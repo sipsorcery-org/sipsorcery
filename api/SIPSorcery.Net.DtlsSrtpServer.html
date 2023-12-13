@@ -78,258 +78,165 @@
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer</span></div>
-    <div class="level2"><span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer</span></div>
-    <div class="level3"><span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer</span></div>
+    <div class="level1"><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer</span></div>
+    <div class="level2"><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer</span></div>
+    <div class="level3"><span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer</span></div>
     <div class="level4"><span class="xref">DtlsSrtpServer</span></div>
   </div>
   <div class="implements">
     <h5>Implements</h5>
-    <div><span class="xref">Org.BouncyCastle.Tls.TlsServer</span></div>
-    <div><span class="xref">Org.BouncyCastle.Tls.TlsPeer</span></div>
+    <div><span class="xref">Org.BouncyCastle.Crypto.Tls.TlsServer</span></div>
+    <div><span class="xref">Org.BouncyCastle.Crypto.Tls.TlsPeer</span></div>
     <div><a class="xref" href="SIPSorcery.Net.IDtlsSrtpPeer.html">IDtlsSrtpPeer</a></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer.GetDsaSignerCredentials()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetDsaSignerCredentials()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer.GetSupportedCipherSuites()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetDHParameters()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer.GetCredentials()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetCredentials()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_context</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetKeyExchange()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_protocolVersions</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.CreateDHKeyExchange(System.Int32)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_cipherSuites</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.CreateDheKeyExchange(System.Int32)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_offeredCipherSuites</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.CreateECDHKeyExchange(System.Int32)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_clientExtensions</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.CreateECDheKeyExchange(System.Int32)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_encryptThenMACOffered</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.CreateRsaKeyExchange()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_maxFragmentLengthOffered</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mCipherFactory</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_truncatedHMacOffered</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mContext</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_clientSentECPointFormats</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mClientVersion</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_certificateStatusRequest</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mOfferedCipherSuites</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_statusRequestV2</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mOfferedCompressionMethods</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_trustedCAKeys</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mClientExtensions</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_selectedCipherSuite</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mEncryptThenMacOffered</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_clientProtocolNames</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mMaxFragmentLengthOffered</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_selectedProtocolName</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mTruncatedHMacOffered</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.m_serverExtensions</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mSupportedSignatureAlgorithms</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.AllowCertificateStatus()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mEccCipherSuitesOffered</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.AllowEncryptThenMac()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mNamedCurves</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.AllowMultiCertStatus()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mClientECPointFormats</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.AllowTruncatedHmac()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mServerECPointFormats</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.AllowTrustedCAIndication()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mServerVersion</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetMaximumNegotiableCurveBits()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mSelectedCipherSuite</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetMaximumNegotiableFiniteFieldBits()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mSelectedCompressionMethod</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetProtocolNames()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.mServerExtensions</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.IsSelectableCipherSuite(System.Int32, System.Int32, System.Int32, System.Collections.Generic.IList&lt;System.Int16&gt;)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.CheckServerExtensions()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.PreferLocalCipherSuites()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetCompressionMethods()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectCipherSuite(System.Int32)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.SupportsClientEccCapabilities(System.Int32[], System.Byte[])</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectDH(System.Int32)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.Init(Org.BouncyCastle.Crypto.Tls.TlsServerContext)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectDHDefault(System.Int32)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.NotifyClientVersion(Org.BouncyCastle.Crypto.Tls.ProtocolVersion)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectECDH(System.Int32)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.NotifyFallback(System.Boolean)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectECDHDefault(System.Int32)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.NotifyOfferedCipherSuites(System.Int32[])</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectProtocolName()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.NotifyOfferedCompressionMethods(System.Byte[])</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.SelectProtocolName(System.Collections.Generic.IList&lt;Org.BouncyCastle.Tls.ProtocolName&gt;, System.Collections.Generic.IList&lt;Org.BouncyCastle.Tls.ProtocolName&gt;)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetServerVersion()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.ShouldSelectProtocolNameEarly()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetSelectedCompressionMethod()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.PreferLocalClientCertificateTypes()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetServerSupplementalData()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetAllowedClientCertificateTypes()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetCertificateStatus()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetNewConnectionID()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.ProcessClientSupplementalData(System.Collections.IList)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.Init(Org.BouncyCastle.Tls.TlsServerContext)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetCompression()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetProtocolVersions()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetCipher()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetCipherSuites()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetNewSessionTicket()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.NotifyHandshakeBeginning()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.AllowEncryptThenMac</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetSessionToResume(System.Byte[])</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.AllowTruncatedHMac</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetNewSessionID()</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.Cancel()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetExternalPsk(System.Collections.Generic.IList&lt;Org.BouncyCastle.Tls.PskIdentity&gt;)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.NotifyCloseHandle(Org.BouncyCastle.Crypto.Tls.TlsCloseable)</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.NotifySession(Org.BouncyCastle.Tls.TlsSession)</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.GetHandshakeTimeoutMillis()</span>
     </div>
     <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.NotifyClientVersion(Org.BouncyCastle.Tls.ProtocolVersion)</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.NotifyFallback(System.Boolean)</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.NotifyOfferedCipherSuites(System.Int32[])</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetServerVersion()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetSupportedGroups()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetServerExtensionsForConnection(System.Collections.Generic.IDictionary&lt;System.Int32, System.Byte[]&gt;)</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetServerSupplementalData()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetCertificateStatus()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetPskIdentityManager()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetSrpLoginParameters()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetDHConfig()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetECDHConfig()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.ProcessClientSupplementalData(System.Collections.Generic.IList&lt;Org.BouncyCastle.Tls.SupplementalDataEntry&gt;)</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetNewSessionTicket()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.Cancel()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.NotifyCloseHandle(Org.BouncyCastle.Tls.TlsCloseable)</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetHandshakeTimeoutMillis()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetHandshakeResendTimeMillis()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.AllowLegacyResumption()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetMaxCertificateChainLength()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetMaxHandshakeMessageSize()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetPskKeyExchangeModes()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.RequiresCloseNotify()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.ShouldCheckSigAlgOfPeerCerts()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.ShouldUseExtendedMasterSecret()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.ShouldUseExtendedPadding()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.ShouldUseGmtUnixTime()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetKeyExchangeFactory()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetHeartbeat()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetHeartbeatPolicy()</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.Crypto</span>
-    </div>
-    <div>
-      <span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.IgnoreCorruptDtlsRecords</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.ShouldUseGmtUnixTime()</span>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
@@ -363,50 +270,33 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L127">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer__ctor_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto)">DtlsSrtpServer(TlsCrypto)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor">DtlsSrtpServer()</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(TlsCrypto crypto)</code></pre>
+    <pre><code class="lang-csharp hljs">public DtlsSrtpServer()</code></pre>
   </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Crypto.TlsCrypto</span></td>
-        <td><span class="parametername">crypto</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_Org_BouncyCastle_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto%2COrg.BouncyCastle.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(Org.BouncyCastle.Crypto.Tls.Certificate%2COrg.BouncyCastle.Crypto.AsymmetricKeyParameter)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L144">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer__ctor_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_Org_BouncyCastle_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto,Org.BouncyCastle.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">DtlsSrtpServer(TlsCrypto, Certificate, AsymmetricKeyParameter)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Crypto_Tls_Certificate_Org_BouncyCastle_Crypto_AsymmetricKeyParameter_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Crypto.Tls.Certificate,Org.BouncyCastle.Crypto.AsymmetricKeyParameter)">DtlsSrtpServer(Certificate, AsymmetricKeyParameter)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey)</code></pre>
+    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -419,12 +309,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Crypto.TlsCrypto</span></td>
-        <td><span class="parametername">crypto</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Certificate</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.Certificate</span></td>
         <td><span class="parametername">certificateChain</span></td>
         <td></td>
       </tr>
@@ -437,18 +322,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto%2CSystem.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(System.Security.Cryptography.X509Certificates.X509Certificate2)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L131">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer__ctor_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto,System.Security.Cryptography.X509Certificates.X509Certificate2)">DtlsSrtpServer(TlsCrypto, X509Certificate2)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2)">DtlsSrtpServer(X509Certificate2)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(TlsCrypto crypto, X509Certificate2 certificate)</code></pre>
+    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(X509Certificate2 certificate)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -460,11 +345,6 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Crypto.TlsCrypto</span></td>
-        <td><span class="parametername">crypto</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><span class="xref">System.Security.Cryptography.X509Certificates.X509Certificate2</span></td>
         <td><span class="parametername">certificate</span></td>
@@ -474,18 +354,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L135">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer__ctor_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_System_String_System_String_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto,System.String,System.String)">DtlsSrtpServer(TlsCrypto, String, String)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_System_String_System_String_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(System.String,System.String)">DtlsSrtpServer(String, String)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(TlsCrypto crypto, string certificatePath, string keyPath)</code></pre>
+    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(string certificatePath, string keyPath)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -497,11 +377,6 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Crypto.TlsCrypto</span></td>
-        <td><span class="parametername">crypto</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">certificatePath</span></td>
@@ -516,18 +391,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_System_String___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto%2CSystem.String%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer__ctor_System_String___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.%23ctor(System.String%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L139">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer__ctor_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_Org_BouncyCastle_Tls_Crypto_TlsCrypto_System_String___System_String_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(Org.BouncyCastle.Tls.Crypto.TlsCrypto,System.String[],System.String)">DtlsSrtpServer(TlsCrypto, String[], String)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer__ctor_System_String___System_String_" data-uid="SIPSorcery.Net.DtlsSrtpServer.#ctor(System.String[],System.String)">DtlsSrtpServer(String[], String)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(TlsCrypto crypto, string[] certificatesPath, string keyPath)</code></pre>
+    <pre><code class="lang-csharp hljs">public DtlsSrtpServer(string[] certificatesPath, string keyPath)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -539,11 +414,6 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Crypto.TlsCrypto</span></td>
-        <td><span class="parametername">crypto</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><span class="xref">System.String</span>[]</td>
         <td><span class="parametername">certificatesPath</span></td>
@@ -563,7 +433,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_CertificateChain.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.CertificateChain%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L176">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L178">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_CertificateChain_" data-uid="SIPSorcery.Net.DtlsSrtpServer.CertificateChain*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_CertificateChain" data-uid="SIPSorcery.Net.DtlsSrtpServer.CertificateChain">CertificateChain</h4>
@@ -583,7 +453,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Certificate</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.Certificate</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -593,7 +463,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_ClientCertificate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.ClientCertificate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L102">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L100">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_ClientCertificate_" data-uid="SIPSorcery.Net.DtlsSrtpServer.ClientCertificate*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_ClientCertificate" data-uid="SIPSorcery.Net.DtlsSrtpServer.ClientCertificate">ClientCertificate</h4>
@@ -613,7 +483,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Certificate</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.Certificate</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -623,7 +493,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_Fingerprint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.Fingerprint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L160">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L162">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_Fingerprint_" data-uid="SIPSorcery.Net.DtlsSrtpServer.Fingerprint*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_Fingerprint" data-uid="SIPSorcery.Net.DtlsSrtpServer.Fingerprint">Fingerprint</h4>
@@ -653,7 +523,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_ForceUseExtendedMasterSecret.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L100">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L98">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_ForceUseExtendedMasterSecret_" data-uid="SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_ForceUseExtendedMasterSecret" data-uid="SIPSorcery.Net.DtlsSrtpServer.ForceUseExtendedMasterSecret">ForceUseExtendedMasterSecret</h4>
@@ -683,7 +553,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_MaximumVersion.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.MaximumVersion%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L184">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L186">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_MaximumVersion_" data-uid="SIPSorcery.Net.DtlsSrtpServer.MaximumVersion*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_MaximumVersion" data-uid="SIPSorcery.Net.DtlsSrtpServer.MaximumVersion">MaximumVersion</h4>
@@ -691,7 +561,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected ProtocolVersion MaximumVersion { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">protected override ProtocolVersion MaximumVersion { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -703,17 +573,19 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.ProtocolVersion</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.ProtocolVersion</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.MaximumVersion</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_MinimumVersion.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.MinimumVersion%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L192">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L194">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_MinimumVersion_" data-uid="SIPSorcery.Net.DtlsSrtpServer.MinimumVersion*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_MinimumVersion" data-uid="SIPSorcery.Net.DtlsSrtpServer.MinimumVersion">MinimumVersion</h4>
@@ -721,7 +593,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected ProtocolVersion MinimumVersion { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">protected override ProtocolVersion MinimumVersion { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -733,17 +605,19 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.ProtocolVersion</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.ProtocolVersion</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.MinimumVersion</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_PrivateKey.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.PrivateKey%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L168">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L170">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_PrivateKey_" data-uid="SIPSorcery.Net.DtlsSrtpServer.PrivateKey*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_PrivateKey" data-uid="SIPSorcery.Net.DtlsSrtpServer.PrivateKey">PrivateKey</h4>
@@ -775,7 +649,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetCertificateRequest.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetCertificateRequest%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L232">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L233">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetCertificateRequest_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetCertificateRequest*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetCertificateRequest" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetCertificateRequest">GetCertificateRequest()</h4>
@@ -795,27 +669,27 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.CertificateRequest</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.CertificateRequest</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetCertificateRequest()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetCertificateRequest()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetECDsaSignerCredentials.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetECDsaSignerCredentials%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetCipherSuites.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetCipherSuites%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L346">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L499">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_DtlsSrtpServer_GetECDsaSignerCredentials_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetECDsaSignerCredentials*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetECDsaSignerCredentials" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetECDsaSignerCredentials">GetECDsaSignerCredentials()</h4>
+  <a id="SIPSorcery_Net_DtlsSrtpServer_GetCipherSuites_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetCipherSuites*"></a>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetCipherSuites" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetCipherSuites">GetCipherSuites()</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected override TlsCredentialedSigner GetECDsaSignerCredentials()</code></pre>
+    <pre><code class="lang-csharp hljs">protected override int[] GetCipherSuites()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -827,19 +701,51 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.TlsCredentialedSigner</span></td>
+        <td><span class="xref">System.Int32</span>[]</td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer.GetECDsaSignerCredentials()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetCipherSuites()</span></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetECDsaSignerCredentials.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetECDsaSignerCredentials%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L347">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_DtlsSrtpServer_GetECDsaSignerCredentials_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetECDsaSignerCredentials*"></a>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetECDsaSignerCredentials" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetECDsaSignerCredentials">GetECDsaSignerCredentials()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override TlsSignerCredentials GetECDsaSignerCredentials()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.TlsSignerCredentials</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetECDsaSignerCredentials()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L415">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L439">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.Int32)">GetKeyingMaterial(Int32)</h4>
@@ -886,7 +792,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_System_String_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.String%2CSystem.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L420">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L444">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetKeyingMaterial_System_String_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetKeyingMaterial(System.String,System.Byte[],System.Int32)">GetKeyingMaterial(String, Byte[], Int32)</h4>
@@ -943,7 +849,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetRemoteCertificate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetRemoteCertificate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L475">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L509">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetRemoteCertificate_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetRemoteCertificate*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetRemoteCertificate" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetRemoteCertificate">GetRemoteCertificate()</h4>
@@ -963,7 +869,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Certificate</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.Certificate</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -973,7 +879,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetRsaEncryptionCredentials.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetRsaEncryptionCredentials%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L351">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L352">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetRsaEncryptionCredentials_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetRsaEncryptionCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetRsaEncryptionCredentials" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetRsaEncryptionCredentials">GetRsaEncryptionCredentials()</h4>
@@ -981,7 +887,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected override TlsCredentialedDecryptor GetRsaEncryptionCredentials()</code></pre>
+    <pre><code class="lang-csharp hljs">protected override TlsEncryptionCredentials GetRsaEncryptionCredentials()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -993,19 +899,19 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.TlsCredentialedDecryptor</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.TlsEncryptionCredentials</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer.GetRsaEncryptionCredentials()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetRsaEncryptionCredentials()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetRsaSignerCredentials.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetRsaSignerCredentials%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L356">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L357">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetRsaSignerCredentials_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetRsaSignerCredentials*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetRsaSignerCredentials" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetRsaSignerCredentials">GetRsaSignerCredentials()</h4>
@@ -1013,7 +919,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected override TlsCredentialedSigner GetRsaSignerCredentials()</code></pre>
+    <pre><code class="lang-csharp hljs">protected override TlsSignerCredentials GetRsaSignerCredentials()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1025,19 +931,19 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.TlsCredentialedSigner</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.TlsSignerCredentials</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.DefaultTlsServer.GetRsaSignerCredentials()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.DefaultTlsServer.GetRsaSignerCredentials()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSelectedCipherSuite.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSelectedCipherSuite%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L200">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L202">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSelectedCipherSuite_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSelectedCipherSuite*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSelectedCipherSuite" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSelectedCipherSuite">GetSelectedCipherSuite()</h4>
@@ -1063,13 +969,13 @@
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetSelectedCipherSuite()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetSelectedCipherSuite()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetServerExtensions.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetServerExtensions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L258">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L259">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetServerExtensions_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetServerExtensions*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetServerExtensions" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetServerExtensions">GetServerExtensions()</h4>
@@ -1077,7 +983,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override IDictionary&lt;int, byte[]&gt; GetServerExtensions()</code></pre>
+    <pre><code class="lang-csharp hljs">public override IDictionary GetServerExtensions()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1089,19 +995,19 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.IDictionary</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Collections.IDictionary</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.GetServerExtensions()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.GetServerExtensions()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSrtcpPolicy.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSrtcpPolicy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L306">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L307">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSrtcpPolicy_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtcpPolicy*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSrtcpPolicy" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtcpPolicy">GetSrtcpPolicy()</h4>
@@ -1131,7 +1037,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterClientKey.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterClientKey%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L321">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L322">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterClientKey_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterClientKey*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterClientKey" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterClientKey">GetSrtpMasterClientKey()</h4>
@@ -1161,7 +1067,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterClientSalt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterClientSalt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L326">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L327">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterClientSalt_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterClientSalt*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterClientSalt" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterClientSalt">GetSrtpMasterClientSalt()</h4>
@@ -1191,7 +1097,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterServerKey.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterServerKey%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L311">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L312">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterServerKey_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterServerKey*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterServerKey" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterServerKey">GetSrtpMasterServerKey()</h4>
@@ -1221,7 +1127,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterServerSalt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterServerSalt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L316">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L317">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterServerSalt_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterServerSalt*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpMasterServerSalt" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpMasterServerSalt">GetSrtpMasterServerSalt()</h4>
@@ -1251,7 +1157,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSrtpPolicy.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSrtpPolicy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L301">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L302">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpPolicy_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpPolicy*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSrtpPolicy" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSrtpPolicy">GetSrtpPolicy()</h4>
@@ -1278,42 +1184,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_GetSupportedVersions.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.GetSupportedVersions%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L480">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_DtlsSrtpServer_GetSupportedVersions_" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSupportedVersions*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer_GetSupportedVersions" data-uid="SIPSorcery.Net.DtlsSrtpServer.GetSupportedVersions">GetSupportedVersions()</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected override ProtocolVersion[] GetSupportedVersions()</code></pre>
-  </div>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.ProtocolVersion</span>[]</td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.GetSupportedVersions()</span></div>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_IsClient.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.IsClient%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L341">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L342">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_IsClient_" data-uid="SIPSorcery.Net.DtlsSrtpServer.IsClient*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_IsClient" data-uid="SIPSorcery.Net.DtlsSrtpServer.IsClient">IsClient()</h4>
@@ -1340,18 +1214,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyAlertRaised_System_Int16_System_Int16_System_String_System_Exception_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyAlertRaised(System.Int16%2CSystem.Int16%2CSystem.String%2CSystem.Exception)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyAlertRaised_System_Byte_System_Byte_System_String_System_Exception_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyAlertRaised(System.Byte%2CSystem.Byte%2CSystem.String%2CSystem.Exception)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L489">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L514">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_NotifyAlertRaised_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyAlertRaised*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyAlertRaised_System_Int16_System_Int16_System_String_System_Exception_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyAlertRaised(System.Int16,System.Int16,System.String,System.Exception)">NotifyAlertRaised(Int16, Int16, String, Exception)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyAlertRaised_System_Byte_System_Byte_System_String_System_Exception_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyAlertRaised(System.Byte,System.Byte,System.String,System.Exception)">NotifyAlertRaised(Byte, Byte, String, Exception)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)</code></pre>
+    <pre><code class="lang-csharp hljs">public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1364,12 +1238,12 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int16</span></td>
+        <td><span class="xref">System.Byte</span></td>
         <td><span class="parametername">alertLevel</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Int16</span></td>
+        <td><span class="xref">System.Byte</span></td>
         <td><span class="parametername">alertDescription</span></td>
         <td></td>
       </tr>
@@ -1386,21 +1260,21 @@
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.NotifyAlertRaised(System.Int16, System.Int16, System.String, System.Exception)</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.NotifyAlertRaised(System.Byte, System.Byte, System.String, System.Exception)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyAlertReceived_System_Int16_System_Int16_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived(System.Int16%2CSystem.Int16)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyAlertReceived_System_Byte_System_Byte_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived(System.Byte%2CSystem.Byte)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L514">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L539">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_NotifyAlertReceived_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyAlertReceived_System_Int16_System_Int16_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived(System.Int16,System.Int16)">NotifyAlertReceived(Int16, Int16)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyAlertReceived_System_Byte_System_Byte_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyAlertReceived(System.Byte,System.Byte)">NotifyAlertReceived(Byte, Byte)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override void NotifyAlertReceived(short alertLevel, short alertDescription)</code></pre>
+    <pre><code class="lang-csharp hljs">public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1413,28 +1287,28 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int16</span></td>
+        <td><span class="xref">System.Byte</span></td>
         <td><span class="parametername">alertLevel</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Int16</span></td>
+        <td><span class="xref">System.Byte</span></td>
         <td><span class="parametername">alertDescription</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.NotifyAlertReceived(System.Int16, System.Int16)</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.NotifyAlertReceived(System.Byte, System.Byte)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Org_BouncyCastle_Tls_Certificate_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Tls.Certificate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Org_BouncyCastle_Crypto_Tls_Certificate_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L253">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L254">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Org_BouncyCastle_Tls_Certificate_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Tls.Certificate)">NotifyClientCertificate(Certificate)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyClientCertificate_Org_BouncyCastle_Crypto_Tls_Certificate_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)">NotifyClientCertificate(Certificate)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -1452,20 +1326,20 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Org.BouncyCastle.Tls.Certificate</span></td>
+        <td><span class="xref">Org.BouncyCastle.Crypto.Tls.Certificate</span></td>
         <td><span class="parametername">clientCertificate</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.NotifyClientCertificate(Org.BouncyCastle.Tls.Certificate)</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.NotifyClientCertificate(Org.BouncyCastle.Crypto.Tls.Certificate)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifyHandshakeComplete.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifyHandshakeComplete%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L331">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L332">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_NotifyHandshakeComplete_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyHandshakeComplete*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifyHandshakeComplete" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifyHandshakeComplete">NotifyHandshakeComplete()</h4>
@@ -1476,13 +1350,13 @@
     <pre><code class="lang-csharp hljs">public override void NotifyHandshakeComplete()</code></pre>
   </div>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.NotifyHandshakeComplete()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.NotifyHandshakeComplete()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_NotifySecureRenegotiation_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.NotifySecureRenegotiation(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L552">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L577">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_NotifySecureRenegotiation_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifySecureRenegotiation*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_NotifySecureRenegotiation_System_Boolean_" data-uid="SIPSorcery.Net.DtlsSrtpServer.NotifySecureRenegotiation(System.Boolean)">NotifySecureRenegotiation(Boolean)</h4>
@@ -1514,13 +1388,13 @@ see <a href="https://github.com/pion/dtls/issues/274">https://github.com/pion/dt
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.NotifySecureRenegotiation(System.Boolean)</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.NotifySecureRenegotiation(System.Boolean)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_PrepareSrtpSharedSecret.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.PrepareSrtpSharedSecret%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L361">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L385">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_PrepareSrtpSharedSecret_" data-uid="SIPSorcery.Net.DtlsSrtpServer.PrepareSrtpSharedSecret*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_PrepareSrtpSharedSecret" data-uid="SIPSorcery.Net.DtlsSrtpServer.PrepareSrtpSharedSecret">PrepareSrtpSharedSecret()</h4>
@@ -1532,18 +1406,18 @@ see <a href="https://github.com/pion/dtls/issues/274">https://github.com/pion/dt
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_ProcessClientExtensions_System_Collections_Generic_IDictionary_System_Int32_System_Byte____.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.ProcessClientExtensions(System.Collections.Generic.IDictionary%7BSystem.Int32%2CSystem.Byte%5B%5D%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_ProcessClientExtensions_System_Collections_IDictionary_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.ProcessClientExtensions(System.Collections.IDictionary)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L272">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L273">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_ProcessClientExtensions_" data-uid="SIPSorcery.Net.DtlsSrtpServer.ProcessClientExtensions*"></a>
-  <h4 id="SIPSorcery_Net_DtlsSrtpServer_ProcessClientExtensions_System_Collections_Generic_IDictionary_System_Int32_System_Byte____" data-uid="SIPSorcery.Net.DtlsSrtpServer.ProcessClientExtensions(System.Collections.Generic.IDictionary{System.Int32,System.Byte[]})">ProcessClientExtensions(IDictionary&lt;Int32, Byte[]&gt;)</h4>
+  <h4 id="SIPSorcery_Net_DtlsSrtpServer_ProcessClientExtensions_System_Collections_IDictionary_" data-uid="SIPSorcery.Net.DtlsSrtpServer.ProcessClientExtensions(System.Collections.IDictionary)">ProcessClientExtensions(IDictionary)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override void ProcessClientExtensions(IDictionary&lt;int, byte[]&gt; clientExtensions)</code></pre>
+    <pre><code class="lang-csharp hljs">public override void ProcessClientExtensions(IDictionary clientExtensions)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1556,20 +1430,20 @@ see <a href="https://github.com/pion/dtls/issues/274">https://github.com/pion/dt
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.IDictionary</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Collections.IDictionary</span></td>
         <td><span class="parametername">clientExtensions</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsServer.ProcessClientExtensions(System.Collections.Generic.IDictionary&lt;System.Int32, System.Byte[]&gt;)</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsServer.ProcessClientExtensions(System.Collections.IDictionary)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer_RequiresExtendedMasterSecret.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L470">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L494">View Source</a>
   </span>
   <a id="SIPSorcery_Net_DtlsSrtpServer_RequiresExtendedMasterSecret_" data-uid="SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret*"></a>
   <h4 id="SIPSorcery_Net_DtlsSrtpServer_RequiresExtendedMasterSecret" data-uid="SIPSorcery.Net.DtlsSrtpServer.RequiresExtendedMasterSecret">RequiresExtendedMasterSecret()</h4>
@@ -1595,7 +1469,7 @@ see <a href="https://github.com/pion/dtls/issues/274">https://github.com/pion/dt
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">Org.BouncyCastle.Tls.AbstractTlsPeer.RequiresExtendedMasterSecret()</span></div>
+  <div><span class="xref">Org.BouncyCastle.Crypto.Tls.AbstractTlsPeer.RequiresExtendedMasterSecret()</span></div>
   <h3 id="events">Events
   </h3>
   <span class="small pull-right mobile-hide">
@@ -1635,10 +1509,10 @@ see <a href="https://github.com/pion/dtls/issues/274">https://github.com/pion/dt
   </table>
   <h3 id="implements">Implements</h3>
   <div>
-      <span class="xref">Org.BouncyCastle.Tls.TlsServer</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.TlsServer</span>
   </div>
   <div>
-      <span class="xref">Org.BouncyCastle.Tls.TlsPeer</span>
+      <span class="xref">Org.BouncyCastle.Crypto.Tls.TlsPeer</span>
   </div>
   <div>
       <a class="xref" href="SIPSorcery.Net.IDtlsSrtpPeer.html">IDtlsSrtpPeer</a>
@@ -1658,7 +1532,7 @@ see <a href="https://github.com/pion/dtls/issues/274">https://github.com/pion/dt
                     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_DtlsSrtpServer.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.DtlsSrtpServer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L89" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/DtlsSrtp/DtlsSrtpServer.cs/#L87" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
