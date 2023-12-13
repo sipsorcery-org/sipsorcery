@@ -14,7 +14,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
@@ -26,12 +25,10 @@ namespace SIPSorcery.Net.IntegrationTests
     public class DtlsUtilsUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
-        private BcTlsCrypto crypto = null;
 
         public DtlsUtilsUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
-            crypto = new BcTlsCrypto();
         }
 
         /// <summary>
@@ -43,7 +40,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
+            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
 
             logger.LogDebug(tlsCert.ToString());
 
@@ -60,7 +57,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
+            (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
             Assert.NotNull(tlsCert);
 
             var fingerprint = DtlsUtils.Fingerprint(tlsCert);
@@ -118,7 +115,7 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.NotNull(coreFxCert);
             Assert.NotNull(coreFxCert.PrivateKey);
 
-            string coreFxFingerprint = DtlsUtils.Fingerprint(crypto, coreFxCert).ToString();
+            string coreFxFingerprint = DtlsUtils.Fingerprint(coreFxCert).ToString();
             logger.LogDebug($"Core FX certificate fingerprint {coreFxFingerprint}.");
 
             var bcCert = Org.BouncyCastle.Security.DotNetUtilities.FromX509Certificate(coreFxCert);
