@@ -212,20 +212,31 @@ namespace SIPSorcery.Net
              * formats supported by the client [...].
              */
 
-            bool eccCipherSuitesEnabled = false;// SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
-
             int[] cipherSuites = GetCipherSuites();
             for (int i = 0; i < cipherSuites.Length; ++i)
             {
                 int cipherSuite = cipherSuites[i];
 
                 if (Arrays.Contains(this.m_offeredCipherSuites, cipherSuite)
-                        && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
+                        && !TlsEccUtilities.IsEccCipherSuite(cipherSuite)
                         && TlsUtilities.IsValidVersionForCipherSuite(cipherSuite, GetServerVersion()))
                 {
                     return this.m_selectedCipherSuite = cipherSuite;
                 }
             }
+
+            for (int i = 0; i < cipherSuites.Length; ++i)
+            {
+                int cipherSuite = cipherSuites[i];
+
+                if (Arrays.Contains(this.m_offeredCipherSuites, cipherSuite)
+                        && TlsEccUtilities.IsEccCipherSuite(cipherSuite)
+                        && TlsUtilities.IsValidVersionForCipherSuite(cipherSuite, GetServerVersion()))
+                {
+                    return this.m_selectedCipherSuite = cipherSuite;
+                }
+            }
+
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
