@@ -31,6 +31,9 @@ namespace SIPSorcery.Net
         public bool StartOfVP8Partition;            // Should be set when the first payload octet is the start of a new VP8 partition.
         public byte PartitionIndex;                 // Denotes the VP8 partition index that the first payload octet of the packet belongs to.
         public bool IsPictureIDPresent;
+        public bool IsTL0PICIDXPresent;
+        public bool IsTIDPresent;
+        public bool IsKEYIDXPresent;
         public ushort PictureID;
 
         // Payload Header Fields.
@@ -68,6 +71,9 @@ namespace SIPSorcery.Net
             if (vp8Header.ExtendedControlBitsPresent)
             {
                 vp8Header.IsPictureIDPresent = ((rtpPayload[1] >> 7) & 0x01) == 1;
+                vp8Header.IsTL0PICIDXPresent = ((rtpPayload[1] >> 6) & 0x01) == 1;
+                vp8Header.IsTIDPresent = ((rtpPayload[1] >> 5) & 0x01) == 1;
+                vp8Header.IsKEYIDXPresent = ((rtpPayload[1] >> 4) & 0x01) == 1;
                 vp8Header._length = 2;
                 payloadHeaderStartIndex = 2;
             }
@@ -91,7 +97,24 @@ namespace SIPSorcery.Net
                 }
             }
 
+            if (vp8Header.IsTL0PICIDXPresent)
+            {
+                vp8Header._length++;
+                payloadHeaderStartIndex++;
+            }
+            if (vp8Header.IsTIDPresent || vp8Header.IsKEYIDXPresent)
+            {
+                vp8Header._length++;
+                payloadHeaderStartIndex++;
+            }
+
             vp8Header._payloadDescriptorLength = payloadHeaderStartIndex;
+            
+            bool isPID0 = ((rtpPayload[0] & (1 << 2))==0) && ((rtpPayload[0] & (1 << 1))==0) && ((rtpPayload[0] & (1 << 0))==0);
+            if (vp8Header.StartOfVP8Partition && isPID0)
+            {
+                vp8Header.IsKeyFrame=(rtpPayload[payloadHeaderStartIndex] & (1 << 0)) == 0;
+            }
 
             return vp8Header;
         }
