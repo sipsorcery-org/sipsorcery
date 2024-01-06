@@ -15269,12 +15269,30 @@ references:
   commentId: F:SIPSorcery.Net.RtpVP8Header.IsKeyFrame
   fullName: SIPSorcery.Net.RtpVP8Header.IsKeyFrame
   nameWithType: RtpVP8Header.IsKeyFrame
+- uid: SIPSorcery.Net.RtpVP8Header.IsKEYIDXPresent
+  name: IsKEYIDXPresent
+  href: api/SIPSorcery.Net.RtpVP8Header.html#SIPSorcery_Net_RtpVP8Header_IsKEYIDXPresent
+  commentId: F:SIPSorcery.Net.RtpVP8Header.IsKEYIDXPresent
+  fullName: SIPSorcery.Net.RtpVP8Header.IsKEYIDXPresent
+  nameWithType: RtpVP8Header.IsKEYIDXPresent
 - uid: SIPSorcery.Net.RtpVP8Header.IsPictureIDPresent
   name: IsPictureIDPresent
   href: api/SIPSorcery.Net.RtpVP8Header.html#SIPSorcery_Net_RtpVP8Header_IsPictureIDPresent
   commentId: F:SIPSorcery.Net.RtpVP8Header.IsPictureIDPresent
   fullName: SIPSorcery.Net.RtpVP8Header.IsPictureIDPresent
   nameWithType: RtpVP8Header.IsPictureIDPresent
+- uid: SIPSorcery.Net.RtpVP8Header.IsTIDPresent
+  name: IsTIDPresent
+  href: api/SIPSorcery.Net.RtpVP8Header.html#SIPSorcery_Net_RtpVP8Header_IsTIDPresent
+  commentId: F:SIPSorcery.Net.RtpVP8Header.IsTIDPresent
+  fullName: SIPSorcery.Net.RtpVP8Header.IsTIDPresent
+  nameWithType: RtpVP8Header.IsTIDPresent
+- uid: SIPSorcery.Net.RtpVP8Header.IsTL0PICIDXPresent
+  name: IsTL0PICIDXPresent
+  href: api/SIPSorcery.Net.RtpVP8Header.html#SIPSorcery_Net_RtpVP8Header_IsTL0PICIDXPresent
+  commentId: F:SIPSorcery.Net.RtpVP8Header.IsTL0PICIDXPresent
+  fullName: SIPSorcery.Net.RtpVP8Header.IsTL0PICIDXPresent
+  nameWithType: RtpVP8Header.IsTL0PICIDXPresent
 - uid: SIPSorcery.Net.RtpVP8Header.Length
   name: Length
   href: api/SIPSorcery.Net.RtpVP8Header.html#SIPSorcery_Net_RtpVP8Header_Length
