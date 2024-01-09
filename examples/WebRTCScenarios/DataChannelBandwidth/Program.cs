@@ -1,25 +1,34 @@
 ﻿using System.Diagnostics;
+
 using DataChannelBandwidth;
+
 using Microsoft.Extensions.Logging;
+
 using SIPSorcery;
 using SIPSorcery.Net;
 
 ILoggerFactory logs = LoggerFactory.Create(
-    builder => builder.AddFilter(level => level >= LogLevel.Error).AddConsole());
+    builder => builder.AddFilter(level => level >= LogLevel.Warning).AddConsole());
 
 LogFactory.Set(logs);
 
-var server = new RTCPeerConnection();
-var client = new RTCPeerConnection();
+var rtcConfig = new RTCConfiguration
+{
+    iceServers = new List<RTCIceServer> {
+        new() { urls = "stun:stun.l.google.com:19302" },
+    },
+};
+
+var server = new RTCPeerConnection(rtcConfig);
+var client = new RTCPeerConnection(rtcConfig);
 
 long clientReceived = 0;
 long serverReceived = 0;
-double clientRate = 0;
-double serverRate = 0;
 
 client.ondatachannel += ch =>
 {
-    new Thread(() => SendRecv(ch, ref clientReceived, ref clientRate)) {
+    new Thread(() => SendRecv(ch, ref clientReceived))
+    {
         IsBackground = true,
         Name = "client",
     }.Start();
@@ -29,7 +38,7 @@ client.ondatachannel += ch =>
 var serverCH = await server.createDataChannel("test");
 serverCH.onopen += () =>
 {
-    new Thread(() => SendRecv(serverCH, ref serverReceived, ref serverRate))
+    new Thread(() => SendRecv(serverCH, ref serverReceived))
     {
         IsBackground = true,
         Name = "server",
@@ -42,13 +51,15 @@ var answer = client.createAnswer();
 server.setRemoteDescription(answer);
 await client.setLocalDescription(answer);
 
+var stopwatch = Stopwatch.StartNew();
+
 while (true)
 {
     long recvC = Interlocked.Read(ref clientReceived);
     long recvS = Interlocked.Read(ref serverReceived);
-    double rateC = Volatile.Read(ref clientRate);
-    double rateS = Volatile.Read(ref serverRate);
-    Console.WriteLine($"client: {rateC:F1}MB/s server: {rateS:F1}MB/s", recvC, recvS);
+    double rateC = recvC / 1024 / 1024 / stopwatch.Elapsed.TotalSeconds;
+    double rateS = recvS / 1024 / 1024 / stopwatch.Elapsed.TotalSeconds;
+    Console.Title = $"client: {rateC:F1}MB/s server: {rateS:F1}MB/s";
     Thread.Sleep(1000);
 }
 
@@ -61,7 +72,7 @@ void Send(RTCDataChannel channel)
     }
 }
 
-void SendRecv(RTCDataChannel channel, ref long received, ref double rate)
+void SendRecv(RTCDataChannel channel, ref long received)
 {
     var stream = new DataChannelStream(channel);
     var sender = new Thread(() => Send(channel))
@@ -69,11 +80,10 @@ void SendRecv(RTCDataChannel channel, ref long received, ref double rate)
         IsBackground = true,
     };
     sender.Start();
-    var stopwatch = Stopwatch.StartNew();
+    
     byte[] buffer = new byte[200_000];
     while (true)
     {
         Interlocked.Add(ref received, stream.Read(buffer));
-        Interlocked.Exchange(ref rate, received / 1024 / 1024 / stopwatch.Elapsed.TotalSeconds);
     }
 }
