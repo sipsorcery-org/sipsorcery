@@ -45,6 +45,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorcery.Sys;
@@ -91,7 +92,7 @@ namespace SIPSorcery.Net
         /// Create a new RTCP Sender Report from a serialised byte array.
         /// </summary>
         /// <param name="packet">The byte array holding the serialised sender report.</param>
-        public RTCPSenderReport(byte[] packet)
+        public RTCPSenderReport(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < MIN_PACKET_SIZE)
             {
@@ -101,27 +102,16 @@ namespace SIPSorcery.Net
             Header = new RTCPHeader(packet);
             ReceptionReports = new List<ReceptionReportSample>();
 
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-                NtpTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt64(packet, 8));
-                RtpTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 16));
-                PacketCount = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 20));
-                OctetCount = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 24));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-                NtpTimestamp = BitConverter.ToUInt64(packet, 8);
-                RtpTimestamp = BitConverter.ToUInt32(packet, 16);
-                PacketCount = BitConverter.ToUInt32(packet, 20);
-                OctetCount = BitConverter.ToUInt32(packet, 24);
-            }
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
+            NtpTimestamp = BinaryPrimitives.ReadUInt64BigEndian(packet.Slice(8));
+            RtpTimestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(16));
+            PacketCount = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(20));
+            OctetCount = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(24));
 
             int rrIndex = 28;
             for (int i = 0; i < Header.ReceptionReportCount; i++)
             {
-                var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
+                var rr = new ReceptionReportSample(packet.Slice(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE));
                 ReceptionReports.Add(rr);
             }
         }

@@ -286,7 +286,7 @@ namespace SIPSorcery.Net
         /// must have the required space already allocated.</param>
         /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public override ushort WriteTo(byte[] buffer, int posn)
+        public override ushort WriteTo(Span<byte> buffer, int posn)
         {
             WriteChunkHeader(buffer, posn);
 
@@ -319,7 +319,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
-        public static SctpInitChunk ParseChunk(byte[] buffer, int posn)
+        public static SctpInitChunk ParseChunk(ReadOnlySpan<byte> buffer, int posn)
         {
             var initChunk = new SctpInitChunk();
             ushort chunkLen = initChunk.ParseFirstWord(buffer, posn);
@@ -339,7 +339,7 @@ namespace SIPSorcery.Net
             {
                 bool stopProcessing = false;
 
-                foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
+                GetParameters(buffer, paramPosn, paramsBufferLength, varParam =>
                 {
                     switch (varParam.ParameterType)
                     {
@@ -399,9 +399,10 @@ namespace SIPSorcery.Net
                     {
                         logger.LogWarning($"SCTP unrecognised parameter {varParam.ParameterType} for chunk type {initChunk.KnownType} "
                             + "indicated no further chunks should be processed.");
-                        break;
+                        return false;
                     }
-                }
+                    return true;
+                });
             }
 
             return initChunk;

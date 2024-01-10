@@ -115,12 +115,17 @@ namespace SIPSorcery.Sys
             }
         }
 
-        public static string HexStr(this byte[] buffer, char? separator = null)
+        public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null)
         {
-            return buffer.HexStr(buffer.Length, separator);
+            return HexStr(buffer, buffer.Length, separator);
         }
 
-        public static string HexStr(this byte[] buffer, int length, char? separator = null)
+        public static string HexStr(this byte[] buffer, char? separator = null)
+        {
+            return HexStr(buffer, buffer.Length, separator);
+        }
+
+        public static string HexStr(this ReadOnlySpan<byte> buffer, int length, char? separator = null)
         {
             string rv = string.Empty;
 

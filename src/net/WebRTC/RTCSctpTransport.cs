@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -282,13 +283,13 @@ namespace SIPSorcery.Net
                     }
                     else if (bytesRead > 0)
                     {
-                        if (!SctpPacket.VerifyChecksum(recvBuffer, 0, bytesRead))
+                        if (!SctpPacket.VerifyChecksum(recvBuffer.AsSpan().Slice(0, bytesRead)))
                         {
                             logger.LogWarning($"SCTP packet received on DTLS transport dropped due to invalid checksum.");
                         }
                         else
                         {
-                            var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
+                            var pkt = SctpPacket.Parse(recvBuffer.AsSpan(0, bytesRead));
 
                             if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                             {
@@ -362,14 +363,11 @@ namespace SIPSorcery.Net
         /// to the remote party.
         /// </summary>
         /// <param name="associationID">Not used for the DTLS transport.</param>
-        /// <param name="buffer">The buffer containing the data to send.</param>
-        /// <param name="offset">The position in the buffer to send from.</param>
-        /// <param name="length">The number of bytes to send.</param>
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string associationID, ReadOnlySpan<byte> data)
         {
-            if (length > maxMessageSize)
+            if (data.Length > maxMessageSize)
             {
-                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
+                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {data.Length} " +
                     $" that exceeded the maximum allowed message size of {maxMessageSize}.");
             }
 
@@ -377,7 +375,20 @@ namespace SIPSorcery.Net
             {
                 lock (transport)
                 {
-                    transport.Send(buffer, offset, length);
+#if NET6_0_OR_GREATER
+                    transport.Send(data);
+#else
+                    byte[] tmp = ArrayPool<byte>.Shared.Rent(data.Length);
+                    try
+                    {
+                        data.CopyTo(tmp);
+                        transport.Send(tmp, 0, data.Length);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(tmp);
+                    }
+#endif
                 }
             }
         }

@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
 using SIPSorcery.Sys;
 
@@ -73,7 +74,7 @@ namespace SIPSorcery.Net
         /// Create a new RTCP Goodbye packet from a serialised byte array.
         /// </summary>
         /// <param name="packet">The byte array holding the Goodbye packet.</param>
-        public RTCPBye(byte[] packet)
+        public RTCPBye(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < MIN_PACKET_SIZE)
             {
@@ -81,15 +82,7 @@ namespace SIPSorcery.Net
             }
 
             Header = new RTCPHeader(packet);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-            }
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
 
             if (packet.Length > MIN_PACKET_SIZE)
             {
@@ -97,7 +90,7 @@ namespace SIPSorcery.Net
 
                 if (packet.Length - MIN_PACKET_SIZE - 1 >= reasonLength)
                 {
-                    Reason = Encoding.UTF8.GetString(packet, 9, reasonLength);
+                    Reason = packet.Slice(9, reasonLength).ToString(Encoding.UTF8);
                 }
             }
         }

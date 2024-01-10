@@ -93,7 +93,7 @@ namespace SIPSorcery.Net
         /// </returns>
         public virtual bool IsPortAgnostic => false;
 
-        public abstract void Send(string associationID, byte[] buffer, int offset, int length);
+        public abstract void Send(string associationID, ReadOnlySpan<byte> buffer);
 
         static SctpTransport()
         {
@@ -131,8 +131,26 @@ namespace SIPSorcery.Net
             else
             {
                 var initAckPacket = GetInitAck(initPacket, remoteEndPoint);
-                var buffer = initAckPacket.GetBytes();
-                Send(null, buffer, 0, buffer.Length);
+                Send(null, initAckPacket);
+            }
+        }
+
+        /// <summary>
+        /// Sends an SCTP packet to the remote peer.
+        /// </summary>
+        /// <param name="pkt">The packet to send.</param>
+        internal void Send(string? ID, SctpPacket pkt)
+        {
+            Span<byte> span = stackalloc byte[4 * 1024];
+            if (pkt.GetBytes(span) is { } size and >= 0)
+            {
+                Send(ID, span.Slice(0, size));
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("SCTP packet too large to send without allocation.");
+                byte[] buffer = pkt.GetBytes();
+                Send(ID, buffer.AsSpan());
             }
         }
 
@@ -318,8 +336,7 @@ namespace SIPSorcery.Net
             errorChunk.AddErrorCause(error);
             errorPacket.AddChunk(errorChunk);
 
-            var buffer = errorPacket.GetBytes();
-            Send(null, buffer, 0, buffer.Length);
+            Send(null, errorPacket);
         }
 
         /// <summary>

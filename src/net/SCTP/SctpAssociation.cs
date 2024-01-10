@@ -707,8 +707,7 @@ namespace SIPSorcery.Net
 
                 SetState(SctpAssociationState.CookieWait);
 
-                byte[] buffer = init.GetBytes();
-                _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                SendPacket(init);
 
                 _t1Init = new Timer(T1InitTimerExpired, init, T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
             }
@@ -729,9 +728,7 @@ namespace SIPSorcery.Net
 
                 pkt.AddChunk(chunk);
 
-                byte[] buffer = pkt.GetBytes();
-
-                _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                SendPacket(pkt);
             }
         }
 
@@ -743,8 +740,7 @@ namespace SIPSorcery.Net
         {
             if (!_wasAborted)
             {
-                byte[] buffer = pkt.GetBytes();
-                _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                _sctpTransport.Send(ID, pkt);
             }
         }
 

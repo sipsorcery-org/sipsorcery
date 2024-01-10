@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
 using SIPSorcery.Sys;
@@ -49,7 +50,7 @@ namespace SIPSorcery.Net
     {
         SctpErrorCauseCode CauseCode { get; }
         ushort GetErrorCauseLength(bool padded);
-        int WriteTo(byte[] buffer, int posn);
+        int WriteTo(Span<byte> buffer, int posn);
     }
 
     /// <summary>
@@ -87,7 +88,7 @@ namespace SIPSorcery.Net
 
         public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
@@ -115,7 +116,7 @@ namespace SIPSorcery.Net
 
         public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
@@ -143,7 +144,7 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
@@ -180,7 +181,7 @@ namespace SIPSorcery.Net
 
         public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
@@ -214,15 +215,12 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (UnresolvableAddress != null)
-            {
-                Buffer.BlockCopy(UnresolvableAddress, 0, buffer, posn + 4, UnresolvableAddress.Length);
-            }
+            UnresolvableAddress?.CopyTo(buffer.Slice(posn + 4));
             return len;
         }
     }
@@ -251,15 +249,12 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (UnrecognizedChunk != null)
-            {
-                Buffer.BlockCopy(UnrecognizedChunk, 0, buffer, posn + 4, UnrecognizedChunk.Length);
-            }
+            UnrecognizedChunk?.CopyTo(buffer.Slice(posn + 4));
             return len;
         }
     }
@@ -292,15 +287,12 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (UnrecognizedParameters != null)
-            {
-                Buffer.BlockCopy(UnrecognizedParameters, 0, buffer, posn + 4, UnrecognizedParameters.Length);
-            }
+            UnrecognizedParameters?.CopyTo(buffer.Slice(posn + 4));
             return len;
         }
     }
@@ -326,7 +318,7 @@ namespace SIPSorcery.Net
 
         public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
@@ -360,15 +352,12 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
             NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (NewAddressTLVs != null)
-            {
-                Buffer.BlockCopy(NewAddressTLVs, 0, buffer, posn + 4, NewAddressTLVs.Length);
-            }
+            NewAddressTLVs?.CopyTo(buffer.Slice(posn + 4));
             return len;
         }
     }
@@ -395,7 +384,7 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
@@ -403,7 +392,7 @@ namespace SIPSorcery.Net
             if (!string.IsNullOrEmpty(AbortReason))
             {
                 var reasonBuffer = Encoding.UTF8.GetBytes(AbortReason);
-                Buffer.BlockCopy(reasonBuffer, 0, buffer, posn + 4, reasonBuffer.Length);
+                reasonBuffer.CopyTo(buffer.Slice(posn + 4));
             }
             return len;
         }
@@ -432,7 +421,7 @@ namespace SIPSorcery.Net
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
-        public int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(Span<byte> buffer, int posn)
         {
             var len = GetErrorCauseLength(true);
             NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
@@ -440,7 +429,7 @@ namespace SIPSorcery.Net
             if (!string.IsNullOrEmpty(AdditionalInformation))
             {
                 var reasonBuffer = Encoding.UTF8.GetBytes(AdditionalInformation);
-                Buffer.BlockCopy(reasonBuffer, 0, buffer, posn + 4, reasonBuffer.Length);
+                reasonBuffer.CopyTo(buffer.Slice(posn + 4));
             }
             return len;
         }

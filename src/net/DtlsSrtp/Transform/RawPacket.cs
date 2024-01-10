@@ -40,6 +40,7 @@
 * 
 */
 
+using System;
 using System.IO;
 
 namespace SIPSorcery.Net
@@ -82,16 +83,16 @@ namespace SIPSorcery.Net
          * @param length the number of <tt>byte</tt>s in <tt>buffer</tt> which
          * constitute the actual data to be represented by the new instance
          */
-        public RawPacket(byte[] data, int offset, int length)
+        public RawPacket(ReadOnlySpan<byte> data, int offset, int length)
         {
             this.buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
             Wrap(data, offset, length);
         }
 
-        public void Wrap(byte[] data, int offset, int length)
+        public void Wrap(ReadOnlySpan<byte> data, int offset, int length)
         {
             this.buffer.Position = 0;
-            this.buffer.Write(data, offset, length);
+            this.buffer.Write(data.ToArray(), offset, length);
             this.buffer.SetLength(length - offset);
             this.buffer.Position = 0;
         }

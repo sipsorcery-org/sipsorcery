@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Security;
 using SIPSorcery.Sys;
+using System.Buffers;
 
 namespace SIPSorcery.Net
 {
@@ -47,7 +48,7 @@ namespace SIPSorcery.Net
         IDtlsSrtpPeer connection = null;
 
         /// <summary>The collection of chunks to be written.</summary>
-        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+        private BlockingCollection<ArraySegment<byte>> _chunks = new(new ConcurrentQueue<ArraySegment<byte>>());
 
         public DtlsTransport Transport { get; private set; }
 
@@ -371,7 +372,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRTP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtpDecoder)
             {
@@ -379,7 +380,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int UnprotectRTP(byte[] payload, int length, out int outLength)
+        public int UnprotectRTP(Span<byte> payload, int length, out int outLength)
         {
             var result = UnprotectRTP(payload, 0, length);
 
@@ -389,13 +390,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        public byte[] ProtectRTP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtpEncoder)
             {
@@ -403,7 +404,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int ProtectRTP(byte[] payload, int length, out int outLength)
+        public int ProtectRTP(Span<byte> payload, int length, out int outLength)
         {
             var result = ProtectRTP(payload, 0, length);
 
@@ -413,13 +414,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRTCP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtcpDecoder)
             {
@@ -427,7 +428,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int UnprotectRTCP(byte[] payload, int length, out int outLength)
+        public int UnprotectRTCP(Span<byte> payload, int length, out int outLength)
         {
             var result = UnprotectRTCP(payload, 0, length);
             if (result == null)
@@ -436,13 +437,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[] ProtectRTCP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtcpEncoder)
             {
@@ -450,7 +451,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int ProtectRTCP(byte[] payload, int length, out int outLength)
+        public int ProtectRTCP(Span<byte> payload, int length, out int outLength)
         {
             var result = ProtectRTCP(payload, 0, length);
             if (result == null)
@@ -459,7 +460,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
@@ -483,15 +484,17 @@ namespace SIPSorcery.Net
             return this._sendLimit;
         }
 
-        public void WriteToRecvStream(byte[] buf)
+        public void WriteToRecvStream(ReadOnlySpan<byte> buf)
         {
             if (!_isClosed)
             {
-                _chunks.Add(buf);
+                var chunk = ArrayPool<byte>.Shared.Rent(buf.Length);
+                buf.CopyTo(chunk);
+                _chunks.Add(new(chunk, 0, buf.Length));
             }
         }
 
-        private byte[] _partialChunk = null;
+        private ArraySegment<byte> _partialChunk = default;
         private int _partialChunkOffset = 0;
         private int Read(byte[] buffer, int offset, int count, int timeout)
         {
@@ -502,15 +505,16 @@ namespace SIPSorcery.Net
                     throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
                     //return DTLS_RECEIVE_ERROR_CODE;
                 }
-                else if (_partialChunk != null)
+                else if (_partialChunk.Array != null)
                 {
-                    int bytesToCopy = Math.Min(count, _partialChunk.Length - _partialChunkOffset);
-                    Buffer.BlockCopy(_partialChunk, _partialChunkOffset, buffer, offset, bytesToCopy);
+                    int bytesToCopy = Math.Min(count, _partialChunk.Count - _partialChunkOffset);
+                    Buffer.BlockCopy(_partialChunk.Array, _partialChunkOffset, buffer, offset, bytesToCopy);
                     _partialChunkOffset += bytesToCopy;
 
-                    if (_partialChunkOffset == _partialChunk.Length)
+                    if (_partialChunkOffset == _partialChunk.Count)
                     {
-                        _partialChunk = null;
+                        ArrayPool<byte>.Shared.Return(_partialChunk.Array);
+                        _partialChunk = default;
                         _partialChunkOffset = 0;
                     }
 
@@ -518,12 +522,16 @@ namespace SIPSorcery.Net
                 }
                 else if (_chunks.TryTake(out var item, timeout))
                 {
-                    int bytesToCopy = Math.Min(count, item.Length);
-                    Buffer.BlockCopy(item, 0, buffer, offset, bytesToCopy);
-                    if (bytesToCopy < item.Length)
+                    int bytesToCopy = Math.Min(count, item.Count);
+                    Buffer.BlockCopy(item.Array, 0, buffer, offset, bytesToCopy);
+                    if (bytesToCopy < item.Count)
                     {
                         _partialChunk = item;
                         _partialChunkOffset = bytesToCopy;
+                    }
+                    else
+                    {
+                        ArrayPool<byte>.Shared.Return(item.Array);
                     }
                     return bytesToCopy;
                 }
@@ -620,6 +628,14 @@ namespace SIPSorcery.Net
         {
             _isClosed = true;
             this._startTime = System.DateTime.MinValue;
+            foreach(var chunk in _chunks.GetConsumingEnumerable())
+            {
+                ArrayPool<byte>.Shared.Return(chunk.Array);
+            }
+            if (_partialChunk.Array is { } partialChunk)
+            {
+                ArrayPool<byte>.Shared.Return(partialChunk);
+            }
             this._chunks?.Dispose();
         }
 

@@ -569,7 +569,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageSent;
 
-        public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
+        public new event DataReceivedDelegate OnRTPDataReceived;
 
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
@@ -2547,9 +2547,9 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
-            if (packet?.Length > 0)
+            if (packet.Length > 0)
             {
                 bool wasRelayed = false;
 

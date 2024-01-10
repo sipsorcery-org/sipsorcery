@@ -147,14 +147,9 @@ namespace SIPSorcery.Net
             Value = NetConvert.GetBytes(value);
         }
 
-        public static bool TryParseMessageAttributes(List<STUNAttribute> attributes, byte[] buffer, int startIndex, int endIndex)
+        public static bool TryParseMessageAttributes(List<STUNAttribute> attributes, ReadOnlySpan<byte> buffer, int startIndex, int endIndex)
         {
-            if (buffer is null)
-            {
-                throw new ArgumentNullException(nameof(buffer));
-            }
-
-            if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
+            if (buffer.Length > startIndex && buffer.Length >= endIndex)
             {
                 int startAttIndex = startIndex;
 
@@ -182,7 +177,7 @@ namespace SIPSorcery.Net
                         else
                         {
                             stunAttributeValue = new byte[stunAttributeLength];
-                            Buffer.BlockCopy(buffer, startAttIndex + 4, stunAttributeValue, 0, stunAttributeLength);
+                            buffer.Slice(startAttIndex + 4, stunAttributeLength).CopyTo(stunAttributeValue);
                         }
                     }
 

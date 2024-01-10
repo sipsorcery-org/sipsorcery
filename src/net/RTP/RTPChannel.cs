@@ -25,7 +25,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);
+    public delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet);
 
     /// <summary>
     /// A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
@@ -177,10 +177,14 @@ namespace SIPSorcery.Net
                         //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
                         //}
 
-                        byte[] packetBuffer = new byte[bytesRead];
-                        // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
-                        Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                        CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
+                        if (bytesRead < 256 * 1024)
+                        {
+                            Span<byte> packetBuffer = stackalloc byte[bytesRead];
+                            CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, m_recvBuffer.AsSpan().Slice(0, bytesRead));
+                        } else
+                        {
+                            logger.LogCritical("UDP packet received was larger than 256KB and was ignored.");
+                        }
                     }
                 }
 
@@ -258,7 +262,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        protected virtual void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected virtual void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
             OnPacketReceived?.Invoke(this, localPort, remoteEndPoint, packet);
         }
@@ -343,8 +347,10 @@ namespace SIPSorcery.Net
             get { return m_isClosed; }
         }
 
-        public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
-        public event Action<int, IPEndPoint, byte[]> OnControlDataReceived;
+        public delegate void DataReceivedDelegate(int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> buffer);
+
+        public event DataReceivedDelegate OnRTPDataReceived;
+        public event DataReceivedDelegate OnControlDataReceived;
         public event Action<string> OnClosed;
 
         /// <summary>
@@ -569,9 +575,9 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
-            if (packet?.Length > 0)
+            if (packet.Length > 0)
             {
                 LastRtpDestination = remoteEndPoint;
                 OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
@@ -585,7 +591,7 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received which should always be an RTCP packet.</param>
-        private void OnControlPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnControlPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
             LastControlDestination = remoteEndPoint;
             OnControlDataReceived?.Invoke(localPort, remoteEndPoint, packet);

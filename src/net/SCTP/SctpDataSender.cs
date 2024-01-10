@@ -74,7 +74,7 @@ namespace SIPSorcery.Net
         private uint _initialTSN;
         private bool _gotFirstSACK;
         private bool _isStarted;
-        private bool _isClosed;
+        private Once _closed;
         private int _lastAckedDataChunkSize;
         private bool _inRetransmitMode;
         private bool _inFastRecoveryMode;
@@ -143,6 +143,7 @@ namespace SIPSorcery.Net
         private Dictionary<ushort, ushort> _streamSeqnums = new Dictionary<ushort, ushort>();
 
         public int MaxSendQueueCount => 128;
+#warning this must be rewritten to use BlockingQueue
         /// <summary>
         /// Queue to hold SCTP frames that are waiting to be sent to the remote peer.
         /// </summary>
@@ -393,7 +394,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
-            _isClosed = true;
+            _closed.TryMarkOccurred();
         }
 
         /// <summary>
@@ -544,7 +545,7 @@ namespace SIPSorcery.Net
         {
             logger.LogDebug($"SCTP association data send thread started for association {_associationID}.");
 
-            while (!_isClosed)
+            while (!_closed.HasOccurred)
             {
                 var outstandingBytes = _outstandingBytes;
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only

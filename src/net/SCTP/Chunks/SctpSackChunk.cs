@@ -17,6 +17,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using SIPSorcery.Sys;
 
@@ -95,7 +96,7 @@ namespace SIPSorcery.Net
         /// must have the required space already allocated.</param>
         /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public override ushort WriteTo(byte[] buffer, int posn)
+        public override ushort WriteTo(Span<byte> buffer, int posn)
         {
             WriteChunkHeader(buffer, posn);
 
@@ -129,7 +130,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
-        public static SctpSackChunk ParseChunk(byte[] buffer, int posn)
+        public static SctpSackChunk ParseChunk(ReadOnlySpan<byte> buffer, int posn)
         {
             var sackChunk = new SctpSackChunk();
             ushort chunkLen = sackChunk.ParseFirstWord(buffer, posn);
