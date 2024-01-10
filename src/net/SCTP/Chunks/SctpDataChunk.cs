@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers.Binary;
+using System.Diagnostics;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -84,8 +84,15 @@ namespace SIPSorcery.Net
         /// </summary>
         public byte[] UserData;
 
+        internal struct Timestamp
+        {
+            readonly long ticks;
+            Timestamp(long ticks) => this.ticks = ticks;
+            public readonly double Milliseconds => ticks / (Stopwatch.Frequency / 1000.0);
+            public static Timestamp Now => new(Stopwatch.GetTimestamp());
+        }
         // These properties are used by the data sender.
-        internal DateTime LastSentAt;
+        internal Timestamp LastSentAt;
         internal int SendCount;
 
         private SctpDataChunk()

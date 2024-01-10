@@ -550,7 +550,7 @@ namespace SIPSorcery.Net
                 var outstandingBytes = _outstandingBytes;
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
-                DateTime now = DateTime.Now;
+                var now = SctpDataChunk.Timestamp.Now;
 
                 int burstSize = (_inRetransmitMode || _inFastRecoveryMode || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
@@ -588,10 +588,10 @@ namespace SIPSorcery.Net
                 if (chunksSent < burstSize && _unconfirmedChunks.Count > 0)
                 {
                     foreach (var chunk in _unconfirmedChunks.Values
-                        .Where(x => now.Subtract(x.LastSentAt).TotalMilliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
+                        .Where(x => now.Milliseconds - x.LastSentAt.Milliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
                         .Take(burstSize - chunksSent))
                     {
-                        chunk.LastSentAt = DateTime.Now;
+                        chunk.LastSentAt = SctpDataChunk.Timestamp.Now;
                         chunk.SendCount += 1;
 
                         logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserData.Length}, " +
@@ -627,7 +627,7 @@ namespace SIPSorcery.Net
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
-                        dataChunk.LastSentAt = DateTime.Now;
+                        dataChunk.LastSentAt = SctpDataChunk.Timestamp.Now;
                         dataChunk.SendCount = 1;
 
                         logger.LogTrace($"SCTP sending data chunk for TSN {dataChunk.TSN}, data length {dataChunk.UserData.Length}, " +
@@ -696,7 +696,7 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            var rttMilliseconds = (DateTime.Now - acknowledgedChunk.LastSentAt).TotalMilliseconds;
+            var rttMilliseconds = SctpDataChunk.Timestamp.Now.Milliseconds - acknowledgedChunk.LastSentAt.Milliseconds;
 
             if (!_hasRoundTripTime)
             {
