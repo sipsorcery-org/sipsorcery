@@ -558,7 +558,7 @@ namespace SIPSorcery.Net
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
 
                 // Missing chunks from a SACK gap report take priority.
-                if (_missingChunks.Count > 0)
+                if (!_missingChunks.IsEmpty)
                 {
                     foreach (var missing in _missingChunks)
                     {
@@ -585,9 +585,10 @@ namespace SIPSorcery.Net
                 }
 
                 // Check if there are any unconfirmed transactions that are due for a retransmit.
-                if (chunksSent < burstSize && _unconfirmedChunks.Count > 0)
+                if (chunksSent < burstSize && !_unconfirmedChunks.IsEmpty)
                 {
-                    foreach (var chunk in _unconfirmedChunks.Values
+                    foreach (var chunk in _unconfirmedChunks
+                        .Select(kv => kv.Value)
                         .Where(x => now.Milliseconds - x.LastSentAt.Milliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
                         .Take(burstSize - chunksSent))
                     {
@@ -661,7 +662,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private int GetSendWaitMilliseconds()
         {
-            if (_sendQueue.Count > 0 || _missingChunks.Count > 0)
+            if (!_sendQueue.IsEmpty || !_missingChunks.IsEmpty)
             {
                 if (_receiverWindow > 0 && _congestionWindow > _outstandingBytes)
                 {
@@ -672,7 +673,7 @@ namespace SIPSorcery.Net
                     return _rtoMinimumMilliseconds;
                 }
             }
-            else if (_unconfirmedChunks.Count > 0)
+            else if (!_unconfirmedChunks.IsEmpty)
             {
                 return (int)(_hasRoundTripTime ? _rto : _rtoInitialMilliseconds);
             }

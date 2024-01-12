@@ -742,7 +742,7 @@ namespace SIPSorcery.Net
 
                 logger.LogDebug($"RTP ICE Channel discovered {_candidates.Count} local candidates.");
 
-                if (_iceServerConnections?.Count > 0)
+                if (_iceServerConnections?.IsEmpty == false)
                 {
                     InitialiseIceServers(_iceServers);
                     _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
@@ -2215,7 +2215,7 @@ namespace SIPSorcery.Net
         /// <returns>If found a matching state object or null if not.</returns>
         private IceServer GetIceServerForTransactionID(byte[] transactionID)
         {
-            if (_iceServerConnections == null || _iceServerConnections.Count == 0)
+            if (_iceServerConnections == null || _iceServerConnections.IsEmpty)
             {
                 return null;
             }
