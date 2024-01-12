@@ -163,7 +163,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The total size (in bytes) of queued user data that will be sent to the peer.
         /// </summary>
-        public ulong BufferedAmount => (ulong)_sendQueue.Sum(x => x.UserData?.Length ?? 0);
+        public ulong BufferedAmount => (ulong)_sendQueue.Sum(x => x.HasUserData ? x.UserData.Length : 0);
 
         /// <summary>
         /// The Transaction Sequence Number (TSN) that will be used in the next DATA chunk sent.

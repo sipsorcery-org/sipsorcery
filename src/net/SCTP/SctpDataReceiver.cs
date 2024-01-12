@@ -15,15 +15,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public struct SctpDataFrame
+    public struct SctpDataFrame: IDisposable
     {
         public static SctpDataFrame Empty => default;
 
@@ -31,21 +32,25 @@ namespace SIPSorcery.Net
         public ushort StreamID;
         public ushort StreamSeqNum;
         public uint PPID;
-        public byte[] UserData;
+        BorrowedArray userData;
+        public readonly ReadOnlySpan<byte> UserData => userData.Data;
 
-        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
+        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid)
         {
             Unordered = unordered;
             StreamID = streamID;
             StreamSeqNum = streamSeqNum;
             PPID = ppid;
-            UserData = userData;
         }
 
-        public bool IsEmpty()
+        public void SetUserData(ReadOnlySpan<byte> userData)
         {
-            return UserData == null;
+            this.userData.Set(userData);
         }
+
+        public void Dispose() => userData.Dispose();
+
+        public readonly bool IsEmpty() => userData.IsNull();
     }
 
     public struct SctpTsnGapBlock
@@ -284,13 +289,15 @@ namespace SIPSorcery.Net
                             dataChunk.Unordered,
                             dataChunk.StreamID,
                             dataChunk.StreamSeqNum,
-                            dataChunk.PPID,
-                            dataChunk.UserData);
+                            dataChunk.PPID);
+
+                        frame.SetUserData(dataChunk.UserData);
                     }
                     else
                     {
+                        var tmp = SctpDataChunk.ParseChunk(dataChunk.Buffer, 0, ArrayPool<byte>.Shared);
                         // This is a data chunk fragment.
-                        _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
+                        _fragmentedChunks.Add(dataChunk.TSN, tmp);
                         (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
 
                         if (begin != null && end != null)
@@ -513,24 +520,26 @@ namespace SIPSorcery.Net
         {
             unchecked
             {
-                byte[] full = new byte[MAX_FRAME_SIZE];
+                Span<byte> full = stackalloc byte[MAX_FRAME_SIZE];
                 int posn = 0;
                 var beginChunk = fragments[beginTSN];
-                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
 
                 uint afterEndTSN = endTSN + 1;
                 uint tsn = beginTSN;
 
                 while (tsn != afterEndTSN)
                 {
-                    var fragment = fragments[tsn].UserData;
-                    Buffer.BlockCopy(fragment, 0, full, posn, fragment.Length);
-                    posn += fragment.Length;
+                    var fragment = fragments[tsn];
+                    var fragmentData = fragment.UserData;
+                    fragmentData.CopyTo(full.Slice(posn));
+                    posn += fragmentData.Length;
                     fragments.Remove(tsn);
+                    fragment.Dispose();
                     tsn++;
                 }
 
-                frame.UserData = frame.UserData.Take(posn).ToArray();
+                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID);
+                frame.SetUserData(full.Slice(0, posn));
 
                 return frame;
             }

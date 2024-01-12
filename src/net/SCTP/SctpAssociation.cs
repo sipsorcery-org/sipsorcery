@@ -397,7 +397,8 @@ namespace SIPSorcery.Net
                     switch (chunkType)
                     {
                         case SctpChunkType.ABORT:
-                            string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
+                            var abortChunk = (SctpAbortChunk)chunk.AsChunk();
+                            string abortReason = abortChunk.GetAbortReason();
                             logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
                             _wasAborted = true;
                             OnAbortReceived?.Invoke(abortReason);
@@ -452,6 +453,7 @@ namespace SIPSorcery.Net
                                 foreach (var frame in sortedFrames)
                                 {
                                     OnData?.Invoke(frame);
+                                    frame.Dispose();
                                 }
                             }
 
@@ -466,8 +468,9 @@ namespace SIPSorcery.Net
 
                         case SctpChunkType.HEARTBEAT:
                             // The HEARTBEAT ACK sends back the same chunk but with the type changed.
-                            chunk.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
-                            SendChunk(chunk);
+                            var ack = chunk.AsChunk();
+                            ack.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
+                            SendChunk(ack);
                             break;
 
                         case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
@@ -484,7 +487,7 @@ namespace SIPSorcery.Net
                                 _t1Init = null;
                             }
 
-                            var initAckChunk = chunk;
+                            var initAckChunk = (SctpInitChunk)chunk.AsChunk();
 
                             if (initAckChunk.InitiateTag == 0 ||
                                 initAckChunk.NumberInboundStreams == 0 ||

@@ -249,7 +249,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for an SCTP data chunk being received for this data channel.
         /// </summary>
-        internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
+        internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, ReadOnlySpan<byte> data)
         {
             //logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
 

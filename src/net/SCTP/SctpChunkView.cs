@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +14,8 @@ public readonly ref struct SctpChunkView
     static readonly ILogger logger = LogFactory.CreateLogger<SctpChunk>();
 
     readonly ReadOnlySpan<byte> buffer;
+
+    public ReadOnlySpan<byte> Buffer => buffer;
 
     public SctpChunkType Type => (SctpChunkType)buffer[0];
     public SctpDataChunk.Flags Flags => (SctpDataChunk.Flags)buffer[1];
@@ -76,23 +77,54 @@ public readonly ref struct SctpChunkView
     public uint InitialTSN => BinaryPrimitives.ReadUInt32BigEndian(Value.Slice(12, 4));
     #endregion Init Chunk
 
-    public IEnumerable<SctpErrorCauseCode> GetErrorCodes()
+    public ErrorCodeEnumerable GetErrorCodes()
     {
         int paramsBufferLength = Length - SctpChunk.SCTP_CHUNK_HEADER_LENGTH;
-        if (paramsBufferLength == 0)
+        int paramPosn = SctpChunk.SCTP_CHUNK_HEADER_LENGTH;
+        var paramsBuffer = Value.Slice(paramPosn, paramsBufferLength);
+        return new ErrorCodeEnumerable(paramsBuffer);
+    }
+
+    public readonly ref struct ErrorCodeEnumerable(ReadOnlySpan<byte> paramsBuffer)
+    {
+        readonly ReadOnlySpan<byte> originalParamsBuffer = paramsBuffer;
+        public ErrorCodeEnumerator GetEnumerator() => new (originalParamsBuffer);
+    }
+
+    public ref struct ErrorCodeEnumerator(ReadOnlySpan<byte> paramsBuffer)
+    {
+        readonly ReadOnlySpan<byte> originalParamsBuffer = paramsBuffer;
+        ReadOnlySpan<byte> paramsBuffer;
+        bool started;
+
+        public readonly SctpErrorCauseCode Current
         {
-            yield break;
+            get
+            {
+                SctpTlvChunkParameter.ParseFirstWord(paramsBuffer, out var type);
+                return (SctpErrorCauseCode)type;
+            }
         }
 
-        int paramPosn = SctpChunk.SCTP_CHUNK_HEADER_LENGTH;
-
-        var paramsBuffer = Value.Slice(paramPosn, paramsBufferLength);
-        while (!paramsBuffer.IsEmpty)
+        public bool MoveNext()
         {
-            int length = SctpTlvChunkParameter.ParseFirstWord(paramsBuffer, out var type);
-            var causeCode = (SctpErrorCauseCode)type;
-            yield return causeCode;
-            paramsBuffer = paramsBuffer.Slice(length);
+            if (started)
+            {
+                int length = SctpTlvChunkParameter.ParseFirstWord(paramsBuffer, out var type);
+                paramsBuffer = paramsBuffer.Slice(length);
+            }
+            else
+            {
+                started = true;
+                paramsBuffer = originalParamsBuffer;
+            }
+            return !paramsBuffer.IsEmpty;
+        }
+        public void Dispose() { }
+
+        public void Reset()
+        {
+            throw new NotSupportedException();
         }
     }
 
@@ -124,14 +156,16 @@ public readonly ref struct SctpChunkView
         };
     }
 
+    public SctpChunk AsChunk() => SctpChunk.Parse(buffer, 0);
+
     bool ValidateShutdown()
     {
-        throw new NotImplementedException();
+        return true;
     }
 
     bool ValidateInit()
     {
-        throw new NotImplementedException();
+        return true;
     }
 
     bool ValidateSack()

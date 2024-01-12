@@ -137,7 +137,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer to parse the message from.</param>
         /// <param name="posn">The position in the buffer to start parsing from.</param>
         /// <returns>A new DCEP open message instance.</returns>
-        public static DataChannelOpenMessage Parse(byte[] buffer, int posn)
+        public static DataChannelOpenMessage Parse(ReadOnlySpan<byte> buffer, int posn)
         {
             if (buffer.Length < DCEP_OPEN_FIXED_PARAMETERS_LENGTH)
             {
@@ -156,12 +156,12 @@ namespace SIPSorcery.Net
 
             if (labelLength > 0)
             {
-                dcepOpen.Label = Encoding.UTF8.GetString(buffer, 12, labelLength);
+                dcepOpen.Label = buffer.Slice(12, labelLength).ToString(Encoding.UTF8);
             }
 
             if (protocolLength > 0)
             {
-                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer, 12 + labelLength, protocolLength);
+                dcepOpen.Protocol = buffer.Slice(12 + labelLength, protocolLength).ToString(Encoding.UTF8);
             }
 
             return dcepOpen;

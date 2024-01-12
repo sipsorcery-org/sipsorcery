@@ -313,5 +313,10 @@ namespace SIPSorcery.Net
         {
             return GetVerificationTag(buffer) == requiredTag && VerifyChecksum(buffer);
         }
+
+        public SctpChunk GetChunk(SctpChunkType chunkType)
+        {
+            return Chunks.Single(x => x.ChunkType == (byte)chunkType);
+        }
     }
 }

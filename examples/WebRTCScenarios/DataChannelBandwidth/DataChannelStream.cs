@@ -74,7 +74,7 @@ class DataChannelStream : Stream
     }
 
     int messages;
-    void OnMessage(RTCDataChannel _, DataChannelPayloadProtocols protocol, byte[] data)
+    void OnMessage(RTCDataChannel _, DataChannelPayloadProtocols protocol, ReadOnlySpan<byte> data)
     {
         int seq = Interlocked.Increment(ref messages);
         log?.LogDebug("{Seq} received", seq);
@@ -83,7 +83,7 @@ class DataChannelStream : Stream
             messageNeeded.Wait();
             lock (sync)
             {
-                message = data;
+                message = data.ToArray();
                 currentMessageOffset = 0;
             }
             messageAvailable.Release();

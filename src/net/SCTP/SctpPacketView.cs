@@ -106,6 +106,8 @@ public readonly ref struct SctpPacketView
         return new(buffer, chunks, unrecognized);
     }
 
+    public SctpPacket AsPacket() => SctpPacket.Parse(buffer);
+
     SctpPacketView(ReadOnlySpan<byte> buffer, SmallList<N2<Chunk>, Chunk> chunks, SmallList<N0<Chunk>, Chunk> unrecognized)
     {
         this.buffer = buffer;

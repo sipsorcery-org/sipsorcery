@@ -130,7 +130,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var initAckPacket = GetInitAck(initPacket, remoteEndPoint);
+                var initAckPacket = GetInitAck(initPacket.AsPacket(), remoteEndPoint);
                 Send(null, initAckPacket);
             }
         }
@@ -198,9 +198,9 @@ namespace SIPSorcery.Net
         /// received on. For transports that don't use an IP transport directly this parameter
         /// can be set to null and it will not form part of the COOKIE ECHO checks.</param>
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
-        protected SctpPacket GetInitAck(SctpPacketView initPacket, IPEndPoint remoteEP)
+        protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
         {
-            var initChunk = initPacket.GetChunk(SctpChunkType.INIT);
+            var initChunk = (SctpInitChunk)initPacket.GetChunk(SctpChunkType.INIT);
 
             SctpPacket initAckPacket = new SctpPacket(
                 initPacket.Header.DestinationPort,
