@@ -50,11 +50,11 @@ namespace SIPSorcery.Net
         protected static ILogger logger = Log.Logger;
 
         protected readonly Socket m_socket;
-        protected byte[] m_recvBuffer;
+        protected readonly byte[] m_recvBuffer;
         protected bool m_isClosed;
         protected bool m_isRunningReceive;
-        protected IPEndPoint m_localEndPoint;
-        protected AddressFamily m_addressFamily;
+        protected readonly IPEndPoint m_localEndPoint;
+        protected readonly AddressFamily m_addressFamily;
 
         public virtual bool IsClosed
         {
@@ -104,8 +104,11 @@ namespace SIPSorcery.Net
             m_localEndPoint = m_socket.LocalEndPoint as IPEndPoint;
             m_recvBuffer = new byte[mtu];
             m_addressFamily = m_socket.LocalEndPoint.AddressFamily;
+            endReceiveFrom = EndReceiveFrom;
         }
 
+        static readonly IPEndPoint IPv4AnyEndPoint = new(IPAddress.Any, 0);
+        static readonly IPEndPoint IPv6AnyEndPoint = new(IPAddress.IPv6Any, 0);
         /// <summary>
         /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
         /// return any data received.
@@ -125,8 +128,8 @@ namespace SIPSorcery.Net
             try
             {
                 m_isRunningReceive = true;
-                EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                m_socket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
+                EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? IPv4AnyEndPoint : IPv6AnyEndPoint;
+                m_socket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, endReceiveFrom, null);
             }
             // Thrown when socket is closed. Can be safely ignored.
             // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
@@ -153,6 +156,7 @@ namespace SIPSorcery.Net
             }
         }
 
+        readonly AsyncCallback endReceiveFrom;
         /// <summary>
         /// Handler for end of the begin receive call.
         /// </summary>
@@ -164,7 +168,7 @@ namespace SIPSorcery.Net
                 // When socket is closed the object will be disposed of in the middle of a receive.
                 if (!m_isClosed)
                 {
-                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? IPv4AnyEndPoint : IPv6AnyEndPoint;
                     int bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
 
                     if (bytesRead > 0)
@@ -193,24 +197,21 @@ namespace SIPSorcery.Net
                 // It also avoids the situation where if the application cannot keep up with the network then BeginReceiveFrom
                 // will be called synchronously (if data is available it calls the callback method immediately) which can
                 // create a very nasty stack.
-                if (!m_isClosed && m_socket.Available > 0)
+                while (!m_isClosed && m_socket.Available > 0)
                 {
-                    while (!m_isClosed && m_socket.Available > 0)
-                    {
-                        EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                        int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? IPv4AnyEndPoint : IPv6AnyEndPoint;
+                    int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
 
-                        if (bytesReadSync > 0)
-                        {
-                            byte[] packetBufferSync = new byte[bytesReadSync];
-                            // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
-                            Buffer.BlockCopy(m_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
-                            CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);
-                        }
-                        else
-                        {
-                            break;
-                        }
+                    if (bytesReadSync > 0)
+                    {
+                        byte[] packetBufferSync = new byte[bytesReadSync];
+                        // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
+                        Buffer.BlockCopy(m_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
+                        CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
             }
@@ -281,6 +282,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTPChannel : IDisposable
     {
+        private static readonly bool isMono = Type.GetType("Mono.Runtime") != null;
         private static ILogger logger = Log.Logger;
         protected UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
@@ -381,6 +383,7 @@ namespace SIPSorcery.Net
             RTPPort = RTPLocalEndPoint.Port;
             ControlLocalEndPoint = (m_controlSocket != null) ? m_controlSocket.LocalEndPoint as IPEndPoint : null;
             ControlPort = (m_controlSocket != null) ? ControlLocalEndPoint.Port : 0;
+            endSendTo = EndSendTo;
         }
 
         /// <summary>
@@ -510,7 +513,7 @@ namespace SIPSorcery.Net
                     }
 
                     //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-                    if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
+                    if (isMono && dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
                     {
                         dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
                     }
@@ -521,7 +524,7 @@ namespace SIPSorcery.Net
                         m_rtpReceiver.BeginReceiveFrom();
                     }
 
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, endSendTo, sendSocket);
                     return SocketError.Success;
                 }
                 catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
@@ -540,6 +543,7 @@ namespace SIPSorcery.Net
             }
         }
 
+        readonly AsyncCallback endSendTo;
         /// <summary>
         /// Ends an async send on one of the channel's sockets.
         /// </summary>

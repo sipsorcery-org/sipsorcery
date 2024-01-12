@@ -132,7 +132,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (Enum.IsDefined(typeof(SctpChunkType), ChunkType))
+                if (((SctpChunkType)ChunkType).IsDefined())
                 {
                     return (SctpChunkType)ChunkType;
                 }
@@ -147,7 +147,7 @@ namespace SIPSorcery.Net
         /// Records any unrecognised parameters received from the remote peer and are classified
         /// as needing to be reported. These can be sent back to the remote peer if needed.
         /// </summary>
-        public List<SctpTlvChunkParameter> UnrecognizedPeerParameters = new List<SctpTlvChunkParameter>();
+        public IReadOnlyList<SctpTlvChunkParameter> UnrecognizedPeerParameters = Array.Empty<SctpTlvChunkParameter>();
 
         public SctpChunk(SctpChunkType chunkType, byte chunkFlags = 0x00)
         {
@@ -255,12 +255,14 @@ namespace SIPSorcery.Net
                     break;
                 case SctpUnrecognisedParameterActions.StopAndReport:
                     stop = true;
-                    UnrecognizedPeerParameters.Add(chunkParameter);
+                    UnrecognizedPeerParameters = UnrecognizedPeerParameters as List<SctpTlvChunkParameter> ?? [];
+                    ((List<SctpTlvChunkParameter>)UnrecognizedPeerParameters).Add(chunkParameter);
                     break;
                 case SctpUnrecognisedParameterActions.Skip:
                     break;
                 case SctpUnrecognisedParameterActions.SkipAndReport:
-                    UnrecognizedPeerParameters.Add(chunkParameter);
+                    UnrecognizedPeerParameters = UnrecognizedPeerParameters as List<SctpTlvChunkParameter> ?? [];
+                    ((List<SctpTlvChunkParameter>)UnrecognizedPeerParameters).Add(chunkParameter);
                     break;
             }
 
@@ -330,7 +332,7 @@ namespace SIPSorcery.Net
 
             byte chunkType = buffer[posn];
 
-            if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
+            if (((SctpChunkType)chunkType).IsDefined())
             {
                 switch ((SctpChunkType)chunkType)
                 {

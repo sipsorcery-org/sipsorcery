@@ -59,7 +59,8 @@ while (true)
     long recvS = Interlocked.Read(ref serverReceived);
     double rateC = recvC / 1024 / 1024 / stopwatch.Elapsed.TotalSeconds;
     double rateS = recvS / 1024 / 1024 / stopwatch.Elapsed.TotalSeconds;
-    Console.Title = $"client: {rateC:F1}MB/s server: {rateS:F1}MB/s";
+    // almost 2000 MB/s with TCP over loopback
+    Console.Title = $"client: {rateC:F1}MB/s server: {rateS:F1}MB/s total: {rateC + rateS:F1}MB/s";
     Thread.Sleep(1000);
 }
 
