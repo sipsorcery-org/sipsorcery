@@ -76,14 +76,14 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    var sctpPacket = SctpPacket.Parse(packet);
+                    var sctpPacket = SctpPacketView.Parse(packet);
 
                     // Process packet.
                     if (sctpPacket.Header.VerificationTag == 0)
                     {
                         GotInit(sctpPacket, remoteEndPoint);
                     }
-                    else if (sctpPacket.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                    else if (sctpPacket.Has(SctpChunkType.COOKIE_ECHO))
                     {
                         // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                         // requested a new association be created.
@@ -101,7 +101,7 @@ namespace SIPSorcery.Net
 
                             if (_associations.TryAdd(association.ID, association))
                             {
-                                if (sctpPacket.Chunks.Count > 1)
+                                if (sctpPacket.ChunkCount > 1)
                                 {
                                     // There could be DATA chunks after the COOKIE ECHO chunk.
                                     association.OnPacketReceived(sctpPacket);

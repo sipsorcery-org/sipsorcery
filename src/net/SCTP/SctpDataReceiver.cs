@@ -25,7 +25,7 @@ namespace SIPSorcery.Net
 {
     public struct SctpDataFrame
     {
-        public static SctpDataFrame Empty = new SctpDataFrame();
+        public static SctpDataFrame Empty => default;
 
         public bool Unordered;
         public ushort StreamID;
@@ -199,8 +199,13 @@ namespace SIPSorcery.Net
         /// or more new frames will be returned otherwise an empty frame is returned. Multiple
         /// frames may be returned if this chunk is part of a stream and was received out
         /// or order. For unordered chunks the list will always have a single entry.</returns>
-        public List<SctpDataFrame> OnDataChunk(SctpDataChunk dataChunk)
+        public List<SctpDataFrame> OnDataChunk(SctpChunkView dataChunk)
         {
+            if (dataChunk.Type != SctpChunkType.DATA)
+            {
+                throw new ArgumentException($"An attempt was made to process a {dataChunk.Type} chunk as a DATA chunk.");
+            }
+
             var sortedFrames = new List<SctpDataFrame>();
             var frame = SctpDataFrame.Empty;
 
@@ -272,7 +277,7 @@ namespace SIPSorcery.Net
                 if (processFrame)
                 {
                     // Now go about processing the data chunk.
-                    if (dataChunk.Begining && dataChunk.Ending)
+                    if (dataChunk.Beginning && dataChunk.Ending)
                     {
                         // Single packet chunk.
                         frame = new SctpDataFrame(
@@ -290,7 +295,7 @@ namespace SIPSorcery.Net
 
                         if (begin != null && end != null)
                         {
-                            frame = GetFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
+                            frame = ExtractFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
                         }
                     }
                 }
@@ -504,7 +509,7 @@ namespace SIPSorcery.Net
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <param name="beginTSN">The beginning TSN for the fragment.</param>
         /// <param name="endTSN">The end TSN for the fragment.</param>
-        private SctpDataFrame GetFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
+        private SctpDataFrame ExtractFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
         {
             unchecked
             {

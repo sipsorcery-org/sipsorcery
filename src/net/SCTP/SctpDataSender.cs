@@ -201,9 +201,8 @@ namespace SIPSorcery.Net
         /// Handler for SACK chunks received from the remote peer.
         /// </summary>
         /// <param name="sack">The SACK chunk from the remote peer.</param>
-        public void GotSack(SctpSackChunk sack)
+        public void GotSack(SctpChunkView sack)
         {
-            if (sack != null)
             {
                 if (_inRetransmitMode)
                 {
@@ -233,7 +232,7 @@ namespace SIPSorcery.Net
                         if (SctpDataReceiver.GetDistance(_initialTSN, sack.CumulativeTsnAck) < maxTSNDistance
                             && SctpDataReceiver.IsNewerOrEqual(_initialTSN, sack.CumulativeTsnAck))
                         {
-                            logger.LogTrace($"SCTP first SACK remote peer TSN ACK {sack.CumulativeTsnAck} next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.GapAckBlocks.Count}).");
+                            logger.LogTrace($"SCTP first SACK remote peer TSN ACK {sack.CumulativeTsnAck} next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.NumGapAckBlocks}).");
                             _gotFirstSACK = true;
                             _cumulativeAckTSN = _initialTSN;
                             RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
@@ -255,24 +254,25 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogTrace($"SCTP SACK remote peer TSN ACK {sack.CumulativeTsnAck}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.GapAckBlocks.Count}).");
+                                logger.LogTrace($"SCTP SACK remote peer TSN ACK {sack.CumulativeTsnAck}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.NumGapAckBlocks}).");
                                 RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
                             }
                         }
                         else
                         {
-                            logger.LogTrace($"SCTP SACK remote peer TSN ACK no change {_cumulativeAckTSN}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.GapAckBlocks.Count}).");
+                            logger.LogTrace($"SCTP SACK remote peer TSN ACK no change {_cumulativeAckTSN}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.NumGapAckBlocks}).");
                             RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
                         }
                     }
 
-                    if (sack.DuplicateTSN.Count > 0)
+                    if (sack.NumDuplicateTSNs > 0)
                     {
                         // The remote is reporting that we have sent a duplicate TSN. 
                         // This is probably because a SACK chunk was dropped. 
                         // Ensure that we stop sending the duplicate.
-                        foreach (uint duplicateTSN in sack.DuplicateTSN)
+                        for (int tsnIndex = 0; tsnIndex < sack.NumDuplicateTSNs; tsnIndex++)
                         {
+                            uint duplicateTSN = sack.GetDuplicateTSN(tsnIndex);
                             _unconfirmedChunks.TryRemove(duplicateTSN, out _);
                             _missingChunks.TryRemove(duplicateTSN, out _);
                         }
@@ -280,7 +280,7 @@ namespace SIPSorcery.Net
 
 
                     // Check gap reports. Only process them if the cumulative ACK TSN was acceptable.
-                    if (processGapReports && sack.GapAckBlocks.Count > 0)
+                    if (processGapReports && sack.NumGapAckBlocks > 0)
                     {
                         bool didIncrementCumAckTSN = SctpDataReceiver.IsNewer(cumAckTSNBeforeSackProcessing, _cumulativeAckTSN);
                         ProcessGapReports(sack.GapAckBlocks, maxTSNDistance, didIncrementCumAckTSN);
@@ -406,7 +406,7 @@ namespace SIPSorcery.Net
         /// ACK'ed TSN. If this distance gets exceeded by a gap report then it's likely something has been
         /// miscalculated.</param>
         /// <param name="didSackIncrementTSN">If true, processing of the SACK incremented the <see cref="_cumulativeAckTSN"/></param>
-        private void ProcessGapReports(List<SctpTsnGapBlock> sackGapBlocks, uint maxTSNDistance, bool didSackIncrementTSN)
+        private void ProcessGapReports(ReadOnlySpan<SctpTsnGapBlock> sackGapBlocks, uint maxTSNDistance, bool didSackIncrementTSN)
         {
             uint lastAckTSN = _cumulativeAckTSN;
 
@@ -489,7 +489,7 @@ namespace SIPSorcery.Net
                                     {
                                         _inFastRecoveryMode = true;
                                         // mark the highest outstanding TSN as the Fast Recovery exit point
-                                        _fastRecoveryExitPoint = _cumulativeAckTSN + sackGapBlocks.Last().End;
+                                        _fastRecoveryExitPoint = _cumulativeAckTSN + sackGapBlocks[sackGapBlocks.Length - 1].End;
 
                                         logger.LogTrace($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
                                         // RFC4960 7.2.3

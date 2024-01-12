@@ -267,7 +267,7 @@ namespace SIPSorcery.Net
                 posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
             }
 
-            return new(header, chunks, unrecognisedChunks);
+            return new SctpPacket(header, chunks, unrecognisedChunks);
         }
 
         /// <summary>

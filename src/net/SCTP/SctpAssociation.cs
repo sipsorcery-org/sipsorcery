@@ -366,7 +366,7 @@ namespace SIPSorcery.Net
         /// SCTP Association State Diagram:
         /// https://tools.ietf.org/html/rfc4960#section-4
         /// </remarks>
-        internal void OnPacketReceived(SctpPacket packet)
+        internal void OnPacketReceived(SctpPacketView packet)
         {
             if (_wasAborted)
             {
@@ -389,9 +389,10 @@ namespace SIPSorcery.Net
             }
             else
             {
-                foreach (var chunk in packet.Chunks)
+                for (int chunkIndex = 0; chunkIndex < packet.ChunkCount; chunkIndex++)
                 {
-                    var chunkType = (SctpChunkType)chunk.ChunkType;
+                    var chunk = packet[chunkIndex];
+                    var chunkType = chunk.Type;
 
                     switch (chunkType)
                     {
@@ -423,19 +424,19 @@ namespace SIPSorcery.Net
                             break;
 
                         case SctpChunkType.DATA:
-                            var dataChunk = chunk as SctpDataChunk;
+                            var dataChunk = chunk;
 
-                            if (dataChunk.UserData == null || dataChunk.UserData.Length == 0)
+                            if (dataChunk.UserData.Length == 0)
                             {
                                 // Fatal condition:
                                 // - If an endpoint receives a DATA chunk with no user data (i.e., the
                                 //   Length field is set to 16), it MUST send an ABORT with error cause
                                 //   set to "No User Data". (RFC4960 pg. 80)
-                                Abort(new SctpErrorNoUserData { TSN = (chunk as SctpDataChunk).TSN });
+                                Abort(new SctpErrorNoUserData { TSN = dataChunk.TSN });
                             }
                             else
                             {
-                                logger.LogTrace($"SCTP data chunk received on ID {ID} with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.ChunkFlags:X2}.");
+                                logger.LogTrace($"SCTP data chunk received on ID {ID} with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.Flags:X2}.");
 
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
@@ -457,10 +458,9 @@ namespace SIPSorcery.Net
                             break;
 
                         case SctpChunkType.ERROR:
-                            var errorChunk = chunk as SctpErrorChunk;
-                            foreach (var err in errorChunk.ErrorCauses)
+                            foreach (var code in chunk.GetErrorCodes())
                             {
-                                logger.LogWarning($"SCTP error {err.CauseCode}.");
+                                logger.LogWarning("SCTP error {Code}.", code);
                             }
                             break;
 
@@ -484,7 +484,7 @@ namespace SIPSorcery.Net
                                 _t1Init = null;
                             }
 
-                            var initAckChunk = chunk as SctpInitChunk;
+                            var initAckChunk = chunk;
 
                             if (initAckChunk.InitiateTag == 0 ||
                                 initAckChunk.NumberInboundStreams == 0 ||
@@ -534,7 +534,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case SctpChunkType.SACK:
-                            _dataSender.GotSack(chunk as SctpSackChunk);
+                            _dataSender.GotSack(chunk);
                             break;
 
                         case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:

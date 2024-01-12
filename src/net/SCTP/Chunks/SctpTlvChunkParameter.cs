@@ -203,14 +203,27 @@ namespace SIPSorcery.Net
         /// <param name="posn">The position in the buffer that indicates the start of the chunk parameter.</param>
         public ushort ParseFirstWord(ReadOnlySpan<byte> buffer, int posn)
         {
-            ParameterType = NetConvert.ParseUInt16(buffer, posn);
-            ushort paramLen = NetConvert.ParseUInt16(buffer, posn + 2);
+            ushort len = ParseFirstWord(buffer.Slice(posn), out ushort type);
+            ParameterType = type;
+            return len;
+        }
 
-            if (paramLen > 0 && buffer.Length < posn + paramLen)
+        /// <summary>
+        /// The first 32 bits of all chunk parameters represent the type and length. This method
+        /// parses those fields and sets them on the current instance.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk parameter.</param>
+        /// <param name="posn">The position in the buffer that indicates the start of the chunk parameter.</param>
+        public static ushort ParseFirstWord(ReadOnlySpan<byte> buffer, out ushort type)
+        {
+            type = NetConvert.ParseUInt16(buffer, 0);
+            ushort paramLen = NetConvert.ParseUInt16(buffer, 2);
+
+            if (paramLen > 0 && buffer.Length < paramLen)
             {
                 // The buffer was not big enough to supply the specified chunk parameter.
                 int bytesRequired = paramLen;
-                int bytesAvailable = buffer.Length - posn;
+                int bytesAvailable = buffer.Length;
                 throw new ApplicationException($"The SCTP chunk parameter buffer was too short. " +
                     $"Required {bytesRequired} bytes but only {bytesAvailable} available.");
             }

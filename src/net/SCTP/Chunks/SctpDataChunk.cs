@@ -223,5 +223,14 @@ namespace SIPSorcery.Net
 
             return dataChunk;
         }
+
+        [Flags]
+        public enum Flags: byte
+        {
+            None = 0x00,
+            Unordered = 0x04,
+            Beginning = 0x02,
+            Ending = 0x01
+        }
     }
 }

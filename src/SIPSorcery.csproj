@@ -21,6 +21,7 @@
     <PackageReference Include="DnsClient" Version="1.7.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.0" />
+    <PackageReference Include="Small" Version="0.0.1" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 

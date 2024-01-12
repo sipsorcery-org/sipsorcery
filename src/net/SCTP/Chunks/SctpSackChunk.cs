@@ -32,8 +32,8 @@ namespace SIPSorcery.Net
     public class SctpSackChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 12;
-        private const int GAP_REPORT_LENGTH = 4;
-        private const int DUPLICATE_TSN_LENGTH = 4;
+        internal const int GAP_REPORT_LENGTH = 4;
+        internal const int DUPLICATE_TSN_LENGTH = 4;
 
         /// <summary>
         /// This parameter contains the TSN of the last chunk received in

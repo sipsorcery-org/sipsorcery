@@ -289,16 +289,16 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            var pkt = SctpPacket.Parse(recvBuffer.AsSpan(0, bytesRead));
+                            var pkt = SctpPacketView.Parse(recvBuffer.AsSpan(0, bytesRead));
 
-                            if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                            if (pkt.Has(SctpChunkType.INIT))
                             {
-                                var initChunk = pkt.Chunks.First(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+                                var initChunk = pkt.GetChunk(SctpChunkType.INIT);
                                 logger.LogDebug($"SCTP INIT packet received, initial tag {initChunk.InitiateTag}, initial TSN {initChunk.InitialTSN}.");
 
                                 GotInit(pkt, null);
                             }
-                            else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                            else if (pkt.Has(SctpChunkType.COOKIE_ECHO))
                             {
                                 // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                                 // requested a new association be created.
@@ -312,7 +312,7 @@ namespace SIPSorcery.Net
                                 {
                                     RTCSctpAssociation.GotCookie(cookie);
 
-                                    if (pkt.Chunks.Count() > 1)
+                                    if (pkt.ChunkCount > 1)
                                     {
                                         // There could be DATA chunks after the COOKIE ECHO chunk.
                                         RTCSctpAssociation.OnPacketReceived(pkt);

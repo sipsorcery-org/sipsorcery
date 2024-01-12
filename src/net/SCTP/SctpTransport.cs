@@ -100,12 +100,12 @@ namespace SIPSorcery.Net
             Crypto.GetRandomBytes(_hmacKey);
         }
 
-        protected void GotInit(SctpPacket initPacket, IPEndPoint remoteEndPoint)
+        protected void GotInit(SctpPacketView initPacket, IPEndPoint remoteEndPoint)
         {
             // INIT packets have specific processing rules in order to prevent resource exhaustion.
             // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
 
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            var initChunk = initPacket.GetChunk(SctpChunkType.INIT);
 
             if (initChunk.InitiateTag == 0 ||
                 initChunk.NumberInboundStreams == 0 ||
@@ -198,9 +198,9 @@ namespace SIPSorcery.Net
         /// received on. For transports that don't use an IP transport directly this parameter
         /// can be set to null and it will not form part of the COOKIE ECHO checks.</param>
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
-        protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
+        protected SctpPacket GetInitAck(SctpPacketView initPacket, IPEndPoint remoteEP)
         {
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            var initChunk = initPacket.GetChunk(SctpChunkType.INIT);
 
             SctpPacket initAckPacket = new SctpPacket(
                 initPacket.Header.DestinationPort,
@@ -251,11 +251,11 @@ namespace SIPSorcery.Net
         /// <param name="sctpPacket">The packet containing the COOKIE ECHO chunk received from the remote party.</param>
         /// <returns>If the state cookie in the chunk is valid a new SCTP association will be returned. IF
         /// it's not valid an empty cookie will be returned and an error response gets sent to the peer.</returns>
-        protected SctpTransportCookie GetCookie(SctpPacket sctpPacket)
+        protected SctpTransportCookie GetCookie(SctpPacketView sctpPacket)
         {
-            var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
-            var cookieBuffer = cookieEcho.ChunkValue;
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
+            var cookieEcho = sctpPacket.GetChunk(SctpChunkType.COOKIE_ECHO);
+            var cookieBuffer = cookieEcho.Value;
+            var cookie = JSONParser.FromJson<SctpTransportCookie>(cookieBuffer.ToString(Encoding.UTF8));
 
             logger.LogDebug($"Cookie: {cookie.ToJson()}");
 
@@ -295,9 +295,9 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the state cookie.</param>
         /// <returns>True if the cookie is determined as valid, false if not.</returns>
-        protected string GetCookieHMAC(byte[] buffer)
+        protected string GetCookieHMAC(ReadOnlySpan<byte> buffer)
         {
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(buffer));
+            var cookie = JSONParser.FromJson<SctpTransportCookie>(buffer.ToString(Encoding.UTF8));
             string hmacCalculated = null;
             cookie.HMAC = string.Empty;
 
