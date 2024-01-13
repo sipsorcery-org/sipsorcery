@@ -273,7 +273,11 @@ namespace SIPSorcery.Net
             {
                 try
                 {
+#if NET6_0_OR_GREATER
+                    int bytesRead = transport.Receive(recvBuffer.AsSpan(), RECEIVE_TIMEOUT_MILLISECONDS);
+#else
                     int bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
+#endif
 
                     if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
                     {
