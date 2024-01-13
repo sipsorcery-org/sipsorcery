@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-
+using System.Runtime.CompilerServices;
 using DataChannelBandwidth;
 
 using Microsoft.Extensions.Logging;
@@ -73,12 +73,14 @@ void Send(RTCDataChannel channel)
     }
 }
 
-void SendRecv(RTCDataChannel channel, ref long received)
+void SendRecv(RTCDataChannel channel, ref long received,
+              [CallerArgumentExpression(nameof(channel))] string name = "")
 {
     var stream = new DataChannelStream(channel);
     var sender = new Thread(() => Send(channel))
     {
         IsBackground = true,
+        Name = $"{name} sender",
     };
     sender.Start();
     
