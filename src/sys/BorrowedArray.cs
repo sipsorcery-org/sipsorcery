@@ -37,6 +37,7 @@ namespace SIPSorcery.Sys
         {
             Empty();
             this.data = data;
+            length = data.Length;
         }
 
         void Empty()
