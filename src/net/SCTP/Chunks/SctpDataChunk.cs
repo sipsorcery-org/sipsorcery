@@ -85,7 +85,7 @@ namespace SIPSorcery.Net
         /// This is the payload user data.
         /// </summary>
         public Span<byte> UserData => userData;
-        public bool HasUserData => !userData.IsNull();
+        public int UserDataLength => userData.Length;
 
         internal struct Timestamp
         {
@@ -124,9 +124,9 @@ namespace SIPSorcery.Net
             ushort streamID, 
             ushort seqnum, 
             uint ppid, 
-            byte[] data) : base(SctpChunkType.DATA)
+            ReadOnlySpan<byte> data) : base(SctpChunkType.DATA)
         {
-            if (data == null || data.Length == 0)
+            if (data.Length == 0)
             {
                 throw new ArgumentNullException("data", "The SctpDataChunk data parameter cannot be empty.");
             }
@@ -154,7 +154,7 @@ namespace SIPSorcery.Net
         public override ushort GetChunkLength(bool padded)
         {
             ushort len = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
-            len += (ushort)(!userData.IsNull() ? UserData.Length : 0);
+            len += (ushort)userData.Length;
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
@@ -167,7 +167,7 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(Span<byte> buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
+            ushort length = WriteChunkHeader(buffer, posn);
 
             // Write fixed parameters.
             int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
@@ -179,12 +179,9 @@ namespace SIPSorcery.Net
 
             int userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 
-            if (!userData.IsNull())
-            {
-                UserData.CopyTo(buffer.Slice(userDataPosn));
-            }
+            userData.DataMayBeEmpty.CopyTo(buffer.Slice(userDataPosn));
 
-            return GetChunkLength(true);
+            return SctpPadding.PadTo4ByteBoundary(length);
         }
 
         public bool IsEmpty()

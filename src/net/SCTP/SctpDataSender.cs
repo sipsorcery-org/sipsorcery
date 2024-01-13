@@ -129,7 +129,7 @@ namespace SIPSorcery.Net
         /// A count of the bytes currently in-flight to the remote peer.
         /// </summary>
         internal uint _outstandingBytes =>
-            (uint)(_unconfirmedChunks.Sum(x => x.Value.UserData.Length));
+            (uint)(_unconfirmedChunks.Sum(x => x.Value.UserDataLength));
 
         /// <summary>
         /// The TSN that the remote peer has acknowledged.
@@ -163,7 +163,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The total size (in bytes) of queued user data that will be sent to the peer.
         /// </summary>
-        public ulong BufferedAmount => (ulong)_sendQueue.Sum(x => x.HasUserData ? x.UserData.Length : 0);
+        public ulong BufferedAmount => (ulong)_sendQueue.Sum(x => x.UserDataLength);
 
         /// <summary>
         /// The Transaction Sequence Number (TSN) that will be used in the next DATA chunk sent.
@@ -224,7 +224,7 @@ namespace SIPSorcery.Net
                             UpdateRoundTripTime(result);
                         }
 
-                        _lastAckedDataChunkSize = result.UserData.Length;
+                        _lastAckedDataChunkSize = result.UserDataLength;
                     }
 
                     if (!_gotFirstSACK)
@@ -273,7 +273,7 @@ namespace SIPSorcery.Net
                         for (int tsnIndex = 0; tsnIndex < sack.NumDuplicateTSNs; tsnIndex++)
                         {
                             uint duplicateTSN = sack.GetDuplicateTSN(tsnIndex);
-                            _unconfirmedChunks.TryRemove(duplicateTSN, out _);
+                            RemoveUnconfirmedChunk(duplicateTSN);
                             _missingChunks.TryRemove(duplicateTSN, out _);
                         }
                     }
@@ -319,6 +319,10 @@ namespace SIPSorcery.Net
 
             lock (_sendQueue)
             {
+                if (_closed.HasOccurred)
+                {
+                    return;
+                }
                 ushort seqnum = 0;
 
                 if (_streamSeqnums.ContainsKey(streamID))
@@ -339,10 +343,6 @@ namespace SIPSorcery.Net
                     int offset = (index == 0) ? 0 : (index * _defaultMTU);
                     int payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
 
-                    // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
-                    byte[] payload = new byte[payloadLength];
-                    data.Slice(offset, payloadLength).CopyTo(payload);
-
                     bool isBegining = index == 0;
                     bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;
 
@@ -354,7 +354,7 @@ namespace SIPSorcery.Net
                         streamID,
                         seqnum,
                         ppid,
-                        payload);
+                        data.Slice(offset, payloadLength));
 
                     _sendQueue.Enqueue(dataChunk);
 
@@ -395,6 +395,17 @@ namespace SIPSorcery.Net
         public void Close()
         {
             _closed.TryMarkOccurred();
+            foreach (var chunk in _unconfirmedChunks)
+            {
+                chunk.Value.Dispose();
+            }
+            lock (_sendQueue)
+            {
+                foreach (var chunk in _sendQueue)
+                {
+                    chunk.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -425,10 +436,11 @@ namespace SIPSorcery.Net
                         uint goodTSN = _cumulativeAckTSN + offset;
 
                         _missingChunks.TryRemove(goodTSN, out _);
-                        if (_unconfirmedChunks.TryRemove(goodTSN, out _))
+                        if (_unconfirmedChunks.TryRemove(goodTSN, out var chunk))
                         {
-                            logger.LogTrace($"SCTP acknowledged data chunk receipt in gap report for TSN {goodTSN}");
+                            logger.LogTrace("SCTP acknowledged data chunk receipt in gap report for TSN {TSN}", goodTSN);
                             highestTsnNewlyAcknowledged = goodTSN;
+                            chunk.Dispose();
                         }
                     }
                 }
@@ -523,7 +535,7 @@ namespace SIPSorcery.Net
             if (_cumulativeAckTSN == sackTSN)
             {
                 // This is normal for the first SACK received.
-                _unconfirmedChunks.TryRemove(_cumulativeAckTSN, out _);
+                RemoveUnconfirmedChunk(_cumulativeAckTSN);
                 _missingChunks.TryRemove(_cumulativeAckTSN, out _);
             }
             else
@@ -533,11 +545,19 @@ namespace SIPSorcery.Net
                     for (uint offset = 0; offset <= SctpDataReceiver.GetDistance(_cumulativeAckTSN, sackTSN); offset++)
                     {
                         uint ackd = _cumulativeAckTSN + offset;
-                        _unconfirmedChunks.TryRemove(ackd, out _);
+                        RemoveUnconfirmedChunk(ackd);
                         _missingChunks.TryRemove(ackd, out _);
                     }
                     _cumulativeAckTSN = sackTSN;
                 }
+            }
+        }
+
+        private void RemoveUnconfirmedChunk(uint tsn)
+        {
+            if (_unconfirmedChunks.TryRemove(tsn, out var chunk))
+            {
+                chunk.Dispose();
             }
         }
 
@@ -572,7 +592,7 @@ namespace SIPSorcery.Net
                                 missingChunk.LastSentAt = now;
                                 missingChunk.SendCount += 1;
 
-                                logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserData.Length}, " +
+                                logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserDataLength}, " +
                                     $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
 
                                 _sendDataChunk(missingChunk);
@@ -598,7 +618,7 @@ namespace SIPSorcery.Net
                         chunk.LastSentAt = SctpDataChunk.Timestamp.Now;
                         chunk.SendCount += 1;
 
-                        logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserData.Length}, " +
+                        logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserDataLength}, " +
                             $"flags {chunk.ChunkFlags:X2}, send count {chunk.SendCount}.");
 
                         _sendDataChunk(chunk);
@@ -634,11 +654,17 @@ namespace SIPSorcery.Net
                         dataChunk.LastSentAt = SctpDataChunk.Timestamp.Now;
                         dataChunk.SendCount = 1;
 
-                        logger.LogTrace($"SCTP sending data chunk for TSN {dataChunk.TSN}, data length {dataChunk.UserData.Length}, " +
+                        logger.LogTrace($"SCTP sending data chunk for TSN {dataChunk.TSN}, data length {dataChunk.UserDataLength}, " +
                             $"flags {dataChunk.ChunkFlags:X2}, send count {dataChunk.SendCount}.");
 
-                        _unconfirmedChunks.TryAdd(dataChunk.TSN, dataChunk);
-                        _sendDataChunk(dataChunk);
+                        if (_unconfirmedChunks.TryAdd(dataChunk.TSN, dataChunk))
+                        {
+                            _sendDataChunk(dataChunk);
+                        }
+                        else
+                        {
+                            logger.LogDebug("SCTP duplicate TSN {TSN} detected in send queue.", dataChunk.TSN);
+                        }
                         if (_sendQueue.Count < MaxSendQueueCount)
                         {
                             _queueSpaceAvailable.Set();

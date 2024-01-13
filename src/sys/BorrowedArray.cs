@@ -12,6 +12,11 @@ namespace SIPSorcery.Sys
 
         public readonly bool IsNull() => data == null;
         public readonly Span<byte> Data => data.AsSpan(0, length);
+        public readonly Span<byte> DataMayBeEmpty
+            => data is { } array
+            ? array.AsSpan(0, Math.Min(length, array.Length))
+            : [];
+        public readonly int Length => length;
 
         public static implicit operator Span<byte>(BorrowedArray borrowed) => borrowed.Data;
 

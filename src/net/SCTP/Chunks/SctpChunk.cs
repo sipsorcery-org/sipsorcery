@@ -208,12 +208,14 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer to write the chunk header to.</param>
         /// <param name="posn">The position in the buffer to write at.</param>
-        /// <returns>The padded length of this chunk.</returns>
-        protected void WriteChunkHeader(Span<byte> buffer, int posn)
+        /// <returns>Unpadded length of this chunk.</returns>
+        protected ushort WriteChunkHeader(Span<byte> buffer, int posn)
         {
             buffer[posn] = ChunkType;
             buffer[posn + 1] = ChunkFlags;
-            NetConvert.ToBuffer(GetChunkLength(false), buffer, posn + 2);
+            ushort length = GetChunkLength(false);
+            NetConvert.ToBuffer(length, buffer, posn + 2);
+            return length;
         }
 
         /// <summary>
