@@ -56,8 +56,8 @@ public readonly ref struct SctpChunkView
             End = BinaryPrimitives.ReadUInt16BigEndian(Value.Slice(posn + 2, 2))
         };
     }
-    public ReadOnlySpan<SctpTsnGapBlock> GapAckBlocks
-        => MemoryMarshal.Cast<byte, SctpTsnGapBlock>(Value.Slice(SctpSackChunk.FIXED_PARAMETERS_LENGTH, NumGapAckBlocks * SctpSackChunk.GAP_REPORT_LENGTH));
+    public ReadOnlySpan<byte> GapAckBlocks
+        => Value.Slice(SctpSackChunk.FIXED_PARAMETERS_LENGTH, NumGapAckBlocks * SctpSackChunk.GAP_REPORT_LENGTH);
     public uint GetDuplicateTSN(int index)
     {
         int posn = SctpSackChunk.FIXED_PARAMETERS_LENGTH

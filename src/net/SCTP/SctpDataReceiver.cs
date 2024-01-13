@@ -16,15 +16,17 @@
 
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 
 using Microsoft.Extensions.Logging;
+
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public struct SctpDataFrame: IDisposable
+    public struct SctpDataFrame : IDisposable
     {
         public static SctpDataFrame Empty => default;
 
@@ -70,6 +72,12 @@ namespace SIPSorcery.Net
         /// DATA chunk received in this Gap Ack Block.
         /// </summary>
         public ushort End;
+
+        public static SctpTsnGapBlock Read(ReadOnlySpan<byte> bytes) => new()
+        {
+            Start = BinaryPrimitives.ReadUInt16BigEndian(bytes),
+            End = BinaryPrimitives.ReadUInt16BigEndian(bytes.Slice(2)),
+        };
     }
 
     /// <summary>

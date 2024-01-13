@@ -406,7 +406,7 @@ namespace SIPSorcery.Net
         /// ACK'ed TSN. If this distance gets exceeded by a gap report then it's likely something has been
         /// miscalculated.</param>
         /// <param name="didSackIncrementTSN">If true, processing of the SACK incremented the <see cref="_cumulativeAckTSN"/></param>
-        private void ProcessGapReports(ReadOnlySpan<SctpTsnGapBlock> sackGapBlocks, uint maxTSNDistance, bool didSackIncrementTSN)
+        private void ProcessGapReports(ReadOnlySpan<byte> sackGapBlocks, uint maxTSNDistance, bool didSackIncrementTSN)
         {
             uint lastAckTSN = _cumulativeAckTSN;
 
@@ -417,8 +417,9 @@ namespace SIPSorcery.Net
             unchecked {
 
                 // Parse the gap report to identify missing chunks that have now been acknowledged in the gap report
-                foreach (var block in sackGapBlocks)
+                for(int index = 0; index < sackGapBlocks.Length; index += SctpSackChunk.GAP_REPORT_LENGTH)
                 {
+                    var block = SctpTsnGapBlock.Read(sackGapBlocks.Slice(index));
                     for (ushort offset = block.Start; offset <= block.End; offset++)
                     {
                         uint goodTSN = _cumulativeAckTSN + offset;
@@ -432,8 +433,9 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                foreach (var gapBlock in sackGapBlocks)
+                for (int index = 0; index < sackGapBlocks.Length; index += SctpSackChunk.GAP_REPORT_LENGTH)
                 {
+                    var gapBlock = SctpTsnGapBlock.Read(sackGapBlocks.Slice(index));
                     uint goodTSNStart = _cumulativeAckTSN + gapBlock.Start;
 
                     if (SctpDataReceiver.GetDistance(lastAckTSN, goodTSNStart) > maxTSNDistance)
@@ -489,7 +491,8 @@ namespace SIPSorcery.Net
                                     {
                                         _inFastRecoveryMode = true;
                                         // mark the highest outstanding TSN as the Fast Recovery exit point
-                                        _fastRecoveryExitPoint = _cumulativeAckTSN + sackGapBlocks[sackGapBlocks.Length - 1].End;
+                                        var last = SctpTsnGapBlock.Read(sackGapBlocks.Slice(sackGapBlocks.Length - SctpSackChunk.GAP_REPORT_LENGTH));
+                                        _fastRecoveryExitPoint = _cumulativeAckTSN + last.End;
 
                                         logger.LogTrace($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
                                         // RFC4960 7.2.3
