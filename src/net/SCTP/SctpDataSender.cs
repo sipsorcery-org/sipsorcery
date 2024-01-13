@@ -309,7 +309,7 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="message">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        public void SendData(ushort streamID, uint ppid, ReadOnlySpan<byte> data)
         {
             // combined spin/lock wait
             while (!_queueSpaceAvailable.Wait(TimeSpan.FromMilliseconds(10)) && _sendQueue.Count > MaxSendQueueCount)
@@ -341,7 +341,7 @@ namespace SIPSorcery.Net
 
                     // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
                     byte[] payload = new byte[payloadLength];
-                    Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
+                    data.Slice(offset, payloadLength).CopyTo(payload);
 
                     bool isBegining = index == 0;
                     bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;

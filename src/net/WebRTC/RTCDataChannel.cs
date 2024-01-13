@@ -165,7 +165,7 @@ namespace SIPSorcery.Net
         /// Sends a binary data payload on the data channel.
         /// </summary>
         /// <param name="data">The data to send.</param>
-        public void send(byte[] data)
+        public void send(ReadOnlySpan<byte> data)
         {
             if (data.Length > _transport.maxMessageSize)
             {
@@ -180,7 +180,7 @@ namespace SIPSorcery.Net
             {
                 lock (this)
                 {
-                    if (data?.Length == 0)
+                    if (data.Length == 0)
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty,

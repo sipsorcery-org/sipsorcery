@@ -4,13 +4,12 @@ using DataChannelBandwidth;
 
 using Microsoft.Extensions.Logging;
 
-using SIPSorcery;
 using SIPSorcery.Net;
 
 ILoggerFactory logs = LoggerFactory.Create(
-    builder => builder.AddFilter(level => level >= LogLevel.Warning).AddConsole());
+    builder => builder.AddFilter(level => level >= LogLevel.Debug).AddConsole());
 
-LogFactory.Set(logs);
+// SIPSorcery.LogFactory.Set(logs);
 
 var rtcConfig = new RTCConfiguration
 {

@@ -251,7 +251,7 @@ class DataChannelStream : Stream
     long totalSent;
     void Send(ReadOnlySpan<byte> buffer)
     {
-        channel.send(buffer.ToArray());
+        channel.send(buffer);
         Interlocked.Add(ref totalSent, buffer.Length);
     }
 
