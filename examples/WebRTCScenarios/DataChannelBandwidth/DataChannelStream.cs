@@ -1,5 +1,6 @@
 namespace DataChannelBandwidth;
 
+using System.Buffers;
 using Microsoft.Extensions.Logging;
 
 using SIPSorcery.Net;
@@ -9,7 +10,7 @@ class DataChannelStream : Stream
 {
     readonly RTCDataChannel channel;
     int currentMessageOffset;
-    byte[] message = Array.Empty<byte>();
+    ArraySegment<byte> message = Array.Empty<byte>();
     readonly CancellationTokenSource closed = new();
     readonly SemaphoreSlim messageNeeded = new(0, 1);
     readonly SemaphoreSlim messageAvailable = new(0, maxCount: 1);
@@ -83,7 +84,11 @@ class DataChannelStream : Stream
             messageNeeded.Wait();
             lock (sync)
             {
-                message = data.ToArray();
+                if (message.Array is not null)
+                {
+                    ArrayPool<byte>.Shared.Return(message.Array);
+                }
+                message = data.ToArraySegment(ArrayPool<byte>.Shared);
                 currentMessageOffset = 0;
             }
             messageAvailable.Release();
@@ -138,7 +143,7 @@ class DataChannelStream : Stream
 
             lock (sync)
             {
-                int remaining = message.Length - currentMessageOffset;
+                int remaining = message.Count - currentMessageOffset;
                 int toCopy = Math.Min(remaining, buffer.Length);
                 message.AsSpan(currentMessageOffset, toCopy).CopyTo(buffer);
                 currentMessageOffset += toCopy;
@@ -192,7 +197,7 @@ class DataChannelStream : Stream
 
             lock (sync)
             {
-                int remaining = message.Length - currentMessageOffset;
+                int remaining = message.Count - currentMessageOffset;
                 int toCopy = Math.Min(remaining, buffer.Length);
                 message.AsSpan(currentMessageOffset, toCopy).CopyTo(buffer.Span);
                 currentMessageOffset += toCopy;
@@ -207,7 +212,7 @@ class DataChannelStream : Stream
     }
     long totalRead;
 
-    bool MessageNeeded() => message.Length - currentMessageOffset == 0;
+    bool MessageNeeded() => message.Count - currentMessageOffset == 0;
 
     public override void Write(byte[] buffer, int offset, int count)
     {
