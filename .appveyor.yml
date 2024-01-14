@@ -1,5 +1,5 @@
 version: 0.0.1.{build}
-image: Visual Studio 2019
+image: Visual Studio 2022
 configuration: Release
 before_build:
 - cmd: nuget restore -DisableParallelProcessing src\SIPSorceryMedia.Abstractions.sln
@@ -12,7 +12,7 @@ deploy:
   - provider: NuGet
     server:                  # remove to push to NuGet.org
     api_key:
-      secure: aK5GHmF0JAaJZbd7x8g5G2b1qemnimHJMZ5rhQEexHsJJ2B0uVBh/W+KumXETBZz
+      secure: GWtnKGaBRjWgQ8jTe+9zzlr83Gr15mS/poFyqLWWEeWAIndh0uyaBpAXxozsCcC5
     skip_symbols: false
     symbol_server:           # remove to push symbols to SymbolSource.org
     artifact: /.*\.nupkg/
