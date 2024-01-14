@@ -183,7 +183,7 @@ namespace FFmpegEncodingTest
 
             var rtpSession = CreateRtpSession(videoCapabilities);
             //OnTestPatternSampleReady += (media, duration, payload) => rtpSession.SendVp8Frame(duration, payloadID, payload);
-            OnTestPatternSampleReady += (media, duration, payload) => rtpSession.SendH264Frame(duration, payloadID, payload);
+            OnTestPatternSampleReady += (media, duration, payload) => rtpSession.SendVideo(duration, payload);
             rtpSession.Start();
 
             Console.WriteLine("press any key to start...");

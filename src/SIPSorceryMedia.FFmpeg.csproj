@@ -1,33 +1,64 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Version>1.3.0-pre</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
     <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
-
-  <ItemGroup>
-    <NativeLibs Include="$(MSBuildThisFileDirectory)\..\lib\x86\*.dll" Condition="'$(Platform)' == 'x86'" />
-    <NativeLibs Include="$(MSBuildThisFileDirectory)\..\lib\x64\*.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'AnyCPU'" />
-    <ContentWithTargetPath Include="@(NativeLibs)">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <TargetPath>%(Filename)%(Extension)</TargetPath>
-    </ContentWithTargetPath>
-  </ItemGroup>
-  
+ 
   <ItemGroup>
     <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.0" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-    <PackageReference Include="FFmpeg.AutoGen" Version="6.0.0.2" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="6.1.0" />
   </ItemGroup>
   
+  <ItemGroup>
+	  <None Include="icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0;net7;net8</TargetFrameworks>
+		<Authors>Aaron Clauson, Christophe Irles, Rafael Soares and Contributors</Authors>
+		<Copyright>opyright © 2020-2024 Aaron Clauson, Christophe Irles, Rafael Soares and Contributors.</Copyright>
+		<PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
+		<Title>SIPSorceryMedia.FFmpeg</Title>
+		<Summary>FFmpeg media end points for real-time communications.</Summary>
+		<Description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.		</Description>
+		<Company>SIP Sorcery PTY LTD</Company>
+		<Product>SIPSorceryMedia.FFmpeg</Product>
+		<PackageId>SIPSorceryMedia.FFmpeg</PackageId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+		<PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+		<PackageIcon>icon.png</PackageIcon>
+		<RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.FFmpeg</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryBranch>master</RepositoryBranch>
+		<PackageTags>WebRTC VoIP SIPSorcery Media FFmpeg</PackageTags>
+		<PackageReleaseNotes>-v1.3.0-pre: Removed FFmpeg binaries from nuget package. On Windows use winget to obtain FFmpeg.
+-v1.1.0: Enhance Audio Source encoding. Audio Codecs tested: PCMU (G711), PCMA (G711), G722, G729 and Opus
+-v1.0.0: Use SIPSorceryMedia.Abstractions v1.2.0. Add Camera and Monitor detection on MacOs
+-v0.0.18-pre: More great work and features from @ChristopheI. Netstandard2.0 target added.
+-v0.0.12-pre: New features from @ChristopheI, including camera and microphone sources.
+-v0.0.11-pre: Changed target framework from netcoreapp3.1 to netstandard2.1 for wider platform support.
+-v0.0.10-pre: Updated to use latest abstractons package with change to IAudioEncoder and IVideoEncoder interfaces.
+-v0.0.9-pre: Updated to use latest abstractions nuget package and video format parameter on IVideoSink.GotVideoFrame.
+-v0.0.8-pre: Fixed the video decoder to return BGR instead of RGB.
+-v0.0.7-pre: Updated the video encoder class to support the IVideoEncoder interface.
+-v0.0.6-pre: Updated to use latest abstractions nuget package.
+-v0.0.5-pre: Use pixel conversion class from abstractions package.
+-v0.0.4-pre: Added codec manager support to FFmpegVideoEndPoint.
+-v0.0.3-pre: Fixed bugs passing frames between file source decoder and video encoder.
+-v0.0.2-pre: Added file based source.
+-v0.0.1-pre: Initial release.
+		</PackageReleaseNotes>
+		<NeutralLanguage>en</NeutralLanguage>
+		<Version>1.3.0-pre</Version>
+		<AssemblyVersion>1.3.0</AssemblyVersion>
+		<FileVersion>1.3.0</FileVersion>
+	</PropertyGroup>
 
 </Project>
