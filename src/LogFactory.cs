@@ -30,7 +30,7 @@ namespace SIPSorcery
         public static ILogger CreateLogger(string categoryName) =>
             Instance._factory.CreateLogger(categoryName);
 
-        public static ILogger CreateLogger<T>() =>
+        public static ILogger<T> CreateLogger<T>() =>
             Instance._factory.CreateLogger<T>();
 
         public static void Set(ILoggerFactory factory)
