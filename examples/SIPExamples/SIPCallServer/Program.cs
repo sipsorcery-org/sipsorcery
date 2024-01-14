@@ -456,10 +456,10 @@ namespace SIPSorcery
                 var regUserAgent = new SIPRegistrationUserAgent(sipTransport, sipAccount.Username, sipAccount.Password, sipAccount.Domain, sipAccount.Expiry);
 
                 // Event handlers for the different stages of the registration.
-                regUserAgent.RegistrationFailed += (uri, err) => Log.LogError($"{uri.ToString()}: {err}");
-                regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Log.LogWarning($"{uri.ToString()}: {msg}");
-                regUserAgent.RegistrationRemoved += (uri) => Log.LogError($"{uri.ToString()} registration failed.");
-                regUserAgent.RegistrationSuccessful += (uri) => Log.LogInformation($"{uri.ToString()} registration succeeded.");
+                regUserAgent.RegistrationFailed += (uri, resp, err) => Log.LogError($"{uri.ToString()}: {err}");
+                regUserAgent.RegistrationTemporaryFailure += (uri, resp, msg) => Log.LogWarning($"{uri.ToString()}: {msg}");
+                regUserAgent.RegistrationRemoved += (uri, resp) => Log.LogError($"{uri.ToString()} registration failed.");
+                regUserAgent.RegistrationSuccessful += (uri, resp) => Log.LogInformation($"{uri.ToString()} registration succeeded.");
 
                 // Start the thread to perform the initial registration and then periodically resend it.
                 regUserAgent.Start();
