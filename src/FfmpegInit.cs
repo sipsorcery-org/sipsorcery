@@ -108,7 +108,7 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 // search the system path, handle with and without .exe extension
                 string ffmpegExecutable = "ffmpeg";
-                string path = Environment.GetEnvironmentVariable("PATH")
+                string? path = Environment.GetEnvironmentVariable("PATH")?
                     .Split(';')
                     .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, ffmpegExecutable  + ".exe")))
                     .FirstOrDefault();

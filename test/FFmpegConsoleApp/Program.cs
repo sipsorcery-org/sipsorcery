@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
 
@@ -13,7 +14,6 @@ namespace FFmpegConsoleApp
         //const String VIDEO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
         //const String VIDEO_FILE_PATH = @"C:\media\Armello_Trailer.webm";
         
-
         static private AsciiFrame? asciiFrame = null;
 
         static void Main(string[] args)
@@ -21,8 +21,17 @@ namespace FFmpegConsoleApp
             VideoCodecsEnum VideoCodec = VideoCodecsEnum.H264;
             IVideoSource? videoSource = null;
 
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder
+                    .SetMinimumLevel(LogLevel.Debug)
+                    .AddConsole();
+            });
+
+            ILogger logger = loggerFactory.CreateLogger<Program>();
+
             // Initialise FFmpeg librairies
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, null, logger);
 
             // Get cameras and monitors
             List<Camera>? cameras = FFmpegCameraManager.GetCameraDevices();

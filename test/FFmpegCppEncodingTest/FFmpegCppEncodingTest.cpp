@@ -24,7 +24,7 @@ extern "C"
 #define ERROR_LEN 128
 #define codecID AVCodecID::AV_CODEC_ID_H264 // AVCodecID::AV_CODEC_ID_VP8;
 
-AVCodec* _codec;
+const AVCodec* _codec;
 AVCodecContext* _codecCtx;
 AVFormatContext* _formatContext;
 AVStream* _rtpOutStream;
@@ -64,7 +64,7 @@ int mainx()
   }
 
   // Initialise RTP output stream.
-  AVOutputFormat* fmt = av_guess_format(RTP_OUTPUT_FORMAT, NULL, NULL);
+  const AVOutputFormat* fmt = av_guess_format(RTP_OUTPUT_FORMAT, NULL, NULL);
   if (!fmt) {
     std::cerr << "Failed to guess output format for " << RTP_OUTPUT_FORMAT << "." << std::endl;
   }

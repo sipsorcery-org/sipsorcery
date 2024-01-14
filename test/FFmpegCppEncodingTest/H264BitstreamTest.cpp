@@ -24,7 +24,7 @@ namespace h264bitstream_test
   #define ERROR_LEN 128
   #define codecID AVCodecID::AV_CODEC_ID_H264
 
-  AVCodec* _codec;
+  const AVCodec* _codec;
   AVCodecContext* _codecCtx;
   AVFormatContext* _formatContext;
   char _errorLog[ERROR_LEN];

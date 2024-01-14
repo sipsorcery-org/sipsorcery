@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-    <PackageReference Include="FFmpeg.AutoGen" Version="4.3.0.1" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="6.0.0.2" />
   </ItemGroup>
 
   <ItemGroup>

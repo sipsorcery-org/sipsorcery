@@ -2,7 +2,7 @@
 
 This project is an example of developing a C# library that can use features from [FFmpeg](https://ffmpeg.org/) native libraries and that inegrates with the [SIPSorcery](https://github.com/sipsorcery-org/sipsorcery) real-time communications library.
 
-This project has been test successfully on Windows, MacOs and Linux.
+This project has been tested successfully on Windows, MacOs and Linux.
 
 The classes in this project provide functions to:
 
@@ -25,6 +25,10 @@ There is no **Audio ouput** in this library. For this you can use [SIPSorcery.SD
 ## For Windows
 
 Install the [FFmpeg](https://www.ffmpeg.org/) binaries using the packages at https://www.gyan.dev/ffmpeg/builds/#release-builds and include the FFMPEG executable in your PATH to find them automatically.
+
+As of 14 Jan 2024 the command below works on Windows 11 and installs the required FFmpeg binaries and lbraries wheer teh can be found by SIPSorceryMedia.FFmpeg:
+
+`winget install "FFmpeg (Shared)"`
 
 ## For Linux
 
