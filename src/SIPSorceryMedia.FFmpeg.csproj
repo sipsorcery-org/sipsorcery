@@ -26,7 +26,7 @@
 		<PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
 		<Title>SIPSorceryMedia.FFmpeg</Title>
 		<Summary>FFmpeg media end points for real-time communications.</Summary>
-		<Description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.		</Description>
+		<Description>Provides FFmpeg based audio and video media end points that can be used with the SIPSorcery real-time communications library.</Description>
 		<Company>SIP Sorcery PTY LTD</Company>
 		<Product>SIPSorceryMedia.FFmpeg</Product>
 		<PackageId>SIPSorceryMedia.FFmpeg</PackageId>
