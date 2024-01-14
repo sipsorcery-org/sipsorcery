@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0-windows10.0.22000.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,7 +10,7 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="SIPSorcery" Version="6.1.1-pre" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="6.0.3-pre" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="6.0.4" />
   </ItemGroup>
 
   <ItemGroup>
