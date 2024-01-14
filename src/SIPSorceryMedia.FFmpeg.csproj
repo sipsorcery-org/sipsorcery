@@ -38,7 +38,8 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryBranch>master</RepositoryBranch>
 		<PackageTags>WebRTC VoIP SIPSorcery Media FFmpeg</PackageTags>
-		<PackageReleaseNotes>-v1.3.0-pre: Removed FFmpeg binaries from nuget package. On Windows use winget to obtain FFmpeg.
+		<PackageReleaseNotes>-v1.4.0: Stable release.
+-v1.3.0-pre: Removed FFmpeg binaries from nuget package. On Windows use winget to obtain FFmpeg.
 -v1.1.0: Enhance Audio Source encoding. Audio Codecs tested: PCMU (G711), PCMA (G711), G722, G729 and Opus
 -v1.0.0: Use SIPSorceryMedia.Abstractions v1.2.0. Add Camera and Monitor detection on MacOs
 -v0.0.18-pre: More great work and features from @ChristopheI. Netstandard2.0 target added.
@@ -56,9 +57,9 @@
 -v0.0.1-pre: Initial release.
 		</PackageReleaseNotes>
 		<NeutralLanguage>en</NeutralLanguage>
-		<Version>1.3.0-pre</Version>
-		<AssemblyVersion>1.3.0</AssemblyVersion>
-		<FileVersion>1.3.0</FileVersion>
+		<Version>1.4.0</Version>
+		<AssemblyVersion>1.4.0</AssemblyVersion>
+		<FileVersion>1.4.0</FileVersion>
 	</PropertyGroup>
 
 </Project>
