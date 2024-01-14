@@ -33,8 +33,10 @@ namespace demo
 {
     class Program
     {
-        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin";  //  /!\ A valid path to FFmpeg library
-        private const string MP4_PATH = @"C:\media\max_intro.mp4";                          //  /!\ A valid path to Video file
+        // FFmpeg path can be hard coded. On Win11 you can use: winget install "FFmpeg (Shared)"
+        //private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin";  //  /!\ A valid path to FFmpeg library
+        //private const string MP4_PATH = @"media\max_intro.mp4";                          //  /!\ A valid path to Video file
+        private const string MP4_PATH = @"media\big_buck_bunny.mp4";
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -76,11 +78,11 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
             var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
             mediaFileSource.RestrictFormats(x => x.Codec == VideoCodecsEnum.VP8);
             mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
-            mediaFileSource.OnEndOfFile += () => pc.Close("source eof");
+            //mediaFileSource..OnEndOfFile += () => pc.Close("source eof");
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(mediaFileSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
