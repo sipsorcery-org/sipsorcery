@@ -85,10 +85,12 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
 
+#pragma warning disable 0067
         /// <summary>
         /// Event Not used in this component - use instead <see cref="OnVideoSourceRawSample"/>
         /// </summary>
         public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
+#pragma warning restore 0067
 
         /// <summary>
         /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
@@ -100,11 +102,12 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
 
+#pragma warning disable 0067
         /// <summary>
         /// Event Not used in this component - use instead <see cref="OnVideoSinkDecodedSample"/>
         /// </summary>
         public event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster;
-
+#pragma warning restore 0067
 
         /// <summary>
         /// This event will be fired if there is a problem acquiring the capture device.

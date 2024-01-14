@@ -9,7 +9,7 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageId>SIPSorceryMedia.Windows</PackageId>
-    <TargetFrameworks>net6.0-windows10.0.22000.0</TargetFrameworks>
+    <TargetFrameworks>net6.0-windows10.0.17763.0;net8.0-windows10.0.17763.0</TargetFrameworks>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
@@ -24,12 +24,12 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
-    <Version>6.0.3-pre</Version>
-    <AssemblyVersion>6.0.3.0</AssemblyVersion>
-    <FileVersion>6.0.3.0</FileVersion>
+    <Version>6.0.4</Version>
+    <AssemblyVersion>6.0.4.0</AssemblyVersion>
+    <FileVersion>6.0.4.0</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-    <PackageReleaseNotes>-v6.0.3: Updated for changes to abstractions library.
+    <PackageReleaseNotes>-v6.0.4: Updated for changes to abstractions library.
 -v6.0.1-pre: Fixed invalid cast exception acquiring webcam frames (properly this time, not just in test app).
 -v6.0.0-pre: Target .net6 and lastest Windows SDK version.
 -v0.0.32-pre: Updated to the latest Windows SDK version.
@@ -52,6 +52,7 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
+	<None Include="readme.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
   <PropertyGroup>
