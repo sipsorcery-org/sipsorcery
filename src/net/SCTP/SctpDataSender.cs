@@ -566,7 +566,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private void DoSend(object state)
         {
-            logger.LogDebug($"SCTP association data send thread started for association {_associationID}.");
+            logger.LogDebug("SCTP association data send thread started for association {ID}.", _associationID);
 
             while (!_closed.HasOccurred)
             {
@@ -592,8 +592,9 @@ namespace SIPSorcery.Net
                                 missingChunk.LastSentAt = now;
                                 missingChunk.SendCount += 1;
 
-                                logger.LogTrace($"SCTP resending missing data chunk for TSN {missingChunk.TSN}, data length {missingChunk.UserDataLength}, " +
-                                    $"flags {missingChunk.ChunkFlags:X2}, send count {missingChunk.SendCount}.");
+                                logger.LogTrace("SCTP resending missing data chunk for TSN {TSN}, data length {Length}, " +
+                                    "flags {Flags:X2}, send count {Count}.",
+                                    missingChunk.TSN, missingChunk.UserDataLength, missingChunk.ChunkFlags, missingChunk.SendCount);
 
                                 _sendDataChunk(missingChunk);
                                 chunksSent++;
@@ -610,16 +611,25 @@ namespace SIPSorcery.Net
                 // Check if there are any unconfirmed transactions that are due for a retransmit.
                 if (chunksSent < burstSize && !_unconfirmedChunks.IsEmpty)
                 {
-                    foreach (var chunk in _unconfirmedChunks
-                        .Select(kv => kv.Value)
-                        .Where(x => now.Milliseconds - x.LastSentAt.Milliseconds > (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
-                        .Take(burstSize - chunksSent))
+                    int taken = 0, send = burstSize - chunksSent;
+                    foreach (var chunk in _unconfirmedChunks.Select(kv => kv.Value))
                     {
+                        if (now.Milliseconds - chunk.LastSentAt.Milliseconds <= (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
+                        {
+                            continue;
+                        }
+                        if (taken >= send)
+                        {
+                            break;
+                        }
+                        taken++;
+
                         chunk.LastSentAt = SctpDataChunk.Timestamp.Now;
                         chunk.SendCount += 1;
 
-                        logger.LogTrace($"SCTP retransmitting data chunk for TSN {chunk.TSN}, data length {chunk.UserDataLength}, " +
-                            $"flags {chunk.ChunkFlags:X2}, send count {chunk.SendCount}.");
+                        logger.LogTrace("SCTP retransmitting data chunk for TSN {TSN}, data length {Length}, " +
+                            "flags {Flags:X2}, send count {Count}.",
+                            chunk.TSN, chunk.UserDataLength, chunk.ChunkFlags, chunk.SendCount);
 
                         _sendDataChunk(chunk);
                         chunksSent++;
@@ -654,8 +664,9 @@ namespace SIPSorcery.Net
                         dataChunk.LastSentAt = SctpDataChunk.Timestamp.Now;
                         dataChunk.SendCount = 1;
 
-                        logger.LogTrace($"SCTP sending data chunk for TSN {dataChunk.TSN}, data length {dataChunk.UserDataLength}, " +
-                            $"flags {dataChunk.ChunkFlags:X2}, send count {dataChunk.SendCount}.");
+                        logger.LogTrace("SCTP sending data chunk for TSN {TSN}, data length {Length}, " +
+                            "flags {Flags:X2}, send count {Count}.",
+                            dataChunk.TSN, dataChunk.UserDataLength, dataChunk.ChunkFlags, dataChunk.SendCount);
 
                         if (_unconfirmedChunks.TryAdd(dataChunk.TSN, dataChunk))
                         {
@@ -683,7 +694,7 @@ namespace SIPSorcery.Net
                 _senderMre.Wait(wait);
             }
 
-            logger.LogDebug($"SCTP association data send thread stopped for association {_associationID}.");
+            logger.LogDebug("SCTP association data send thread stopped for association {ID}.", _associationID);
         }
 
         /// <summary>
