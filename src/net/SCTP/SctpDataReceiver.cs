@@ -225,27 +225,31 @@ namespace SIPSorcery.Net
             if (_inOrderReceiveCount == 0 &&
                 GetDistance(_initialTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning($"SCTP data receiver received a data chunk with a {dataChunk.TSN} " +
-                    $"TSN when the initial TSN was {_initialTSN} and a " +
-                    $"window size of {_windowSize}, ignoring.");
+                logger.LogWarning("SCTP data receiver received a data chunk with a {TSN} " +
+                    "TSN when the initial TSN was {InitialTSN} and a " +
+                    "window size of {Size}, ignoring.",
+                    dataChunk.TSN, _initialTSN, _windowSize);
             }
             else if (_inOrderReceiveCount > 0 &&
                 GetDistance(_lastInOrderTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning($"SCTP data receiver received a data chunk with a {dataChunk.TSN} " +
-                    $"TSN when the expected TSN was {_lastInOrderTSN + 1} and a " +
-                    $"window size of {_windowSize}, ignoring.");
+                logger.LogWarning("SCTP data receiver received a data chunk with a {TSN} " +
+                    "TSN when the expected TSN was {LastInOrderTSN} and a " +
+                    "window size of {Size}, ignoring.",
+                    dataChunk.TSN, _lastInOrderTSN + 1, _windowSize);
             }
             else if (_inOrderReceiveCount > 0 &&
                 !IsNewer(_lastInOrderTSN, dataChunk.TSN))
             {
-                logger.LogWarning($"SCTP data receiver received an old data chunk with {dataChunk.TSN} " +
-                    $"TSN when the expected TSN was {_lastInOrderTSN + 1}, ignoring.");
+                logger.LogWarning("SCTP data receiver received an old data chunk with {TSN} " +
+                    "TSN when the expected TSN was {LastInOrderTSN}, ignoring.",
+                    dataChunk.TSN, _lastInOrderTSN + 1);
             }
             else if (!_forwardTSN.ContainsKey(dataChunk.TSN))
             {
-                logger.LogTrace($"SCTP receiver got data chunk with TSN {dataChunk.TSN}, " +
-                    $"last in order TSN {_lastInOrderTSN}, in order receive count {_inOrderReceiveCount}.");
+                logger.LogTrace("SCTP receiver got data chunk with TSN {TSN}, " +
+                    "last in order TSN {LastInOrderTSN}, in order receive count {InOrderReceiveCount}.",
+                    dataChunk.TSN, _lastInOrderTSN, _inOrderReceiveCount);
 
                 bool processFrame = true;
 
@@ -277,7 +281,8 @@ namespace SIPSorcery.Net
                             outOfOrder.Count >= MAXIMUM_OUTOFORDER_FRAMES)
                         {
                             // Stream is nearing capacity, only chunks that advance _lastInOrderTSN can be accepted. 
-                            logger.LogWarning($"Stream {dataChunk.StreamID} is at buffer capacity. Rejected out-of-order data chunk TSN {dataChunk.TSN}.");
+                            logger.LogWarning("Stream {StreamID} is at buffer capacity. Rejected out-of-order data chunk TSN {TSN}.",
+                                dataChunk.StreamID, dataChunk.TSN);
                             processFrame = false;
                         }
                         else
@@ -317,7 +322,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogTrace($"SCTP duplicate TSN received for {dataChunk.TSN}.");
+                logger.LogTrace("SCTP duplicate TSN received for {TSN}.", dataChunk.TSN);
                 if (!_duplicateTSN.ContainsKey(dataChunk.TSN))
                 {
                     _duplicateTSN.Add(dataChunk.TSN, 1);

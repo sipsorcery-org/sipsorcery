@@ -206,7 +206,7 @@ namespace SIPSorcery.Net
             {
                 if (_inRetransmitMode)
                 {
-                    logger.LogTrace($"SCTP sender exiting retransmit mode.");
+                    logger.LogTrace("SCTP sender exiting retransmit mode.");
                     _inRetransmitMode = false;
                 }
 
@@ -232,7 +232,8 @@ namespace SIPSorcery.Net
                         if (SctpDataReceiver.GetDistance(_initialTSN, sack.CumulativeTsnAck) < maxTSNDistance
                             && SctpDataReceiver.IsNewerOrEqual(_initialTSN, sack.CumulativeTsnAck))
                         {
-                            logger.LogTrace($"SCTP first SACK remote peer TSN ACK {sack.CumulativeTsnAck} next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.NumGapAckBlocks}).");
+                            logger.LogTrace("SCTP first SACK remote peer TSN ACK {CumulativeTsnAck} next sender TSN {TSN}, arwnd {ARwnd} (gap reports {NumGapAckBlocks}).",
+                                sack.CumulativeTsnAck, TSN, sack.ARwnd, sack.NumGapAckBlocks);
                             _gotFirstSACK = true;
                             _cumulativeAckTSN = _initialTSN;
                             RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
@@ -244,23 +245,27 @@ namespace SIPSorcery.Net
                         {
                             if (SctpDataReceiver.GetDistance(_cumulativeAckTSN, sack.CumulativeTsnAck) > maxTSNDistance)
                             {
-                                logger.LogWarning($"SCTP SACK TSN from remote peer of {sack.CumulativeTsnAck} was too distant from the expected {_cumulativeAckTSN}, ignoring.");
+                                logger.LogWarning("SCTP SACK TSN from remote peer of {PeerCumulativeTsnAck} was too distant from the expected {ExpectedCumulativeAckTSN}, ignoring.",
+                                    sack.CumulativeTsnAck, _cumulativeAckTSN);
                                 processGapReports = false;
                             }
                             else if (!SctpDataReceiver.IsNewer(_cumulativeAckTSN, sack.CumulativeTsnAck))
                             {
-                                logger.LogWarning($"SCTP SACK TSN from remote peer of {sack.CumulativeTsnAck} was behind expected {_cumulativeAckTSN}, ignoring.");
+                                logger.LogWarning("SCTP SACK TSN from remote peer of {PeerCumulativeTsnAck} was behind expected {ExpectedCumulativeAckTSN}, ignoring.",
+                                    sack.CumulativeTsnAck, _cumulativeAckTSN);
                                 processGapReports = false;
                             }
                             else
                             {
-                                logger.LogTrace($"SCTP SACK remote peer TSN ACK {sack.CumulativeTsnAck}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.NumGapAckBlocks}).");
+                                logger.LogTrace("SCTP SACK remote peer TSN ACK {CumulativeTsnAck}, next sender TSN {TSN}, arwnd {ARwnd} (gap reports {NumGapAckBlocks}).",
+                                    sack.CumulativeTsnAck, TSN, sack.ARwnd, sack.NumGapAckBlocks);
                                 RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
                             }
                         }
                         else
                         {
-                            logger.LogTrace($"SCTP SACK remote peer TSN ACK no change {_cumulativeAckTSN}, next sender TSN {TSN}, arwnd {sack.ARwnd} (gap reports {sack.NumGapAckBlocks}).");
+                            logger.LogTrace("SCTP SACK remote peer TSN ACK no change {CumulativeAckTSN}, next sender TSN {TSN}, arwnd {ARwnd} (gap reports {NumGapAckBlocks}).",
+                                _cumulativeAckTSN, TSN, sack.ARwnd, sack.NumGapAckBlocks);
                             RemoveAckedUnconfirmedChunks(sack.CumulativeTsnAck);
                         }
                     }
@@ -290,7 +295,7 @@ namespace SIPSorcery.Net
                     // If the Cumulative TSN Ack matches or exceeds the Fast Recovery exitpoint(Section 7.2.4), Fast Recovery is exited.
                     if (_inFastRecoveryMode && SctpDataReceiver.IsNewerOrEqual(_fastRecoveryExitPoint, _cumulativeAckTSN))
                     {
-                        logger.LogTrace($"SCTP sender exiting fast recovery at TSN {_fastRecoveryExitPoint}");
+                        logger.LogTrace("SCTP sender exiting fast recovery at TSN {TSN}", _fastRecoveryExitPoint);
                         _inFastRecoveryMode = false;
                     }
                 }
