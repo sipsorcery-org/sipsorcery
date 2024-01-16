@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -550,7 +551,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, ReadOnlySpan<byte> buffer)
         {
             if (m_isClosed)
             {
@@ -604,7 +605,18 @@ namespace SIPSorcery.Net
                     }
 
 #if NET6_0_OR_GREATER
-                    var send = sendSocket.SendToAsync(buffer.AsMemory(), SocketFlags.None, dstEndPoint);
+                    var tmp = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                    buffer.CopyTo(tmp);
+                    ValueTask<int> send;
+                    try
+                    {
+                        send = sendSocket.SendToAsync(tmp.AsMemory(0, buffer.Length), SocketFlags.None, dstEndPoint);
+                    }
+                    catch
+                    {
+                        ArrayPool<byte>.Shared.Return(tmp);
+                        throw;
+                    }
                     if (send.IsCompleted)
                     {
                         try
@@ -615,14 +627,25 @@ namespace SIPSorcery.Net
                         {
                             EndSendTo(excp);
                         }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(tmp);
+                        }
                     }
                     else
                     {
-                        send.AsTask().ContinueWith(t => EndSendTo(t.Exception), TaskContinuationOptions.OnlyOnFaulted);
+                        send.AsTask().ContinueWith(t =>
+                        {
+                            ArrayPool<byte>.Shared.Return(tmp);
+                            if (t.IsFaulted)
+                            {
+                                EndSendTo(t.Exception);
+                            }
+                        });
                     }
 
 #else
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, endSendTo, sendSocket);
+                    sendSocket.BeginSendTo(buffer.ToArray(), 0, buffer.Length, SocketFlags.None, dstEndPoint, endSendTo, sendSocket);
 #endif
                     return SocketError.Success;
                 }

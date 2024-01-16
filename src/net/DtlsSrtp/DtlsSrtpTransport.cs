@@ -63,7 +63,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public int RetransmissionMilliseconds = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
 
-        public Action<byte[]> OnDataReady;
+        public delegate void OnBytesReadyDelegate(ReadOnlySpan<byte> bytes);
+        public OnBytesReadyDelegate OnDataReady;
 
         /// <summary>
         /// Parameters:
@@ -619,7 +620,7 @@ namespace SIPSorcery.Net
 #if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
         public void Send(ReadOnlySpan<byte> buf)
         {
-            OnDataReady?.Invoke(buf.ToArray());
+            OnDataReady?.Invoke(buf);
         }
 #endif
 
