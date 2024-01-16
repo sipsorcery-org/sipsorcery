@@ -128,8 +128,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A count of the bytes currently in-flight to the remote peer.
         /// </summary>
-        internal uint _outstandingBytes =>
-            (uint)(_unconfirmedChunks.Sum(x => x.Value.UserDataLength));
+        internal int _outstandingBytes => _unconfirmedChunks.Sum(x => x.Value.UserDataLength);
 
         /// <summary>
         /// The TSN that the remote peer has acknowledged.
@@ -300,8 +299,9 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                _receiverWindow = CalculateReceiverWindow(sack.ARwnd);
-                _congestionWindow = CalculateCongestionWindow(_lastAckedDataChunkSize);
+                var outstandingBytes = _outstandingBytes;
+                _receiverWindow = CalculateReceiverWindow(sack.ARwnd, outstandingBytes: (uint)outstandingBytes);
+                _congestionWindow = CalculateCongestionWindow(_lastAckedDataChunkSize, outstandingBytes: (uint)outstandingBytes);
 
                 // SACK's will normally allow more data to be sent.
                 _senderMre.Set();
@@ -535,7 +535,8 @@ namespace SIPSorcery.Net
         /// <param name="sackTSN">The acknowledged TSN received from in a SACK from the remote peer.</param>
         private void RemoveAckedUnconfirmedChunks(uint sackTSN)
         {
-            logger.LogTrace($"SCTP data sender removing unconfirmed chunks cumulative ACK TSN {_cumulativeAckTSN}, SACK TSN {sackTSN}.");
+            logger.LogTrace("SCTP data sender removing unconfirmed chunks cumulative ACK TSN {CumulativeAckTSN}, SACK TSN {SackTSN}.",
+                _cumulativeAckTSN, sackTSN);
 
             if (_cumulativeAckTSN == sackTSN)
             {
@@ -575,7 +576,7 @@ namespace SIPSorcery.Net
 
             while (!_closed.HasOccurred)
             {
-                var outstandingBytes = _outstandingBytes;
+                var outstandingBytes = (uint)_outstandingBytes;
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
                 var now = SctpDataChunk.Timestamp.Now;
@@ -617,8 +618,9 @@ namespace SIPSorcery.Net
                 if (chunksSent < burstSize && !_unconfirmedChunks.IsEmpty)
                 {
                     int taken = 0, send = burstSize - chunksSent;
-                    foreach (var chunk in _unconfirmedChunks.Select(kv => kv.Value))
+                    foreach (var entry in _unconfirmedChunks)
                     {
+                        var chunk = entry.Value;
                         if (now.Milliseconds - chunk.LastSentAt.Milliseconds <= (_hasRoundTripTime ? _rto : _rtoInitialMilliseconds))
                         {
                             continue;
@@ -641,7 +643,7 @@ namespace SIPSorcery.Net
                         
                         if (!_inRetransmitMode)
                         {
-                            logger.LogTrace($"SCTP sender entering retransmit mode.");
+                            logger.LogTrace("SCTP sender entering retransmit mode.");
                             _inRetransmitMode = true;
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
@@ -709,7 +711,7 @@ namespace SIPSorcery.Net
         {
             if (!_sendQueue.IsEmpty || !_missingChunks.IsEmpty)
             {
-                if (_receiverWindow > 0 && _congestionWindow > _outstandingBytes)
+                if (_receiverWindow > 0 && _congestionWindow > (uint)_outstandingBytes)
                 {
                     return _burstPeriodMilliseconds;
                 }
@@ -775,9 +777,9 @@ namespace SIPSorcery.Net
         /// See https://tools.ietf.org/html/rfc4960#section-6.2.1.
         /// </remarks>
         /// <returns>The new value to use for the receiver window.</returns>
-        private uint CalculateReceiverWindow(uint advertisedReceiveWindow)
+        private uint CalculateReceiverWindow(uint advertisedReceiveWindow, uint outstandingBytes)
         {
-            return (advertisedReceiveWindow > _outstandingBytes) ? advertisedReceiveWindow - _outstandingBytes : 0;
+            return (advertisedReceiveWindow > outstandingBytes) ? advertisedReceiveWindow - outstandingBytes : 0;
         }
 
         /// <summary>
@@ -785,20 +787,21 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="lastAckDataChunkSize">The size of last ACK'ed DATA chunk.</param>
         /// <returns>A congestion window value.</returns>
-        private uint CalculateCongestionWindow(int lastAckDataChunkSize)
+        private uint CalculateCongestionWindow(int lastAckDataChunkSize, uint outstandingBytes)
         {
             if (_congestionWindow < _slowStartThreshold)
             {
                 // In Slow-Start mode, see RFC4960 7.2.1.
 
-                if (_congestionWindow < _outstandingBytes)
+                if (_congestionWindow < outstandingBytes)
                 {
                     // When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
                     // use the slow - start algorithm to increase cwnd only if the current
                     // congestion window is being fully utilized.
                     uint increasedCwnd = (uint)(_congestionWindow + Math.Min(lastAckDataChunkSize, _defaultMTU));
 
-                    logger.LogTrace($"SCTP sender congestion window in slow-start increased from {_congestionWindow} to {increasedCwnd}.");
+                    logger.LogTrace("SCTP sender congestion window in slow-start increased from {Original} to {Increased}.",
+                        _congestionWindow, increasedCwnd);
 
                     return increasedCwnd;
                 }
@@ -811,9 +814,10 @@ namespace SIPSorcery.Net
             {
                 // In Congestion Avoidance mode, see RFC4960 7.2.2.
 
-                if (_congestionWindow < _outstandingBytes)
+                if (_congestionWindow < outstandingBytes)
                 {
-                    logger.LogTrace($"SCTP sender congestion window in congestion avoidance increased from {_congestionWindow} to {_congestionWindow + _defaultMTU}.");
+                    logger.LogTrace("SCTP sender congestion window in congestion avoidance increased from {Original} to {Increased}.",
+                        _congestionWindow, _congestionWindow + _defaultMTU);
 
                     return _congestionWindow + _defaultMTU;
                 }
