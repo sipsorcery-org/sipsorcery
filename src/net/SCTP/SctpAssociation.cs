@@ -370,22 +370,22 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted)
             {
-                logger.LogWarning($"SCTP packet received but association has been aborted, ignoring.");
+                logger.LogWarning("SCTP packet received but association has been aborted, ignoring.");
             }
             else if (packet.Header.VerificationTag != VerificationTag)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong verification tag, expected " +
-                    $"{VerificationTag} got {packet.Header.VerificationTag}.");
+                logger.LogWarning("SCTP packet dropped due to wrong verification tag, expected {Expected} got {Actual}.",
+                    VerificationTag, packet.Header.VerificationTag);
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.DestinationPort != _sctpSourcePort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP destination port, expected " +
-                                    $"{_sctpSourcePort} got {packet.Header.DestinationPort}.");
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP destination port, expected {Expected} got {Actual}.",
+                                  _sctpSourcePort, packet.Header.DestinationPort);
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.SourcePort != _sctpDestinationPort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP source port, expected " +
-                                    $"{_sctpDestinationPort} got {packet.Header.SourcePort}.");
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP source port, expected {Expected} got {Actual}.",
+                                  _sctpDestinationPort, packet.Header.SourcePort);
             }
             else
             {
@@ -399,7 +399,7 @@ namespace SIPSorcery.Net
                         case SctpChunkType.ABORT:
                             var abortChunk = (SctpAbortChunk)chunk.AsChunk();
                             string abortReason = abortChunk.GetAbortReason();
-                            logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
+                            logger.LogWarning("SCTP packet ABORT chunk received from remote party, reason {Message}.", abortReason);
                             _wasAborted = true;
                             OnAbortReceived?.Invoke(abortReason);
                             break;
@@ -437,7 +437,8 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogTrace($"SCTP data chunk received on ID {ID} with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.Flags}.");
+                                logger.LogTrace("SCTP data chunk received on ID {ID} with TSN {TSN}, payload length {Length}, flags {Flags}.",
+                                    ID, dataChunk.TSN, dataChunk.UserData.Length, dataChunk.Flags);
 
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
@@ -533,7 +534,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
-                            logger.LogWarning($"SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.");
+                            logger.LogWarning("SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.", State);
                             break;
 
                         case SctpChunkType.SACK:
@@ -563,7 +564,7 @@ namespace SIPSorcery.Net
                             break;
 
                         default:
-                            logger.LogWarning($"SCTP association no rule for {chunkType} in state of {State}.");
+                            logger.LogWarning("SCTP association no rule for {chunkType} in state of {State}.", chunkType, State);
                             break;
                     }
                 }
