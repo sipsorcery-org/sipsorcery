@@ -18,11 +18,11 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
-
 using Microsoft.Extensions.Logging;
 
 using SIPSorcery.Sys;
+using Small.Collections;
+using TypeNum;
 
 namespace SIPSorcery.Net
 {
@@ -355,7 +355,7 @@ namespace SIPSorcery.Net
             {
                 SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
                 sack.GapAckBlocks = GetForwardTSNGaps();
-                sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
+                sack.DuplicateTSN.AddRange(_duplicateTSN.Keys.GetEnumerator());
                 return sack;
             }
             else
@@ -370,9 +370,9 @@ namespace SIPSorcery.Net
         /// TSNs have not yet been received.
         /// </summary>
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
-        internal List<SctpTsnGapBlock> GetForwardTSNGaps()
+        internal SmallList<N8<SctpTsnGapBlock>, SctpTsnGapBlock> GetForwardTSNGaps()
         {
-            List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
+            var gaps = new SmallList<N8<SctpTsnGapBlock>, SctpTsnGapBlock>();
 
             // Can't create gap reports until the initial DATA chunk has been received.
             if (_inOrderReceiveCount > 0)
