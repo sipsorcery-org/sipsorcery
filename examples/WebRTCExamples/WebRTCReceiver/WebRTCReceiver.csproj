@@ -19,7 +19,7 @@
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.12-pre" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="1.4.0" />
-    <PackageReference Include="SIPSorcery" Version="6.2.0" />
+     <PackageReference Include="SIPSorcery" Version="6.2.0" />
   </ItemGroup>
 
 </Project>
