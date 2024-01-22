@@ -346,6 +346,8 @@ namespace TinyJson
 
         static object ParseObject(Type type, string json)
         {
+            // For .net8 this call needs to change to: RuntimeHelpers.GetUninitializedObject(type);
+
             object instance = FormatterServices.GetUninitializedObject(type);
 
             //The list is split into key/value pairs only, this means the split must be divisible by 2 to be valid JSON

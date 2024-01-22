@@ -26,6 +26,8 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net461;net5.0;net6.0;net8.0</TargetFrameworks>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <NoWarn>$(NoWarn);SYSLIB0050</NoWarn>
     <Authors>Aaron Clauson, Christophe Irles, Rafael Soares &amp; Contributors</Authors>
     <Copyright>Copyright © 2010-2024 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
