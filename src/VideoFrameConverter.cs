@@ -55,7 +55,6 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_image_fill_arrays(ref _dstData, ref _dstLinesize, (byte*)_convertedFrameBufferPtr, destinationPixelFormat, dstWidth, dstHeight, 1)
                 .ThrowExceptionIfError();
 
-
             _dstFrame = ffmpeg.av_frame_alloc();
             _dstFrame->width = _dstWidth;
             _dstFrame->height = _dstHeight;

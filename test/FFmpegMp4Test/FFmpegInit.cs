@@ -1,7 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 
 namespace FFmpegMp4Test
@@ -18,11 +21,69 @@ namespace FFmpegMp4Test
         AV_LOG_TRACE = 56,
     }
 
-    public static class FFmpegInit
+    public static unsafe class FFmpegInit
     {
-        public static void Initialise(FfmpegLogLevelEnum? logLevel = null)
+        private static ILogger logger = NullLogger.Instance;
+        private static bool registered = false;
+
+        private static av_log_set_callback_callback? logCallback;
+        private static String storedLogs = "";
+
+        public static String GetStoredLogs(Boolean clear = true)
         {
-            RegisterFFmpegBinaries();
+            if (clear)
+            {
+                String log = storedLogs;
+                storedLogs = "";
+                return log;
+            }
+            return storedLogs;
+        }
+
+        public static void ClearStoredLogs()
+        {
+            storedLogs = "";
+        }
+
+        public static void UseSpecificLogCallback(Boolean storeLogs = true)
+        {
+            // We clear previous stored logs
+            if (storeLogs)
+                ClearStoredLogs();
+
+            logCallback = (p0, level, format, vl) =>
+            {
+                if ((!storeLogs) && (level > ffmpeg.av_log_get_level())) return;
+
+                var lineSize = 1024;
+                var lineBuffer = stackalloc byte[lineSize];
+                var printPrefix = 1;
+                ffmpeg.av_log_format_line(p0, level, format, vl, lineBuffer, lineSize, &printPrefix);
+                var line = Marshal.PtrToStringAnsi((IntPtr)lineBuffer);
+                //Console.Write(line);
+                if (storeLogs)
+                    storedLogs += line;
+            };
+            ffmpeg.av_log_set_callback(logCallback);
+        }
+
+        public static void UseDefaultLogCallback()
+        {
+            logCallback = (p0, level, format, vl) => ffmpeg.av_log_default_callback(p0, level, format, vl);
+
+            ffmpeg.av_log_set_callback(logCallback);
+        }
+
+        public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger? appLogger = null)
+        {
+            if (appLogger != null)
+            {
+                logger = appLogger;
+            }
+
+            RegisterFFmpegBinaries(libPath);
+
+            logger.LogInformation($"FFmpeg version info: {ffmpeg.av_version_info()}");
 
             if (logLevel.HasValue)
             {
@@ -30,21 +91,61 @@ namespace FFmpegMp4Test
             }
         }
 
-        internal static void RegisterFFmpegBinaries()
+        internal static void SetFFmpegBinariesPath(string path)
         {
-            var current = Environment.CurrentDirectory;
-            var probe = Path.Combine("FFmpeg", "bin", Environment.Is64BitProcess ? "x64" : "x86");
-            while (current != null)
+            ffmpeg.RootPath = path;
+            registered = true;
+
+            ffmpeg.avdevice_register_all();
+        }
+
+        internal static void RegisterFFmpegBinaries(String? libPath = null)
+        {
+            if (registered)
+                return;
+
+            if (libPath == null)
             {
-                var ffmpegBinaryPath = Path.Combine(current, probe);
-                if (Directory.Exists(ffmpegBinaryPath))
+                // search the system path, handle with and without .exe extension
+                string ffmpegExecutable = "ffmpeg";
+                string? path = Environment.GetEnvironmentVariable("PATH")?
+                    .Split(';')
+                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, ffmpegExecutable  + ".exe")))
+                    .FirstOrDefault();
+
+                if (path != null)
                 {
-                    ffmpeg.RootPath = ffmpegBinaryPath;
+                    logger.LogInformation($"FFmpeg binaries found in system path at: {path}");
+                    SetFFmpegBinariesPath(path);
                     return;
                 }
 
-                current = Directory.GetParent(current)?.FullName;
+                // search from the current folder up
+                var current = Environment.CurrentDirectory;
+                var probe = Path.Combine("FFmpeg", "bin", Environment.Is64BitProcess ? "x64" : "x86");
+                while (current != null)
+                {
+                    var ffmpegBinaryPath = Path.Combine(current, probe);
+                    if (Directory.Exists(ffmpegBinaryPath))
+                    {
+                        logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
+                        SetFFmpegBinariesPath(ffmpegBinaryPath);
+                        return;
+                    }
+
+                    current = Directory.GetParent(current)?.FullName;
+                }
             }
+            else
+            {
+                if (Directory.Exists(libPath))
+                {
+                    logger.LogInformation($"FFmpeg binaries path set to: {libPath}");
+                    SetFFmpegBinariesPath(libPath);
+                    return;
+                }
+            }
+            throw new ApplicationException("Unable to find FFMPEG binaries");
         }
 
         public static unsafe string? av_strerror(int error)
