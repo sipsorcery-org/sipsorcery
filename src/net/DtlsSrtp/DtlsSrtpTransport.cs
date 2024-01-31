@@ -497,7 +497,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                if(_isClosed)
+                if (_isClosed)
                 {
                     throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
                     //return DTLS_RECEIVE_ERROR_CODE;
@@ -583,9 +583,13 @@ namespace SIPSorcery.Net
 
         public virtual void Close()
         {
-            _isClosed = true;
-            this._startTime = System.DateTime.MinValue;
-            this._chunks?.Dispose();
+            if (!_isClosed)
+            {
+                _isClosed = true;
+                this._startTime = System.DateTime.MinValue;
+                this._chunks?.Dispose();
+                Transport?.Close();
+            }
         }
 
         /// <summary>
@@ -593,7 +597,10 @@ namespace SIPSorcery.Net
         /// </summary>
         protected void Dispose(bool disposing)
         {
-            Close();
+            if (!_isClosed)
+            {
+                Close();
+            }
         }
 
         /// <summary>
@@ -601,7 +608,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Dispose()
         {
-            Close();
+            if (!_isClosed)
+            {
+                Close();
+            }
         }
 
         /// <summary>
