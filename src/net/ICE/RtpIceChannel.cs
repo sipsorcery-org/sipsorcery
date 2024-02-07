@@ -1113,6 +1113,11 @@ namespace SIPSorcery.Net
         {
             try
             {
+                if (_closed)
+                {
+                    return;
+                }
+
                 if (NominatedEntry == null || _activeIceServer == null)
                 {
                     return;
@@ -1513,6 +1518,11 @@ namespace SIPSorcery.Net
         /// </summary>
         private void DoConnectivityCheck(Object stateInfo)
         {
+            if (_closed)
+            {
+                return;
+            }
+
             switch (IceConnectionState)
             {
                 case RTCIceConnectionState.@new:
