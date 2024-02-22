@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
 // Description: A "full" SIP user agent that encompasses both client and server 
@@ -640,9 +640,10 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
+        /// <param name="publicIpAddress">The public IP address to use in SDP</param>
+        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, IPAddress publicIpAddress = null)
         {
-            return Answer(uas, mediaSession, null);
+            return Answer(uas, mediaSession, null, publicIpAddress);
         }
 
         /// <summary>
@@ -653,14 +654,15 @@ namespace SIPSorcery.SIP.App
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
         /// <param name="customHeaders">Custom SIP-Headers to use in Answer.</param>
+        /// <param name="publicIpAddress">The public IP address to use in SDP</param>
         /// <returns>True if the call was successfully answered or false if there was a problem
         /// such as incompatible codecs.</returns>
-        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress = null)
         {
             try
             {
                 await m_semaphoreSlim.WaitAsync().ConfigureAwait(false);
-                return await AnswerSyncronized(uas, mediaSession, customHeaders).ConfigureAwait(false);
+                return await AnswerSyncronized(uas, mediaSession, customHeaders, publicIpAddress).ConfigureAwait(false);
             }
             finally
             {
@@ -668,7 +670,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private async Task<bool> AnswerSyncronized(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        private async Task<bool> AnswerSyncronized(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress)
         {
             if (uas.IsCancelled)
             {
@@ -711,7 +713,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        var sdpAnswer = MediaSession.CreateAnswer(null);
+                        var sdpAnswer = MediaSession.CreateAnswer(publicIpAddress);
                         sdp = sdpAnswer.ToString();
                     }
                 }
