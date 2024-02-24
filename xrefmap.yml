@@ -28719,21 +28719,21 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall
   nameWithType: SIPUserAgent.AcceptCall
-- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession)
-  name: Answer(SIPServerUserAgent, IMediaSession)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession)
-  nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession)
-- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[])
-  name: Answer(SIPServerUserAgent, IMediaSession, String[])
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_System_String___
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[])
-  name.vb: Answer(SIPServerUserAgent, IMediaSession, String())
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.String[])
-  fullName.vb: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.String())
-  nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, String[])
-  nameWithType.vb: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, String())
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.Net.IPAddress)
+  name: Answer(SIPServerUserAgent, IMediaSession, IPAddress)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_System_Net_IPAddress_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.Net.IPAddress)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.Net.IPAddress)
+  nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, IPAddress)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[],System.Net.IPAddress)
+  name: Answer(SIPServerUserAgent, IMediaSession, String[], IPAddress)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_System_String___System_Net_IPAddress_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[],System.Net.IPAddress)
+  name.vb: Answer(SIPServerUserAgent, IMediaSession, String(), IPAddress)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.String[], System.Net.IPAddress)
+  fullName.vb: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.String(), System.Net.IPAddress)
+  nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, String[], IPAddress)
+  nameWithType.vb: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, String(), IPAddress)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Answer*
   name: Answer
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_
