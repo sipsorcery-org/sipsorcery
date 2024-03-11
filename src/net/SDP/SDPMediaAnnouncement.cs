@@ -81,7 +81,7 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
         public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
         public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
-        private const int RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME = 2;
+        public const int RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME = 2;
         private const string RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
