@@ -1141,9 +1141,9 @@ namespace SIPSorcery.Net
                 else
                 {
                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
-                        mediaStream.LocalTrack.Kind,
-                        SDP.IGNORE_RTP_PORT_NUMBER,
-                        mediaStream.LocalTrack.Capabilities);
+                     mediaStream.LocalTrack.Kind,
+                     SDP.IGNORE_RTP_PORT_NUMBER,
+                     mediaStream.LocalTrack.Capabilities);
 
                     announcement.Transport = RTP_MEDIA_PROFILE;
                     announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
