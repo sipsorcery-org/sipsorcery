@@ -399,10 +399,13 @@ namespace SIPSorcery.net.RTP
             }
         }
 
+        // DateTimeOffset.UnixEpoch only available in newer target frameworks
+        private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        
         private byte[] AbsSendTime()
         {
             var t = DateTimeOffset.Now;
-            ulong u = (ulong)((t - DateTimeOffset.UnixEpoch).Ticks * 100L);
+            ulong u = (ulong)((t - UnixEpoch).Ticks * 100L);
             var s = u / (ulong)1e9;
             s += 0x83AA7E80UL;
             var f = u % (ulong)1e9;
