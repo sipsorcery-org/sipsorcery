@@ -28,6 +28,7 @@ namespace SIPSorcery.Net
         public const int MIN_HEADER_LEN = 12;
 
         public const int RTP_VERSION = 2;
+        private const int ONE_BYTE_EXTENSION_PROFILE = 0xBEDE;
 
         public int Version = RTP_VERSION;                       // 2 bits.
         public int PaddingFlag = 0;                             // 1 bit.
@@ -253,7 +254,7 @@ namespace SIPSorcery.Net
 
         private bool HasOneByteExtension()
         {
-            return ExtensionProfile == 0xBEDE;
+            return ExtensionProfile == ONE_BYTE_EXTENSION_PROFILE;
         }
 
         private bool HasTwoByteExtension()
@@ -322,6 +323,39 @@ namespace SIPSorcery.Net
 
             consumed = offset;
             return header.PayloadSize>=0;
+        }
+
+        // DateTimeOffset.UnixEpoch only available in newer target frameworks
+        private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        private byte[] AbsSendTime()
+        {
+            var t = DateTimeOffset.Now;
+            ulong u = (ulong)((t - UnixEpoch).Ticks * 100L);
+            var s = u / (ulong)1e9;
+            s += 0x83AA7E80UL;
+            var f = u % (ulong)1e9;
+            f <<= 32;
+            f /= (ulong)1e9;
+            s <<= 32;
+            var ntp = s | f;
+            var abs = ntp >> 14;
+
+            return new byte[]
+            {
+                0x22, // ID = 2; L = 2 (3-1)
+                (byte)((abs & 0xff0000UL) >> 16),
+                (byte)((abs & 0xff00UL) >> 8),
+                (byte)(abs & 0xffUL) 
+            };
+        }
+        
+        public void AddAbsSendTimeExtension()
+        {
+            HeaderExtensionFlag = 1;
+            ExtensionProfile = ONE_BYTE_EXTENSION_PROFILE;
+            ExtensionLength = 1; // only abs-send-time for now
+            ExtensionPayload = AbsSendTime();
         }
     }
 }

@@ -367,10 +367,7 @@ namespace SIPSorcery.net.RTP
                 rtpPacket.Header.PayloadType = payloadType;
 
                 // abs-send-time
-                rtpPacket.Header.HeaderExtensionFlag = 1;
-                rtpPacket.Header.ExtensionProfile = 0xBEDE; // one byte extension
-                rtpPacket.Header.ExtensionLength = 1;
-                rtpPacket.Header.ExtensionPayload = AbsSendTime();
+                rtpPacket.Header.AddAbsSendTimeExtension();
 
                 Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
 
@@ -397,31 +394,6 @@ namespace SIPSorcery.net.RTP
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
             }
-        }
-
-        // DateTimeOffset.UnixEpoch only available in newer target frameworks
-        private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        
-        private byte[] AbsSendTime()
-        {
-            var t = DateTimeOffset.Now;
-            ulong u = (ulong)((t - UnixEpoch).Ticks * 100L);
-            var s = u / (ulong)1e9;
-            s += 0x83AA7E80UL;
-            var f = u % (ulong)1e9;
-            f <<= 32;
-            f /= (ulong)1e9;
-            s <<= 32;
-            var ntp = s | f;
-            var abs = ntp >> 14;
-
-            return new byte[]
-            {
-                0x22, // ID = 2; L = 2 (3-1)
-                (byte)((abs & 0xff0000UL) >> 16),
-                (byte)((abs & 0xff00UL) >> 8),
-                (byte)(abs & 0xffUL) 
-            };
         }
 
         /// <summary>
