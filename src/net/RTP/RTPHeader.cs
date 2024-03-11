@@ -329,9 +329,8 @@ namespace SIPSorcery.Net
         private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
         // inspired by https://github.com/pion/rtp/blob/master/abssendtimeextension.go
-        private byte[] AbsSendTime()
+        internal static byte[] AbsSendTime(DateTimeOffset now)
         {
-            var now = DateTimeOffset.Now;
             ulong unixNanoseconds = (ulong)((now - UnixEpoch).Ticks * 100L);
             var seconds = unixNanoseconds / (ulong)1e9;
             seconds += 0x83AA7E80UL; // offset in seconds between unix epoch and ntp epoch
@@ -374,7 +373,7 @@ namespace SIPSorcery.Net
             HeaderExtensionFlag = 1;
             ExtensionProfile = ONE_BYTE_EXTENSION_PROFILE;
             ExtensionLength = 1; // only abs-send-time for now
-            ExtensionPayload = AbsSendTime();
+            ExtensionPayload = AbsSendTime(DateTimeOffset.Now);
         }
     }
 }
