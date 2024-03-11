@@ -434,13 +434,13 @@ namespace SIPSorcery.Net
                                 }
 
                                 break;
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX):
+                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
                                     if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
                                     {
                                         // Parse the rtpmap attribute for audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
                                         if (formatAttributeMatch.Success)
                                         {
                                             string formatID = formatAttributeMatch.Result("${id}");
@@ -471,7 +471,7 @@ namespace SIPSorcery.Net
                                     else
                                     {
                                         // Parse the rtpmap attribute for NON audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
+                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
                                         if (formatAttributeMatch.Success)
                                         {
                                             string formatID = formatAttributeMatch.Result("${id}");
