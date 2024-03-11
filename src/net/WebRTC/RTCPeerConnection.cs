@@ -1141,15 +1141,9 @@ namespace SIPSorcery.Net
                 else
                 {
                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
-                     mediaStream.LocalTrack.Kind,
-                     SDP.IGNORE_RTP_PORT_NUMBER,
-                     mediaStream.LocalTrack.Capabilities)
-                    {
-                        HeaderExtensions = new Dictionary<int, RTPHeaderExtension>
-                        {
-                            {2, new RTPHeaderExtension(2, "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")}
-                        }
-                    };
+                        mediaStream.LocalTrack.Kind,
+                        SDP.IGNORE_RTP_PORT_NUMBER,
+                        mediaStream.LocalTrack.Capabilities);
 
                     announcement.Transport = RTP_MEDIA_PROFILE;
                     announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
