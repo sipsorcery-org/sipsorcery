@@ -276,7 +276,7 @@ namespace SIPSorcery.SIP.App
         /// For calls accepted by this user agent this event will be fired if the call
         /// is cancelled before it gets answered.
         /// </summary>
-        public event SIPUASDelegate ServerCallCancelled;
+        public event SIPUASCancelDelegate ServerCallCancelled;
 
         /// <summary>
         /// For calls accepted by this user agent this event will be fired if the call
@@ -617,10 +617,10 @@ namespace SIPSorcery.SIP.App
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
-            uas.CallCancelled += (pendingUas) =>
+            uas.CallCancelled += (pendingUas, reason, customHeaders) =>
             {
                 CallEnded(inviteRequest.Header.CallId);
-                ServerCallCancelled?.Invoke(pendingUas);
+                ServerCallCancelled?.Invoke(pendingUas, reason, customHeaders);
             };
             uas.NoRingTimeout += (pendingUas) =>
             {
