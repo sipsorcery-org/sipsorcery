@@ -107,8 +107,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCSctpTransportState> OnStateChanged;
 
-        private bool _isStarted;
-        private bool _isClosed;
+        private Once _isStarted;
+        private Once _isClosed;
         private Thread _receiveThread;
 
         /// <summary>
@@ -163,10 +163,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Start(DatagramTransport dtlsTransport, bool isDtlsClient)
         {
-            if (!_isStarted)
+            if (_isStarted.TryMarkOccurred())
             {
-                _isStarted = true;
-
                 transport = dtlsTransport;
                 IsDtlsClient = isDtlsClient;
 
@@ -174,6 +172,10 @@ namespace SIPSorcery.Net
                 _receiveThread.Name = $"{THREAD_NAME_PREFIX}{RTCSctpAssociation.ID}";
                 _receiveThread.IsBackground = true;
                 _receiveThread.Start();
+            }
+            else
+            {
+                logger.LogWarning($"RTCSctpTransport for association {RTCSctpAssociation.ID} has already been started.");
             }
         }
 
@@ -197,7 +199,7 @@ namespace SIPSorcery.Net
             {
                 RTCSctpAssociation?.Shutdown();
             }
-            _isClosed = true;
+            _isClosed.TryMarkOccurred();
         }
 
         /// <summary>
@@ -267,16 +269,21 @@ namespace SIPSorcery.Net
         /// </summary>
         private void DoReceive(object state)
         {
-            byte[] recvBuffer = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
+#if NET6_0_OR_GREATER
+            Span<byte> recvBuffer = stackalloc byte[checked((int)SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW)];
+#else
+            byte[] recvBufferArray = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
+            Span<byte> recvBuffer = recvBufferArray.AsSpan();
+#endif
 
-            while (!_isClosed)
+            while (!_isClosed.HasOccurred)
             {
                 try
                 {
 #if NET6_0_OR_GREATER
-                    int bytesRead = transport.Receive(recvBuffer.AsSpan(), RECEIVE_TIMEOUT_MILLISECONDS);
+                    int bytesRead = transport.Receive(recvBuffer, RECEIVE_TIMEOUT_MILLISECONDS);
 #else
-                    int bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
+                    int bytesRead = transport.Receive(recvBufferArray, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
 #endif
 
                     if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
@@ -287,13 +294,13 @@ namespace SIPSorcery.Net
                     }
                     else if (bytesRead > 0)
                     {
-                        if (!SctpPacket.VerifyChecksum(recvBuffer.AsSpan().Slice(0, bytesRead)))
+                        if (!SctpPacket.VerifyChecksum(recvBuffer.Slice(0, bytesRead)))
                         {
                             logger.LogWarning($"SCTP packet received on DTLS transport dropped due to invalid checksum.");
                         }
                         else
                         {
-                            var pkt = SctpPacketView.Parse(recvBuffer.AsSpan(0, bytesRead));
+                            var pkt = SctpPacketView.Parse(recvBuffer.Slice(0, bytesRead));
 
                             if (pkt.Has(SctpChunkType.INIT))
                             {
@@ -329,7 +336,7 @@ namespace SIPSorcery.Net
                             }
                         }
                     }
-                    else if (_isClosed)
+                    else if (_isClosed.HasOccurred)
                     {
                         // The DTLS transport has been closed or is no longer available.
                         logger.LogWarning($"SCTP the RTCSctpTransport DTLS transport returned an error.");
@@ -354,7 +361,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 logger.LogWarning($"SCTP association {RTCSctpAssociation.ID} receive thread stopped.");
             }
@@ -375,7 +382,7 @@ namespace SIPSorcery.Net
                     $" that exceeded the maximum allowed message size of {maxMessageSize}.");
             }
 
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 lock (transport)
                 {
