@@ -1582,7 +1582,12 @@ namespace SIPSorcery.Net
                 // Until that happens there is no work to do.
                 if (IceConnectionState == RTCIceConnectionState.checking)
                 {
-                    if (_checklist.Count > 0)
+                    int count;
+                    lock (_checklist)
+                    {
+                        count = _checklist.Count;
+                    }
+                    if (count > 0)
                     {
                         if (RemoteIceUser == null || RemoteIcePassword == null)
                         {
@@ -1974,7 +1979,10 @@ namespace SIPSorcery.Net
                             else if (IsController)
                             {
                                 logger.LogDebug($"ICE RTP channel binding response state {matchingChecklistEntry.State} as Controller for {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
-                                ProcessNominateLogicAsController(matchingChecklistEntry);
+                                lock (_checklist)
+                                {
+                                    ProcessNominateLogicAsController(matchingChecklistEntry);
+                                }
                             }
                         }
                     }
@@ -2147,7 +2155,10 @@ namespace SIPSorcery.Net
                             entry.TurnPermissionsResponseAt = DateTime.Now;
                         }
 
-                        AddChecklistEntry(entry);
+                        lock (_checklist)
+                        {
+                            AddChecklistEntry(entry);
+                        }
 
                         matchingChecklistEntry = entry;
                     }
