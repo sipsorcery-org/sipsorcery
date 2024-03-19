@@ -33,14 +33,16 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using Vpx.Net;
+using WebSocketSharp.Server;
 
 namespace demo
 {
     class Program
     {
-        private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
-        private const string REST_SIGNALING_MY_USER = "cli";
-        private const string REST_SIGNALING_THEIR_USER = "svr";
+        //private const string REST_SIGNALING_SERVER = "https://localhost:5001/api/webrtcsignal";
+        //private const string REST_SIGNALING_MY_USER = "cli";
+        //private const string REST_SIGNALING_THEIR_USER = "svr";
+        private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = null;
 
@@ -54,10 +56,16 @@ namespace demo
 
             logger = AddConsoleLogger();
 
-            CancellationTokenSource cts = new CancellationTokenSource();
+            //CancellationTokenSource cts = new CancellationTokenSource();
 
-            var nodeDssWebRTCPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
-            await nodeDssWebRTCPeer.Start(cts);
+            //var nodeDssWebRTCPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
+            //await nodeDssWebRTCPeer.Start(cts);
+
+            // Start web socket.
+            Console.WriteLine("Starting web socket server...");
+            var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+            webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+            webSocketServer.Start();
 
             // Open a Window to display the video feed from the WebRTC peer.
             _form = new Form();

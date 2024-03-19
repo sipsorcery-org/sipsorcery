@@ -64,7 +64,10 @@ namespace SIPSorcery.Media
         /// Unencoded test pattern samples.
         /// </summary>
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
+
+#pragma warning disable CS0067
         public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
+#pragma warning restore CS0067
 
         /// <summary>
         /// If a video encoder has been set then this event contains the encoded video

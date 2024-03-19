@@ -830,12 +830,21 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
+                // Close all DataChannels
+                if (DataChannels?.Count >0)
+                {
+                    foreach(var dc in DataChannels)
+                    {
+                        dc?.close();
+                    }
+                }
+
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
 
                 sctp?.Close();
 
-                base.Close(reason);
+                base.Close(reason); // Here Audio and/or Video Streams are closed
 
                 connectionState = RTCPeerConnectionState.closed;
                 onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);

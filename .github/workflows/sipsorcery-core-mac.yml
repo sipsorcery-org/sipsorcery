@@ -10,12 +10,12 @@ jobs:
   build:
     strategy:
       matrix:
-        framework: [ 'net6.0' ]
+        framework: [ 'net8.0' ]
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: '8.0.x'
     - name: Unit tests
       run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework  ${{ matrix.framework }} -c Release

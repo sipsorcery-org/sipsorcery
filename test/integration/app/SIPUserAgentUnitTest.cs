@@ -1158,8 +1158,8 @@ a=sendrecv";
                 new List<string> { "Custom header" },
                 null,
                 SIPCallDirection.Out,
-                SDP.SDP_MIME_CONTENTTYPE,
-                null,
+                contentType,
+                content,
                 null
                 );
         }

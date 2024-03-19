@@ -8,9 +8,25 @@
         async function start() {
             pc = new RTCPeerConnection();
 
-            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.ontrack = evt => {
+				console.log("Adding track to video control.");
+				document.querySelector('#videoCtl').srcObject = evt.streams[0];
+				
+				evt.streams[0].onunmute = () => {
+					console.log("Adding track to video control.");
+				};
+                    
+			   evt.streams[0].onended = () => {
+				  console.log("Track ended.");
+			   };
+			}
+			
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
+			pc.onclose= () => {
+			   console.log("pc close");
+			};
+			
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onmessage = async function (evt) {
                 var obj = JSON.parse(evt.data);
@@ -30,6 +46,8 @@
             await pc?.close();
             await ws?.close();
         };
+
+   	
 
     </script>
 </head>

@@ -626,6 +626,8 @@ namespace SIPSorcery.Net
 
         public virtual void Close()
         {
+            if (_isClosed) return;
+
             _isClosed = true;
             this._startTime = System.DateTime.MinValue;
             foreach(var chunk in _chunks.GetConsumingEnumerable())
@@ -637,6 +639,7 @@ namespace SIPSorcery.Net
                 ArrayPool<byte>.Shared.Return(partialChunk);
             }
             this._chunks?.Dispose();
+            Transport?.Close();
         }
 
         /// <summary>
@@ -644,7 +647,10 @@ namespace SIPSorcery.Net
         /// </summary>
         protected void Dispose(bool disposing)
         {
-            Close();
+            if (!_isClosed)
+            {
+                Close();
+            }
         }
 
         /// <summary>
@@ -652,7 +658,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Dispose()
         {
-            Close();
+            if (!_isClosed)
+            {
+                Close();
+            }
         }
 
         /// <summary>

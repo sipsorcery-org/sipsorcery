@@ -24,7 +24,6 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
@@ -47,8 +46,6 @@ namespace SIPSorcery.Media
     {
         private const int TEST_PATTERN_FPS = 30;
         private const int TEST_PATTERN_ONHOLD_FPS = 3;
-
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private VideoTestPatternSource _videoTestPatternSource;
         private AudioExtrasSource _audioExtrasSource;
@@ -124,7 +121,7 @@ namespace SIPSorcery.Media
             Media = config.MediaEndPoint;
 
             // The audio extras source is used for on-hold music.
-            _audioExtrasSource = new AudioExtrasSource();
+            _audioExtrasSource = new AudioExtrasSource(config.AudioExtrasEncoder);
             _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
 
             // Wire up the audio and video sample event handlers.

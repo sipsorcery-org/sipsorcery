@@ -115,6 +115,18 @@ namespace demo
             pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
+            // To test closing.
+            //_ = Task.Run(async () => 
+            //{ 
+            //    await Task.Delay(5000);
+
+            //    audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
+            //    videoEncoderEndPoint.OnVideoSourceEncodedSample -= pc.SendVideo;
+
+            //    logger.LogDebug("Closing peer connection.");
+            //    pc.Close("normal");
+            //});
+
             return Task.FromResult(pc);
         }
 
