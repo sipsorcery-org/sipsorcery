@@ -200,7 +200,7 @@ namespace SIPSorcery.Net
                         BitrateExp = (byte)(packet[currentCounter] >> 2);
 
                         // Now read next 18 bits
-                        var remaininMantissaBytes = new byte[] { (byte)0, (byte)(packet[currentCounter] & 4), packet[currentCounter + 1], packet[currentCounter + 2] };
+                        var remaininMantissaBytes = new byte[] { (byte)0, (byte)(packet[currentCounter] & 3), packet[currentCounter + 1], packet[currentCounter + 2] };
                         if (BitConverter.IsLittleEndian)
                         {
                             BitrateMantissa = NetConvert.DoReverseEndian(BitConverter.ToUInt32(remaininMantissaBytes, 0));
@@ -317,7 +317,7 @@ namespace SIPSorcery.Net
                         {
                             remaininMantissaBytes = BitConverter.GetBytes(BitrateMantissa);
                         }
-                        buffer[currentCounter] = (byte)((BitrateExp << 2) & (remaininMantissaBytes[1] & 4));
+                        buffer[currentCounter] = (byte)((BitrateExp << 2) | (remaininMantissaBytes[1] & 3));
                         buffer[currentCounter + 1] = remaininMantissaBytes[2];
                         buffer[currentCounter + 2] = remaininMantissaBytes[3];
 

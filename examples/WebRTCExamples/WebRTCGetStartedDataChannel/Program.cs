@@ -189,13 +189,13 @@ namespace demo
 
                 var slice = new ArraySegment<byte>(buffer, startPosn, length);
 
-                using (SHA256Managed sha256 = new SHA256Managed())
+                using (var sha256 = SHA256.Create())
                 {
                     Buffer.BlockCopy(sha256.ComputeHash(slice.ToArray()), 0, hashOfHashes, i * SHA256_OUTPUT_SIZE, SHA256_OUTPUT_SIZE);
                 }
             }
 
-            using (SHA256Managed sha256 = new SHA256Managed())
+            using (var sha256 = SHA256.Create())
             {
                 return sha256.ComputeHash(hashOfHashes).HexStr();
             }

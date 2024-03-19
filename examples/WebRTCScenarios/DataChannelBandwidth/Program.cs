@@ -46,7 +46,7 @@ for (int i = 0; i < 1; i++)
         new Thread(() => SendRecv(ch, ref clientReceived))
         {
             IsBackground = true,
-            Name = "client",
+            Name = $"client {i}",
         }.Start();
         if (!ch.IsOpened)
         {
@@ -72,7 +72,7 @@ for (int i = 0; i < 1; i++)
         new Thread(() => SendRecv(serverCH, ref serverReceived))
         {
             IsBackground = true,
-            Name = "server",
+            Name = $"server {i}",
         }.Start();
     };
     serverCH.onclose += () =>

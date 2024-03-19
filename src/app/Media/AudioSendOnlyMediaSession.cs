@@ -15,8 +15,6 @@ namespace SIPSorcery.Media
     /// </summary>
     public class AudioSendOnlyMediaSession : RTPSession, IMediaSession
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
-
         public AudioExtrasSource AudioExtrasSource { get; private set; }
 
         public AudioSendOnlyMediaSession(

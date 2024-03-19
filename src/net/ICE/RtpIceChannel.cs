@@ -1111,34 +1111,46 @@ namespace SIPSorcery.Net
         //
         private void RefreshTurn(Object state)
         {
-            if (NominatedEntry == null || _activeIceServer == null)
+            try
             {
-                return;
-            }
-            if (_activeIceServer._uri.Scheme != STUNSchemesEnum.turn || NominatedEntry.LocalCandidate.IceServer is null)
-            {
-                _refreshTurnTimer?.Dispose();
-                return;
-            }
-            if (_activeIceServer.TurnTimeToExpiry.Subtract(DateTime.Now) <= TimeSpan.FromMinutes(1))
-            {
-                logger.LogDebug($"Sending TURN refresh request to ICE server {_activeIceServer._uri}.");
-                _activeIceServer.Error = SendTurnRefreshRequest(_activeIceServer);
-            }
+                if (_closed)
+                {
+                    return;
+                }
 
-            if (NominatedEntry.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
-            {
-                logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {NominatedEntry.LocalCandidate.IceServer._uri} after {NominatedEntry.TurnPermissionsRequestSent} attempts.");
+                if (NominatedEntry == null || _activeIceServer == null)
+                {
+                    return;
+                }
+                if (_activeIceServer._uri.Scheme != STUNSchemesEnum.turn || NominatedEntry.LocalCandidate.IceServer is null)
+                {
+                    _refreshTurnTimer?.Dispose();
+                    return;
+                }
+                if (_activeIceServer.TurnTimeToExpiry.Subtract(DateTime.Now) <= TimeSpan.FromMinutes(1))
+                {
+                    logger.LogDebug($"Sending TURN refresh request to ICE server {_activeIceServer._uri}.");
+                    _activeIceServer.Error = SendTurnRefreshRequest(_activeIceServer);
+                }
+
+                if (NominatedEntry.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
+                {
+                    logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {NominatedEntry.LocalCandidate.IceServer._uri} after {NominatedEntry.TurnPermissionsRequestSent} attempts.");
+                }
+                else if (NominatedEntry.TurnPermissionsRequestSent != 1 || NominatedEntry.TurnPermissionsResponseAt == DateTime.MinValue || DateTime.Now.Subtract(NominatedEntry.TurnPermissionsResponseAt).TotalSeconds >
+                         REFRESH_PERMISSION_PERIOD)
+                {
+                    // Send Create Permissions request to TURN server for remote candidate.
+                    NominatedEntry.TurnPermissionsRequestSent++;
+                    logger.LogDebug($"ICE RTP channel sending TURN permissions request {NominatedEntry.TurnPermissionsRequestSent} " +
+                                    $"to server {NominatedEntry.LocalCandidate.IceServer._uri} for peer {NominatedEntry.RemoteCandidate.DestinationEndPoint} " +
+                                    $"(TxID: {NominatedEntry.RequestTransactionID}).");
+                    SendTurnCreatePermissionsRequest(NominatedEntry.RequestTransactionID, NominatedEntry.LocalCandidate.IceServer, NominatedEntry.RemoteCandidate.DestinationEndPoint);
+                }
             }
-            else if (NominatedEntry.TurnPermissionsRequestSent != 1 || NominatedEntry.TurnPermissionsResponseAt == DateTime.MinValue || DateTime.Now.Subtract(NominatedEntry.TurnPermissionsResponseAt).TotalSeconds >
-                     REFRESH_PERMISSION_PERIOD)
+            catch(Exception excp)
             {
-                // Send Create Permissions request to TURN server for remote candidate.
-                NominatedEntry.TurnPermissionsRequestSent++;
-                logger.LogDebug($"ICE RTP channel sending TURN permissions request {NominatedEntry.TurnPermissionsRequestSent} " +
-                                $"to server {NominatedEntry.LocalCandidate.IceServer._uri} for peer {NominatedEntry.RemoteCandidate.DestinationEndPoint} " +
-                                $"(TxID: {NominatedEntry.RequestTransactionID}).");
-                SendTurnCreatePermissionsRequest(NominatedEntry.RequestTransactionID, NominatedEntry.LocalCandidate.IceServer, NominatedEntry.RemoteCandidate.DestinationEndPoint);
+                logger.LogError($"Exception {nameof(RefreshTurn)}." + excp);
             }
         }
 
@@ -1506,6 +1518,11 @@ namespace SIPSorcery.Net
         /// </summary>
         private void DoConnectivityCheck(Object stateInfo)
         {
+            if (_closed)
+            {
+                return;
+            }
+
             switch (IceConnectionState)
             {
                 case RTCIceConnectionState.@new:

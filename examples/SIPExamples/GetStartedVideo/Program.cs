@@ -40,6 +40,7 @@ namespace demo
 {
     class Program
     {
+        // Need to find a new echo endpoint since the sipsorcery cloud was turned off to save $$. 14 Jan 2024.
         private static string DESTINATION = "echo@sipsorcery.cloud";
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;

@@ -36,10 +36,10 @@ namespace SIPSorcery.Sys.IntegrationTests
         /// <summary>
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
-        //[Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
+        [Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
         // TODO: This test sporadically fails on appveyor macos jobs. Try and determine if it's due
         // to the vm having a different network configuration, IPv6 set up etc.
-        [Fact]
+        //[Fact]
         [Trait("Category", "IPv6")]
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
@@ -52,9 +52,10 @@ namespace SIPSorcery.Sys.IntegrationTests
                     !x.IsIPv6LinkLocal && !x.IsIPv6SiteLocal && !x.IsIPv6Teredo && !IPAddress.IsLoopback(x)))
                 {
                     var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
-                    Assert.NotNull(localAddress);
 
                     logger.LogDebug($"Local address {localAddress}.");
+
+                    Assert.NotNull(localAddress);
                 }
                 else
                 {

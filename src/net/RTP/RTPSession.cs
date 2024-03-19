@@ -1030,7 +1030,7 @@ namespace SIPSorcery.Net
                         SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
-                        //currentMediaStream.LocalTrack.Capabilities = capabilities;
+                        currentMediaStream.LocalTrack.Capabilities = capabilities;
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
