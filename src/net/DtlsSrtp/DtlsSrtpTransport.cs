@@ -627,7 +627,10 @@ namespace SIPSorcery.Net
 
         public virtual void Close()
         {
-            if (_isClosed) return;
+            if (_isClosed)
+            {
+                return;
+            }
 
             _isClosed = true;
             this._startTime = System.DateTime.MinValue;
