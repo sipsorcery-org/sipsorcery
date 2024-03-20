@@ -693,7 +693,7 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
-                logger.LogWarning(sockExcp, $"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({ErrorCode}). {Message}", sockExcp.ErrorCode, sockExcp.Message);
                 break;
 
             case ObjectDisposedException: // Thrown when socket is closed. Can be safely ignored.
