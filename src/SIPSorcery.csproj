@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BouncyCastle.Cryptography" Version="2.2.1" />
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.3.0" />
     <PackageReference Include="DnsClient" Version="1.7.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.1" />
