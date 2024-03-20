@@ -600,8 +600,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                //throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
-                return DTLS_RECEIVE_ERROR_CODE;
+                throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                //return DTLS_RECEIVE_ERROR_CODE;
             }
         }
 
