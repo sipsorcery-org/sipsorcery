@@ -514,7 +514,7 @@ namespace SIPSorcery.Net
                                         logger.LogTrace($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
                                         // RFC4960 7.2.3
                                         _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
-                                        _congestionWindow = _defaultMTU;
+                                        _congestionWindow = _slowStartThreshold;
                                     }
                                 }
                             }
@@ -644,12 +644,13 @@ namespace SIPSorcery.Net
                         if (!_inRetransmitMode)
                         {
                             logger.LogTrace("SCTP sender entering retransmit mode.");
-                            _inRetransmitMode = true;
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
                             // RFC4960 7.2.3
                             _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
-                            _congestionWindow = _defaultMTU;
+                            // did not clarify, but I believe entering retransmit mode is NOT the same
+                            // as T3-rtx timer expiring. Will just use regular halving formula here.
+                            _congestionWindow = _slowStartThreshold;
 
                             // For the destination address for which the timer expires, set RTO <- RTO * 2("back off the timer")
                             // RFC4960 6.3.3 E2
@@ -664,7 +665,7 @@ namespace SIPSorcery.Net
                 // if it has cwnd or more bytes of data outstanding to that transport address.
 
                 // Send any new data chunks that have not yet been sent.
-                if (chunksSent < burstSize && _sendQueue.Count > 0 && _congestionWindow > outstandingBytes)
+                if (chunksSent < burstSize && !_sendQueue.IsEmpty && _congestionWindow > outstandingBytes)
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
@@ -789,11 +790,11 @@ namespace SIPSorcery.Net
         /// <returns>A congestion window value.</returns>
         private uint CalculateCongestionWindow(int lastAckDataChunkSize, uint outstandingBytes)
         {
-            if (_congestionWindow < _slowStartThreshold)
+            if (_congestionWindow <= _slowStartThreshold)
             {
                 // In Slow-Start mode, see RFC4960 7.2.1.
-
-                if (_congestionWindow < outstandingBytes)
+                // Updated to RFC9260 7.2.1
+                if (_congestionWindow <= outstandingBytes && !_inFastRecoveryMode)
                 {
                     // When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
                     // use the slow - start algorithm to increase cwnd only if the current
@@ -814,7 +815,7 @@ namespace SIPSorcery.Net
             {
                 // In Congestion Avoidance mode, see RFC4960 7.2.2.
 
-                if (_congestionWindow < outstandingBytes)
+                if (_congestionWindow <= outstandingBytes)
                 {
                     logger.LogTrace("SCTP sender congestion window in congestion avoidance increased from {Original} to {Increased}.",
                         _congestionWindow, _congestionWindow + _defaultMTU);
