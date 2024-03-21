@@ -60,7 +60,7 @@ namespace SIPSorcery.Net.IntegrationTests
             _listener.BeginReceiveFrom();
         }
 
-        private void OnPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
             STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
 
@@ -140,10 +140,10 @@ namespace SIPSorcery.Net.IntegrationTests
         /// <param name="localPort">The port number the packet was received on.</param>
         /// <param name="remoteEndPoint">The end point of the peer sending traffic to the TURN server.</param>
         /// <param name="packet">The byes received from the peer.</param>
-        private void OnRelayPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnRelayPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
             STUNMessage dataInd = new STUNMessage(STUNMessageTypesEnum.DataIndication);
-            dataInd.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, packet));
+            dataInd.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, packet.ToArray()));
             dataInd.AddXORPeerAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
 
             _clientSocket.SendTo(dataInd.ToByteBuffer(null, false), _clientEndPoint);
