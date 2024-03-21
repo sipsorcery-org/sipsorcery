@@ -75,7 +75,7 @@ namespace SIPSorcery.Net
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
         private System.DateTime _startTime = System.DateTime.MinValue;
-        private bool _isClosed = false;
+        private Once _isClosed;
 
         // Network properties
         private int _waitMillis = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
@@ -487,11 +487,18 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(ReadOnlySpan<byte> buf)
         {
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 var chunk = ArrayPool<byte>.Shared.Rent(buf.Length);
                 buf.CopyTo(chunk);
-                _chunks.Add(new(chunk, 0, buf.Length));
+                try
+                {
+                    _chunks.Add(new(chunk, 0, buf.Length));
+                }
+                catch (Exception) when (_isClosed.HasOccurred)
+                {
+                    ArrayPool<byte>.Shared.Return(chunk);
+                }
             }
         }
 
@@ -501,7 +508,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                if (_isClosed)
+                if (_isClosed.HasOccurred)
                 {
                     throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
                     //return DTLS_RECEIVE_ERROR_CODE;
@@ -570,7 +577,7 @@ namespace SIPSorcery.Net
                     logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
-                else if (!_isClosed)
+                else if (!_isClosed.HasOccurred)
                 {
                     waitMillis = Math.Min(waitMillis, millisecondsRemaining);
                     var receiveLen = Read(buf, off, len, waitMillis);
@@ -594,7 +601,7 @@ namespace SIPSorcery.Net
                     //return DTLS_RECEIVE_ERROR_CODE;
                 }
             }
-            else if (!_isClosed)
+            else if (!_isClosed.HasOccurred)
             {
                 return Read(buf, off, len, waitMillis);
             }
@@ -627,13 +634,13 @@ namespace SIPSorcery.Net
 
         public virtual void Close()
         {
-            if (_isClosed)
+            if (!_isClosed.TryMarkOccurred())
             {
                 return;
             }
 
-            _isClosed = true;
             this._startTime = System.DateTime.MinValue;
+            _chunks.CompleteAdding();
             foreach(var chunk in _chunks.GetConsumingEnumerable())
             {
                 ArrayPool<byte>.Shared.Return(chunk.Array);
@@ -651,7 +658,7 @@ namespace SIPSorcery.Net
         /// </summary>
         protected void Dispose(bool disposing)
         {
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 Close();
             }
@@ -662,7 +669,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Dispose()
         {
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 Close();
             }
