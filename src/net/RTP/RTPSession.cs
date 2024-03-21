@@ -335,17 +335,19 @@ namespace SIPSorcery.Net
         /// </summary>
         public int MaxReconstructedVideoFrameSize { get => VideoStream.MaxReconstructedVideoFrameSize; set => VideoStream.MaxReconstructedVideoFrameSize = value; }
 
+        Once isClosed;
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
         /// be restarted.
         /// </summary>
-        public bool IsClosed { get; private set; }
+        public bool IsClosed => isClosed.HasOccurred;
 
+        Once isStarted;
         /// <summary>
         /// Indicates whether the session has been started. Starting a session tells the RTP 
         /// socket to start receiving,
         /// </summary>
-        public bool IsStarted { get; private set; }
+        public bool IsStarted => isStarted.HasOccurred;
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -1881,11 +1883,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public virtual Task Start()
         {
-            if (!IsStarted)
+            if (isStarted.TryMarkOccurred())
             {
-                IsStarted = true;
-
-
                 foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -1955,11 +1954,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public virtual void Close(string reason)
         {
-            if (!IsClosed)
+            if (isClosed.TryMarkOccurred())
             {
-                IsClosed = true;
-
-
                 foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream != null)
