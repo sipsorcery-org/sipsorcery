@@ -165,10 +165,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public ulong BufferedAmount => (ulong)_sendQueue.Sum(x => x.UserDataLength);
 
+        int tsn;
         /// <summary>
         /// The Transaction Sequence Number (TSN) that will be used in the next DATA chunk sent.
         /// </summary>
-        public uint TSN { get; internal set; }
+        public uint TSN => unchecked((uint)Interlocked.CompareExchange(ref tsn, 0, 0));
 
         public SctpDataSender(
             string associationID,
@@ -181,7 +182,7 @@ namespace SIPSorcery.Net
             _sendDataChunk = sendDataChunk;
             _defaultMTU = defaultMTU > 0 ? defaultMTU : DEFAULT_SCTP_MTU;
             _initialTSN = initialTSN;
-            TSN = initialTSN;
+            tsn = unchecked((int)initialTSN);
             _initialRemoteARwnd = remoteARwnd;
             _receiverWindow = remoteARwnd;
 
@@ -362,7 +363,7 @@ namespace SIPSorcery.Net
 
                     _sendQueue.Enqueue(dataChunk);
 
-                    TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
+                    Interlocked.Increment(ref tsn);
                 }
 
                 if (_sendQueue.Count > MaxSendQueueCount)
