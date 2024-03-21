@@ -239,6 +239,13 @@ namespace SIPSorcery.Net
             return GetChunkLength(true);
         }
 
+        internal SctpChunkView View()
+        {
+            byte[] bytes = new byte[GetChunkLength(padded: true)];
+            ushort written = WriteTo(bytes, 0);
+            return new SctpChunkView(bytes.AsSpan().Slice(0, written));
+        }
+
         /// <summary>
         /// Handler for processing an unrecognised chunk parameter.
         /// </summary>

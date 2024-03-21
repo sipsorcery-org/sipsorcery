@@ -52,8 +52,8 @@ namespace SIPSorcery.Net.UnitTests
             // sender to the receiver of a remote peer and the return of the SACK. 
             Action<SctpDataChunk> doSend = (chunk) =>
             {
-                receiver.OnDataChunk(chunk);
-                sender.GotSack(receiver.GetSackChunk());
+                receiver.OnDataChunk(chunk.View());
+                sender.GotSack(receiver.GetSackChunk().View());
             };
 
             Action<SctpDataChunk> dontSend = (chunk) => { };
@@ -116,8 +116,8 @@ namespace SIPSorcery.Net.UnitTests
                 }
                 else
                 {
-                    receiver.OnDataChunk(chunk);
-                    sender.GotSack(receiver.GetSackChunk());
+                    receiver.OnDataChunk(chunk.View());
+                    sender.GotSack(receiver.GetSackChunk().View());
                 }
             };
             sender._sendDataChunk = doSend;
@@ -162,12 +162,12 @@ namespace SIPSorcery.Net.UnitTests
             Action<SctpDataChunk> doSend = (chunk) =>
             {
                 logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                var frames = receiver.OnDataChunk(chunk);
-                sender.GotSack(receiver.GetSackChunk());
+                var frames = receiver.OnDataChunk(chunk.View());
+                sender.GotSack(receiver.GetSackChunk().View());
 
                 if (frames.Count > 0)
                 {
-                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData.Length}.");
                     frame = frames.First();
                     frameReady.Set();
                 }
@@ -210,12 +210,12 @@ namespace SIPSorcery.Net.UnitTests
             Action<SctpDataChunk> doSend = (chunk) =>
             {
                 logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                var frames = receiver.OnDataChunk(chunk);
-                sender.GotSack(receiver.GetSackChunk());
+                var frames = receiver.OnDataChunk(chunk.View());
+                sender.GotSack(receiver.GetSackChunk().View());
                 
                 if (frames.Count > 0)
                 {
-                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData.Length}.");
                     frame = frames.First();
                     frameReady.Set();
                 }
@@ -267,12 +267,12 @@ namespace SIPSorcery.Net.UnitTests
                 else
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                    var frames = receiver.OnDataChunk(chunk);
-                    sender.GotSack(receiver.GetSackChunk());
+                    var frames = receiver.OnDataChunk(chunk.View());
+                    sender.GotSack(receiver.GetSackChunk().View());
 
                     if (frames.Count > 0)
                     {
-                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData.Length}.");
                         frame = frames.First();
                         frameReady.Set();
                     }
@@ -325,12 +325,12 @@ namespace SIPSorcery.Net.UnitTests
                 else
                 {
                     logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
-                    var frames = receiver.OnDataChunk(chunk);
-                    sender.GotSack(receiver.GetSackChunk());
+                    var frames = receiver.OnDataChunk(chunk.View());
+                    sender.GotSack(receiver.GetSackChunk().View());
 
                     if (frames.Count > 0)
                     {
-                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData.Length}.");
                         frame = frames.First();
                         frameReady.Set();
                     }

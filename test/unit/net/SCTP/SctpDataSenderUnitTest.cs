@@ -52,7 +52,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Single(outStm);
 
             byte[] sendBuffer = outStm.Single();
-            SctpPacket pkt = SctpPacket.Parse(sendBuffer, 0, sendBuffer.Length);
+            SctpPacket pkt = SctpPacket.Parse(sendBuffer);
 
             Assert.NotNull(pkt);
             Assert.NotNull(pkt.Chunks.Single() as SctpDataChunk);
@@ -108,8 +108,8 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (chunk.TSN % 5 == 0)
                 {
-                    receiver.OnDataChunk(chunk);
-                    sender.GotSack(receiver.GetSackChunk());
+                    receiver.OnDataChunk(chunk.View());
+                    sender.GotSack(receiver.GetSackChunk().View());
                 }
             };
 

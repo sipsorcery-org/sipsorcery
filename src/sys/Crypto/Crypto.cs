@@ -372,6 +372,13 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
+        /// Gets the HSA256 hash of an arbitrary buffer.
+        /// </summary>
+        /// <returns>A hex string representing the hashed buffer.</returns>
+        public static string GetSHA256Hash(ReadOnlySpan<byte> buffer)
+            => GetSHA256Hash(buffer.ToArray());
+
+        /// <summary>
         /// Attempts to load an X509 certificate from a Windows OS certificate store.
         /// </summary>
         /// <param name="storeLocation">The certificate store to load from, can be CurrentUser or LocalMachine.</param>

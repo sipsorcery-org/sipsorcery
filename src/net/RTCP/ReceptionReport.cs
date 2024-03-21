@@ -114,7 +114,7 @@ namespace SIPSorcery.Net
 
         public ReceptionReportSample(ReadOnlySpan<byte> packet)
         {
-            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(0, 4));
             FractionLost = packet[4];
             Span<byte> packetsLost = stackalloc byte[] { 0x00, packet[5], packet[6], packet[7] };
             PacketsLost = BinaryPrimitives.ReadInt32BigEndian(packetsLost);

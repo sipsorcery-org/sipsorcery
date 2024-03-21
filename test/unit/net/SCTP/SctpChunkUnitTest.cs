@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             var sackBuffer = BufferUtils.ParseHexStr("13881388E48092946AB2050003000014D19244F60002000000000001A7498379");
 
-            var sackPkt = SctpPacket.Parse(sackBuffer, 0, sackBuffer.Length);
+            var sackPkt = SctpPacket.Parse(sackBuffer);
 
             Assert.NotNull(sackPkt);
             Assert.Single(sackPkt.Chunks);

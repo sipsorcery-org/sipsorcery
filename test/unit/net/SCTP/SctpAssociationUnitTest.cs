@@ -98,7 +98,7 @@ namespace SIPSorcery.Net.UnitTests
             
             string message = "hello world";
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
+            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData.ToArray()));
             aAssoc.SendData(0, 0, Encoding.UTF8.GetBytes(message));
 
             tcs.Task.Wait(3000);
@@ -123,7 +123,7 @@ namespace SIPSorcery.Net.UnitTests
 
             string message = "hello world";
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
+            bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData.ToArray()));
             aAssoc.SendData(0, 0, Encoding.UTF8.GetBytes(message));
 
             tcs.Task.Wait(3000);
@@ -228,7 +228,9 @@ namespace SIPSorcery.Net.UnitTests
 
         private bool _exit;
 
-        public event Action<SctpPacket> OnSctpPacket;
+        public delegate void SctpPacketViewAction(SctpPacketView pkt);
+
+        public event SctpPacketViewAction OnSctpPacket;
         public event Action<SctpTransportCookie> OnCookieEcho;
 
         public MockB2BSctpTransport(BlockingCollection<byte[]> output, BlockingCollection<byte[]> input)
@@ -243,19 +245,19 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (_input.TryTake(out var buffer, 1000))
                 {
-                    SctpPacket pkt = SctpPacket.Parse(buffer, 0, buffer.Length);
+                    SctpPacket pkt = SctpPacket.Parse(buffer);
 
                     // Process packet.
                     if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                     {
                         var initAckPacket = base.GetInitAck(pkt, null);
                         var initAckBuffer = initAckPacket.GetBytes();
-                        Send(null, initAckBuffer, 0, initAckBuffer.Length);
+                        Send(null, initAckBuffer);
                     }
                     else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
                         var cookieEcho = pkt.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
-                        var cookie = base.GetCookie(pkt);
+                        var cookie = base.GetCookie(SctpPacketView.Parse(buffer));
                         if (cookie.IsEmpty())
                         {
                             throw new ApplicationException($"MockB2BSctpTransport gave itself an invalid INIT cookie.");
@@ -267,15 +269,15 @@ namespace SIPSorcery.Net.UnitTests
                     }
                     else
                     {
-                        OnSctpPacket?.Invoke(pkt);
+                        OnSctpPacket?.Invoke(SctpPacketView.Parse(buffer));
                     }
                 }
             }
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string associationID, ReadOnlySpan<byte> buffer)
         {
-            _output.Add(buffer.Skip(offset).Take(length).ToArray());
+            _output.Add(buffer.ToArray());
         }
 
         public void Close()
