@@ -13230,6 +13230,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPHeader.RTPHeader
   nameWithType: RTPHeader.RTPHeader
+- uid: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
+  name: AddAbsSendTimeExtension()
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_AddAbsSendTimeExtension
+  commentId: M:SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
+  fullName: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension()
+  nameWithType: RTPHeader.AddAbsSendTimeExtension()
+- uid: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension*
+  name: AddAbsSendTimeExtension
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_AddAbsSendTimeExtension_
+  commentId: Overload:SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
+  nameWithType: RTPHeader.AddAbsSendTimeExtension
 - uid: SIPSorcery.Net.RTPHeader.CSRCCount
   name: CSRCCount
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_CSRCCount
@@ -20872,6 +20885,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability
   nameWithType: SDPAudioVideoMediaFormat.SortMediaCapability
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
+  name: SupportedRtcpFeedbackMessages
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_SupportedRtcpFeedbackMessages
+  commentId: P:SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
+  nameWithType: SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages*
+  name: SupportedRtcpFeedbackMessages
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_SupportedRtcpFeedbackMessages_
+  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
+  nameWithType: SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
   name: ToAudioFormat()
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToAudioFormat
@@ -21282,12 +21308,18 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
   nameWithType: SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX
-  name: MEDIA_FORMAT_ATTRIBUE_PREFIX
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_ATTRIBUE_PREFIX
-  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX
-  nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX
+  name: MEDIA_FORMAT_ATTRIBUTE_PREFIX
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_ATTRIBUTE_PREFIX
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX
+  nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_PREFIX
+  name: MEDIA_FORMAT_FEEDBACK_PREFIX
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_FEEDBACK_PREFIX
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_PREFIX
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_PREFIX
+  nameWithType: SDPMediaAnnouncement.MEDIA_FORMAT_FEEDBACK_PREFIX
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX
   name: MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX
@@ -21398,6 +21430,18 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.Port
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.Port
   nameWithType: SDPMediaAnnouncement.Port
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  name: RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  nameWithType: SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  name: RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  nameWithType: SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.SctpMap
   name: SctpMap
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_SctpMap
