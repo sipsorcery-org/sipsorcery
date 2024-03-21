@@ -77,7 +77,8 @@ namespace SIPSorcery.Net
         private Once _closed;
         private int _lastAckedDataChunkSize;
         private OnOff _inRetransmitMode;
-        private bool _inFastRecoveryMode;
+        private OnOff _inFastRecoveryMode;
+        /// <summary>Only ever accessed inside <see cref="GotSack(SctpChunkView)"/></summary>
         private uint _fastRecoveryExitPoint;
         private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
         private readonly ManualResetEventSlim _queueSpaceAvailable = new ManualResetEventSlim(initialState: true);
@@ -131,7 +132,7 @@ namespace SIPSorcery.Net
         internal int _outstandingBytes => _unconfirmedChunks.Sum(x => x.Value.UserDataLength);
 
         /// <summary>
-        /// The TSN that the remote peer has acknowledged.
+        /// The TSN that the remote peer has acknowledged. Only ever accessed inside <see cref="GotSack(SctpChunkView)"/>
         /// </summary>
         private uint _cumulativeAckTSN;
 
@@ -205,7 +206,7 @@ namespace SIPSorcery.Net
             {
                 if (_inRetransmitMode.TryTurnOff())
                 {
-                    logger.LogTrace("SCTP sender exiting retransmit mode.");
+                    logger.LogDebug("SCTP sender exiting retransmit mode.");
                 }
 
                 unchecked
@@ -291,10 +292,9 @@ namespace SIPSorcery.Net
 
                     // rfc4960 6.2.1 D iv
                     // If the Cumulative TSN Ack matches or exceeds the Fast Recovery exitpoint(Section 7.2.4), Fast Recovery is exited.
-                    if (_inFastRecoveryMode && SctpDataReceiver.IsNewerOrEqual(_fastRecoveryExitPoint, _cumulativeAckTSN))
+                    if (SctpDataReceiver.IsNewerOrEqual(_fastRecoveryExitPoint, _cumulativeAckTSN) && _inFastRecoveryMode.TryTurnOff())
                     {
                         logger.LogTrace("SCTP sender exiting fast recovery at TSN {TSN}", _fastRecoveryExitPoint);
-                        _inFastRecoveryMode = false;
                     }
                 }
 
@@ -493,7 +493,7 @@ namespace SIPSorcery.Net
                             else if (
                                 // If an endpoint is in Fast Recovery and a SACK arrives that advances the Cumulative TSN Ack
                                 // Point, the miss indications are incremented for all TSNs reported missing in the SACK.
-                                (_inFastRecoveryMode && didSackIncrementTSN) ||
+                                (_inFastRecoveryMode.IsOn() && didSackIncrementTSN) ||
                                 //  For each incoming SACK, miss indications are incremented only
                                 //  for missing TSNs prior to the highest TSN newly acknowledged in the SACK.
                                 SctpDataReceiver.IsNewer(missingTSN, highestTsnNewlyAcknowledged))
@@ -503,14 +503,13 @@ namespace SIPSorcery.Net
                                 // rfc 7.2.4: When the third consecutive miss indication is received for a TSN(s), the data sender shall do the following...
                                 if (missCount + 1 == 3)
                                 {
-                                    if (!_inFastRecoveryMode) // RFC4960 7.2.4 (2)
+                                    if (_inFastRecoveryMode.TryTurnOn()) // RFC4960 7.2.4 (2)
                                     {
-                                        _inFastRecoveryMode = true;
                                         // mark the highest outstanding TSN as the Fast Recovery exit point
                                         var last = SctpTsnGapBlock.Read(sackGapBlocks.Slice(sackGapBlocks.Length - SctpSackChunk.GAP_REPORT_LENGTH));
                                         _fastRecoveryExitPoint = _cumulativeAckTSN + last.End;
 
-                                        logger.LogTrace($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
+                                        logger.LogDebug($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
                                         // RFC4960 7.2.3
                                         _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
                                         _congestionWindow = _slowStartThreshold;
@@ -580,7 +579,7 @@ namespace SIPSorcery.Net
                 // calling once per loop.
                 var now = SctpDataChunk.Timestamp.Now;
 
-                int burstSize = (_inRetransmitMode.IsOn() || _inFastRecoveryMode || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
+                int burstSize = (_inRetransmitMode.IsOn() || _inFastRecoveryMode.IsOn() || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
@@ -642,7 +641,7 @@ namespace SIPSorcery.Net
 
                         if (_inRetransmitMode.TryTurnOn())
                         {
-                            logger.LogTrace("SCTP sender entering retransmit mode.");
+                            logger.LogDebug("SCTP sender entering retransmit mode.");
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
                             // RFC4960 7.2.3
@@ -793,7 +792,7 @@ namespace SIPSorcery.Net
             {
                 // In Slow-Start mode, see RFC4960 7.2.1.
                 // Updated to RFC9260 7.2.1
-                if (_congestionWindow <= outstandingBytes && !_inFastRecoveryMode)
+                if (_congestionWindow <= outstandingBytes && !_inFastRecoveryMode.IsOn())
                 {
                     // When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
                     // use the slow - start algorithm to increase cwnd only if the current
