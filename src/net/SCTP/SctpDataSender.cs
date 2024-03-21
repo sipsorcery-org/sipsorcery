@@ -224,7 +224,7 @@ namespace SIPSorcery.Net
                             UpdateRoundTripTime(result);
                         }
 
-                        _lastAckedDataChunkSize = result.UserDataLength;
+                        Interlocked.Exchange(ref _lastAckedDataChunkSize, result.UserDataLength);
                     }
 
                     if (!_gotFirstSACK)
@@ -301,7 +301,7 @@ namespace SIPSorcery.Net
 
                 var outstandingBytes = _outstandingBytes;
                 _receiverWindow = CalculateReceiverWindow(sack.ARwnd, outstandingBytes: (uint)outstandingBytes);
-                _congestionWindow = CalculateCongestionWindow(_lastAckedDataChunkSize, outstandingBytes: (uint)outstandingBytes);
+                _congestionWindow = CalculateCongestionWindow(InterlockedEx.Read(ref _lastAckedDataChunkSize), outstandingBytes: (uint)outstandingBytes);
 
                 // SACK's will normally allow more data to be sent.
                 _senderMre.Set();
