@@ -644,6 +644,7 @@ namespace SIPSorcery.Net
                         if (!_inRetransmitMode)
                         {
                             logger.LogTrace("SCTP sender entering retransmit mode.");
+                            _inRetransmitMode = true;
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
                             // RFC4960 7.2.3
