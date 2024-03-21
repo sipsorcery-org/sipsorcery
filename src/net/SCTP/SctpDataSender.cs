@@ -76,7 +76,7 @@ namespace SIPSorcery.Net
         private bool _isStarted;
         private Once _closed;
         private int _lastAckedDataChunkSize;
-        private bool _inRetransmitMode;
+        private OnOff _inRetransmitMode;
         private bool _inFastRecoveryMode;
         private uint _fastRecoveryExitPoint;
         private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
@@ -203,10 +203,9 @@ namespace SIPSorcery.Net
         public void GotSack(SctpChunkView sack)
         {
             {
-                if (_inRetransmitMode)
+                if (_inRetransmitMode.TryTurnOff())
                 {
                     logger.LogTrace("SCTP sender exiting retransmit mode.");
-                    _inRetransmitMode = false;
                 }
 
                 unchecked
@@ -363,12 +362,12 @@ namespace SIPSorcery.Net
 
                     _sendQueue.Enqueue(dataChunk);
 
-                    if (_sendQueue.Count > MaxSendQueueCount)
-                    {
-                        _queueSpaceAvailable.Reset();
-                    }
-
                     TSN = (TSN == UInt32.MaxValue) ? 0 : TSN + 1;
+                }
+
+                if (_sendQueue.Count > MaxSendQueueCount)
+                {
+                    _queueSpaceAvailable.Reset();
                 }
 
                 _senderMre.Set();
@@ -581,7 +580,7 @@ namespace SIPSorcery.Net
                 // calling once per loop.
                 var now = SctpDataChunk.Timestamp.Now;
 
-                int burstSize = (_inRetransmitMode || _inFastRecoveryMode || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
+                int burstSize = (_inRetransmitMode.IsOn() || _inFastRecoveryMode || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
@@ -640,11 +639,10 @@ namespace SIPSorcery.Net
 
                         _sendDataChunk(chunk);
                         chunksSent++;
-                        
-                        if (!_inRetransmitMode)
+
+                        if (_inRetransmitMode.TryTurnOn())
                         {
                             logger.LogTrace("SCTP sender entering retransmit mode.");
-                            _inRetransmitMode = true;
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
                             // RFC4960 7.2.3
