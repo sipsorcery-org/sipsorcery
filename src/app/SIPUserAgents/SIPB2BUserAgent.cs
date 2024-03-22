@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP.App
             base.CallCancelled += SIPServerUserAgent_CallCancelled;
         }
 
-        private void SIPServerUserAgent_CallCancelled(ISIPServerUserAgent uas)
+        private void SIPServerUserAgent_CallCancelled(ISIPServerUserAgent uas, string reason, string[] customHeaders)
         {
             logger.LogDebug("B2BUserAgent server call was cancelled.");
             m_uac?.Cancel();

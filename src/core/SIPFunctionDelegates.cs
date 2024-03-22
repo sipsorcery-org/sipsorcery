@@ -38,7 +38,7 @@ namespace SIPSorcery.SIP
     public delegate void SIPTransactionStateChangeDelegate(SIPTransaction sipTransaction);
     public delegate Task<SocketError> SIPTransactionResponseReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse);
     public delegate Task<SocketError> SIPTransactionRequestReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest);
-    public delegate void SIPTransactionCancelledDelegate(SIPTransaction sipTransaction);
+    public delegate void SIPTransactionCancelledDelegate(SIPTransaction sipTransaction, SIPRequest sipCancelRequest);
     public delegate void SIPTransactionFailedDelegate(SIPTransaction sipTransaction, SocketError failureReason);
     public delegate void SIPTransactionRequestRetransmitDelegate(SIPTransaction sipTransaction, SIPRequest sipRequest, int retransmitNumber);
     public delegate void SIPTransactionResponseRetransmitDelegate(SIPTransaction sipTransaction, SIPResponse sipResponse, int retransmitNumber);
