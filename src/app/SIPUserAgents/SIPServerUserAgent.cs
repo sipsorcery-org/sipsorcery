@@ -493,7 +493,7 @@ namespace SIPSorcery.SIP.App
         {
             logger.LogDebug("SIPServerUserAgent got cancellation request.");
             m_isCancelled = true;
-            CallCancelled?.Invoke(this, sipCancelRequest.Header.Reason, sipCancelRequest.Header.UnknownHeaders.ToArray());
+            CallCancelled?.Invoke(this, sipCancelRequest?.Header.Reason, sipCancelRequest?.Header.UnknownHeaders.ToArray());
         }
 
         private void ClientTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
