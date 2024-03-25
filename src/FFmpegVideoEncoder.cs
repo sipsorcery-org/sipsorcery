@@ -37,6 +37,8 @@ namespace SIPSorceryMedia.FFmpeg
         private long? _rc_min_rate = null;
         private long? _rc_max_rate = null;
 
+        private int? _thread_count = null;
+
         private bool _forceKeyFrame;
         private int _pts = 0;
         private bool _isDisposed;
@@ -163,6 +165,7 @@ namespace SIPSorceryMedia.FFmpeg
                 if (_bit_rate_tolerance != null) _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance;
                 if (_rc_min_rate != null) _encoderContext->rc_min_rate = (long)_rc_min_rate;
                 if (_rc_max_rate != null) _encoderContext->rc_max_rate = (long)_rc_max_rate;
+                if (_thread_count != null) _encoderContext->thread_count = (int)_thread_count;
 
                 // Set Key frame interval
                 if (fps < 5)
@@ -197,13 +200,25 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        internal void SetBitrate(long? avgBitrate, int? toleranceBitrate, long? minBitrate, long? maxBitrate)
+        public void SetThreadCount(int? threadCount)
+        {
+            _thread_count = threadCount;
+
+            ResetEncoder();
+        }
+        
+        public void SetBitrate(long? avgBitrate, int? toleranceBitrate, long? minBitrate, long? maxBitrate)
         {
             _bit_rate = avgBitrate;
             _bit_rate_tolerance = toleranceBitrate;
             _rc_min_rate = minBitrate;
             _rc_max_rate = maxBitrate;
 
+            ResetEncoder();
+        }
+
+        private void ResetEncoder()
+        {
             // Reset encoder
             lock (_encoderLock)
             {
