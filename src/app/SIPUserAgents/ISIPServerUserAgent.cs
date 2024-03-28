@@ -18,7 +18,7 @@ namespace SIPSorcery.SIP.App
 {
     public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
 
-    public delegate void SIPUASCancelDelegate(ISIPServerUserAgent uas, string reasonPhrase, string[] customHeaders);
+    public delegate void SIPUASCancelDelegate(ISIPServerUserAgent uas, SIPRequest cancelRequest);
 
     /// <summary>
     /// Interface for classes implementing SIP server user agent functionality. The

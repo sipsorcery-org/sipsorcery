@@ -617,10 +617,10 @@ namespace SIPSorcery.SIP.App
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
-            uas.CallCancelled += (pendingUas, reason, customHeaders) =>
+            uas.CallCancelled += (pendingUas, sipCancelRequest) =>
             {
                 CallEnded(inviteRequest.Header.CallId);
-                ServerCallCancelled?.Invoke(pendingUas, reason, customHeaders);
+                ServerCallCancelled?.Invoke(pendingUas, sipCancelRequest);
             };
             uas.NoRingTimeout += (pendingUas) =>
             {
