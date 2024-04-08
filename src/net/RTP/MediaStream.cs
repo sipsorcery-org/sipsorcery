@@ -366,8 +366,8 @@ namespace SIPSorcery.net.RTP
                 rtpPacket.Header.MarkerBit = markerBit;
                 rtpPacket.Header.PayloadType = payloadType;
 
-                if (RemoteTrack.HeaderExtensions.TryGetValue(SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME, out var ext) &&
-                    ext.Uri == SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME)
+                if (RemoteTrack.HeaderExtensions.TryGetValue(RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME, out var ext) &&
+                    ext.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME)
                 {
                     rtpPacket.Header.AddAbsSendTimeExtension();
                 }
