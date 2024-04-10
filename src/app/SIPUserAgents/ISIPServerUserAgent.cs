@@ -18,6 +18,8 @@ namespace SIPSorcery.SIP.App
 {
     public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
 
+    public delegate void SIPUASCancelDelegate(ISIPServerUserAgent uas, SIPRequest cancelRequest);
+
     /// <summary>
     /// Interface for classes implementing SIP server user agent functionality. The
     /// main function of a SIP client user agent is the ability to receive calls.
@@ -35,7 +37,7 @@ namespace SIPSorcery.SIP.App
         string CallDestination { get; }
         bool IsUASAnswered { get; }
 
-        event SIPUASDelegate CallCancelled;
+        event SIPUASCancelDelegate CallCancelled;
         event SIPUASDelegate NoRingTimeout;
 
         bool AuthenticateCall();

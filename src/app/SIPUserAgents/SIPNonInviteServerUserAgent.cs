@@ -78,7 +78,7 @@ namespace SIPSorcery.SIP.App
         public UASInviteTransaction ClientTransaction => throw new NotImplementedException();
 
 #pragma warning disable CS0067
-        public event SIPUASDelegate CallCancelled;
+        public event SIPUASCancelDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
 #pragma warning restore

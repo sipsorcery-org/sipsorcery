@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// The caller cancelled the call request.
         /// </summary>
-        public event SIPUASDelegate CallCancelled;
+        public event SIPUASCancelDelegate CallCancelled;
 
         /// <summary>
         /// This end of the call timed out providing a ringing response. This situation can occur for SIP servers.
@@ -489,11 +489,11 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void UASTransactionCancelled(SIPTransaction sipTransaction)
+        private void UASTransactionCancelled(SIPTransaction sipTransaction, SIPRequest sipCancelRequest)
         {
             logger.LogDebug("SIPServerUserAgent got cancellation request.");
             m_isCancelled = true;
-            CallCancelled?.Invoke(this);
+            CallCancelled?.Invoke(this, sipCancelRequest);
         }
 
         private void ClientTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
