@@ -75,6 +75,11 @@ namespace SIPSorcery.SIP.App
             return m_uac.Call(m_uacCallDescriptor);
         }
 
+        public void AckAnswer(SIPResponse sipResponse, string content, string contentType)
+        {
+            m_uac.AckAnswer(sipResponse, content, contentType);
+        }
+
         public void Cancel()
         {
             logger.LogDebug("SIPB2BUserAgent Cancel.");
