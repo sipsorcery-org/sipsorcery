@@ -75,9 +75,9 @@ namespace SIPSorcery.SIP.App
             return m_uac.Call(m_uacCallDescriptor);
         }
 
-        public void AcknowledgeCall(SIPResponse sipResponse, string content, string contentType)
+        public void AckAnswer(SIPResponse sipResponse, string content, string contentType)
         {
-            m_uac.AcknowledgeCall(sipResponse, content, contentType);
+            m_uac.AckAnswer(sipResponse, content, contentType);
         }
 
         public void Cancel()

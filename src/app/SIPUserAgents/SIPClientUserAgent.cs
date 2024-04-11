@@ -332,15 +332,20 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        
-        public void AcknowledgeCall(SIPResponse sipResponse, string content, string contentType)
+        /// <summary>
+        /// Sends AckAnswer response.
+        /// </summary>
+        /// <param name="sipResponse">SIPResponse to acknowledge</param>
+        /// <param name="content">The optional content body for the ACK request.</param>
+        /// <param name="contentType">The optional content type.</param>
+        public void AckAnswer(SIPResponse sipResponse, string content, string contentType)
         {
             if (m_sipDialogue == null)
             {
                 return;
             }
             
-            m_serverTransaction.AcknowledgeCall(sipResponse, content, contentType);
+            m_serverTransaction.AckAnswer(sipResponse, content, contentType);
             m_sipDialogue.SDP = content;
             m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }

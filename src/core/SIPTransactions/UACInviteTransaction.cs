@@ -344,12 +344,12 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Sends Acknowledge response.
+        /// Sends AckAnswer response.
         /// </summary>
         /// <param name="sipResponse">SIPResponse to acknowledge</param>
         /// <param name="content">The optional content body for the ACK request.</param>
         /// <param name="contentType">The optional content type.</param>
-        public void AcknowledgeCall(SIPResponse sipResponse, string  content, string contentType)
+        public void AckAnswer(SIPResponse sipResponse, string  content, string contentType)
         {
             AckRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.ACK, sipResponse.Header.CSeq, content, contentType);
             UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
