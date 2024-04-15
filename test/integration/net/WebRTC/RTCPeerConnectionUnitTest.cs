@@ -1050,13 +1050,13 @@ a=max-message-size:1073741823";
 
             logger.LogDebug("First media shouldn't have abs-send-time");
             Assert.DoesNotContain(answer.Media[0].HeaderExtensions, 
-                ext => ext.Value.Uri == SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
+                ext => ext.Value.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
             logger.LogDebug("Second media should have abs-send-time");
             Assert.Contains(answer.Media[1].HeaderExtensions, 
-                ext => ext.Value.Uri == SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
+                ext => ext.Value.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
             // 4 is the ID for abs-send-time ext in offer
             Assert.Equal(4, answer.Media[1].HeaderExtensions[4].Id);
-            Assert.Equal(SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME, answer.Media[1].HeaderExtensions[4].Uri);
+            Assert.Equal(RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME, answer.Media[1].HeaderExtensions[4].Uri);
 
             pc.Close("normal");
         }
