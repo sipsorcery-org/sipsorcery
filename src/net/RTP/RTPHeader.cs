@@ -344,7 +344,7 @@ namespace SIPSorcery.Net
 
             return new[]
             {
-                (byte)((SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME << 4) | length),
+                (byte)((RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME << 4) | length),
                 (byte)((abs & 0xff0000UL) >> 16),
                 (byte)((abs & 0xff00UL) >> 8),
                 (byte)(abs & 0xffUL) 

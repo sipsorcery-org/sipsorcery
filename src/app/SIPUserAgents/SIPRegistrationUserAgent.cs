@@ -446,6 +446,9 @@ namespace SIPSorcery.SIP.App
                                 };
                                 regAuthTransaction.NonInviteTransactionFailed += RegistrationTransactionFailed;
                                 regAuthTransaction.SendRequest();
+
+                                // make sure CSeq does not decrease
+                                m_cseq = Math.Max(m_cseq, authenticatedRequest.Header.CSeq);
                             }
                         }
                     }

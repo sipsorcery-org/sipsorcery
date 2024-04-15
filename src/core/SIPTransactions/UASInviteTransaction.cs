@@ -121,12 +121,12 @@ namespace SIPSorcery.SIP
         /// generated final response.
         /// </summary>
         /// <returns>A socket error with the result of the cancel.</returns>
-        public void CancelCall()
+        public void CancelCall(SIPRequest sipCancelRequest = null)
         {
             if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
             {
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
-                UASInviteTransactionCancelled?.Invoke(this);
+                UASInviteTransactionCancelled?.Invoke(this, sipCancelRequest);
 
                 SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
                 cancelResponse.Header.To.ToTag = LocalTag;
