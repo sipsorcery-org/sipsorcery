@@ -9778,6 +9778,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.restartIce
   nameWithType: RTCPeerConnection.restartIce
+- uid: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  name: RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  commentId: F:SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  fullName: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+  nameWithType: RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
+- uid: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  name: RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  commentId: F:SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  fullName: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
+  nameWithType: RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
 - uid: SIPSorcery.Net.RTCPeerConnection.sctp
   name: sctp
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_sctp
@@ -21430,18 +21442,6 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.Port
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.Port
   nameWithType: SDPMediaAnnouncement.Port
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  name: RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  nameWithType: SDPMediaAnnouncement.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  name: RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  nameWithType: SDPMediaAnnouncement.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.SctpMap
   name: SctpMap
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_SctpMap
@@ -26386,6 +26386,19 @@ references:
   commentId: T:SIPSorcery.SIP.App.ISIPClientUserAgent
   fullName: SIPSorcery.SIP.App.ISIPClientUserAgent
   nameWithType: ISIPClientUserAgent
+- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  name: AckAnswer(SIPResponse, String, String)
+  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_AckAnswer_SIPSorcery_SIP_SIPResponse_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.App.ISIPClientUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse, System.String, System.String)
+  nameWithType: ISIPClientUserAgent.AckAnswer(SIPResponse, String, String)
+- uid: SIPSorcery.SIP.App.ISIPClientUserAgent.AckAnswer*
+  name: AckAnswer
+  href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_AckAnswer_
+  commentId: Overload:SIPSorcery.SIP.App.ISIPClientUserAgent.AckAnswer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.ISIPClientUserAgent.AckAnswer
+  nameWithType: ISIPClientUserAgent.AckAnswer
 - uid: SIPSorcery.SIP.App.ISIPClientUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   name: Call(SIPCallDescriptor)
   href: api/SIPSorcery.SIP.App.ISIPClientUserAgent.html#SIPSorcery_SIP_App_ISIPClientUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_
@@ -26818,6 +26831,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPB2BUserAgent
   nameWithType: SIPB2BUserAgent.SIPB2BUserAgent
+- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  name: AckAnswer(SIPResponse, String, String)
+  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AckAnswer_SIPSorcery_SIP_SIPResponse_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse, System.String, System.String)
+  nameWithType: SIPB2BUserAgent.AckAnswer(SIPResponse, String, String)
+- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AckAnswer*
+  name: AckAnswer
+  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AckAnswer_
+  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.AckAnswer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AckAnswer
+  nameWithType: SIPB2BUserAgent.AckAnswer
 - uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   name: Call(SIPCallDescriptor)
   href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_
@@ -27379,6 +27405,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SIPClientUserAgent
   nameWithType: SIPClientUserAgent.SIPClientUserAgent
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  name: AckAnswer(SIPResponse, String, String)
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AckAnswer_SIPSorcery_SIP_SIPResponse_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AckAnswer(SIPSorcery.SIP.SIPResponse, System.String, System.String)
+  nameWithType: SIPClientUserAgent.AckAnswer(SIPResponse, String, String)
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AckAnswer*
+  name: AckAnswer
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AckAnswer_
+  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.AckAnswer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AckAnswer
+  nameWithType: SIPClientUserAgent.AckAnswer
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
   name: AdjustInvite
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AdjustInvite
@@ -28719,6 +28758,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SIPDialogue
   nameWithType: SIPServerUserAgent.SIPDialogue
+- uid: SIPSorcery.SIP.App.SIPUASCancelDelegate
+  name: SIPUASCancelDelegate
+  href: api/SIPSorcery.SIP.App.SIPUASCancelDelegate.html
+  commentId: T:SIPSorcery.SIP.App.SIPUASCancelDelegate
+  fullName: SIPSorcery.SIP.App.SIPUASCancelDelegate
+  nameWithType: SIPUASCancelDelegate
 - uid: SIPSorcery.SIP.App.SIPUASDelegate
   name: SIPUASDelegate
   href: api/SIPSorcery.SIP.App.SIPUASDelegate.html
@@ -39899,6 +39944,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransaction
   nameWithType: UACInviteTransaction.UACInviteTransaction
+- uid: SIPSorcery.SIP.UACInviteTransaction.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  name: AckAnswer(SIPResponse, String, String)
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_AckAnswer_SIPSorcery_SIP_SIPResponse_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.UACInviteTransaction.AckAnswer(SIPSorcery.SIP.SIPResponse,System.String,System.String)
+  fullName: SIPSorcery.SIP.UACInviteTransaction.AckAnswer(SIPSorcery.SIP.SIPResponse, System.String, System.String)
+  nameWithType: UACInviteTransaction.AckAnswer(SIPResponse, String, String)
+- uid: SIPSorcery.SIP.UACInviteTransaction.AckAnswer*
+  name: AckAnswer
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_AckAnswer_
+  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.AckAnswer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.UACInviteTransaction.AckAnswer
+  nameWithType: UACInviteTransaction.AckAnswer
 - uid: SIPSorcery.SIP.UACInviteTransaction.CancelCall(System.String)
   name: CancelCall(String)
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_CancelCall_System_String_
@@ -39962,12 +40020,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UASInviteTransaction.UASInviteTransaction
   nameWithType: UASInviteTransaction.UASInviteTransaction
-- uid: SIPSorcery.SIP.UASInviteTransaction.CancelCall
-  name: CancelCall()
-  href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_CancelCall
-  commentId: M:SIPSorcery.SIP.UASInviteTransaction.CancelCall
-  fullName: SIPSorcery.SIP.UASInviteTransaction.CancelCall()
-  nameWithType: UASInviteTransaction.CancelCall()
+- uid: SIPSorcery.SIP.UASInviteTransaction.CancelCall(SIPSorcery.SIP.SIPRequest)
+  name: CancelCall(SIPRequest)
+  href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_CancelCall_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.UASInviteTransaction.CancelCall(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.UASInviteTransaction.CancelCall(SIPSorcery.SIP.SIPRequest)
+  nameWithType: UASInviteTransaction.CancelCall(SIPRequest)
 - uid: SIPSorcery.SIP.UASInviteTransaction.CancelCall*
   name: CancelCall
   href: api/SIPSorcery.SIP.UASInviteTransaction.html#SIPSorcery_SIP_UASInviteTransaction_CancelCall_
