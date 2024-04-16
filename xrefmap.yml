@@ -28183,6 +28183,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OutboundProxy
   nameWithType: SIPRegistrationUserAgent.OutboundProxy
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OverrideAllowHeader(System.String)
+  name: OverrideAllowHeader(String)
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_OverrideAllowHeader_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPRegistrationUserAgent.OverrideAllowHeader(System.String)
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OverrideAllowHeader(System.String)
+  nameWithType: SIPRegistrationUserAgent.OverrideAllowHeader(String)
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OverrideAllowHeader*
+  name: OverrideAllowHeader
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_OverrideAllowHeader_
+  commentId: Overload:SIPSorcery.SIP.App.SIPRegistrationUserAgent.OverrideAllowHeader
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.OverrideAllowHeader
+  nameWithType: SIPRegistrationUserAgent.OverrideAllowHeader
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.RegistrationFailed
   name: RegistrationFailed
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_RegistrationFailed
