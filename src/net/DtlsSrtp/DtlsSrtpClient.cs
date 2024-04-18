@@ -45,7 +45,7 @@ namespace SIPSorcery.Net
         public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
         {
             byte[] certificateTypes = certificateRequest.CertificateTypes;
-            if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))
+            if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign) || !Arrays.Contains(certificateTypes, ClientCertificateType.ecdsa_sign))
             {
                 return null;
             }
