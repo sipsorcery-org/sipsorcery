@@ -69,8 +69,6 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="rtcSctpTransport">The DTLS transport that will be used to encapsulate the
         /// SCTP packets.</param>
-        /// <param name="isClient">True if this peer will be the client within the association. This
-        /// dictates whether streams created use odd or even ID's.</param>
         /// <param name="srcPort">The source port to use when forming the association.</param>
         /// <param name="dstPort">The destination port to use when forming the association.</param>
         /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This

@@ -2601,7 +2601,6 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Sends a packet via a TURN relay server.
         /// </summary>
-        /// <param name="sendOn">The local socket to send the packet from.</param>
         /// <param name="dstEndPoint">The peer destination end point.</param>
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>

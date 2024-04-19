@@ -305,7 +305,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
-        /// <param name="message">The byte data to send.</param>
+        /// <param name="data">The byte data to send.</param>
         public void SendData(ushort streamID, uint ppid, byte[] data)
         {
             lock (_sendQueue)
@@ -665,7 +665,7 @@ namespace SIPSorcery.Net
         /// Updates the round trip time. 
         /// See https://datatracker.ietf.org/doc/html/rfc4960#section-6.3.1
         /// </summary>
-        /// <param name="rttMilliseconds">The last round trip time</param>
+        /// <param name="acknowledgedChunk">The last sent and acknowledged chunk used to calculate the round trip time</param>
         private void UpdateRoundTripTime(SctpDataChunk acknowledgedChunk)
         {
             // rfc 4960 6.3.1 C5: RTT measurements MUST NOT be made using packets that were retransmitted

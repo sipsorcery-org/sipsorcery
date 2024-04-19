@@ -58,7 +58,7 @@
  * We use AESCipher to handle basic AES encryption / decryption.
  * 
  * @author Bing SU (nova.su@gmail.com)
- * @author Werner Dittmann <werner.dittmann@t-online.de>
+ * @author Werner Dittmann (werner.dittmann@t-online.de)
  */
 
 using System.IO;

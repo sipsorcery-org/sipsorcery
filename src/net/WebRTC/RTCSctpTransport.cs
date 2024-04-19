@@ -179,8 +179,6 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Attempts to create and initialise a new SCTP association with the remote party.
         /// </summary>
-        /// <param name="sourcePort">The source port to use for the SCTP association.</param>
-        /// <param name="destinationPort">The destination port to use for the SCTP association.</param>
         public void Associate()
         {
             SetState(RTCSctpTransportState.Connecting);

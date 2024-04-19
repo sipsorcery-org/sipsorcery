@@ -297,8 +297,8 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Send an SCTP packet with one of the error type chunks (ABORT or ERROR) to the remote peer.
         /// </summary>
-        /// <param name=isAbort">Set to true to use an ABORT chunk otherwise an ERROR chunk will be used.</param>
-        /// <param name="desintationPort">The SCTP destination port.</param>
+        /// <param name="isAbort">Set to true to use an ABORT chunk otherwise an ERROR chunk will be used.</param>
+        /// <param name="destinationPort">The SCTP destination port.</param>
         /// <param name="sourcePort">The SCTP source port.</param>
         /// <param name="initiateTag">If available the initial tag for the remote peer.</param>
         /// <param name="error">The error to send.</param>

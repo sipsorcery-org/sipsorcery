@@ -265,7 +265,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="fromDisplayName"></param>
         /// <param name="fromUsername"></param>
-        /// <param name="fromhost"></param>
+        /// <param name="fromHost"></param>
         public void SetGeneralFromHeaderFields(string fromDisplayName, string fromUsername, string fromHost)
         {
             if (!fromDisplayName.IsNullOrBlank() && FromDisplayName == null)
