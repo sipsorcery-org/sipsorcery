@@ -155,7 +155,7 @@ namespace SIPSorcery.Media.G729Codec
         /**
  * Initialization of variables for the encoder.
  * Initialize pointers to speech vector.
- *<pre>
+ *<pre> <![CDATA[
  *   |--------------------|-------------|-------------|------------|
  *     previous speech           sf1           sf2         L_NEXT
  *
@@ -166,7 +166,7 @@ namespace SIPSorcery.Media.G729Codec
  *     p_wind            |              |
  *                     speech           |
  *                             new_speech
- * </pre>
+ * ]]></pre>
  */
 
         public void init_coder_ld8k()

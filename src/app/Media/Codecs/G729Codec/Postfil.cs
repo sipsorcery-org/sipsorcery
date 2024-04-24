@@ -635,7 +635,7 @@ namespace SIPSorcery.Media.G729Codec
 
         /**
  * Compute delayed signal,
- * num & den of gain for fractional delay
+ * num &amp; den of gain for fractional delay
  * with long interpolation filter
  *
  * @param s_in           input signal with past

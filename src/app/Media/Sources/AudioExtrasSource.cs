@@ -427,13 +427,20 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendSilenceSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
+            try
             {
-                lock (_sendSampleTimer)
+                if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
                 {
-                    short[] silencePcm = new short[_audioFormatManager.SelectedFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
-                    EncodeAndSend(silencePcm, _audioFormatManager.SelectedFormat.ClockRate);
+                    lock (_sendSampleTimer)
+                    {
+                        short[] silencePcm = new short[_audioFormatManager.SelectedFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
+                        EncodeAndSend(silencePcm, _audioFormatManager.SelectedFormat.ClockRate);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.LogError(e, "Exception sending silence sample");
             }
         }
 
@@ -442,17 +449,24 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendSignalGeneratorSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
+            try
             {
-                lock (_sendSampleTimer)
+                if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
                 {
-                    // Get the signal generator to generate the samples and then convert from signed linear to PCM.
-                    float[] linear = new float[_audioFormatManager.SelectedFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
-                    _signalGenerator.Read(linear, 0, linear.Length);
-                    short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
+                    lock (_sendSampleTimer)
+                    {
+                        // Get the signal generator to generate the samples and then convert from signed linear to PCM.
+                        float[] linear = new float[_audioFormatManager.SelectedFormat.ClockRate / 1000 * _audioSamplePeriodMilliseconds];
+                        _signalGenerator.Read(linear, 0, linear.Length);
+                        short[] pcm = linear.Select(x => (short)(x * LINEAR_MAXIMUM)).ToArray();
 
-                    EncodeAndSend(pcm, _audioFormatManager.SelectedFormat.ClockRate);
+                        EncodeAndSend(pcm, _audioFormatManager.SelectedFormat.ClockRate);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.LogError(e, "Exception sending signal generator sample");
             }
         }
 

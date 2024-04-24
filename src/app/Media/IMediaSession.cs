@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP.App
         /// if they are.
         /// </summary>
         /// <param name="sdpType">Whether the SDP being set is an offer or answer.</param>
-        /// <param name="sdp">The SDP description from the remote party.</param>
+        /// <param name="sessionDescription">The SDP description from the remote party.</param>
         /// <returns>If successful an OK enum result. If not an enum result indicating the 
         /// failure cause.</returns>
         SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription);
