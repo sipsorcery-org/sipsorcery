@@ -457,7 +457,12 @@ from the SDP serialisation.</p>
   </span>
   <a id="SIPSorcery_Net_SDPAudioVideoMediaFormat_Fmtp_" data-uid="SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp*"></a>
   <h4 id="SIPSorcery_Net_SDPAudioVideoMediaFormat_Fmtp" data-uid="SIPSorcery.Net.SDPAudioVideoMediaFormat.Fmtp">Fmtp</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The optional format parameter attribute for the media format. For standard media types this is not necessary.</p>
+<pre><code>// Example
+a=rtpmap:0 PCMU/8000
+a=rtpmap:101 telephone-event/8000 
+a=fmtp:101 0-16                     ← &quot;101 0-16&quot; is the fmtp attribute.</code></pre>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -487,7 +492,28 @@ from the SDP serialisation.</p>
   </span>
   <a id="SIPSorcery_Net_SDPAudioVideoMediaFormat_ID_" data-uid="SIPSorcery.Net.SDPAudioVideoMediaFormat.ID*"></a>
   <h4 id="SIPSorcery_Net_SDPAudioVideoMediaFormat_ID" data-uid="SIPSorcery.Net.SDPAudioVideoMediaFormat.ID">ID</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The mandatory ID for the media format. Warning, even though some ID's are normally used to represent
+a standard media type, e.g &quot;0&quot; for &quot;PCMU&quot; etc, there is no guarantee that's the case. &quot;0&quot; can be used
+for any media format if there is a format attribute describing it. In the absence of a format attribute
+then it is required that it represents a standard media type.</p>
+<p>Note (rj2): FormatID MUST be string (not int), in case ID is 't38' and type is 'image'
+Note to above: The FormatID is always numeric for profile &quot;RTP/AVP&quot; and &quot;RTP/SAVP&quot;, see
+<a href="https://tools.ietf.org/html/rfc4566#section-5.14">https://tools.ietf.org/html/rfc4566#section-5.14</a> and section on &quot;fmt&quot;:
+&quot;If the [proto] sub-field is &quot;RTP/AVP&quot; or &quot;RTP/SAVP&quot; the [fmt]
+sub-fields contain RTP payload type numbers&quot;
+In the case of T38 the format name is &quot;t38&quot; but the formatID must be set as a dynamic ID.</p>
+<pre><code>// Example
+// Note in this example &quot;0&quot; is representing a standard format so the format attribute is optional.
+m=audio 12228 RTP/AVP 0 101         // &quot;0&quot; and &quot;101&quot; are media format ID&apos;s.
+a=rtpmap:0 PCMU/8000                // &quot;0&quot; is the media format ID.
+a=rtpmap:101 telephone-event/8000   // &quot;101&quot; is the media format ID.
+a=fmtp:101 0-16</code></pre>
+<pre><code> 
+// t38 example from https://tools.ietf.org/html/rfc4612.
+m=audio 6800 RTP/AVP 0 98 
+a=rtpmap:98 t38/8000 
+a=fmtp:98 T38FaxVersion=2;T38FaxRateManagement=transferredTCF</code></pre>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -548,7 +574,12 @@ from the SDP serialisation.</p>
   </span>
   <a id="SIPSorcery_Net_SDPAudioVideoMediaFormat_Rtpmap_" data-uid="SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap*"></a>
   <h4 id="SIPSorcery_Net_SDPAudioVideoMediaFormat_Rtpmap" data-uid="SIPSorcery.Net.SDPAudioVideoMediaFormat.Rtpmap">Rtpmap</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The optional rtpmap attribute properties for the media format. For standard media types this is not necessary.</p>
+<pre><code>// Example
+a=rtpmap:0 PCMU/8000
+a=rtpmap:101 telephone-event/8000 ← &quot;101 telephone-event/8000&quot; is the rtpmap properties.
+a=fmtp:101 0-16</code></pre>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
