@@ -124,12 +124,12 @@ namespace SIPSorcery.Media.G729Codec
         public static float GAMMA2_PST = 0.55f;
 
         /**
- * tilt weighting factor when k1<0
+ * tilt weighting factor when k1 &lt; 0
  */
         public static float GAMMA3_MINUS = 0.9f;
 
         /**
- * tilt weighting factor when k1>0
+ * tilt weighting factor when k1 &gt; 0
  */
         public static float GAMMA3_PLUS = 0.2f;
 

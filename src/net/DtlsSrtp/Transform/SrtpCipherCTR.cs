@@ -33,7 +33,7 @@
  * limitations under the License.
  */
 
-/**
+/*
  * SRTPCipherF8 implements SRTP F8 Mode AES Encryption (AES-f8).
  * F8 Mode AES Encryption algorithm is defined in RFC3711, section 4.1.2.
  * 

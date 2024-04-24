@@ -321,7 +321,7 @@ namespace SIPSorcery.Net
         /// Creates a Jpeg QuantizationTableMarker for each table given in the tables
         /// </summary>
         /// <param name="tables">The tables verbatim, either 1 or 2 (Luminance and Chrominance)</param>
-        /// <returns>The table with marker and prefix/returns>
+        /// <returns>The table with marker and prefix</returns>
         static byte[] CreateQuantizationTablesMarker(ArraySegment<byte> tables, byte precision)
         {
             //List<byte> result = new List<byte>();

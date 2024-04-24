@@ -28,7 +28,7 @@ namespace SIPSorcery.Net
     /// It encapsulate the encryption / decryption logic for SRTCP packets
     ///
     /// @author Bing SU (nova.su @gmail.com)
-    /// @author Werner Dittmann<Werner.Dittmann@t-online.de>
+    /// @author Werner Dittmann (Werner.Dittmann@t-online.de)
     /// </summary>
     public class SrtcpTransformer : IPacketTransformer
     {

@@ -261,7 +261,7 @@ namespace SIPSorcery.Net
         /// Event handler for an RTCP packet being received from the remote party.
         /// </summary>
         /// <param name="remoteEndPoint">The end point the packet was received from.</param>
-        /// <param name="buffer">The data received.</param>
+        /// <param name="rtcpCompoundPacket">The data received.</param>
         public void ReportReceived(IPEndPoint remoteEndPoint, RTCPCompoundPacket rtcpCompoundPacket)
         {
             try

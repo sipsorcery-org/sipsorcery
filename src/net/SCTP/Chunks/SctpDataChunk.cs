@@ -98,7 +98,7 @@ namespace SIPSorcery.Net
         /// without requiring it to be delivered to the remote part in order.</param>
         /// <param name="isBegining">Must be set to true for the first chunk in a user data payload.</param>
         /// <param name="isEnd">Must be set to true for the last chunk in a user data payload. Note that
-        /// <see cref="isBegining"/> and <see cref="isEnd"/> must both be set to true when the full payload
+        /// <paramref name="isBegining"/> and <paramref name="isEnd"/> must both be set to true when the full payload
         /// is being sent in a single data chunk.</param>
         /// <param name="tsn">The Transmission Sequence Number for this chunk.</param>
         /// <param name="streamID">Optional. The stream ID for this data chunk.</param>

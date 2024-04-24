@@ -67,7 +67,7 @@ namespace SIPSorcery.Media
         /// Initializes a new instance for the Generator (UserDef SampleRate &amp; Channels)
         /// </summary>
         /// <param name="sampleRate">Desired sample rate</param>
-        /// <param name="channel">Number of channels</param>
+        /// <param name="channels">Number of channels</param>
         public SignalGenerator(int sampleRate, int channels)
         {
             phi = 0;
