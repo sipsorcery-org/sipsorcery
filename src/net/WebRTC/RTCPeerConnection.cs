@@ -161,6 +161,8 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
         private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
+        public const int RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME = 2;
+        public const string RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
         /// <summary>
         /// The period to wait for the SCTP association to complete before giving up.
@@ -873,12 +875,21 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
+                // Close all DataChannels
+                if (DataChannels?.Count >0)
+                {
+                    foreach(var dc in DataChannels)
+                    {
+                        dc?.close();
+                    }
+                }
+
                 _rtpIceChannel?.Close();
                 _dtlsHandle?.Close();
 
                 sctp?.Close();
 
-                base.Close(reason);
+                base.Close(reason); // Here Audio and/or Video Streams are closed
 
                 connectionState = RTCPeerConnectionState.closed;
                 onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);
@@ -915,6 +926,16 @@ namespace SIPSorcery.Net
 
             bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
             var offerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+
+            foreach (var mediaStream in offerSdp.Media)
+            {
+                // when creating offer, tell that we support abs-send-time
+                mediaStream.HeaderExtensions.Add(
+                    RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME,
+                    new RTPHeaderExtension(
+                        RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME, 
+                        RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME));
+            }
 
             foreach (var ann in offerSdp.Media)
             {
@@ -995,6 +1016,21 @@ namespace SIPSorcery.Net
 
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
                 var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+
+                foreach (var media in answerSdp.Media)
+                {
+                    var remoteMedia = remoteDescription.sdp.Media.FirstOrDefault(m => m.MediaID == media.MediaID);
+                    // when creating answer, copy abs-send-time ext only if the media in offer contained it
+                    if (remoteMedia != null)
+                    {
+                        foreach (var kv in 
+                                 remoteMedia.HeaderExtensions.Where(kv => 
+                                     kv.Value.Uri == RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME))
+                        {
+                            media.HeaderExtensions.Add(kv.Key, kv.Value);
+                        }
+                    }
+                }
 
                 //if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 //{

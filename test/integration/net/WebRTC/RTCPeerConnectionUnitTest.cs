@@ -654,9 +654,9 @@ a=rtpmap:100 VP8/90000";
 
             logger.LogDebug($"Local answer: {answer}");
 
-            Assert.Equal(3, pc.AudioStream.LocalTrack.Capabilities.Count());
+            Assert.Equal(2, pc.AudioStream.LocalTrack.Capabilities.Count());
             Assert.Equal(0, pc.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMU").ID);
-            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+            Assert.Equal(100, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             pc.Close("normal");
         }
@@ -731,7 +731,7 @@ a=rtpmap:100 VP8/90000";
             logger.LogDebug($"Local answer: {answer}");
 
             Assert.Equal(MediaStreamStatusEnum.Inactive, pc.AudioStream.LocalTrack.StreamStatus);
-            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+            Assert.Equal(100, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             pc.Close("normal");
         }
@@ -909,8 +909,154 @@ a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:A
             logger.LogDebug($"Local answer: {answer}");
 
             Assert.NotNull(pc.VideoStream.LocalTrack);
-            Assert.Equal(100, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "H264").ID);
+            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "H264").ID);
             Assert.Equal(IceRolesEnum.active, pc.IceRole);
+
+            pc.Close("normal");
+        }
+        
+        /// <summary>
+        ///  https://github.com/sipsorcery-org/sipsorcery/issues/1093
+        /// </summary>
+        [Fact]
+        public void AnswerShouldNotContainAbsSendTimeIfOfferDidNot()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string offerSdp =
+                @"v=0
+o=mozilla...THIS_IS_SDPARTA-99.0 1197589987011925003 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+a=fingerprint:sha-256 C8:44:FD:0C:0B:CF:3B:89:FF:0A:8E:B8:14:95:FA:88:AC:C2:D0:AA:3B:BF:89:9C:D8:44:2D:01:EE:8D:A9:23
+a=group:BUNDLE 0 1 2
+a=ice-options:trickle
+a=msid-semantic:WMS *
+m=audio 9 UDP/TLS/RTP/SAVPF 109 9 0 8 101
+c=IN IP4 0.0.0.0
+a=recvonly
+a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level
+a=extmap:2/recvonly urn:ietf:params:rtp-hdrext:csrc-audio-level
+a=extmap:3 urn:ietf:params:rtp-hdrext:sdes:mid
+a=fmtp:109 maxplaybackrate=48000;stereo=1;useinbandfec=1
+a=fmtp:101 0-15
+a=ice-pwd:6f1379310e8465d2cf74fc662461e8a5
+a=ice-ufrag:fed34101
+a=mid:0
+a=rtcp-mux
+a=rtpmap:109 opus/48000/2
+a=rtpmap:9 G722/8000/1
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:101 telephone-event/8000/1
+a=setup:actpass
+a=ssrc:3465053168 cname:{d9cfdcd2-1130-487c-ab95-b81a583d4d7c}
+m=video 9 UDP/TLS/RTP/SAVPF 120 124 121 125 126 127 97 98 123 122 119
+c=IN IP4 0.0.0.0
+a=recvonly
+a=extmap:3 urn:ietf:params:rtp-hdrext:sdes:mid
+a=extmap:4 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:5 urn:ietf:params:rtp-hdrext:toffset
+a=extmap:6/recvonly http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:7 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=fmtp:126 profile-level-id=42e01f;level-asymmetry-allowed=1;packetization-mode=1
+a=fmtp:97 profile-level-id=42e01f;level-asymmetry-allowed=1
+a=fmtp:120 max-fs=12288;max-fr=60
+a=fmtp:124 apt=120
+a=fmtp:121 max-fs=12288;max-fr=60
+a=fmtp:125 apt=121
+a=fmtp:127 apt=126
+a=fmtp:98 apt=97
+a=fmtp:119 apt=122
+a=ice-pwd:6f1379310e8465d2cf74fc662461e8a5
+a=ice-ufrag:fed34101
+a=mid:1
+a=rtcp-fb:120 nack
+a=rtcp-fb:120 nack pli
+a=rtcp-fb:120 ccm fir
+a=rtcp-fb:120 goog-remb
+a=rtcp-fb:120 transport-cc
+a=rtcp-fb:121 nack
+a=rtcp-fb:121 nack pli
+a=rtcp-fb:121 ccm fir
+a=rtcp-fb:121 goog-remb
+a=rtcp-fb:121 transport-cc
+a=rtcp-fb:126 nack
+a=rtcp-fb:126 nack pli
+a=rtcp-fb:126 ccm fir
+a=rtcp-fb:126 goog-remb
+a=rtcp-fb:126 transport-cc
+a=rtcp-fb:97 nack
+a=rtcp-fb:97 nack pli
+a=rtcp-fb:97 ccm fir
+a=rtcp-fb:97 goog-remb
+a=rtcp-fb:97 transport-cc
+a=rtcp-fb:123 nack
+a=rtcp-fb:123 nack pli
+a=rtcp-fb:123 ccm fir
+a=rtcp-fb:123 goog-remb
+a=rtcp-fb:123 transport-cc
+a=rtcp-fb:122 nack
+a=rtcp-fb:122 nack pli
+a=rtcp-fb:122 ccm fir
+a=rtcp-fb:122 goog-remb
+a=rtcp-fb:122 transport-cc
+a=rtcp-mux
+a=rtcp-rsize
+a=rtpmap:120 VP8/90000
+a=rtpmap:124 rtx/90000
+a=rtpmap:121 VP9/90000
+a=rtpmap:125 rtx/90000
+a=rtpmap:126 H264/90000
+a=rtpmap:127 rtx/90000
+a=rtpmap:97 H264/90000
+a=rtpmap:98 rtx/90000
+a=rtpmap:123 ulpfec/90000
+a=rtpmap:122 red/90000
+a=rtpmap:119 rtx/90000
+a=setup:actpass
+a=ssrc:146552387 cname:{d9cfdcd2-1130-487c-ab95-b81a583d4d7c}
+m=application 9 UDP/DTLS/SCTP webrtc-datachannel
+c=IN IP4 0.0.0.0
+a=sendrecv
+a=ice-pwd:6f1379310e8465d2cf74fc662461e8a5
+a=ice-ufrag:fed34101
+a=mid:2
+a=setup:actpass
+a=sctp-port:5000
+a=max-message-size:1073741823";
+            
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            pc.addTrack(audioTrack);
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            pc.addTrack(localVideoTrack);
+
+            var offer = SDP.ParseSDPDescription(offerSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+            var answerString = answer.ToString();
+
+            logger.LogDebug($"Local answer: {answerString}");
+
+            logger.LogDebug("First media shouldn't have abs-send-time");
+            Assert.DoesNotContain(answer.Media[0].HeaderExtensions, 
+                ext => ext.Value.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
+            logger.LogDebug("Second media should have abs-send-time");
+            Assert.Contains(answer.Media[1].HeaderExtensions, 
+                ext => ext.Value.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
+            // 4 is the ID for abs-send-time ext in offer
+            Assert.Equal(4, answer.Media[1].HeaderExtensions[4].Id);
+            Assert.Equal(RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME, answer.Media[1].HeaderExtensions[4].Uri);
 
             pc.Close("normal");
         }

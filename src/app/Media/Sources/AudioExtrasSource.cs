@@ -111,7 +111,7 @@ namespace SIPSorcery.Media
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
-        private AudioEncoder _audioEncoder;
+        private IAudioEncoder _audioEncoder;
 
         // Fields for interrupting the main audio source with a different stream. For example playing
         // an announcement over music etc.
@@ -173,7 +173,7 @@ namespace SIPSorcery.Media
         /// <param name="audioOptions">Optional. The options that determine the type of audio to stream to the remote party. 
         /// Example type of audio sources are music, silence, white noise etc.</param>
         public AudioExtrasSource(
-            AudioEncoder audioEncoder,
+            IAudioEncoder audioEncoder,
             AudioSourceOptions audioOptions = null)
         {
             _audioEncoder = audioEncoder;
@@ -396,22 +396,29 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendMusicSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress && _musicStreamReader != null)
+            try
             {
-                lock (_musicStreamReader)
+                if (!_isClosed && !_streamSendInProgress && _musicStreamReader != null)
                 {
-                    var pcm = GetPcmSampleFromReader(_musicStreamReader, _audioOpts.MusicInputSamplingRate, out int samplesRead);
-
-                    if (samplesRead > 0)
+                    lock (_musicStreamReader)
                     {
-                        EncodeAndSend(pcm, (int)_audioOpts.MusicInputSamplingRate);
-                    }
+                        var pcm = GetPcmSampleFromReader(_musicStreamReader, _audioOpts.MusicInputSamplingRate, out int samplesRead);
 
-                    if (samplesRead == 0)
-                    {
-                        _musicStreamReader.BaseStream.Position = 0;
+                        if (samplesRead > 0)
+                        {
+                            EncodeAndSend(pcm, (int)_audioOpts.MusicInputSamplingRate);
+                        }
+
+                        if (samplesRead == 0)
+                        {
+                            _musicStreamReader.BaseStream.Position = 0;
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning(e, "Stream Closed.");
             }
         }
 
@@ -420,7 +427,7 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendSilenceSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress)
+            if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
             {
                 lock (_sendSampleTimer)
                 {
@@ -435,7 +442,7 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendSignalGeneratorSample(object state)
         {
-            if (!_isClosed && !_streamSendInProgress)
+            if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
             {
                 lock (_sendSampleTimer)
                 {
@@ -539,7 +546,7 @@ namespace SIPSorcery.Media
             {
                 if (pcmSampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
-                    pcm = _audioEncoder.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
+                    pcm = PcmResampler.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
                 }
 
                 byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);

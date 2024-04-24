@@ -202,10 +202,11 @@ namespace SIPSorcery.SIP.App
                 }
 
                 string content = sipCallDescriptor.Content;
-
+                bool sendOkAckManually = false;
                 if (content.IsNullOrBlank())
                 {
                     logger.LogDebug("Body on UAC call was empty.");
+                    sendOkAckManually = true;
                 }
 
                 if (this.m_sipCallDescriptor.BranchId.IsNullOrBlank())
@@ -221,7 +222,7 @@ namespace SIPSorcery.SIP.App
                 SIPRequest inviteRequest = GetInviteRequest(m_sipCallDescriptor, m_sipCallDescriptor.BranchId, m_sipCallDescriptor.CallId, routeSet, content, sipCallDescriptor.ContentType);
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                m_serverTransaction = new UACInviteTransaction(m_sipTransport, inviteRequest, m_outboundProxy);
+                m_serverTransaction = new UACInviteTransaction(m_sipTransport, inviteRequest, m_outboundProxy, sendOkAckManually);
 
                 m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                 m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
@@ -307,7 +308,7 @@ namespace SIPSorcery.SIP.App
                 logger.LogError("Exception CancelServerCall. " + excp.Message);
             }
         }
-
+        
         public void Hangup()
         {
             if (m_sipDialogue == null)
@@ -329,6 +330,24 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogError("Exception SIPClientUserAgent Hangup. " + excp.Message);
             }
+        }
+
+        /// <summary>
+        /// Sends AckAnswer response.
+        /// </summary>
+        /// <param name="sipResponse">SIPResponse to acknowledge</param>
+        /// <param name="content">The optional content body for the ACK request.</param>
+        /// <param name="contentType">The optional content type.</param>
+        public void AckAnswer(SIPResponse sipResponse, string content, string contentType)
+        {
+            if (m_sipDialogue == null)
+            {
+                return;
+            }
+            
+            m_serverTransaction.AckAnswer(sipResponse, content, contentType);
+            m_sipDialogue.SDP = content;
+            m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }
 
         private Task<SocketError> ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)

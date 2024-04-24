@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
 // Description: A "full" SIP user agent that encompasses both client and server 
@@ -276,7 +276,7 @@ namespace SIPSorcery.SIP.App
         /// For calls accepted by this user agent this event will be fired if the call
         /// is cancelled before it gets answered.
         /// </summary>
-        public event SIPUASDelegate ServerCallCancelled;
+        public event SIPUASCancelDelegate ServerCallCancelled;
 
         /// <summary>
         /// For calls accepted by this user agent this event will be fired if the call
@@ -617,10 +617,10 @@ namespace SIPSorcery.SIP.App
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
-            uas.CallCancelled += (pendingUas) =>
+            uas.CallCancelled += (pendingUas, sipCancelRequest) =>
             {
                 CallEnded(inviteRequest.Header.CallId);
-                ServerCallCancelled?.Invoke(pendingUas);
+                ServerCallCancelled?.Invoke(pendingUas, sipCancelRequest);
             };
             uas.NoRingTimeout += (pendingUas) =>
             {
@@ -640,9 +640,10 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
+        /// <param name="publicIpAddress">The public IP address to use in SDP</param>
+        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, IPAddress publicIpAddress = null)
         {
-            return Answer(uas, mediaSession, null);
+            return Answer(uas, mediaSession, null, publicIpAddress);
         }
 
         /// <summary>
@@ -653,22 +654,23 @@ namespace SIPSorcery.SIP.App
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
         /// <param name="customHeaders">Custom SIP-Headers to use in Answer.</param>
+        /// <param name="publicIpAddress">The public IP address to use in SDP</param>
         /// <returns>True if the call was successfully answered or false if there was a problem
         /// such as incompatible codecs.</returns>
-        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress = null)
         {
             try
             {
                 await m_semaphoreSlim.WaitAsync().ConfigureAwait(false);
-                return await AnswerSyncronized(uas, mediaSession, customHeaders).ConfigureAwait(false);
+                return await AnswerSyncronized(uas, mediaSession, customHeaders, publicIpAddress).ConfigureAwait(false);
             }
             finally
             {
-                m_semaphoreSlim.Release();
+                TryReleaseSemaphore();
             }
         }
 
-        private async Task<bool> AnswerSyncronized(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        private async Task<bool> AnswerSyncronized(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders, IPAddress publicIpAddress)
         {
             if (uas.IsCancelled)
             {
@@ -711,7 +713,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        var sdpAnswer = MediaSession.CreateAnswer(null);
+                        var sdpAnswer = MediaSession.CreateAnswer(publicIpAddress);
                         sdp = sdpAnswer.ToString();
                     }
                 }
@@ -1753,7 +1755,7 @@ namespace SIPSorcery.SIP.App
             }
             finally
             {
-                m_semaphoreSlim.Release();
+                TryReleaseSemaphore();
             }
         }
 
@@ -1940,8 +1942,20 @@ namespace SIPSorcery.SIP.App
 
             // Wait for completion of CallEnded and Answer methods
             m_semaphoreSlim.Wait();
-            m_semaphoreSlim.Release();
+            TryReleaseSemaphore();
             m_semaphoreSlim.Dispose();
         }
+		
+		private void TryReleaseSemaphore()
+		{
+			try
+			{
+				m_semaphoreSlim.Release();
+			}
+			catch (ObjectDisposedException)
+			{
+				//Swallow it
+			}
+		}
     }
 }

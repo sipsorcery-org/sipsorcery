@@ -114,7 +114,8 @@ namespace demo
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
-            
+            windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
+
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
@@ -128,9 +129,9 @@ namespace demo
             {
                 logger.LogDebug($"Peer connection connected changed to {state}.");
 
-                if(state == RTCPeerConnectionState.connected)
+                if (state == RTCPeerConnectionState.connected)
                 {
-                    await windowsAudioEP.StartAudio();
+                    await windowsAudioEP.StartAudioSink();
                 }
                 else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
                 {
@@ -144,6 +145,7 @@ namespace demo
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
                 //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+
                 if (media == SDPMediaTypesEnum.audio)
                 {
                     windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);

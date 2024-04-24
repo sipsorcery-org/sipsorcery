@@ -67,5 +67,20 @@ namespace SIPSorcery.UnitTests.net.RTP
 
             Assert.Null(timestamps);
         }
+
+        [Fact]
+        public void AbsSendTime()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var time = new DateTimeOffset(2024, 2, 11, 14, 51, 02, 999, new TimeSpan(-5, 0, 0));
+            var bytes = RTPHeader.AbsSendTime(time);
+            
+            Assert.Equal(0x22, bytes[0]); // 2 for ID and 2 for Length (3-1)
+            Assert.Equal(155, bytes[1]);
+            Assert.Equal(254, bytes[2]);
+            Assert.Equal(249, bytes[3]);
+        }
     }
 }

@@ -342,5 +342,19 @@ namespace SIPSorcery.SIP
             UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
             CDR?.Cancelled(cancelReason);
         }
+
+        /// <summary>
+        /// Sends AckAnswer response.
+        /// </summary>
+        /// <param name="sipResponse">SIPResponse to acknowledge</param>
+        /// <param name="content">The optional content body for the ACK request.</param>
+        /// <param name="contentType">The optional content type.</param>
+        public void AckAnswer(SIPResponse sipResponse, string  content, string contentType)
+        {
+            AckRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.ACK, sipResponse.Header.CSeq, content, contentType);
+            UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
+            SendRequestAsync(AckRequest).ConfigureAwait(false);
+        }
+        
     }
 }

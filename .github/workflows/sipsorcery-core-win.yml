@@ -17,4 +17,4 @@ jobs:
     - name: Build
       run: dotnet build src/SIPSorcery.sln -c Release --no-restore
     - name: Test
-      run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal
+      run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal -f net8.0

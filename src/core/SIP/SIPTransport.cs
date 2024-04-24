@@ -1034,7 +1034,7 @@ namespace SIPSorcery.SIP
                                             if (inviteTransaction != null)
                                             {
                                                 // Note: this will generate the INVITE request response.
-                                                inviteTransaction.CancelCall();
+                                                inviteTransaction.CancelCall(sipRequest);
 
                                                 // Note: this will generate the CANCEL request response.
                                                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);

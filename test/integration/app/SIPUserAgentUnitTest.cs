@@ -938,7 +938,7 @@ a=sendrecv";
             // Set up auto-answer for UA's C and D:
             foreach (var userAgent in new List<SIPUserAgent> { userAgentC, userAgentD })
             {
-                userAgent.ServerCallCancelled += (uas) => logger.LogDebug("Incoming call cancelled by remote party.");
+                userAgent.ServerCallCancelled += (uas, req) => logger.LogDebug("Incoming call cancelled by remote party.");
                 userAgent.OnCallHungup += (dialog) => logger.LogDebug("Call hungup by remote party.");
                 userAgent.OnIncomingCall += async (ua, req) =>
                 {
@@ -1158,8 +1158,8 @@ a=sendrecv";
                 new List<string> { "Custom header" },
                 null,
                 SIPCallDirection.Out,
-                SDP.SDP_MIME_CONTENTTYPE,
-                null,
+                contentType,
+                content,
                 null
                 );
         }

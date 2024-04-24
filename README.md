@@ -1,8 +1,7 @@
 | CI | win-x64 | linux-x64 | osx-x64 | Examples <br/> (win-x64) | Softphone <br/> (win-x64) |
 |-|-|-|-|-|-|
 | <sup>AppVeyor</sup> | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/cark9l28ovb8o886/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-5aavr/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/7mrg69mtolwceplg/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-jyl3x/branch/master) | [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
-| <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/win-x64/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/linux-x64/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/osx-x64/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/workflows/egs-win-x64/badge.svg) | |
-| <sup>Azure DevOps</sup>   | [![Build Status](https://dev.azure.com/aaronrc/SIPSorcery/_apis/build/status/sipsorcery.sipsorcery?branchName=master&jobName=Job&configuration=Job%20windows)](https://dev.azure.com/aaronrc/SIPSorcery/_build/latest?definitionId=3&branchName=master) | [![Build Status](https://dev.azure.com/aaronrc/SIPSorcery/_apis/build/status/sipsorcery.sipsorcery?branchName=master&jobName=Job&configuration=Job%20linux)](https://dev.azure.com/aaronrc/SIPSorcery/_build/latest?definitionId=3&branchName=master) | [![Build Status](https://dev.azure.com/aaronrc/SIPSorcery/_apis/build/status/sipsorcery.sipsorcery?branchName=master&jobName=Job&configuration=Job%20mac)](https://dev.azure.com/aaronrc/SIPSorcery/_build/latest?definitionId=3&branchName=master) | | |
+| <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-win.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg) | | |
 
 
 ## What Is It?
@@ -35,9 +34,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0 (encompassing .NET Core 2.0+), .NET Framework 4.6.1 (theoretically also encompassed by `netstandard2.0` but set as an explicit target due to compatibility issues between the two), .NET 5 and .NET 6. The demo applications mainly target .NET Core 3.1 with newer ones targeting .NET 5 or 6. The library is available via NuGet.
-
-For .NET Core and .NET 5 & 6:
+The library is should work with .NET Framework >= 4.6.1 and all .NET Core and .NET versions. The demo applications initially targetted .NET Core 3.1 and are updated to later .NET versions as time and interest permit. The library is available via NuGet.
 
 ````bash
 dotnet add package SIPSorcery
@@ -53,15 +50,7 @@ Install-Package SIPSorcery
 
 Class reference documentation and articles explaining common usage are available at [https://sipsorcery-org.github.io/sipsorcery/](https://sipsorcery-org.github.io/sipsorcery/).
 
-## Additional Resources
-
-A free SIP account for GitHub users that can be used for SIP and WebRTC testing is available at [sipsorcery.cloud](https://sipsorcery.cloud).
-
-For WebRTC testing the [webrtc-echoes](https://github.com/sipsorcery/webrtc-echoes) project has a number of basic WebRTC implementations in different libraries. It includes a set of [docker images](https://github.com/sipsorcery?tab=packages) which can be useful for testing during WebRTC application development.
-
 ## Getting Started VoIP
-
-**Note, the examples below have been updated for .NET 6. They can be made to work with .NET 5 and .NET Core but will require some adjustments to the instructions below.**
 
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET audio device support on non-Windows platforms).
 
@@ -76,7 +65,7 @@ dotnet run
 ````
 
 ````csharp
-string DESTINATION = "helloworld@sipsorcery.cloud";
+string DESTINATION = "music@iptel.org";
         
 Console.WriteLine("SIP Get Started");
 

@@ -656,6 +656,70 @@ serverReadyEvent);
             logger.LogDebug("Test complete.");
         }
 
+        [Fact]
+        public void TlsDoesNotGetStuckOnIncompleteTcpConnection()
+        {
+            // Arrange
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
+            CancellationTokenSource cancelServer = new CancellationTokenSource();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
+            serverCertificate.Verify();
+
+            var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+            serverChannel.DisableLocalTCPSocketsCheck = true;
+            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
+
+            var tlsClientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
+            tlsClientChannel.DisableLocalTCPSocketsCheck = true;
+
+            var tcpConnection = new TcpClient(new IPEndPoint(IPAddress.Loopback, 0));
+
+            // Act
+            try
+            {
+                tcpConnection.Connect(serverChannel.ListeningEndPoint);
+
+                var clientTask = Task.Run(async () =>
+                {
+                    // Try to connect a TLS client
+                    await RunClient(
+                        tlsClientChannel,
+                        serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, serverChannel.ListeningEndPoint)),
+                        testComplete,
+                        cancelServer,
+                        serverReadyEvent);
+                });
+
+                // Assert
+                if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
+                {
+                    logger.LogWarning($"Tasks timed out");
+                }
+
+                if (testComplete.Task.IsCompleted == false)
+                {
+                    // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
+                    testComplete.SetResult(false);
+                }
+
+                Assert.True(testComplete.Task.Result);
+
+            }
+            finally
+            {
+                tcpConnection.Close();
+                cancelServer.Cancel();
+            }
+            logger.LogDebug("Test complete.");
+
+        }
+
         /// <summary>
         /// Initialises a SIP transport to act as a server in single request/response exchange.
         /// </summary>

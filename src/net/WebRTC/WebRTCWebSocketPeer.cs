@@ -99,6 +99,7 @@ namespace SIPSorcery.Net
                         await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
                         logger.LogDebug($"Sending SDP answer to client {Context.UserEndPoint}.");
+                        // Don't log SDP can contain sensitive info, albeit very short lived.
                         //logger.LogDebug(answerSdp.sdp);
 
                         Context.WebSocket.Send(answerSdp.toJSON());
@@ -134,7 +135,8 @@ namespace SIPSorcery.Net
                 await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
                 logger.LogDebug($"Sending SDP offer to client {Context.UserEndPoint}.");
-                logger.LogDebug(offerSdp.sdp);
+                // Don't log SDP can contain sensitive info, albeit very short lived.
+                //logger.LogDebug(offerSdp.sdp);
 
                 Context.WebSocket.Send(offerSdp.toJSON());
             }

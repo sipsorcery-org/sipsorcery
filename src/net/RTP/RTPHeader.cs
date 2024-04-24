@@ -28,6 +28,7 @@ namespace SIPSorcery.Net
         public const int MIN_HEADER_LEN = 12;
 
         public const int RTP_VERSION = 2;
+        private const int ONE_BYTE_EXTENSION_PROFILE = 0xBEDE;
 
         public int Version = RTP_VERSION;                       // 2 bits.
         public int PaddingFlag = 0;                             // 1 bit.
@@ -253,7 +254,7 @@ namespace SIPSorcery.Net
 
         private bool HasOneByteExtension()
         {
-            return ExtensionProfile == 0xBEDE;
+            return ExtensionProfile == ONE_BYTE_EXTENSION_PROFILE;
         }
 
         private bool HasTwoByteExtension()
@@ -322,6 +323,57 @@ namespace SIPSorcery.Net
 
             consumed = offset;
             return header.PayloadSize>=0;
+        }
+
+        // DateTimeOffset.UnixEpoch only available in newer target frameworks
+        private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        // inspired by https://github.com/pion/rtp/blob/master/abssendtimeextension.go
+        internal static byte[] AbsSendTime(DateTimeOffset now)
+        {
+            ulong unixNanoseconds = (ulong)((now - UnixEpoch).Ticks * 100L);
+            var seconds = unixNanoseconds / (ulong)1e9;
+            seconds += 0x83AA7E80UL; // offset in seconds between unix epoch and ntp epoch
+            var f = unixNanoseconds % (ulong)1e9;
+            f <<= 32;
+            f /= (ulong)1e9;
+            seconds <<= 32;
+            var ntp = seconds | f;
+            var abs = ntp >> 14;
+            var length = 2; // extension length (3-1)
+
+            return new[]
+            {
+                (byte)((RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME << 4) | length),
+                (byte)((abs & 0xff0000UL) >> 16),
+                (byte)((abs & 0xff00UL) >> 8),
+                (byte)(abs & 0xffUL) 
+            };
+        }
+
+        /*
+           An example header extension, with three extension elements, some
+           padding, and including the required RTP fields, follows:
+           
+           0                   1                   2                   3
+           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |       0xBE    |    0xDE       |           length=3            |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |  ID   | L=0   |     data      |  ID   |  L=1  |   data...     |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |     ...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           |                          data                                 |
+           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+         */
+        // https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
+        public void AddAbsSendTimeExtension()
+        {
+            HeaderExtensionFlag = 1;
+            ExtensionProfile = ONE_BYTE_EXTENSION_PROFILE;
+            ExtensionLength = 1; // only abs-send-time for now
+            ExtensionPayload = AbsSendTime(DateTimeOffset.Now);
         }
     }
 }

@@ -70,7 +70,8 @@ namespace SIPSorcery.Net
     public class SDPMediaAnnouncement
     {
         public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=extmap:";
-        public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";
+        public const string MEDIA_FORMAT_ATTRIBUTE_PREFIX = "a=rtpmap:";
+        public const string MEDIA_FORMAT_FEEDBACK_PREFIX = "a=rtcp-fb:";
         public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
         public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
         public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
@@ -80,6 +81,7 @@ namespace SIPSorcery.Net
         public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
         public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
         public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
+
         public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
         public const string m_CRLF = "\r\n";
@@ -422,7 +424,7 @@ namespace SIPSorcery.Net
                     {
                         if (appFormat.Value.Rtpmap != null)
                         {
-                            sb.Append($"{MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
+                            sb.Append($"{MEDIA_FORMAT_ATTRIBUTE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
                         }
 
                         if (appFormat.Value.Fmtp != null)
@@ -474,11 +476,16 @@ namespace SIPSorcery.Net
                         {
                             // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
                             // stacks don't work without it.
-                            formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
+                            formatAttributes += MEDIA_FORMAT_ATTRIBUTE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
                         }
                         else
                         {
-                            formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                            formatAttributes += MEDIA_FORMAT_ATTRIBUTE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                        }
+
+                        foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
+                        {
+                            formatAttributes += MEDIA_FORMAT_FEEDBACK_PREFIX + mediaFormat.ID + " " + rtcpFeedbackMessage + m_CRLF;
                         }
 
                         if (mediaFormat.Fmtp != null)

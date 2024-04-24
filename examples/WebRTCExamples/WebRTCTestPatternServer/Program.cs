@@ -43,7 +43,8 @@ namespace demo
 
     class Program
     {
-        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
+        // Install with: winget install "FFmpeg (Shared)" 
+        private const string ffmpegLibFullPath = null; //@"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
