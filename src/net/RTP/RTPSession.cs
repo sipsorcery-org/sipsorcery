@@ -2267,6 +2267,7 @@ namespace SIPSorcery.Net
             {
                 if (!HasVideo)
                 {
+                    logger.LogDebug("An RTP packet with SSRC {ssrc} force matched to the only audio stream.", ssrc);
                     return AudioStream;
                 }
             }
@@ -2274,8 +2275,15 @@ namespace SIPSorcery.Net
             {
                 if (HasVideo)
                 {
+                    logger.LogDebug("An RTP packet with SSRC {ssrc} force matched to the only video stream.", ssrc);
                     return VideoStream;
                 }
+            }
+
+            if (ssrc == 1)
+            {
+                logger.LogDebug("An RTP packet with SSRC {ssrc} force matched to the primary stream.", ssrc);
+                return PrimaryStream;
             }
 
             return null;
