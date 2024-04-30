@@ -416,7 +416,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
-        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession, int)"/> to start a call without
         /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
         /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
         /// </summary>
@@ -464,7 +464,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
-        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession, int)"/> to start a call without
         /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
         /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
         /// </summary>

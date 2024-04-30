@@ -1585,7 +1585,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Generates a session description from the provided list of MediaStream.
         /// </summary>
-        /// <param name="tracks">The list of tracks to generate the session description for.</param>
+        /// <param name="mediaStreamList">The list of tracks to generate the session description for.</param>
         /// <param name="connectionAddress">Optional. If set this address will be used as 
         /// the SDP Connection address. If not specified the Internet facing address will
         /// be used. IPAddress.Any and IPAddress. Any and IPv6Any are special cases. If they are set the respective
@@ -1799,7 +1799,6 @@ namespace SIPSorcery.Net
         /// Creates a new RTP channel (which manages the UDP socket sending and receiving RTP
         /// packets) for use with this session.
         /// </summary>
-        /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
         protected virtual RTPChannel CreateRtpChannel()
         {

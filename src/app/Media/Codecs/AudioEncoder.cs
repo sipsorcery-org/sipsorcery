@@ -123,9 +123,8 @@ namespace SIPSorcery.Media
         /// <summary>
         /// Event handler for receiving RTP packets from the remote party.
         /// </summary>
-        /// <param name="remoteEP">The remote end point the RTP was received from.</param>
+        /// <param name="encodedSample">Data received from an RTP socket.</param>
         /// <param name="format">The audio format of the encoded packets.</param>
-        /// <param name="rtpPacket">The RTP packet with the media sample.</param>
         public short[] DecodeAudio(byte[] encodedSample, AudioFormat format)
         {
             if (format.Codec == AudioCodecsEnum.G722)

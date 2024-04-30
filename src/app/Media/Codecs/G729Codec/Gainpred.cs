@@ -118,13 +118,13 @@ namespace SIPSorcery.Media.G729Codec
 
         /**
  * Update table of past quantized energies (frame erasure).
- * <pre>
+ * <pre> <![CDATA[
  *     av_pred_en = 0.0;
  *     for (i = 0; i < 4; i++)
  *        av_pred_en += past_qua_en[i];
  *     av_pred_en = av_pred_en*0.25 - 4.0;
  *     if (av_pred_en < -14.0) av_pred_en = -14.0;
- * </pre>
+ * ]]></pre>
  *
  * @param past_qua_en   input/output:Past quantized energies
  */

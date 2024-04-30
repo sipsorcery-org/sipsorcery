@@ -83,11 +83,11 @@ namespace SIPSorcery.net.RTP
         /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
         /// quality image is required since the header used in this method does not support quantization tables.
         /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
         /// <param name="jpegBytes">The raw encoded bytes of the JPEG image to transmit.</param>
         /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
         /// <param name="jpegWidth">The width of the JPEG image.</param>
         /// <param name="jpegHeight">The height of the JPEG image.</param>
-        /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
         public void SendJpegFrame(uint duration, int payloadTypeID, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
         {
             if (CheckIfCanSendRtpRaw())
@@ -129,8 +129,9 @@ namespace SIPSorcery.net.RTP
         /// An Access Unit can contain one or more NAL's. The NAL's have to be parsed in order to be able to package 
         /// in RTP packets.
         /// 
-        /// See https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items Annex B for byte stream specification.
+        /// See <see href="https://www.itu.int/rec/dologin_pub.asp?lang=e&amp;id=T-REC-H.264-201602-S!!PDF-E&amp;type=items" /> Annex B for byte stream specification.
         /// </remarks>
+        // The same URL without XML escape sequences: https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items
         public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
         {
             if (CheckIfCanSendRtpRaw())
@@ -150,8 +151,6 @@ namespace SIPSorcery.net.RTP
         /// <param name="nal">The buffer containing the NAL to send.</param>
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
-        /// <param name="dstEndPoint">The destination end point to send to.</param>
-        /// <param name="LocalTrack">The video track to send on.</param>
         private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal)
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
@@ -204,7 +203,7 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// Sends a VP8 frame as one or more RTP packets.
         /// </summary>
-        /// <param name="timestamp">The timestamp to place in the RTP header. Needs
+        /// <param name="duration"> The duration in timestamp units of the payload. Needs
         /// to be based on a 90Khz clock.</param>
         /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
         /// <param name="buffer">The VP8 encoded payload.</param>

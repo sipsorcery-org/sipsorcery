@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public List<SDPAudioVideoMediaFormat> Capabilities { get; internal set; }
 
-        // <summary>
+        /// <summary>
         ///  a=extmap - Mapping for RTP header extensions
         /// </summary>
         public Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; }
@@ -205,7 +205,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Add a local audio track.
         /// </summary>
-        /// <param name="audioFormats">The audio formats that the local application supports.</param>
+        /// <param name="formats">The audio formats that the local application supports.</param>
         /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(
@@ -229,7 +229,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Add a local video track.
         /// </summary>
-        /// <param name="videoFormats">The video formats that the local application supports.</param>
+        /// <param name="formats">The video formats that the local application supports.</param>
         /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
         /// send and receive or only one of.</param>
         public MediaStreamTrack(

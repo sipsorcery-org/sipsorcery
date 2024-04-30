@@ -1,16 +1,16 @@
-﻿/// <summary>
-/// Based in https://github.com/BogdanovKirill/RtspClientSharp/blob/master/RtspClientSharp/MediaParsers/H264VideoPayloadParser.cs 
-/// Distributed under MIT License
-/// 
-/// @author raf.csoares@kyubinteractive.com
-/// </summary>
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// Based in https://github.com/BogdanovKirill/RtspClientSharp/blob/master/RtspClientSharp/MediaParsers/H264VideoPayloadParser.cs 
+    /// Distributed under MIT License
+    /// 
+    /// @author raf.csoares@kyubinteractive.com
+    /// </summary>
     public class H264Depacketiser
     {
         const int SPS = 7;

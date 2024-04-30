@@ -33,6 +33,10 @@ namespace SIPSorcery.Net
         public uint PPID;
         public byte[] UserData;
 
+        /// <param name="streamID">The stream ID of the chunk.</param>
+        /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
+        /// <param name="ppid">The payload protocol ID for the chunk.</param>
+        /// <param name="userData">The chunk data.</param>
         public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
         {
             Unordered = unordered;
