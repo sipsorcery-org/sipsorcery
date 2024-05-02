@@ -2642,7 +2642,7 @@ namespace SIPSorcery.Net
             if (MdnsResolve != null)
             {
                 var address = await MdnsResolve(candidate.address).ConfigureAwait(false);
-                return address != null ? new IPAddress[] { address } : null;
+                return address != null ? new IPAddress[] { address } : Array.Empty<IPAddress>();
             }
 
 
