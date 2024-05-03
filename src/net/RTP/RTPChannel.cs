@@ -625,7 +625,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception excp)
                         {
-                            EndSendTo(excp);
+                            EndSendTo(excp, dstEndPoint, sendSocket);
                         }
                         finally
                         {
@@ -639,7 +639,7 @@ namespace SIPSorcery.Net
                             ArrayPool<byte>.Shared.Return(tmp);
                             if (t.IsFaulted)
                             {
-                                EndSendTo(t.Exception);
+                                EndSendTo(t.Exception, dstEndPoint, sendSocket);
                             }
                         });
                     }
@@ -672,19 +672,25 @@ namespace SIPSorcery.Net
         /// <param name="ar">The async result to complete the send with.</param>
         private void EndSendTo(IAsyncResult ar)
         {
+            Socket sendSocket = (Socket)ar.AsyncState;
             try
             {
-                Socket sendSocket = (Socket)ar.AsyncState;
                 int bytesSent = sendSocket.EndSendTo(ar);
             }
             catch (Exception excp)
             {
-                EndSendTo(excp);
+                EndSendTo(excp, socket: sendSocket);
             }
         }
 
-        private void EndSendTo(Exception exception)
+        private void EndSendTo(Exception exception, IPEndPoint? endPoint = null, Socket? socket = null)
         {
+            string kind = socket switch
+            {
+                null => "Unknown",
+                { } m when m == m_controlSocket => "Control",
+                _ => "RTP",
+            };
             switch (exception)
             {
             case SocketException sockExcp:
@@ -693,7 +699,7 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
-                logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({ErrorCode}). {Message}", sockExcp.ErrorCode, sockExcp.Message);
+                logger.LogWarning("SocketException RTPChannel EndSendTo {Kind} {EndPoint} ({ErrorCode}). {Message}", kind, endPoint, sockExcp.ErrorCode, sockExcp.Message);
                 break;
 
             case ObjectDisposedException: // Thrown when socket is closed. Can be safely ignored.
@@ -702,12 +708,12 @@ namespace SIPSorcery.Net
             case AggregateException aggExcp:
                 foreach (var innerExcp in aggExcp.InnerExceptions)
                 {
-                    EndSendTo(innerExcp);
+                    EndSendTo(innerExcp, endPoint, socket);
                 }
                 break;
 
             default:
-                logger.LogError("Exception RTPChannel EndSendTo. {Message}", exception.Message);
+                logger.LogError("Exception RTPChannel EndSendTo. {Kind} {EndPoint} {Message}", kind, endPoint, exception.Message);
                 break;
             }
         }
