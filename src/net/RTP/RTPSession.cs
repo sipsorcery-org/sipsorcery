@@ -2072,7 +2072,6 @@ namespace SIPSorcery.Net
             }
 
             var rtcpPkt = new RTCPCompoundPacket(buffer);
-            if (rtcpPkt != null)
             {
                 mediaStream = GetMediaStream(rtcpPkt);
                 if (rtcpPkt.Bye != null)
@@ -2129,10 +2128,6 @@ namespace SIPSorcery.Net
                         //logger.LogTrace(rtcpPkt.GetDebugSummary());
                     }
                 }
-            }
-            else
-            {
-                logger.LogWarning("Failed to parse RTCP compound report.");
             }
 
             #endregion
@@ -2280,9 +2275,9 @@ namespace SIPSorcery.Net
                 }
             }
 
-            if (ssrc == 1)
+            if (ssrc == 1 || ssrc == RTCP_RR_NOSTREAM_SSRC)
             {
-                logger.LogDebug("An RTP packet with SSRC {ssrc} force matched to the primary stream.", ssrc);
+                logger.LogDebug("An RTP packet with SSRC {ssrc} force matched to the primary stream {Stream}.", ssrc, PrimaryStream);
                 return PrimaryStream;
             }
 

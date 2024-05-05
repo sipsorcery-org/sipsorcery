@@ -857,6 +857,8 @@ namespace SIPSorcery.net.RTP
             });
         }
 
+        public override string ToString() => $"{MediaType}[{Index}]";
+
         public MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
