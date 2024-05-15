@@ -2,7 +2,7 @@
 // Filename: WebRTCWebSocketPeer.cs
 //
 // Description: This class is NOT a required component for using WebRTC. It is a
-// convenience class provided to assist when using a web socket server for the 
+// convenience class provided to assist when using a web socket server for the
 // WebRTC signalling.
 //
 // Author(s):
@@ -11,7 +11,7 @@
 // History:
 // 12 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ namespace SIPSorcery.Net
 {
     /// <summary>
     /// This class is NOT a required component for using WebRTC. It is a convenience
-    /// class provided to assist when using a web socket server for the  WebRTC 
+    /// class provided to assist when using a web socket server for the  WebRTC
     /// signalling.
     /// </summary>
     public class WebRTCWebSocketPeer : WebSocketBehavior
@@ -46,8 +46,8 @@ namespace SIPSorcery.Net
         public RTCAnswerOptions AnswerOptions { get; set; }
 
         /// <summary>
-        /// Optional filter that can be applied to remote ICE candidates. The filter is 
-        /// primarily intended for use in testing. In real application scenarios it's 
+        /// Optional filter that can be applied to remote ICE candidates. The filter is
+        /// primarily intended for use in testing. In real application scenarios it's
         /// normally desirable to accept all remote ICE candidates.
         /// </summary>
         public Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
@@ -93,7 +93,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if(_pc.signalingState == RTCSignalingState.have_remote_offer)
+                    if (_pc.signalingState == RTCSignalingState.have_remote_offer)
                     {
                         var answerSdp = _pc.createAnswer(AnswerOptions);
                         await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
@@ -138,7 +138,14 @@ namespace SIPSorcery.Net
                 // Don't log SDP can contain sensitive info, albeit very short lived.
                 //logger.LogDebug(offerSdp.sdp);
 
-                Context.WebSocket.Send(offerSdp.toJSON());
+                try
+                {
+                    Context.WebSocket.Send(offerSdp.toJSON());
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"An error has occurred during the OnOpen event.\n{ex.ToString()}.");
+                }
             }
         }
     }
