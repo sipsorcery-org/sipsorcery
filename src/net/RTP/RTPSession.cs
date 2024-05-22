@@ -1654,7 +1654,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            SDP sdp = new SDP(IPAddress.Loopback);
+            SDP sdp = new SDP(localAddress ?? IPAddress.Loopback);
             sdp.SessionId = m_sdpSessionID;
             sdp.AnnouncementVersion = m_sdpAnnouncementVersion;
 
