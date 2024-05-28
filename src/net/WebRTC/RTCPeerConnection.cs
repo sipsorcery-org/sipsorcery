@@ -1488,7 +1488,7 @@ namespace SIPSorcery.Net
         /// When a data channel is requested an SCTP association is needed. This method attempts to 
         /// initialise the association if it is not already available.
         /// </summary>
-        private async Task InitialiseSctpAssociation()
+        private async Task InitialiseSctpAssociation(CancellationToken cancel = default)
         {
             if (sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
             {
@@ -1510,7 +1510,7 @@ namespace SIPSorcery.Net
 
                 DateTime startTime = DateTime.Now;
 
-                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000, cancel)).ConfigureAwait(false);
 
                 if (sctp.state != RTCSctpTransportState.Connected)
                 {
@@ -1537,7 +1537,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="label">The label used to identify the data channel.</param>
         /// <returns>The data channel created.</returns>
-        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init = null)
+        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init = null, CancellationToken cancel = default)
         {
             logger.LogDebug($"Data channel create request for label {label}.");
 
@@ -1561,7 +1561,7 @@ namespace SIPSorcery.Net
                     if (sctp.RTCSctpAssociation == null ||
                         sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
                     {
-                        await InitialiseSctpAssociation().ConfigureAwait(false);
+                        await InitialiseSctpAssociation(cancel).ConfigureAwait(false);
                     }
 
                     dataChannels.AddActiveChannel(channel);
@@ -1571,6 +1571,7 @@ namespace SIPSorcery.Net
                     TaskCompletionSource<string> isopen = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
                     channel.onopen += () => isopen.TrySetResult(string.Empty);
                     channel.onerror += (err) => isopen.TrySetResult(err);
+                    using var _ = cancel.Register(() => isopen.TrySetResult("cancelled"));
                     var error = await isopen.Task.ConfigureAwait(false);
 
                     if (error != string.Empty)
