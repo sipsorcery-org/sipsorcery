@@ -202,7 +202,8 @@ public readonly ref struct SctpChunkView
     bool ValidateError(bool isAbort)
     {
         ValidateBase();
-        throw new NotImplementedException();
+        SctpErrorChunk.ParseChunk(buffer, 0, isAbort: isAbort);
+        return true;
     }
 
     bool ValidateUnknownBase()
