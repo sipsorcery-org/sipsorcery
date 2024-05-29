@@ -130,6 +130,7 @@ namespace SIPSorcery.Net
         /// Sends a string data payload on the data channel.
         /// </summary>
         /// <param name="message">The string message to send.</param>
+        /// <exception cref="InvalidOperationException">SCTP transport is not connected.</exception></exception>
         public void send(string message)
         {
             if (message != null && Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
@@ -139,7 +140,7 @@ namespace SIPSorcery.Net
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
+                throw new InvalidOperationException("SCTP transport is not connected.");
             }
             else
             {
@@ -165,6 +166,7 @@ namespace SIPSorcery.Net
         /// Sends a binary data payload on the data channel.
         /// </summary>
         /// <param name="data">The data to send.</param>
+        /// <exception cref="InvalidOperationException">SCTP transport is not connected.</exception></exception>
         public void send(ReadOnlySpan<byte> data)
         {
             if (data.Length > _transport.maxMessageSize)
@@ -174,7 +176,7 @@ namespace SIPSorcery.Net
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
+                throw new InvalidOperationException("SCTP transport is not connected.");
             }
             else
             {
