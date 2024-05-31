@@ -549,9 +549,10 @@ namespace SIPSorcery.Net
         /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
         /// <param name="dstEndPoint">The destination end point to send to.</param>
         /// <param name="buffer">The data to send.</param>
+        /// <param name="onFailure">If supplied and given an exception returns <c>true</c>, disables further error processing.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, ReadOnlySpan<byte> buffer)
+        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, ReadOnlySpan<byte> buffer, Func<Exception, bool>? onFailure = null)
         {
             if (m_isClosed)
             {
@@ -625,7 +626,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception excp)
                         {
-                            EndSendTo(excp, dstEndPoint, sendSocket);
+                            EndSendTo(excp, dstEndPoint, sendSocket, onFailure);
                         }
                         finally
                         {
@@ -639,7 +640,7 @@ namespace SIPSorcery.Net
                             ArrayPool<byte>.Shared.Return(tmp);
                             if (t.IsFaulted)
                             {
-                                EndSendTo(t.Exception, dstEndPoint, sendSocket);
+                                EndSendTo(t.Exception, dstEndPoint, sendSocket, onFailure);
                             }
                         });
                     }
@@ -683,7 +684,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void EndSendTo(Exception exception, IPEndPoint? endPoint = null, Socket? socket = null)
+        private void EndSendTo(Exception exception, IPEndPoint? endPoint = null, Socket? socket = null, Func<Exception, bool>? onFailure = null)
         {
             string kind = socket switch
             {
@@ -691,6 +692,10 @@ namespace SIPSorcery.Net
                 { } m when m == m_controlSocket => "Control",
                 _ => "RTP",
             };
+            if (onFailure?.Invoke(exception) == true)
+            {
+                return;
+            }
             switch (exception)
             {
             case SocketException sockExcp:
@@ -708,7 +713,7 @@ namespace SIPSorcery.Net
             case AggregateException aggExcp:
                 foreach (var innerExcp in aggExcp.InnerExceptions)
                 {
-                    EndSendTo(innerExcp, endPoint, socket);
+                    EndSendTo(innerExcp, endPoint, socket, onFailure);
                 }
                 break;
 
