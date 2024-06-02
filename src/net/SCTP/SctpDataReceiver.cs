@@ -241,7 +241,7 @@ namespace SIPSorcery.Net
             else if (_inOrderReceiveCount > 0 &&
                 !IsNewer(_lastInOrderTSN, dataChunk.TSN))
             {
-                logger.LogWarning("SCTP data receiver received an old data chunk with {TSN} " +
+                logger.LogDebug("SCTP received an old data chunk with {TSN} " +
                     "TSN when the expected TSN was {LastInOrderTSN}, ignoring.",
                     dataChunk.TSN, _lastInOrderTSN + 1);
             }
