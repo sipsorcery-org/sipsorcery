@@ -399,6 +399,8 @@ namespace SIPSorcery.Net
                         case SctpChunkType.ABORT:
                             var abortChunk = (SctpAbortChunk)chunk.AsChunk();
                             string abortReason = abortChunk.GetAbortReason();
+                            var logLevel = abortChunk.ErrorCauses.Any(cause => cause.CauseCode == SctpErrorCauseCode.UserInitiatedAbort)
+                                ? LogLevel.Debug : LogLevel.Warning;
                             logger.LogWarning("SCTP packet ABORT chunk received from remote party, reason {Message}.", abortReason);
                             _wasAborted = true;
                             OnAbortReceived?.Invoke(abortReason);
