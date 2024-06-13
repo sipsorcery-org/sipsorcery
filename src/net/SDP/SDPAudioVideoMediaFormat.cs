@@ -256,16 +256,15 @@ namespace SIPSorcery.Net
         /// equivalent type need to be adjusted by one party.
         /// </summary>
         /// <param name="id">The ID to set on the new format.</param>
-        /// <param name="format">The existing format to copy all properties except the ID from.</param>
         /// <returns>A new format.</returns>
-        public SDPAudioVideoMediaFormat WithUpdatedID(int id, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, id, format.Rtpmap, format.Fmtp);
+        public SDPAudioVideoMediaFormat WithUpdatedID(int id) =>
+            new SDPAudioVideoMediaFormat(Kind, id, Rtpmap, Fmtp);
 
-        public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, format.ID, rtpmap, format.Fmtp);
+        public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap) =>
+            new SDPAudioVideoMediaFormat(Kind, ID, rtpmap, Fmtp);
 
-        public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, format.ID, format.Rtpmap, fmtp);
+        public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp) =>
+            new SDPAudioVideoMediaFormat(Kind, ID, Rtpmap, fmtp);
 
         /// <summary>
         /// Maps an audio SDP media type to a media abstraction layer audio format.

@@ -450,7 +450,7 @@ namespace SIPSorcery.Net
                                             {
                                                 if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                                 {
-                                                    activeAnnouncement.MediaFormats[id] = activeAnnouncement.MediaFormats[id].WithUpdatedRtpmap(rtpmap, activeAnnouncement.MediaFormats[id]);
+                                                    activeAnnouncement.MediaFormats[id] = activeAnnouncement.MediaFormats[id].WithUpdatedRtpmap(rtpmap);
                                                 }
                                                 else
                                                 {
@@ -514,7 +514,7 @@ namespace SIPSorcery.Net
                                             {
                                                 if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                                 {
-                                                    activeAnnouncement.MediaFormats[id] = activeAnnouncement.MediaFormats[id].WithUpdatedFmtp(fmtp, activeAnnouncement.MediaFormats[id]);
+                                                    activeAnnouncement.MediaFormats[id] = activeAnnouncement.MediaFormats[id].WithUpdatedFmtp(fmtp);
                                                 }
                                                 else
                                                 {
