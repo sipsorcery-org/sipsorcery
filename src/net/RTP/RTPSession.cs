@@ -180,7 +180,7 @@ namespace SIPSorcery.Net
 
         private Boolean m_acceptRtpFromAny = false;
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
-        private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
+        private ulong m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
