@@ -148,7 +148,7 @@ namespace SIPSorcery.Net
         // Owner fields.
         public string Username = "-";       // Username of the session originator.
         public string SessionId = "-";      // Unique Id for the session.
-        public int AnnouncementVersion = 0; // Version number for each announcement, number must be increased for each subsequent SDP modification.
+        public ulong AnnouncementVersion = 0; // Version number for each announcement, number must be increased for each subsequent SDP modification.
         public string NetworkType = "IN";   // Type of network, IN = Internet.
         public string AddressType = ADDRESS_TYPE_IPV4;  // Address type, typically IP4 or IP6.
         public string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
@@ -237,7 +237,7 @@ namespace SIPSorcery.Net
                                 string[] ownerFields = sdpLineTrimmed.Substring(2).Split(' ');
                                 sdp.Username = ownerFields[0];
                                 sdp.SessionId = ownerFields[1];
-                                Int32.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
+                                UInt64.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
                                 sdp.NetworkType = ownerFields[3];
                                 sdp.AddressType = ownerFields[4];
                                 sdp.AddressOrHost = ownerFields[5];
