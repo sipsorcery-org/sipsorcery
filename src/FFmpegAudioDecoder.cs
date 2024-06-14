@@ -48,6 +48,9 @@ namespace SIPSorceryMedia.FFmpeg
             _isMicrophone = isMicrophone;
         }
 
+        internal int InSampleRate { get; private set; }
+        internal int OutSampleRate { get; private set; }
+        internal int OutChannelCount { get; private set; }
 
         private void RaiseError(String err)
         {
@@ -120,6 +123,9 @@ namespace SIPSorceryMedia.FFmpeg
                     return false;
                 }
 
+                InSampleRate = _audDecCtx->sample_rate;
+                OutSampleRate = clockRate;
+
                 // Set up an audio conversion context so that the decoded samples can always be delivered as signed 16 bit mono PCM.
 
                 _swrContext = ffmpeg.swr_alloc();
@@ -137,6 +143,8 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 else
                     ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
+
+                OutChannelCount = 1;
                 ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", (long)ffmpeg.AV_CH_LAYOUT_MONO, 0);
 
                 if ( ffmpeg.swr_init(_swrContext) < 0 )
@@ -195,13 +203,13 @@ namespace SIPSorceryMedia.FFmpeg
         private unsafe void RunDecodeLoop()
         {
             bool needToRestartAudio = false;
-            
+
             AVPacket* pkt = ffmpeg.av_packet_alloc();
             AVFrame* avFrame = ffmpeg.av_frame_alloc();
 
             int eagain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
             int error;
-            
+
             bool canContinue = true;
             bool managePacket = true;
 
