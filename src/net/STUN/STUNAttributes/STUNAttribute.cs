@@ -59,6 +59,7 @@ namespace SIPSorcery.Net
         ReflectedFrom = 0x000B,         // Not used in RFC5389.
         Realm = 0x0014,
         Nonce = 0x0015,
+        RequestedAddressFamily = 0x0017,// Added in RFC6156.
         XORMappedAddress = 0x0020,
 
         Software = 0x8022,              // Added in RFC5389.
@@ -97,6 +98,15 @@ namespace SIPSorcery.Net
     {
         public static readonly byte[] UdpTransportType = new byte[] { 0x11, 0x00, 0x00, 0x00 };     // The payload type for UDP in a RequestedTransport type attribute.
         public static readonly byte[] TcpTransportType = new byte[] { 0x06, 0x00, 0x00, 0x00 };     // The payload type for TCP in a RequestedTransport type attribute.
+
+        /// <summary>
+        /// The requested TURN relay ip address is IPv4 (RFC5389, Section 15.1)
+        /// </summary>
+        public static readonly byte[] IPv4AddressFamily = new byte[] { 0x01, 0x00, 0x00, 0x00 };
+        /// <summary>
+        /// The requested TURN relay ip address is IPv6 (RFC5389, Section 15.1)
+        /// </summary>
+        public static readonly byte[] IPv6AddressFamily = new byte[] { 0x02, 0x00, 0x00, 0x00 };
     }
 
     public class STUNAttribute

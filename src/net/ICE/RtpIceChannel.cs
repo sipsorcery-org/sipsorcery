@@ -2316,6 +2316,11 @@ namespace SIPSorcery.Net
             STUNAttributeConstants.TcpTransportType :
             STUNAttributeConstants.UdpTransportType));*/
 
+            allocateRequest.Attributes.Add(
+                new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
+                iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
+                STUNAttributeConstants.IPv4AddressFamily : STUNAttributeConstants.IPv6AddressFamily));
+
             byte[] allocateReqBytes = null;
 
             if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
