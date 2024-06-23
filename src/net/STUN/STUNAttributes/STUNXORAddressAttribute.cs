@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNXORAddressAttribute.cs
 //
 // Description: Implements STUN XOR mapped address attribute as defined in RFC5389.
@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using SIPSorcery.Sys;
 
@@ -37,20 +38,35 @@ namespace SIPSorcery.Net
         }
 
         public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
+            : this(attributeType, attributeValue, null)
+        {
+        }
+
+        internal STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue, STUNHeader header)
             : base(attributeType, attributeValue)
         {
+            byte[] address;
+
             if (BitConverter.IsLittleEndian)
             {
                 Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                UInt32 address = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE;
-                Address = new IPAddress(NetConvert.DoReverseEndian(address));
+                address = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE).Reverse().ToArray();
             }
             else
             {
                 Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                UInt32 address = BitConverter.ToUInt32(attributeValue, 4) ^ STUNHeader.MAGIC_COOKIE;
-                Address = new IPAddress(address);
+                address = BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 4)  ^ STUNHeader.MAGIC_COOKIE);
             }
+
+            if (attributeValue[1] == STUNAttributeConstants.IPv6AddressFamily[0] && header != null)
+            {
+                address = address.Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 08) ^ BitConverter.ToUInt32(header.TransactionId, 0)))
+                                 .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 12) ^ BitConverter.ToUInt32(header.TransactionId, 4)))
+                                 .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 16) ^ BitConverter.ToUInt32(header.TransactionId, 8)))
+                                 .ToArray();
+            }
+
+            Address = new IPAddress(address);
         }
 
         public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)

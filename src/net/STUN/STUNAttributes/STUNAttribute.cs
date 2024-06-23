@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNAttribute.cs
 //
 // Description: Implements STUN message attributes as defined in RFC5389.
@@ -157,7 +157,9 @@ namespace SIPSorcery.Net
             Value = NetConvert.GetBytes(value);
         }
 
-        public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex)
+        public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex) => ParseMessageAttributes(buffer, startIndex, endIndex, null);
+
+        public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex, STUNHeader header)
         {
             if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
             {
@@ -204,7 +206,7 @@ namespace SIPSorcery.Net
                     }
                     else if (attributeType == STUNAttributeTypesEnum.XORMappedAddress || attributeType == STUNAttributeTypesEnum.XORPeerAddress || attributeType == STUNAttributeTypesEnum.XORRelayedAddress)
                     {
-                        attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue);
+                        attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header);
                     }
                     else if(attributeType == STUNAttributeTypesEnum.ConnectionId)
                     {
