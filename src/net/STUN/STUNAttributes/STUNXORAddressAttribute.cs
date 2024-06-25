@@ -39,9 +39,21 @@ namespace SIPSorcery.Net
         {
         }
 
-        internal STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue, STUNHeader header)
+        /// <summary>
+        /// Parses an XOR-d (encoded) Address attribute with IPv4/IPv6 support.
+        /// </summary>
+        /// <param name="attributeType">of <see cref="STUNAttributeTypesEnum.XORMappedAddress"/>
+        /// or <see cref="STUNAttributeTypesEnum.XORPeerAddress"/>
+        /// or <see cref="STUNAttributeTypesEnum.XORRelayedAddress"/></param>
+        /// <param name="attributeValue">the raw bytes</param>
+        /// <param name="transactionId">the <see cref="STUNHeader.TransactionId"/></param>
+        public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue, byte[] transactionId)
             : base(attributeType, attributeValue)
         {
+            Family = attributeValue[1];
+            AddressAttributeLength = Family == 1 ? ADDRESS_ATTRIBUTE_IPV4_LENGTH : ADDRESS_ATTRIBUTE_IPV6_LENGTH;
+            TransactionId = transactionId;
+
             byte[] address;
 
             if (BitConverter.IsLittleEndian)
@@ -55,11 +67,11 @@ namespace SIPSorcery.Net
                 address = BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 4)  ^ STUNHeader.MAGIC_COOKIE);
             }
 
-            if (attributeValue[1] == STUNAttributeConstants.IPv6AddressFamily[0] && header != null)
+            if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
             {
-                address = address.Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 08) ^ BitConverter.ToUInt32(header.TransactionId, 0)))
-                                 .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 12) ^ BitConverter.ToUInt32(header.TransactionId, 4)))
-                                 .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 16) ^ BitConverter.ToUInt32(header.TransactionId, 8)))
+                address = address.Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 08) ^ BitConverter.ToUInt32(TransactionId, 0)))
+                                 .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 12) ^ BitConverter.ToUInt32(TransactionId, 4)))
+                                 .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 16) ^ BitConverter.ToUInt32(TransactionId, 8)))
                                  .ToArray();
             }
 
@@ -74,10 +86,27 @@ namespace SIPSorcery.Net
         /// </summary>
         [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
         public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
+            : this(attributeType, port, address, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates an XOR-d (encoded) Address attribute with IPv4/IPv6 support.
+        /// </summary>
+        /// <param name="attributeType">of <see cref="STUNAttributeTypesEnum.XORMappedAddress"/>
+        /// or <see cref="STUNAttributeTypesEnum.XORPeerAddress"/>
+        /// or <see cref="STUNAttributeTypesEnum.XORRelayedAddress"/></param>
+        /// <param name="port">Allocated Port</param>
+        /// <param name="address">Allocated IPAddress</param>
+        /// <param name="transactionId">the <see cref="STUNHeader.TransactionId"/></param>
+        public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address, byte[] transactionId)
             : base(attributeType, null)
         {
             Port = port;
             Address = address;
+            Family = address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? 1 : 2;
+            AddressAttributeLength = Family == 1 ? ADDRESS_ATTRIBUTE_IPV4_LENGTH : ADDRESS_ATTRIBUTE_IPV6_LENGTH;
+            TransactionId = transactionId;
         }
 
         public override int ToByteBuffer(byte[] buffer, int startIndex)
@@ -85,33 +114,45 @@ namespace SIPSorcery.Net
             if (BitConverter.IsLittleEndian)
             {
                 Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(AddressAttributeLength)), 0, buffer, startIndex + 2, 2);
             }
             else
             {
                 Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(AddressAttributeLength), 0, buffer, startIndex + 2, 2);
             }
 
             buffer[startIndex + 4] = 0x00;
             buffer[startIndex + 5] = (byte)Family;
 
+            var address = Address.GetAddressBytes();
+
             if (BitConverter.IsLittleEndian)
             {
-                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNHeader.MAGIC_COOKIE >> 16));
-                UInt32 xorAddress = NetConvert.DoReverseEndian(BitConverter.ToUInt32(Address.GetAddressBytes(), 0)) ^ STUNHeader.MAGIC_COOKIE;
+                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
+                UInt32 xorAddress = NetConvert.DoReverseEndian(BitConverter.ToUInt32(address, 0)) ^ STUNHeader.MAGIC_COOKIE;
                 Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorPort)), 0, buffer, startIndex + 6, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorAddress)), 0, buffer, startIndex + 8, 4);
             }
             else
             {
-                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNHeader.MAGIC_COOKIE >> 16));
-                UInt32 xorAddress = BitConverter.ToUInt32(Address.GetAddressBytes(), 0) ^ STUNHeader.MAGIC_COOKIE;
+                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
+                UInt32 xorAddress = BitConverter.ToUInt32(address, 0) ^ STUNHeader.MAGIC_COOKIE;
                 Buffer.BlockCopy(BitConverter.GetBytes(xorPort), 0, buffer, startIndex + 6, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);
             }
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+            if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
+            {
+                Buffer.BlockCopy(
+                            BitConverter.GetBytes(BitConverter.ToUInt32(address, 04) ^ BitConverter.ToUInt32(TransactionId, 0))
+                    .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(address, 08) ^ BitConverter.ToUInt32(TransactionId, 4)))
+                    .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(address, 12) ^ BitConverter.ToUInt32(TransactionId, 8)))
+                    .ToArray(),
+                0, buffer, startIndex + 12, 12);
+            }
+
+            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
 
         public override string ToString()

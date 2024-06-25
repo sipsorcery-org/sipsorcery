@@ -206,7 +206,7 @@ namespace SIPSorcery.Net
                     }
                     else if (attributeType == STUNAttributeTypesEnum.XORMappedAddress || attributeType == STUNAttributeTypesEnum.XORPeerAddress || attributeType == STUNAttributeTypesEnum.XORRelayedAddress)
                     {
-                        attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header);
+                        attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header.TransactionId);
                     }
                     else if(attributeType == STUNAttributeTypesEnum.ConnectionId)
                     {
