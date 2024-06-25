@@ -26,17 +26,14 @@ namespace SIPSorcery.Net
     /// </summary>
     public class STUNXORAddressAttribute : STUNAddressAttributeBase
     {
-        public const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
-
-        public int Family = 1;      // Ipv4 = 1, IPv6 = 2.
-        public int Port;
-        public IPAddress Address;
-
-        public override UInt16 PaddedLength
-        {
-            get { return ADDRESS_ATTRIBUTE_LENGTH; }
-        }
-
+        /// <summary>
+        /// Obsolete.
+        /// <br/> For IPv6 support, please parse using
+        /// <br/> <see cref="STUNXORAddressAttribute(STUNAttributeTypesEnum, byte[], byte[])"/>
+        /// <br/> <br/>
+        /// Parses an XOR-d (encoded) IPv4 Address attribute.
+        /// </summary>
+        [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
         public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
             : this(attributeType, attributeValue, null)
         {
@@ -69,6 +66,13 @@ namespace SIPSorcery.Net
             Address = new IPAddress(address);
         }
 
+        /// <summary>
+        /// Obsolete.
+        /// <br/> For IPv6 support, please create using <see cref="STUNXORAddressAttribute(STUNAttributeTypesEnum, int, IPAddress, byte[])"/>
+        /// <br/> <br/>
+        /// Creates an XOR-d (encoded) IPv4 Address attribute.
+        /// </summary>
+        [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
         public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
             : base(attributeType, null)
         {
