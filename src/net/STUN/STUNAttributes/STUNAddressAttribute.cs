@@ -20,6 +20,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net
 {
     public class STUNAddressAttribute : STUNAttribute
+    public class STUNAddressAttribute : STUNAddressAttributeBase
     {
         public const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
 
