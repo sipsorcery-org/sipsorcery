@@ -55,6 +55,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
+using System;
 using System.IO;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
@@ -686,6 +687,39 @@ namespace SIPSorcery.Net
             pcc = new SrtcpCryptoContext(ssrc, masterKey,
                     masterSalt, policy);
             return pcc;
+        }
+
+        public void RotateKeys()
+        {
+            // Generate new master key and salt
+            byte[] newMasterKey = GenerateNewKey(policy.EncKeyLength);
+            byte[] newMasterSalt = GenerateNewKey(policy.SaltKeyLength);
+
+            // Update the master key and salt
+            Array.Copy(newMasterKey, masterKey, masterKey.Length);
+            Array.Copy(newMasterSalt, masterSalt, masterSalt.Length);
+
+            // Re-derive session keys
+            DeriveSrtcpKeys();
+
+            // Reset counters or perform any other necessary updates
+            sentIndex = 0;
+            receivedIndex = 0;
+            replayWindow = 0;
+
+            // Securely erase the temporary new keys
+            Array.Clear(newMasterKey, 0, newMasterKey.Length);
+            Array.Clear(newMasterSalt, 0, newMasterSalt.Length);
+        }
+
+        private byte[] GenerateNewKey(int length)
+        {
+            byte[] key = new byte[length];
+            using (var rng = new System.Security.Cryptography.RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(key);
+            }
+            return key;
         }
     }
 }

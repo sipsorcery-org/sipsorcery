@@ -108,6 +108,19 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Wraps the specified ReadOnlySpan<byte> buffer into this RTPPacket.
+        /// </summary>
+        /// <param name="data">The ReadOnlySpan<byte> buffer to wrap.</param>
+        public void Wrap(ReadOnlySpan<byte> data)
+        {
+            _buffer.Position = 0;
+            _buffer.SetLength(0);
+            data.CopyTo(new Span<byte>(_buffer.GetBuffer(), 0, data.Length));
+            _buffer.SetLength(data.Length);
+            _buffer.Position = 0;
+        }
+
+        /// <summary>
         /// Gets the data contained in this RTPPacket as a byte array.
         /// </summary>
         /// <returns>A byte array containing the data of this RTPPacket.</returns>
