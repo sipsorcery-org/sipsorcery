@@ -17,6 +17,7 @@ namespace SIPSorcery.Net
         private TimeSpan? _contextRotationInterval;
         private DateTime _lastContextRotation;
         private bool _contextRotationEnabled;
+        private readonly RTPPacket _sharedPacket = new RTPPacket();
 
         public SrtcpPacketTransformer(SecureRtpTransformEngine engine) : this(engine, engine) { }
 
@@ -102,6 +103,8 @@ namespace SIPSorcery.Net
 
                     try
                     {
+                        _sharedPacket?.Dispose();
+
                         _forwardEngine.CloseContexts();
                         if (_forwardEngine != _reverseEngine)
                         {
@@ -145,20 +148,19 @@ namespace SIPSorcery.Net
 
         private byte[] EncodeOrDecodePacket(ReadOnlySpan<byte> pkt, SecureRtpTransformEngine engine, bool isEncode)
         {
-            using var packet = new RTPPacket();
-            packet.Wrap(pkt.ToArray());
-            var context = GetOrCreateContext(packet.GetRTCPSSRC(), engine);
+            _sharedPacket.Wrap(pkt.ToArray());
+            var context = GetOrCreateContext(_sharedPacket.GetRTCPSSRC(), engine);
 
             if (isEncode)
             {
-                context.TransformPacket(packet);
+                context.TransformPacket(_sharedPacket);
             }
-            else if (!context.ReverseTransformPacket(packet))
+            else if (!context.ReverseTransformPacket(_sharedPacket))
             {
                 return null;
             }
 
-            return packet.GetData();
+            return _sharedPacket.GetData();
         }
 
         private SrtcpCryptoContext GetOrCreateContext(long ssrc, SecureRtpTransformEngine engine)
