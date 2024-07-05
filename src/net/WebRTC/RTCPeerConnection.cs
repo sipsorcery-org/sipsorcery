@@ -560,7 +560,7 @@ namespace SIPSorcery.Net
                                 IceRole == IceRolesEnum.active ?
                                 new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                                (IDtlsSrtpPeer)new DtlsSrtpSecureServer(_dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
@@ -1715,7 +1715,7 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
                 var expectedFp = RemotePeerDtlsFingerprint;
-                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.RemoteCertificate.GetCertificateAt(0));
 
                 if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
                 {
@@ -1746,9 +1746,9 @@ namespace SIPSorcery.Net
         /// <param name="alertLevel">The level of the alert: warning or critical.</param>
         /// <param name="alertType">The type of the alert.</param>
         /// <param name="alertDescription">An optional description for the alert.</param>
-        private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
+        private void OnDtlsAlert(AlertLevels alertLevel, AlertTypes alertType, string alertDescription)
         {
-            if (alertType == AlertTypesEnum.close_notify)
+            if (alertType == AlertTypes.CloseNotify)
             {
                 logger.LogDebug($"SCTP closing transport as a result of DTLS close notification.");
 

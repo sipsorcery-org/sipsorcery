@@ -299,7 +299,7 @@ namespace SIPSorcery.Net
          * 
          * @param pkt the RTP packet that is going to be sent out
          */
-        public void TransformPacket(RawPacket pkt)
+        public void TransformPacket(RTPPacket pkt)
         {
             bool encrypt = false;
             // Encrypt the packet using Counter Mode encryption
@@ -353,7 +353,7 @@ namespace SIPSorcery.Net
          * @return true if the packet can be accepted
          *         false if authentication or replay check failed 
          */
-        public bool ReverseTransformPacket(RawPacket pkt)
+        public bool ReverseTransformPacket(RTPPacket pkt)
         {
             bool decrypt = false;
             int tagLength = policy.AuthTagLength;
@@ -376,11 +376,11 @@ namespace SIPSorcery.Net
             if (policy.AuthType != SrtpPolicy.NULL_AUTHENTICATION)
             {
                 // get original authentication data and store in tempStore
-                pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, tempStore);
+                pkt.ReadRegionToBuffer(pkt.GetLength() - tagLength, tagLength, tempStore);
 
                 // Shrink packet to remove the authentication tag and index
                 // because this is part of authenticated data
-                pkt.shrink(tagLength + 4);
+                pkt.Shrink(tagLength + 4);
 
                 // compute, then save authentication in tagStore
                 AuthenticatePacket(pkt, indexEflag);
@@ -420,7 +420,7 @@ namespace SIPSorcery.Net
          * Perform Counter Mode AES encryption / decryption 
          * @param pkt the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESCM(RawPacket pkt, int index)
+        public void ProcessPacketAESCM(RTPPacket pkt, int index)
         {
             long ssrc = pkt.GetRTCPSSRC();
 
@@ -465,7 +465,7 @@ namespace SIPSorcery.Net
          *
          * @param pkt the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESF8(RawPacket pkt, int index)
+        public void ProcessPacketAESF8(RTPPacket pkt, int index)
         {
             // byte[] iv = new byte[16];
 
@@ -497,7 +497,7 @@ namespace SIPSorcery.Net
             SrtpCipherF8.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore, cipherF8);
         }
 
-        byte[] tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
+        byte[] tempBuffer = new byte[RTPPacket.RTP_PACKET_MAX_SIZE];
 
         /**
          * Authenticate a packet.
@@ -506,7 +506,7 @@ namespace SIPSorcery.Net
          *
          * @param pkt the RTP packet to be authenticated
          */
-        private void AuthenticatePacket(RawPacket pkt, int index)
+        private void AuthenticatePacket(RTPPacket pkt, int index)
         {
             MemoryStream buf = pkt.GetBuffer();
             buf.Position = 0;

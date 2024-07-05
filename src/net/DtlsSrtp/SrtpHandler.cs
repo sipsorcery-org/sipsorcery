@@ -32,10 +32,10 @@ namespace SIPSorcery.Net
         public SDPSecurityDescription LocalSecurityDescription { get; private set; }
         public SDPSecurityDescription RemoteSecurityDescription { get; private set; }
 
-        public IPacketTransformer SrtpDecoder { get; private set; }
-        public IPacketTransformer SrtpEncoder { get; private set; }
-        public IPacketTransformer SrtcpDecoder { get; private set; }
-        public IPacketTransformer SrtcpEncoder { get; private set; }
+        public IDataPacketTransformer SrtpDecoder { get; private set; }
+        public IDataPacketTransformer SrtpEncoder { get; private set; }
+        public IDataPacketTransformer SrtcpDecoder { get; private set; }
+        public IDataPacketTransformer SrtcpEncoder { get; private set; }
 
         public bool IsNegotiationComplete { get; private set; } = false;
 
@@ -127,42 +127,42 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        private IPacketTransformer GenerateRtpEncoder(SDPSecurityDescription securityDescription)
+        private IDataPacketTransformer GenerateRtpEncoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, true);
         }
 
-        private IPacketTransformer GenerateRtpDecoder(SDPSecurityDescription securityDescription)
+        private IDataPacketTransformer GenerateRtpDecoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, true);
         }
 
-        private IPacketTransformer GenerateRtcpEncoder(SDPSecurityDescription securityDescription)
+        private IDataPacketTransformer GenerateRtcpEncoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, false);
         }
 
-        private IPacketTransformer GenerateRtcpDecoder(SDPSecurityDescription securityDescription)
+        private IDataPacketTransformer GenerateRtcpDecoder(SDPSecurityDescription securityDescription)
         {
             return GenerateTransformer(securityDescription, false);
         }
 
-        private IPacketTransformer GenerateTransformer(SDPSecurityDescription securityDescription, bool isRtp)
+        private IDataPacketTransformer GenerateTransformer(SDPSecurityDescription securityDescription, bool isRtp)
         {
-            var srtpParams = SrtpParameters.GetSrtpParametersForProfile((int)securityDescription.CryptoSuite);
+            var srtpParams = SecureRtpParameters.GetParametersForProfile((int)securityDescription.CryptoSuite);
 
-            var engine = new SrtpTransformEngine(securityDescription.KeyParams[0].Key,
+            var engine = new SecureRtpTransformEngine(securityDescription.KeyParams[0].Key,
                                                  securityDescription.KeyParams[0].Salt,
-                                                 srtpParams.GetSrtpPolicy(), 
-                                                 srtpParams.GetSrtcpPolicy() );
+                                                 srtpParams.GetPolicy(), 
+                                                 srtpParams.GetRtcpPolicy() );
 
             if (isRtp)
             {
-                return engine.GetRTPTransformer();
+                return engine.CreateRtpPacketTransformer();
             }
             else
             {
-                return engine.GetRTCPTransformer();
+                return engine.CreateRtcpPacketTransformer();
             }
         }
 
@@ -170,7 +170,7 @@ namespace SIPSorcery.Net
         {
             lock (SrtpDecoder)
             {
-                return SrtpDecoder.ReverseTransform(packet, offset, length);
+                return SrtpDecoder.DecodePacket(packet, offset, length);
             }
         }
 
@@ -194,7 +194,7 @@ namespace SIPSorcery.Net
         {
             lock (SrtpEncoder)
             {
-                return SrtpEncoder.Transform(packet, offset, length);
+                return SrtpEncoder.EncodePacket(packet, offset, length);
             }
         }
 
@@ -218,7 +218,7 @@ namespace SIPSorcery.Net
         {
             lock (SrtcpDecoder)
             {
-                return SrtcpDecoder.ReverseTransform(packet, offset, length);
+                return SrtcpDecoder.DecodePacket(packet, offset, length);
             }
         }
 
@@ -241,7 +241,7 @@ namespace SIPSorcery.Net
         {
             lock (SrtcpEncoder)
             {
-                return SrtcpEncoder.Transform(packet, offset, length);
+                return SrtcpEncoder.EncodePacket(packet, offset, length);
             }
         }
 

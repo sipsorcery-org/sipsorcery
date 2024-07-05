@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
         ///  - alert type,
         ///  - alert description.
         /// </summary>
-        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+        public event Action<AlertLevels, AlertTypes, string> OnAlert;
 
         public DtlsSrtpClient() :
             this(null, null, null)
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
             {
                 SecureRandom random = new SecureRandom();
                 int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
-                byte[] mki = new byte[(SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherKeyLength() + SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherSaltLength()) / 8];
+                byte[] mki = new byte[(SecureRtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.EncryptionKeyLength + SecureRtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.SaltLength) / 8];
                 random.NextBytes(mki); // Reusing our secure random for generating the key.
                 this.clientSrtpData = new UseSrtpData(protectionProfiles, mki);
             }
@@ -205,35 +205,16 @@ namespace SIPSorcery.Net
             clientSrtpData = new UseSrtpData(protectionProfiles, clientSrtpData.Mki);
         }
 
-        public virtual SrtpPolicy GetSrtpPolicy()
-        {
-            return srtpPolicy;
-        }
+        public virtual SrtpPolicy SrtpPolicy => srtpPolicy;
 
-        public virtual SrtpPolicy GetSrtcpPolicy()
-        {
-            return srtcpPolicy;
-        }
+        public virtual SrtpPolicy SrtcpPolicy => srtcpPolicy;
 
-        public virtual byte[] GetSrtpMasterServerKey()
-        {
-            return srtpMasterServerKey;
-        }
+        public virtual byte[] SrtpMasterServerKey => srtpMasterServerKey;
+        public virtual byte[] SrtpMasterServerSalt => srtpMasterServerSalt;
 
-        public virtual byte[] GetSrtpMasterServerSalt()
-        {
-            return srtpMasterServerSalt;
-        }
+        public virtual byte[] SrtpMasterClientKey => srtpMasterClientKey;
 
-        public virtual byte[] GetSrtpMasterClientKey()
-        {
-            return srtpMasterClientKey;
-        }
-
-        public virtual byte[] GetSrtpMasterClientSalt()
-        {
-            return srtpMasterClientSalt;
-        }
+        public virtual byte[] SrtpMasterClientSalt => srtpMasterClientSalt;
 
         public override TlsAuthentication GetAuthentication()
         {
@@ -252,10 +233,7 @@ namespace SIPSorcery.Net
             PrepareSrtpSharedSecret();
         }
 
-        public bool IsClient()
-        {
-            return true;
-        }
+        public bool IsClient { get; } = true;
 
         protected byte[] GetKeyingMaterial(int length)
         {
@@ -322,12 +300,12 @@ namespace SIPSorcery.Net
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.MasterSecret = masterSecret;
 
-            SrtpParameters srtpParams = SrtpParameters.GetSrtpParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
-            int keyLen = srtpParams.GetCipherKeyLength();
-            int saltLen = srtpParams.GetCipherSaltLength();
+            SecureRtpParameters srtpParams = SecureRtpParameters.GetParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
+            int keyLen = srtpParams.EncryptionKeyLength;
+            int saltLen = srtpParams.SaltLength;
 
-            srtpPolicy = srtpParams.GetSrtpPolicy();
-            srtcpPolicy = srtpParams.GetSrtcpPolicy();
+            srtpPolicy = srtpParams.GetPolicy();
+            srtcpPolicy = srtpParams.GetRtcpPolicy();
 
             srtpMasterClientKey = new byte[keyLen];
             srtpMasterServerKey = new byte[keyLen];
@@ -401,7 +379,7 @@ namespace SIPSorcery.Net
             string alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
             alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
-            if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
+            if (alertDescription == AlertTypes.CloseNotify.GetHashCode())
             {
                 logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
             }
@@ -416,29 +394,32 @@ namespace SIPSorcery.Net
             base.NotifyServerVersion(serverVersion);
         }
 
-        public Certificate GetRemoteCertificate()
+        public Certificate RemoteCertificate
         {
-            return ServerCertificate;
+            get
+            {
+                return ServerCertificate;
+            }
         }
 
         public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
         {
             string description = AlertDescription.GetText(alertDescription);
 
-            AlertLevelsEnum level = AlertLevelsEnum.Warning;
-            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+            AlertLevels level = AlertLevels.Warning;
+            AlertTypes alertType = AlertTypes.Unknown;
 
-            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
+            if (Enum.IsDefined(typeof(AlertLevels), alertLevel))
             {
-                level = (AlertLevelsEnum)alertLevel;
+                level = (AlertLevels)alertLevel;
             }
 
-            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
+            if (Enum.IsDefined(typeof(AlertTypes), alertDescription))
             {
-                alertType = (AlertTypesEnum)alertDescription;
+                alertType = (AlertTypes)alertDescription;
             }
 
-            if (alertType == AlertTypesEnum.close_notify)
+            if (alertType == AlertTypes.CloseNotify)
             {
                 logger.LogDebug($"DTLS client received close notification: {AlertLevel.GetText(alertLevel)}, {description}.");
             }

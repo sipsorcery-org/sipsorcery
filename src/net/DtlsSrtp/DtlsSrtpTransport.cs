@@ -40,10 +40,10 @@ namespace SIPSorcery.Net
 
         private static readonly Random random = new Random();
 
-        private IPacketTransformer srtpEncoder;
-        private IPacketTransformer srtpDecoder;
-        private IPacketTransformer srtcpEncoder;
-        private IPacketTransformer srtcpDecoder;
+        private IDataPacketTransformer srtpEncoder;
+        private IDataPacketTransformer srtpDecoder;
+        private IDataPacketTransformer srtcpEncoder;
+        private IDataPacketTransformer srtcpDecoder;
         IDtlsSrtpPeer connection = null;
 
         /// <summary>The collection of chunks to be written.</summary>
@@ -70,7 +70,7 @@ namespace SIPSorcery.Net
         ///  - alert type,
         ///  - alert description.
         /// </summary>
-        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+        public event Action<AlertLevels, AlertTypes, string> OnAlert;
 
         private System.DateTime _startTime = System.DateTime.MinValue;
         private bool _isClosed = false;
@@ -96,7 +96,7 @@ namespace SIPSorcery.Net
             connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
         }
 
-        public IPacketTransformer SrtpDecoder
+        public IDataPacketTransformer SrtpDecoder
         {
             get
             {
@@ -104,7 +104,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public IPacketTransformer SrtpEncoder
+        public IDataPacketTransformer SrtpEncoder
         {
             get
             {
@@ -112,7 +112,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public IPacketTransformer SrtcpDecoder
+        public IDataPacketTransformer SrtcpDecoder
         {
             get
             {
@@ -120,7 +120,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public IPacketTransformer SrtcpEncoder
+        public IDataPacketTransformer SrtcpEncoder
         {
             get
             {
@@ -145,7 +145,7 @@ namespace SIPSorcery.Net
 
         public bool DoHandshake(out string handshakeError)
         {
-            if (connection.IsClient())
+            if (connection.IsClient)
             {
                 return DoHandshakeAsClient(out handshakeError);
             }
@@ -157,7 +157,7 @@ namespace SIPSorcery.Net
 
         public bool IsClient
         {
-            get { return connection.IsClient(); }
+            get { return connection.IsClient; }
         }
 
         private bool DoHandshakeAsClient(out string handshakeError)
@@ -182,7 +182,7 @@ namespace SIPSorcery.Net
                     // Prepare the shared key to be used in RTP streaming
                     //client.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
-                    if (client.GetSrtpPolicy() != null)
+                    if (client.SrtpPolicy != null)
                     {
                         srtpDecoder = GenerateRtpDecoder();
                         srtpEncoder = GenerateRtpEncoder();
@@ -242,14 +242,14 @@ namespace SIPSorcery.Net
                 DtlsServerProtocol serverProtocol = new DtlsServerProtocol(secureRandom);
                 try
                 {
-                    var server = (DtlsSrtpServer)connection;
+                    var server = (DtlsSrtpSecureServer)connection;
 
                     // Perform the handshake in a non-blocking fashion
                     Transport = serverProtocol.Accept(server, this);
                     // Prepare the shared key to be used in RTP streaming
                     //server.PrepareSrtpSharedSecret();
                     // Generate encoders for DTLS traffic
-                    if (server.GetSrtpPolicy() != null)
+                    if (server.SrtpPolicy != null)
                     {
                         srtpDecoder = GenerateRtpDecoder();
                         srtpEncoder = GenerateRtpEncoder();
@@ -293,83 +293,86 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        public Certificate GetRemoteCertificate()
+        public Certificate RemoteCertificate
         {
-            return connection.GetRemoteCertificate();
+            get
+            {
+                return connection.RemoteCertificate;
+            }
         }
 
         protected byte[] GetMasterServerKey()
         {
-            return connection.GetSrtpMasterServerKey();
+            return connection.SrtpMasterServerKey;
         }
 
         protected byte[] GetMasterServerSalt()
         {
-            return connection.GetSrtpMasterServerSalt();
+            return connection.SrtpMasterServerSalt;
         }
 
         protected byte[] GetMasterClientKey()
         {
-            return connection.GetSrtpMasterClientKey();
+            return connection.SrtpMasterClientKey;
         }
 
         protected byte[] GetMasterClientSalt()
         {
-            return connection.GetSrtpMasterClientSalt();
+            return connection.SrtpMasterClientSalt;
         }
 
         protected SrtpPolicy GetSrtpPolicy()
         {
-            return connection.GetSrtpPolicy();
+            return connection.SrtpPolicy;
         }
 
         protected SrtpPolicy GetSrtcpPolicy()
         {
-            return connection.GetSrtcpPolicy();
+            return connection.SrtcpPolicy;
         }
 
-        protected IPacketTransformer GenerateRtpEncoder()
+        protected IDataPacketTransformer GenerateRtpEncoder()
         {
-            return GenerateTransformer(connection.IsClient(), true);
+            return GenerateTransformer(connection.IsClient, true);
         }
 
-        protected IPacketTransformer GenerateRtpDecoder()
+        protected IDataPacketTransformer GenerateRtpDecoder()
         {
             //Generate the reverse result of "GenerateRtpEncoder"
-            return GenerateTransformer(!connection.IsClient(), true);
+            return GenerateTransformer(!connection.IsClient, true);
         }
 
-        protected IPacketTransformer GenerateRtcpEncoder()
+        protected IDataPacketTransformer GenerateRtcpEncoder()
         {
             var isClient = connection is DtlsSrtpClient;
-            return GenerateTransformer(connection.IsClient(), false);
+            return GenerateTransformer(connection.IsClient, false);
         }
 
-        protected IPacketTransformer GenerateRtcpDecoder()
+        protected IDataPacketTransformer GenerateRtcpDecoder()
         {
             //Generate the reverse result of "GenerateRctpEncoder"
-            return GenerateTransformer(!connection.IsClient(), false);
+            return GenerateTransformer(!connection.IsClient, false);
         }
 
-        protected IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
+        protected IDataPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
         {
-            SrtpTransformEngine engine = null;
+            SecureRtpTransformEngine engine = null;
             if (!isClient)
             {
-                engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+                engine = new SecureRtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
             }
             else
             {
-                engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+                engine = new SecureRtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
             }
 
             if (isRtp)
             {
-                return engine.GetRTPTransformer();
+                return engine.CreateRtpPacketTransformer();
             }
             else
             {
-                return engine.GetRTCPTransformer();
+                return engine.CreateRtcpPacketTransformer();
             }
         }
 
@@ -377,7 +380,7 @@ namespace SIPSorcery.Net
         {
             lock (this.srtpDecoder)
             {
-                return this.srtpDecoder.ReverseTransform(packet, offset, length);
+                return this.srtpDecoder.DecodePacket(packet, offset, length);
             }
         }
 
@@ -401,7 +404,7 @@ namespace SIPSorcery.Net
         {
             lock (this.srtpEncoder)
             {
-                return this.srtpEncoder.Transform(packet, offset, length);
+                return this.srtpEncoder.EncodePacket(packet, offset, length);
             }
         }
 
@@ -425,7 +428,7 @@ namespace SIPSorcery.Net
         {
             lock (this.srtcpDecoder)
             {
-                return this.srtcpDecoder.ReverseTransform(packet, offset, length);
+                return this.srtcpDecoder.DecodePacket(packet, offset, length);
             }
         }
 
@@ -448,7 +451,7 @@ namespace SIPSorcery.Net
         {
             lock (this.srtcpEncoder)
             {
-                return this.srtcpEncoder.Transform(packet, offset, length);
+                return this.srtcpEncoder.EncodePacket(packet, offset, length);
             }
         }
 
@@ -530,7 +533,7 @@ namespace SIPSorcery.Net
 
                 if (millisecondsRemaining <= 0)
                 {
-                    logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
+                    logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
                 else if (!_isClosed)

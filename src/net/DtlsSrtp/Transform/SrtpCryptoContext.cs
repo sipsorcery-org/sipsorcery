@@ -420,7 +420,7 @@ namespace SIPSorcery.Net
          * @param pkt
          *            the RTP packet that is going to be sent out
          */
-        public void TransformPacket(RawPacket pkt)
+        public void TransformPacket(RTPPacket pkt)
         {
             /* Encrypt the packet using Counter Mode encryption */
             if (policy.EncType == SrtpPolicy.AESCM_ENCRYPTION || policy.EncType == SrtpPolicy.TWOFISH_ENCRYPTION)
@@ -467,7 +467,7 @@ namespace SIPSorcery.Net
          * @return true if the packet can be accepted false if the packet failed
          *         authentication or failed replay check
          */
-        public bool ReverseTransformPacket(RawPacket pkt)
+        public bool ReverseTransformPacket(RTPPacket pkt)
         {
             int seqNo = pkt.GetSequenceNumber();
 
@@ -493,8 +493,8 @@ namespace SIPSorcery.Net
                 int tagLength = policy.AuthTagLength;
 
                 // get original authentication and store in tempStore
-                pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, tempStore);
-                pkt.shrink(tagLength);
+                pkt.ReadRegionToBuffer(pkt.GetLength() - tagLength, tagLength, tempStore);
+                pkt.Shrink(tagLength);
 
                 // save computed authentication in tagStore
                 AuthenticatePacketHMCSHA1(pkt, guessedROC);
@@ -536,7 +536,7 @@ namespace SIPSorcery.Net
          * @param pkt
          *            the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESCM(RawPacket pkt)
+        public void ProcessPacketAESCM(RTPPacket pkt)
         {
             long ssrc = pkt.GetSSRC();
             int seqNo = pkt.GetSequenceNumber();
@@ -574,7 +574,7 @@ namespace SIPSorcery.Net
          * @param pkt
          *            the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESF8(RawPacket pkt)
+        public void ProcessPacketAESF8(RTPPacket pkt)
         {
             // 11 bytes of the RTP header are the 11 bytes of the iv
             // the first byte of the RTP header is not used.
@@ -594,7 +594,7 @@ namespace SIPSorcery.Net
             SrtpCipherF8.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore, cipherF8);
         }
 
-        byte[] tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
+        byte[] tempBuffer = new byte[RTPPacket.RTP_PACKET_MAX_SIZE];
 
         /**
          * Authenticate a packet. Calculated authentication tag is returned.
@@ -604,7 +604,7 @@ namespace SIPSorcery.Net
          * @param rocIn
          *            Roll-Over-Counter
          */
-        private void AuthenticatePacketHMCSHA1(RawPacket pkt, int rocIn)
+        private void AuthenticatePacketHMCSHA1(RTPPacket pkt, int rocIn)
         {
             MemoryStream buf = pkt.GetBuffer();
             buf.Position = 0;
@@ -858,7 +858,7 @@ namespace SIPSorcery.Net
          *            The key derivation rate for this context
          * @return a new SRTPCryptoContext with all relevant data set.
          */
-        public SrtpCryptoContext deriveContext(long ssrc, int roc, long deriveRate)
+        public SrtpCryptoContext DeriveContext(long ssrc, int roc, long deriveRate)
         {
             return new SrtpCryptoContext(ssrc, roc, deriveRate, masterKey, masterSalt, policy);
         }
