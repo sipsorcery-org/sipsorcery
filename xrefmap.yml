@@ -20952,12 +20952,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.TryParseRtpmap
   nameWithType: SDPAudioVideoMediaFormat.TryParseRtpmap
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  name: WithUpdatedFmtp(String, SDPAudioVideoMediaFormat)
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedFmtp_System_String_SIPSorcery_Net_SDPAudioVideoMediaFormat_
-  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String, SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedFmtp(String, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String)
+  name: WithUpdatedFmtp(String)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedFmtp_System_String_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp(System.String)
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedFmtp(String)
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp*
   name: WithUpdatedFmtp
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedFmtp_
@@ -20965,12 +20965,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedFmtp
   nameWithType: SDPAudioVideoMediaFormat.WithUpdatedFmtp
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32,SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  name: WithUpdatedID(Int32, SDPAudioVideoMediaFormat)
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedID_System_Int32_SIPSorcery_Net_SDPAudioVideoMediaFormat_
-  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32,SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32, SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedID(Int32, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32)
+  name: WithUpdatedID(Int32)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedID_System_Int32_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID(System.Int32)
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedID(Int32)
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID*
   name: WithUpdatedID
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedID_
@@ -20978,12 +20978,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedID
   nameWithType: SDPAudioVideoMediaFormat.WithUpdatedID
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  name: WithUpdatedRtpmap(String, SDPAudioVideoMediaFormat)
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedRtpmap_System_String_SIPSorcery_Net_SDPAudioVideoMediaFormat_
-  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String,SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String, SIPSorcery.Net.SDPAudioVideoMediaFormat)
-  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedRtpmap(String, SDPAudioVideoMediaFormat)
+- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String)
+  name: WithUpdatedRtpmap(String)
+  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedRtpmap_System_String_
+  commentId: M:SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String)
+  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap(System.String)
+  nameWithType: SDPAudioVideoMediaFormat.WithUpdatedRtpmap(String)
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.WithUpdatedRtpmap*
   name: WithUpdatedRtpmap
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_WithUpdatedRtpmap_
@@ -23741,43 +23741,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNAddressAttribute.STUNAddressAttribute
   nameWithType: STUNAddressAttribute.STUNAddressAttribute
-- uid: SIPSorcery.Net.STUNAddressAttribute.Address
-  name: Address
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_Address
-  commentId: F:SIPSorcery.Net.STUNAddressAttribute.Address
-  fullName: SIPSorcery.Net.STUNAddressAttribute.Address
-  nameWithType: STUNAddressAttribute.Address
-- uid: SIPSorcery.Net.STUNAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-  name: ADDRESS_ATTRIBUTE_LENGTH
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_ADDRESS_ATTRIBUTE_LENGTH
-  commentId: F:SIPSorcery.Net.STUNAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-  fullName: SIPSorcery.Net.STUNAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-  nameWithType: STUNAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-- uid: SIPSorcery.Net.STUNAddressAttribute.Family
-  name: Family
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_Family
-  commentId: F:SIPSorcery.Net.STUNAddressAttribute.Family
-  fullName: SIPSorcery.Net.STUNAddressAttribute.Family
-  nameWithType: STUNAddressAttribute.Family
-- uid: SIPSorcery.Net.STUNAddressAttribute.PaddedLength
-  name: PaddedLength
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_PaddedLength
-  commentId: P:SIPSorcery.Net.STUNAddressAttribute.PaddedLength
-  fullName: SIPSorcery.Net.STUNAddressAttribute.PaddedLength
-  nameWithType: STUNAddressAttribute.PaddedLength
-- uid: SIPSorcery.Net.STUNAddressAttribute.PaddedLength*
-  name: PaddedLength
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_PaddedLength_
-  commentId: Overload:SIPSorcery.Net.STUNAddressAttribute.PaddedLength
-  isSpec: "True"
-  fullName: SIPSorcery.Net.STUNAddressAttribute.PaddedLength
-  nameWithType: STUNAddressAttribute.PaddedLength
-- uid: SIPSorcery.Net.STUNAddressAttribute.Port
-  name: Port
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_Port
-  commentId: F:SIPSorcery.Net.STUNAddressAttribute.Port
-  fullName: SIPSorcery.Net.STUNAddressAttribute.Port
-  nameWithType: STUNAddressAttribute.Port
 - uid: SIPSorcery.Net.STUNAddressAttribute.ToByteBuffer(System.Byte[],System.Int32)
   name: ToByteBuffer(Byte[], Int32)
   href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute_ToByteBuffer_System_Byte___System_Int32_
@@ -23807,6 +23770,89 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNAddressAttribute.ToString
   nameWithType: STUNAddressAttribute.ToString
+- uid: SIPSorcery.Net.STUNAddressAttributeBase
+  name: STUNAddressAttributeBase
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html
+  commentId: T:SIPSorcery.Net.STUNAddressAttributeBase
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase
+  nameWithType: STUNAddressAttributeBase
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Byte[])
+  name: STUNAddressAttributeBase(STUNAttributeTypesEnum, Byte[])
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___
+  commentId: M:SIPSorcery.Net.STUNAddressAttributeBase.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Byte[])
+  name.vb: STUNAddressAttributeBase(STUNAttributeTypesEnum, Byte())
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.STUNAddressAttributeBase(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNAddressAttributeBase.STUNAddressAttributeBase(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte())
+  nameWithType: STUNAddressAttributeBase.STUNAddressAttributeBase(STUNAttributeTypesEnum, Byte[])
+  nameWithType.vb: STUNAddressAttributeBase.STUNAddressAttributeBase(STUNAttributeTypesEnum, Byte())
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.#ctor*
+  name: STUNAddressAttributeBase
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase__ctor_
+  commentId: Overload:SIPSorcery.Net.STUNAddressAttributeBase.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.STUNAddressAttributeBase
+  nameWithType: STUNAddressAttributeBase.STUNAddressAttributeBase
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.Address
+  name: Address
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_Address
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.Address
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.Address
+  nameWithType: STUNAddressAttributeBase.Address
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV4_LENGTH
+  name: ADDRESS_ATTRIBUTE_IPV4_LENGTH
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_ADDRESS_ATTRIBUTE_IPV4_LENGTH
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV4_LENGTH
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV4_LENGTH
+  nameWithType: STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV4_LENGTH
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV6_LENGTH
+  name: ADDRESS_ATTRIBUTE_IPV6_LENGTH
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_ADDRESS_ATTRIBUTE_IPV6_LENGTH
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV6_LENGTH
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV6_LENGTH
+  nameWithType: STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV6_LENGTH
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_LENGTH
+  name: ADDRESS_ATTRIBUTE_LENGTH
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_ADDRESS_ATTRIBUTE_LENGTH
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_LENGTH
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_LENGTH
+  nameWithType: STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_LENGTH
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.AddressAttributeLength
+  name: AddressAttributeLength
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_AddressAttributeLength
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.AddressAttributeLength
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.AddressAttributeLength
+  nameWithType: STUNAddressAttributeBase.AddressAttributeLength
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.Family
+  name: Family
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_Family
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.Family
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.Family
+  nameWithType: STUNAddressAttributeBase.Family
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.PaddedLength
+  name: PaddedLength
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_PaddedLength
+  commentId: P:SIPSorcery.Net.STUNAddressAttributeBase.PaddedLength
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.PaddedLength
+  nameWithType: STUNAddressAttributeBase.PaddedLength
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.PaddedLength*
+  name: PaddedLength
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_PaddedLength_
+  commentId: Overload:SIPSorcery.Net.STUNAddressAttributeBase.PaddedLength
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.PaddedLength
+  nameWithType: STUNAddressAttributeBase.PaddedLength
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.Port
+  name: Port
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_Port
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.Port
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.Port
+  nameWithType: STUNAddressAttributeBase.Port
+- uid: SIPSorcery.Net.STUNAddressAttributeBase.TransactionId
+  name: TransactionId
+  href: api/SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_TransactionId
+  commentId: F:SIPSorcery.Net.STUNAddressAttributeBase.TransactionId
+  fullName: SIPSorcery.Net.STUNAddressAttributeBase.TransactionId
+  nameWithType: STUNAddressAttributeBase.TransactionId
 - uid: SIPSorcery.Net.STUNAttribute
   name: STUNAttribute
   href: api/SIPSorcery.Net.STUNAttribute.html
@@ -23875,6 +23921,15 @@ references:
   fullName.vb: SIPSorcery.Net.STUNAttribute.ParseMessageAttributes(System.Byte(), System.Int32, System.Int32)
   nameWithType: STUNAttribute.ParseMessageAttributes(Byte[], Int32, Int32)
   nameWithType.vb: STUNAttribute.ParseMessageAttributes(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.STUNAttribute.ParseMessageAttributes(System.Byte[],System.Int32,System.Int32,SIPSorcery.Net.STUNHeader)
+  name: ParseMessageAttributes(Byte[], Int32, Int32, STUNHeader)
+  href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ParseMessageAttributes_System_Byte___System_Int32_System_Int32_SIPSorcery_Net_STUNHeader_
+  commentId: M:SIPSorcery.Net.STUNAttribute.ParseMessageAttributes(System.Byte[],System.Int32,System.Int32,SIPSorcery.Net.STUNHeader)
+  name.vb: ParseMessageAttributes(Byte(), Int32, Int32, STUNHeader)
+  fullName: SIPSorcery.Net.STUNAttribute.ParseMessageAttributes(System.Byte[], System.Int32, System.Int32, SIPSorcery.Net.STUNHeader)
+  fullName.vb: SIPSorcery.Net.STUNAttribute.ParseMessageAttributes(System.Byte(), System.Int32, System.Int32, SIPSorcery.Net.STUNHeader)
+  nameWithType: STUNAttribute.ParseMessageAttributes(Byte[], Int32, Int32, STUNHeader)
+  nameWithType.vb: STUNAttribute.ParseMessageAttributes(Byte(), Int32, Int32, STUNHeader)
 - uid: SIPSorcery.Net.STUNAttribute.ParseMessageAttributes*
   name: ParseMessageAttributes
   href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ParseMessageAttributes_
@@ -23929,6 +23984,18 @@ references:
   commentId: T:SIPSorcery.Net.STUNAttributeConstants
   fullName: SIPSorcery.Net.STUNAttributeConstants
   nameWithType: STUNAttributeConstants
+- uid: SIPSorcery.Net.STUNAttributeConstants.IPv4AddressFamily
+  name: IPv4AddressFamily
+  href: api/SIPSorcery.Net.STUNAttributeConstants.html#SIPSorcery_Net_STUNAttributeConstants_IPv4AddressFamily
+  commentId: F:SIPSorcery.Net.STUNAttributeConstants.IPv4AddressFamily
+  fullName: SIPSorcery.Net.STUNAttributeConstants.IPv4AddressFamily
+  nameWithType: STUNAttributeConstants.IPv4AddressFamily
+- uid: SIPSorcery.Net.STUNAttributeConstants.IPv6AddressFamily
+  name: IPv6AddressFamily
+  href: api/SIPSorcery.Net.STUNAttributeConstants.html#SIPSorcery_Net_STUNAttributeConstants_IPv6AddressFamily
+  commentId: F:SIPSorcery.Net.STUNAttributeConstants.IPv6AddressFamily
+  fullName: SIPSorcery.Net.STUNAttributeConstants.IPv6AddressFamily
+  nameWithType: STUNAttributeConstants.IPv6AddressFamily
 - uid: SIPSorcery.Net.STUNAttributeConstants.TcpTransportType
   name: TcpTransportType
   href: api/SIPSorcery.Net.STUNAttributeConstants.html#SIPSorcery_Net_STUNAttributeConstants_TcpTransportType
@@ -24086,6 +24153,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNAttributeTypesEnum.ReflectedFrom
   fullName: SIPSorcery.Net.STUNAttributeTypesEnum.ReflectedFrom
   nameWithType: STUNAttributeTypesEnum.ReflectedFrom
+- uid: SIPSorcery.Net.STUNAttributeTypesEnum.RequestedAddressFamily
+  name: RequestedAddressFamily
+  href: api/SIPSorcery.Net.STUNAttributeTypesEnum.html#SIPSorcery_Net_STUNAttributeTypesEnum_RequestedAddressFamily
+  commentId: F:SIPSorcery.Net.STUNAttributeTypesEnum.RequestedAddressFamily
+  fullName: SIPSorcery.Net.STUNAttributeTypesEnum.RequestedAddressFamily
+  nameWithType: STUNAttributeTypesEnum.RequestedAddressFamily
 - uid: SIPSorcery.Net.STUNAttributeTypesEnum.RequestedTransport
   name: RequestedTransport
   href: api/SIPSorcery.Net.STUNAttributeTypesEnum.html#SIPSorcery_Net_STUNAttributeTypesEnum_RequestedTransport
@@ -25462,12 +25535,30 @@ references:
   fullName.vb: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte())
   nameWithType: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte[])
   nameWithType.vb: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte())
+- uid: SIPSorcery.Net.STUNXORAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Byte[],System.Byte[])
+  name: STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte[], Byte[])
+  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___System_Byte___
+  commentId: M:SIPSorcery.Net.STUNXORAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Byte[],System.Byte[])
+  name.vb: STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte(), Byte())
+  fullName: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte[], System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte(), System.Byte())
+  nameWithType: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte[], Byte[])
+  nameWithType.vb: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte(), Byte())
 - uid: SIPSorcery.Net.STUNXORAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress)
   name: STUNXORAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress)
   href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_System_Net_IPAddress_
   commentId: M:SIPSorcery.Net.STUNXORAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress)
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Int32, System.Net.IPAddress)
   nameWithType: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress)
+- uid: SIPSorcery.Net.STUNXORAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress,System.Byte[])
+  name: STUNXORAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress, Byte[])
+  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_System_Net_IPAddress_System_Byte___
+  commentId: M:SIPSorcery.Net.STUNXORAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress,System.Byte[])
+  name.vb: STUNXORAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress, Byte())
+  fullName: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Int32, System.Net.IPAddress, System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Int32, System.Net.IPAddress, System.Byte())
+  nameWithType: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress, Byte[])
+  nameWithType.vb: STUNXORAddressAttribute.STUNXORAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress, Byte())
 - uid: SIPSorcery.Net.STUNXORAddressAttribute.#ctor*
   name: STUNXORAddressAttribute
   href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_
@@ -25475,24 +25566,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.STUNXORAddressAttribute
   nameWithType: STUNXORAddressAttribute.STUNXORAddressAttribute
-- uid: SIPSorcery.Net.STUNXORAddressAttribute.Address
-  name: Address
-  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_Address
-  commentId: F:SIPSorcery.Net.STUNXORAddressAttribute.Address
-  fullName: SIPSorcery.Net.STUNXORAddressAttribute.Address
-  nameWithType: STUNXORAddressAttribute.Address
-- uid: SIPSorcery.Net.STUNXORAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-  name: ADDRESS_ATTRIBUTE_LENGTH
-  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_ADDRESS_ATTRIBUTE_LENGTH
-  commentId: F:SIPSorcery.Net.STUNXORAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-  fullName: SIPSorcery.Net.STUNXORAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-  nameWithType: STUNXORAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH
-- uid: SIPSorcery.Net.STUNXORAddressAttribute.Family
-  name: Family
-  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_Family
-  commentId: F:SIPSorcery.Net.STUNXORAddressAttribute.Family
-  fullName: SIPSorcery.Net.STUNXORAddressAttribute.Family
-  nameWithType: STUNXORAddressAttribute.Family
 - uid: SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint
   name: GetIPEndPoint()
   href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_GetIPEndPoint
@@ -25506,25 +25579,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint
   nameWithType: STUNXORAddressAttribute.GetIPEndPoint
-- uid: SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength
-  name: PaddedLength
-  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_PaddedLength
-  commentId: P:SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength
-  fullName: SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength
-  nameWithType: STUNXORAddressAttribute.PaddedLength
-- uid: SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength*
-  name: PaddedLength
-  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_PaddedLength_
-  commentId: Overload:SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength
-  isSpec: "True"
-  fullName: SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength
-  nameWithType: STUNXORAddressAttribute.PaddedLength
-- uid: SIPSorcery.Net.STUNXORAddressAttribute.Port
-  name: Port
-  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_Port
-  commentId: F:SIPSorcery.Net.STUNXORAddressAttribute.Port
-  fullName: SIPSorcery.Net.STUNXORAddressAttribute.Port
-  nameWithType: STUNXORAddressAttribute.Port
 - uid: SIPSorcery.Net.STUNXORAddressAttribute.ToByteBuffer(System.Byte[],System.Int32)
   name: ToByteBuffer(Byte[], Int32)
   href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_ToByteBuffer_System_Byte___System_Int32_

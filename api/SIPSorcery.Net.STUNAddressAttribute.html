@@ -79,10 +79,38 @@
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><a class="xref" href="SIPSorcery.Net.STUNAttribute.html">STUNAttribute</a></div>
-    <div class="level2"><span class="xref">STUNAddressAttribute</span></div>
+    <div class="level2"><a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html">STUNAddressAttributeBase</a></div>
+    <div class="level3"><span class="xref">STUNAddressAttribute</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_ADDRESS_ATTRIBUTE_LENGTH">STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_ADDRESS_ATTRIBUTE_IPV4_LENGTH">STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV4_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_ADDRESS_ATTRIBUTE_IPV6_LENGTH">STUNAddressAttributeBase.ADDRESS_ATTRIBUTE_IPV6_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_AddressAttributeLength">STUNAddressAttributeBase.AddressAttributeLength</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_TransactionId">STUNAddressAttributeBase.TransactionId</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_Family">STUNAddressAttributeBase.Family</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_Port">STUNAddressAttributeBase.Port</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_Address">STUNAddressAttributeBase.Address</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAddressAttributeBase.html#SIPSorcery_Net_STUNAddressAttributeBase_PaddedLength">STUNAddressAttributeBase.PaddedLength</a>
+    </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_STUNATTRIBUTE_HEADER_LENGTH">STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH</a>
     </div>
@@ -94,6 +122,9 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ParseMessageAttributes_System_Byte___System_Int32_System_Int32_">STUNAttribute.ParseMessageAttributes(Byte[], Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_ParseMessageAttributes_System_Byte___System_Int32_System_Int32_SIPSorcery_Net_STUNHeader_">STUNAttribute.ParseMessageAttributes(Byte[], Int32, Int32, STUNHeader)</a>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>
@@ -118,7 +149,8 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_STUNAddressAttribute_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class STUNAddressAttribute : STUNAttribute</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Provided for backward compatibility with RFC3489 clients.&quot;)]
+public class STUNAddressAttribute : STUNAddressAttributeBase</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -127,15 +159,21 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.%23ctor(SIPSorcery.Net.STUNAttributeTypesEnum%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L50">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L55">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNAddressAttribute__ctor_" data-uid="SIPSorcery.Net.STUNAddressAttribute.#ctor*"></a>
   <h4 id="SIPSorcery_Net_STUNAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___" data-uid="SIPSorcery.Net.STUNAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Byte[])">STUNAddressAttribute(STUNAttributeTypesEnum, Byte[])</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Obsolete.
+<br> For IPv6 support, please parse using
+<br> <a class="xref" href="SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___System_Byte___">STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte[], Byte[])</a>
+<br> <br>
+Parses an IPv4 Address attribute.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Provided for backward compatibility with RFC3489 clients.&quot;)]
+public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -164,15 +202,21 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.%23ctor(SIPSorcery.Net.STUNAttributeTypesEnum%2CSystem.Int32%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L65">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L78">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNAddressAttribute__ctor_" data-uid="SIPSorcery.Net.STUNAddressAttribute.#ctor*"></a>
   <h4 id="SIPSorcery_Net_STUNAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_System_Net_IPAddress_" data-uid="SIPSorcery.Net.STUNAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress)">STUNAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Obsolete.
+<br> For IPv6 support, please parse using
+<br> <a class="xref" href="SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___System_Byte___">STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte[], Byte[])</a>
+<br> <br>
+Parses an IPv4 Address attribute.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Provided for backward compatibility with RFC3489 clients.&quot;)]
+public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -206,15 +250,21 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute__ctor_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.%23ctor(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L35">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L32">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNAddressAttribute__ctor_" data-uid="SIPSorcery.Net.STUNAddressAttribute.#ctor*"></a>
   <h4 id="SIPSorcery_Net_STUNAddressAttribute__ctor_System_Byte___" data-uid="SIPSorcery.Net.STUNAddressAttribute.#ctor(System.Byte[])">STUNAddressAttribute(Byte[])</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Obsolete.
+<br> For IPv6 support, please parse using
+<br> <a class="xref" href="SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Byte___System_Byte___">STUNXORAddressAttribute(STUNAttributeTypesEnum, Byte[], Byte[])</a>
+<br> <br>
+Parses an IPv4 Address attribute.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public STUNAddressAttribute(byte[] attributeValue)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Provided for backward compatibility with RFC3489 clients.&quot;)]
+public STUNAddressAttribute(byte[] attributeValue)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -233,158 +283,6 @@
       </tr>
     </tbody>
   </table>
-  <h3 id="fields">Fields
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_Address.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.Address%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L28">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_STUNAddressAttribute_Address" data-uid="SIPSorcery.Net.STUNAddressAttribute.Address">Address</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IPAddress Address</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_ADDRESS_ATTRIBUTE_LENGTH.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L24">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_STUNAddressAttribute_ADDRESS_ATTRIBUTE_LENGTH" data-uid="SIPSorcery.Net.STUNAddressAttribute.ADDRESS_ATTRIBUTE_LENGTH">ADDRESS_ATTRIBUTE_LENGTH</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const ushort ADDRESS_ATTRIBUTE_LENGTH = 8</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.UInt16</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_Family.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.Family%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L26">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_STUNAddressAttribute_Family" data-uid="SIPSorcery.Net.STUNAddressAttribute.Family">Family</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Family</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_Port.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.Port%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L27">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_STUNAddressAttribute_Port" data-uid="SIPSorcery.Net.STUNAddressAttribute.Port">Port</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int Port</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h3 id="properties">Properties
-  </h3>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_PaddedLength.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.PaddedLength%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L30">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_STUNAddressAttribute_PaddedLength_" data-uid="SIPSorcery.Net.STUNAddressAttribute.PaddedLength*"></a>
-  <h4 id="SIPSorcery_Net_STUNAddressAttribute_PaddedLength" data-uid="SIPSorcery.Net.STUNAddressAttribute.PaddedLength">PaddedLength</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public override ushort PaddedLength { get; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.UInt16</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute_PaddedLength">STUNAttribute.PaddedLength</a></div>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
@@ -392,7 +290,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_ToByteBuffer_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.ToByteBuffer(System.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L75">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L89">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNAddressAttribute_ToByteBuffer_" data-uid="SIPSorcery.Net.STUNAddressAttribute.ToByteBuffer*"></a>
   <h4 id="SIPSorcery_Net_STUNAddressAttribute_ToByteBuffer_System_Byte___System_Int32_" data-uid="SIPSorcery.Net.STUNAddressAttribute.ToByteBuffer(System.Byte[],System.Int32)">ToByteBuffer(Byte[], Int32)</h4>
@@ -446,7 +344,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNAddressAttribute_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNAddressAttribute.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L103">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/STUN/STUNAttributes/STUNAddressAttribute.cs/#L117">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNAddressAttribute_ToString_" data-uid="SIPSorcery.Net.STUNAddressAttribute.ToString*"></a>
   <h4 id="SIPSorcery_Net_STUNAddressAttribute_ToString" data-uid="SIPSorcery.Net.STUNAddressAttribute.ToString">ToString()</h4>
