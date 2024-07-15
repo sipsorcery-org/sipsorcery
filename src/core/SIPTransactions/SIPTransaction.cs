@@ -256,7 +256,7 @@ namespace SIPSorcery.SIP
                 }
 
                 m_sipTransport = sipTransport;
-                m_transactionId = GetRequestTransactionId(transactionRequest.Header.Vias.TopViaHeader.Branch, transactionRequest.Header.CSeqMethod);
+                m_transactionId = GetRequestTransactionId(transactionRequest.Header.Vias.TopViaHeader.Branch, transactionRequest.Header.CSeqMethod, transactionRequest.Header.CSeq);
                 HasTimedOut = false;
 
                 m_transactionRequest = transactionRequest;
@@ -278,9 +278,9 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static string GetRequestTransactionId(string branchId, SIPMethodsEnum method)
+        public static string GetRequestTransactionId(string branchId, SIPMethodsEnum method, int cseq)
         {
-            return Crypto.GetSHAHashAsString(branchId + method.ToString());
+            return Crypto.GetSHAHashAsString(branchId + method.ToString() + cseq.ToString());
         }
 
         public Task<SocketError> GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)

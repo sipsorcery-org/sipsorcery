@@ -1028,9 +1028,9 @@ namespace SIPSorcery.SIP
                                             }
                                         }
                                         else if (m_transactionEngine != null && sipRequest.Method == SIPMethodsEnum.CANCEL &&
-                                            GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE)) != null)
+                                            GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE, sipRequest.Header.CSeq)) != null)
                                         {
-                                            UASInviteTransaction inviteTransaction = (UASInviteTransaction)GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
+                                            UASInviteTransaction inviteTransaction = (UASInviteTransaction)GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE, sipRequest.Header.CSeq));
                                             if (inviteTransaction != null)
                                             {
                                                 // Note: this will generate the INVITE request response.

@@ -147,7 +147,7 @@ namespace SIPSorcery.SIP
             }
 
             SIPMethodsEnum transactionMethod = (sipRequest.Method != SIPMethodsEnum.ACK) ? sipRequest.Method : SIPMethodsEnum.INVITE;
-            string transactionId = SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, transactionMethod);
+            string transactionId = SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, transactionMethod, sipRequest.Header.CSeq);
 
             lock (m_pendingTransactions)
             {
@@ -237,7 +237,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                string transactionId = SIPTransaction.GetRequestTransactionId(sipResponse.Header.Vias.TopViaHeader.Branch, sipResponse.Header.CSeqMethod);
+                string transactionId = SIPTransaction.GetRequestTransactionId(sipResponse.Header.Vias.TopViaHeader.Branch, sipResponse.Header.CSeqMethod, sipResponse.Header.CSeq);
 
                 m_pendingTransactions.TryGetValue(transactionId, out var transaction);
                 return transaction;
