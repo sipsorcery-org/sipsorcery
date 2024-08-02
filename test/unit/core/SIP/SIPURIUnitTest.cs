@@ -972,5 +972,28 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that a SIP URI with a tel: scheme is correctly recognised.
+        /// </summary>
+        [Fact]
+        public void ParseTelSchemeURIUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var telStr = "tel:+1-(201) 555 0123;phone-context=example.com";
+            SIPURI sipURI = SIPURI.ParseSIPURI(telStr);
+
+            Assert.Equal(null, sipURI.User);
+            Assert.Equal("+1-(201) 555 0123", sipURI.Host);
+            Assert.Equal("tel:+1-(201) 555 0123", sipURI.CanonicalAddress);
+            Assert.True(sipURI.Parameters.Has("phone-context"), "The tel: URI parameters were not parsed correctly.");
+            Assert.Equal("example.com", sipURI.Parameters.Get("phone-context"));
+            Assert.Equal(telStr, sipURI.ToString());
+            Assert.Equal("+1-(201) 555 0123", sipURI.ToAOR());
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }
