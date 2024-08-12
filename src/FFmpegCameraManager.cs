@@ -58,6 +58,8 @@ namespace SIPSorceryMedia.FFmpeg
             }
             return result;
         }
+
+        static public Camera? GetCameraByPath(string path) => GetCameraDevices()?.FirstOrDefault(x => x.Path == path);
     }
 
     public class Camera
