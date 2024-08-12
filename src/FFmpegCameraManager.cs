@@ -77,9 +77,21 @@ namespace SIPSorceryMedia.FFmpeg
 
     public class Camera
     {
-        public String Name { get; set; }
+        public struct CameraFormat
+        {
+            public AVPixelFormat PixelFormat;
+            public int Width;
+            public int Height;
+            public double FPS;
+        }
 
-        public String Path { get; set; }
+        public string Name { get; set; }
+
+        public string Path { get; set; }
+
+        public List<CameraFormat>? AvailableFormats {  get; set; }
+
+        public List<Dictionary<string, string>>? AvailableOptions { get; set; }
 
         public Camera()
         {
