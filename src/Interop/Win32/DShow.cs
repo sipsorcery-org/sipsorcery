@@ -1,3 +1,4 @@
+﻿using DirectShowLib;
 using FFmpeg.AutoGen;
 using SIPSorceryMedia.Abstractions;
 using System;
@@ -23,9 +24,17 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
         /// <summary>
         /// Gets all DirectShow camera and input devices.
         /// </summary>
+        /// <remarks>This includes FFmpeg and falls back to DirectShowLib.</remarks>
         /// <returns>a <see cref="List{T}"/> of <see cref="Camera"/>s found on the system.</returns>
         public static List<Camera>? GetCameraDevices()
-            => ParseDShowLogsForCameras(GetDShowLogsForDevice())?.ToList();
+        {
+            var ffmpegcams = ParseDShowLogsForCameras(GetDShowLogsForDevice());
+            // FFmpeg doesn't implement avdevice_list_input_sources() for the DShow input format yet.
+            // Get DShowLib cameras in case of something wrong.
+            var dshowcams = GetDShowLibCameras();
+
+            return (ffmpegcams?.Union(dshowcams ?? Enumerable.Empty<Camera>(), CameraEqualityComparer.Default) ?? dshowcams)?.ToList();
+        }
 
         private static List<Camera>? ParseDShowLogsForCameras(string? logs)
         {
@@ -130,5 +139,27 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
             ffmpeg.av_log_set_callback(logCallback);
         }
 
+        private static List<Camera>? GetDShowLibCameras()
+        {
+            List<Camera>? result = null;
+            var dsDevices = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
+            for (int i = 0; i < dsDevices.Length; i++)
+            {
+                var dsDevice = dsDevices[i];
+                if ((dsDevice.Name != null) && (dsDevice.Name.Length > 0))
+                {
+                    var camera = new Camera()
+                    {
+                        Name = dsDevice.Name,
+                        Path = $"video={dsDevice.Name}"
+                    };
+
+                    result ??= [];
+
+                    result.Add(camera);
+                }
+            }
+            return result;
+        }
     }
 }

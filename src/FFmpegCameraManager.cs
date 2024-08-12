@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using DirectShowLib;
+using System.Linq;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -80,6 +81,24 @@ namespace SIPSorceryMedia.FFmpeg
         public Camera()
         {
             Name = Path = "";
+        }
+    }
+
+    internal class CameraEqualityComparer : EqualityComparer<Camera>
+    {
+        new public static CameraEqualityComparer Default = new();
+
+        public override bool Equals(Camera? x, Camera? y)
+        {
+            return x != null && y != null && x.Name == y.Name && x.Path == y.Path
+                && !string.IsNullOrEmpty(x.Name) && !string.IsNullOrEmpty(y.Name)
+                && !string.IsNullOrEmpty(x.Path) && !string.IsNullOrEmpty(y.Path)
+                ;
+        }
+
+        public override int GetHashCode(Camera obj)
+        {
+            return obj.GetHashCode();
         }
     }
 }
