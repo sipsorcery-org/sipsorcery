@@ -39,54 +39,77 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
         private static List<Camera>? ParseDShowLogsForCameras(string? logs)
         {
             return logs?.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries)
-                .Where(l => DSHOW_VIDEO_DEVICE_LOG_OUTPUT.Any(l.ToLower().Contains))
-                .Select(l =>
+                .Where(logline => DSHOW_VIDEO_DEVICE_LOG_OUTPUT.Any(logline.ToLower().Contains))
+                .Select(splitline =>
                 {
-                    var cam = l.Split(['"'], StringSplitOptions.RemoveEmptyEntries).First();
+                    var cam = splitline.Split(['"'], StringSplitOptions.RemoveEmptyEntries).First();
 
                     var opts = GetDShowLogsForDevice(cam)?
                             .Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries)
-                            .Where(l => DSHOW_CAMERA_FORMAT_LOG_OUTPUT.Any(l.ToLower().Contains))
-                            .Select(l =>
-                            {
-                                var grouped = l.Split([' '], StringSplitOptions.RemoveEmptyEntries)
                                     .Where(s => s.Contains("="))
-                                    .Distinct()
-                                    .Select(s => s.Split(['='], StringSplitOptions.RemoveEmptyEntries))
-                                    .Select(kp => new KeyValuePair<string, string>(value: kp[1],
-                                                    key: kp[0] switch
+                        .Select(optline =>
+                            optline.Split(["min", "max"], StringSplitOptions.RemoveEmptyEntries)
+                            .Select((sections, i) => sections
+                                .Split([' '], StringSplitOptions.RemoveEmptyEntries)
+                                .Where(s => s.Contains("="))
+                                .Select(opt =>
                                                     {
-                                                        "fps" => "framerate",
-                                                        "s" => "video_size",
-                                                        _ => kp[0]
-                                                    }))
-                                    .GroupBy(kp => kp.Key)
-                                    .ToDictionary(g => g.Key, g => g.Select(kvp => kvp.Value));
+                                    var kp = opt.Split(['='], StringSplitOptions.RemoveEmptyEntries);
 
-                                return Enumerable.Range(0, grouped.Values.Max(v => v.Count()))
-                                    .Select(i => grouped.ToDictionary(
-                                        g => g.Key,
-                                        g => g.Value.ElementAtOrDefault(i) ?? g.Value.Last()))
-                                    ;
+                                    return string.IsNullOrEmpty(kp.ElementAtOrDefault(0))
+                                        ?
+                                        new KeyValuePair<string, string>()
+                                        :
+                                        new KeyValuePair<string, string>(
+                                            value: kp.ElementAtOrDefault(1) ?? string.Empty,
+                                            key: i switch
+                                            {
+                                                1 => "min_",
+                                                2 => "max_",
+                                                _ => string.Empty
+                                            }
+                                            + kp.ElementAtOrDefault(0)!
+                                        );
                             })
-                            .SelectMany(ld => ld)
-                            .ToList();
+                                .Where(kp => !string.IsNullOrEmpty(kp.Key))
+                            )
+                            .SelectMany(d => d)
+                            .ToDictionary(g => g.Key, g => g.Value)
+                        );
 
                     return new Camera()
                     {
-                        Name = cam, Path = $"video={cam}",
-                        AvailableOptions = opts,
+                        Name = cam,
+                        Path = $"video={cam}",
+                        AvailableOptions = opts?.ToList(),
                         AvailableFormats = opts?
+                            .Where(d => DSHOW_CAMERA_FORMAT_LOG_OUTPUT.Any(d.ContainsKey))
                             .Select(d =>
                             {
-                                return new Camera.CameraFormat()
+                                var pixfmt = d.Keys.First(DSHOW_CAMERA_FORMAT_LOG_OUTPUT.Contains);
+                                var min_s = d["min_s"].Split(['x'], StringSplitOptions.RemoveEmptyEntries);
+                                var max_s = d["max_s"].Split(['x'], StringSplitOptions.RemoveEmptyEntries);
+
+                                return new[]
                                 {
-                                    PixelFormat = ffmpeg.av_get_pix_fmt(d[d.Keys.First(DSHOW_CAMERA_FORMAT_LOG_OUTPUT.Contains)]),
-                                    Width = int.Parse(d["video_size"].Split(['x'], StringSplitOptions.RemoveEmptyEntries)[0]),
-                                    Height = int.Parse(d["video_size"].Split(['x'], StringSplitOptions.RemoveEmptyEntries)[1]),
-                                    FPS = double.Parse(d["framerate"])
-                                };
+                                    new Camera.CameraFormat()
+                                    {
+                                        PixelFormat = ffmpeg.av_get_pix_fmt(d[pixfmt]),
+                                        Width = int.Parse(min_s[0]),
+                                        Height = int.Parse(min_s[1]),
+                                        FPS = double.Parse(d["min_fps"])
+                                    },
+                                    new Camera.CameraFormat()
+                                    {
+                                        PixelFormat = ffmpeg.av_get_pix_fmt(d[pixfmt]),
+                                        Width = int.Parse(max_s[0]),
+                                        Height = int.Parse(max_s[1]),
+                                        FPS = double.Parse(d["max_fps"])
+                                    }
+                                }
+                                .Distinct();
                             })
+                            .SelectMany(f => f)
                             .ToList()
                     };
 
@@ -132,9 +155,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
                 
                 var num = ffmpeg.av_log_format_line2(p0, level, format, vl, lineBuffer, lineSize, &printPrefix);
 
-                var line = Encoding.Default.GetString(lineBuffer, num);
-                Console.Write(line);
-                storedLogs += line;
+                storedLogs += Encoding.Default.GetString(lineBuffer, num);
             };
             ffmpeg.av_log_set_callback(logCallback);
         }

@@ -60,6 +60,7 @@ namespace SIPSorceryMedia.FFmpeg
                                     .ThenByDescending(c => c.FPS)
                                     .Select(c => new Dictionary<string, string>()
                                     {
+                                        { "pixel_format", ffmpeg.av_get_pix_fmt_name(c.PixelFormat) },
                                         { "video_size", $"{c.Width}x{c.Height}" },
                                         { "framerate", $"{c.FPS}" },
                                     })
