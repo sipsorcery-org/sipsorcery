@@ -54,7 +54,7 @@ namespace SIPSorceryMedia.FFmpeg
         /// Filter for the desired <see cref="Camera.CameraFormat"/>(s) to use
         /// and resets the underlying <see cref="FFmpegVideoDecoder"/>.
         /// </summary>
-        /// <remarks>Will use highest resolution and framerate after filtered.
+        /// <remarks>Will use highest framerate then resolution after filtered.
         /// </remarks>
         /// <param name="formatFilter">Filter function.</param>
         /// <returns><see langword="true"/> If decoder resets successfully.
@@ -62,8 +62,8 @@ namespace SIPSorceryMedia.FFmpeg
         public bool RestrictCameraFormats(Func<Camera.CameraFormat, bool> formatFilter)
         {
             var maxAllowedres = _camera.AvailableFormats?.Where(formatFilter.Invoke)
-                                    .OrderByDescending(c => c.Width > c.Height ? c.Width : c.Height)
-                                    .ThenByDescending(c => c.FPS)
+                                    .OrderByDescending(c => c.FPS)
+                                    .ThenByDescending(c => c.Width > c.Height ? c.Width : c.Height)
                                     .Select(c => new Dictionary<string, string>()
                                     {
                                         { "pixel_format", ffmpeg.av_get_pix_fmt_name(c.PixelFormat) },
@@ -82,7 +82,8 @@ namespace SIPSorceryMedia.FFmpeg
         /// Filter for available FFmpeg camera/input device options and resets the underlying
         /// <see cref="FFmpegVideoDecoder"/> with the specified options.
         /// </summary>
-        /// <remarks>
+        /// <remarks>Will use highest framerate then resolution after filtered.
+        /// <br/><br/>
         /// <i>This is an advanced control for camera/input devices options filtering.
         /// <br/>Most usage will use <see cref="RestrictCameraFormats"/> filter.</i>
         /// <br/><br/> See <see href="https://www.ffmpeg.org/ffmpeg-devices.html">FFmpeg documentation on the device options</see>
@@ -93,12 +94,40 @@ namespace SIPSorceryMedia.FFmpeg
         /// <br/>Increase FFmpeg verbosity / loglevel for more information.</returns>
         public bool RestrictCameraOptions(Func<Dictionary<string, string>, bool> optFilter)
         {
-            var opts = _camera.AvailableOptions?.FirstOrDefault(optFilter.Invoke);
+            var filtered = _camera.AvailableOptions?.Where(optFilter.Invoke)
+                                .OrderByDescending(d => int.Parse(d["max_fps"]))
+                                .ThenByDescending(d => int.Parse(d["min_fps"]))
+                                .ThenByDescending(d =>
+                                {
+                                    var max_s = d["max_s"].Split(['x'], StringSplitOptions.RemoveEmptyEntries);
+                                    var max_w = int.Parse(max_s[0]);
+                                    var max_h = int.Parse(max_s[1]);
 
-            if (opts is null)
+                                    return max_h > max_w ? max_h : max_w;
+                                })
+                                .ThenByDescending(d =>
+                                {
+                                    var min_s = d["min_s"].Split(['x'], StringSplitOptions.RemoveEmptyEntries);
+                                    var min_w = int.Parse(min_s[0]);
+                                    var min_h = int.Parse(min_s[1]);
+
+                                    return min_h > min_w ? min_h : min_w;
+                                })
+                                .FirstOrDefault()?
+                                .Where(kp => !kp.Key.Contains("min_"))
+                                .ToDictionary(d => d.Key switch
+                                    {
+                                        "max_s" => "video_size",
+                                        "max_fps" => "framerate",
+                                        _ => d.Key
+                                    },
+                                    kp => kp.Value
+                                );
+
+            if (filtered is null)
                 logger.LogWarning($"No camera/input device options to be used.");
 
-            return SetCameraDeviceOptions(opts);
+            return SetCameraDeviceOptions(filtered);
         }
 
         /// <summary>
