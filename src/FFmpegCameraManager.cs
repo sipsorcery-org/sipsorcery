@@ -22,7 +22,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (inputFormat == "dshow")
             {
                 result = SIPSorceryMedia.FFmpeg.Interop.Win32.DShow.GetCameraDevices();
-                    }
+            }
             else if (inputFormat == "avfoundation")
             {
                 result = SIPSorceryMedia.FFmpeg.Interop.MacOS.AvFoundation.GetCameraDevices();
@@ -84,23 +84,16 @@ namespace SIPSorceryMedia.FFmpeg
         {
             Name = Path = "";
         }
-    }
 
-    internal class CameraEqualityComparer : EqualityComparer<Camera>
-    {
-        new public static CameraEqualityComparer Default = new();
-
-        public override bool Equals(Camera? x, Camera? y)
+        public override bool Equals(object? obj)
         {
-            return x != null && y != null && x.Name == y.Name && x.Path == y.Path
-                && !string.IsNullOrEmpty(x.Name) && !string.IsNullOrEmpty(y.Name)
-                && !string.IsNullOrEmpty(x.Path) && !string.IsNullOrEmpty(y.Path)
-                ;
+            return obj is not null && obj.GetType() == GetType()
+                && ((Camera)obj).Name == Name && ((Camera)obj).Path == Path;
         }
 
-        public override int GetHashCode(Camera obj)
+        public override int GetHashCode()
         {
-            return obj.GetHashCode();
+            return Name.GetHashCode();
         }
     }
 }

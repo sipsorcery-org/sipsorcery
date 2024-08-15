@@ -33,7 +33,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
             // Get DShowLib cameras in case of something wrong.
             var dshowcams = GetDShowLibCameras();
 
-            return (ffmpegcams?.Union(dshowcams ?? Enumerable.Empty<Camera>(), CameraEqualityComparer.Default) ?? dshowcams)?.ToList();
+            return (ffmpegcams?.Union(dshowcams ?? Enumerable.Empty<Camera>()) ?? dshowcams)?.ToList();
         }
 
         private static List<Camera>? ParseDShowLogsForCameras(string? logs)
@@ -45,15 +45,15 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
                     var cam = splitline.Split(['"'], StringSplitOptions.RemoveEmptyEntries).First();
 
                     var opts = GetDShowLogsForDevice(cam)?
-                            .Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries)
-                                    .Where(s => s.Contains("="))
+                        .Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries)
+                        .Where(s => s.Contains("="))
                         .Select(optline =>
                             optline.Split(["min", "max"], StringSplitOptions.RemoveEmptyEntries)
                             .Select((sections, i) => sections
                                 .Split([' '], StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => s.Contains("="))
                                 .Select(opt =>
-                                                    {
+                                {
                                     var kp = opt.Split(['='], StringSplitOptions.RemoveEmptyEntries);
 
                                     return string.IsNullOrEmpty(kp.ElementAtOrDefault(0))
@@ -70,7 +70,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
                                             }
                                             + kp.ElementAtOrDefault(0)!
                                         );
-                            })
+                                })
                                 .Where(kp => !string.IsNullOrEmpty(kp.Key))
                             )
                             .SelectMany(d => d)
