@@ -169,14 +169,7 @@ namespace SIPSorcery.net.RTP
                         if (m_localTrack.Capabilities != null && !m_localTrack.NoDtmfSupport &&
                             !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
                         {
-                            SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
-                                SDPMediaTypesEnum.audio,
-                                RTPSession.DTMF_EVENT_PAYLOAD_ID,
-                                SDP.TELEPHONE_EVENT_ATTRIBUTE,
-                                RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
-                                SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
-                                "0-16");
-                            m_localTrack.Capabilities.Add(rtpEventFormat);
+                            m_localTrack.Capabilities.Add(DefaultRTPEventFormat);
                         }
                     }
                 }
@@ -202,6 +195,23 @@ namespace SIPSorcery.net.RTP
         /// The remote RTP control end point this stream is sending to RTCP reports for the media stream to.
         /// </summary>
         public IPEndPoint ControlDestinationEndPoint { get; set; }
+
+        /// <summary>
+        /// Default RTP event format that we support.
+        /// </summary>
+        public static SDPAudioVideoMediaFormat DefaultRTPEventFormat
+        {
+            get
+            {
+                return new SDPAudioVideoMediaFormat(
+                                SDPMediaTypesEnum.audio,
+                                RTPSession.DTMF_EVENT_PAYLOAD_ID,
+                                SDP.TELEPHONE_EVENT_ATTRIBUTE,
+                                RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
+                                SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
+                                "0-16");
+            }
+        }
 
         #endregion PROPERTIES
 
