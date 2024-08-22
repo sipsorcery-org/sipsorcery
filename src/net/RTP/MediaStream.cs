@@ -126,6 +126,11 @@ namespace SIPSorcery.net.RTP
                 }
                 _isClosed = value;
 
+                if (value)
+                {
+                    RtcpSession.OnTimeout -= RaiseOnTimeoutByIndex;
+                }
+
                 //Clear previous buffer
                 ClearPendingPackages();
 
