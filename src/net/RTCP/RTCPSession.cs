@@ -92,6 +92,11 @@ namespace SIPSorcery.Net
         public DateTime LastActivityAt { get; private set; } = DateTime.MinValue;
 
         /// <summary>
+        /// Time to wait before classifying the session as timed out due to inactivity.
+        /// </summary>
+        public TimeSpan NoActivityTimeout { get; private set; } = new(ticks: NO_ACTIVITY_TIMEOUT_MILLISECONDS * TimeSpan.TicksPerMillisecond);
+
+        /// <summary>
         /// Indicates whether the session is currently in a timed out state. This
         /// occurs if no RTP or RTCP packets have been received during an expected
         /// interval.
@@ -313,8 +318,8 @@ namespace SIPSorcery.Net
                 {
                     lock (m_rtcpReportTimer)
                     {
-                        if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
-                            (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS))
+                        if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt) > NoActivityTimeout) ||
+                            (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt) > NoActivityTimeout))
                         {
                             if (!IsTimedOut)
                             {
