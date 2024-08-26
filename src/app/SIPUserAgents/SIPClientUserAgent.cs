@@ -485,6 +485,21 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        public Task<SocketError> SendNonInviteRequest(SIPRequest sipRequest)
+        {
+            try
+            {
+                SIPNonInviteTransaction nonInvteTransaction = new SIPNonInviteTransaction(m_sipTransport, sipRequest, m_outboundProxy);
+                nonInvteTransaction.SendRequest();
+                return Task.FromResult(SocketError.Success);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception SendNonInviteRequest. {excp.Message}");
+                return Task.FromResult(SocketError.Fault);
+            }
+        }
+        
         private Task<SocketError> ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
