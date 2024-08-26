@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
 // Description: A "full" SIP user agent that encompasses both client and server 
@@ -324,6 +324,15 @@ namespace SIPSorcery.SIP.App
         /// if no event handler is hooked up the transfer will be accepted.
         /// </remarks>
         public event Func<SIPUserField, string, bool> OnTransferRequested;
+
+        /// <summary>
+        /// Allows the call descriptor for the new call to be customised before a transfer.
+        /// </summary>
+        /// <remarks>
+        /// SIPCallDescriptor: The call descriptor to be customised
+        /// SIPRequest: The refer request that initialised the transfer
+        /// </remarks>
+        public event Action<SIPCallDescriptor, SIPRequest> OnTransferCallDescriptorCreated;
 
         /// <summary>
         /// Fires when the call placed as a result of a transfer request is successfully answered.
@@ -1217,6 +1226,8 @@ namespace SIPSorcery.SIP.App
                                SDP.SDP_MIME_CONTENTTYPE,
                                null,
                                null);
+
+                            OnTransferCallDescriptorCreated?.Invoke(callDescriptor, referRequest);
 
                             var transferResult = await Call(callDescriptor, MediaSession).ConfigureAwait(false);
 
