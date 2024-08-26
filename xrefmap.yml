@@ -27612,6 +27612,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.PrackSupported
   nameWithType: SIPClientUserAgent.PrackSupported
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.SendNonInviteRequest(SIPSorcery.SIP.SIPRequest)
+  name: SendNonInviteRequest(SIPRequest)
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_SendNonInviteRequest_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPClientUserAgent.SendNonInviteRequest(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SendNonInviteRequest(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPClientUserAgent.SendNonInviteRequest(SIPRequest)
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.SendNonInviteRequest*
+  name: SendNonInviteRequest
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_SendNonInviteRequest_
+  commentId: Overload:SIPSorcery.SIP.App.SIPClientUserAgent.SendNonInviteRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.SendNonInviteRequest
+  nameWithType: SIPClientUserAgent.SendNonInviteRequest
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.ServerTransaction
   name: ServerTransaction
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_ServerTransaction
@@ -28799,6 +28812,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Reject
   nameWithType: SIPServerUserAgent.Reject
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.SendNonInviteRequest(SIPSorcery.SIP.SIPRequest)
+  name: SendNonInviteRequest(SIPRequest)
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SendNonInviteRequest_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.SendNonInviteRequest(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SendNonInviteRequest(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPServerUserAgent.SendNonInviteRequest(SIPRequest)
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.SendNonInviteRequest*
+  name: SendNonInviteRequest
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SendNonInviteRequest_
+  commentId: Overload:SIPSorcery.SIP.App.SIPServerUserAgent.SendNonInviteRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SendNonInviteRequest
+  nameWithType: SIPServerUserAgent.SendNonInviteRequest
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.SIPAccount
   name: SIPAccount
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SIPAccount
@@ -29209,6 +29235,12 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnTransactionTraceMessage
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnTransactionTraceMessage
   nameWithType: SIPUserAgent.OnTransactionTraceMessage
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnTransferCallDescriptorCreated
+  name: OnTransferCallDescriptorCreated
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnTransferCallDescriptorCreated
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnTransferCallDescriptorCreated
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnTransferCallDescriptorCreated
+  nameWithType: SIPUserAgent.OnTransferCallDescriptorCreated
 - uid: SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify
   name: OnTransferNotify
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnTransferNotify
