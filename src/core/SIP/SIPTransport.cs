@@ -1039,6 +1039,8 @@ namespace SIPSorcery.SIP
                                                 // Note: this will generate the CANCEL request response.
                                                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                                                 okResponse.Header.To.ToTag = inviteTransaction.LocalTag;
+                                                // Only update response here, as INVITE requests header is already set correctly from prior responses
+                                                okResponse.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                 return SendResponseAsync(okResponse);
                                             }
                                             else
