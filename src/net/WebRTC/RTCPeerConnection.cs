@@ -46,6 +46,7 @@ using SIPSorcery.net.RTP;
 using Org.BouncyCastle.Crypto.Tls;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using SIPSorcery.net.RTP.RTPHeaderExtensions;
 
 namespace SIPSorcery.Net
 {
@@ -161,8 +162,6 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
         private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
-        public const int RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME = 2;
-        public const string RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
         /// <summary>
         /// The period to wait for the SCTP association to complete before giving up.
@@ -926,19 +925,24 @@ namespace SIPSorcery.Net
             bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
             var offerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
 
-            foreach (var mediaStream in offerSdp.Media)
+            var extensions = RTPHeaderExtension.GetRTPHeaderExtensions();
+            foreach (var media in offerSdp.Media)
             {
-                // when creating offer, tell that we support abs-send-time
-                mediaStream.HeaderExtensions.Add(
-                    RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME,
-                    new RTPHeaderExtension(
-                        RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME, 
-                        RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME));
-            }
+                // when creating offer, tell that we support several RTP extensions
+                foreach (var ext in extensions.Values)
+                {
+                    if (ext.IsMediaSupported(media.Media))
+                    {
+                        logger.LogDebug("[createOffer] - Add HeaderExtensions:[{Uri}]", ext.Uri);
+                        media.HeaderExtensions.Add(ext.Id, ext);
+                    }
+                    else
+                    {
+                        logger.LogDebug("[createOffer] - HeaderExtensions not added:[{Uri}] - Media:[{Media]}]", ext.Uri, media.Media);
+                    }
+                }
 
-            foreach (var ann in offerSdp.Media)
-            {
-                ann.IceRole = IceRole;
+                media.IceRole = IceRole;
             }
 
             RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
@@ -1019,14 +1023,13 @@ namespace SIPSorcery.Net
                 foreach (var media in answerSdp.Media)
                 {
                     var remoteMedia = remoteDescription.sdp.Media.FirstOrDefault(m => m.MediaID == media.MediaID);
-                    // when creating answer, copy abs-send-time ext only if the media in offer contained it
+
                     if (remoteMedia != null)
                     {
-                        foreach (var kv in 
-                                 remoteMedia.HeaderExtensions.Where(kv => 
-                                     kv.Value.Uri == RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME))
+                        foreach (var ext in remoteMedia.HeaderExtensions.Values)
                         {
-                            media.HeaderExtensions.Add(kv.Key, kv.Value);
+                            logger.LogDebug("[createAnswer] - Add HeaderExtensions:[{Uri}]", ext.Uri);
+                            media.HeaderExtensions.Add(ext.Id, ext);
                         }
                     }
                 }

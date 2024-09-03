@@ -424,7 +424,12 @@ namespace SIPSorcery.Net
                                              var extensionId = formatAttributeMatch.Result("${id}");
                                              var uri = formatAttributeMatch.Result("${url}");
                                              if (Int32.TryParse(extensionId, out var id)) {
-                                                 activeAnnouncement.HeaderExtensions.Add(id, new RTPHeaderExtension(id, uri));
+
+                                                var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(id, uri);
+                                                if ( (rtpExtension != null) && (rtpExtension.IsMediaSupported(activeAnnouncement.Media)))
+                                                {
+                                                    activeAnnouncement.HeaderExtensions.Add(id, rtpExtension);
+                                                }
                                              }
                                              else {
                                                  logger.LogWarning("Invalid id of header extension in " + SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
