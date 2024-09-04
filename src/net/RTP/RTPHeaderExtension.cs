@@ -45,6 +45,13 @@ namespace SIPSorcery.net.RTP
             return result;
         }
 
+        /// <summary>
+        /// To create a RTP Header Extension
+        /// </summary>
+        /// <param name="id"><see cref="int"/> Id / extmap</param>
+        /// <param name="uri"><see cref="String"/>uri</param>
+        /// <param name="type"><see cref="RTPHeaderExtension"/>type (one or two bytes)</param>
+        /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supportef by this extension - set null/empty if all medias are supported</param>
         public RTPHeaderExtension(int id, string uri, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
         {
             Id = id;
@@ -67,10 +74,7 @@ namespace SIPSorcery.net.RTP
         // Uri
         public string Uri { get; }
 
-        // Data read of the RTPHeaderExtension
-        public byte[] Data { get; set;  }
-
-        // Medias supported by this extension - if null all media are supported
+        // Medias supported by this extension - if null/empty all medias are supported
         public List<SDPMediaTypesEnum> Medias { get;}
 
         // Type (one or two bytes)
@@ -93,24 +97,6 @@ namespace SIPSorcery.net.RTP
         public abstract void ReadHeader(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data);
     }
 
-    public class RTPHeaderExtensionUri
-    {
-        public enum Type{
-            Unknown,
-            AbsCaptureTime
-        }
-
-        private static Dictionary<string, Type> Types { get; } = new Dictionary<string, Type>() {{"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time", Type.AbsCaptureTime}};
-
-        public static Type? GetType(string uri) {
-            if (!Types.ContainsKey(uri)) {
-                return Type.Unknown;
-            }
-
-            return Types[uri];
-        }
-    }
-    
     public enum RTPHeaderExtensionType
     {
         OneByte,

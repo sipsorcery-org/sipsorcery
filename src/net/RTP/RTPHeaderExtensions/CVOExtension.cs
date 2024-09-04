@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 {
-    // CVO (Coordination of Video Orientation) is a extension payload format in  https://www.3gpp.org/ftp/Specs/archive/26_series/26.114/26114-i70.zip
+    // CVO (Coordination of Video Orientation) is a extension payload format in https://www.3gpp.org/ftp/Specs/archive/26_series/26.114/26114-i70.zip
 
     // Code reference:
     //  - https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#134
@@ -15,58 +15,84 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
     {
         public const string RTP_HEADER_EXTENSION_URI    = "urn:3gpp:video-orientation";
 
-        private VideoRotation rotation = VideoRotation.kVideoRotation_0;
+        public event Action<VideoRotation> OnVideoRotationChange;
+
+        private byte _rotation = 0; // Default rotation is 0 <=> VideoRotation.CW_0
+        private byte[] _rotationArray;
 
         public CVOExtension(int id) : base(id, RTP_HEADER_EXTENSION_URI, RTPHeaderExtensionType.OneByte, Net.SDPMediaTypesEnum.video)
         {
+            _rotationArray = BitConverter.GetBytes((char)_rotation);
+        }
+
+        /// <summary>
+        /// To set a new rotation
+        /// </summary>
+        /// <param name="videoRotation"><see cref="VideoRotation"/></param>
+        public void SetRotation(VideoRotation videoRotation)
+        {
+            SetRotation(ConvertVideoRotationToCVOByte(videoRotation));
+        }
+
+        /// <summary>
+        /// To set a new rotation
+        /// </summary>
+        /// <param name="rotation"><see cref="byte"/></param>
+        public void SetRotation(byte rotation)
+        {
+            if (rotation != _rotation)
+            {
+                _rotation = rotation;
+                _rotationArray = BitConverter.GetBytes((char)_rotation);
+
+                // Trigger event
+                var videoRotation = ConvertCVOByteToVideoRotation(_rotation);
+                OnVideoRotationChange?.Invoke(videoRotation);
+            }
         }
 
         public override byte[] WriteHeader()
         {
-            return null;
+            return _rotationArray;
         }
 
         public override void ReadHeader(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data)
         {
-            if ( (data != null) && data.Length > 0)
+            if (data.Length > 0)
             {
-                var currentRotation = ConvertCVOByteToVideoRotation((uint)data[0]);
-                if(currentRotation != rotation)
-                {
-                    rotation = currentRotation;
-                    // TODO - need to trigger event
-                }
+                SetRotation(data[0]);
             }
-            
         }
 
-        // enum for clockwise rotation.
+        /// <summary>
+        /// Enum for clockwise (CW) rotation in degree.
+        /// </summary>
         public enum VideoRotation
         {
-            kVideoRotation_0 = 0,
-            kVideoRotation_90 = 90,
-            kVideoRotation_180 = 180,
-            kVideoRotation_270 = 270
+            CW_0 = 0,
+            CW_90 = 90,
+            CW_180 = 180,
+            CW_270 = 270
         };
 
-        static uint ConvertVideoRotationToCVOByte(VideoRotation rotation)
+        static byte ConvertVideoRotationToCVOByte(VideoRotation rotation)
         {
             switch (rotation)
             {
-                case VideoRotation.kVideoRotation_0:
+                case VideoRotation.CW_0:
                     return 0;
-                case VideoRotation.kVideoRotation_90:
+                case VideoRotation.CW_90:
                     return 1;
-                case VideoRotation.kVideoRotation_180:
+                case VideoRotation.CW_180:
                     return 2;
-                case VideoRotation.kVideoRotation_270:
+                case VideoRotation.CW_270:
                     return 3;
                 default:
                     return 0;
             }
         }
 
-        static VideoRotation ConvertCVOByteToVideoRotation(uint cvo_byte)
+        static VideoRotation ConvertCVOByteToVideoRotation(byte cvo_byte)
         {
             /* CVO byte: |0 0 0 0 C F R1 R0|
                 With the following definitions: 
@@ -87,19 +113,19 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
                     1, 1 = 270° CCW rotation                        => needs 270° CW rotation
              */
 
-            uint rotation_bits = cvo_byte & 0x3;
+            uint rotation_bits = (uint)cvo_byte & 0x3;
             switch (rotation_bits)
             {
                 case 0:
-                    return VideoRotation.kVideoRotation_0;
+                    return VideoRotation.CW_0;
                 case 1:
-                    return VideoRotation.kVideoRotation_90;
+                    return VideoRotation.CW_90;
                 case 2:
-                    return VideoRotation.kVideoRotation_180;
+                    return VideoRotation.CW_180;
                 case 3:
-                    return VideoRotation.kVideoRotation_270;
+                    return VideoRotation.CW_270;
                 default:
-                    return VideoRotation.kVideoRotation_0;
+                    return VideoRotation.CW_0;
             }
         }
     }

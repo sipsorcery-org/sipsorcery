@@ -396,18 +396,21 @@ namespace SIPSorcery.net.RTP
                          */
                 // https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
 
-                foreach (var ext in RemoteTrack.HeaderExtensions.Values)
+                if (RemoteTrack?.HeaderExtensions?.Values != null)
                 {
-                    // TODO - must manage multiple extensions - here it's a shorcut to just take into account AbsSendTime
-                    // How to manage RTPHeader with different extensio profile ?
-                    // Need to increase ExtensionLength and update ExtensionPayload for each extensions
-                    if (ext.Uri == AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI)
+                    foreach (var ext in RemoteTrack.HeaderExtensions.Values)
                     {
-                        rtpPacket.Header.HeaderExtensionFlag = 1;
-                        rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
-                        rtpPacket.Header.ExtensionLength = 1; // only abs-send-time for now
-                        rtpPacket.Header.ExtensionPayload = ext.WriteHeader();
-                        break;
+                        // TODO - must manage multiple extensions - here it's a shorcut to just take into account AbsSendTime
+                        // How to manage RTPHeader with different extensio profile ?
+                        // Need to increase ExtensionLength and update ExtensionPayload for each extensions
+                        if (ext.Uri == AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI)
+                        {
+                            rtpPacket.Header.HeaderExtensionFlag = 1;
+                            rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
+                            rtpPacket.Header.ExtensionLength = 1; // only abs-send-time for now
+                            rtpPacket.Header.ExtensionPayload = ext.WriteHeader();
+                            break;
+                        }
                     }
                 }
 
@@ -883,7 +886,7 @@ namespace SIPSorcery.net.RTP
             header.GetHeaderExtensions().ToList().ForEach(rtpHeaderExtensionData =>
             {
                 // We want to store LastAbsoluteCaptureTimestamp in RemoteTrack using AbsSendTimeExtension
-                if(RemoteTrack?.HeaderExtensions.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
+                if(RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
                 {
                     rtpHeaderExtension?.ReadHeader(ref m_localTrack, ref m_remoteTrack, header, rtpHeaderExtensionData.Data);
                 }

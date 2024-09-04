@@ -56,32 +56,6 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             };
         }
 
-        /*
-           An example header extension, with three extension elements, some
-           padding, and including the required RTP fields, follows:
-           
-           0                   1                   2                   3
-           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-           |       0xBE    |    0xDE       |           length=3            |
-           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-           |  ID   | L=0   |     data      |  ID   |  L=1  |   data...     |
-           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-           |     ...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
-           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-           |                          data                                 |
-           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-         */
-        // https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
-        private RTPHeader WriteAbsSendTimeHeader(RTPHeader rtpHeader)
-        {
-            rtpHeader.HeaderExtensionFlag = 1;
-            rtpHeader.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
-            rtpHeader.ExtensionLength = 1; // only abs-send-time for now
-            rtpHeader.ExtensionPayload = AbsSendTimePayload(Id, DateTimeOffset.Now);
-            return rtpHeader;
-        }
-
         private static ulong? GetUlong(byte[] data, int offset)
         {
             if (offset + sizeof(ulong) - 1 >= data.Length)
