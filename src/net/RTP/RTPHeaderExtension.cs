@@ -25,6 +25,9 @@ namespace SIPSorcery.net.RTP
 
                 case CVOExtension.RTP_HEADER_EXTENSION_URI:
                     return new CVOExtension(id);
+
+                case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
+                    return new AudioLevelExtension(id);
             }
             return null;
         }
@@ -39,7 +42,8 @@ namespace SIPSorcery.net.RTP
             var result = new Dictionary<int, RTPHeaderExtension>
             {
                 { index, new AbsSendTimeExtension(index++) },
-                { index, new CVOExtension(index++) }
+                { index, new CVOExtension(index++) },
+                { index, new AudioLevelExtension(index++) }
             };
 
             return result;
