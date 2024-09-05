@@ -1,7 +1,5 @@
 ﻿using SIPSorcery.Net;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 {
@@ -14,15 +12,14 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
     public class CVOExtension: RTPHeaderExtension
     {
         public const string RTP_HEADER_EXTENSION_URI    = "urn:3gpp:video-orientation";
+        public const int RTP_HEADER_EXTENSION_SIZE = 1;
 
         public event Action<VideoRotation> OnVideoRotationChange;
 
         private byte _rotation = 0; // Default rotation is 0 <=> VideoRotation.CW_0
-        private byte[] _rotationArray;
 
-        public CVOExtension(int id) : base(id, RTP_HEADER_EXTENSION_URI, RTPHeaderExtensionType.OneByte, Net.SDPMediaTypesEnum.video)
+        public CVOExtension(int id) : base(id, RTP_HEADER_EXTENSION_URI, RTP_HEADER_EXTENSION_SIZE, RTPHeaderExtensionType.OneByte, Net.SDPMediaTypesEnum.video)
         {
-            _rotationArray = BitConverter.GetBytes((char)_rotation);
         }
 
         /// <summary>
@@ -43,7 +40,6 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             if (rotation != _rotation)
             {
                 _rotation = rotation;
-                _rotationArray = BitConverter.GetBytes((char)_rotation);
 
                 // Trigger event
                 var videoRotation = ConvertCVOByteToVideoRotation(_rotation);
@@ -51,14 +47,18 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             }
         }
 
-        public override byte[] WriteHeader()
+        public override byte[] Marshal()
         {
-            return _rotationArray;
+            return new[]
+            {
+                (byte)((Id << 4) | ExtensionSize - 1),
+                _rotation
+            };
         }
 
-        public override void ReadHeader(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data)
+        public override void Unmarshal(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data)
         {
-            if (data.Length > 0)
+            if (data.Length == ExtensionSize)
             {
                 SetRotation(data[0]);
             }

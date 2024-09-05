@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -364,6 +363,19 @@ namespace SIPSorcery.net.RTP
             return true;
         }
 
+
+        private static byte[] Combine(params byte[][] arrays)
+        {
+            byte[] rv = new byte[arrays.Sum(a => a.Length)];
+            int offset = 0;
+            foreach (byte[] array in arrays)
+            {
+                System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
+                offset += array.Length;
+            }
+            return rv;
+        }
+
         protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
         {
             if (checkDone || CheckIfCanSendRtpRaw())
@@ -396,22 +408,48 @@ namespace SIPSorcery.net.RTP
                          */
                 // https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
 
-                if (RemoteTrack?.HeaderExtensions?.Values != null)
+                if (RemoteTrack?.HeaderExtensions?.Values.Count > 0)
                 {
+                    byte[] payload = null;
                     foreach (var ext in RemoteTrack.HeaderExtensions.Values)
                     {
-                        // TODO - must manage multiple extensions - here it's a shorcut to just take into account AbsSendTime
-                        // How to manage RTPHeader with different extensio profile ?
-                        // Need to increase ExtensionLength and update ExtensionPayload for each extensions
-                        if (ext.Uri == AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI)
+                        // We support up to 14 extensions .... Not clear at all how to manage more ...
+                        if ( (ext.Id < 1) && (ext.Id > 14) )
                         {
-                            rtpPacket.Header.HeaderExtensionFlag = 1;
-                            rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE;
-                            rtpPacket.Header.ExtensionLength = 1; // only abs-send-time for now
-                            rtpPacket.Header.ExtensionPayload = ext.WriteHeader();
-                            break;
+                            continue;
+                        }
+
+                        // Get extension payload and combine it to global payload
+                        var extPayLoad = ext.Marshal();
+                        if (payload == null)
+                        {
+                            payload = extPayLoad;
+                        }
+                        else
+                        {
+                            payload = Combine(payload, extPayLoad);
                         }
                     }
+
+                    if(payload?.Length > 0)
+                    {
+                        // Need to round to 4 bytes boundaries
+                        var roundedExtSize = payload.Length % 4;
+                        if(roundedExtSize > 0)
+                        {
+                            var padding = Enumerable.Repeat((byte)0, 4 - roundedExtSize).ToArray();
+                            payload = Combine(payload, padding);
+                        }
+
+                        rtpPacket.Header.HeaderExtensionFlag = 1; // We have at least one extension
+                        rtpPacket.Header.ExtensionLength = (ushort) (payload.Length / 4);  // payload length / 4 
+                        rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE; // We support up to 14 extensions .... Not clear at all how to manage more ...
+                        rtpPacket.Header.ExtensionPayload = payload;
+                    }
+                }
+                else
+                {
+                    rtpPacket.Header.HeaderExtensionFlag = 0;
                 }
 
                 Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
@@ -424,8 +462,7 @@ namespace SIPSorcery.net.RTP
                 }
                 else
                 {
-                    int outBufLen = 0;
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
@@ -520,8 +557,7 @@ namespace SIPSorcery.net.RTP
                     byte[] sendBuffer = new byte[reportBuffer.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH];
                     Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
 
-                    int outBufLen = 0;
-                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
+                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out int outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
@@ -572,7 +608,7 @@ namespace SIPSorcery.net.RTP
 
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
-            RTPPacket rtpPacket = null;
+            RTPPacket rtpPacket;
             if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
@@ -615,7 +651,6 @@ namespace SIPSorcery.net.RTP
             // For video RTP packets an attempt will be made to collate into frames. It's up to the application
             // whether it wants to subscribe to frames of RTP packets.
 
-            rtpPacket = null;
             if (RemoteTrack != null)
             {
                 LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
@@ -888,7 +923,7 @@ namespace SIPSorcery.net.RTP
                 // We want to store LastAbsoluteCaptureTimestamp in RemoteTrack using AbsSendTimeExtension
                 if(RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
                 {
-                    rtpHeaderExtension?.ReadHeader(ref m_localTrack, ref m_remoteTrack, header, rtpHeaderExtensionData.Data);
+                    rtpHeaderExtension?.Unmarshal(ref m_localTrack, ref m_remoteTrack, header, rtpHeaderExtensionData.Data);
                 }
             });
         }

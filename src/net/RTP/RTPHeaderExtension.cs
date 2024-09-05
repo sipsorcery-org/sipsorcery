@@ -52,10 +52,11 @@ namespace SIPSorcery.net.RTP
         /// <param name="uri"><see cref="String"/>uri</param>
         /// <param name="type"><see cref="RTPHeaderExtension"/>type (one or two bytes)</param>
         /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supportef by this extension - set null/empty if all medias are supported</param>
-        public RTPHeaderExtension(int id, string uri, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
+        public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
         {
             Id = id;
             Uri = uri;
+            ExtensionSize = extensionSize;
             Type = type;
 
             if (medias != null)
@@ -74,6 +75,8 @@ namespace SIPSorcery.net.RTP
         // Uri
         public string Uri { get; }
 
+        public int ExtensionSize { get; }
+
         // Medias supported by this extension - if null/empty all medias are supported
         public List<SDPMediaTypesEnum> Medias { get;}
 
@@ -91,10 +94,10 @@ namespace SIPSorcery.net.RTP
         }
 
         // Function to call to get the payload when writting the RTP header
-        public abstract byte[] WriteHeader();
+        public abstract byte[] Marshal();
 
         // Function to call when reading the RTP header
-        public abstract void ReadHeader(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data);
+        public abstract void Unmarshal(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data);
     }
 
     public enum RTPHeaderExtensionType
