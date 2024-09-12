@@ -16,37 +16,30 @@ namespace SIPSorcery.net.RTP
         /// <param name="id">extmap value</param>
         /// <param name="uri">URI of the extension - for example: "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" or "urn:3gpp:video-orientation" </param>
         /// <returns>A Specific RTPHeaderExtension</returns>
-        public static RTPHeaderExtension GetRTPHeaderExtension(int id, String uri)
+        public static RTPHeaderExtension GetRTPHeaderExtension(int id, String uri, SDPMediaTypesEnum media)
         {
+            RTPHeaderExtension result = null;
             switch (uri)
             {
                 case AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
-                    return new AbsSendTimeExtension(id);
+                    result = new AbsSendTimeExtension(id);
+                    break;
 
                 case CVOExtension.RTP_HEADER_EXTENSION_URI:
-                    return new CVOExtension(id);
+                    result = new CVOExtension(id);
+                    break;
 
                 case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
-                    return new AudioLevelExtension(id);
+                    result = new AudioLevelExtension(id);
+                    break;
             }
-            return null;
-        }
 
-        /// <summary>
-        /// To get a list of all RT
-        /// </summary>
-        /// <returns></returns>
-        public static Dictionary<int, RTPHeaderExtension> GetRTPHeaderExtensions()
-        {
-            int index = 1;
-            var result = new Dictionary<int, RTPHeaderExtension>
+            if ( (result != null) &&  result.IsMediaSupported(media) )
             {
-                { index, new AbsSendTimeExtension(index++) },
-                { index, new CVOExtension(index++) },
-                { index, new AudioLevelExtension(index++) }
-            };
+                return result;
+            }
 
-            return result;
+            return null;
         }
 
         /// <summary>
@@ -97,11 +90,14 @@ namespace SIPSorcery.net.RTP
             return Medias.Contains(media);
         }
 
+        // Function to call to set a new value to this extension
+        public abstract void Set(Object obj);
+
         // Function to call to get the payload when writting the RTP header
         public abstract byte[] Marshal();
 
         // Function to call when reading the RTP header
-        public abstract void Unmarshal(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data);
+        public abstract Object Unmarshal(RTPHeader header, byte[] data);
     }
 
     public enum RTPHeaderExtensionType

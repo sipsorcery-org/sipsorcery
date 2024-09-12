@@ -8,11 +8,16 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
     // Code refrence: https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#49
     public class AbsSendTimeExtension: RTPHeaderExtension
     {
-        public const string RTP_HEADER_EXTENSION_URI    = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
-        public const int RTP_HEADER_EXTENSION_SIZE = 3;
+        public const string RTP_HEADER_EXTENSION_URI = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+        private const int RTP_HEADER_EXTENSION_SIZE = 3;
 
         public AbsSendTimeExtension(int id): base(id, RTP_HEADER_EXTENSION_URI, RTP_HEADER_EXTENSION_SIZE, RTPHeaderExtensionType.OneByte)
         {
+        }
+
+        public override void Set(Object value)
+        {
+            // Nothing to do here 
         }
 
         public override byte[] Marshal()
@@ -37,13 +42,10 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             };
         }
 
-        public override void Unmarshal(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data)
+        public override Object Unmarshal(RTPHeader header, byte[] data)
         {
             var ntpTimestamp = GetUlong(data);
-            if (ntpTimestamp.HasValue)
-            {
-                remoteTrack.LastAbsoluteCaptureTimestamp = new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
-            }
+            return new TimestampPair() { NtpTimestamp = ntpTimestamp.HasValue ? ntpTimestamp.Value : 0, RtpTimestamp = header.Timestamp };
         }
 
         // DateTimeOffset.UnixEpoch only available in newer target frameworks
@@ -51,7 +53,7 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 
         private ulong? GetUlong(byte[] data)
         {
-            if (data.Length != ExtensionSize)
+            if ( (data.Length != ExtensionSize) || ((sizeof(ulong) - 1) > data.Length) )
             {
                 return null;
             }

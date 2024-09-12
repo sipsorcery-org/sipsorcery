@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP.RTPHeaderExtensions;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -85,11 +86,22 @@ namespace SIPSorcery.net.RTP
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
+        ///  - index of the AudioStream or VideoStream
         ///  - Remote endpoint packet was received from,
         ///  - The media type the packet contains, will be audio or video,
         ///  - The full RTP packet.
         /// </summary>
         public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceivedByIndex;
+
+        /// <summary>
+        /// Gets fired when an RTP Header packet is received from a remote party.
+        /// Parameters are:
+        ///  - index of the AudioStream or VideoStream
+        ///  - Remote endpoint packet was received from,
+        ///  - The media type the packet contains, will be audio or video,
+        ///  - The RTP Header exension URI.
+        /// </summary>
+        public event Action<int, IPEndPoint, SDPMediaTypesEnum, String, Object> OnRtpHeaderReceivedByIndex;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
@@ -363,7 +375,6 @@ namespace SIPSorcery.net.RTP
             return true;
         }
 
-
         private static byte[] Combine(params byte[][] arrays)
         {
             byte[] rv = new byte[arrays.Sum(a => a.Length)];
@@ -390,28 +401,27 @@ namespace SIPSorcery.net.RTP
                 rtpPacket.Header.MarkerBit = markerBit;
                 rtpPacket.Header.PayloadType = payloadType;
 
-                /*
-                           An example header extension, with three extension elements, some
-                           padding, and including the required RTP fields, follows:
+                /*  https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
+                    
+                    An example header extension, with three extension elements, some
+                    padding, and including the required RTP fields, follows:
 
-                           0                   1                   2                   3
-                           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-                           |       0xBE    |    0xDE       |           length=3            |
-                           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-                           |  ID   | L=0   |     data      |  ID   |  L=1  |   data...     |
-                           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-                           |     ...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
-                           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-                           |                          data                                 |
-                           +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-                         */
-                // https://datatracker.ietf.org/doc/html/rfc5285#section-4.2
-
-                if (RemoteTrack?.HeaderExtensions?.Values.Count > 0)
+                    0                   1                   2                   3
+                    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |       0xBE    |    0xDE       |           length=3            |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |  ID   | L=0   |     data      |  ID   |  L=1  |   data...     |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |     ...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    |                          data                                 |
+                    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                */
+                if (LocalTrack?.HeaderExtensions?.Values.Count > 0)
                 {
                     byte[] payload = null;
-                    foreach (var ext in RemoteTrack.HeaderExtensions.Values)
+                    foreach (var ext in LocalTrack.HeaderExtensions.Values)
                     {
                         // We support up to 14 extensions .... Not clear at all how to manage more ...
                         if ( (ext.Id < 1) && (ext.Id > 14) )
@@ -475,6 +485,52 @@ namespace SIPSorcery.net.RTP
                 m_lastRtpTimestamp = timestamp;
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
+            }
+        }
+
+        /// <summary>
+        /// To set a new value to a RTP Header extension.
+        /// 
+        /// According the extension the Object expected as value is different - check on each extension
+        /// </summary>
+        /// <param name="uri">The URI of the extension to use</param>
+        /// <param name="value">Object to set on the extension (check extension to know object type) </param>
+        public void SetRtpHeaderExtensionValue(String uri, Object value)
+        {
+            try
+            {
+                var ext = LocalTrack?.HeaderExtensions?.Values?.FirstOrDefault(ext => ext.Uri == uri);
+                if (ext != null)
+                {
+                    switch (uri)
+                    {
+                        case CVOExtension.RTP_HEADER_EXTENSION_URI:
+                            if (ext is CVOExtension cvoExtension)
+                            {
+                                cvoExtension.Set(value);
+                            }
+                            break;
+
+                        case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
+                            if (ext is AudioLevelExtension audioLevelExtension)
+                            {
+                                audioLevelExtension.Set(value);
+                            }
+                            break;
+
+                        // Not necessary to set something in AbsSendTimeExtension - just to be coherent here
+                        case AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
+                            if (ext is AbsSendTimeExtension absSendTimeExtension)
+                            {
+                                absSendTimeExtension.Set(value);
+                            }
+                            break;
+                    }
+                }
+            }
+            catch
+            {
+
             }
         }
 
@@ -654,7 +710,7 @@ namespace SIPSorcery.net.RTP
             if (RemoteTrack != null)
             {
                 LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
-                ProcessHeaderExtensions(hdr);
+                ProcessHeaderExtensions(hdr, remoteEndPoint);
             }
             if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
             {
@@ -916,14 +972,14 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        public void ProcessHeaderExtensions(RTPHeader header)
+        public void ProcessHeaderExtensions(RTPHeader header, IPEndPoint remoteEndPoint)
         {
             header.GetHeaderExtensions().ToList().ForEach(rtpHeaderExtensionData =>
             {
-                // We want to store LastAbsoluteCaptureTimestamp in RemoteTrack using AbsSendTimeExtension
                 if(RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
                 {
-                    rtpHeaderExtension?.Unmarshal(ref m_localTrack, ref m_remoteTrack, header, rtpHeaderExtensionData.Data);
+                    var value = rtpHeaderExtension.Unmarshal(header, rtpHeaderExtensionData.Data);
+                    OnRtpHeaderReceivedByIndex?.Invoke(Index, remoteEndPoint, MediaType, rtpHeaderExtension.Uri, value);
                 }
             });
         }

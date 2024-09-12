@@ -11,39 +11,57 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 
     public class CVOExtension: RTPHeaderExtension
     {
-        public const string RTP_HEADER_EXTENSION_URI    = "urn:3gpp:video-orientation";
-        public const int RTP_HEADER_EXTENSION_SIZE = 1;
+        public class CVO
+        {
+            public Boolean CameraBackFacing = false;
+            public Boolean HorizontalFlip = false;
+            public VideoRotation VideoRotation = VideoRotation.CW_0;
+        }
 
-        public event Action<VideoRotation> OnVideoRotationChange;
+        public const string RTP_HEADER_EXTENSION_URI = "urn:3gpp:video-orientation";
+        private const int RTP_HEADER_EXTENSION_SIZE = 1;
 
-        private byte _rotation = 0; // Default rotation is 0 <=> VideoRotation.CW_0
+        private byte _cvo_byte;
+        private CVO _cvo;
 
         public CVOExtension(int id) : base(id, RTP_HEADER_EXTENSION_URI, RTP_HEADER_EXTENSION_SIZE, RTPHeaderExtensionType.OneByte, Net.SDPMediaTypesEnum.video)
         {
+            _cvo_byte = 0;
+            _cvo = new CVO();
         }
 
         /// <summary>
-        /// To set a new rotation
+        /// To set a new Coordination of Video Orientation
         /// </summary>
-        /// <param name="videoRotation"><see cref="VideoRotation"/></param>
-        public void SetRotation(VideoRotation videoRotation)
+        /// <param name="cvo"><see cref="CVO"/></param>
+        public void SetCVO(CVO cvo)
         {
-            SetRotation(ConvertVideoRotationToCVOByte(videoRotation));
+            SetCVO(ConvertCVOToCVOByte(cvo));
         }
 
         /// <summary>
-        /// To set a new rotation
+        /// To set byte as new Coordination of Video Orientation
         /// </summary>
-        /// <param name="rotation"><see cref="byte"/></param>
-        public void SetRotation(byte rotation)
+        /// <param name="cvoByte"><see cref="byte"/></param>
+        public CVO SetCVO(byte cvoByte)
         {
-            if (rotation != _rotation)
+            if (_cvo_byte != cvoByte)
             {
-                _rotation = rotation;
+                _cvo_byte = cvoByte;
+                _cvo = ConvertCVOByteToCVO(_cvo_byte);
+            }
+            return _cvo;
+        }
 
-                // Trigger event
-                var videoRotation = ConvertCVOByteToVideoRotation(_rotation);
-                OnVideoRotationChange?.Invoke(videoRotation);
+        /// <summary>
+        /// To set video rotation
+        /// </summary>
+        /// <param name="value">A <see cref="CVO"/> object is expected here</param>
+        public override void Set(Object value)
+        {
+            if (value is CVO cvo)
+            {
+                SetCVO(cvo);
             }
         }
 
@@ -52,16 +70,17 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             return new[]
             {
                 (byte)((Id << 4) | ExtensionSize - 1),
-                _rotation
+                _cvo_byte
             };
         }
 
-        public override void Unmarshal(ref MediaStreamTrack localTrack, ref MediaStreamTrack remoteTrack, RTPHeader header, byte[] data)
+        public override Object Unmarshal(RTPHeader header, byte[] data)
         {
             if (data.Length == ExtensionSize)
             {
-                SetRotation(data[0]);
+                SetCVO(data[0]);
             }
+            return _cvo;
         }
 
         /// <summary>
@@ -74,6 +93,42 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             CW_180 = 180,
             CW_270 = 270
         };
+
+        static byte ConvertCVOToCVOByte(CVO cvo)
+        {
+            return (byte) ( (cvo.CameraBackFacing ? 0x8 : 0x0)
+                            + (cvo.HorizontalFlip ? 0x4 : 0x0) 
+                            + ConvertVideoRotationToCVOByte(cvo.VideoRotation));
+        }
+
+        static CVO ConvertCVOByteToCVO(byte cvo_byte)
+        {
+            /* CVO byte: |0 0 0 0 C F R1 R0|
+                With the following definitions: 
+
+                C = Camera: indicates the direction of the camera used for this video stream. It can be used by the MTSI client in 
+                receiver to e.g. display the received video differently depending on the source camera. 
+                    0: Front-facing camera, facing the user. If camera direction is unknown by the sending MTSI client in the terminal then this is the default value used. 
+                    1: Back-facing camera, facing away from the user. 
+                
+                F = Flip: indicates a horizontal (left-right flip) mirror operation on the video as sent on the link. 
+                    0: No flip operation. If the sending MTSI client in terminal does not know if a horizontal mirror operation is necessary, then this is the default value used. 
+                    1: Horizontal flip operation 
+
+                R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link.
+                    0, 0 =   0° rotation                            => needs   0° CW rotation
+                    0, 1 =  90° Counter Clockwise (CCW) rotation    => needs  90° CW rotation 
+                    1, 0 = 180° CCW rotation                        => needs 180° CW rotation
+                    1, 1 = 270° CCW rotation                        => needs 270° CW rotation
+             */
+
+            CVO result = new CVO();
+            result.CameraBackFacing = (cvo_byte & 0x8) == 0x8;
+            result.HorizontalFlip = (cvo_byte & 0x4) == 0x4;
+            result.VideoRotation = ConvertCVOByteToVideoRotation(cvo_byte);
+
+            return result;
+        }
 
         static byte ConvertVideoRotationToCVOByte(VideoRotation rotation)
         {

@@ -424,9 +424,8 @@ namespace SIPSorcery.Net
                                              var extensionId = formatAttributeMatch.Result("${id}");
                                              var uri = formatAttributeMatch.Result("${url}");
                                              if (Int32.TryParse(extensionId, out var id)) {
-
-                                                var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(id, uri);
-                                                if ( (rtpExtension != null) && (rtpExtension.IsMediaSupported(activeAnnouncement.Media)))
+                                                var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(id, uri, activeAnnouncement.Media);
+                                                if ( (rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(id))
                                                 {
                                                     activeAnnouncement.HeaderExtensions.Add(id, rtpExtension);
                                                 }
