@@ -1075,7 +1075,7 @@ namespace SIPSorcery.Net
                         var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
                         if (remoteHeaderExtensions != null)
                         {
-                            var localHeaderExtensions = VideoStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
+                            var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
                             localHeaderExtensions ??= new Dictionary<int, RTPHeaderExtension>().Values;
 
                             var newRemoteHeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
