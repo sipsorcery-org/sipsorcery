@@ -186,6 +186,8 @@ namespace SIPSorcery.Net
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceGatheringTask;
 
+        private Dictionary<String, int> _rtpExtensionsUsed; // < Uri, Id>
+
         /// <summary>
         /// Local ICE candidates that have been supplied directly by the application.
         /// Useful for cases where the application may has extra information about the
@@ -719,6 +721,24 @@ namespace SIPSorcery.Net
 
             SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
+            // Need to store uri/id of know extensions
+            _rtpExtensionsUsed ??= new Dictionary<string, int>();
+            foreach (var ann in remoteSdp.Media)
+            {
+                if ( (ann.Media == SDPMediaTypesEnum.audio) || (ann.Media == SDPMediaTypesEnum.video) )
+                {
+                    var extensions = ann.HeaderExtensions?.Values;
+                    if(extensions != null)
+                    {
+                        foreach(var extension in extensions)
+                        {
+                            logger.LogDebug("[setRemoteDescription] - Extension:[{Id} - {Uri}]", extension.Id, extension.Uri);
+                            _rtpExtensionsUsed[extension.Uri] = extension.Id;
+                        }
+                    }
+                }
+            }
+
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
 
             switch (signalingState)
@@ -925,19 +945,31 @@ namespace SIPSorcery.Net
 
             int indexAudioStream = 0;
             int indexVideoStream = 0;
-
+            _rtpExtensionsUsed ??= new Dictionary<string, int>();
             foreach (var ann in offerSdp.Media)
             {
                 // Audio - Add RTP Extension we want or can support
                 if (ann.Media == SDPMediaTypesEnum.audio)
                 {
-                    var headerExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
-                    if(headerExtensions != null)
+                    ann.HeaderExtensions.Clear();
+
+                    var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
+                    if (localHeaderExtensions != null)
                     {
-                        foreach (var extension in headerExtensions)
+                        foreach (var localExtension in localHeaderExtensions)
                         {
-                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, extension.Id, extension.Uri);
-                            ann.HeaderExtensions.Add(extension.Id, extension);
+                            // We must ensure to use same Id by extension
+                            if(_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            {
+                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                            }
+                            else
+                            {
+                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                            }
+
+                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                            ann.HeaderExtensions[localExtension.Id] = localExtension;
                         }
                     }
                     indexAudioStream++;
@@ -945,13 +977,25 @@ namespace SIPSorcery.Net
                 // Video - Add RTP Extension we want or can support
                 else if (ann.Media == SDPMediaTypesEnum.video)
                 {
-                    var headerExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
-                    if (headerExtensions != null)
+                    ann.HeaderExtensions.Clear();
+
+                    var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
+                    if (localHeaderExtensions != null)
                     {
-                        foreach (var extension in headerExtensions)
+                        foreach (var localExtension in localHeaderExtensions)
                         {
-                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, extension.Id, extension.Uri);
-                            ann.HeaderExtensions.Add(extension.Id, extension);
+                            // We must ensure to use same Id by extension
+                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            {
+                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                            }
+                            else
+                            {
+                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                            }
+
+                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                            ann.HeaderExtensions[localExtension.Id] = localExtension;
                         }
                     }
                     indexVideoStream++;
@@ -1036,66 +1080,54 @@ namespace SIPSorcery.Net
 
                 int indexAudioStream = 0;
                 int indexVideoStream = 0;
+                _rtpExtensionsUsed ??= new Dictionary<string, int>();
                 foreach (var ann in answerSdp.Media)
                 {
                     // Audio - RTP Extension must be same on Local and Remote Track
                     if (ann.Media == SDPMediaTypesEnum.audio)
                     {
-                        var remoteHeaderExtensions = AudioStreamList[indexAudioStream].RemoteTrack?.HeaderExtensions?.Values;
-                        if (remoteHeaderExtensions != null) 
-                        {
-                            var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
-                            localHeaderExtensions ??= new Dictionary<int, RTPHeaderExtension>().Values;
+                        ann.HeaderExtensions.Clear();
 
-                            var newRemoteHeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
-                            foreach (var remoteHeaderExtension in remoteHeaderExtensions)
+                        var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
+                        var remoteHeaderExtensions = AudioStreamList[indexAudioStream].RemoteTrack?.HeaderExtensions?.Values;
+                        if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
                             {
-                                var localHeaderExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteHeaderExtension.Uri);
-                                if(localHeaderExtension != null)
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                if ( (localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
-                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Uri}]", ann.Media, ann.MediaID, remoteHeaderExtension.Uri);
-                                    ann.HeaderExtensions.Add(remoteHeaderExtension.Id, remoteHeaderExtension);
-                                    newRemoteHeaderExtensions.Add(remoteHeaderExtension.Id, remoteHeaderExtension);
-                                }
-                                else
-                                {
-                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Don't use HeaderExtensions:[{Uri}]", ann.Media, ann.MediaID, remoteHeaderExtension.Uri);
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+
+                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
                                 }
                             }
-
-                            // Store only extensions used
-                            AudioStreamList[indexAudioStream].RemoteTrack.HeaderExtensions = newRemoteHeaderExtensions;
-
                         }
                         indexAudioStream++;
                     }
                     // Video - RTP Extension must be same on Local and Remote Track
                     else if (ann.Media == SDPMediaTypesEnum.video)
                     {
-                        var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
-                        if (remoteHeaderExtensions != null)
-                        {
-                            var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
-                            localHeaderExtensions ??= new Dictionary<int, RTPHeaderExtension>().Values;
+                        ann.HeaderExtensions.Clear();
 
-                            var newRemoteHeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
-                            foreach (var remoteHeaderExtension in remoteHeaderExtensions)
+                        var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
+                        var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
+                        if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
                             {
-                                var localHeaderExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteHeaderExtension.Uri);
-                                if (localHeaderExtension != null)
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
-                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Uri}]", ann.Media, ann.MediaID, remoteHeaderExtension.Uri);
-                                    ann.HeaderExtensions.Add(remoteHeaderExtension.Id, remoteHeaderExtension);
-                                    newRemoteHeaderExtensions.Add(remoteHeaderExtension.Id, remoteHeaderExtension);
-                                }
-                                else
-                                {
-                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Don't use HeaderExtensions:[{Uri}]", ann.Media, ann.MediaID, remoteHeaderExtension.Uri);
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+
+                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
                                 }
                             }
-
-                            // Store only extensions used
-                            VideoStreamList[indexVideoStream].RemoteTrack.HeaderExtensions = newRemoteHeaderExtensions;
                         }
                         indexVideoStream++;
                     }

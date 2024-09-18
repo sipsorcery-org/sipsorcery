@@ -67,7 +67,7 @@ namespace SIPSorcery.net.RTP
         }
 
         // Id / "extmap"
-        public int Id { get; }
+        public int Id { get; internal set; }
 
         // Uri
         public string Uri { get; }
