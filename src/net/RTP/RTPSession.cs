@@ -1029,7 +1029,21 @@ namespace SIPSorcery.Net
                         SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
-                        currentMediaStream.LocalTrack.Capabilities = capabilities;
+
+                        // Keep the local track's RTP event capability
+                        var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
+                        SDPAudioVideoMediaFormat localRTPEventCapabilities;
+                        if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
+                        {
+                            localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                        }
+                        else
+                        {
+                            localRTPEventCapabilities = MediaStream.DefaultRTPEventFormat;
+                        }
+
+                        currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
+                        currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities);
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
