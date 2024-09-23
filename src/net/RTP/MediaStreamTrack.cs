@@ -83,7 +83,7 @@ namespace SIPSorcery.Net
         /// <summary>
         ///  a=extmap - Mapping for RTP header extensions
         /// </summary>
-        public Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; internal set; }
+        public Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; }
 
         /// <summary>
         /// Represents the original and default stream status for the track. This is set
