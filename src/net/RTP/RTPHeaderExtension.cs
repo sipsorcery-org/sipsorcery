@@ -1,43 +1,105 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using SIPSorcery.net.RTP.RTPHeaderExtensions;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.net.RTP
 {
-    public class RTPHeaderExtension
+    public abstract class RTPHeaderExtension
     {
-        public RTPHeaderExtension(int id, string uri)
+        /// <summary>
+        /// Create an RTPHeaderExtension (<see cref="AbsSendTimeExtension"/>, <see cref="CVOExtension"/>, etc ...) based on the URI provided
+        /// If found, id permits to store the "extmap" value related to this extension
+        /// It not found returns null
+        /// </summary>
+        /// <param name="id">extmap value</param>
+        /// <param name="uri">URI of the extension - for example: "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" or "urn:3gpp:video-orientation" </param>
+        /// <returns>A Specific RTPHeaderExtension</returns>
+        public static RTPHeaderExtension GetRTPHeaderExtension(int id, String uri, SDPMediaTypesEnum media)
+        {
+            RTPHeaderExtension result = null;
+            switch (uri)
+            {
+                case AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
+                    result = new AbsSendTimeExtension(id);
+                    break;
+
+                case CVOExtension.RTP_HEADER_EXTENSION_URI:
+                    result = new CVOExtension(id);
+                    break;
+
+                case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
+                    result = new AudioLevelExtension(id);
+                    break;
+            }
+
+            if ( (result != null) &&  result.IsMediaSupported(media) )
+            {
+                return result;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// To create a RTP Header Extension
+        /// </summary>
+        /// <param name="id"><see cref="int"/> Id / extmap</param>
+        /// <param name="uri"><see cref="String"/>uri</param>
+        /// <param name="type"><see cref="RTPHeaderExtension"/>type (one or two bytes)</param>
+        /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supportef by this extension - set null/empty if all medias are supported</param>
+        public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
         {
             Id = id;
             Uri = uri;
+            ExtensionSize = extensionSize;
+            Type = type;
+
+            if (medias != null)
+            {
+                Medias = medias.ToList();
+            }
+            else
+            {
+                Medias = new List<SDPMediaTypesEnum>();
+            }
         }
-        public int Id { get; }
+
+        // Id / "extmap"
+        public int Id { get; internal set; }
+
+        // Uri
         public string Uri { get; }
 
-        public RTPHeaderExtensionUri.Type? Type => RTPHeaderExtensionUri.GetType(Uri);
-    }
+        public int ExtensionSize { get; }
 
-    public class RTPHeaderExtensionUri
-    {
-        public enum Type{
-            Unknown,
-            AbsCaptureTime
-        }
+        // Medias supported by this extension - if null/empty all medias are supported
+        public List<SDPMediaTypesEnum> Medias { get;}
 
-        private static Dictionary<string, Type> Types { get; } = new Dictionary<string, Type>() {{"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time", Type.AbsCaptureTime}};
+        // Type (one or two bytes)
+        public RTPHeaderExtensionType Type { get; }
 
-        public static Type? GetType(string uri) {
-            if (!Types.ContainsKey(uri)) {
-                return Type.Unknown;
+        public Boolean IsMediaSupported(SDPMediaTypesEnum media)
+        {
+            if (Medias.Count == 0)
+            {
+                return true;
             }
 
-            return Types[uri];
+            return Medias.Contains(media);
         }
+
+        // Function to call to set a new value to this extension
+        public abstract void Set(Object obj);
+
+        // Function to call to get the payload when writting the RTP header
+        public abstract byte[] Marshal();
+
+        // Function to call when reading the RTP header
+        public abstract Object Unmarshal(RTPHeader header, byte[] data);
     }
-    
+
     public enum RTPHeaderExtensionType
     {
         OneByte,
@@ -55,29 +117,5 @@ namespace SIPSorcery.net.RTP
         public int Id { get; }
         public byte[] Data { get; }
         public RTPHeaderExtensionType Type { get; }
-
-        public RTPHeaderExtensionUri.Type? GetUriType(Dictionary<int, RTPHeaderExtension> map) {
-            return !map.ContainsKey(Id) ? null : map[Id].Type;
-        }
-
-
-        public ulong? GetNtpTimestamp(Dictionary<int, RTPHeaderExtension> extensions){
-            var extensionType = GetUriType(extensions);
-            if (extensionType != RTPHeaderExtensionUri.Type.AbsCaptureTime) {
-                return null;
-            }
-
-            return GetUlong(0);
-        }
-
-        public ulong? GetUlong(int offset) {
-            if (offset + sizeof(ulong) - 1 >= Data.Length) {
-                return null;
-            }
-
-            return BitConverter.IsLittleEndian ? 
-                NetConvert.DoReverseEndian(BitConverter.ToUInt64(Data, offset)) : 
-                BitConverter.ToUInt64(Data, offset);
-        }
     }
 }
