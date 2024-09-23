@@ -1582,7 +1582,7 @@ namespace SIPSorcery.Net
                 // Until that happens there is no work to do.
                 if (IceConnectionState == RTCIceConnectionState.checking)
                 {
-                    if (_checklist.Count > 0)
+                    if (Checklist.Count > 0)
                     {
                         if (RemoteIceUser == null || RemoteIcePassword == null)
                         {
