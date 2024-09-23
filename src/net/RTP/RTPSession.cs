@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -465,27 +466,6 @@ namespace SIPSorcery.Net
         public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceivedByIndex;
 
         /// <summary>
-        /// Gets fired when an RTP Header packet is received from a remote party. (on the primary one)
-        /// Parameters are:
-        ///  - Remote endpoint packet was received from,
-        ///  - The media type the packet contains, will be audio or video,
-        ///  - The RTP Header extension URI,
-        ///  - Object/Value of the header
-        /// </summary>
-        public event Action< IPEndPoint, SDPMediaTypesEnum, String, Object> OnRtpHeaderReceived;
-
-        /// <summary>
-        /// Gets fired when an RTP Header packet is received from a remote party.
-        /// Parameters are:
-        ///  - index of the AudioStream or VideoStream
-        ///  - Remote endpoint packet was received from,
-        ///  - The media type the packet contains, will be audio or video,
-        ///  - The RTP Header extension URI,
-        ///  - Object/Value of the header
-        /// </summary>
-        public event Action<int, IPEndPoint, SDPMediaTypesEnum, String, Object> OnRtpHeaderReceivedByIndex;
-
-        /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream (on the primary one).
         /// </summary>
         public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
@@ -655,7 +635,6 @@ namespace SIPSorcery.Net
                 mediaStream.OnSendReportByIndex += RaiseOnSendReport;
                 mediaStream.OnRtpEventByIndex += RaisedOnRtpEvent;
                 mediaStream.OnRtpPacketReceivedByIndex += RaisedOnRtpPacketReceived;
-                mediaStream.OnRtpHeaderReceivedByIndex += RaisedOnRtpHeaderReceived;
                 mediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
 
                 if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
@@ -745,15 +724,6 @@ namespace SIPSorcery.Net
                 OnRtpPacketReceived?.Invoke(ipEndPoint, media, rtpPacket);
             }
             OnRtpPacketReceivedByIndex?.Invoke(index, ipEndPoint, media, rtpPacket);
-        }
-
-        private void RaisedOnRtpHeaderReceived(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, String uri, Object value)
-        {
-            if (index == 0)
-            {
-                OnRtpHeaderReceived?.Invoke(ipEndPoint, media, uri, value);
-            }
-            OnRtpHeaderReceivedByIndex?.Invoke(index, ipEndPoint, media, uri, value);
         }
 
         private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RTCPCompoundPacket report)
@@ -2486,7 +2456,6 @@ namespace SIPSorcery.Net
                 VideoStream?.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
             }
         }
-
         /// <summary>
         /// Allows additional control for sending raw RTCP payloads (on the primary one).
         /// </summary>
