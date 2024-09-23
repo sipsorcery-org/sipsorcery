@@ -9778,18 +9778,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.restartIce
   nameWithType: RTCPeerConnection.restartIce
-- uid: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  name: RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  commentId: F:SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  fullName: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-  nameWithType: RTCPeerConnection.RTP_HEADER_EXTENSION_ID_ABS_SEND_TIME
-- uid: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  name: RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  commentId: F:SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  fullName: SIPSorcery.Net.RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
-  nameWithType: RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME
 - uid: SIPSorcery.Net.RTCPeerConnection.sctp
   name: sctp
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_sctp
@@ -11839,6 +11827,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.CreateRtcpSession
   nameWithType: MediaStream.CreateRtcpSession
+- uid: SIPSorcery.net.RTP.MediaStream.DefaultRTPEventFormat
+  name: DefaultRTPEventFormat
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_DefaultRTPEventFormat
+  commentId: P:SIPSorcery.net.RTP.MediaStream.DefaultRTPEventFormat
+  fullName: SIPSorcery.net.RTP.MediaStream.DefaultRTPEventFormat
+  nameWithType: MediaStream.DefaultRTPEventFormat
+- uid: SIPSorcery.net.RTP.MediaStream.DefaultRTPEventFormat*
+  name: DefaultRTPEventFormat
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_DefaultRTPEventFormat_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.DefaultRTPEventFormat
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.DefaultRTPEventFormat
+  nameWithType: MediaStream.DefaultRTPEventFormat
 - uid: SIPSorcery.net.RTP.MediaStream.DestinationEndPoint
   name: DestinationEndPoint
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_DestinationEndPoint
@@ -12064,6 +12065,12 @@ references:
   commentId: E:SIPSorcery.net.RTP.MediaStream.OnRtpEventByIndex
   fullName: SIPSorcery.net.RTP.MediaStream.OnRtpEventByIndex
   nameWithType: MediaStream.OnRtpEventByIndex
+- uid: SIPSorcery.net.RTP.MediaStream.OnRtpHeaderReceivedByIndex
+  name: OnRtpHeaderReceivedByIndex
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpHeaderReceivedByIndex
+  commentId: E:SIPSorcery.net.RTP.MediaStream.OnRtpHeaderReceivedByIndex
+  fullName: SIPSorcery.net.RTP.MediaStream.OnRtpHeaderReceivedByIndex
+  nameWithType: MediaStream.OnRtpHeaderReceivedByIndex
 - uid: SIPSorcery.net.RTP.MediaStream.OnRtpPacketReceivedByIndex
   name: OnRtpPacketReceivedByIndex
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_OnRtpPacketReceivedByIndex
@@ -12140,12 +12147,12 @@ references:
   commentId: F:SIPSorcery.net.RTP.MediaStream.PendingPackages.videoStream
   fullName: SIPSorcery.net.RTP.MediaStream.PendingPackages.videoStream
   nameWithType: MediaStream.PendingPackages.videoStream
-- uid: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader)
-  name: ProcessHeaderExtensions(RTPHeader)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ProcessHeaderExtensions_SIPSorcery_Net_RTPHeader_
-  commentId: M:SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader)
-  fullName: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader)
-  nameWithType: MediaStream.ProcessHeaderExtensions(RTPHeader)
+- uid: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader,System.Net.IPEndPoint)
+  name: ProcessHeaderExtensions(RTPHeader, IPEndPoint)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ProcessHeaderExtensions_SIPSorcery_Net_RTPHeader_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader,System.Net.IPEndPoint)
+  fullName: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions(SIPSorcery.Net.RTPHeader, System.Net.IPEndPoint)
+  nameWithType: MediaStream.ProcessHeaderExtensions(RTPHeader, IPEndPoint)
 - uid: SIPSorcery.net.RTP.MediaStream.ProcessHeaderExtensions*
   name: ProcessHeaderExtensions
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_ProcessHeaderExtensions_
@@ -12345,6 +12352,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.MediaStream.SetDestination
   nameWithType: MediaStream.SetDestination
+- uid: SIPSorcery.net.RTP.MediaStream.SetRtpHeaderExtensionValue(System.String,System.Object)
+  name: SetRtpHeaderExtensionValue(String, Object)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SetRtpHeaderExtensionValue_System_String_System_Object_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.SetRtpHeaderExtensionValue(System.String,System.Object)
+  fullName: SIPSorcery.net.RTP.MediaStream.SetRtpHeaderExtensionValue(System.String, System.Object)
+  nameWithType: MediaStream.SetRtpHeaderExtensionValue(String, Object)
+- uid: SIPSorcery.net.RTP.MediaStream.SetRtpHeaderExtensionValue*
+  name: SetRtpHeaderExtensionValue
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SetRtpHeaderExtensionValue_
+  commentId: Overload:SIPSorcery.net.RTP.MediaStream.SetRtpHeaderExtensionValue
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.MediaStream.SetRtpHeaderExtensionValue
+  nameWithType: MediaStream.SetRtpHeaderExtensionValue
 - uid: SIPSorcery.net.RTP.MediaStream.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
   name: SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
@@ -12383,12 +12403,15 @@ references:
   commentId: T:SIPSorcery.net.RTP.RTPHeaderExtension
   fullName: SIPSorcery.net.RTP.RTPHeaderExtension
   nameWithType: RTPHeaderExtension
-- uid: SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String)
-  name: RTPHeaderExtension(Int32, String)
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_
-  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String)
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.RTPHeaderExtension(System.Int32, System.String)
-  nameWithType: RTPHeaderExtension.RTPHeaderExtension(Int32, String)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String,System.Int32,SIPSorcery.net.RTP.RTPHeaderExtensionType,SIPSorcery.Net.SDPMediaTypesEnum[])
+  name: RTPHeaderExtension(Int32, String, Int32, RTPHeaderExtensionType, SDPMediaTypesEnum[])
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtensionType_SIPSorcery_Net_SDPMediaTypesEnum___
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String,System.Int32,SIPSorcery.net.RTP.RTPHeaderExtensionType,SIPSorcery.Net.SDPMediaTypesEnum[])
+  name.vb: RTPHeaderExtension(Int32, String, Int32, RTPHeaderExtensionType, SDPMediaTypesEnum())
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.RTPHeaderExtension(System.Int32, System.String, System.Int32, SIPSorcery.net.RTP.RTPHeaderExtensionType, SIPSorcery.Net.SDPMediaTypesEnum[])
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtension.RTPHeaderExtension(System.Int32, System.String, System.Int32, SIPSorcery.net.RTP.RTPHeaderExtensionType, SIPSorcery.Net.SDPMediaTypesEnum())
+  nameWithType: RTPHeaderExtension.RTPHeaderExtension(Int32, String, Int32, RTPHeaderExtensionType, SDPMediaTypesEnum[])
+  nameWithType.vb: RTPHeaderExtension.RTPHeaderExtension(Int32, String, Int32, RTPHeaderExtensionType, SDPMediaTypesEnum())
 - uid: SIPSorcery.net.RTP.RTPHeaderExtension.#ctor*
   name: RTPHeaderExtension
   href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension__ctor_
@@ -12396,6 +12419,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.RTPHeaderExtension.RTPHeaderExtension
   nameWithType: RTPHeaderExtension.RTPHeaderExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize
+  name: ExtensionSize
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_ExtensionSize
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize
+  nameWithType: RTPHeaderExtension.ExtensionSize
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize*
+  name: ExtensionSize
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_ExtensionSize_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize
+  nameWithType: RTPHeaderExtension.ExtensionSize
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension(System.Int32,System.String,SIPSorcery.Net.SDPMediaTypesEnum)
+  name: GetRTPHeaderExtension(Int32, String, SDPMediaTypesEnum)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_GetRTPHeaderExtension_System_Int32_System_String_SIPSorcery_Net_SDPMediaTypesEnum_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension(System.Int32,System.String,SIPSorcery.Net.SDPMediaTypesEnum)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension(System.Int32, System.String, SIPSorcery.Net.SDPMediaTypesEnum)
+  nameWithType: RTPHeaderExtension.GetRTPHeaderExtension(Int32, String, SDPMediaTypesEnum)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension*
+  name: GetRTPHeaderExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_GetRTPHeaderExtension_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension
+  nameWithType: RTPHeaderExtension.GetRTPHeaderExtension
 - uid: SIPSorcery.net.RTP.RTPHeaderExtension.Id
   name: Id
   href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Id
@@ -12409,6 +12458,58 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Id
   nameWithType: RTPHeaderExtension.Id
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported(SIPSorcery.Net.SDPMediaTypesEnum)
+  name: IsMediaSupported(SDPMediaTypesEnum)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_IsMediaSupported_SIPSorcery_Net_SDPMediaTypesEnum_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported(SIPSorcery.Net.SDPMediaTypesEnum)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported(SIPSorcery.Net.SDPMediaTypesEnum)
+  nameWithType: RTPHeaderExtension.IsMediaSupported(SDPMediaTypesEnum)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported*
+  name: IsMediaSupported
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_IsMediaSupported_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported
+  nameWithType: RTPHeaderExtension.IsMediaSupported
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Marshal
+  name: Marshal()
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Marshal
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.Marshal
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Marshal()
+  nameWithType: RTPHeaderExtension.Marshal()
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Marshal*
+  name: Marshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Marshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Marshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Marshal
+  nameWithType: RTPHeaderExtension.Marshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Medias
+  name: Medias
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Medias
+  commentId: P:SIPSorcery.net.RTP.RTPHeaderExtension.Medias
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Medias
+  nameWithType: RTPHeaderExtension.Medias
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Medias*
+  name: Medias
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Medias_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Medias
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Medias
+  nameWithType: RTPHeaderExtension.Medias
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Set(System.Object)
+  name: Set(Object)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Set_System_Object_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.Set(System.Object)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Set(System.Object)
+  nameWithType: RTPHeaderExtension.Set(Object)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Set*
+  name: Set
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Set_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Set
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Set
+  nameWithType: RTPHeaderExtension.Set
 - uid: SIPSorcery.net.RTP.RTPHeaderExtension.Type
   name: Type
   href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Type
@@ -12422,6 +12523,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Type
   nameWithType: RTPHeaderExtension.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name: Unmarshal(RTPHeader, Byte[])
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Unmarshal_SIPSorcery_Net_RTPHeader_System_Byte___
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name.vb: Unmarshal(RTPHeader, Byte())
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte[])
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte())
+  nameWithType: RTPHeaderExtension.Unmarshal(RTPHeader, Byte[])
+  nameWithType.vb: RTPHeaderExtension.Unmarshal(RTPHeader, Byte())
+- uid: SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal*
+  name: Unmarshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Unmarshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal
+  nameWithType: RTPHeaderExtension.Unmarshal
 - uid: SIPSorcery.net.RTP.RTPHeaderExtension.Uri
   name: Uri
   href: api/SIPSorcery.net.RTP.RTPHeaderExtension.html#SIPSorcery_net_RTP_RTPHeaderExtension_Uri
@@ -12470,51 +12587,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Data
   nameWithType: RTPHeaderExtensionData.Data
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
-  name: GetNtpTimestamp(Dictionary<Int32, RTPHeaderExtension>)
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetNtpTimestamp_System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__
-  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
-  name.vb: GetNtpTimestamp(Dictionary(Of Int32, RTPHeaderExtension))
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary<System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension>)
-  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp(System.Collections.Generic.Dictionary(Of System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension))
-  nameWithType: RTPHeaderExtensionData.GetNtpTimestamp(Dictionary<Int32, RTPHeaderExtension>)
-  nameWithType.vb: RTPHeaderExtensionData.GetNtpTimestamp(Dictionary(Of Int32, RTPHeaderExtension))
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp*
-  name: GetNtpTimestamp
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetNtpTimestamp_
-  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetNtpTimestamp
-  nameWithType: RTPHeaderExtensionData.GetNtpTimestamp
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong(System.Int32)
-  name: GetUlong(Int32)
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUlong_System_Int32_
-  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong(System.Int32)
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong(System.Int32)
-  nameWithType: RTPHeaderExtensionData.GetUlong(Int32)
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong*
-  name: GetUlong
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUlong_
-  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUlong
-  nameWithType: RTPHeaderExtensionData.GetUlong
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
-  name: GetUriType(Dictionary<Int32, RTPHeaderExtension>)
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUriType_System_Collections_Generic_Dictionary_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtension__
-  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary{System.Int32,SIPSorcery.net.RTP.RTPHeaderExtension})
-  name.vb: GetUriType(Dictionary(Of Int32, RTPHeaderExtension))
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary<System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension>)
-  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType(System.Collections.Generic.Dictionary(Of System.Int32, SIPSorcery.net.RTP.RTPHeaderExtension))
-  nameWithType: RTPHeaderExtensionData.GetUriType(Dictionary<Int32, RTPHeaderExtension>)
-  nameWithType.vb: RTPHeaderExtensionData.GetUriType(Dictionary(Of Int32, RTPHeaderExtension))
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType*
-  name: GetUriType
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_GetUriType_
-  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.GetUriType
-  nameWithType: RTPHeaderExtensionData.GetUriType
 - uid: SIPSorcery.net.RTP.RTPHeaderExtensionData.Id
   name: Id
   href: api/SIPSorcery.net.RTP.RTPHeaderExtensionData.html#SIPSorcery_net_RTP_RTPHeaderExtensionData_Id
@@ -12541,6 +12613,330 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.net.RTP.RTPHeaderExtensionData.Type
   nameWithType: RTPHeaderExtensionData.Type
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions
+  name: SIPSorcery.net.RTP.RTPHeaderExtensions
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.html
+  commentId: N:SIPSorcery.net.RTP.RTPHeaderExtensions
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions
+  nameWithType: SIPSorcery.net.RTP.RTPHeaderExtensions
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension
+  name: AbsSendTimeExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension
+  nameWithType: AbsSendTimeExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.#ctor(System.Int32)
+  name: AbsSendTimeExtension(Int32)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension__ctor_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.#ctor(System.Int32)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.AbsSendTimeExtension(System.Int32)
+  nameWithType: AbsSendTimeExtension.AbsSendTimeExtension(Int32)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.#ctor*
+  name: AbsSendTimeExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.AbsSendTimeExtension
+  nameWithType: AbsSendTimeExtension.AbsSendTimeExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Marshal
+  name: Marshal()
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_Marshal
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Marshal
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Marshal()
+  nameWithType: AbsSendTimeExtension.Marshal()
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Marshal*
+  name: Marshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_Marshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Marshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Marshal
+  nameWithType: AbsSendTimeExtension.Marshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI
+  name: RTP_HEADER_EXTENSION_URI
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_RTP_HEADER_EXTENSION_URI
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI
+  nameWithType: AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Set(System.Object)
+  name: Set(Object)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_Set_System_Object_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Set(System.Object)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Set(System.Object)
+  nameWithType: AbsSendTimeExtension.Set(Object)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Set*
+  name: Set
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_Set_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Set
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Set
+  nameWithType: AbsSendTimeExtension.Set
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name: Unmarshal(RTPHeader, Byte[])
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_Unmarshal_SIPSorcery_Net_RTPHeader_System_Byte___
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name.vb: Unmarshal(RTPHeader, Byte())
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte[])
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte())
+  nameWithType: AbsSendTimeExtension.Unmarshal(RTPHeader, Byte[])
+  nameWithType.vb: AbsSendTimeExtension.Unmarshal(RTPHeader, Byte())
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal*
+  name: Unmarshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AbsSendTimeExtension_Unmarshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.Unmarshal
+  nameWithType: AbsSendTimeExtension.Unmarshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension
+  name: AudioLevelExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension
+  nameWithType: AudioLevelExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.#ctor(System.Int32)
+  name: AudioLevelExtension(Int32)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension__ctor_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.#ctor(System.Int32)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevelExtension(System.Int32)
+  nameWithType: AudioLevelExtension.AudioLevelExtension(Int32)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.#ctor*
+  name: AudioLevelExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevelExtension
+  nameWithType: AudioLevelExtension.AudioLevelExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel
+  name: AudioLevelExtension.AudioLevel
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel
+  nameWithType: AudioLevelExtension.AudioLevel
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.Level
+  name: Level
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_AudioLevel_Level
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.Level
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.Level
+  nameWithType: AudioLevelExtension.AudioLevel.Level
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.Voice
+  name: Voice
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_AudioLevel_Voice
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.Voice
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.AudioLevel.Voice
+  nameWithType: AudioLevelExtension.AudioLevel.Voice
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Marshal
+  name: Marshal()
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_Marshal
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Marshal
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Marshal()
+  nameWithType: AudioLevelExtension.Marshal()
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Marshal*
+  name: Marshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_Marshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Marshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Marshal
+  nameWithType: AudioLevelExtension.Marshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.RTP_HEADER_EXTENSION_URI
+  name: RTP_HEADER_EXTENSION_URI
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_RTP_HEADER_EXTENSION_URI
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.RTP_HEADER_EXTENSION_URI
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.RTP_HEADER_EXTENSION_URI
+  nameWithType: AudioLevelExtension.RTP_HEADER_EXTENSION_URI
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Set(System.Object)
+  name: Set(Object)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_Set_System_Object_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Set(System.Object)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Set(System.Object)
+  nameWithType: AudioLevelExtension.Set(Object)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Set*
+  name: Set
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_Set_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Set
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Set
+  nameWithType: AudioLevelExtension.Set
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetLevel(System.UInt16)
+  name: SetLevel(UInt16)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_SetLevel_System_UInt16_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetLevel(System.UInt16)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetLevel(System.UInt16)
+  nameWithType: AudioLevelExtension.SetLevel(UInt16)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetLevel*
+  name: SetLevel
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_SetLevel_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetLevel
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetLevel
+  nameWithType: AudioLevelExtension.SetLevel
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetVoice(System.Boolean)
+  name: SetVoice(Boolean)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_SetVoice_System_Boolean_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetVoice(System.Boolean)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetVoice(System.Boolean)
+  nameWithType: AudioLevelExtension.SetVoice(Boolean)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetVoice*
+  name: SetVoice
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_SetVoice_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetVoice
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.SetVoice
+  nameWithType: AudioLevelExtension.SetVoice
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name: Unmarshal(RTPHeader, Byte[])
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_Unmarshal_SIPSorcery_Net_RTPHeader_System_Byte___
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name.vb: Unmarshal(RTPHeader, Byte())
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte[])
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte())
+  nameWithType: AudioLevelExtension.Unmarshal(RTPHeader, Byte[])
+  nameWithType.vb: AudioLevelExtension.Unmarshal(RTPHeader, Byte())
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal*
+  name: Unmarshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_AudioLevelExtension_Unmarshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.Unmarshal
+  nameWithType: AudioLevelExtension.Unmarshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension
+  name: CVOExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension
+  nameWithType: CVOExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.#ctor(System.Int32)
+  name: CVOExtension(Int32)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension__ctor_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.#ctor(System.Int32)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVOExtension(System.Int32)
+  nameWithType: CVOExtension.CVOExtension(Int32)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.#ctor*
+  name: CVOExtension
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension__ctor_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVOExtension
+  nameWithType: CVOExtension.CVOExtension
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO
+  name: CVOExtension.CVO
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO
+  nameWithType: CVOExtension.CVO
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.CameraBackFacing
+  name: CameraBackFacing
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_CVO_CameraBackFacing
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.CameraBackFacing
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.CameraBackFacing
+  nameWithType: CVOExtension.CVO.CameraBackFacing
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.HorizontalFlip
+  name: HorizontalFlip
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_CVO_HorizontalFlip
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.HorizontalFlip
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.HorizontalFlip
+  nameWithType: CVOExtension.CVO.HorizontalFlip
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.VideoRotation
+  name: VideoRotation
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_CVO_VideoRotation
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.VideoRotation
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO.VideoRotation
+  nameWithType: CVOExtension.CVO.VideoRotation
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Marshal
+  name: Marshal()
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_Marshal
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Marshal
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Marshal()
+  nameWithType: CVOExtension.Marshal()
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Marshal*
+  name: Marshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_Marshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Marshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Marshal
+  nameWithType: CVOExtension.Marshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.RTP_HEADER_EXTENSION_URI
+  name: RTP_HEADER_EXTENSION_URI
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_RTP_HEADER_EXTENSION_URI
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.RTP_HEADER_EXTENSION_URI
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.RTP_HEADER_EXTENSION_URI
+  nameWithType: CVOExtension.RTP_HEADER_EXTENSION_URI
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Set(System.Object)
+  name: Set(Object)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_Set_System_Object_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Set(System.Object)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Set(System.Object)
+  nameWithType: CVOExtension.Set(Object)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Set*
+  name: Set
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_Set_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Set
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Set
+  nameWithType: CVOExtension.Set
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO(SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO)
+  name: SetCVO(CVOExtension.CVO)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_SetCVO_SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_CVO_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO(SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO(SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.CVO)
+  nameWithType: CVOExtension.SetCVO(CVOExtension.CVO)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO(System.Byte)
+  name: SetCVO(Byte)
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_SetCVO_System_Byte_
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO(System.Byte)
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO(System.Byte)
+  nameWithType: CVOExtension.SetCVO(Byte)
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO*
+  name: SetCVO
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_SetCVO_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.SetCVO
+  nameWithType: CVOExtension.SetCVO
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name: Unmarshal(RTPHeader, Byte[])
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_Unmarshal_SIPSorcery_Net_RTPHeader_System_Byte___
+  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])
+  name.vb: Unmarshal(RTPHeader, Byte())
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte[])
+  fullName.vb: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal(SIPSorcery.Net.RTPHeader, System.Byte())
+  nameWithType: CVOExtension.Unmarshal(RTPHeader, Byte[])
+  nameWithType.vb: CVOExtension.Unmarshal(RTPHeader, Byte())
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal*
+  name: Unmarshal
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_Unmarshal_
+  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal
+  isSpec: "True"
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.Unmarshal
+  nameWithType: CVOExtension.Unmarshal
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation
+  name: CVOExtension.VideoRotation
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.html
+  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation
+  nameWithType: CVOExtension.VideoRotation
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_0
+  name: CW_0
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_VideoRotation_CW_0
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_0
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_0
+  nameWithType: CVOExtension.VideoRotation.CW_0
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_180
+  name: CW_180
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_VideoRotation_CW_180
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_180
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_180
+  nameWithType: CVOExtension.VideoRotation.CW_180
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_270
+  name: CW_270
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_VideoRotation_CW_270
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_270
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_270
+  nameWithType: CVOExtension.VideoRotation.CW_270
+- uid: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_90
+  name: CW_90
+  href: api/SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.html#SIPSorcery_net_RTP_RTPHeaderExtensions_CVOExtension_VideoRotation_CW_90
+  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_90
+  fullName: SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.VideoRotation.CW_90
+  nameWithType: CVOExtension.VideoRotation.CW_90
 - uid: SIPSorcery.net.RTP.RTPHeaderExtensionType
   name: RTPHeaderExtensionType
   href: api/SIPSorcery.net.RTP.RTPHeaderExtensionType.html
@@ -12559,43 +12955,6 @@ references:
   commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionType.TwoByte
   fullName: SIPSorcery.net.RTP.RTPHeaderExtensionType.TwoByte
   nameWithType: RTPHeaderExtensionType.TwoByte
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri
-  name: RTPHeaderExtensionUri
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.html
-  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensionUri
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri
-  nameWithType: RTPHeaderExtensionUri
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType(System.String)
-  name: GetType(String)
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_GetType_System_String_
-  commentId: M:SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType(System.String)
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType(System.String)
-  nameWithType: RTPHeaderExtensionUri.GetType(String)
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType*
-  name: GetType
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_GetType_
-  commentId: Overload:SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType
-  isSpec: "True"
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.GetType
-  nameWithType: RTPHeaderExtensionUri.GetType
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type
-  name: RTPHeaderExtensionUri.Type
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html
-  commentId: T:SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type
-  nameWithType: RTPHeaderExtensionUri.Type
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.AbsCaptureTime
-  name: AbsCaptureTime
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_Type_AbsCaptureTime
-  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.AbsCaptureTime
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.AbsCaptureTime
-  nameWithType: RTPHeaderExtensionUri.Type.AbsCaptureTime
-- uid: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.Unknown
-  name: Unknown
-  href: api/SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html#SIPSorcery_net_RTP_RTPHeaderExtensionUri_Type_Unknown
-  commentId: F:SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.Unknown
-  fullName: SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.Unknown
-  nameWithType: RTPHeaderExtensionUri.Type.Unknown
 - uid: SIPSorcery.net.RTP.RTPReorderBuffer
   name: RTPReorderBuffer
   href: api/SIPSorcery.net.RTP.RTPReorderBuffer.html
@@ -13242,19 +13601,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPHeader.RTPHeader
   nameWithType: RTPHeader.RTPHeader
-- uid: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
-  name: AddAbsSendTimeExtension()
-  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_AddAbsSendTimeExtension
-  commentId: M:SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
-  fullName: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension()
-  nameWithType: RTPHeader.AddAbsSendTimeExtension()
-- uid: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension*
-  name: AddAbsSendTimeExtension
-  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_AddAbsSendTimeExtension_
-  commentId: Overload:SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPHeader.AddAbsSendTimeExtension
-  nameWithType: RTPHeader.AddAbsSendTimeExtension
 - uid: SIPSorcery.Net.RTPHeader.CSRCCount
   name: CSRCCount
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_CSRCCount
@@ -13355,6 +13701,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPHeader.MIN_HEADER_LEN
   fullName: SIPSorcery.Net.RTPHeader.MIN_HEADER_LEN
   nameWithType: RTPHeader.MIN_HEADER_LEN
+- uid: SIPSorcery.Net.RTPHeader.ONE_BYTE_EXTENSION_PROFILE
+  name: ONE_BYTE_EXTENSION_PROFILE
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_ONE_BYTE_EXTENSION_PROFILE
+  commentId: F:SIPSorcery.Net.RTPHeader.ONE_BYTE_EXTENSION_PROFILE
+  fullName: SIPSorcery.Net.RTPHeader.ONE_BYTE_EXTENSION_PROFILE
+  nameWithType: RTPHeader.ONE_BYTE_EXTENSION_PROFILE
 - uid: SIPSorcery.Net.RTPHeader.PaddingCount
   name: PaddingCount
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_PaddingCount
@@ -13425,6 +13777,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPHeader.TryParse
   nameWithType: RTPHeader.TryParse
+- uid: SIPSorcery.Net.RTPHeader.TWO_BYTE_EXTENSION_PROFILE
+  name: TWO_BYTE_EXTENSION_PROFILE
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_TWO_BYTE_EXTENSION_PROFILE
+  commentId: F:SIPSorcery.Net.RTPHeader.TWO_BYTE_EXTENSION_PROFILE
+  fullName: SIPSorcery.Net.RTPHeader.TWO_BYTE_EXTENSION_PROFILE
+  nameWithType: RTPHeader.TWO_BYTE_EXTENSION_PROFILE
 - uid: SIPSorcery.Net.RTPHeader.Version
   name: Version
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_Version
@@ -14581,6 +14939,18 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnRtpEventByIndex
   fullName: SIPSorcery.Net.RTPSession.OnRtpEventByIndex
   nameWithType: RTPSession.OnRtpEventByIndex
+- uid: SIPSorcery.Net.RTPSession.OnRtpHeaderReceived
+  name: OnRtpHeaderReceived
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpHeaderReceived
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpHeaderReceived
+  fullName: SIPSorcery.Net.RTPSession.OnRtpHeaderReceived
+  nameWithType: RTPSession.OnRtpHeaderReceived
+- uid: SIPSorcery.Net.RTPSession.OnRtpHeaderReceivedByIndex
+  name: OnRtpHeaderReceivedByIndex
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpHeaderReceivedByIndex
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpHeaderReceivedByIndex
+  fullName: SIPSorcery.Net.RTPSession.OnRtpHeaderReceivedByIndex
+  nameWithType: RTPSession.OnRtpHeaderReceivedByIndex
 - uid: SIPSorcery.Net.RTPSession.OnRtpPacketReceived
   name: OnRtpPacketReceived
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived
