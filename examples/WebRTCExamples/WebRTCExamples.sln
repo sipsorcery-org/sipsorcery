@@ -47,6 +47,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RtspToWebRTCAudioAndVideo",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.FFmpeg", "..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj", "{F752D05D-00D1-439B-A56F-9F49E17BE5E3}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -321,6 +323,18 @@ Global
 		{F752D05D-00D1-439B-A56F-9F49E17BE5E3}.Release|x64.Build.0 = Release|Any CPU
 		{F752D05D-00D1-439B-A56F-9F49E17BE5E3}.Release|x86.ActiveCfg = Release|Any CPU
 		{F752D05D-00D1-439B-A56F-9F49E17BE5E3}.Release|x86.Build.0 = Release|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Debug|x64.Build.0 = Debug|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Debug|x86.Build.0 = Debug|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Release|x64.ActiveCfg = Release|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Release|x64.Build.0 = Release|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Release|x86.ActiveCfg = Release|Any CPU
+		{1FC24E86-ADB2-4614-A30A-53F6E9EAFB9E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
