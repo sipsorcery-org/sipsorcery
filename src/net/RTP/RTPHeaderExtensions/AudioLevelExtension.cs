@@ -1,18 +1,42 @@
 ﻿using SIPSorcery.Net;
 using System;
+using System.ComponentModel;
 
 namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 {
+    // Code reference: https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#49
+    //    0                   1
+    //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+    //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //   |  ID   | len=0 |V|   level     |
+    //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     public class AudioLevelExtension : RTPHeaderExtension
     {
         public class AudioLevel
         {
             public Boolean Voice;
             public ushort Level;
+
+            public AudioLevel()
+            {
+                Voice = false;
+                Level = 0;
+            }
+
+            public AudioLevel(byte[] data)
+            {
+                if ((data == null) || (data.Length != AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE))
+                {
+                    throw new ArgumentException(nameof(data));
+                }
+
+                Voice = (data[0] & 0x80) != 0;
+                Level = (ushort)(data[0] & 0x7F);
+            }
         };
 
         public const string RTP_HEADER_EXTENSION_URI = "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
-        private const int RTP_HEADER_EXTENSION_SIZE = 1;
+        internal const int RTP_HEADER_EXTENSION_SIZE = 1;
 
         private AudioLevel _audioLevel;
 
@@ -33,29 +57,7 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
         { 
             if (value is AudioLevel audioLevel) 
             {
-                SetVoice(audioLevel.Voice);
-                SetLevel(audioLevel.Level);
-            }
-        }
-
-        public void SetVoice(Boolean voice)
-        {
-            if(_audioLevel.Voice != voice)
-            {
-                _audioLevel.Voice = voice;
-            }
-        }
-
-        public void SetLevel(ushort level)
-        {
-            if(level > 127)
-            {
-                return;
-            }
-
-            if (_audioLevel.Level != level)
-            {
-                _audioLevel.Level = level;
+                _audioLevel = audioLevel;
             }
         }
 
@@ -76,10 +78,16 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 
         public override Object Unmarshal(RTPHeader header, byte[] data)
         {
-            if (data.Length == ExtensionSize)
+            try
             {
-                SetLevel((ushort)(data[0] & 0x7F));
-                SetVoice((data[0] & 0x80) != 0);
+                if ((data == null) || (data.Length != AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE))
+                {
+                    _audioLevel = new AudioLevel(data);
+                }
+            }
+            catch
+            {
+                // Nothing to do more
             }
             return _audioLevel;
         }

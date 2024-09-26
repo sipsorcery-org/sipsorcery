@@ -5,11 +5,11 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 {
     // AbsSendTimeExtension is a extension payload format in
     // http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
-    // Code refrence: https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#49
+    // Code reference: https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#19
     public class AbsSendTimeExtension: RTPHeaderExtension
     {
         public const string RTP_HEADER_EXTENSION_URI = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
-        private const int RTP_HEADER_EXTENSION_SIZE = 3;
+        internal const int RTP_HEADER_EXTENSION_SIZE = 3;
 
         public AbsSendTimeExtension(int id): base(id, RTP_HEADER_EXTENSION_URI, RTP_HEADER_EXTENSION_SIZE, RTPHeaderExtensionType.OneByte)
         {
@@ -20,10 +20,10 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
             // Nothing to do here 
         }
 
-        public override byte[] Marshal()
+        internal static byte[] AbsSendTime(int id, int extensionSize, DateTimeOffset now)
         {
             // inspired by https://github.com/pion/rtp/blob/master/abssendtimeextension.go
-            ulong unixNanoseconds = (ulong)((DateTimeOffset.Now - UnixEpoch).Ticks * 100L);
+            ulong unixNanoseconds = (ulong)((now - UnixEpoch).Ticks * 100L);
             var seconds = unixNanoseconds / (ulong)1e9;
             seconds += 0x83AA7E80UL; // offset in seconds between unix epoch and ntp epoch
             var f = unixNanoseconds % (ulong)1e9;
@@ -35,11 +35,16 @@ namespace SIPSorcery.net.RTP.RTPHeaderExtensions
 
             return new[]
             {
-                (byte)((Id << 4) | ExtensionSize - 1),
+                (byte)((id << 4) | extensionSize - 1),
                 (byte)((abs & 0xff0000UL) >> 16),
                 (byte)((abs & 0xff00UL) >> 8),
                 (byte)(abs & 0xffUL)
             };
+        }
+        
+        public override byte[] Marshal()
+        {
+            return AbsSendTime(Id, ExtensionSize, DateTimeOffset.Now);
         }
 
         public override Object Unmarshal(RTPHeader header, byte[] data)
