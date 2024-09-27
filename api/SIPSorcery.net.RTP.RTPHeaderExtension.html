@@ -79,6 +79,9 @@
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">RTPHeaderExtension</span></div>
+      <div class="level2"><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html">AbsSendTimeExtension</a></div>
+      <div class="level2"><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensions.AudioLevelExtension.html">AudioLevelExtension</a></div>
+      <div class="level2"><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html">CVOExtension</a></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -108,24 +111,25 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_net_RTP_RTPHeaderExtension_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class RTPHeaderExtension</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract class RTPHeaderExtension</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.%23ctor(System.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtensionType_SIPSorcery_Net_SDPMediaTypesEnum___.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.%23ctor(System.Int32%2CSystem.String%2CSystem.Int32%2CSIPSorcery.net.RTP.RTPHeaderExtensionType%2CSIPSorcery.Net.SDPMediaTypesEnum%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L12">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L52">View Source</a>
   </span>
   <a id="SIPSorcery_net_RTP_RTPHeaderExtension__ctor_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.#ctor*"></a>
-  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String)">RTPHeaderExtension(Int32, String)</h4>
-  <div class="markdown level1 summary"></div>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension__ctor_System_Int32_System_String_System_Int32_SIPSorcery_net_RTP_RTPHeaderExtensionType_SIPSorcery_Net_SDPMediaTypesEnum___" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.#ctor(System.Int32,System.String,System.Int32,SIPSorcery.net.RTP.RTPHeaderExtensionType,SIPSorcery.Net.SDPMediaTypesEnum[])">RTPHeaderExtension(Int32, String, Int32, RTPHeaderExtensionType, SDPMediaTypesEnum[])</h4>
+  <div class="markdown level1 summary"><p>To create a RTP Header Extension</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPHeaderExtension(int id, string uri)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -140,12 +144,31 @@
       <tr>
         <td><span class="xref">System.Int32</span></td>
         <td><span class="parametername">id</span></td>
-        <td></td>
+        <td><p><span class="xref">System.Int32</span> Id / extmap</p>
+</td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">uri</span></td>
+        <td><p><span class="xref">System.String</span>uri</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">extensionSize</span></td>
         <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensionType.html">RTPHeaderExtensionType</a></td>
+        <td><span class="parametername">type</span></td>
+        <td><p><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtension.html">RTPHeaderExtension</a>type (one or two bytes)</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>[]</td>
+        <td><span class="parametername">medias</span></td>
+        <td><p><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>media(s) supportef by this extension - set null/empty if all medias are supported</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -153,10 +176,40 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_ExtensionSize.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L75">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_ExtensionSize_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_ExtensionSize" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.ExtensionSize">ExtensionSize</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int ExtensionSize { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Id.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Id%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L17">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L70">View Source</a>
   </span>
   <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Id_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Id*"></a>
   <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Id" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Id">Id</h4>
@@ -183,18 +236,18 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Type.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Type%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Medias.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Medias%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L20">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L78">View Source</a>
   </span>
-  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Type_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Type*"></a>
-  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Type" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Type">Type</h4>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Medias_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Medias*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Medias" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Medias">Medias</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPHeaderExtensionUri.Type? Type { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public List&lt;SDPMediaTypesEnum&gt; Medias { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -206,7 +259,37 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensionUri.Type.html">RTPHeaderExtensionUri.Type</a>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Type.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Type%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L81">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Type_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Type*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Type" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Type">Type</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTPHeaderExtensionType Type { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensionType.html">RTPHeaderExtensionType</a></td>
         <td></td>
       </tr>
     </tbody>
@@ -216,7 +299,7 @@
     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Uri.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Uri%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L18">View Source</a>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L73">View Source</a>
   </span>
   <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Uri_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Uri*"></a>
   <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Uri" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Uri">Uri</h4>
@@ -241,6 +324,232 @@
       </tr>
     </tbody>
   </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_GetRTPHeaderExtension_System_Int32_System_String_SIPSorcery_Net_SDPMediaTypesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension(System.Int32%2CSystem.String%2CSIPSorcery.Net.SDPMediaTypesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L19">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_GetRTPHeaderExtension_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_GetRTPHeaderExtension_System_Int32_System_String_SIPSorcery_Net_SDPMediaTypesEnum_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.GetRTPHeaderExtension(System.Int32,System.String,SIPSorcery.Net.SDPMediaTypesEnum)">GetRTPHeaderExtension(Int32, String, SDPMediaTypesEnum)</h4>
+  <div class="markdown level1 summary"><p>Create an RTPHeaderExtension (<a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensions.AbsSendTimeExtension.html">AbsSendTimeExtension</a>, <a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtensions.CVOExtension.html">CVOExtension</a>, etc ...) based on the URI provided
+If found, id permits to store the &quot;extmap&quot; value related to this extension
+It not found returns null</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static RTPHeaderExtension GetRTPHeaderExtension(int id, string uri, SDPMediaTypesEnum media)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">id</span></td>
+        <td><p>extmap value</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">uri</span></td>
+        <td><p>URI of the extension - for example: &quot;http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time&quot; or &quot;urn:3gpp:video-orientation&quot;</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">media</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.net.RTP.RTPHeaderExtension.html">RTPHeaderExtension</a></td>
+        <td><p>A Specific RTPHeaderExtension</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_IsMediaSupported_SIPSorcery_Net_SDPMediaTypesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported(SIPSorcery.Net.SDPMediaTypesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L83">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_IsMediaSupported_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_IsMediaSupported_SIPSorcery_Net_SDPMediaTypesEnum_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.IsMediaSupported(SIPSorcery.Net.SDPMediaTypesEnum)">IsMediaSupported(SDPMediaTypesEnum)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsMediaSupported(SDPMediaTypesEnum media)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">media</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Marshal.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Marshal%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L97">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Marshal_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Marshal*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Marshal" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Marshal">Marshal()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract byte[] Marshal()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Set_System_Object_.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Set(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L94">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Set_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Set*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Set_System_Object_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Set(System.Object)">Set(Object)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract void Set(object obj)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">obj</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension_Unmarshal_SIPSorcery_Net_RTPHeader_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal(SIPSorcery.Net.RTPHeader%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L100">View Source</a>
+  </span>
+  <a id="SIPSorcery_net_RTP_RTPHeaderExtension_Unmarshal_" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal*"></a>
+  <h4 id="SIPSorcery_net_RTP_RTPHeaderExtension_Unmarshal_SIPSorcery_Net_RTPHeader_System_Byte___" data-uid="SIPSorcery.net.RTP.RTPHeaderExtension.Unmarshal(SIPSorcery.Net.RTPHeader,System.Byte[])">Unmarshal(RTPHeader, Byte[])</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract object Unmarshal(RTPHeader header, byte[] data)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a></td>
+        <td><span class="parametername">header</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">data</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="extensionmethods">Extension Methods</h3>
   <div>
       <a class="xref" href="TinyJson.JSONWriter.html#TinyJson_JSONWriter_ToJson_System_Object_">JSONWriter.ToJson(Object)</a>
@@ -256,7 +565,7 @@
                     <a href="https://github.com/sipsorcery-org/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_net_RTP_RTPHeaderExtension.md&amp;value=---%0Auid%3A%20SIPSorcery.net.RTP.RTPHeaderExtension%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L10" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery-org/sipsorcery/blob/gh-pages/src/net/RTP/RTPHeaderExtension.cs/#L9" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
