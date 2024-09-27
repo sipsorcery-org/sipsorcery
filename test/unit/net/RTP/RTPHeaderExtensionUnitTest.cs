@@ -6,6 +6,7 @@ using SIPSorcery.Net;
 using SIPSorcery.net.RTP;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
+using SIPSorcery.net.RTP.RTPHeaderExtensions;
 
 namespace SIPSorcery.UnitTests.net.RTP
 {
@@ -20,67 +21,85 @@ namespace SIPSorcery.UnitTests.net.RTP
         }
 
         [Fact]
-        public void ExtensionShouldReturnRightUlongValue() {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            var absCaptureTime = new byte[] {0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-            var extension = new RTPHeaderExtensionData(13, absCaptureTime, RTPHeaderExtensionType.OneByte);
-
-            var val = extension.GetUlong(0);
-            Assert.NotNull(val);
-            Assert.Equal(0xb385b08f0c139de5, val.Value);
-
-            val = extension.GetUlong(8);
-            Assert.NotNull(val);
-            Assert.Equal(0ul, val.Value);
-
-            val = extension.GetUlong(9);
-            Assert.Null(val);
-        }
-
-        [Fact]
-        public void ShouldReturnCorrectTimestamps() {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            var absCaptureTime = new byte[] { 0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-            var extension = new RTPHeaderExtensionData(13, absCaptureTime, RTPHeaderExtensionType.OneByte);
-            var extensions = new Dictionary<int, RTPHeaderExtension>() {{13, new RTPHeaderExtension(13, "http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time") }};
-            var ntpTimestamp = extension.GetNtpTimestamp(extensions);
-
-            Assert.NotNull(ntpTimestamp);
-            Assert.Equal(extension.GetUlong(0), ntpTimestamp.Value);
-        }
-
-        [Fact]
-        public void ReturnsNullTimestamps()
+        public void RTPHeaderExtensionAbsSendTime()
         {
+            // Ads Send Time extension use always DateTimeOffset.Now for data
+            // So to test Marshalling we use
+            //  - the static method AbsSendTime() used by AbsSendTimeExtension.Marshal()
+            //  - and a specific DateTimeOffset value
+
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            var absCaptureTime = new byte[] { 0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-            var extension = new RTPHeaderExtensionData(13, absCaptureTime, RTPHeaderExtensionType.OneByte);
-            const uint timestamp = 0x123456u;
-            var extensions = new Dictionary<int, RTPHeaderExtension>();
-            var timestamps = extension.GetNtpTimestamp(extensions);
-
-            Assert.Null(timestamps);
-        }
-
-        [Fact]
-        public void AbsSendTime()
-        {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            
+            var extensionId = 2; // Id / Extmap of the extension
 
             var time = new DateTimeOffset(2024, 2, 11, 14, 51, 02, 999, new TimeSpan(-5, 0, 0));
-            var bytes = RTPHeader.AbsSendTime(time);
-            
-            Assert.Equal(0x22, bytes[0]); // 2 for ID and 2 for Length (3-1)
-            Assert.Equal(155, bytes[1]);
-            Assert.Equal(254, bytes[2]);
-            Assert.Equal(249, bytes[3]);
+            var bytes = AbsSendTimeExtension.AbsSendTime(extensionId, AbsSendTimeExtension.RTP_HEADER_EXTENSION_SIZE, time);
+
+            Assert.Equal(0x22, bytes[0]); // 2 for Extension ID and 2 for Length (AbsSendTimeExtension.RTP_HEADER_EXTENSION_SIZE - 1)
+            Assert.Equal(155,  bytes[1]);
+            Assert.Equal(254,  bytes[2]);
+            Assert.Equal(249,  bytes[3]);
+
+
+        }
+
+        [Fact]
+        public void RTPHeaderExtensionAudioLevel()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var extensionId = 2; // Id / Extmap of the extension
+            var extension = new AudioLevelExtension(extensionId);
+
+            // Create an audio Level
+            var audioLevel = new AudioLevelExtension.AudioLevel()
+            { 
+                Voice = false,
+                Level = 80 // "01010000" in bytes representation
+            };
+            extension.Set(audioLevel);
+
+            // Marshal
+            var bytesMarshalled = extension.Marshal();
+
+            Assert.Equal(0x20, bytesMarshalled[0]); // 2 for Extension ID and 0 for Length (AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE - 1)
+            Assert.Equal(Convert.ToByte("01010000", 2), bytesMarshalled[1]);
+
+            // Unmarshal
+            var audioLevelFromBytes = (AudioLevelExtension.AudioLevel)extension.Unmarshal(null, new byte[] { bytesMarshalled[1] });
+            Assert.Equal(audioLevel.Voice, audioLevelFromBytes.Voice);
+            Assert.Equal(audioLevel.Level, audioLevelFromBytes.Level);
+        }
+
+        [Fact]
+        public void RTPHeaderExtensionCVO()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var extensionId = 2; // Id / Extmap of the extension
+            var extension = new CVOExtension(extensionId);
+
+            // Create an CVO
+            var cvo = new CVOExtension.CVO()
+            {
+                CameraBackFacing = true,
+                HorizontalFlip = false,
+                VideoRotation = CVOExtension.VideoRotation.CW_90
+            };
+            extension.Set(cvo);
+
+            // Marshal
+            var bytesMarshalled = extension.Marshal();
+            Assert.Equal(0x20, bytesMarshalled[0]); // 2 for Extension ID and 0 for Length (CVOExtension.RTP_HEADER_EXTENSION_SIZE - 1)
+
+            // Unmarshal
+            var cvoFromBytes = (CVOExtension.CVO) extension.Unmarshal(null, new byte[] { bytesMarshalled[1] });
+            Assert.Equal(cvo.CameraBackFacing, cvoFromBytes.CameraBackFacing);
+            Assert.Equal(cvo.HorizontalFlip, cvoFromBytes.HorizontalFlip);
+            Assert.Equal(cvo.VideoRotation, cvoFromBytes.VideoRotation);
         }
     }
 }
