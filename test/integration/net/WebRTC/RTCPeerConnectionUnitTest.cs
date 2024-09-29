@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP;
+using SIPSorcery.net.RTP.RTPHeaderExtensions;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -1026,11 +1028,19 @@ a=mid:2
 a=setup:actpass
 a=sctp-port:5000
 a=max-message-size:1073741823";
-            
+
+            int extensionId = 1;
+            var audioExtensions = new Dictionary<int, RTPHeaderExtension>();
+            audioExtensions.Add(extensionId, RTPHeaderExtension.GetRTPHeaderExtension(extensionId, AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI, SDPMediaTypesEnum.audio));
+
             RTCPeerConnection pc = new RTCPeerConnection(null);
-            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) }, headerExtensions: audioExtensions);
             pc.addTrack(audioTrack);
-            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+
+            var videoExtensions = new Dictionary<int, RTPHeaderExtension>();
+            videoExtensions.Add(extensionId, RTPHeaderExtension.GetRTPHeaderExtension(extensionId, AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI, SDPMediaTypesEnum.video));
+
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) }, headerExtensions: videoExtensions);
             pc.addTrack(localVideoTrack);
 
             var offer = SDP.ParseSDPDescription(offerSdp);
@@ -1050,13 +1060,15 @@ a=max-message-size:1073741823";
 
             logger.LogDebug("First media shouldn't have abs-send-time");
             Assert.DoesNotContain(answer.Media[0].HeaderExtensions, 
-                ext => ext.Value.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
+                ext => ext.Value.Uri == AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI);
+
             logger.LogDebug("Second media should have abs-send-time");
             Assert.Contains(answer.Media[1].HeaderExtensions, 
-                ext => ext.Value.Uri == RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME);
+                ext => ext.Value.Uri == AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI);
+
             // 4 is the ID for abs-send-time ext in offer
             Assert.Equal(4, answer.Media[1].HeaderExtensions[4].Id);
-            Assert.Equal(RTCPeerConnection.RTP_HEADER_EXTENSION_URI_ABS_SEND_TIME, answer.Media[1].HeaderExtensions[4].Uri);
+            Assert.Equal(AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI, answer.Media[1].HeaderExtensions[4].Uri);
 
             pc.Close("normal");
         }

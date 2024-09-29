@@ -539,7 +539,7 @@ namespace SIPSorcery.Media
 
             if (binaryReader?.BaseStream?.CanRead == true)
             {
-                int sampleRate = (inputSampleRate == AudioSamplingRatesEnum.Rate8KHz) ? 8000 : 16000;
+                int sampleRate = (int)inputSampleRate;
                 int sampleSize = sampleRate / 1000 * _audioSamplePeriodMilliseconds;
                 short[] pcm = new short[sampleSize];
 
@@ -598,9 +598,9 @@ namespace SIPSorcery.Media
                 }
             }
 
-            if(_musicStreamReader != null)
+            if (_musicStreamReader != null)
             {
-                lock(_musicStreamReader)
+                lock (_musicStreamReader)
                 {
                     _musicStreamReader.Close();
                 }
