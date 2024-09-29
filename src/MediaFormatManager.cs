@@ -24,7 +24,7 @@ namespace SIPSorceryMedia.Abstractions
 
         /// <summary>
         /// Requests that the audio sink and source only advertise support for the supplied list of codecs.
-        /// Only codecs that are already supported and in the <see cref="SupportedCodecs" /> list can be 
+        /// Only codecs that are already supported and in the <see cref="SupportedFormats" /> list can be 
         /// used.
         /// </summary>
         /// <param name="filter">Function to determine which formats the source formats should be restricted to.</param>
