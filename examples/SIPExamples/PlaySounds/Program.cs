@@ -34,7 +34,7 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "aaron@192.168.1.101";
+        private static string DESTINATION = "aaron@127.0.0.1:5080";
         private static SIPEndPoint OUTBOUND_PROXY = null;
 
         private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";

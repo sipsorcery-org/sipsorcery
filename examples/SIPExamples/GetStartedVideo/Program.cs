@@ -14,6 +14,7 @@
 // History:
 // 21 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 02 Feb 2021  Aaron Clauson   Simplified by switching to video test pattern only.
+// 30 Sep 2024  Aaron Clauson   Can't find a SIP echo server that supports video calls :(
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -41,7 +42,11 @@ namespace demo
     class Program
     {
         // Need to find a new echo endpoint since the sipsorcery cloud was turned off to save $$. 14 Jan 2024.
-        private static string DESTINATION = "echo@sipsorcery.cloud";
+        //private static string DESTINATION = "echo@iptel.org"; // Doesn't support video.
+        //private static string DESTINATION = "3333@sip2sip.info"; // Doesn't support video.
+        //private static string DESTINATION = "echo@linphone.org"; // Authentication required.
+        //private static string DESTINATION = "echo@onsip.com"; // Not found.
+        private static string DESTINATION = "???";
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
 

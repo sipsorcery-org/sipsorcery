@@ -51,7 +51,8 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*63@192.168.0.48";   // Custom Asterisk dialplan to speak back DTMF tones.
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*63@192.168.0.48";   // Custom Asterisk dialplan to speak back DTMF tones.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:aaron@127.0.0.1:5080";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
