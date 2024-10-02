@@ -19,7 +19,7 @@ namespace SIPSorceryMedia.FFmpeg
         internal bool _isClosed;
 
         internal int _currentNbSamples = 0;
-        internal int bufferSize;
+        internal int bufferSizeInSamples;
         internal byte[] buffer; // Avoid to create buffer of same size
 
         private int frameSize;
@@ -38,7 +38,7 @@ namespace SIPSorceryMedia.FFmpeg
 #pragma warning disable CS0067
         public event RawAudioSampleDelegate? OnAudioSourceRawSample;
 #pragma warning restore CS0067
-        
+
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public FFmpegAudioSource(IAudioEncoder audioEncoder, uint frameSize = 960)
@@ -79,7 +79,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             return _audioDecoder?.InitialiseSource(_audioFormatManager.SelectedFormat.ClockRate) == true;
         }
-      
+
         public bool IsPaused() => _isPaused;
 
         public List<AudioFormat> GetAudioSourceFormats()
@@ -88,32 +88,32 @@ namespace SIPSorceryMedia.FFmpeg
                 return _audioFormatManager.GetSourceFormats();
             return new List<AudioFormat>();
         }
-        
+
         public void SetAudioSourceFormat(AudioFormat audioFormat)
         {
             logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
             _audioFormatManager.SetSelectedFormat(audioFormat);
             InitialiseDecoder();
         }
-        
+
         public void RestrictFormats(Func<AudioFormat, bool> filter)
         {
             if (_audioFormatManager != null)
                 _audioFormatManager.RestrictFormats(filter);
         }
-        
+
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) => throw new NotImplementedException();
-        
+
         public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
-        
+
         public bool IsAudioSourcePaused() => _isPaused;
-        
+
         public Task StartAudio() => Start();
-        
+
         public Task PauseAudio() => Pause();
-        
+
         public Task ResumeAudio() => Resume();
-        
+
         public Task CloseAudio() => Close();
 
         private unsafe void AudioDecoder_OnAudioFrame(ref AVFrame avFrame)
@@ -123,17 +123,27 @@ namespace SIPSorceryMedia.FFmpeg
 
 
             // Avoid to create several times buffer of the same size
-            if (_currentNbSamples != avFrame.nb_samples)
+            if (_currentNbSamples < avFrame.nb_samples)
             {
-                bufferSize = ffmpeg.av_samples_get_buffer_size(null, avFrame.channels, avFrame.nb_samples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
-                buffer = new byte[bufferSize];
+                // a * b / c,
+                // handles overflow, supports different rounding methods.
+                bufferSizeInSamples = (int)ffmpeg.av_rescale_rnd(
+                    a: avFrame.nb_samples,
+                    b: _audioDecoder.OutSampleRate,
+                    c: _audioDecoder.InSampleRate,
+                    AVRounding.AV_ROUND_UP);
+
+                var bufferSizeInBytes = ffmpeg.av_samples_get_buffer_size(
+                    null, _audioDecoder.OutChannelCount, bufferSizeInSamples, AVSampleFormat.AV_SAMPLE_FMT_S16, 1);
+
+                buffer = new byte[bufferSizeInBytes];
                 _currentNbSamples = avFrame.nb_samples;
             }
 
             // Convert audio
             int dstSampleCount;
             fixed (byte* pBuffer = buffer)
-                dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSize, avFrame.extended_data, avFrame.nb_samples);
+                dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSizeInSamples, avFrame.extended_data, avFrame.nb_samples);
 
             if(dstSampleCount < 0)
             {
@@ -177,7 +187,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isClosed)
             {
                 _isClosed = true;
-                
+
                 if(_audioDecoder != null)
                     await _audioDecoder.Close();
 
@@ -225,4 +235,3 @@ namespace SIPSorceryMedia.FFmpeg
         }
     }
 }
-

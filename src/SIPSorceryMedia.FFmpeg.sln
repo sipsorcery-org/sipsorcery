@@ -17,8 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FFmpegWebRTCReceiver", "..\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FFmpegConsoleApp", "..\test\FFmpegConsoleApp\FFmpegConsoleApp.csproj", "{3DC8A13D-F7FB-406D-AEF3-FC52BE137B81}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFmpegCppEncodingTest", "..\test\FFmpegCppEncodingTest\FFmpegCppEncodingTest.vcxproj", "{5D877D45-557E-4E23-9453-85E8B88C10EB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,18 +99,6 @@ Global
 		{3DC8A13D-F7FB-406D-AEF3-FC52BE137B81}.Release|x64.Build.0 = Release|Any CPU
 		{3DC8A13D-F7FB-406D-AEF3-FC52BE137B81}.Release|x86.ActiveCfg = Release|Any CPU
 		{3DC8A13D-F7FB-406D-AEF3-FC52BE137B81}.Release|x86.Build.0 = Release|Any CPU
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|Any CPU.Build.0 = Debug|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|x64.ActiveCfg = Debug|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|x64.Build.0 = Debug|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|x86.ActiveCfg = Debug|Win32
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Debug|x86.Build.0 = Debug|Win32
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Release|Any CPU.ActiveCfg = Release|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Release|Any CPU.Build.0 = Release|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Release|x64.ActiveCfg = Release|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Release|x64.Build.0 = Release|x64
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Release|x86.ActiveCfg = Release|Win32
-		{5D877D45-557E-4E23-9453-85E8B88C10EB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,7 +109,6 @@ Global
 		{981BFE56-79B9-4D6D-878E-029502904E94} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
 		{21D27EF1-C666-4A5D-8B12-4F4E5CFAEA9B} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
 		{3DC8A13D-F7FB-406D-AEF3-FC52BE137B81} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
-		{5D877D45-557E-4E23-9453-85E8B88C10EB} = {C76D54C9-D8F7-4D5E-B82A-35887626EC04}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8476DD5B-15BB-4770-A727-42C54B0648F8}
