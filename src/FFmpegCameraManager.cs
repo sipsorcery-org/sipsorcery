@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using DirectShowLib;
+using System.Linq;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -18,25 +19,9 @@ namespace SIPSorceryMedia.FFmpeg
                                     : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "avfoundation"
                                     : throw new NotSupportedException($"Cannot find adequate input format - OSArchitecture:[{RuntimeInformation.OSArchitecture}] - OSDescription:[{RuntimeInformation.OSDescription}]");
 
-
-            // FFmpeg doesn't implement avdevice_list_input_sources() for the DShow input format yet.
             if (inputFormat == "dshow")
             {
-                result = new List<Camera>();
-                var dsDevices = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
-                for (int i = 0; i < dsDevices.Length; i++)
-                {
-                    var dsDevice = dsDevices[i];
-                    if ((dsDevice.Name != null) && (dsDevice.Name.Length > 0))
-                    {
-                        Camera camera = new Camera
-                        {
-                            Name = dsDevice.Name,
-                            Path = $"video={dsDevice.Name}"
-                        };
-                        result.Add(camera);
-                    }
-                }
+                result = SIPSorceryMedia.FFmpeg.Interop.Win32.DShow.GetCameraDevices();
             }
             else if (inputFormat == "avfoundation")
             {
@@ -73,17 +58,42 @@ namespace SIPSorceryMedia.FFmpeg
             }
             return result;
         }
+
+        static public Camera? GetCameraByPath(string path) => GetCameraDevices()?.FirstOrDefault(x => x.Path == path);
     }
 
     public class Camera
     {
-        public String Name { get; set; }
+        public struct CameraFormat
+        {
+            public AVPixelFormat PixelFormat;
+            public int Width;
+            public int Height;
+            public double FPS;
+        }
 
-        public String Path { get; set; }
+        public string Name { get; set; }
+
+        public string Path { get; set; }
+
+        public List<CameraFormat>? AvailableFormats {  get; set; }
+
+        public List<Dictionary<string, string>>? AvailableOptions { get; set; }
 
         public Camera()
         {
             Name = Path = "";
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is not null && obj.GetType() == GetType()
+                && ((Camera)obj).Name == Name && ((Camera)obj).Path == Path;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
         }
     }
 }
