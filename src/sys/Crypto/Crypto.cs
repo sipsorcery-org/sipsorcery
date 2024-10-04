@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -218,31 +219,52 @@ namespace SIPSorcery.Sys
 
         public static UInt16 GetRandomUInt16()
         {
-            byte[] uint16Buffer = new byte[2];
-            m_randomProvider.GetBytes(uint16Buffer);
-            return BitConverter.ToUInt16(uint16Buffer, 0);
+            byte[] uint16Buffer = ArrayPool<byte>.Shared.Rent(2);
+            try
+            {
+                m_randomProvider.GetBytes(uint16Buffer);
+                return BitConverter.ToUInt16(uint16Buffer, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(uint16Buffer);
+            }
         }
 
         public static UInt32 GetRandomUInt(bool noZero = false)
         {
-            byte[] uint32Buffer = new byte[4];
-            m_randomProvider.GetBytes(uint32Buffer);
-            var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
-
-            if(noZero && randomUint == 0)
+            byte[] uint32Buffer = ArrayPool<byte>.Shared.Rent(4);
+            try
             {
                 m_randomProvider.GetBytes(uint32Buffer);
-                randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
-            }
+                var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
 
-            return randomUint;
+                if (noZero && randomUint == 0)
+                {
+                    m_randomProvider.GetBytes(uint32Buffer);
+                    randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
+                }
+
+                return randomUint;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(uint32Buffer);
+            }
         }
 
         public static UInt64 GetRandomULong()
         {
-            byte[] uint64Buffer = new byte[8];
-            m_randomProvider.GetBytes(uint64Buffer);
-            return BitConverter.ToUInt64(uint64Buffer, 0);
+            byte[] uint64Buffer = ArrayPool<byte>.Shared.Rent(8);
+            try
+            {
+                m_randomProvider.GetBytes(uint64Buffer);
+                return BitConverter.ToUInt64(uint64Buffer, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(uint64Buffer);
+            }
         }
 
         public static byte[] createRandomSalt(int length)

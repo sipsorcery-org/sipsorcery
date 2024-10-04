@@ -41,17 +41,20 @@ namespace SIPSorcery.Net
 
         public struct H264Nal
         {
-            public byte[] NAL { get; }
+            public readonly int Start;
+            public readonly int Length;
+
             public bool IsLast { get; }
 
-            public H264Nal(byte[] nal, bool isLast)
+            public H264Nal(int start, int length, bool isLast)
             {
-                NAL = nal;
+                Start = start;
+                Length = length;
                 IsLast = isLast;
             }
         }
 
-        public static IEnumerable<H264Nal> ParseNals(byte[] accessUnit)
+        public static IEnumerable<H264Nal> ParseNals(byte[] accessUnit, int start, int end)
         {
             int zeroes = 0;
 
@@ -74,7 +77,7 @@ namespace SIPSorcery.Net
                         int nalSize = endPosn - currPosn;
                         bool isLast = currPosn + nalSize == accessUnit.Length;
 
-                        yield return new H264Nal(accessUnit.Skip(currPosn).Take(nalSize).ToArray(), isLast);
+                        yield return new H264Nal(currPosn, nalSize, isLast);
                     }
 
                     currPosn = nalStart;
@@ -87,7 +90,7 @@ namespace SIPSorcery.Net
 
             if (currPosn < accessUnit.Length)
             {
-                yield return new H264Nal(accessUnit.Skip(currPosn).ToArray(), true);
+                yield return new H264Nal(currPosn, accessUnit.Length - currPosn, true);
             }
         }
 

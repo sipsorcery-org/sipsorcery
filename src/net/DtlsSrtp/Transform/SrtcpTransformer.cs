@@ -59,12 +59,12 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="pkt">plain SRTCP packet to be encrypted.</param>
         /// <returns>encrypted SRTCP packet.</returns>
-        public byte[] Transform(byte[] pkt)
+        public int Transform(byte[] pkt,byte[] resultBuffer,int resultBufferLength)
         {
-            return Transform(pkt, 0, pkt.Length);
+            return Transform(pkt, 0, pkt.Length, resultBuffer, resultBufferLength);
         }
 
-        public byte[] Transform(byte[] pkt, int offset, int length)
+        public int Transform(byte[] pkt, int offset, int length,byte[] resultBuffer,int resultBufferLength)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
             try
@@ -87,9 +87,8 @@ namespace SIPSorcery.Net
 
                 // Secure packet into SRTCP format
                 context.TransformPacket(packet);
-                byte[] result = packet.GetData();
-
-                return result;
+                return packet.GetDataIntoBuffer(resultBuffer,resultBufferLength);
+              
             }
             finally
             {
