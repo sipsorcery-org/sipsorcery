@@ -133,8 +133,17 @@ namespace SIPSorcery.net.RTP
         /// See <see href="https://www.itu.int/rec/dologin_pub.asp?lang=e&amp;id=T-REC-H.264-201602-S!!PDF-E&amp;type=items" /> Annex B for byte stream specification.
         /// </remarks>
         // The same URL without XML escape sequences: https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items
-        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit,int index,int length)
+        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit, int index=-1, int length=-1)
         {
+            if (index < 0)
+            {
+                index = 0;
+            }
+
+            if (length < 0)
+            {
+                length = accessUnit.Length;
+            }
             if (CheckIfCanSendRtpRaw())
             {
                 foreach (var nal in H264Packetiser.ParseNals(accessUnit,index,length))
