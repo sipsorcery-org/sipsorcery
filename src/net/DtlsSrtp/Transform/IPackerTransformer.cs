@@ -30,6 +30,7 @@ namespace SIPSorcery.Net
          *            the packet to be transformed
          * @return The transformed packet. Returns null if the packet cannot be transformed.
          */
+        byte[] Transform(byte[] pkt);
         int Transform(byte[] pkt,byte[] resultBuffer,int resultBufferLength);
 
         /**
@@ -44,6 +45,8 @@ namespace SIPSorcery.Net
          * @return The transformed packet. Returns null if the packet cannot be
          *         transformed.
          */
+        
+        byte[] Transform(byte[] pkt, int offset, int length);
         int Transform(byte[] pkt, int offset, int length,byte[] resultBuffer,int resultBufferLength);
 
         /**
