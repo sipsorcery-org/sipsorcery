@@ -166,7 +166,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRTP(Span<byte> packet, int offset, int length)
         {
             lock (SrtpDecoder)
             {
@@ -174,7 +174,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int UnprotectRTP(byte[] payload, int length, out int outLength)
+        public int UnprotectRTP(Span<byte> payload, int length, out int outLength)
         {
             var result = UnprotectRTP(payload, 0, length);
 
@@ -184,13 +184,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        public byte[] ProtectRTP(Span<byte> packet, int offset, int length)
         {
             lock (SrtpEncoder)
             {
@@ -198,7 +198,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int ProtectRTP(byte[] payload, int length, out int outLength)
+        public int ProtectRTP(Span<byte> payload, int length, out int outLength)
         {
             var result = ProtectRTP(payload, 0, length);
 
@@ -208,13 +208,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRTCP(Span<byte> packet, int offset, int length)
         {
             lock (SrtcpDecoder)
             {
@@ -222,7 +222,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int UnprotectRTCP(byte[] payload, int length, out int outLength)
+        public int UnprotectRTCP(Span<byte> payload, int length, out int outLength)
         {
             var result = UnprotectRTCP(payload, 0, length);
             if (result == null)
@@ -231,13 +231,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[] ProtectRTCP(Span<byte> packet, int offset, int length)
         {
             lock (SrtcpEncoder)
             {
@@ -245,7 +245,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int ProtectRTCP(byte[] payload, int length, out int outLength)
+        public int ProtectRTCP(Span<byte> payload, int length, out int outLength)
         {
             var result = ProtectRTCP(payload, 0, length);
             if (result == null)
@@ -254,7 +254,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors

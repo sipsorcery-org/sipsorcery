@@ -19,9 +19,10 @@
 using System;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Security;
 using SIPSorcery.Sys;
+using System.Buffers;
 
 namespace SIPSorcery.Net
 {
@@ -47,7 +48,7 @@ namespace SIPSorcery.Net
         IDtlsSrtpPeer connection = null;
 
         /// <summary>The collection of chunks to be written.</summary>
-        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+        private BlockingCollection<ArraySegment<byte>> _chunks = new(new ConcurrentQueue<ArraySegment<byte>>());
 
         public DtlsTransport Transport { get; private set; }
 
@@ -62,7 +63,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public int RetransmissionMilliseconds = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
 
-        public Action<byte[]> OnDataReady;
+        public delegate void OnBytesReadyDelegate(ReadOnlySpan<byte> bytes);
+        public OnBytesReadyDelegate OnDataReady;
 
         /// <summary>
         /// Parameters:
@@ -73,7 +75,7 @@ namespace SIPSorcery.Net
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
         private System.DateTime _startTime = System.DateTime.MinValue;
-        private bool _isClosed = false;
+        private Once _isClosed;
 
         // Network properties
         private int _waitMillis = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
@@ -171,8 +173,7 @@ namespace SIPSorcery.Net
                 this._waitMillis = RetransmissionMilliseconds;
                 this._startTime = System.DateTime.Now;
                 this._handshaking = true;
-                SecureRandom secureRandom = new SecureRandom();
-                DtlsClientProtocol clientProtocol = new DtlsClientProtocol(secureRandom);
+                DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
                 try
                 {
                     var client = (DtlsSrtpClient)connection;
@@ -208,9 +209,9 @@ namespace SIPSorcery.Net
                     else
                     {
                         handshakeError = "unknown";
-                        if (excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
+                        if (excp is Org.BouncyCastle.Tls.TlsFatalAlert)
                         {
-                            handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
+                            handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
                         logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
@@ -238,8 +239,7 @@ namespace SIPSorcery.Net
                 this._waitMillis = RetransmissionMilliseconds;
                 this._startTime = System.DateTime.Now;
                 this._handshaking = true;
-                SecureRandom secureRandom = new SecureRandom();
-                DtlsServerProtocol serverProtocol = new DtlsServerProtocol(secureRandom);
+                DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
@@ -274,9 +274,9 @@ namespace SIPSorcery.Net
                     else
                     {
                         handshakeError = "unknown";
-                        if (excp is Org.BouncyCastle.Crypto.Tls.TlsFatalAlert)
+                        if (excp is Org.BouncyCastle.Tls.TlsFatalAlert)
                         {
-                            handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
+                            handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
                         logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
@@ -373,7 +373,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRTP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtpDecoder)
             {
@@ -381,7 +381,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int UnprotectRTP(byte[] payload, int length, out int outLength)
+        public int UnprotectRTP(Span<byte> payload, int length, out int outLength)
         {
             var result = UnprotectRTP(payload, 0, length);
 
@@ -391,13 +391,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        public byte[] ProtectRTP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtpEncoder)
             {
@@ -405,7 +405,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int ProtectRTP(byte[] payload, int length, out int outLength)
+        public int ProtectRTP(Span<byte> payload, int length, out int outLength)
         {
             var result = ProtectRTP(payload, 0, length);
 
@@ -415,13 +415,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRTCP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtcpDecoder)
             {
@@ -429,7 +429,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int UnprotectRTCP(byte[] payload, int length, out int outLength)
+        public int UnprotectRTCP(Span<byte> payload, int length, out int outLength)
         {
             var result = UnprotectRTCP(payload, 0, length);
             if (result == null)
@@ -438,13 +438,13 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[] ProtectRTCP(Span<byte> packet, int offset, int length)
         {
             lock (this.srtcpEncoder)
             {
@@ -452,7 +452,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public int ProtectRTCP(byte[] payload, int length, out int outLength)
+        public int ProtectRTCP(Span<byte> payload, int length, out int outLength)
         {
             var result = ProtectRTCP(payload, 0, length);
             if (result == null)
@@ -461,7 +461,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            result.AsSpan().CopyTo(payload);
             outLength = result.Length;
 
             return 0; //No Errors
@@ -485,27 +485,63 @@ namespace SIPSorcery.Net
             return this._sendLimit;
         }
 
-        public void WriteToRecvStream(byte[] buf)
+        public void WriteToRecvStream(ReadOnlySpan<byte> buf)
         {
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
-                _chunks.Add(buf);
+                var chunk = ArrayPool<byte>.Shared.Rent(buf.Length);
+                buf.CopyTo(chunk);
+                try
+                {
+                    _chunks.Add(new(chunk, 0, buf.Length));
+                }
+                catch (Exception) when (_isClosed.HasOccurred)
+                {
+                    ArrayPool<byte>.Shared.Return(chunk);
+                }
             }
         }
 
+        private ArraySegment<byte> _partialChunk = default;
+        private int _partialChunkOffset = 0;
         private int Read(byte[] buffer, int offset, int count, int timeout)
         {
             try
             {
-                if (_isClosed)
+                if (_isClosed.HasOccurred)
                 {
                     throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
                     //return DTLS_RECEIVE_ERROR_CODE;
                 }
+                else if (_partialChunk.Array != null)
+                {
+                    int bytesToCopy = Math.Min(count, _partialChunk.Count - _partialChunkOffset);
+                    Buffer.BlockCopy(_partialChunk.Array, _partialChunkOffset, buffer, offset, bytesToCopy);
+                    _partialChunkOffset += bytesToCopy;
+
+                    if (_partialChunkOffset == _partialChunk.Count)
+                    {
+                        ArrayPool<byte>.Shared.Return(_partialChunk.Array);
+                        _partialChunk = default;
+                        _partialChunkOffset = 0;
+                    }
+
+                    return bytesToCopy;
+                }
                 else if (_chunks.TryTake(out var item, timeout))
                 {
-                    Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
-                    return item.Length;
+                    int bytesToCopy = Math.Min(count, item.Count);
+                    Buffer.BlockCopy(item.Array, 0, buffer, offset, bytesToCopy);
+                    if (bytesToCopy < item.Count)
+                    {
+                        _partialChunk = item;
+                        _partialChunkOffset = bytesToCopy;
+                    }
+                    else
+                    {
+                        ArrayPool<byte>.Shared.Return(item.Array);
+                    }
+                    return bytesToCopy;
                 }
             }
             catch (ObjectDisposedException) { }
@@ -513,6 +549,14 @@ namespace SIPSorcery.Net
 
             return DTLS_RETRANSMISSION_CODE;
         }
+
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
+        public int Receive(Span<byte> buf, int waitMillis)
+        {
+            throw new NotImplementedException();
+            return Receive(buf.ToArray(), 0, buf.Length, waitMillis);
+        }
+#endif
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
@@ -533,7 +577,7 @@ namespace SIPSorcery.Net
                     logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
-                else if (!_isClosed)
+                else if (!_isClosed.HasOccurred)
                 {
                     waitMillis = Math.Min(waitMillis, millisecondsRemaining);
                     var receiveLen = Read(buf, off, len, waitMillis);
@@ -557,14 +601,14 @@ namespace SIPSorcery.Net
                     //return DTLS_RECEIVE_ERROR_CODE;
                 }
             }
-            else if (!_isClosed)
+            else if (!_isClosed.HasOccurred)
             {
                 return Read(buf, off, len, waitMillis);
             }
             else
             {
-                //throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
-                return DTLS_RECEIVE_ERROR_CODE;
+                throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                //return DTLS_RECEIVE_ERROR_CODE;
             }
         }
 
@@ -580,16 +624,33 @@ namespace SIPSorcery.Net
 
             OnDataReady?.Invoke(buf);
         }
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+        public void Send(ReadOnlySpan<byte> buf)
+        {
+            OnDataReady?.Invoke(buf);
+        }
+#endif
+
 
         public virtual void Close()
         {
-            if (!_isClosed)
+            if (!_isClosed.TryMarkOccurred())
             {
-                _isClosed = true;
-                this._startTime = System.DateTime.MinValue;
-                this._chunks?.Dispose();
-                Transport?.Close();
+                return;
             }
+
+            this._startTime = System.DateTime.MinValue;
+            _chunks.CompleteAdding();
+            foreach(var chunk in _chunks.GetConsumingEnumerable())
+            {
+                ArrayPool<byte>.Shared.Return(chunk.Array);
+            }
+            if (_partialChunk.Array is { } partialChunk)
+            {
+                ArrayPool<byte>.Shared.Return(partialChunk);
+            }
+            this._chunks?.Dispose();
+            Transport?.Close();
         }
 
         /// <summary>
@@ -597,7 +658,7 @@ namespace SIPSorcery.Net
         /// </summary>
         protected void Dispose(bool disposing)
         {
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 Close();
             }
@@ -608,7 +669,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Dispose()
         {
-            if (!_isClosed)
+            if (!_isClosed.HasOccurred)
             {
                 Close();
             }

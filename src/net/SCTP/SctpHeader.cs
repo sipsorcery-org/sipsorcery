@@ -62,12 +62,24 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Serialises the header to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the SCTP header bytes to. It
+        /// must have the required space already allocated.</param>
+        public readonly void WriteToBuffer(Span<byte> buffer)
+        {
+            NetConvert.ToBuffer(SourcePort, buffer, 0);
+            NetConvert.ToBuffer(DestinationPort, buffer, 2);
+            NetConvert.ToBuffer(VerificationTag, buffer, 4);
+        }
+
+        /// <summary>
         /// Parses the an SCTP header from a buffer.
         /// </summary>
         /// <param name="buffer">The buffer to parse the SCTP header from.</param>
         /// <param name="posn">The position in the buffer to start parsing the header from.</param>
         /// <returns>A new SCTPHeaer instance.</returns>
-        public static SctpHeader Parse(byte[] buffer, int posn)
+        public static SctpHeader Parse(ReadOnlySpan<byte> buffer)
         {
             if (buffer.Length < SCTP_HEADER_LENGTH)
             {
@@ -76,10 +88,10 @@ namespace SIPSorcery.Net
 
             SctpHeader header = new SctpHeader();
 
-            header.SourcePort = NetConvert.ParseUInt16(buffer, posn);
-            header.DestinationPort = NetConvert.ParseUInt16(buffer, posn + 2);
-            header.VerificationTag = NetConvert.ParseUInt32(buffer, posn + 4);
-            header.Checksum = NetConvert.ParseUInt32(buffer, posn + 8);
+            header.SourcePort = NetConvert.ParseUInt16(buffer);
+            header.DestinationPort = NetConvert.ParseUInt16(buffer.Slice(2));
+            header.VerificationTag = NetConvert.ParseUInt32(buffer.Slice(4));
+            header.Checksum = NetConvert.ParseUInt32(buffer.Slice(8));
 
             return header;
         }

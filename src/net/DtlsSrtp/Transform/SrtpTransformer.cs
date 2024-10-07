@@ -39,6 +39,7 @@
 * 
 */
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -70,12 +71,12 @@ namespace SIPSorcery.Net
             this.rawPacket = new RawPacket();
         }
 
-        public byte[] Transform(byte[] pkt)
+        public byte[] Transform(ReadOnlySpan<byte> pkt)
         {
             return Transform(pkt, 0, pkt.Length);
         }
 
-        public byte[] Transform(byte[] pkt, int offset, int length)
+        public byte[] Transform(ReadOnlySpan<byte> pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
 
@@ -107,7 +108,9 @@ namespace SIPSorcery.Net
             {
                 //Unlock
                 if (!isLocked)
+                {
                     Interlocked.CompareExchange(ref _isLocked, 0, 1);
+                }
             }
         }
 
@@ -119,12 +122,12 @@ namespace SIPSorcery.Net
          *            the transformed packet to be restored
          * @return the restored packet
          */
-        public byte[] ReverseTransform(byte[] pkt)
+        public byte[] ReverseTransform(ReadOnlySpan<byte> pkt)
         {
             return ReverseTransform(pkt, 0, pkt.Length);
         }
 
-        public byte[] ReverseTransform(byte[] pkt, int offset, int length)
+        public byte[] ReverseTransform(ReadOnlySpan<byte> pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
             try
@@ -157,7 +160,9 @@ namespace SIPSorcery.Net
             {
                 //Unlock
                 if (!isLocked)
+                {
                     Interlocked.CompareExchange(ref _isLocked, 0, 1);
+                }
             }
         }
 

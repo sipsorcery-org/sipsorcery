@@ -18,11 +18,13 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
+using System.Diagnostics;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class SctpDataChunk : SctpChunk
+    public class SctpDataChunk : SctpChunk, IDisposable
     {
         /// <summary>
         /// An empty data chunk. The main use is to indicate a DATA chunk has
@@ -78,13 +80,22 @@ namespace SIPSorcery.Net
         /// </summary>
         public uint PPID;
 
+        BorrowedArray userData;
         /// <summary>
         /// This is the payload user data.
         /// </summary>
-        public byte[] UserData;
+        public Span<byte> UserData => userData;
+        public int UserDataLength => userData.Length;
 
+        internal struct Timestamp
+        {
+            readonly long ticks;
+            Timestamp(long ticks) => this.ticks = ticks;
+            public readonly double Milliseconds => ticks / (Stopwatch.Frequency / 1000.0);
+            public static Timestamp Now => new(Stopwatch.GetTimestamp());
+        }
         // These properties are used by the data sender.
-        internal DateTime LastSentAt;
+        internal Timestamp LastSentAt;
         internal int SendCount;
 
         private SctpDataChunk()
@@ -113,9 +124,9 @@ namespace SIPSorcery.Net
             ushort streamID, 
             ushort seqnum, 
             uint ppid, 
-            byte[] data) : base(SctpChunkType.DATA)
+            ReadOnlySpan<byte> data) : base(SctpChunkType.DATA)
         {
-            if (data == null || data.Length == 0)
+            if (data.Length == 0)
             {
                 throw new ArgumentNullException("data", "The SctpDataChunk data parameter cannot be empty.");
             }
@@ -127,7 +138,7 @@ namespace SIPSorcery.Net
             StreamID = streamID;
             StreamSeqNum = seqnum; 
             PPID = ppid;
-            UserData = data;
+            userData.Set(data);
 
             ChunkFlags = (byte)(
                 (Unordered ? 0x04 : 0x0) +
@@ -143,7 +154,7 @@ namespace SIPSorcery.Net
         public override ushort GetChunkLength(bool padded)
         {
             ushort len = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
-            len += (ushort)(UserData != null ? UserData.Length : 0);
+            len += (ushort)userData.Length;
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
@@ -154,9 +165,9 @@ namespace SIPSorcery.Net
         /// must have the required space already allocated.</param>
         /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public override ushort WriteTo(byte[] buffer, int posn)
+        public override ushort WriteTo(Span<byte> buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
+            ushort length = WriteChunkHeader(buffer, posn);
 
             // Write fixed parameters.
             int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
@@ -168,17 +179,14 @@ namespace SIPSorcery.Net
 
             int userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 
-            if (UserData != null)
-            {
-                Buffer.BlockCopy(UserData, 0, buffer, userDataPosn, UserData.Length);
-            }
+            userData.DataMayBeEmpty.CopyTo(buffer.Slice(userDataPosn));
 
-            return GetChunkLength(true);
+            return SctpPadding.PadTo4ByteBoundary(length);
         }
 
         public bool IsEmpty()
         {
-            return UserData == null;
+            return userData.IsNull();
         }
 
         /// <summary>
@@ -186,7 +194,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
-        public static SctpDataChunk ParseChunk(byte[] buffer, int posn)
+        public static SctpDataChunk ParseChunk(ReadOnlySpan<byte> buffer, int posn, ArrayPool<byte> pool = null)
         {
             var dataChunk = new SctpDataChunk();
             ushort chunkLen = dataChunk.ParseFirstWord(buffer, posn);
@@ -212,11 +220,32 @@ namespace SIPSorcery.Net
 
             if (userDataLen > 0)
             {
-                dataChunk.UserData = new byte[userDataLen];
-                Buffer.BlockCopy(buffer, userDataPosn, dataChunk.UserData, 0, dataChunk.UserData.Length);
+                if (pool != null)
+                {
+                    dataChunk.userData.Set(buffer.Slice(userDataPosn, userDataLen), pool);
+                }
+                else
+                {
+                    dataChunk.userData.Set(new byte[userDataLen]);
+                    buffer.Slice(userDataPosn, userDataLen).CopyTo(dataChunk.UserData);
+                }
             }
 
             return dataChunk;
+        }
+
+        public void Dispose()
+        {
+            userData.Dispose();
+        }
+
+        [Flags]
+        public enum Flags: byte
+        {
+            None = 0x00,
+            Unordered = 0x04,
+            Beginning = 0x02,
+            Ending = 0x01
         }
     }
 }

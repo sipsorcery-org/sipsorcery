@@ -15,41 +15,47 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
+
+using SIPSorcery.Sys;
+using Small.Collections;
+using TypeNum;
 
 namespace SIPSorcery.Net
 {
-    public struct SctpDataFrame
+    public struct SctpDataFrame : IDisposable
     {
-        public static SctpDataFrame Empty = new SctpDataFrame();
+        public static SctpDataFrame Empty => default;
 
         public bool Unordered;
         public ushort StreamID;
         public ushort StreamSeqNum;
         public uint PPID;
-        public byte[] UserData;
+        BorrowedArray userData;
+        public readonly ReadOnlySpan<byte> UserData => userData.Data;
 
         /// <param name="streamID">The stream ID of the chunk.</param>
         /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
         /// <param name="ppid">The payload protocol ID for the chunk.</param>
-        /// <param name="userData">The chunk data.</param>
-        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
+        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid)
         {
             Unordered = unordered;
             StreamID = streamID;
             StreamSeqNum = streamSeqNum;
             PPID = ppid;
-            UserData = userData;
         }
 
-        public bool IsEmpty()
+        public void SetUserData(ReadOnlySpan<byte> userData)
         {
-            return UserData == null;
+            this.userData.Set(userData);
         }
+
+        public void Dispose() => userData.Dispose();
+
+        public readonly bool IsEmpty() => userData.IsNull();
     }
 
     public struct SctpTsnGapBlock
@@ -69,6 +75,12 @@ namespace SIPSorcery.Net
         /// DATA chunk received in this Gap Ack Block.
         /// </summary>
         public ushort End;
+
+        public static SctpTsnGapBlock Read(ReadOnlySpan<byte> bytes) => new()
+        {
+            Start = BinaryPrimitives.ReadUInt16BigEndian(bytes),
+            End = BinaryPrimitives.ReadUInt16BigEndian(bytes.Slice(2)),
+        };
     }
 
     /// <summary>
@@ -203,35 +215,44 @@ namespace SIPSorcery.Net
         /// or more new frames will be returned otherwise an empty frame is returned. Multiple
         /// frames may be returned if this chunk is part of a stream and was received out
         /// or order. For unordered chunks the list will always have a single entry.</returns>
-        public List<SctpDataFrame> OnDataChunk(SctpDataChunk dataChunk)
+        public List<SctpDataFrame> OnDataChunk(SctpChunkView dataChunk)
         {
+            if (dataChunk.Type != SctpChunkType.DATA)
+            {
+                throw new ArgumentException($"An attempt was made to process a {dataChunk.Type} chunk as a DATA chunk.");
+            }
+
             var sortedFrames = new List<SctpDataFrame>();
             var frame = SctpDataFrame.Empty;
 
             if (_inOrderReceiveCount == 0 &&
                 GetDistance(_initialTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning($"SCTP data receiver received a data chunk with a {dataChunk.TSN} " +
-                    $"TSN when the initial TSN was {_initialTSN} and a " +
-                    $"window size of {_windowSize}, ignoring.");
+                logger.LogWarning("SCTP data receiver received a data chunk with a {TSN} " +
+                    "TSN when the initial TSN was {InitialTSN} and a " +
+                    "window size of {Size}, ignoring.",
+                    dataChunk.TSN, _initialTSN, _windowSize);
             }
             else if (_inOrderReceiveCount > 0 &&
                 GetDistance(_lastInOrderTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning($"SCTP data receiver received a data chunk with a {dataChunk.TSN} " +
-                    $"TSN when the expected TSN was {_lastInOrderTSN + 1} and a " +
-                    $"window size of {_windowSize}, ignoring.");
+                logger.LogWarning("SCTP data receiver received a data chunk with a {TSN} " +
+                    "TSN when the expected TSN was {LastInOrderTSN} and a " +
+                    "window size of {Size}, ignoring.",
+                    dataChunk.TSN, _lastInOrderTSN + 1, _windowSize);
             }
             else if (_inOrderReceiveCount > 0 &&
                 !IsNewer(_lastInOrderTSN, dataChunk.TSN))
             {
-                logger.LogWarning($"SCTP data receiver received an old data chunk with {dataChunk.TSN} " +
-                    $"TSN when the expected TSN was {_lastInOrderTSN + 1}, ignoring.");
+                logger.LogDebug("SCTP received an old data chunk with {TSN} " +
+                    "TSN when the expected TSN was {LastInOrderTSN}, ignoring.",
+                    dataChunk.TSN, _lastInOrderTSN + 1);
             }
             else if (!_forwardTSN.ContainsKey(dataChunk.TSN))
             {
-                logger.LogTrace($"SCTP receiver got data chunk with TSN {dataChunk.TSN}, " +
-                    $"last in order TSN {_lastInOrderTSN}, in order receive count {_inOrderReceiveCount}.");
+                logger.LogTrace("SCTP receiver got data chunk with TSN {TSN}, " +
+                    "last in order TSN {LastInOrderTSN}, in order receive count {InOrderReceiveCount}.",
+                    dataChunk.TSN, _lastInOrderTSN, _inOrderReceiveCount);
 
                 bool processFrame = true;
 
@@ -263,7 +284,8 @@ namespace SIPSorcery.Net
                             outOfOrder.Count >= MAXIMUM_OUTOFORDER_FRAMES)
                         {
                             // Stream is nearing capacity, only chunks that advance _lastInOrderTSN can be accepted. 
-                            logger.LogWarning($"Stream {dataChunk.StreamID} is at buffer capacity. Rejected out-of-order data chunk TSN {dataChunk.TSN}.");
+                            logger.LogWarning("Stream {StreamID} is at buffer capacity. Rejected out-of-order data chunk TSN {TSN}.",
+                                dataChunk.StreamID, dataChunk.TSN);
                             processFrame = false;
                         }
                         else
@@ -276,32 +298,34 @@ namespace SIPSorcery.Net
                 if (processFrame)
                 {
                     // Now go about processing the data chunk.
-                    if (dataChunk.Begining && dataChunk.Ending)
+                    if (dataChunk.Beginning && dataChunk.Ending)
                     {
                         // Single packet chunk.
                         frame = new SctpDataFrame(
                             dataChunk.Unordered,
                             dataChunk.StreamID,
                             dataChunk.StreamSeqNum,
-                            dataChunk.PPID,
-                            dataChunk.UserData);
+                            dataChunk.PPID);
+
+                        frame.SetUserData(dataChunk.UserData);
                     }
                     else
                     {
+                        var tmp = SctpDataChunk.ParseChunk(dataChunk.Buffer, 0, ArrayPool<byte>.Shared);
                         // This is a data chunk fragment.
-                        _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
+                        _fragmentedChunks.Add(dataChunk.TSN, tmp);
                         (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
 
                         if (begin != null && end != null)
                         {
-                            frame = GetFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
+                            frame = ExtractFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
                         }
                     }
                 }
             }
             else
             {
-                logger.LogTrace($"SCTP duplicate TSN received for {dataChunk.TSN}.");
+                logger.LogTrace("SCTP duplicate TSN received for {TSN}.", dataChunk.TSN);
                 if (!_duplicateTSN.ContainsKey(dataChunk.TSN))
                 {
                     _duplicateTSN.Add(dataChunk.TSN, 1);
@@ -339,7 +363,7 @@ namespace SIPSorcery.Net
             {
                 SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
                 sack.GapAckBlocks = GetForwardTSNGaps();
-                sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
+                sack.DuplicateTSN.AddRange(_duplicateTSN.Keys.GetEnumerator());
                 return sack;
             }
             else
@@ -354,9 +378,9 @@ namespace SIPSorcery.Net
         /// TSNs have not yet been received.
         /// </summary>
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
-        internal List<SctpTsnGapBlock> GetForwardTSNGaps()
+        internal SmallList<N8<SctpTsnGapBlock>, SctpTsnGapBlock> GetForwardTSNGaps()
         {
-            List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
+            var gaps = new SmallList<N8<SctpTsnGapBlock>, SctpTsnGapBlock>();
 
             // Can't create gap reports until the initial DATA chunk has been received.
             if (_inOrderReceiveCount > 0)
@@ -508,28 +532,30 @@ namespace SIPSorcery.Net
         /// <param name="fragments">The dictionary containing the chunk fragments.</param>
         /// <param name="beginTSN">The beginning TSN for the fragment.</param>
         /// <param name="endTSN">The end TSN for the fragment.</param>
-        private SctpDataFrame GetFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
+        private SctpDataFrame ExtractFragmentedChunk(Dictionary<uint, SctpDataChunk> fragments, uint beginTSN, uint endTSN)
         {
             unchecked
             {
-                byte[] full = new byte[MAX_FRAME_SIZE];
+                Span<byte> full = stackalloc byte[MAX_FRAME_SIZE];
                 int posn = 0;
                 var beginChunk = fragments[beginTSN];
-                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
 
                 uint afterEndTSN = endTSN + 1;
                 uint tsn = beginTSN;
 
                 while (tsn != afterEndTSN)
                 {
-                    var fragment = fragments[tsn].UserData;
-                    Buffer.BlockCopy(fragment, 0, full, posn, fragment.Length);
-                    posn += fragment.Length;
+                    var fragment = fragments[tsn];
+                    var fragmentData = fragment.UserData;
+                    fragmentData.CopyTo(full.Slice(posn));
+                    posn += fragmentData.Length;
                     fragments.Remove(tsn);
+                    fragment.Dispose();
                     tsn++;
                 }
 
-                frame.UserData = frame.UserData.Take(posn).ToArray();
+                var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID);
+                frame.SetUserData(full.Slice(0, posn));
 
                 return frame;
             }

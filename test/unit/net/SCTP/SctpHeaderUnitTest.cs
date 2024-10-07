@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.UnitTests
 
             header.WriteToBuffer(buffer, 0);
 
-            var rndTripHeader = SctpHeader.Parse(buffer, 0);
+            var rndTripHeader = SctpHeader.Parse(buffer);
 
             Assert.Equal(srcPort, rndTripHeader.SourcePort);
             Assert.Equal(dstPort, rndTripHeader.DestinationPort);
@@ -68,7 +68,7 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = { 0xdf, 0x90, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 
                               0x6a, 0xb8, 0x0e, 0x99 };
 
-            var sctpHdr = SctpHeader.Parse(buffer, 0);
+            var sctpHdr = SctpHeader.Parse(buffer);
 
             Assert.Equal(57232, sctpHdr.SourcePort);
             Assert.Equal(7, sctpHdr.DestinationPort);

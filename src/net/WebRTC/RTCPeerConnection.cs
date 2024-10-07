@@ -42,9 +42,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP;
-using Org.BouncyCastle.Crypto.Tls;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
 namespace SIPSorcery.Net
 {
@@ -181,8 +182,9 @@ namespace SIPSorcery.Net
         readonly RTCDataChannelCollection dataChannels;
         public IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
-        private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
+        private Org.BouncyCastle.Tls.Certificate _dtlsCertificate;
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
+        private BcTlsCrypto _crypto;
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceGatheringTask;
 
@@ -385,6 +387,7 @@ namespace SIPSorcery.Net
         public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null, Boolean videoAsPrimary = false) :
             base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
         {
+            _crypto = new BcTlsCrypto();
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
             
             if (_configuration != null &&
@@ -398,7 +401,7 @@ namespace SIPSorcery.Net
             {
                 _configuration = configuration;
 
-                if (!InitializeCertificates(configuration) && !InitializeCertificates2(configuration))
+                if (!InitializeCertificates2(configuration))
                 {
                     logger.LogWarning("No DTLS certificate is provided in the configuration");
                 }
@@ -416,7 +419,7 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
@@ -452,55 +455,6 @@ namespace SIPSorcery.Net
             _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
         }
 
-        private bool InitializeCertificates(RTCConfiguration configuration)
-        {
-            if (configuration.certificates == null || configuration.certificates.Count == 0)
-            {
-                return false;
-            }
-
-            // Find the first certificate that has a usable private key.
-#pragma warning disable CS0618 // Type or member is obsolete
-            RTCCertificate usableCert = null;
-#pragma warning restore CS0618 // Type or member is obsolete
-            foreach (var cert in _configuration.certificates)
-            {
-                // Attempting to check that a certificate has an exportable private key.
-                // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
-                if (cert.Certificate.HasPrivateKey)
-                {
-                    //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
-                    //{
-                    //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
-                    //    if (!rsa.CspKeyContainerInfo.Exportable)
-                    //    {
-                    //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
-                    //    }
-                    //    else
-                    //    {
-                    //        usableCert = cert;
-                    //        break;
-                    //    }
-                    //}
-                    //else
-                    //{
-                    usableCert = cert;
-                    break;
-                    //}
-                }
-            }
-
-            if (usableCert == null)
-            {
-                throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
-            }
-
-            _dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
-            _dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
-
-            return true;
-        }
-
         private bool InitializeCertificates2(RTCConfiguration configuration)
         {
             if (configuration.certificates2 == null || configuration.certificates2.Count == 0)
@@ -508,7 +462,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            _dtlsCertificate = new Certificate(new [] { configuration.certificates2[0].Certificate.CertificateStructure });
+            _dtlsCertificate = new Certificate(new [] { new BcTlsCertificate(_crypto, configuration.certificates2[0].Certificate.CertificateStructure) });
             _dtlsPrivateKey = configuration.certificates2[0].PrivateKey;
 
             return true;
@@ -555,11 +509,14 @@ namespace SIPSorcery.Net
                     logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
+
+                    
+
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
+                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
@@ -1372,7 +1329,7 @@ namespace SIPSorcery.Net
         /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
         /// <param name="remoteEP">The remote end point the packet was received from.</param>
         /// <param name="buffer">The data received.</param>
-        private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
+        private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, ReadOnlySpan<byte> buffer)
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
@@ -1381,11 +1338,11 @@ namespace SIPSorcery.Net
             // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP 
             // prefix to distinguish.
 
-            if (buffer?.Length > 0)
+            if (buffer.Length > 0)
             {
                 try
                 {
-                    if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+                    if (buffer.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                     {
                         // RTP/RTCP packet.
                         base.OnReceive(localPort, remoteEP, buffer);
@@ -1656,7 +1613,7 @@ namespace SIPSorcery.Net
         /// When a data channel is requested an SCTP association is needed. This method attempts to 
         /// initialise the association if it is not already available.
         /// </summary>
-        private async Task InitialiseSctpAssociation()
+        private async Task InitialiseSctpAssociation(CancellationToken cancel = default)
         {
             if (sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
             {
@@ -1678,7 +1635,7 @@ namespace SIPSorcery.Net
 
                 DateTime startTime = DateTime.Now;
 
-                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000, cancel)).ConfigureAwait(false);
 
                 if (sctp.state != RTCSctpTransportState.Connected)
                 {
@@ -1705,7 +1662,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="label">The label used to identify the data channel.</param>
         /// <returns>The data channel created.</returns>
-        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init = null)
+        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init = null, CancellationToken cancel = default)
         {
             logger.LogDebug($"Data channel create request for label {label}.");
 
@@ -1729,7 +1686,7 @@ namespace SIPSorcery.Net
                     if (sctp.RTCSctpAssociation == null ||
                         sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
                     {
-                        await InitialiseSctpAssociation().ConfigureAwait(false);
+                        await InitialiseSctpAssociation(cancel).ConfigureAwait(false);
                     }
 
                     dataChannels.AddActiveChannel(channel);
@@ -1739,6 +1696,7 @@ namespace SIPSorcery.Net
                     TaskCompletionSource<string> isopen = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
                     channel.onopen += () => isopen.TrySetResult(string.Empty);
                     channel.onerror += (err) => isopen.TrySetResult(err);
+                    using var _ = cancel.Register(() => isopen.TrySetResult("cancelled"));
                     var error = await isopen.Task.ConfigureAwait(false);
 
                     if (error != string.Empty)

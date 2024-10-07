@@ -40,6 +40,7 @@ namespace SIPSorcery.UnitTests
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
                 .Enrich.WithProperty("ThreadId", System.Threading.Thread.CurrentThread.ManagedThreadId)
                 .WriteTo.TestOutput(output, outputTemplate: template)
+                .WriteTo.Debug(outputTemplate: template)
                 .WriteTo.Console(outputTemplate: template)
                 .CreateLogger();
             SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(serilog));

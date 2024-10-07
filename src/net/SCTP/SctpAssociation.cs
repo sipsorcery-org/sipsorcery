@@ -366,38 +366,42 @@ namespace SIPSorcery.Net
         /// SCTP Association State Diagram:
         /// https://tools.ietf.org/html/rfc4960#section-4
         /// </remarks>
-        internal void OnPacketReceived(SctpPacket packet)
+        internal void OnPacketReceived(SctpPacketView packet)
         {
             if (_wasAborted)
             {
-                logger.LogWarning($"SCTP packet received but association has been aborted, ignoring.");
+                logger.LogWarning("SCTP packet received but association has been aborted, ignoring.");
             }
             else if (packet.Header.VerificationTag != VerificationTag)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong verification tag, expected " +
-                    $"{VerificationTag} got {packet.Header.VerificationTag}.");
+                logger.LogWarning("SCTP packet dropped due to wrong verification tag, expected {Expected} got {Actual}.",
+                    VerificationTag, packet.Header.VerificationTag);
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.DestinationPort != _sctpSourcePort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP destination port, expected " +
-                                    $"{_sctpSourcePort} got {packet.Header.DestinationPort}.");
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP destination port, expected {Expected} got {Actual}.",
+                                  _sctpSourcePort, packet.Header.DestinationPort);
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.SourcePort != _sctpDestinationPort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP source port, expected " +
-                                    $"{_sctpDestinationPort} got {packet.Header.SourcePort}.");
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP source port, expected {Expected} got {Actual}.",
+                                  _sctpDestinationPort, packet.Header.SourcePort);
             }
             else
             {
-                foreach (var chunk in packet.Chunks)
+                for (int chunkIndex = 0; chunkIndex < packet.ChunkCount; chunkIndex++)
                 {
-                    var chunkType = (SctpChunkType)chunk.ChunkType;
+                    var chunk = packet[chunkIndex];
+                    var chunkType = chunk.Type;
 
                     switch (chunkType)
                     {
                         case SctpChunkType.ABORT:
-                            string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
-                            logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
+                            var abortChunk = (SctpAbortChunk)chunk.AsChunk();
+                            string abortReason = abortChunk.GetAbortReason();
+                            var logLevel = abortChunk.ErrorCauses.Any(cause => cause.CauseCode == SctpErrorCauseCode.UserInitiatedAbort)
+                                ? LogLevel.Debug : LogLevel.Warning;
+                            logger.LogWarning("SCTP packet ABORT chunk received from remote party, reason {Message}.", abortReason);
                             _wasAborted = true;
                             OnAbortReceived?.Invoke(abortReason);
                             break;
@@ -423,19 +427,20 @@ namespace SIPSorcery.Net
                             break;
 
                         case SctpChunkType.DATA:
-                            var dataChunk = chunk as SctpDataChunk;
+                            var dataChunk = chunk;
 
-                            if (dataChunk.UserData == null || dataChunk.UserData.Length == 0)
+                            if (dataChunk.UserData.Length == 0)
                             {
                                 // Fatal condition:
                                 // - If an endpoint receives a DATA chunk with no user data (i.e., the
                                 //   Length field is set to 16), it MUST send an ABORT with error cause
                                 //   set to "No User Data". (RFC4960 pg. 80)
-                                Abort(new SctpErrorNoUserData { TSN = (chunk as SctpDataChunk).TSN });
+                                Abort(new SctpErrorNoUserData { TSN = dataChunk.TSN });
                             }
                             else
                             {
-                                logger.LogTrace($"SCTP data chunk received on ID {ID} with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.ChunkFlags:X2}.");
+                                logger.LogTrace("SCTP data chunk received on ID {ID} with TSN {TSN}, payload length {Length}, flags {Flags}.",
+                                    ID, dataChunk.TSN, dataChunk.UserData.Length, dataChunk.Flags);
 
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
@@ -451,23 +456,24 @@ namespace SIPSorcery.Net
                                 foreach (var frame in sortedFrames)
                                 {
                                     OnData?.Invoke(frame);
+                                    frame.Dispose();
                                 }
                             }
 
                             break;
 
                         case SctpChunkType.ERROR:
-                            var errorChunk = chunk as SctpErrorChunk;
-                            foreach (var err in errorChunk.ErrorCauses)
+                            foreach (var code in chunk.GetErrorCodes())
                             {
-                                logger.LogWarning($"SCTP error {err.CauseCode}.");
+                                logger.LogWarning("SCTP error {Code}.", code);
                             }
                             break;
 
                         case SctpChunkType.HEARTBEAT:
                             // The HEARTBEAT ACK sends back the same chunk but with the type changed.
-                            chunk.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
-                            SendChunk(chunk);
+                            var ack = chunk.AsChunk();
+                            ack.ChunkType = (byte)SctpChunkType.HEARTBEAT_ACK;
+                            SendChunk(ack);
                             break;
 
                         case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
@@ -484,7 +490,7 @@ namespace SIPSorcery.Net
                                 _t1Init = null;
                             }
 
-                            var initAckChunk = chunk as SctpInitChunk;
+                            var initAckChunk = (SctpInitChunk)chunk.AsChunk();
 
                             if (initAckChunk.InitiateTag == 0 ||
                                 initAckChunk.NumberInboundStreams == 0 ||
@@ -530,11 +536,11 @@ namespace SIPSorcery.Net
                             break;
 
                         case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
-                            logger.LogWarning($"SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.");
+                            logger.LogWarning("SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.", State);
                             break;
 
                         case SctpChunkType.SACK:
-                            _dataSender.GotSack(chunk as SctpSackChunk);
+                            _dataSender.GotSack(chunk);
                             break;
 
                         case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
@@ -560,7 +566,7 @@ namespace SIPSorcery.Net
                             break;
 
                         default:
-                            logger.LogWarning($"SCTP association no rule for {chunkType} in state of {State}.");
+                            logger.LogWarning("SCTP association no rule for {chunkType} in state of {State}.", chunkType, State);
                             break;
                     }
                 }
@@ -589,7 +595,7 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        public void SendData(ushort streamID, uint ppid, ReadOnlySpan<byte> data)
         {
             if (_wasAborted)
             {
@@ -707,8 +713,7 @@ namespace SIPSorcery.Net
 
                 SetState(SctpAssociationState.CookieWait);
 
-                byte[] buffer = init.GetBytes();
-                _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                SendPacket(init);
 
                 _t1Init = new Timer(T1InitTimerExpired, init, T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
             }
@@ -729,9 +734,7 @@ namespace SIPSorcery.Net
 
                 pkt.AddChunk(chunk);
 
-                byte[] buffer = pkt.GetBytes();
-
-                _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                SendPacket(pkt);
             }
         }
 
@@ -743,8 +746,7 @@ namespace SIPSorcery.Net
         {
             if (!_wasAborted)
             {
-                byte[] buffer = pkt.GetBytes();
-                _sctpTransport.Send(ID, buffer, 0, buffer.Length);
+                _sctpTransport.Send(ID, pkt);
             }
         }
 

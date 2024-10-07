@@ -130,6 +130,7 @@ namespace SIPSorcery.Net
         /// Sends a string data payload on the data channel.
         /// </summary>
         /// <param name="message">The string message to send.</param>
+        /// <exception cref="InvalidOperationException">SCTP transport is not connected.</exception></exception>
         public void send(string message)
         {
             if (message != null && Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
@@ -139,7 +140,7 @@ namespace SIPSorcery.Net
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
+                throw new InvalidOperationException("SCTP transport is not connected.");
             }
             else
             {
@@ -165,7 +166,8 @@ namespace SIPSorcery.Net
         /// Sends a binary data payload on the data channel.
         /// </summary>
         /// <param name="data">The data to send.</param>
-        public void send(byte[] data)
+        /// <exception cref="InvalidOperationException">SCTP transport is not connected.</exception></exception>
+        public void send(ReadOnlySpan<byte> data)
         {
             if (data.Length > _transport.maxMessageSize)
             {
@@ -174,13 +176,13 @@ namespace SIPSorcery.Net
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
+                throw new InvalidOperationException("SCTP transport is not connected.");
             }
             else
             {
                 lock (this)
                 {
-                    if (data?.Length == 0)
+                    if (data.Length == 0)
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty,
@@ -249,7 +251,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for an SCTP data chunk being received for this data channel.
         /// </summary>
-        internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
+        internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, ReadOnlySpan<byte> data)
         {
             //logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
 

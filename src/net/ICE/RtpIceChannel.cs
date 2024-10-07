@@ -479,7 +479,16 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Creates a copy of the checklist of local and remote candidate pairs
         /// </summary>
-        internal List<ChecklistEntry> Checklist { get { return _checklist.ToList(); } }
+        internal List<ChecklistEntry> Checklist
+        {
+            get
+            {
+                lock (_checklist)
+                {
+                    return [.. _checklist];
+                }
+            }
+        }
 
         /// <summary>
         /// For local candidates this implementation takes a shortcut to reduce complexity. 
@@ -569,7 +578,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageSent;
 
-        public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
+        public new event DataReceivedDelegate OnRTPDataReceived;
 
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
@@ -742,7 +751,7 @@ namespace SIPSorcery.Net
 
                 logger.LogDebug($"RTP ICE Channel discovered {_candidates.Count} local candidates.");
 
-                if (_iceServerConnections?.Count > 0)
+                if (_iceServerConnections?.IsEmpty == false)
                 {
                     InitialiseIceServers(_iceServers);
                     _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
@@ -1582,7 +1591,12 @@ namespace SIPSorcery.Net
                 // Until that happens there is no work to do.
                 if (IceConnectionState == RTCIceConnectionState.checking)
                 {
-                    if (Checklist.Count > 0)
+                    int count;
+                    lock (_checklist)
+                    {
+                        count = _checklist.Count;
+                    }
+                    if (count > 0)
                     {
                         if (RemoteIceUser == null || RemoteIcePassword == null)
                         {
@@ -1822,12 +1836,12 @@ namespace SIPSorcery.Net
             {
                 IPEndPoint relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
                 var protocol = candidatePair.LocalCandidate.IceServer.Protocol;
-                SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP, candidatePair.LocalCandidate.IceServer);
+                SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP, candidatePair.LocalCandidate.IceServer, OnBindingFailure);
             }
             else
             {
                 IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-                var sendResult = base.Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
+                var sendResult = base.Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes, OnBindingFailure);
 
                 if (sendResult != SocketError.Success)
                 {
@@ -1838,6 +1852,17 @@ namespace SIPSorcery.Net
                     OnStunMessageSent?.Invoke(stunRequest, remoteEndPoint, false);
                 }
             }
+        }
+
+        bool OnBindingFailure(Exception exception)
+        {
+            if (exception is SocketException socketException)
+            {
+                logger.LogDebug("Socket exception binding RTP channel: {Code} {Message}.", socketException.ErrorCode, socketException.Message);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1974,7 +1999,10 @@ namespace SIPSorcery.Net
                             else if (IsController)
                             {
                                 logger.LogDebug($"ICE RTP channel binding response state {matchingChecklistEntry.State} as Controller for {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
-                                ProcessNominateLogicAsController(matchingChecklistEntry);
+                                lock (_checklist)
+                                {
+                                    ProcessNominateLogicAsController(matchingChecklistEntry);
+                                }
                             }
                         }
                     }
@@ -2147,7 +2175,10 @@ namespace SIPSorcery.Net
                             entry.TurnPermissionsResponseAt = DateTime.Now;
                         }
 
-                        AddChecklistEntry(entry);
+                        lock (_checklist)
+                        {
+                            AddChecklistEntry(entry);
+                        }
 
                         matchingChecklistEntry = entry;
                     }
@@ -2193,7 +2224,7 @@ namespace SIPSorcery.Net
                         if (wasRelayed)
                         {
                             var protocol = matchingChecklistEntry.LocalCandidate.IceServer.Protocol;
-                            SendRelay(protocol, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint, matchingChecklistEntry.LocalCandidate.IceServer);
+                            SendRelay(protocol, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint, matchingChecklistEntry.LocalCandidate.IceServer, onFailure: null);
                             OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, true);
                         }
                         else
@@ -2232,7 +2263,7 @@ namespace SIPSorcery.Net
         /// <returns>If found a matching state object or null if not.</returns>
         private IceServer GetIceServerForTransactionID(byte[] transactionID)
         {
-            if (_iceServerConnections == null || _iceServerConnections.Count == 0)
+            if (_iceServerConnections == null || _iceServerConnections.IsEmpty)
             {
                 return null;
             }
@@ -2283,7 +2314,7 @@ namespace SIPSorcery.Net
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
                                 SendOverTCP(iceServer, stunReqBytes) :
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
+                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes, OnBindingFailure);
 
             if (sendResult != SocketError.Success)
             {
@@ -2334,7 +2365,7 @@ namespace SIPSorcery.Net
 
             var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
                                 SendOverTCP(iceServer, allocateReqBytes) :
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
+                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes, OnBindingFailure);
 
             if (sendResult != SocketError.Success)
             {
@@ -2574,9 +2605,9 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> packet)
         {
-            if (packet?.Length > 0)
+            if (packet.Length > 0)
             {
                 bool wasRelayed = false;
 
@@ -2615,16 +2646,16 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
         /// <returns></returns>
-        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer)
+        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, ReadOnlySpan<byte> buffer, IPEndPoint relayEndPoint, IceServer iceServer, Func<Exception, bool>? onFailure)
         {
             STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
             sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
-            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer));
+            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer.ToArray()));
 
             var request = sendReq.ToByteBuffer(null, false);
             var sendResult = protocol == ProtocolType.Tcp ?
                 SendOverTCP(iceServer, request) :
-                base.Send(RTPChannelSocketsEnum.RTP, relayEndPoint, request);
+                base.Send(RTPChannelSocketsEnum.RTP, relayEndPoint, request, onFailure);
 
             if (sendResult != SocketError.Success)
             {
@@ -2692,7 +2723,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, ReadOnlySpan<byte> buffer, Func<Exception, bool>? onFailure = null)
         {
             if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
                 NominatedEntry.LocalCandidate.IceServer != null &&
@@ -2702,11 +2733,11 @@ namespace SIPSorcery.Net
                 // A TURN relay channel is being used to communicate with the remote peer.
                 var protocol = NominatedEntry.LocalCandidate.IceServer.Protocol;
                 var serverEndPoint = NominatedEntry.LocalCandidate.IceServer.ServerEndPoint;
-                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint, NominatedEntry.LocalCandidate.IceServer);
+                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint, NominatedEntry.LocalCandidate.IceServer, onFailure);
             }
             else
             {
-                return base.Send(sendOn, dstEndPoint, buffer);
+                return base.Send(sendOn, dstEndPoint, buffer, onFailure);
             }
         }
     }

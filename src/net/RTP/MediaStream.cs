@@ -139,6 +139,11 @@ namespace SIPSorcery.net.RTP
                 }
                 _isClosed = value;
 
+                if (value)
+                {
+                    RtcpSession.OnTimeout -= RaiseOnTimeoutByIndex;
+                }
+
                 //Clear previous buffer
                 ClearPendingPackages();
 
@@ -286,7 +291,7 @@ namespace SIPSorcery.net.RTP
             return (SecureContext != null);
         }
 
-        private (bool, byte[]) UnprotectBuffer(byte[] buffer)
+        private bool UnprotectBuffer(Span<byte> buffer, out ReadOnlySpan<byte> result)
         {
             if (SecureContext != null)
             {
@@ -294,21 +299,23 @@ namespace SIPSorcery.net.RTP
 
                 if (res == 0)
                 {
-                    return (true, buffer.Take(outBufLen).ToArray());
+                    result = buffer.Slice(0, outBufLen);
+                    return true;
                 }
                 else
                 {
                     logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
                 }
             }
-            return (false, buffer);
+            result = buffer;
+            return false;
         }
 
-        public bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
+        public bool EnsureBufferUnprotected(Span<byte> buf, RTPHeader header, out RTPPacket packet)
         {
             if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
             {
-                var (succeeded, newBuffer) = UnprotectBuffer(buf);
+                var succeeded = UnprotectBuffer(buf, out var newBuffer);
                 if (!succeeded)
                 {
                     packet = null;
@@ -489,7 +496,7 @@ namespace SIPSorcery.net.RTP
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.AsSpan(0, outBufLen));
                     }
                 }
                 m_lastRtpTimestamp = timestamp;
@@ -630,7 +637,7 @@ namespace SIPSorcery.net.RTP
                     }
                     else
                     {
-                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.AsSpan(0, outBufLen));
                     }
                 }
             }
@@ -672,7 +679,7 @@ namespace SIPSorcery.net.RTP
 
         #region RECEIVE PACKET
 
-        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, Span<byte> buffer, VideoStream videoStream = null)
         {
             RTPPacket rtpPacket;
             if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
@@ -823,7 +830,7 @@ namespace SIPSorcery.net.RTP
 
         // Cache pending packages to use it later to prevent missing frames
         // when DTLS was not completed yet as a Server but already completed as a client
-        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> buffer, VideoStream videoStream = null)
         {
             const int MAX_PENDING_PACKAGES_BUFFER_SIZE = 32;
 
@@ -836,7 +843,7 @@ namespace SIPSorcery.net.RTP
                     {
                         _pendingPackagesBuffer.RemoveAt(0);
                     }
-                    _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer, videoStream));
+                    _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer.ToArray(), videoStream));
                 }
                 return true;
             }
@@ -993,6 +1000,8 @@ namespace SIPSorcery.net.RTP
                 }
             });
         }
+
+        public override string ToString() => $"{MediaType}[{Index}]";
 
         public MediaStream(RtpSessionConfig config, int index)
         {

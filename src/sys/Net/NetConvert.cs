@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 
 namespace SIPSorcery.Sys
@@ -55,6 +56,26 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
+        /// Parse a UInt16 from a network buffer using network byte order.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse the value from.</param>
+        /// <param name="posn">The position in the buffer to start the parse from.</param>
+        /// <returns>A UInt16 value.</returns>
+        public static ushort ParseUInt16(ReadOnlySpan<byte> buffer, int posn)
+        {
+            return (ushort)(buffer[posn] << 8 | buffer[posn + 1]);
+        }
+
+        /// <summary>
+        /// Parse a UInt16 from a network buffer using network byte order.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse the value from.</param>
+        public static ushort ParseUInt16(ReadOnlySpan<byte> buffer)
+        {
+            return (ushort)(buffer[0] << 8 | buffer[1]);
+        }
+
+        /// <summary>
         /// Parse a UInt32 from a network buffer using network byte order.
         /// </summary>
         /// <param name="buffer">The buffer to parse the value from.</param>
@@ -63,6 +84,28 @@ namespace SIPSorcery.Sys
         public static uint ParseUInt32(byte[] buffer, int posn)
         {
             return (uint)(buffer[posn] << 24 | buffer[posn + 1] << 16 | buffer[posn + 2] << 8 | buffer[posn + 3]);
+        }
+
+        /// <summary>
+        /// Parse a UInt32 from a network buffer using network byte order.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse the value from.</param>
+        /// <param name="posn">The position in the buffer to start the parse from.</param>
+        /// <returns>A UInt32 value.</returns>
+        public static uint ParseUInt32(ReadOnlySpan<byte> buffer, int posn)
+        {
+            return (uint)(buffer[posn] << 24 | buffer[posn + 1] << 16 | buffer[posn + 2] << 8 | buffer[posn + 3]);
+        }
+
+        /// <summary>
+        /// Parse a UInt32 from a network buffer using network byte order.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse the value from.</param>
+        /// <param name="posn">The position in the buffer to start the parse from.</param>
+        /// <returns>A UInt32 value.</returns>
+        public static uint ParseUInt32(ReadOnlySpan<byte> buffer)
+        {
+            return (uint)(buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3]);
         }
 
         /// <summary>
@@ -102,6 +145,17 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
+        /// Writes a UInt16 value to a network buffer using network byte order.
+        /// </summary>
+        /// <param name="val">The value to write to the buffer.</param>
+        /// <param name="buffer">The buffer to write the value to.</param>
+        /// <param name="posn">The start position in the buffer to write the value at.</param>
+        public static void ToBuffer(ushort val, Span<byte> buffer, int posn)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(posn), val);
+        }
+
+        /// <summary>
         /// Get a buffer representing the unsigned 16 bit integer in network
         /// byte (big endian) order.
         /// </summary>
@@ -131,6 +185,17 @@ namespace SIPSorcery.Sys
             buffer[posn + 1] = (byte)(val >> 16);
             buffer[posn + 2] = (byte)(val >> 8);
             buffer[posn + 3] = (byte)val;
+        }
+
+        /// <summary>
+        /// Writes a UInt16 value to a network buffer using network byte order.
+        /// </summary>
+        /// <param name="val">The value to write to the buffer.</param>
+        /// <param name="buffer">The buffer to write the value to.</param>
+        /// <param name="posn">The start position in the buffer to write the value at.</param>
+        public static void ToBuffer(uint val, Span<byte> buffer, int posn)
+        {
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(posn), val);
         }
 
         /// <summary>

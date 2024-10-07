@@ -132,7 +132,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (Enum.IsDefined(typeof(SctpChunkType), ChunkType))
+                if (((SctpChunkType)ChunkType).IsDefined())
                 {
                     return (SctpChunkType)ChunkType;
                 }
@@ -147,7 +147,7 @@ namespace SIPSorcery.Net
         /// Records any unrecognised parameters received from the remote peer and are classified
         /// as needing to be reported. These can be sent back to the remote peer if needed.
         /// </summary>
-        public List<SctpTlvChunkParameter> UnrecognizedPeerParameters = new List<SctpTlvChunkParameter>();
+        public IReadOnlyList<SctpTlvChunkParameter> UnrecognizedPeerParameters = Array.Empty<SctpTlvChunkParameter>();
 
         public SctpChunk(SctpChunkType chunkType, byte chunkFlags = 0x00)
         {
@@ -185,11 +185,11 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position in the buffer that indicates the start of the chunk.</param>
         /// <returns>The chunk length value.</returns>
-        public ushort ParseFirstWord(byte[] buffer, int posn)
+        public ushort ParseFirstWord(ReadOnlySpan<byte> buffer, int posn)
         {
             ChunkType = buffer[posn];
             ChunkFlags = buffer[posn + 1];
-            ushort chunkLength = NetConvert.ParseUInt16(buffer, posn + 2);
+            ushort chunkLength = NetConvert.ParseUInt16(buffer.Slice(posn + 2));
 
             if (chunkLength > 0 && buffer.Length < posn + chunkLength)
             {
@@ -208,12 +208,14 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer to write the chunk header to.</param>
         /// <param name="posn">The position in the buffer to write at.</param>
-        /// <returns>The padded length of this chunk.</returns>
-        protected void WriteChunkHeader(byte[] buffer, int posn)
+        /// <returns>Unpadded length of this chunk.</returns>
+        protected ushort WriteChunkHeader(Span<byte> buffer, int posn)
         {
             buffer[posn] = ChunkType;
             buffer[posn + 1] = ChunkFlags;
-            NetConvert.ToBuffer(GetChunkLength(false), buffer, posn + 2);
+            ushort length = GetChunkLength(false);
+            NetConvert.ToBuffer(length, buffer, posn + 2);
+            return length;
         }
 
         /// <summary>
@@ -225,16 +227,23 @@ namespace SIPSorcery.Net
         /// must have the required space already allocated.</param>
         /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public virtual ushort WriteTo(byte[] buffer, int posn)
+        public virtual ushort WriteTo(Span<byte> buffer, int posn)
         {
             WriteChunkHeader(buffer, posn);
 
             if (ChunkValue?.Length > 0)
             {
-                Buffer.BlockCopy(ChunkValue, 0, buffer, posn + SCTP_CHUNK_HEADER_LENGTH, ChunkValue.Length);
+                ChunkValue.CopyTo(buffer.Slice(posn + SCTP_CHUNK_HEADER_LENGTH));
             }
 
             return GetChunkLength(true);
+        }
+
+        internal SctpChunkView View()
+        {
+            byte[] bytes = new byte[GetChunkLength(padded: true)];
+            ushort written = WriteTo(bytes, 0);
+            return new SctpChunkView(bytes.AsSpan().Slice(0, written));
         }
 
         /// <summary>
@@ -255,12 +264,14 @@ namespace SIPSorcery.Net
                     break;
                 case SctpUnrecognisedParameterActions.StopAndReport:
                     stop = true;
-                    UnrecognizedPeerParameters.Add(chunkParameter);
+                    UnrecognizedPeerParameters = UnrecognizedPeerParameters as List<SctpTlvChunkParameter> ?? [];
+                    ((List<SctpTlvChunkParameter>)UnrecognizedPeerParameters).Add(chunkParameter);
                     break;
                 case SctpUnrecognisedParameterActions.Skip:
                     break;
                 case SctpUnrecognisedParameterActions.SkipAndReport:
-                    UnrecognizedPeerParameters.Add(chunkParameter);
+                    UnrecognizedPeerParameters = UnrecognizedPeerParameters as List<SctpTlvChunkParameter> ?? [];
+                    ((List<SctpTlvChunkParameter>)UnrecognizedPeerParameters).Add(chunkParameter);
                     break;
             }
 
@@ -276,14 +287,14 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
         /// <returns>An SCTP chunk instance.</returns>
-        public static SctpChunk ParseBaseChunk(byte[] buffer, int posn)
+        public static SctpChunk ParseBaseChunk(ReadOnlySpan<byte> buffer, int posn)
         {
             var chunk = new SctpChunk();
             ushort chunkLength = chunk.ParseFirstWord(buffer, posn);
             if (chunkLength > SCTP_CHUNK_HEADER_LENGTH)
             {
                 chunk.ChunkValue = new byte[chunkLength - SCTP_CHUNK_HEADER_LENGTH];
-                Buffer.BlockCopy(buffer, posn + SCTP_CHUNK_HEADER_LENGTH, chunk.ChunkValue, 0, chunk.ChunkValue.Length);
+                buffer.Slice(posn + SCTP_CHUNK_HEADER_LENGTH, chunk.ChunkValue.Length).CopyTo(chunk.ChunkValue);
             }
 
             return chunk;
@@ -298,7 +309,7 @@ namespace SIPSorcery.Net
         /// parameters from.</param>
         /// <param name="length">The length of the TLV chunk parameters in the buffer.</param>
         /// <returns>A list of chunk parameters. Can be empty.</returns>
-        public static IEnumerable<SctpTlvChunkParameter> GetParameters(byte[] buffer, int posn, int length)
+        public static void GetParameters(ReadOnlySpan<byte> buffer, int posn, int length, Func<SctpTlvChunkParameter, bool> onParam)
         {
             int paramPosn = posn;
 
@@ -306,7 +317,10 @@ namespace SIPSorcery.Net
             {
                 var chunkParam = SctpTlvChunkParameter.ParseTlvParameter(buffer, paramPosn);
 
-                yield return chunkParam;
+                if (!onParam(chunkParam))
+                {
+                    break;
+                }
 
                 paramPosn += chunkParam.GetParameterLength(true);
             }
@@ -318,7 +332,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
         /// <returns>An SCTP chunk instance.</returns>
-        public static SctpChunk Parse(byte[] buffer, int posn)
+        public static SctpChunk Parse(ReadOnlySpan<byte> buffer, int posn)
         {
             if (buffer.Length < posn + SCTP_CHUNK_HEADER_LENGTH)
             {
@@ -327,7 +341,7 @@ namespace SIPSorcery.Net
 
             byte chunkType = buffer[posn];
 
-            if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
+            if (((SctpChunkType)chunkType).IsDefined())
             {
                 switch ((SctpChunkType)chunkType)
                 {
@@ -369,7 +383,7 @@ namespace SIPSorcery.Net
         /// <param name="posn">The start position of the serialised chunk.</param>
         /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The padded length of the serialised chunk.</returns>
-        public static uint GetChunkLengthFromHeader(byte[] buffer, int posn, bool padded)
+        public static uint GetChunkLengthFromHeader(ReadOnlySpan<byte> buffer, int posn, bool padded)
         {
             ushort len = NetConvert.ParseUInt16(buffer, posn + 2);
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
@@ -389,11 +403,10 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer containing the chunk.</param>
         /// <param name="posn">The position in the buffer that the unrecognised chunk starts.</param>
         /// <returns>A new buffer containing a copy of the chunk.</returns>
-        public static byte[] CopyUnrecognisedChunk(byte[] buffer, int posn)
+        public static ReadOnlySpan<byte> CopyUnrecognisedChunk(ReadOnlySpan<byte> buffer, int posn)
         {
-            byte[] unrecognised = new byte[SctpChunk.GetChunkLengthFromHeader(buffer, posn, true)];
-            Buffer.BlockCopy(buffer, posn, unrecognised, 0, unrecognised.Length);
-            return unrecognised;
+            uint length = GetChunkLengthFromHeader(buffer, posn, true);
+            return buffer.Slice(posn, checked((int)length));
         }
     }
 }

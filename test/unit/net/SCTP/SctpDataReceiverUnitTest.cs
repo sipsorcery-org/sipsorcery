@@ -39,7 +39,7 @@ namespace SIPSorcery.Net.UnitTests
 
             SctpDataChunk chunk = new SctpDataChunk(false, true, true, 0, 0, 0, 0, new byte[] { 0x00 });
 
-            var sortedFrames = receiver.OnDataChunk(chunk);
+            var sortedFrames = receiver.OnDataChunk(chunk.View());
 
             Assert.Single(sortedFrames);
             Assert.Equal("00", sortedFrames.Single().UserData.HexStr());
@@ -59,11 +59,11 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, 1, 0, 0, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, false, true, 2, 0, 0, 0, new byte[] { 0x02 });
 
-            var sortFrames1 = receiver.OnDataChunk(chunk1);
+            var sortFrames1 = receiver.OnDataChunk(chunk1.View());
             Assert.Equal(0U, receiver.CumulativeAckTSN);
-            var sortFrames2 = receiver.OnDataChunk(chunk2);
+            var sortFrames2 = receiver.OnDataChunk(chunk2.View());
             Assert.Equal(1U, receiver.CumulativeAckTSN);
-            var sortFrames3 = receiver.OnDataChunk(chunk3);
+            var sortFrames3 = receiver.OnDataChunk(chunk3.View());
             Assert.Equal(2U, receiver.CumulativeAckTSN);
 
             Assert.Empty(sortFrames1);
@@ -86,11 +86,11 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, 1, 0, 0, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, false, true, 2, 0, 0, 0, new byte[] { 0x02 });
 
-            var sortFrames1 = receiver.OnDataChunk(chunk1);
+            var sortFrames1 = receiver.OnDataChunk(chunk1.View());
             Assert.Equal(0U, receiver.CumulativeAckTSN);
-            var sortFrames2 = receiver.OnDataChunk(chunk3);
+            var sortFrames2 = receiver.OnDataChunk(chunk3.View());
             Assert.Equal(0U, receiver.CumulativeAckTSN);
-            var sortFrames3 = receiver.OnDataChunk(chunk2);
+            var sortFrames3 = receiver.OnDataChunk(chunk2.View());
             Assert.Equal(2U, receiver.CumulativeAckTSN);
 
             Assert.Empty(sortFrames1);
@@ -113,11 +113,11 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, false, false, 1, 0, 0, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, false, true, 2, 0, 0, 0, new byte[] { 0x02 });
 
-            var sortFrames1 = receiver.OnDataChunk(chunk3);
+            var sortFrames1 = receiver.OnDataChunk(chunk3.View());
             Assert.Null(receiver.CumulativeAckTSN);
-            var sortFrames2 = receiver.OnDataChunk(chunk2);
+            var sortFrames2 = receiver.OnDataChunk(chunk2.View());
             Assert.Null(receiver.CumulativeAckTSN);
-            var sortFrames3 = receiver.OnDataChunk(chunk1);
+            var sortFrames3 = receiver.OnDataChunk(chunk1.View());
             Assert.Equal(2U, receiver.CumulativeAckTSN);
 
             Assert.Empty(sortFrames1);
@@ -141,15 +141,15 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk4 = new SctpDataChunk(false, false, false, 0, 0, 0, 0, new byte[] { 0x03 });
             SctpDataChunk chunk5 = new SctpDataChunk(false, false, true, 1, 0, 0, 0, new byte[] { 0x04 });
 
-            var sFrames1 = receiver.OnDataChunk(chunk1);
+            var sFrames1 = receiver.OnDataChunk(chunk1.View());
             Assert.Equal(uint.MaxValue - 2, receiver.CumulativeAckTSN);
-            var sFrames2 = receiver.OnDataChunk(chunk2);
+            var sFrames2 = receiver.OnDataChunk(chunk2.View());
             Assert.Equal(uint.MaxValue - 1, receiver.CumulativeAckTSN);
-            var sFrames3 = receiver.OnDataChunk(chunk3);
+            var sFrames3 = receiver.OnDataChunk(chunk3.View());
             Assert.Equal(uint.MaxValue, receiver.CumulativeAckTSN);
-            var sFrames4 = receiver.OnDataChunk(chunk4);
+            var sFrames4 = receiver.OnDataChunk(chunk4.View());
             Assert.Equal(0U, receiver.CumulativeAckTSN);
-            var sFrames5 = receiver.OnDataChunk(chunk5);
+            var sFrames5 = receiver.OnDataChunk(chunk5.View());
             Assert.Equal(1U, receiver.CumulativeAckTSN);
 
             Assert.Empty(sFrames1);
@@ -180,19 +180,19 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk6 = new SctpDataChunk(true, true, true, 6, 0, 0, 0, new byte[] { 0x06 });
             SctpDataChunk chunk9 = new SctpDataChunk(true, true, true, 9, 0, 0, 0, new byte[] { 0x09 });
 
-            var sframes9 = receiver.OnDataChunk(chunk9);
+            var sframes9 = receiver.OnDataChunk(chunk9.View());
             Assert.Null(receiver.CumulativeAckTSN);
-            var sframes1 = receiver.OnDataChunk(chunk1);
+            var sframes1 = receiver.OnDataChunk(chunk1.View());
             Assert.Equal(uint.MaxValue - 2, receiver.CumulativeAckTSN);
-            var sframes2 = receiver.OnDataChunk(chunk2);
+            var sframes2 = receiver.OnDataChunk(chunk2.View());
             Assert.Equal(uint.MaxValue - 1, receiver.CumulativeAckTSN);
-            var sframes3 = receiver.OnDataChunk(chunk3);
+            var sframes3 = receiver.OnDataChunk(chunk3.View());
             Assert.Equal(uint.MaxValue, receiver.CumulativeAckTSN);
-            var sframes6 = receiver.OnDataChunk(chunk6);
+            var sframes6 = receiver.OnDataChunk(chunk6.View());
             Assert.Equal(uint.MaxValue, receiver.CumulativeAckTSN);
-            var sframes4 = receiver.OnDataChunk(chunk4);
+            var sframes4 = receiver.OnDataChunk(chunk4.View());
             Assert.Equal(0U, receiver.CumulativeAckTSN);
-            var sframes5 = receiver.OnDataChunk(chunk5);
+            var sframes5 = receiver.OnDataChunk(chunk5.View());
             Assert.Equal(1U, receiver.CumulativeAckTSN);
 
             Assert.Empty(sframes1);
@@ -221,11 +221,11 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk4 = new SctpDataChunk(false, false, false, 0, 0, 0, 0, new byte[] { 0x03 });
             SctpDataChunk chunk5 = new SctpDataChunk(false, false, true, 1, 0, 0, 0, new byte[] { 0x04 });
 
-            var sframes1 = receiver.OnDataChunk(chunk1);
-            var sframes2 = receiver.OnDataChunk(chunk2);
-            var sframes3 = receiver.OnDataChunk(chunk3);
-            var sframes4 = receiver.OnDataChunk(chunk4);
-            var sframes5 = receiver.OnDataChunk(chunk5);
+            var sframes1 = receiver.OnDataChunk(chunk1.View());
+            var sframes2 = receiver.OnDataChunk(chunk2.View());
+            var sframes3 = receiver.OnDataChunk(chunk3.View());
+            var sframes4 = receiver.OnDataChunk(chunk4.View());
+            var sframes5 = receiver.OnDataChunk(chunk5.View());
 
             Assert.Empty(sframes1);
             Assert.Empty(sframes2);
@@ -290,7 +290,7 @@ namespace SIPSorcery.Net.UnitTests
             {
                 SctpDataChunk chunk = new SctpDataChunk(true, true, true, tsn++, 0, 0, 0, new byte[] { 0x55 });
 
-                var sortedFrames = receiver.OnDataChunk(chunk);
+                var sortedFrames = receiver.OnDataChunk(chunk.View());
 
                 Assert.Single(sortedFrames);
                 Assert.Equal("55", sortedFrames.Single().UserData.HexStr());
@@ -316,7 +316,7 @@ namespace SIPSorcery.Net.UnitTests
             {
                 SctpDataChunk chunk = new SctpDataChunk(false, true, true, tsn++, 0, streamSeqnum++, 0, new byte[] { 0x55 });
 
-                var sortedFrames = receiver.OnDataChunk(chunk);
+                var sortedFrames = receiver.OnDataChunk(chunk.View());
 
                 Assert.Single(sortedFrames);
                 Assert.Equal("55", sortedFrames.Single().UserData.HexStr());
@@ -337,9 +337,9 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, true, true, 1, 0, 1, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, true, true, 2, 0, 2, 0, new byte[] { 0x02 });
 
-            var sortFrames1 = receiver.OnDataChunk(chunk1);
-            var sortFrames2 = receiver.OnDataChunk(chunk2);
-            var sortFrames3 = receiver.OnDataChunk(chunk3);
+            var sortFrames1 = receiver.OnDataChunk(chunk1.View());
+            var sortFrames2 = receiver.OnDataChunk(chunk2.View());
+            var sortFrames3 = receiver.OnDataChunk(chunk3.View());
 
             Assert.Single(sortFrames1);
             Assert.Equal(0, sortFrames1.Single().StreamSeqNum);
@@ -367,10 +367,10 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataChunk chunk2 = new SctpDataChunk(false, true, true, 1, 0, 1, 0, new byte[] { 0x01 });
             SctpDataChunk chunk3 = new SctpDataChunk(false, true, true, 2, 0, 2, 0, new byte[] { 0x02 });
 
-            var sortFrames0 = receiver.OnDataChunk(chunk0);
-            var sortFrames1 = receiver.OnDataChunk(chunk3);
-            var sortFrames2 = receiver.OnDataChunk(chunk2);
-            var sortFrames3 = receiver.OnDataChunk(chunk1);
+            var sortFrames0 = receiver.OnDataChunk(chunk0.View());
+            var sortFrames1 = receiver.OnDataChunk(chunk3.View());
+            var sortFrames2 = receiver.OnDataChunk(chunk2.View());
+            var sortFrames3 = receiver.OnDataChunk(chunk1.View());
 
             Assert.Single(sortFrames0);
             Assert.Empty(sortFrames1);
@@ -390,8 +390,8 @@ namespace SIPSorcery.Net.UnitTests
         public void GetSingleGapReport()
         {
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 25);
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 25, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 30, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 25, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 30, 0, 0, 0, new byte[] { 0x33 }).View());
 
             var gapReports = receiver.GetForwardTSNGaps();
 
@@ -412,8 +412,8 @@ namespace SIPSorcery.Net.UnitTests
         {
             uint initialTSN = uint.MaxValue - 2;
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, initialTSN);
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 2, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 2, 0, 0, 0, new byte[] { 0x33 }).View());
 
             var gapReports = receiver.GetForwardTSNGaps();
 
@@ -432,10 +432,10 @@ namespace SIPSorcery.Net.UnitTests
         public void GetTwoGapReports()
         {
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 15005);
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15005, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15007, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15008, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15010, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15005, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15007, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15008, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 15010, 0, 0, 0, new byte[] { 0x33 }).View());
 
             var gapReports = receiver.GetForwardTSNGaps();
 
@@ -451,13 +451,13 @@ namespace SIPSorcery.Net.UnitTests
         public void GetThreeGapReports()
         {
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, 3);
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 3, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 7, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 8, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 9, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 11, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 12, 0, 0, 0, new byte[] { 0x33 }));
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 14, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 3, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 7, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 8, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 9, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 11, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 12, 0, 0, 0, new byte[] { 0x33 }).View());
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, 14, 0, 0, 0, new byte[] { 0x33 }).View());
 
             var gapReports = receiver.GetForwardTSNGaps();
 
@@ -478,11 +478,11 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(0, 0, initialTSN);
 
             // Forward TSN.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x33 }).View());
             // Initial expected TSN.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x33 }).View());
             // Duplicate of first received TSN.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x33 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x33 }).View());
 
             var gapReports = receiver.GetForwardTSNGaps();
 
@@ -501,11 +501,11 @@ namespace SIPSorcery.Net.UnitTests
 
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
 
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
 
             // Simulate a missing chunk by incrementing the TSN by 2.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 2, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 2, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
 
             var sack = receiver.GetSackChunk();
@@ -527,7 +527,7 @@ namespace SIPSorcery.Net.UnitTests
 
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
 
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Null(receiver.CumulativeAckTSN);
             Assert.Null(receiver.GetSackChunk());
         }
@@ -545,12 +545,12 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
 
             // Skip initial DATA chunk.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Null(receiver.CumulativeAckTSN);
             Assert.Null(receiver.GetSackChunk());
 
             // Give the receiver the initial DATA chunk.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Equal(initialTSN + 1, receiver.CumulativeAckTSN);
 
             var sack = receiver.GetSackChunk();
@@ -572,16 +572,16 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataReceiver receiver = new SctpDataReceiver(arwnd, mtu, initialTSN);
 
             // Skip initial DATA chunk.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 1, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Null(receiver.CumulativeAckTSN);
             Assert.Null(receiver.GetSackChunk());
 
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 2, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN + 2, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Null(receiver.CumulativeAckTSN);
             Assert.Null(receiver.GetSackChunk());
 
             // Give the receiver the initial DATA chunk.
-            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }));
+            receiver.OnDataChunk(new SctpDataChunk(true, true, true, initialTSN, 0, 0, 0, new byte[] { 0x44 }).View());
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
 
             var sack = receiver.GetSackChunk();

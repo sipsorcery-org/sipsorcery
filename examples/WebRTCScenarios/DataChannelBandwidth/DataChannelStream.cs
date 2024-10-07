@@ -10,7 +10,7 @@ class DataChannelStream : Stream
 {
     readonly RTCDataChannel channel;
     int currentMessageOffset;
-    byte[] message = [];
+    ArraySegment<byte> message = Array.Empty<byte>();
     readonly CancellationTokenSource closed = new();
     readonly SemaphoreSlim messageNeeded = new(0, 1);
     readonly SemaphoreSlim messageAvailable = new(0, maxCount: 1);
@@ -75,7 +75,7 @@ class DataChannelStream : Stream
     }
 
     int messages;
-    void OnMessage(RTCDataChannel _, DataChannelPayloadProtocols protocol, byte[] data)
+    void OnMessage(RTCDataChannel _, DataChannelPayloadProtocols protocol, ReadOnlySpan<byte> data)
     {
         int seq = Interlocked.Increment(ref messages);
         log?.LogDebug("{Seq} received", seq);
@@ -84,7 +84,11 @@ class DataChannelStream : Stream
             messageNeeded.Wait();
             lock (sync)
             {
-                message = data;
+                if (message.Array is not null)
+                {
+                    ArrayPool<byte>.Shared.Return(message.Array);
+                }
+                message = data.ToArraySegment(ArrayPool<byte>.Shared);
                 currentMessageOffset = 0;
             }
             messageAvailable.Release();
@@ -139,7 +143,7 @@ class DataChannelStream : Stream
 
             lock (sync)
             {
-                int remaining = message.Length - currentMessageOffset;
+                int remaining = message.Count - currentMessageOffset;
                 int toCopy = Math.Min(remaining, buffer.Length);
                 message.AsSpan(currentMessageOffset, toCopy).CopyTo(buffer);
                 currentMessageOffset += toCopy;
@@ -193,7 +197,7 @@ class DataChannelStream : Stream
 
             lock (sync)
             {
-                int remaining = message.Length - currentMessageOffset;
+                int remaining = message.Count - currentMessageOffset;
                 int toCopy = Math.Min(remaining, buffer.Length);
                 message.AsSpan(currentMessageOffset, toCopy).CopyTo(buffer.Span);
                 currentMessageOffset += toCopy;
@@ -208,7 +212,7 @@ class DataChannelStream : Stream
     }
     long totalRead;
 
-    bool MessageNeeded() => message.Length - currentMessageOffset == 0;
+    bool MessageNeeded() => message.Count - currentMessageOffset == 0;
 
     public override void Write(byte[] buffer, int offset, int count)
     {
@@ -235,13 +239,13 @@ class DataChannelStream : Stream
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var packet = buffer[..MaxSendBytes];
-                await Task.Run(() => Send(packet.Span.ToArray()), cancellationToken)
+                await Task.Run(() => Send(packet.Span), cancellationToken)
                           .ConfigureAwait(false);
                 buffer = buffer[MaxSendBytes..];
             }
             cancellationToken.ThrowIfCancellationRequested();
             if (buffer.Length > 0)
-                Send(buffer.Span.ToArray());
+                Send(buffer.Span);
         }
         finally
         {
@@ -250,7 +254,7 @@ class DataChannelStream : Stream
     }
 
     long totalSent;
-    void Send(byte[] buffer)
+    void Send(ReadOnlySpan<byte> buffer)
     {
         channel.send(buffer);
         Interlocked.Add(ref totalSent, buffer.Length);
@@ -264,11 +268,11 @@ class DataChannelStream : Stream
             while (buffer.Length > MaxSendBytes)
             {
                 var packet = buffer[..MaxSendBytes];
-                Send(packet.ToArray());
+                Send(packet);
                 buffer = buffer[MaxSendBytes..];
             }
             if (buffer.Length > 0)
-                Send(buffer.ToArray());
+                Send(buffer);
         }
         finally
         {

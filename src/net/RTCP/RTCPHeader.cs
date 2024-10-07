@@ -33,6 +33,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -132,24 +133,15 @@ namespace SIPSorcery.Net
         /// Extract and load the RTCP header from an RTCP packet.
         /// </summary>
         /// <param name="packet"></param>
-        public RTCPHeader(byte[] packet)
+        public RTCPHeader(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < HEADER_BYTES_LENGTH)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-                Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Length = BitConverter.ToUInt16(packet, 2);
-            }
+            UInt16 firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+            Length = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
 
             Version = Convert.ToInt32(firstWord >> 14);
             PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);

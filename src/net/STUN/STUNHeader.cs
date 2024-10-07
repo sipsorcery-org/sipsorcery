@@ -72,6 +72,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
 using SIPSorcery.Sys;
 
@@ -164,30 +165,24 @@ namespace SIPSorcery.Net
             return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
         }
 
-        public static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
+        public static STUNHeader ParseSTUNHeader(ReadOnlySpan<byte> bufferSegment)
         {
-            var startIndex = bufferSegment.Offset;
-            if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
+            var startIndex = 0;
+            if ((bufferSegment[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
             {
                 throw new ApplicationException("The STUN header did not begin with 0x00.");
             }
 
-            if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
+            if (bufferSegment != null && bufferSegment.Length > 0 && bufferSegment.Length >= STUN_HEADER_LENGTH)
             {
                 STUNHeader stunHeader = new STUNHeader();
 
-                UInt16 stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
-                UInt16 stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    stunTypeValue = NetConvert.DoReverseEndian(stunTypeValue);
-                    stunMessageLength = NetConvert.DoReverseEndian(stunMessageLength);
-                }
+                UInt16 stunTypeValue = BinaryPrimitives.ReadUInt16BigEndian(bufferSegment.Slice(startIndex));
+                UInt16 stunMessageLength = BinaryPrimitives.ReadUInt16BigEndian(bufferSegment.Slice(startIndex + 2));
 
                 stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
                 stunHeader.MessageLength = stunMessageLength;
-                Buffer.BlockCopy(bufferSegment.Array, startIndex + 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
+                bufferSegment.Slice(startIndex + 8, TRANSACTION_ID_LENGTH).CopyTo(stunHeader.TransactionId);
 
                 return stunHeader;
             }
