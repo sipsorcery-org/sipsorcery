@@ -59,7 +59,7 @@ namespace SIPSorcery.Media.G729Codec
  * @param xn        input : target vector x[0:l_subfr]
  * @param y1        input : filtered adaptive codebook vector
  * @param y2        input : filtered 1st codebook innovation
- * @param g_coeff   output: <y2,y2> , -2<xn,y2> , and 2<y1,y2>
+ * @param g_coeff   <![CDATA[ output: <y2,y2> , -2<xn,y2> , and 2<y1,y2> ]]>
  */
 
         public static void corr_xy2(

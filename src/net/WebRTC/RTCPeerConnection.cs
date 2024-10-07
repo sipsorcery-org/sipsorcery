@@ -38,7 +38,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -188,6 +187,8 @@ namespace SIPSorcery.Net
         private BcTlsCrypto _crypto;
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceGatheringTask;
+
+        private Dictionary<String, int> _rtpExtensionsUsed; // < Uri, Id>
 
         /// <summary>
         /// Local ICE candidates that have been supplied directly by the application.
@@ -470,7 +471,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for ICE connection state changes.
         /// </summary>
-        /// <param name="state">The new ICE connection state.</param>
+        /// <param name="iceState">The new ICE connection state.</param>
         private async void IceConnectionStateChange(RTCIceConnectionState iceState)
         {
             oniceconnectionstatechange?.Invoke(iceConnectionState);
@@ -579,7 +580,6 @@ namespace SIPSorcery.Net
         /// Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
         /// packets) for use with this session.
         /// </summary>
-        /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
         protected override RTPChannel CreateRtpChannel()
         {
@@ -677,6 +677,24 @@ namespace SIPSorcery.Net
             remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
 
             SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+
+            // Need to store uri/id of know extensions
+            _rtpExtensionsUsed ??= new Dictionary<string, int>();
+            foreach (var ann in remoteSdp.Media)
+            {
+                if ( (ann.Media == SDPMediaTypesEnum.audio) || (ann.Media == SDPMediaTypesEnum.video) )
+                {
+                    var extensions = ann.HeaderExtensions?.Values;
+                    if(extensions != null)
+                    {
+                        foreach(var extension in extensions)
+                        {
+                            logger.LogDebug("[setRemoteDescription] - Extension:[{Id} - {Uri}]", extension.Id, extension.Uri);
+                            _rtpExtensionsUsed[extension.Uri] = extension.Id;
+                        }
+                    }
+                }
+            }
 
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
 
@@ -882,8 +900,63 @@ namespace SIPSorcery.Net
             bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
             var offerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
 
+            int indexAudioStream = 0;
+            int indexVideoStream = 0;
+            _rtpExtensionsUsed ??= new Dictionary<string, int>();
             foreach (var ann in offerSdp.Media)
             {
+                // Audio - Add RTP Extension we want or can support
+                if (ann.Media == SDPMediaTypesEnum.audio)
+                {
+                    ann.HeaderExtensions.Clear();
+
+                    var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
+                    if (localHeaderExtensions != null)
+                    {
+                        foreach (var localExtension in localHeaderExtensions)
+                        {
+                            // We must ensure to use same Id by extension
+                            if(_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            {
+                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                            }
+                            else
+                            {
+                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                            }
+
+                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                            ann.HeaderExtensions[localExtension.Id] = localExtension;
+                        }
+                    }
+                    indexAudioStream++;
+                }
+                // Video - Add RTP Extension we want or can support
+                else if (ann.Media == SDPMediaTypesEnum.video)
+                {
+                    ann.HeaderExtensions.Clear();
+
+                    var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
+                    if (localHeaderExtensions != null)
+                    {
+                        foreach (var localExtension in localHeaderExtensions)
+                        {
+                            // We must ensure to use same Id by extension
+                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            {
+                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                            }
+                            else
+                            {
+                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                            }
+
+                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                            ann.HeaderExtensions[localExtension.Id] = localExtension;
+                        }
+                    }
+                    indexVideoStream++;
+                }
                 ann.IceRole = IceRole;
             }
 
@@ -961,6 +1034,61 @@ namespace SIPSorcery.Net
 
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
                 var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+
+                int indexAudioStream = 0;
+                int indexVideoStream = 0;
+                _rtpExtensionsUsed ??= new Dictionary<string, int>();
+                foreach (var ann in answerSdp.Media)
+                {
+                    // Audio - RTP Extension must be same on Local and Remote Track
+                    if (ann.Media == SDPMediaTypesEnum.audio)
+                    {
+                        ann.HeaderExtensions.Clear();
+
+                        var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
+                        var remoteHeaderExtensions = AudioStreamList[indexAudioStream].RemoteTrack?.HeaderExtensions?.Values;
+                        if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
+                            {
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                if ( (localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                {
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+
+                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                }
+                            }
+                        }
+                        indexAudioStream++;
+                    }
+                    // Video - RTP Extension must be same on Local and Remote Track
+                    else if (ann.Media == SDPMediaTypesEnum.video)
+                    {
+                        ann.HeaderExtensions.Clear();
+
+                        var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
+                        var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
+                        if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
+                            {
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                {
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+
+                                    logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                }
+                            }
+                        }
+                        indexVideoStream++;
+                    }
+                }
 
                 //if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 //{
@@ -1188,7 +1316,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// From RFC5764:
+        /// From RFC5764: <![CDATA[
         ///             +----------------+
         ///             | 127 < B< 192  -+--> forward to RTP
         ///             |                |
@@ -1196,6 +1324,7 @@ namespace SIPSorcery.Net
         ///             |                |
         ///             |       B< 2    -+--> forward to STUN
         ///             +----------------+
+        /// ]]>
         /// </summary>
         /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
         /// <param name="remoteEP">The remote end point the packet was received from.</param>
@@ -1233,7 +1362,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception RTCPeerConnection.OnRTPDataReceived {excp.Message}");
+                    logger.LogError($"Exception RTCPeerConnection.OnRTPDataReceived {excp}");
                 }
             }
         }
@@ -1244,7 +1373,7 @@ namespace SIPSorcery.Net
         /// example is when a machine is behind a 1:1 NAT and the application wants a host 
         /// candidate with the public IP address to be included.
         /// </summary>
-        /// <param name="candidateInit">The ICE candidate to add.</param>
+        /// <param name="candidate">The ICE candidate to add.</param>
         /// <example>
         /// var natCandidate = new RTCIceCandidate(RTCIceProtocol.udp, natAddress, natPort, RTCIceCandidateType.host);
         /// pc.addLocalIceCandidate(natCandidate);
@@ -1468,10 +1597,6 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for an SCTP DATA chunk being received on the SCTP association.
         /// </summary>
-        /// <param name="streamID">The stream ID of the chunk.</param>
-        /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
-        /// <param name="ppID">The payload protocol ID for the chunk.</param>
-        /// <param name="data">The chunk data.</param>
         private void OnSctpAssociationDataChunk(SctpDataFrame frame)
         {
             if (dataChannels.TryGetChannel(frame.StreamID, out var dc))

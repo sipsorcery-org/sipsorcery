@@ -396,7 +396,7 @@ namespace SIPSorcery.Net
         /// protocol and IP end point. Primary use case is to check whether a candidate
         /// is a match for a remote end point that a message has been received from.
         /// </summary>
-        /// <param name="epProtocol">The protocol to check equivalence for.</param>
+        /// <param name="epPotocol">The protocol to check equivalence for.</param>
         /// <param name="ep">The IP end point to check equivalence for.</param>
         /// <returns>True if the candidate is deemed equivalent or false if not.</returns>
         public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)

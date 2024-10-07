@@ -28,6 +28,8 @@ namespace SIPSorcery.Net
         public const int MIN_HEADER_LEN = 12;
 
         public const int RTP_VERSION = 2;
+        public const int ONE_BYTE_EXTENSION_PROFILE = 0xBEDE;
+        public const int TWO_BYTE_EXTENSION_PROFILE = 0x1000;
 
         public int Version = RTP_VERSION;                       // 2 bits.
         public int PaddingFlag = 0;                             // 1 bit.
@@ -192,6 +194,23 @@ namespace SIPSorcery.Net
 
         public List<RTPHeaderExtensionData> GetHeaderExtensions()
         {
+
+            // See https://github.com/pion/rtp/blob/master/packet.go#L88
+            /*
+             *  0                   1                   2                   3
+             *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+             * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+             * |V=2|P|X|  CC   |M|     PT      |       sequence number         |
+             * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+             * |                           timestamp                           |
+             * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+             * |           synchronization source (SSRC) identifier            |
+             * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+             * |            contributing source (CSRC) identifiers             |
+             * |                             ....                              |
+             * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+             */
+
             var extensions = new List<RTPHeaderExtensionData>();
             RTPHeaderExtensionData extension = null;
             var i = 0;
@@ -200,7 +219,7 @@ namespace SIPSorcery.Net
             {
                 while (i + 1 < ExtensionPayload.Length)
                 {
-                    if (HasOneByteExtension())
+                    if (ExtensionProfile == ONE_BYTE_EXTENSION_PROFILE)
                     {
                         var id = (ExtensionPayload[i] & 0xF0) >> 4;
                         var len = (ExtensionPayload[i] & 0x0F) + 1;
@@ -208,7 +227,7 @@ namespace SIPSorcery.Net
                         extension = GetExtensionAtPosition(ref i, id, len, RTPHeaderExtensionType.OneByte, out invalid);
 
                     }
-                    else if (HasTwoByteExtension())
+                    else if (ExtensionProfile == TWO_BYTE_EXTENSION_PROFILE)
                     {
                         var id = ExtensionPayload[i++];
                         var len = ExtensionPayload[i++] + 1;
@@ -228,16 +247,6 @@ namespace SIPSorcery.Net
             }
 
             return extensions;
-        }
-
-        private bool HasOneByteExtension()
-        {
-            return ExtensionProfile == 0xBEDE;
-        }
-
-        private bool HasTwoByteExtension()
-        {
-            return (ExtensionProfile & 0b1111111111110000) == 0b0001000000000000;
         }
 
         public static bool TryParse(
@@ -302,5 +311,6 @@ namespace SIPSorcery.Net
             consumed = offset;
             return header.PayloadSize>=0;
         }
+
     }
 }

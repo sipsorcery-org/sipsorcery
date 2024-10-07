@@ -54,7 +54,7 @@ namespace SIPSorcery.Net
         /// Note (rj2): FormatID MUST be string (not int), in case ID is 't38' and type is 'image'
         /// Note to above: The FormatID is always numeric for profile "RTP/AVP" and "RTP/SAVP", see 
         /// https://tools.ietf.org/html/rfc4566#section-5.14 and section on "fmt":
-        /// "If the <proto> sub-field is "RTP/AVP" or "RTP/SAVP" the <fmt>
+        /// "If the [proto] sub-field is "RTP/AVP" or "RTP/SAVP" the [fmt]
         /// sub-fields contain RTP payload type numbers"
         /// In the case of T38 the format name is "t38" but the formatID must be set as a dynamic ID.
         /// <code>
@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
         /// <code>
         /// // Example
         /// a=rtpmap:0 PCMU/8000
-        /// a=rtpmap:101 telephone-event/8000 <-- "101 telephone-event/8000" is the rtpmap properties.
+        /// a=rtpmap:101 telephone-event/8000 ← "101 telephone-event/8000" is the rtpmap properties.
         /// a=fmtp:101 0-16
         /// </code>
         /// </summary>
@@ -91,16 +91,24 @@ namespace SIPSorcery.Net
         /// // Example
         /// a=rtpmap:0 PCMU/8000
         /// a=rtpmap:101 telephone-event/8000 
-        /// a=fmtp:101 0-16                     <-- "101 0-16" is the fmtp attribute.
+        /// a=fmtp:101 0-16                     ← "101 0-16" is the fmtp attribute.
         /// </code>
         /// </summary>
         public string Fmtp { get; }
+
+        public IEnumerable<string> SupportedRtcpFeedbackMessages
+        {
+            get
+            {
+                yield return "goog-remb";
+            }
+        }
 
         /// <summary>
         /// The standard name of the media format.
         /// <code>
         /// // Example
-        /// a=rtpmap:0 PCMU/8000                <-- "PCMU" is the media format name.
+        /// a=rtpmap:0 PCMU/8000                ← "PCMU" is the media format name.
         /// a=rtpmap:101 telephone-event/8000 
         /// a=fmtp:101 0-16
         /// </code>
@@ -248,16 +256,15 @@ namespace SIPSorcery.Net
         /// equivalent type need to be adjusted by one party.
         /// </summary>
         /// <param name="id">The ID to set on the new format.</param>
-        /// <param name="format">The existing format to copy all properties except the ID from.</param>
         /// <returns>A new format.</returns>
-        public SDPAudioVideoMediaFormat WithUpdatedID(int id, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, id, format.Rtpmap, format.Fmtp);
+        public SDPAudioVideoMediaFormat WithUpdatedID(int id) =>
+            new SDPAudioVideoMediaFormat(Kind, id, Rtpmap, Fmtp);
 
-        public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, format.ID, rtpmap, format.Fmtp);
+        public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap) =>
+            new SDPAudioVideoMediaFormat(Kind, ID, rtpmap, Fmtp);
 
-        public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, format.ID, format.Rtpmap, fmtp);
+        public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp) =>
+            new SDPAudioVideoMediaFormat(Kind, ID, Rtpmap, fmtp);
 
         /// <summary>
         /// Maps an audio SDP media type to a media abstraction layer audio format.

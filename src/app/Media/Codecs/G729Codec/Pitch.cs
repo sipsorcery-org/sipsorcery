@@ -351,7 +351,7 @@ namespace SIPSorcery.Media.G729Codec
             }
         }
 
-        /**
+        /** <![CDATA[
  * Compute adaptive codebook gain and compute <y1,y1> , -2<xn,y1>
  *
  * @param xn        input : target vector
@@ -359,6 +359,7 @@ namespace SIPSorcery.Media.G729Codec
  * @param g_coeff   output: <y1,y1> and -2<xn,y1>
  * @param l_subfr   input : vector dimension
  * @return          pitch gain
+ * ]]>
  */
 
         public static float g_pitch(

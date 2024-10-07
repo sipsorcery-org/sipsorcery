@@ -56,6 +56,7 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCAnswerOptions
     {
+        /// <summary>
         /// If set it indicates that any available ICE candidates should NOT be added
         /// to the offer SDP. By default "host" candidates should always be available
         /// and will be added to the offer SDP.

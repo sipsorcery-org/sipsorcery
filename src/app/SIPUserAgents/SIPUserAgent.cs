@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
 // Description: A "full" SIP user agent that encompasses both client and server 
@@ -276,7 +276,7 @@ namespace SIPSorcery.SIP.App
         /// For calls accepted by this user agent this event will be fired if the call
         /// is cancelled before it gets answered.
         /// </summary>
-        public event SIPUASDelegate ServerCallCancelled;
+        public event SIPUASCancelDelegate ServerCallCancelled;
 
         /// <summary>
         /// For calls accepted by this user agent this event will be fired if the call
@@ -324,6 +324,15 @@ namespace SIPSorcery.SIP.App
         /// if no event handler is hooked up the transfer will be accepted.
         /// </remarks>
         public event Func<SIPUserField, string, bool> OnTransferRequested;
+
+        /// <summary>
+        /// Allows the call descriptor for the new call to be customised before a transfer.
+        /// </summary>
+        /// <remarks>
+        /// SIPCallDescriptor: The call descriptor to be customised
+        /// SIPRequest: The refer request that initialised the transfer
+        /// </remarks>
+        public event Action<SIPCallDescriptor, SIPRequest> OnTransferCallDescriptorCreated;
 
         /// <summary>
         /// Fires when the call placed as a result of a transfer request is successfully answered.
@@ -416,7 +425,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
-        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession, int)"/> to start a call without
         /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
         /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
         /// </summary>
@@ -464,7 +473,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
-        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession, int)"/> to start a call without
         /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
         /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
         /// </summary>
@@ -617,10 +626,10 @@ namespace SIPSorcery.SIP.App
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, uasTransaction, m_answerSipAccount);
             uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
             uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
-            uas.CallCancelled += (pendingUas) =>
+            uas.CallCancelled += (pendingUas, sipCancelRequest) =>
             {
                 CallEnded(inviteRequest.Header.CallId);
-                ServerCallCancelled?.Invoke(pendingUas);
+                ServerCallCancelled?.Invoke(pendingUas, sipCancelRequest);
             };
             uas.NoRingTimeout += (pendingUas) =>
             {
@@ -1217,6 +1226,8 @@ namespace SIPSorcery.SIP.App
                                SDP.SDP_MIME_CONTENTTYPE,
                                null,
                                null);
+
+                            OnTransferCallDescriptorCreated?.Invoke(callDescriptor, referRequest);
 
                             var transferResult = await Call(callDescriptor, MediaSession).ConfigureAwait(false);
 

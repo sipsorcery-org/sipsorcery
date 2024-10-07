@@ -16,9 +16,9 @@ var log = logs.CreateLogger("Bandwidth");
 
 var rtcConfig = new RTCConfiguration
 {
-    iceServers = new List<RTCIceServer> {
+    iceServers = [
         new() { urls = "stun:stun.l.google.com:19302" },
-    },
+    ],
 };
 
 long clientReceived = 0;

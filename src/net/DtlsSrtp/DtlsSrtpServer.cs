@@ -258,7 +258,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            return new CertificateRequest(new short[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
+            return new CertificateRequest(new short[] { ClientCertificateType.rsa_sign, ClientCertificateType.ecdsa_sign }, serverSigAlgs, null);
         }
 
         public override void NotifyClientCertificate(Certificate clientCertificate)

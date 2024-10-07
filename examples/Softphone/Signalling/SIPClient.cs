@@ -291,9 +291,6 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Creates the media session to use with the SIP call.
         /// </summary>
-        /// <param name="audioSrcOpts">The audio source options to set when the call is first
-        /// answered. These options can be adjusted afterwards to do things like put play
-        /// on hold music etc.</param>
         /// <returns>A new media session object.</returns>
         private VoIPMediaSession CreateMediaSession()
         {
@@ -304,8 +301,9 @@ namespace SIPSorcery.SoftPhone
             {
                 AudioSink = windowsAudioEndPoint,
                 AudioSource = windowsAudioEndPoint,
-                VideoSink = windowsVideoEndPoint,
-                VideoSource = windowsVideoEndPoint,
+                // TODO: Not working for calls to sip:music@iptel.org. AC 29 Sep 2024.
+                //VideoSink = windowsVideoEndPoint,
+                //VideoSource = windowsVideoEndPoint,
             };
 
             // Fallback video source if a Windows webcam cannot be accessed.
@@ -365,7 +363,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// An incoming call was cancelled by the caller.
         /// </summary>
-        private void IncomingCallCancelled(ISIPServerUserAgent uas)
+        private void IncomingCallCancelled(ISIPServerUserAgent uas, SIPRequest cancelRequest)
         {
             //SetText(m_signallingStatus, "incoming call cancelled for: " + uas.CallDestination + ".");
             CallFinished(null);

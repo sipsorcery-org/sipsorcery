@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -13,10 +13,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorcery" Version="6.2.0" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.12-pre" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="1.4.0" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.31-pre" />
+    <PackageReference Include="SIPSorcery" Version="8.0.0" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.13" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="1.4.2" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="6.0.5" />
   </ItemGroup>
 
 </Project>

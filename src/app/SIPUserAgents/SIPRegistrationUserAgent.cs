@@ -54,6 +54,7 @@ namespace SIPSorcery.SIP.App
         private int m_maxRegistrationAttemptTimeout;    // The period in seconds to wait for a server response before classifying the registration request as failed.
         private int m_maxRegisterAttempts;              // The maximum number of registration attempts that will be made without a failure condition before incurring a temporary failure.
         private bool m_exitOnUnequivocalFailure;        // If true the agent will exit on failure conditions that most likely require manual intervention.
+        private string m_overridenAllowHeaderValue;
 
         private bool m_isRegistered;
         private int m_cseq;
@@ -275,6 +276,37 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Allows to override the Allow header value for REGISTER requests
+        /// </summary>
+        /// <param name="newAllowHeaderValue">a new Allow header value; if the null is passed then the default Allow header value will be used</param>
+        /// <exception cref="System.ApplicationException">if <paramref name="newAllowHeaderValue"/> contains the methods that are not allowed</exception>
+        public void OverrideAllowHeader(string newAllowHeaderValue)
+        {
+            if (string.IsNullOrEmpty(newAllowHeaderValue))
+            {
+                m_overridenAllowHeaderValue = newAllowHeaderValue;
+            }
+            else
+            {
+                IEnumerable<string> splitMethodsString(string methodsString)
+                    => methodsString.Split(',').Select(s => s.Trim());
+
+                var allowedMethods = splitMethodsString(SIPConstants.ALLOWED_SIP_METHODS);
+                var newAllowedMethods = splitMethodsString(newAllowHeaderValue);
+                var notAllowedMethods = newAllowedMethods.Except(allowedMethods).ToList();
+                if (notAllowedMethods.Count == 0)
+                {
+                    m_overridenAllowHeaderValue = newAllowHeaderValue;
+                }
+                else
+                {
+                    throw new ApplicationException(
+                        $"The following methods are not allowed: {string.Join(", ", notAllowedMethods)}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Allows the registration expiry setting to be adjusted after the instance has been created.
         /// </summary>
         /// <param name="expiry">The new expiry value.</param>
@@ -446,6 +478,9 @@ namespace SIPSorcery.SIP.App
                                 };
                                 regAuthTransaction.NonInviteTransactionFailed += RegistrationTransactionFailed;
                                 regAuthTransaction.SendRequest();
+
+                                // make sure CSeq does not decrease
+                                m_cseq = Math.Max(m_cseq, authenticatedRequest.Header.CSeq);
                             }
                         }
                     }
@@ -635,6 +670,10 @@ namespace SIPSorcery.SIP.App
             registerRequest.Header.CallId = m_callID;
             registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : SIPConstants.SipUserAgentVersionString;
             registerRequest.Header.Expires = m_expiry;
+            if (m_overridenAllowHeaderValue != null)
+            {
+                registerRequest.Header.Allow = m_overridenAllowHeaderValue;
+            }
 
             if (m_customHeaders != null && m_customHeaders.Length > 0)
             {

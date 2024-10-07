@@ -37,6 +37,9 @@ namespace SIPSorcery.Net
         BorrowedArray userData;
         public readonly ReadOnlySpan<byte> UserData => userData.Data;
 
+        /// <param name="streamID">The stream ID of the chunk.</param>
+        /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
+        /// <param name="ppid">The payload protocol ID for the chunk.</param>
         public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid)
         {
             Unordered = unordered;
