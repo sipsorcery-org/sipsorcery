@@ -19,6 +19,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
@@ -398,6 +399,21 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
+        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        {
+            var buffer=ArrayPool<byte>.Shared.Rent(packet.Length * 2);
+            try
+            {
+                var resultLength = ProtectRTP(packet, offset, length, buffer, packet.Length * 2);
+                var segment=new ArraySegment<byte>(buffer, 0, resultLength);
+                return segment.ToArray();
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+
+        }
         public int ProtectRTP(byte[] packet, int offset, int length,byte[] buffer,int bufferLength)
         {
             lock (this.srtpEncoder)
@@ -454,6 +470,20 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
+        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        {
+            var buffer=ArrayPool<byte>.Shared.Rent(packet.Length * 2);
+            try
+            {
+                var resultLength = ProtectRTCP(packet, offset, length, buffer, packet.Length * 2);
+                var segment=new ArraySegment<byte>(buffer, 0, resultLength);
+                return segment.ToArray();
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
         public int ProtectRTCP(byte[] packet, int offset, int length,byte[] buffer,int bufferLength)
         {
             lock (this.srtcpEncoder)
