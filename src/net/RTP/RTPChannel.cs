@@ -153,6 +153,8 @@ namespace SIPSorcery.Net
             }
         }
 
+        
+        private int socketLoop = 0;
         /// <summary>
         /// Handler for end of the begin receive call.
         /// </summary>
@@ -209,10 +211,17 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
+                socketLoop = 0;
+                
             }
             catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
-                // Thrown when close is called on a socket from this end. Safe to ignore.
+                // not really safe. creates a loop with stack exhaustion 
+                socketLoop++;
+                if (socketLoop > 5)
+                {
+                    Close(resetSockExcp.Message);
+                }
             }
             catch (SocketException sockExcp)
             {
@@ -462,8 +471,13 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer,int bufferLength=-1)
         {
+            if (bufferLength == -1)
+            {
+                bufferLength=buffer.Length;
+            }
+                
             if (m_isClosed)
             {
                 return SocketError.Disconnecting;
@@ -472,7 +486,7 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
             }
-            else if (buffer == null || buffer.Length == 0)
+            else if (buffer == null || bufferLength == 0)
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
             }
@@ -515,7 +529,7 @@ namespace SIPSorcery.Net
                         m_rtpReceiver.BeginReceiveFrom();
                     }
 
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                    sendSocket.BeginSendTo(buffer, 0, bufferLength, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
                     return SocketError.Success;
                 }
                 catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.

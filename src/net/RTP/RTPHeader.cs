@@ -15,8 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
@@ -143,44 +145,114 @@ namespace SIPSorcery.Net
             return GetBytes();
         }
 
-        public byte[] GetBytes()
+
+        private void WriteHeaderBytes(byte[] target, int offset, byte[] data,int datalength)
         {
-            byte[] header = new byte[Length];
-
-            UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
-
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, header, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, header, 4, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, header, 8, 4);
-
-                if (HeaderExtensionFlag == 1)
+                for (int i = 0; i <datalength; i++)
                 {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionProfile)), 0, header, 12 + 4 * CSRCCount, 2);
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionLength)), 0, header, 14 + 4 * CSRCCount, 2);
+                    target[offset+i]=data[datalength-i-1];
                 }
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, header, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, header, 4, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, header, 8, 4);
+                Buffer.BlockCopy(data,0,target,offset,datalength);
+            }            
+        }
+        private void WriteHeaderBytes(byte[] target,int offset, ushort data)
+        {
+           
+            
+            #if NET5_0_OR_GREATER
+            var buff = ArrayPool<byte>.Shared.Rent(2);
+            BitConverter.TryWriteBytes(buff, data);
+            WriteHeaderBytes(target,offset,buff,2);
+            ArrayPool<byte>.Shared.Return(buff);
+            #else
+            var buff=BitConverter.GetBytes(data);
+            WriteHeaderBytes(target,offset,buff,2);
+            #endif
+        }
+        
+        private void WriteHeaderBytes(byte[] target,int offset, uint data)
+        {
+           
+            
+#if NET5_0_OR_GREATER
+            var buff = ArrayPool<byte>.Shared.Rent(4);
+            BitConverter.TryWriteBytes(buff, data);
+            WriteHeaderBytes(target,offset,buff,4);
+            ArrayPool<byte>.Shared.Return(buff);
+#else
+            var buff=BitConverter.GetBytes(data);
+            WriteHeaderBytes(target,offset,buff,4);
+#endif
+        }
+
+        public byte[] GetBytes(byte[] header=null)
+        {
+            header ??= new byte[Length];
+           
+
+            UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+
+            WriteHeaderBytes(header, 0, firstWord);
+            WriteHeaderBytes(header, 2, SequenceNumber);
+            WriteHeaderBytes(header, 4, Timestamp);
+            WriteHeaderBytes(header, 8, SyncSource);
+            if (HeaderExtensionFlag == 1)
+            {
+                WriteHeaderBytes(header, 12 + 4 * CSRCCount, ExtensionProfile);
+                WriteHeaderBytes(header, 14 + 4 * CSRCCount, ExtensionLength);
+            }
+            
+            
+            if (ExtensionLength > 0 && ExtensionPayload != null)
+            {
+                Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
+            }
+/*
+            var legacyHeader = new byte[Length];
+            
+            
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, legacyHeader, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, legacyHeader, 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, legacyHeader, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, legacyHeader, 8, 4);
 
                 if (HeaderExtensionFlag == 1)
                 {
-                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionProfile), 0, header, 12 + 4 * CSRCCount, 2);
-                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionLength), 0, header, 14 + 4 * CSRCCount, 2);
+                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionProfile)), 0, legacyHeader, 12 + 4 * CSRCCount, 2);
+                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionLength)), 0, legacyHeader, 14 + 4 * CSRCCount, 2);
+                }
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, legacyHeader, 0, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, legacyHeader, 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, legacyHeader, 4, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, legacyHeader, 8, 4);
+
+                if (HeaderExtensionFlag == 1)
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionProfile), 0, legacyHeader, 12 + 4 * CSRCCount, 2);
+                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionLength), 0, legacyHeader, 14 + 4 * CSRCCount, 2);
                 }
             }
 
             if (ExtensionLength > 0 && ExtensionPayload != null)
             {
-                Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
+                Buffer.BlockCopy(ExtensionPayload, 0, legacyHeader, 16 + 4 * CSRCCount, ExtensionLength * 4);
             }
 
+            if (!legacyHeader.SequenceEqual(header.Take(Length)))
+            {
+                Debugger.Break();
+            }
+*/
             return header;
         }
 

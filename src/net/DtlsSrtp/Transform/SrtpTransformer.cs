@@ -70,12 +70,12 @@ namespace SIPSorcery.Net
             this.rawPacket = new RawPacket();
         }
 
-        public byte[] Transform(byte[] pkt)
+        public int Transform(byte[] pkt,byte[] outputBuffer,int outputBufferSize)
         {
-            return Transform(pkt, 0, pkt.Length);
+            return Transform(pkt, 0, pkt.Length,outputBuffer,outputBufferSize);
         }
 
-        public byte[] Transform(byte[] pkt, int offset, int length)
+        public int Transform(byte[] pkt, int offset, int length,byte[] outputBuffer,int outputBufferSize)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
 
@@ -99,9 +99,8 @@ namespace SIPSorcery.Net
 
                 // Transform RTP packet into SRTP
                 context.TransformPacket(rawPacket);
-                byte[] result = rawPacket.GetData();
+                return rawPacket.GetDataIntoBuffer(outputBuffer,outputBufferSize);
 
-                return result;
             }
             finally
             {
