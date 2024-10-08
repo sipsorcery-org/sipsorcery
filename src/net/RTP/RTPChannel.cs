@@ -153,6 +153,8 @@ namespace SIPSorcery.Net
             }
         }
 
+        
+        private int socketLoop = 0;
         /// <summary>
         /// Handler for end of the begin receive call.
         /// </summary>
@@ -209,10 +211,17 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
+                socketLoop = 0;
+                
             }
             catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
-                // Thrown when close is called on a socket from this end. Safe to ignore.
+                // not really safe. creates a loop with stack exhaustion 
+                socketLoop++;
+                if (socketLoop > 5)
+                {
+                    Close(resetSockExcp.Message);
+                }
             }
             catch (SocketException sockExcp)
             {
