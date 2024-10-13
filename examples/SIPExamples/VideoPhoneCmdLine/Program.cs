@@ -22,14 +22,14 @@
 // dotnet run -- --tp
 //
 // Calling application:
-// dotnet run --no-build -- --dst=127.0.0.1:5080 --tp
+// dotnet run --no-build -- --dst=127.0.0.1:5090 --tp
 //
 // Usage - with two webcams:
 // Listening application:
 // dotnet run
 //
 // Calling application:
-// dotnet run --no-build -- --dst=127.0.0.1:5080 --cam=1
+// dotnet run --no-build -- --dst=127.0.0.1:5090 --cam=1
 //-----------------------------------------------------------------------------
 
 using System;
@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
+using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -128,12 +129,12 @@ namespace demo
 
     class Program
     {
-        private static int SIP_PORT_DEFAULT = 5080;
+        private static int SIP_PORT_DEFAULT = 5090;
         private static int CALL_TIMEOUT_SECONDS = 20;
         private static int VIDEO_FRAME_WIDTH = 640;
         private static int VIDEO_FRAME_HEIGHT = 480;
         private const uint MAXIMUM_VIDEO_BANDWIDTH = 5000000; // 5Mbps.
-        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
+        private const VideoCodecsEnum VIDEO_CODEC = VideoCodecsEnum.H264; // VideoCodecsEnum.VP8; // Supported options are H264 or VP8.
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -148,6 +149,13 @@ namespace demo
         {
             Console.WriteLine("SIPSorcery Video Phone Command Line Demo");
             Console.WriteLine("Press ctrl-c to exit.");
+
+            unsafe
+            {
+                FFmpegInit.Initialise();
+                FFmpeg.AutoGen.ffmpeg.av_log_set_level((int)FfmpegLogLevelEnum.AV_LOG_VERBOSE);
+                FFmpeg.AutoGen.AVCodec* codec = ffmpeg.avcodec_find_encoder(AVCodecID.AV_CODEC_ID_VP8);
+            }
 
             Log = AddConsoleLogger();
             ManualResetEvent exitMRE = new ManualResetEvent(false);

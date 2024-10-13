@@ -227,6 +227,9 @@ namespace SIPSorcery.Net
                     return this.mSelectedCipherSuite = cipherSuite;
                 }
             }
+
+            logger.LogWarning($"Server selected cipher suite not supported by client. Our server cipher suites {string.Join(" ", cipherSuites)}, client ECC curves {string.Join(" ", this.mNamedCurves)}.");
+
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 

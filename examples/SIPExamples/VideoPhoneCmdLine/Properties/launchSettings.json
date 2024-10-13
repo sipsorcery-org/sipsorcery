@@ -1,7 +1,8 @@
 {
   "profiles": {
     "VideoPhoneCmdLine": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--tp"
     }
   }
 }
