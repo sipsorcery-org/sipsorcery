@@ -69,10 +69,48 @@ namespace SIPSorcery.Net
             this.contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
             this.rawPacket = new RawPacket();
         }
-
+        public byte[] Transform(byte[] pkt)
+        {
+            return Transform(pkt, 0, pkt.Length);
+        }
         public int Transform(byte[] pkt,byte[] outputBuffer,int outputBufferSize)
         {
             return Transform(pkt, 0, pkt.Length,outputBuffer,outputBufferSize);
+        }
+        
+        public byte[] Transform(byte[] pkt, int offset, int length)
+        {
+            var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
+
+            try
+            {
+                // Updates the contents of raw packet with new incoming packet 
+                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+                rawPacket.Wrap(pkt, offset, length);
+
+                // Associate packet to a crypto context
+                long ssrc = rawPacket.GetSSRC();
+                SrtpCryptoContext context = null;
+                contexts.TryGetValue(ssrc, out context);
+
+                if (context == null)
+                {
+                    context = forwardEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
+                    context.DeriveSrtpKeys(0);
+                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                }
+
+                // Transform RTP packet into SRTP
+                context.TransformPacket(rawPacket);
+                return rawPacket.GetData();
+
+            }
+            finally
+            {
+                //Unlock
+                if (!isLocked)
+                    Interlocked.CompareExchange(ref _isLocked, 0, 1);
+            }
         }
 
         public int Transform(byte[] pkt, int offset, int length,byte[] outputBuffer,int outputBufferSize)
