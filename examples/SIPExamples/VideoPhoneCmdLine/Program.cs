@@ -11,6 +11,7 @@
 // History:
 // 23 Dec 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 30 Sep 2024  Aaron Clauson   Broken :(. Needs investigation.
+// 15 Oct 2024  Aaron Clauson   Fixed. Was just missing FFmpeg initialise call.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -152,6 +153,8 @@ namespace demo
             Log = AddConsoleLogger();
             ManualResetEvent exitMRE = new ManualResetEvent(false);
             ManualResetEvent waitForCallMre = new ManualResetEvent(false);
+
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, Log);
 
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             _options = (parseResult as Parsed<Options>)?.Value;
