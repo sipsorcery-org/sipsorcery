@@ -4997,6 +4997,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedCert
   nameWithType: DtlsUtils.CreateSelfSignedCert
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedEcdsaCert(System.String,System.String)
+  name: CreateSelfSignedEcdsaCert(String, String)
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedEcdsaCert_System_String_System_String_
+  commentId: M:SIPSorcery.Net.DtlsUtils.CreateSelfSignedEcdsaCert(System.String,System.String)
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedEcdsaCert(System.String, System.String)
+  nameWithType: DtlsUtils.CreateSelfSignedEcdsaCert(String, String)
+- uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedEcdsaCert*
+  name: CreateSelfSignedEcdsaCert
+  href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedEcdsaCert_
+  commentId: Overload:SIPSorcery.Net.DtlsUtils.CreateSelfSignedEcdsaCert
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DtlsUtils.CreateSelfSignedEcdsaCert
+  nameWithType: DtlsUtils.CreateSelfSignedEcdsaCert
 - uid: SIPSorcery.Net.DtlsUtils.CreateSelfSignedTlsCert
   name: CreateSelfSignedTlsCert()
   href: api/SIPSorcery.Net.DtlsUtils.html#SIPSorcery_Net_DtlsUtils_CreateSelfSignedTlsCert
