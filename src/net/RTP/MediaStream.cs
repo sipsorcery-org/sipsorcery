@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -397,14 +398,20 @@ namespace SIPSorcery.net.RTP
             return rv;
         }
 
-        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
+        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null,int dataLength=-1)
         {
+            if (dataLength < 0)
+            {
+                dataLength = data.Length;
+            }
+
             if (checkDone || CheckIfCanSendRtpRaw())
             {
                 ProtectRtpPacket protectRtpPacket = SecureContext?.ProtectRtpPacket;
                 int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
 
-                RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
+                var packetPayloadBuffer=ArrayPool<byte>.Shared.Rent(dataLength + srtpProtectionLength);
+                RTPPacket rtpPacket = new RTPPacket(packetPayloadBuffer,dataLength + srtpProtectionLength);
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
                 rtpPacket.Header.SequenceNumber = seqNum ?? LocalTrack.GetNextSeqNum();
                 rtpPacket.Header.Timestamp = timestamp;
@@ -430,7 +437,8 @@ namespace SIPSorcery.net.RTP
                 */
                 if (LocalTrack?.HeaderExtensions?.Values.Count > 0)
                 {
-                    byte[] payload = null;
+                    int payloadLength = 0;
+                    byte[] payload = ArrayPool<byte>.Shared.Rent(1024*1024);
                     foreach (var ext in LocalTrack.HeaderExtensions.Values)
                     {
                         // We support up to 14 extensions .... Not clear at all how to manage more ...
@@ -441,6 +449,9 @@ namespace SIPSorcery.net.RTP
 
                         // Get extension payload and combine it to global payload
                         var extPayLoad = ext.Marshal();
+                        extPayLoad.CopyTo(payload,0);
+                        payloadLength += extPayLoad.Length;
+                        /*
                         if (payload == null)
                         {
                             payload = extPayLoad;
@@ -448,23 +459,28 @@ namespace SIPSorcery.net.RTP
                         else
                         {
                             payload = Combine(payload, extPayLoad);
-                        }
+                        }*/
                     }
 
-                    if(payload?.Length > 0)
+                    if(payloadLength > 0)
                     {
                         // Need to round to 4 bytes boundaries
-                        var roundedExtSize = payload.Length % 4;
+                        var roundedExtSize = payloadLength % 4;
                         if(roundedExtSize > 0)
                         {
-                            var padding = Enumerable.Repeat((byte)0, 4 - roundedExtSize).ToArray();
-                            payload = Combine(payload, padding);
+                            for (int i = 1; i <= roundedExtSize; i++)
+                            {
+                                payload[i] = 0;
+                            }
+
+                            payloadLength += roundedExtSize;
                         }
 
                         rtpPacket.Header.HeaderExtensionFlag = 1; // We have at least one extension
                         rtpPacket.Header.ExtensionLength = (ushort) (payload.Length / 4);  // payload length / 4 
                         rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE; // We support up to 14 extensions .... Not clear at all how to manage more ...
-                        rtpPacket.Header.ExtensionPayload = payload;
+                        rtpPacket.Header.ExtensionPayload = payload.Take(payloadLength).ToArray();
+                        ArrayPool<byte>.Shared.Return(payload);
                     }
                 }
                 else
@@ -472,9 +488,11 @@ namespace SIPSorcery.net.RTP
                     rtpPacket.Header.HeaderExtensionFlag = 0;
                 }
 
-                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
+                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, dataLength);
 
-                var rtpBuffer = rtpPacket.GetBytes();
+                var rtpBuffer=ArrayPool<byte>.Shared.Rent(rtpPacket.CalculatedSize());
+                var bufferSize=rtpPacket.GetBytes(rtpBuffer);
+                //var rtpBuffer = rtpPacket.GetBytes();
 
                 if (protectRtpPacket == null)
                 {
@@ -482,19 +500,21 @@ namespace SIPSorcery.net.RTP
                 }
                 else
                 {
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
+                    int rtperr = protectRtpPacket(rtpBuffer, bufferSize - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer,outBufLen);
                     }
                 }
                 m_lastRtpTimestamp = timestamp;
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
+                ArrayPool<byte>.Shared.Return(rtpBuffer);
+                ArrayPool<byte>.Shared.Return(packetPayloadBuffer);
             }
         }
 
