@@ -50,6 +50,7 @@ using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
@@ -484,9 +485,61 @@ namespace SIPSorcery.Net
             return (certificate, subjectKeyPair.Private);
         }
 
+        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert(string subjectName, string issuerName)
+        {
+            var randomGenerator = new CryptoApiRandomGenerator();
+            var random = new SecureRandom(randomGenerator);
+
+            // Choose an elliptic curve, e.g., secp256r1 (P-256)
+            var ecSpec = ECNamedCurveTable.GetByName("secp256r1");
+
+            // Convert X9ECParameters to ECDomainParameters
+            var ecDomainParameters = new ECDomainParameters(ecSpec.Curve, ecSpec.G, ecSpec.N, ecSpec.H, ecSpec.GetSeed());
+
+            // Generate ECDSA key pair
+            var keyPairGenerator = new ECKeyPairGenerator("EC");
+            var keyGenerationParameters = new ECKeyGenerationParameters(ecDomainParameters, random);
+            keyPairGenerator.Init(keyGenerationParameters);
+            var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
+
+            // Generate ECDSA signature factory
+            ISignatureFactory signatureFactory = new Asn1SignatureFactory("SHA256WITHECDSA", subjectKeyPair.Private, random);
+
+            // The Certificate Generator
+            var certificateGenerator = new X509V3CertificateGenerator();
+            certificateGenerator.SetSerialNumber(BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random));
+            certificateGenerator.SetIssuerDN(new X509Name(issuerName));
+            certificateGenerator.SetSubjectDN(new X509Name(subjectName));
+            certificateGenerator.SetNotBefore(DateTime.UtcNow.Date);
+            certificateGenerator.SetNotAfter(DateTime.UtcNow.Date.AddYears(70));
+            certificateGenerator.SetPublicKey(subjectKeyPair.Public);
+
+            // Generate the self-signed certificate
+            var certificate = certificateGenerator.Generate(signatureFactory);
+
+            return (certificate, subjectKeyPair.Private);
+        }
+
         public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
         {
             return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
+
+            // Testing with ECDSA certificate. Worked with aiortc WebRTC Python library.
+            // ECDSA is recommended over RSA but is it as well supported as of 14 Oct 2024??
+            // ECSA failed with:
+            //  - libwebrtc (albeit a 3 year old verison)
+            //  - webrtc-rs (Rust library)
+            //  - werift-webtc (nodejs)
+            // ECDA Succeeded with:
+            //  - aiortc (Python library)
+            //  - pion (Go library)
+
+            //var (cert, key) = CreateSelfSignedEcdsaCert("CN=localhost", "CN=root");
+
+            //var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(cert.GetEncoded()) };
+            //var tlsCertificate = new Org.BouncyCastle.Crypto.Tls.Certificate(chain);
+
+            //return (tlsCertificate, key);
         }
 
         public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
