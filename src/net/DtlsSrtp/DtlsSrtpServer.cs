@@ -143,25 +143,25 @@ namespace SIPSorcery.Net
 
         public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
         {
-            if (certificateChain == null && privateKey == null)
-            {
-                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
-            }
-
             this.cipherSuites = base.GetCipherSuites();
 
-            // Add some additional cipher suites to test ECDSA. Bouncy Castle's default list does not include enough options to overlap with some common webrtc libraries.
-            //int[] newCipherSuites = new int[this.cipherSuites.Length + 1];
-            //Array.Copy(this.cipherSuites, newCipherSuites, this.cipherSuites.Length);
-            //newCipherSuites[this.cipherSuites.Length] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
-            //this.cipherSuites = newCipherSuites;
+            // Add ECDSA-based cipher suites to the list. Will need to be adjusted when BouncyCastle updates its list of supported cipher suites.
+            int[] newCipherSuites = new int[this.cipherSuites.Length + 4]; // Adding 4 cipher suites
+            Array.Copy(this.cipherSuites, newCipherSuites, this.cipherSuites.Length);
 
-            this.mPrivateKey = privateKey;
+            // Add desired ECDSA cipher suites
+            newCipherSuites[this.cipherSuites.Length] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;           // 0xC02B
+            newCipherSuites[this.cipherSuites.Length + 1] = CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256; // 0xCCA9
+            newCipherSuites[this.cipherSuites.Length + 2] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA;          // 0xC009
+            newCipherSuites[this.cipherSuites.Length + 3] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA;          // 0xC00A
+
+            this.cipherSuites = newCipherSuites;
+
+            mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
 
             //Generate FingerPrint
             var certificate = mCertificateChain.GetCertificateAt(0);
-
             this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
@@ -205,14 +205,42 @@ namespace SIPSorcery.Net
             }
         }
 
+        //public override int GetSelectedCipherSuiteX()
+        //{
+        //    /*
+        //     * TODO RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate cipher suites against the
+        //     * "signature_algorithms" extension before selecting them. This is somewhat inelegant but is a compromise designed to
+        //     * minimize changes to the original cipher suite design.
+        //     */
+
+        //    /*
+        //     * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these extensions MUST use the client's
+        //     * enumerated capabilities to guide its selection of an appropriate cipher suite. One of the proposed ECC cipher suites
+        //     * must be negotiated only if the server can successfully complete the handshake while using the curves and point
+        //     * formats supported by the client [...].
+        //     */
+        //    bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
+
+        //    int[] cipherSuites = GetCipherSuites();
+        //    for (int i = 0; i < cipherSuites.Length; ++i)
+        //    {
+        //        int cipherSuite = cipherSuites[i];
+
+        //        if (Arrays.Contains(this.mOfferedCipherSuites, cipherSuite)
+        //                && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
+        //                && TlsUtilities.IsValidCipherSuiteForVersion(cipherSuite, mServerVersion))
+        //        {
+        //            return this.mSelectedCipherSuite = cipherSuite;
+        //        }
+        //    }
+
+        //    logger.LogWarning($"DTLS server no matching cipher suite. Our server cipher suites {string.Join(" ", cipherSuites)}, client offered suites {string.Join(" ", this.mOfferedCipherSuites)}.");
+
+        //    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        //}
+
         public override int GetSelectedCipherSuite()
         {
-            /*
-             * TODO RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate cipher suites against the
-             * "signature_algorithms" extension before selecting them. This is somewhat inelegant but is a compromise designed to
-             * minimize changes to the original cipher suite design.
-             */
-
             /*
              * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these extensions MUST use the client's
              * enumerated capabilities to guide its selection of an appropriate cipher suite. One of the proposed ECC cipher suites
@@ -221,6 +249,7 @@ namespace SIPSorcery.Net
              */
             bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
 
+            // Get available cipher suites
             int[] cipherSuites = GetCipherSuites();
             for (int i = 0; i < cipherSuites.Length; ++i)
             {
@@ -230,14 +259,40 @@ namespace SIPSorcery.Net
                         && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
                         && TlsUtilities.IsValidCipherSuiteForVersion(cipherSuite, mServerVersion))
                 {
-                    return this.mSelectedCipherSuite = cipherSuite;
+                    // Cipher suite selected
+                    this.mSelectedCipherSuite = cipherSuite;
+
+                    if (mCertificateChain == null)
+                    {
+                        // Now, choose the certificate based on the selected cipher suite
+                        if (TlsEccUtilities.IsEccCipherSuite(cipherSuite))
+                        {
+                            // If ECC cipher suite, create an ECDSA certificate
+                            (mCertificateChain, mPrivateKey) = DtlsUtils.CreateSelfSignedEcdsaCert();
+                        }
+                        else
+                        {
+                            // If non-ECC cipher suite, create an RSA certificate
+                            (mCertificateChain, mPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                        }
+
+                        //Generate FingerPrint
+                        var certificate = mCertificateChain.GetCertificateAt(0);
+                        this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
+                    }
+
+                    // Optionally log the selected cipher suite and certificate type
+                    logger.LogInformation($"Selected cipher suite: {cipherSuite}. Using {(TlsEccUtilities.IsEccCipherSuite(cipherSuite) ? "ECDSA" : "RSA")} certificate with fingerprint {this.mFingerPrint}.");
+
+                    return this.mSelectedCipherSuite;
                 }
             }
 
+            // If no matching cipher suite is found, throw a fatal alert
             logger.LogWarning($"DTLS server no matching cipher suite. Our server cipher suites {string.Join(" ", cipherSuites)}, client offered suites {string.Join(" ", this.mOfferedCipherSuites)}.");
-
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
+
 
         public override CertificateRequest GetCertificateRequest()
         {

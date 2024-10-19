@@ -43,6 +43,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -485,12 +486,17 @@ namespace SIPSorcery.Net
             return (certificate, subjectKeyPair.Private);
         }
 
-        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert(string subjectName, string issuerName)
+        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert()
+        {
+            return CreateSelfSignedEcdsaCert("CN=localhost", "CN=root");
+        }
+
+        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert(string subjectName, string issuerName)
         {
             var randomGenerator = new CryptoApiRandomGenerator();
             var random = new SecureRandom(randomGenerator);
 
-            // Choose an elliptic curve, e.g., secp256r1 (P-256)
+            // Choose elliptic curve secp256r1 (P-256)
             var ecSpec = ECNamedCurveTable.GetByName("secp256r1");
 
             // Convert X9ECParameters to ECDomainParameters
@@ -514,32 +520,23 @@ namespace SIPSorcery.Net
             certificateGenerator.SetNotAfter(DateTime.UtcNow.Date.AddYears(70));
             certificateGenerator.SetPublicKey(subjectKeyPair.Public);
 
+            // Add necessary extensions for TLS Web Server Authentication
+            certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
+            certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier>() { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") })); // TLS Web Server Authentication
+
             // Generate the self-signed certificate
             var certificate = certificateGenerator.Generate(signatureFactory);
 
-            return (certificate, subjectKeyPair.Private);
+            // Convert to TLS certificate format (for BouncyCastle's DTLS implementation)
+            var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(certificate.GetEncoded()) };
+            var tlsCertificate = new Org.BouncyCastle.Crypto.Tls.Certificate(chain);
+
+            return (tlsCertificate, subjectKeyPair.Private);
         }
 
         public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
         {
             return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
-
-            // Testing with ECDSA certificate. Worked with aiortc WebRTC Python library.
-            // ECDSA is recommended over RSA but is it as well supported as of 14 Oct 2024??
-            // ECSA failed with:
-            //  - libwebrtc (albeit a 3 year old verison)
-            //  - webrtc-rs (Rust library)
-            //  - werift-webtc (nodejs)
-            // ECDA Succeeded with:
-            //  - aiortc (Python library)
-            //  - pion (Go library)
-
-            //var (cert, key) = CreateSelfSignedEcdsaCert("CN=localhost", "CN=root");
-
-            //var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(cert.GetEncoded()) };
-            //var tlsCertificate = new Org.BouncyCastle.Crypto.Tls.Certificate(chain);
-
-            //return (tlsCertificate, key);
         }
 
         public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
@@ -616,7 +613,6 @@ namespace SIPSorcery.Net
 
             //return x509;
         }
-
 
         public static AsymmetricKeyParameter CreatePrivateKeyResource(string subjectName = "CN=root")
         {
