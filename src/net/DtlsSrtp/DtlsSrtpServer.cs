@@ -142,30 +142,6 @@ namespace SIPSorcery.Net
         {
         }
 
-        //public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
-        //{
-        //    this.cipherSuites = base.GetCipherSuites();
-
-        //    // Add ECDSA-based cipher suites to the list. Will need to be adjusted when BouncyCastle updates its list of supported cipher suites.
-        //    int[] newCipherSuites = new int[this.cipherSuites.Length + 4]; // Adding 4 cipher suites
-        //    Array.Copy(this.cipherSuites, newCipherSuites, this.cipherSuites.Length);
-
-        //    // Add desired ECDSA cipher suites
-        //    newCipherSuites[this.cipherSuites.Length] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;           // 0xC02B
-        //    newCipherSuites[this.cipherSuites.Length + 1] = CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256; // 0xCCA9
-        //    newCipherSuites[this.cipherSuites.Length + 2] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA;          // 0xC009
-        //    newCipherSuites[this.cipherSuites.Length + 3] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA;          // 0xC00A
-
-        //    this.cipherSuites = newCipherSuites;
-
-        //    mPrivateKey = privateKey;
-        //    mCertificateChain = certificateChain;
-
-        //    //Generate FingerPrint
-        //    var certificate = mCertificateChain.GetCertificateAt(0);
-        //    this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
-        //}
-
         public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
         {
             // Check if the certificate is ECDSA or RSA
@@ -182,10 +158,10 @@ namespace SIPSorcery.Net
                 // Set only ECDSA-based cipher suites
                 newCipherSuites = new int[]
                 {
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,                // 0xC00A
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
                     CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, // 0xCCA9
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
                 };
             }
             else

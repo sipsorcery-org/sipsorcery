@@ -46,9 +46,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Bcpg;
@@ -59,6 +61,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
@@ -71,14 +74,19 @@ namespace SIPSorcery.Net
     public class DtlsUtils
     {
         /// <summary>
-        /// The key size when generating random keys for self signed certificates.
+        /// The RSA key size when generating random keys for self signed certificates.
         /// </summary>
-        public const int DEFAULT_KEY_SIZE = 2048;
+        public const int DEFAULT_RSA_KEY_SIZE = 2048;
 
         /// <summary>
         /// The W3C WebRTC specification specifies certificate should be valid for 30 days https://www.w3.org/TR/webrtc/#methods-3.
         /// </summary>
         public const int CERTIFICATE_VALIDITY_DAYS = 30;
+
+        /// <summary>
+        /// Common name to use for ephemeral DTSL certificates.
+        /// </summary>
+        public const string CERTIFICATE_COMMON_NAME = "WebRTC";
 
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -333,8 +341,8 @@ namespace SIPSorcery.Net
         private static X509V3CertificateGenerator GetV3CertificateGenerator(string subjectName, string issuerName, SecureRandom random)
         {
             var certificateGenerator = new X509V3CertificateGenerator();
-            certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
-            certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier>() { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
+            //certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
+            //certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier>() { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
 
             // Serial Number
             var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
@@ -347,7 +355,7 @@ namespace SIPSorcery.Net
             certificateGenerator.SetSubjectDN(subjectDn);
 
             // Valid For.
-            var notBefore = DateTime.UtcNow.Date;
+            var notBefore = DateTime.UtcNow.Date.AddDays(-1);
             var notAfter = notBefore.AddDays(CERTIFICATE_VALIDITY_DAYS);
 
             certificateGenerator.SetNotBefore(notBefore);
@@ -358,12 +366,11 @@ namespace SIPSorcery.Net
 
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedRsaCert()
         {
-            return CreateSelfSignedRsaCert("CN=localhost", "CN=root", null);
+            return CreateSelfSignedRsaCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}", null);
         }
 
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedRsaCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
-            const int keyStrength = DEFAULT_KEY_SIZE;
             if (issuerPrivateKey == null)
             {
                 issuerPrivateKey = CreatePrivateKeyResource(issuerName);
@@ -377,7 +384,7 @@ namespace SIPSorcery.Net
             var certificateGenerator = GetV3CertificateGenerator(subjectName, issuerName, random);
 
             // Subject Public Key
-            var keyGenerationParameters = new KeyGenerationParameters(random, keyStrength);
+            var keyGenerationParameters = new KeyGenerationParameters(random, DEFAULT_RSA_KEY_SIZE);
             var keyPairGenerator = new RsaKeyPairGenerator();
             keyPairGenerator.Init(keyGenerationParameters);
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
@@ -392,24 +399,20 @@ namespace SIPSorcery.Net
 
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert()
         {
-            return CreateSelfSignedEcdsaCert("CN=localhost", "CN=root");
+            return CreateSelfSignedEcdsaCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}");
         }
 
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert(string subjectName, string issuerName)
         {
             var randomGenerator = new CryptoApiRandomGenerator();
             var random = new SecureRandom(randomGenerator);
-
-            // Choose elliptic curve secp256r1 (P-256)
             var ecSpec = ECNamedCurveTable.GetByName("secp256r1");
 
-            // Convert X9ECParameters to ECDomainParameters
-            var ecDomainParameters = new ECDomainParameters(ecSpec.Curve, ecSpec.G, ecSpec.N, ecSpec.H, ecSpec.GetSeed());
-
-            // Generate ECDSA key pair
             var keyPairGenerator = new ECKeyPairGenerator("EC");
-            var keyGenerationParameters = new ECKeyGenerationParameters(ecDomainParameters, random);
+            ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(new ECDomainParameters(ecSpec), random);
+
             keyPairGenerator.Init(keyGenerationParameters);
+
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
 
             // Generate ECDSA signature factory
@@ -418,16 +421,19 @@ namespace SIPSorcery.Net
             // The Certificate Generator
             var certificateGenerator = GetV3CertificateGenerator(subjectName, issuerName, random);
 
+            // Create the SubjectPublicKeyInfo with the OID for the named curve secp256r1 (prime256v1)
+            ECPublicKeyParameters ecPublicKeyParameters = (ECPublicKeyParameters)subjectKeyPair.Public;
+            SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(ecPublicKeyParameters);
+
             certificateGenerator.SetPublicKey(subjectKeyPair.Public);
 
-            // Generate the self-signed certificate
             var certificate = certificateGenerator.Generate(signatureFactory);
 
             return (certificate, subjectKeyPair.Private);
         }
 
         public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(bool useRsa = false)
-            => CreateSelfSignedTlsCert("CN=localhost", "CN=root", null, useRsa);
+            => CreateSelfSignedTlsCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}", null, useRsa);
 
         public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey, bool useRsa)
         {
@@ -509,34 +515,12 @@ namespace SIPSorcery.Net
 
         public static AsymmetricKeyParameter CreatePrivateKeyResource(string subjectName = "CN=root")
         {
-            const int keyStrength = DEFAULT_KEY_SIZE;
-
             // Generating Random Numbers
             var randomGenerator = new CryptoApiRandomGenerator();
             var random = new SecureRandom(randomGenerator);
 
-            // The Certificate Generator
-            //var certificateGenerator = new X509V3CertificateGenerator();
-
-            //// Serial Number
-            //var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(long.MaxValue), random);
-            //certificateGenerator.SetSerialNumber(serialNumber);
-
-            //// Issuer and Subject Name
-            //var subjectDn = new X509Name(subjectName);
-            //var issuerDn = subjectDn;
-            //certificateGenerator.SetIssuerDN(issuerDn);
-            //certificateGenerator.SetSubjectDN(subjectDn);
-
-            //// Valid For
-            //var notBefore = DateTime.UtcNow.Date;
-            //var notAfter = notBefore.AddYears(70);
-
-            //certificateGenerator.SetNotBefore(notBefore);
-            //certificateGenerator.SetNotAfter(notAfter);
-
             // Subject Public Key
-            var keyGenerationParameters = new KeyGenerationParameters(random, keyStrength);
+            var keyGenerationParameters = new KeyGenerationParameters(random, DEFAULT_RSA_KEY_SIZE);
             var keyPairGenerator = new RsaKeyPairGenerator();
             keyPairGenerator.Init(keyGenerationParameters);
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
@@ -619,6 +603,12 @@ namespace SIPSorcery.Net
                 default:
                     return false;
             }
+        }
+
+        public static string ExportToDerBase64(Org.BouncyCastle.Crypto.Tls.Certificate certificate)
+        {
+            var certificateBytes = certificate.GetCertificateList()[0].GetEncoded();
+            return Convert.ToBase64String(certificateBytes);
         }
     }
 }
