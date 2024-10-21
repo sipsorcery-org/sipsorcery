@@ -27,14 +27,12 @@
 // - P-384, also known as secp384r1.
 // - P-521, also known as secp521r1.
 //
-// TODO: Switch the self-signed certificates generated in this class to use
-// ECDSA instead of RSA.
-//
 // Author(s):
 // Rafael Soares (raf.csoares@kyubinteractive.com)
 //
 // History:
 // 01 Jul 2020	Rafael Soares   Created.
+// 21 Oct 2024  Aaron Clauson   Added ECDSA certificate generation.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -42,15 +40,11 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Bcpg;
@@ -61,7 +55,6 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
@@ -341,8 +334,6 @@ namespace SIPSorcery.Net
         private static X509V3CertificateGenerator GetV3CertificateGenerator(string subjectName, string issuerName, SecureRandom random)
         {
             var certificateGenerator = new X509V3CertificateGenerator();
-            //certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
-            //certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier>() { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
 
             // Serial Number
             var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
@@ -409,7 +400,7 @@ namespace SIPSorcery.Net
             var ecSpec = ECNamedCurveTable.GetByName("secp256r1");
 
             var keyPairGenerator = new ECKeyPairGenerator("EC");
-            ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(new ECDomainParameters(ecSpec), random);
+            ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(X9ObjectIdentifiers.Prime256v1, random);
 
             keyPairGenerator.Init(keyGenerationParameters);
 
@@ -420,10 +411,6 @@ namespace SIPSorcery.Net
 
             // The Certificate Generator
             var certificateGenerator = GetV3CertificateGenerator(subjectName, issuerName, random);
-
-            // Create the SubjectPublicKeyInfo with the OID for the named curve secp256r1 (prime256v1)
-            ECPublicKeyParameters ecPublicKeyParameters = (ECPublicKeyParameters)subjectKeyPair.Public;
-            SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(ecPublicKeyParameters);
 
             certificateGenerator.SetPublicKey(subjectKeyPair.Public);
 

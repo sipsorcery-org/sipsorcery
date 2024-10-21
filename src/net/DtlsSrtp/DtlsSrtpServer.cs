@@ -11,6 +11,7 @@
 //
 // History:
 // 01 Jul 2020	Rafael Soares   Created.
+// 21 Oct 2024  Aaron Clauson   Improved the cipher suite selection logic.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -158,9 +159,9 @@ namespace SIPSorcery.Net
                 // Set only ECDSA-based cipher suites
                 newCipherSuites = new int[]
                 {
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
                     CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,                // 0xC00A
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
                     CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, // 0xCCA9
                 };
             }
@@ -251,8 +252,8 @@ namespace SIPSorcery.Net
                 .ToArray();
 
             // Log the offered cipher suites by both server and client
-            logger.LogInformation($"Server offered cipher suites:\n {string.Join("\n ", serverCipherSuiteNames)}");
-            logger.LogInformation($"Client offered cipher suites:\n {string.Join("\n ", clientCipherSuiteNames)}");
+            logger.LogTrace($"Server offered cipher suites:\n {string.Join("\n ", serverCipherSuiteNames)}");
+            logger.LogTrace($"Client offered cipher suites:\n {string.Join("\n ", clientCipherSuiteNames)}");
 
             // Get available cipher suites
             for (int i = 0; i < cipherSuites.Length; ++i)
@@ -268,14 +269,6 @@ namespace SIPSorcery.Net
 
                     if (mCertificateChain == null)
                     {
-                        // Now, choose the certificate based on the selected cipher suite
-                        //bool useRsaCertificate = TlsEccUtilities.IsEccCipherSuite(cipherSuite);
-                        //(mCertificateChain, mPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(useEcdsa: useEcdsaCertificate);
-
-                        ////Generate FingerPrint
-                        //var certificate = mCertificateChain.GetCertificateAt(0);
-                        //this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
-
                         logger.LogWarning($"No certificate was set for {nameof(DtlsSrtpServer)}.");
 
                         throw new TlsFatalAlert(AlertDescription.certificate_unobtainable);

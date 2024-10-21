@@ -423,9 +423,8 @@ namespace SIPSorcery.Net
 
             logger.LogDebug($"RTCPeerConnection created with DTLS certificate fingerprint {DtlsCertificateFingerprint}");
 
-            // Save to a file, adding "-----BEGIN CERTIFICATE-----" at the start and "-----END CERTIFICATE-----" at the end.
-            // Then to decode use: openssl x509 -in webrtc-cert.pem -text -noout
-            logger.LogDebug($"Base64 certificate: {DtlsUtils.ExportToDerBase64(_dtlsCertificate)}");
+            // Save this lg message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
+            logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{DtlsUtils.ExportToDerBase64(_dtlsCertificate)}\n-----END CERTIFICATE-----");
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();

@@ -571,7 +571,7 @@ namespace SIPSorcery.Examples
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
                 iceTransportPolicy = relayOnly ? RTCIceTransportPolicy.relay : RTCIceTransportPolicy.all,
                 //X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
-                //X_UseRsaForDtlsCertificate = true,
+                X_UseRsaForDtlsCertificate = true,
             };
 
             _peerConnection = new RTCPeerConnection(pcConfiguration);
@@ -735,7 +735,7 @@ namespace SIPSorcery.Examples
         {
             var loggerConfig = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(loggerConfig);
