@@ -52,7 +52,7 @@ namespace SIPSorcery.Net
 
             return DtlsUtils.LoadSignerCredentials(mContext,
                 certificateRequest.SupportedSignatureAlgorithms,
-                SignatureAlgorithm.rsa,
+                SignatureAlgorithm.ecdsa,
                 mClient.mCertificateChain,
                 mClient.mPrivateKey);
         }

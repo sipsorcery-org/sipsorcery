@@ -416,7 +416,7 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(useRsa: configuration.X_UseRsaForDtlsCertificate);
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(useRsa: configuration?.X_UseRsaForDtlsCertificate ?? false);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
