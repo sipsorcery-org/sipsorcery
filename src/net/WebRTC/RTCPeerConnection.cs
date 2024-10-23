@@ -423,7 +423,7 @@ namespace SIPSorcery.Net
 
             logger.LogDebug($"RTCPeerConnection created with DTLS certificate fingerprint {DtlsCertificateFingerprint}");
 
-            // Save this lg message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
+            // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
             logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{DtlsUtils.ExportToDerBase64(_dtlsCertificate)}\n-----END CERTIFICATE-----");
 
             SessionID = Guid.NewGuid().ToString();
@@ -1818,8 +1818,14 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
+                var remoteCertificate = dtlsHandle.GetRemoteCertificate().GetCertificateAt(0);
+
+                // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
+                logger.LogTrace("Remote peer DTLS certificate.");
+                logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(remoteCertificate.GetDerEncoded())}\n-----END CERTIFICATE-----");
+
                 var expectedFp = RemotePeerDtlsFingerprint;
-                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, remoteCertificate);
 
                 if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
                 {

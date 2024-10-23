@@ -571,7 +571,7 @@ namespace SIPSorcery.Examples
                 iceServers = stunServer != null ? new List<RTCIceServer> { stunServer } : null,
                 iceTransportPolicy = relayOnly ? RTCIceTransportPolicy.relay : RTCIceTransportPolicy.all,
                 //X_BindAddress = IPAddress.Any, // NOTE: Not reqd. Using this to filter out IPv6 addresses so can test with Pion.
-                //X_UseRsaForDtlsCertificate = true,
+                X_UseRsaForDtlsCertificate = true,
             };
 
             _peerConnection = new RTCPeerConnection(pcConfiguration);
