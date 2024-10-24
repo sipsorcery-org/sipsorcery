@@ -150,6 +150,12 @@ namespace SIPSorcery.Net
 
             this.cipherSuites = base.GetCipherSuites();
 
+            // Add some additional cipher suites to test ECDSA. Bouncy Castle's default list does not include enough options to overlap with some common webrtc libraries.
+            //int[] newCipherSuites = new int[this.cipherSuites.Length + 1];
+            //Array.Copy(this.cipherSuites, newCipherSuites, this.cipherSuites.Length);
+            //newCipherSuites[this.cipherSuites.Length] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
+            //this.cipherSuites = newCipherSuites;
+
             this.mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
 
@@ -227,6 +233,9 @@ namespace SIPSorcery.Net
                     return this.mSelectedCipherSuite = cipherSuite;
                 }
             }
+
+            logger.LogWarning($"DTLS server no matching cipher suite. Our server cipher suites {string.Join(" ", cipherSuites)}, client offered suites {string.Join(" ", this.mOfferedCipherSuites)}.");
+
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
@@ -503,6 +512,7 @@ namespace SIPSorcery.Net
             {
                 cipherSuites[i] = this.cipherSuites[i];
             }
+         
             return cipherSuites;
         }
 
