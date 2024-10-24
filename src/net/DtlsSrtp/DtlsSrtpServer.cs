@@ -92,10 +92,9 @@ namespace SIPSorcery.Net
 
         Certificate mCertificateChain = null;
         AsymmetricKeyParameter mPrivateKey = null;
+        bool mIsEcdsaCertificate = false;
 
         private RTCDtlsFingerprint mFingerPrint;
-
-        //private AlgorithmCertificate algorithmCertificate;
 
         public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
@@ -150,11 +149,11 @@ namespace SIPSorcery.Net
             var signatureAlgorithmOid = certificate.SignatureAlgorithm.Algorithm.Id;
 
             // Check if the certificate is ECDSA or RSA based on the OID
-            bool isEcdsaCertificate = signatureAlgorithmOid.StartsWith("1.2.840.10045.4.3"); // OID prefix for ECDSA
+            mIsEcdsaCertificate = signatureAlgorithmOid.StartsWith("1.2.840.10045.4.3"); // OID prefix for ECDSA
 
             int[] newCipherSuites;
 
-            if (isEcdsaCertificate)
+            if (mIsEcdsaCertificate)
             {
                 // Set only ECDSA-based cipher suites
                 newCipherSuites = new int[]
@@ -277,7 +276,7 @@ namespace SIPSorcery.Net
                     // Log the selected cipher suite and certificate type
                     string cipherSuiteName = CipherSuiteNames.ContainsKey(cipherSuite) ? CipherSuiteNames[cipherSuite] : cipherSuite.ToString();
 
-                    logger.LogInformation($"Selected cipher suite: {cipherSuiteName}. Using {(TlsEccUtilities.IsEccCipherSuite(cipherSuite) ? "ECDSA" : "RSA")} certificate with fingerprint {this.mFingerPrint}.");
+                    logger.LogInformation($"Selected cipher suite: {cipherSuiteName}. Using {(mIsEcdsaCertificate ? "ECDSA" : "RSA")} certificate with fingerprint {this.mFingerPrint}.");
 
                     return this.mSelectedCipherSuite;
                 }

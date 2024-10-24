@@ -24,8 +24,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    internal class DtlsSrtpTlsAuthentication
-            : TlsAuthentication
+    internal class DtlsSrtpTlsAuthentication : TlsAuthentication
     {
         private readonly DtlsSrtpClient mClient;
         private readonly TlsContext mContext;
@@ -38,7 +37,6 @@ namespace SIPSorcery.Net
 
         public virtual void NotifyServerCertificate(Certificate serverCertificate)
         {
-            //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
             mClient.ServerCertificate = serverCertificate;
         }
 
