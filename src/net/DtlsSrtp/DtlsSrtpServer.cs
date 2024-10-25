@@ -6,6 +6,24 @@
 // Derived From:
 // https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/DtlsSrtpServer.java
 //
+// Notes:
+// I was unable to find good info on how the DTLS handshake works with regards the server
+// and client using different certificate type, e.g. RSA and ECDSA. Eventually I determined
+// that the crucial properties are:
+// - The type of the DTLS server's certificate. This certificate dictates which cipher suite
+//   can be used. The digital signature algorithm in the server's certificate and in the cipher
+//   suite MUST match.
+// - The client's certificate is NOT used to determine the cipher suite. The client's certificate
+//   is only used for authentication. It can be either RSA or ECDSA providing the server is
+//   capable of verifying it (at this stage all WebRTC implementations should implement both
+//   RSA and ECDSA).
+//
+// Based on this understanding the main failure condition is if the client only supports cipher
+// suites for ONE of RSA or ECDSA. If the server's certificate is for the other type then the handshake
+// cannot proceed.
+//
+// Aaron Clauson 25 Oct 2024.
+//
 // Author(s):
 // Rafael Soares (raf.csoares@kyubinteractive.com)
 //
@@ -96,6 +114,8 @@ namespace SIPSorcery.Net
 
         private RTCDtlsFingerprint mFingerPrint;
 
+        private string mSignatureAlgorithm;
+
         public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
         public Certificate ClientCertificate { get; private set; }
@@ -144,6 +164,11 @@ namespace SIPSorcery.Net
 
         public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
         {
+            if (certificateChain == null && privateKey == null)
+            {
+                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            }
+
             // Check if the certificate is ECDSA or RSA
             var certificate = certificateChain.GetCertificateAt(0);
             var signatureAlgorithmOid = certificate.SignatureAlgorithm.Algorithm.Id;
@@ -185,6 +210,8 @@ namespace SIPSorcery.Net
 
             // Generate fingerprint
             this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
+
+            mSignatureAlgorithm = certificate != null ? DtlsUtils.GetSignatureAlgorithm(certificate) : string.Empty;
         }
 
         public RTCDtlsFingerprint Fingerprint
@@ -242,12 +269,12 @@ namespace SIPSorcery.Net
 
             // Convert server cipher suites to human-readable names
             var serverCipherSuiteNames = cipherSuites
-                .Select(cs => CipherSuiteNames.ContainsKey(cs) ? CipherSuiteNames[cs] : cs.ToString())
+                .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
                 .ToArray();
 
             // Convert client-offered cipher suites to human-readable names
             var clientCipherSuiteNames = this.mOfferedCipherSuites
-                .Select(cs => CipherSuiteNames.ContainsKey(cs) ? CipherSuiteNames[cs] : cs.ToString())
+                .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
                 .ToArray();
 
             // Log the offered cipher suites by both server and client
@@ -274,16 +301,16 @@ namespace SIPSorcery.Net
                     }
 
                     // Log the selected cipher suite and certificate type
-                    string cipherSuiteName = CipherSuiteNames.ContainsKey(cipherSuite) ? CipherSuiteNames[cipherSuite] : cipherSuite.ToString();
+                    string cipherSuiteName = DtlsUtils.CipherSuiteNames.ContainsKey(cipherSuite) ? DtlsUtils.CipherSuiteNames[cipherSuite] : cipherSuite.ToString();
 
-                    logger.LogInformation($"Selected cipher suite: {cipherSuiteName}. Using {(mIsEcdsaCertificate ? "ECDSA" : "RSA")} certificate with fingerprint {this.mFingerPrint}.");
+                    logger.LogInformation($"Selected cipher suite: {cipherSuiteName}. Using {mSignatureAlgorithm} certificate with fingerprint {this.mFingerPrint}.");
 
                     return this.mSelectedCipherSuite;
                 }
             }
 
             // If no matching cipher suite is found, throw a fatal alert
-            logger.LogWarning($"DTLS server no matching cipher suite. Most likely issue is using certificates with differenet digital signature algorithms, typically RSA and ECDSA.");
+            logger.LogWarning($"DTLS server no matching cipher suite. Most likely issue is the client not supporting the server certificate's digital signature algorithm of  {mSignatureAlgorithm}.");
 
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
@@ -640,350 +667,5 @@ namespace SIPSorcery.Net
                 logger.LogWarning($"DTLS server received a client handshake without renegotiation support.");
             }
         }
-
-        public static readonly Dictionary<int, string> CipherSuiteNames = new Dictionary<int, string>
-        {
-            { CipherSuite.TLS_NULL_WITH_NULL_NULL, "CipherSuite.TLS_NULL_WITH_NULL_NULL" },
-            { CipherSuite.TLS_RSA_WITH_NULL_MD5 ,"TLS_RSA_WITH_NULL_MD5" },
-            { CipherSuite.TLS_RSA_WITH_NULL_SHA ,"TLS_RSA_WITH_NULL_SHA" },
-            { CipherSuite.TLS_RSA_EXPORT_WITH_RC4_40_MD5 ,"TLS_RSA_EXPORT_WITH_RC4_40_MD5" },
-            { CipherSuite.TLS_RSA_WITH_RC4_128_MD5 ,"TLS_RSA_WITH_RC4_128_MD5" },
-            { CipherSuite.TLS_RSA_WITH_RC4_128_SHA ,"TLS_RSA_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5 ,"TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5" },
-            { CipherSuite.TLS_RSA_WITH_IDEA_CBC_SHA ,"TLS_RSA_WITH_IDEA_CBC_SHA" },
-            { CipherSuite.TLS_RSA_EXPORT_WITH_DES40_CBC_SHA ,"TLS_RSA_EXPORT_WITH_DES40_CBC_SHA" },
-            { CipherSuite.TLS_RSA_WITH_DES_CBC_SHA ,"TLS_RSA_WITH_DES_CBC_SHA" },
-            { CipherSuite.TLS_RSA_WITH_3DES_EDE_CBC_SHA ,"TLS_RSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA ,"TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_DES_CBC_SHA ,"TLS_DH_DSS_WITH_DES_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA ,"TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA ,"TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_DES_CBC_SHA ,"TLS_DH_RSA_WITH_DES_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA ,"TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA ,"TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_DES_CBC_SHA ,"TLS_DHE_DSS_WITH_DES_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA ,"TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA ,"TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_WITH_DES_CBC_SHA ,"TLS_DHE_RSA_WITH_DES_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA ,"TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_EXPORT_WITH_RC4_40_MD5 ,"TLS_DH_anon_EXPORT_WITH_RC4_40_MD5" },
-            { CipherSuite.TLS_DH_anon_WITH_RC4_128_MD5 ,"TLS_DH_anon_WITH_RC4_128_MD5" },
-            { CipherSuite.TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA ,"TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_DES_CBC_SHA ,"TLS_DH_anon_WITH_DES_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA ,"TLS_DH_anon_WITH_3DES_EDE_CBC_SHA" },
-
-            /*
-             * Note: The cipher suite values { 0x00, 0x1C } and { 0x00, 0x1D } are reserved to avoid
-             * collision with Fortezza-based cipher suites in SSL 3.
-             */
-
-            /*
-             * RFC 3268
-             */
-            { CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA ,"TLS_RSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA ,"TLS_DH_DSS_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA ,"TLS_DH_RSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA ,"TLS_DHE_DSS_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA ,"TLS_DHE_RSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA ,"TLS_DH_anon_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA ,"TLS_RSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA ,"TLS_DH_DSS_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA ,"TLS_DH_RSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA ,"TLS_DHE_DSS_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA ,"TLS_DHE_RSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA ,"TLS_DH_anon_WITH_AES_256_CBC_SHA" },
-
-            /*
-             * RFC 5932
-             */
-            { CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA ,"TLS_RSA_WITH_CAMELLIA_128_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA ,"TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA ,"TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA ,"TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA ,"TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA ,"TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA" },
-
-            { CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA ,"TLS_RSA_WITH_CAMELLIA_256_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA ,"TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA ,"TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA ,"TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SH" },
-            { CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA ,"TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA ,"TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA" },
-
-            { CipherSuite.TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256" },
-
-            { CipherSuite.TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256 ,"TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256" },
-            { CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256 ,"TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256" },
-            { CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256 ,"TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256 ,"TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256 ,"TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256" },
-            { CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256 ,"TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256" },
-
-            /*
-                * RFC 4162
-                */
-            { CipherSuite.TLS_RSA_WITH_SEED_CBC_SHA ,"TLS_RSA_WITH_SEED_CBC_SHA" },
-            { CipherSuite.TLS_DH_DSS_WITH_SEED_CBC_SHA ,"TLS_DH_DSS_WITH_SEED_CBC_SHA" },
-            { CipherSuite.TLS_DH_RSA_WITH_SEED_CBC_SHA ,"TLS_DH_RSA_WITH_SEED_CBC_SHA" },
-            { CipherSuite.TLS_DHE_DSS_WITH_SEED_CBC_SHA ,"TLS_DHE_DSS_WITH_SEED_CBC_SHA" },
-            { CipherSuite.TLS_DHE_RSA_WITH_SEED_CBC_SHA ,"TLS_DHE_RSA_WITH_SEED_CBC_SHA" },
-            { CipherSuite.TLS_DH_anon_WITH_SEED_CBC_SHA ,"TLS_DH_anon_WITH_SEED_CBC_SHA" },
-
-            /*
-             * RFC 4279
-             */
-            { CipherSuite.TLS_PSK_WITH_RC4_128_SHA ,"TLS_PSK_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_PSK_WITH_3DES_EDE_CBC_SHA ,"TLS_PSK_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA ,"TLS_PSK_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA ,"TLS_PSK_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_DHE_PSK_WITH_RC4_128_SHA ,"TLS_DHE_PSK_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA ,"TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA ,"TLS_DHE_PSK_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA ,"TLS_DHE_PSK_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_RSA_PSK_WITH_RC4_128_SHA ,"TLS_RSA_PSK_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA ,"TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA ,"TLS_RSA_PSK_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA ,"TLS_RSA_PSK_WITH_AES_256_CBC_SHA" },
-
-            /*
-             * RFC 4492
-             */
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA ,"TLS_ECDH_ECDSA_WITH_NULL_SHA" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_RC4_128_SHA ,"TLS_ECDH_ECDSA_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA ,"TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA ,"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA ,"TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_NULL_SHA ,"TLS_ECDHE_ECDSA_WITH_NULL_SHA" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA ,"TLS_ECDHE_ECDSA_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA ,"TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA ,"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA ,"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_NULL_SHA ,"TLS_ECDH_RSA_WITH_NULL_SHA" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_RC4_128_SHA ,"TLS_ECDH_RSA_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA ,"TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA ,"TLS_ECDH_RSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA ,"TLS_ECDH_RSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA ,"TLS_ECDHE_RSA_WITH_NULL_SHA" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_RC4_128_SHA ,"TLS_ECDHE_RSA_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA ,"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA ,"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA ,"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_anon_WITH_NULL_SHA ,"TLS_ECDH_anon_WITH_NULL_SHA" },
-            { CipherSuite.TLS_ECDH_anon_WITH_RC4_128_SHA ,"TLS_ECDH_anon_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA ,"TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_anon_WITH_AES_128_CBC_SHA ,"TLS_ECDH_anon_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_ECDH_anon_WITH_AES_256_CBC_SHA ,"TLS_ECDH_anon_WITH_AES_256_CBC_SHA" },
-
-            /*
-             * RFC 4785
-             */
-            { CipherSuite.TLS_PSK_WITH_NULL_SHA ,"TLS_PSK_WITH_NULL_SHA" },
-            { CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA ,"TLS_DHE_PSK_WITH_NULL_SHA" },
-            { CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA ,"TLS_RSA_PSK_WITH_NULL_SHA" },
-
-            /*
-             * RFC 5054
-             */
-            { CipherSuite.TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA ,"TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA ,"TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA ,"TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_WITH_AES_128_CBC_SHA ,"TLS_SRP_SHA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA ,"TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA ,"TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_WITH_AES_256_CBC_SHA ,"TLS_SRP_SHA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA ,"TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA ,"TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA" },
-
-            /*
-             * RFC 5246
-             */
-            { CipherSuite.TLS_RSA_WITH_NULL_SHA256 ,"TLS_RSA_WITH_NULL_SHA256" },
-            { CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256 ,"TLS_RSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256 ,"TLS_RSA_WITH_AES_256_CBC_SHA256" },
-            { CipherSuite.TLS_DH_DSS_WITH_AES_128_CBC_SHA256 ,"TLS_DH_DSS_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_DH_RSA_WITH_AES_128_CBC_SHA256 ,"TLS_DH_RSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA256 ,"TLS_DHE_DSS_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256 ,"TLS_DHE_RSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_DH_DSS_WITH_AES_256_CBC_SHA256 ,"TLS_DH_DSS_WITH_AES_256_CBC_SHA256" },
-            { CipherSuite.TLS_DH_RSA_WITH_AES_256_CBC_SHA256 ,"TLS_DH_RSA_WITH_AES_256_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256 ,"TLS_DHE_DSS_WITH_AES_256_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256 ,"TLS_DHE_RSA_WITH_AES_256_CBC_SHA256" },
-            { CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256 ,"TLS_DH_anon_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA256 ,"TLS_DH_anon_WITH_AES_256_CBC_SHA256" },
-
-            /*
-             * RFC 5288
-             */
-            { CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256 ,"TLS_RSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384 ,"TLS_RSA_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 ,"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 ,"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_DH_RSA_WITH_AES_128_GCM_SHA256 ,"TLS_DH_RSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_DH_RSA_WITH_AES_256_GCM_SHA384 ,"TLS_DH_RSA_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 ,"TLS_DHE_DSS_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 ,"TLS_DHE_DSS_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_DH_DSS_WITH_AES_128_GCM_SHA256 ,"TLS_DH_DSS_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_DH_DSS_WITH_AES_256_GCM_SHA384 ,"TLS_DH_DSS_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256 ,"TLS_DH_anon_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384 ,"TLS_DH_anon_WITH_AES_256_GCM_SHA384" },
-
-            /*
-             * RFC 5289
-             */
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 ,"TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 ,"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256 ,"TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384 ,"TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 ,"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 ,"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256 ,"TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384 ,"TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 ,"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 ,"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256 ,"TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384 ,"TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 ,"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 ,"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256 ,"TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384 ,"TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384" },
-
-            /*
-             * RFC 5487
-             */
-            { CipherSuite.TLS_PSK_WITH_AES_128_GCM_SHA256 ,"TLS_PSK_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_PSK_WITH_AES_256_GCM_SHA384 ,"TLS_PSK_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_128_GCM_SHA256 ,"TLS_DHE_PSK_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_256_GCM_SHA384 ,"TLS_DHE_PSK_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_RSA_PSK_WITH_AES_128_GCM_SHA256 ,"TLS_RSA_PSK_WITH_AES_128_GCM_SHA256" },
-            { CipherSuite.TLS_RSA_PSK_WITH_AES_256_GCM_SHA384 ,"TLS_RSA_PSK_WITH_AES_256_GCM_SHA384" },
-            { CipherSuite.TLS_PSK_WITH_AES_128_CBC_SHA256 ,"TLS_PSK_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_PSK_WITH_AES_256_CBC_SHA384 ,"TLS_PSK_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_PSK_WITH_NULL_SHA256 ,"TLS_PSK_WITH_NULL_SHA256" },
-            { CipherSuite.TLS_PSK_WITH_NULL_SHA384 ,"TLS_PSK_WITH_NULL_SHA384" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_128_CBC_SHA256 ,"TLS_DHE_PSK_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384 ,"TLS_DHE_PSK_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA256 ,"TLS_DHE_PSK_WITH_NULL_SHA256" },
-            { CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384 ,"TLS_DHE_PSK_WITH_NULL_SHA384" },
-            { CipherSuite.TLS_RSA_PSK_WITH_AES_128_CBC_SHA256 ,"TLS_RSA_PSK_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_RSA_PSK_WITH_AES_256_CBC_SHA384 ,"TLS_RSA_PSK_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA256 ,"TLS_RSA_PSK_WITH_NULL_SHA256" },
-            { CipherSuite.TLS_RSA_PSK_WITH_NULL_SHA384 ,"TLS_RSA_PSK_WITH_NULL_SHA384" },
-
-            /*
-             * RFC 5489
-             */
-            { CipherSuite.TLS_ECDHE_PSK_WITH_RC4_128_SHA ,"TLS_ECDHE_PSK_WITH_RC4_128_SHA" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA ,"TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA ,"TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA ,"TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 ,"TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384 ,"TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA ,"TLS_ECDHE_PSK_WITH_NULL_SHA" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA256 ,"TLS_ECDHE_PSK_WITH_NULL_SHA256" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_NULL_SHA384 ,"TLS_ECDHE_PSK_WITH_NULL_SHA384" },
-
-            /*
-             * RFC 5746
-             */
-            { CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV ,"TLS_EMPTY_RENEGOTIATION_INFO_SCSV" },
-
-            /*
-             * RFC 6367
-             */
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384" },
-
-            { CipherSuite.TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
-
-            { CipherSuite.TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256 ,"TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256" },
-            { CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384 ,"TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384" },
-            { CipherSuite.TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384" },
-            { CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384" },
-            { CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256 ,"TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256" },
-            { CipherSuite.TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384 ,"TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384" },
-
-            /*
-             * RFC 6655
-             */
-            { CipherSuite.TLS_RSA_WITH_AES_128_CCM ,"TLS_RSA_WITH_AES_128_CCM" },
-            { CipherSuite.TLS_RSA_WITH_AES_256_CCM ,"TLS_RSA_WITH_AES_256_CCM" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM ,"TLS_DHE_RSA_WITH_AES_128_CCM" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM ,"TLS_DHE_RSA_WITH_AES_256_CCM" },
-            { CipherSuite.TLS_RSA_WITH_AES_128_CCM_8 ,"TLS_RSA_WITH_AES_128_CCM_8" },
-            { CipherSuite.TLS_RSA_WITH_AES_256_CCM_8 ,"TLS_RSA_WITH_AES_256_CCM_8" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_128_CCM_8 ,"TLS_DHE_RSA_WITH_AES_128_CCM_8" },
-            { CipherSuite.TLS_DHE_RSA_WITH_AES_256_CCM_8 ,"TLS_DHE_RSA_WITH_AES_256_CCM_8" },
-            { CipherSuite.TLS_PSK_WITH_AES_128_CCM ,"TLS_PSK_WITH_AES_128_CCM" },
-            { CipherSuite.TLS_PSK_WITH_AES_256_CCM ,"TLS_PSK_WITH_AES_256_CCM" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_128_CCM ,"TLS_DHE_PSK_WITH_AES_128_CCM" },
-            { CipherSuite.TLS_DHE_PSK_WITH_AES_256_CCM ,"TLS_DHE_PSK_WITH_AES_256_CCM" },
-            { CipherSuite.TLS_PSK_WITH_AES_128_CCM_8 ,"TLS_PSK_WITH_AES_128_CCM_8" },
-            { CipherSuite.TLS_PSK_WITH_AES_256_CCM_8 ,"TLS_PSK_WITH_AES_256_CCM_8" },
-            { CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8 ,"TLS_PSK_DHE_WITH_AES_128_CCM_8" },
-            { CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8 ,"TLS_PSK_DHE_WITH_AES_256_CCM_8" },
-
-            /*
-             * RFC 7251
-             */
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM ,"TLS_ECDHE_ECDSA_WITH_AES_128_CCM" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM ,"TLS_ECDHE_ECDSA_WITH_AES_256_CCM" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 ,"TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8" },
-            { CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8 ,"TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8" },
-
-            /*
-             * RFC 7507
-             */
-            { CipherSuite.TLS_FALLBACK_SCSV , "TLS_FALLBACK_SCSV" },
-
-            /*
-             * draft-ietf-tls-chacha20-poly1305-04
-             */
-            { CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-
-        };
     }
 }

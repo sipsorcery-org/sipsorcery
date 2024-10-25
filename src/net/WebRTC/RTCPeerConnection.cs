@@ -263,6 +263,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set; }
 
+        public string DtlsCertificateSignatureAlgorithm { get; private set; } = string.Empty;
+
         /// <summary>
         /// The SCTP transport over which SCTP data is sent and received.
         /// </summary>
@@ -420,8 +422,9 @@ namespace SIPSorcery.Net
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
+            DtlsCertificateSignatureAlgorithm = DtlsUtils.GetSignatureAlgorithm(_dtlsCertificate);
 
-            logger.LogDebug($"RTCPeerConnection created with DTLS certificate fingerprint {DtlsCertificateFingerprint}");
+            logger.LogDebug($"RTCPeerConnection created with DTLS certificate with fingerprint {DtlsCertificateFingerprint} and signature algorithm {DtlsCertificateSignatureAlgorithm}.");
 
             // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
             logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{DtlsUtils.ExportToDerBase64(_dtlsCertificate)}\n-----END CERTIFICATE-----");
@@ -1819,9 +1822,9 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
                 var remoteCertificate = dtlsHandle.GetRemoteCertificate().GetCertificateAt(0);
-
+                var remoteCertificateSignatureAlgorithm = DtlsUtils.GetSignatureAlgorithm(remoteCertificate);
                 // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
-                logger.LogTrace("Remote peer DTLS certificate.");
+                logger.LogTrace($"Remote peer DTLS certificate, signature algorithm {remoteCertificateSignatureAlgorithm}.");
                 logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(remoteCertificate.GetDerEncoded())}\n-----END CERTIFICATE-----");
 
                 var expectedFp = RemotePeerDtlsFingerprint;
