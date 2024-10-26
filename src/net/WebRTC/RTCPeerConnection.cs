@@ -263,6 +263,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set; }
 
+        public string DtlsCertificateSignatureAlgorithm { get; private set; } = string.Empty;
+
         /// <summary>
         /// The SCTP transport over which SCTP data is sent and received.
         /// </summary>
@@ -416,10 +418,16 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(useRsa: configuration?.X_UseRsaForDtlsCertificate ?? false);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
+            DtlsCertificateSignatureAlgorithm = DtlsUtils.GetSignatureAlgorithm(_dtlsCertificate);
+
+            logger.LogDebug($"RTCPeerConnection created with DTLS certificate with fingerprint {DtlsCertificateFingerprint} and signature algorithm {DtlsCertificateSignatureAlgorithm}.");
+
+            // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
+            logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{DtlsUtils.ExportToDerBase64(_dtlsCertificate)}\n-----END CERTIFICATE-----");
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
@@ -837,7 +845,6 @@ namespace SIPSorcery.Net
                     }
                 }
 
-
                 ResetRemoteSDPSsrcAttributes();
                 foreach (var media in remoteSdp.Media)
                 {
@@ -851,10 +858,8 @@ namespace SIPSorcery.Net
 
                     AddRemoteSDPSsrcAttributes(media.Media, media.SsrcAttributes);
                 }
-                logger.LogDebug($"SDP:[{remoteSdp}]");
+
                 LogRemoteSDPSsrcAttributes();
-
-
 
                 UpdatedSctpDestinationPort();
 
@@ -1823,8 +1828,14 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
+                var remoteCertificate = dtlsHandle.GetRemoteCertificate().GetCertificateAt(0);
+                var remoteCertificateSignatureAlgorithm = DtlsUtils.GetSignatureAlgorithm(remoteCertificate);
+                // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
+                logger.LogTrace($"Remote peer DTLS certificate, signature algorithm {remoteCertificateSignatureAlgorithm}.");
+                logger.LogTrace($"-----BEGIN CERTIFICATE-----\n{Convert.ToBase64String(remoteCertificate.GetDerEncoded())}\n-----END CERTIFICATE-----");
+
                 var expectedFp = RemotePeerDtlsFingerprint;
-                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, remoteCertificate);
 
                 if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
                 {
