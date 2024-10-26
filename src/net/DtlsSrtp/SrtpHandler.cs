@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -189,29 +190,53 @@ namespace SIPSorcery.Net
 
             return 0; //No Errors
         }
-
+        
         public byte[] ProtectRTP(byte[] packet, int offset, int length)
         {
-            lock (SrtpEncoder)
+            var buffer=ArrayPool<byte>.Shared.Rent(packet.Length * 2);
+            try
             {
-                return SrtpEncoder.Transform(packet, offset, length);
+                var resultLength = ProtectRTP(packet, offset, length, buffer, packet.Length * 2);
+                var segment=new ArraySegment<byte>(buffer, 0, resultLength);
+                return segment.ToArray();
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+       
+        public int ProtectRTP(byte[] packet, int offset, int length,byte[] buffer,int bufferLength)
+        {
+            lock (this.SrtpEncoder)
+            {
+                return this.SrtpEncoder.Transform(packet, offset, length,buffer,bufferLength);
             }
         }
 
         public int ProtectRTP(byte[] payload, int length, out int outLength)
         {
-            var result = ProtectRTP(payload, 0, length);
-
-            if (result == null)
+            var resultBuf=ArrayPool<byte>.Shared.Rent(length * 2);
+            try
             {
-                outLength = 0;
-                return -1;
+                var resultSize = ProtectRTP(payload, 0, length,resultBuf,length * 2);
+
+                if (resultSize <1)
+                {
+                    outLength = 0;
+                    return -1;
+                }
+
+                System.Buffer.BlockCopy(resultBuf, 0, payload, 0, resultSize);
+                outLength = resultSize;
+
+                return 0; //No Errors
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(resultBuf);
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-            outLength = result.Length;
-
-            return 0; //No Errors
         }
 
         public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
@@ -239,25 +264,50 @@ namespace SIPSorcery.Net
 
         public byte[] ProtectRTCP(byte[] packet, int offset, int length)
         {
+            var buffer=ArrayPool<byte>.Shared.Rent(packet.Length * 2);
+            try
+            {
+                var resultLength = ProtectRTCP(packet, offset, length, buffer, packet.Length * 2);
+                var segment=new ArraySegment<byte>(buffer, 0, resultLength);
+                return segment.ToArray();
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+        public int ProtectRTCP(byte[] packet, int offset, int length, byte[] buffer,int bufferLength)
+        {
             lock (SrtcpEncoder)
             {
-                return SrtcpEncoder.Transform(packet, offset, length);
+                return SrtcpEncoder.Transform(packet, offset, length,buffer,bufferLength);
             }
         }
 
         public int ProtectRTCP(byte[] payload, int length, out int outLength)
         {
-            var result = ProtectRTCP(payload, 0, length);
-            if (result == null)
+            var resultBuf=ArrayPool<byte>.Shared.Rent(length * 2);
+            try
             {
-                outLength = 0;
-                return -1;
+                var resultSize = ProtectRTCP(payload, 0, length,resultBuf,length * 2);
+
+                if (resultSize <1)
+                {
+                    outLength = 0;
+                    return -1;
+                }
+
+                System.Buffer.BlockCopy(resultBuf, 0, payload, 0, resultSize);
+                outLength = resultSize;
+
+                return 0; //No Errors
             }
-
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-            outLength = result.Length;
-
-            return 0; //No Errors
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(resultBuf);
+            }
+            
+         
         }
     }
 }

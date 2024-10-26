@@ -10,8 +10,11 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SIPSorcery" Version="6.2.0" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
   </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+    </ItemGroup>
+    
 </Project>

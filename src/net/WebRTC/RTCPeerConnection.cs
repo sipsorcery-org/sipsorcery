@@ -1606,7 +1606,14 @@ namespace SIPSorcery.Net
                 $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
             // TODO: Set reliability, priority etc. properties on the data channel.
-            var dc = new RTCDataChannel(sctp) { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
+            var dc = new RTCDataChannel(sctp)
+            {
+                id = streamID,
+                label = label,
+                IsOpened = true,
+                readyState = RTCDataChannelState.open,
+                protocol = protocol
+            };
 
             dc.SendDcepAck();
 

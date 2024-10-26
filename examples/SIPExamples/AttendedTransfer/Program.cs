@@ -80,10 +80,10 @@ namespace SIPSorcery
             var userAgent2 = new SIPUserAgent(sipTransport, null);
 
             userAgent1.OnCallHungup += (dialog) => Log.LogInformation($"UA1: Call hungup by remote party.");
-            userAgent1.ServerCallCancelled += (uas) => Log.LogInformation("UA1: Incoming call cancelled by caller.");
+            userAgent1.ServerCallCancelled += (uas, cancelReq) => Log.LogInformation("UA1: Incoming call cancelled by caller.");
 
             userAgent2.OnCallHungup += (dialog) => Log.LogInformation($"UA2: Call hungup by remote party.");
-            userAgent2.ServerCallCancelled += (uas) => Log.LogInformation("UA2: Incoming call cancelled by caller.");
+            userAgent2.ServerCallCancelled += (uas, cancelReq) => Log.LogInformation("UA2: Incoming call cancelled by caller.");
 
             userAgent2.OnTransferNotify += (sipFrag) =>
             {
