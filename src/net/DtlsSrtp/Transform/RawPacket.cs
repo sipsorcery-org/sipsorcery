@@ -95,13 +95,33 @@ namespace SIPSorcery.Net
             this.buffer.SetLength(length - offset);
             this.buffer.Position = 0;
         }
-
-        public byte[] GetData()
+        public int GetDataIntoBuffer(byte[] resultBuffer,int bufferLength)
         {
+         
+            if (bufferLength < this.buffer.Length)
+            {
+                throw new InvalidDataException("Buffer is too small");
+            }
             this.buffer.Position = 0;
-            byte[] data = new byte[this.buffer.Length];
-            this.buffer.Read(data, 0, data.Length);
-            return data;
+            
+            this.buffer.Read(resultBuffer, 0, (int)this.buffer.Length);
+            return (int)this.buffer.Length;
+        }
+        public byte[] GetData(byte[] resultBuffer=null)
+        {
+            if (resultBuffer == null)
+            {
+                resultBuffer= new byte[this.buffer.Length];
+            }
+
+            if (resultBuffer.Length < this.buffer.Length)
+            {
+                throw new InvalidDataException("Buffer is too small");
+            }
+            this.buffer.Position = 0;
+            
+            this.buffer.Read(resultBuffer, 0, (int)this.buffer.Length);
+            return resultBuffer;
         }
 
         /**
