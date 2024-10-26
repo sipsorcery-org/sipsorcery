@@ -4705,6 +4705,15 @@ references:
   fullName.vb: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte(), System.Int32, System.Int32)
   nameWithType: DtlsSrtpTransport.ProtectRTCP(Byte[], Int32, Int32)
   nameWithType.vb: DtlsSrtpTransport.ProtectRTCP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: ProtectRTCP(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: ProtectRTCP(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: DtlsSrtpTransport.ProtectRTCP(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: DtlsSrtpTransport.ProtectRTCP(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTCP(System.Byte[],System.Int32,System.Int32@)
   name: ProtectRTCP(Byte[], Int32, out Int32)
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_ProtectRTCP_System_Byte___System_Int32_System_Int32__
@@ -4730,6 +4739,15 @@ references:
   fullName.vb: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte(), System.Int32, System.Int32)
   nameWithType: DtlsSrtpTransport.ProtectRTP(Byte[], Int32, Int32)
   nameWithType.vb: DtlsSrtpTransport.ProtectRTP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: ProtectRTP(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: ProtectRTP(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: DtlsSrtpTransport.ProtectRTP(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: DtlsSrtpTransport.ProtectRTP(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.DtlsSrtpTransport.ProtectRTP(System.Byte[],System.Int32,System.Int32@)
   name: ProtectRTP(Byte[], Int32, out Int32)
   href: api/SIPSorcery.Net.DtlsSrtpTransport.html#SIPSorcery_Net_DtlsSrtpTransport_ProtectRTP_System_Byte___System_Int32_System_Int32__
@@ -5443,15 +5461,12 @@ references:
   commentId: T:SIPSorcery.Net.H264Packetiser.H264Nal
   fullName: SIPSorcery.Net.H264Packetiser.H264Nal
   nameWithType: H264Packetiser.H264Nal
-- uid: SIPSorcery.Net.H264Packetiser.H264Nal.#ctor(System.Byte[],System.Boolean)
-  name: H264Nal(Byte[], Boolean)
-  href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal__ctor_System_Byte___System_Boolean_
-  commentId: M:SIPSorcery.Net.H264Packetiser.H264Nal.#ctor(System.Byte[],System.Boolean)
-  name.vb: H264Nal(Byte(), Boolean)
-  fullName: SIPSorcery.Net.H264Packetiser.H264Nal.H264Nal(System.Byte[], System.Boolean)
-  fullName.vb: SIPSorcery.Net.H264Packetiser.H264Nal.H264Nal(System.Byte(), System.Boolean)
-  nameWithType: H264Packetiser.H264Nal.H264Nal(Byte[], Boolean)
-  nameWithType.vb: H264Packetiser.H264Nal.H264Nal(Byte(), Boolean)
+- uid: SIPSorcery.Net.H264Packetiser.H264Nal.#ctor(System.Int32,System.Int32,System.Boolean)
+  name: H264Nal(Int32, Int32, Boolean)
+  href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal__ctor_System_Int32_System_Int32_System_Boolean_
+  commentId: M:SIPSorcery.Net.H264Packetiser.H264Nal.#ctor(System.Int32,System.Int32,System.Boolean)
+  fullName: SIPSorcery.Net.H264Packetiser.H264Nal.H264Nal(System.Int32, System.Int32, System.Boolean)
+  nameWithType: H264Packetiser.H264Nal.H264Nal(Int32, Int32, Boolean)
 - uid: SIPSorcery.Net.H264Packetiser.H264Nal.#ctor*
   name: H264Nal
   href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal__ctor_
@@ -5472,28 +5487,27 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.H264Packetiser.H264Nal.IsLast
   nameWithType: H264Packetiser.H264Nal.IsLast
-- uid: SIPSorcery.Net.H264Packetiser.H264Nal.NAL
-  name: NAL
-  href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal_NAL
-  commentId: P:SIPSorcery.Net.H264Packetiser.H264Nal.NAL
-  fullName: SIPSorcery.Net.H264Packetiser.H264Nal.NAL
-  nameWithType: H264Packetiser.H264Nal.NAL
-- uid: SIPSorcery.Net.H264Packetiser.H264Nal.NAL*
-  name: NAL
-  href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal_NAL_
-  commentId: Overload:SIPSorcery.Net.H264Packetiser.H264Nal.NAL
-  isSpec: "True"
-  fullName: SIPSorcery.Net.H264Packetiser.H264Nal.NAL
-  nameWithType: H264Packetiser.H264Nal.NAL
-- uid: SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte[])
-  name: ParseNals(Byte[])
-  href: api/SIPSorcery.Net.H264Packetiser.html#SIPSorcery_Net_H264Packetiser_ParseNals_System_Byte___
-  commentId: M:SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte[])
-  name.vb: ParseNals(Byte())
-  fullName: SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte[])
-  fullName.vb: SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte())
-  nameWithType: H264Packetiser.ParseNals(Byte[])
-  nameWithType.vb: H264Packetiser.ParseNals(Byte())
+- uid: SIPSorcery.Net.H264Packetiser.H264Nal.Length
+  name: Length
+  href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal_Length
+  commentId: F:SIPSorcery.Net.H264Packetiser.H264Nal.Length
+  fullName: SIPSorcery.Net.H264Packetiser.H264Nal.Length
+  nameWithType: H264Packetiser.H264Nal.Length
+- uid: SIPSorcery.Net.H264Packetiser.H264Nal.Start
+  name: Start
+  href: api/SIPSorcery.Net.H264Packetiser.H264Nal.html#SIPSorcery_Net_H264Packetiser_H264Nal_Start
+  commentId: F:SIPSorcery.Net.H264Packetiser.H264Nal.Start
+  fullName: SIPSorcery.Net.H264Packetiser.H264Nal.Start
+  nameWithType: H264Packetiser.H264Nal.Start
+- uid: SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte[],System.Int32,System.Int32)
+  name: ParseNals(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Net.H264Packetiser.html#SIPSorcery_Net_H264Packetiser_ParseNals_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte[],System.Int32,System.Int32)
+  name.vb: ParseNals(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.H264Packetiser.ParseNals(System.Byte(), System.Int32, System.Int32)
+  nameWithType: H264Packetiser.ParseNals(Byte[], Int32, Int32)
+  nameWithType.vb: H264Packetiser.ParseNals(Byte(), Int32, Int32)
 - uid: SIPSorcery.Net.H264Packetiser.ParseNals*
   name: ParseNals
   href: api/SIPSorcery.Net.H264Packetiser.html#SIPSorcery_Net_H264Packetiser_ParseNals_
@@ -5822,6 +5836,15 @@ references:
   fullName.vb: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte())
   nameWithType: IPacketTransformer.Transform(Byte[])
   nameWithType.vb: IPacketTransformer.Transform(Byte())
+- uid: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[],System.Byte[],System.Int32)
+  name: Transform(Byte[], Byte[], Int32)
+  href: api/SIPSorcery.Net.IPacketTransformer.html#SIPSorcery_Net_IPacketTransformer_Transform_System_Byte___System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[],System.Byte[],System.Int32)
+  name.vb: Transform(Byte(), Byte(), Int32)
+  fullName: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[], System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte(), System.Byte(), System.Int32)
+  nameWithType: IPacketTransformer.Transform(Byte[], Byte[], Int32)
+  nameWithType.vb: IPacketTransformer.Transform(Byte(), Byte(), Int32)
 - uid: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[],System.Int32,System.Int32)
   name: Transform(Byte[], Int32, Int32)
   href: api/SIPSorcery.Net.IPacketTransformer.html#SIPSorcery_Net_IPacketTransformer_Transform_System_Byte___System_Int32_System_Int32_
@@ -5831,6 +5854,15 @@ references:
   fullName.vb: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte(), System.Int32, System.Int32)
   nameWithType: IPacketTransformer.Transform(Byte[], Int32, Int32)
   nameWithType.vb: IPacketTransformer.Transform(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: Transform(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.IPacketTransformer.html#SIPSorcery_Net_IPacketTransformer_Transform_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: Transform(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.IPacketTransformer.Transform(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: IPacketTransformer.Transform(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: IPacketTransformer.Transform(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.IPacketTransformer.Transform*
   name: Transform
   href: api/SIPSorcery.Net.IPacketTransformer.html#SIPSorcery_Net_IPacketTransformer_Transform_
@@ -7339,12 +7371,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RawPacket.GetCsrcCount
   nameWithType: RawPacket.GetCsrcCount
-- uid: SIPSorcery.Net.RawPacket.GetData
-  name: GetData()
-  href: api/SIPSorcery.Net.RawPacket.html#SIPSorcery_Net_RawPacket_GetData
-  commentId: M:SIPSorcery.Net.RawPacket.GetData
-  fullName: SIPSorcery.Net.RawPacket.GetData()
-  nameWithType: RawPacket.GetData()
+- uid: SIPSorcery.Net.RawPacket.GetData(System.Byte[])
+  name: GetData(Byte[])
+  href: api/SIPSorcery.Net.RawPacket.html#SIPSorcery_Net_RawPacket_GetData_System_Byte___
+  commentId: M:SIPSorcery.Net.RawPacket.GetData(System.Byte[])
+  name.vb: GetData(Byte())
+  fullName: SIPSorcery.Net.RawPacket.GetData(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RawPacket.GetData(System.Byte())
+  nameWithType: RawPacket.GetData(Byte[])
+  nameWithType.vb: RawPacket.GetData(Byte())
 - uid: SIPSorcery.Net.RawPacket.GetData*
   name: GetData
   href: api/SIPSorcery.Net.RawPacket.html#SIPSorcery_Net_RawPacket_GetData_
@@ -7352,6 +7387,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RawPacket.GetData
   nameWithType: RawPacket.GetData
+- uid: SIPSorcery.Net.RawPacket.GetDataIntoBuffer(System.Byte[],System.Int32)
+  name: GetDataIntoBuffer(Byte[], Int32)
+  href: api/SIPSorcery.Net.RawPacket.html#SIPSorcery_Net_RawPacket_GetDataIntoBuffer_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.RawPacket.GetDataIntoBuffer(System.Byte[],System.Int32)
+  name.vb: GetDataIntoBuffer(Byte(), Int32)
+  fullName: SIPSorcery.Net.RawPacket.GetDataIntoBuffer(System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.RawPacket.GetDataIntoBuffer(System.Byte(), System.Int32)
+  nameWithType: RawPacket.GetDataIntoBuffer(Byte[], Int32)
+  nameWithType.vb: RawPacket.GetDataIntoBuffer(Byte(), Int32)
+- uid: SIPSorcery.Net.RawPacket.GetDataIntoBuffer*
+  name: GetDataIntoBuffer
+  href: api/SIPSorcery.Net.RawPacket.html#SIPSorcery_Net_RawPacket_GetDataIntoBuffer_
+  commentId: Overload:SIPSorcery.Net.RawPacket.GetDataIntoBuffer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RawPacket.GetDataIntoBuffer
+  nameWithType: RawPacket.GetDataIntoBuffer
 - uid: SIPSorcery.Net.RawPacket.GetExtensionBit
   name: GetExtensionBit()
   href: api/SIPSorcery.Net.RawPacket.html#SIPSorcery_Net_RawPacket_GetExtensionBit
@@ -12327,15 +12378,15 @@ references:
   fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32)
   nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32)
   nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32)
-- uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean,System.Nullable{System.UInt16})
-  name: SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean, Nullable<UInt16>)
-  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_Boolean_System_Nullable_System_UInt16__
-  commentId: M:SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean,System.Nullable{System.UInt16})
-  name.vb: SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean, Nullable(Of UInt16))
-  fullName: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[], System.UInt32, System.Int32, System.Int32, System.Boolean, System.Nullable<System.UInt16>)
-  fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32, System.Boolean, System.Nullable(Of System.UInt16))
-  nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean, Nullable<UInt16>)
-  nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean, Nullable(Of UInt16))
+- uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean,System.Nullable{System.UInt16},System.Int32)
+  name: SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean, Nullable<UInt16>, Int32)
+  href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_Boolean_System_Nullable_System_UInt16__System_Int32_
+  commentId: M:SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.Boolean,System.Nullable{System.UInt16},System.Int32)
+  name.vb: SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean, Nullable(Of UInt16), Int32)
+  fullName: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[], System.UInt32, System.Int32, System.Int32, System.Boolean, System.Nullable<System.UInt16>, System.Int32)
+  fullName.vb: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte(), System.UInt32, System.Int32, System.Int32, System.Boolean, System.Nullable(Of System.UInt16), System.Int32)
+  nameWithType: MediaStream.SendRtpRaw(Byte[], UInt32, Int32, Int32, Boolean, Nullable<UInt16>, Int32)
+  nameWithType.vb: MediaStream.SendRtpRaw(Byte(), UInt32, Int32, Int32, Boolean, Nullable(Of UInt16), Int32)
 - uid: SIPSorcery.net.RTP.MediaStream.SendRtpRaw(System.Byte[],System.UInt32,System.Int32,System.Int32,System.UInt16)
   name: SendRtpRaw(Byte[], UInt32, Int32, Int32, UInt16)
   href: api/SIPSorcery.net.RTP.MediaStream.html#SIPSorcery_net_RTP_MediaStream_SendRtpRaw_System_Byte___System_UInt32_System_Int32_System_Int32_System_UInt16_
@@ -13107,15 +13158,15 @@ references:
   commentId: F:SIPSorcery.net.RTP.VideoStream.RtpVideoFramer
   fullName: SIPSorcery.net.RTP.VideoStream.RtpVideoFramer
   nameWithType: VideoStream.RtpVideoFramer
-- uid: SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32,System.Int32,System.Byte[])
-  name: SendH264Frame(UInt32, Int32, Byte[])
-  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_SendH264Frame_System_UInt32_System_Int32_System_Byte___
-  commentId: M:SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32,System.Int32,System.Byte[])
-  name.vb: SendH264Frame(UInt32, Int32, Byte())
-  fullName: SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32, System.Int32, System.Byte[])
-  fullName.vb: SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32, System.Int32, System.Byte())
-  nameWithType: VideoStream.SendH264Frame(UInt32, Int32, Byte[])
-  nameWithType.vb: VideoStream.SendH264Frame(UInt32, Int32, Byte())
+- uid: SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32,System.Int32,System.Byte[],System.Int32,System.Int32)
+  name: SendH264Frame(UInt32, Int32, Byte[], Int32, Int32)
+  href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_SendH264Frame_System_UInt32_System_Int32_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32,System.Int32,System.Byte[],System.Int32,System.Int32)
+  name.vb: SendH264Frame(UInt32, Int32, Byte(), Int32, Int32)
+  fullName: SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32, System.Int32, System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.net.RTP.VideoStream.SendH264Frame(System.UInt32, System.Int32, System.Byte(), System.Int32, System.Int32)
+  nameWithType: VideoStream.SendH264Frame(UInt32, Int32, Byte[], Int32, Int32)
+  nameWithType.vb: VideoStream.SendH264Frame(UInt32, Int32, Byte(), Int32, Int32)
 - uid: SIPSorcery.net.RTP.VideoStream.SendH264Frame*
   name: SendH264Frame
   href: api/SIPSorcery.net.RTP.VideoStream.html#SIPSorcery_net_RTP_VideoStream_SendH264Frame_
@@ -13372,15 +13423,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.RtpSocket
   nameWithType: RTPChannel.RtpSocket
-- uid: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
-  name: Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Send_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
-  name.vb: Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
-  fullName: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
-  nameWithType: RTPChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
-  nameWithType.vb: RTPChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name: Send(RTPChannelSocketsEnum, IPEndPoint, Byte[], Int32)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Send_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name.vb: Send(RTPChannelSocketsEnum, IPEndPoint, Byte(), Int32)
+  fullName: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte(), System.Int32)
+  nameWithType: RTPChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte[], Int32)
+  nameWithType.vb: RTPChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte(), Int32)
 - uid: SIPSorcery.Net.RTPChannel.Send*
   name: Send
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Send_
@@ -13640,12 +13691,15 @@ references:
   commentId: F:SIPSorcery.Net.RTPHeader.ExtensionProfile
   fullName: SIPSorcery.Net.RTPHeader.ExtensionProfile
   nameWithType: RTPHeader.ExtensionProfile
-- uid: SIPSorcery.Net.RTPHeader.GetBytes
-  name: GetBytes()
-  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetBytes
-  commentId: M:SIPSorcery.Net.RTPHeader.GetBytes
-  fullName: SIPSorcery.Net.RTPHeader.GetBytes()
-  nameWithType: RTPHeader.GetBytes()
+- uid: SIPSorcery.Net.RTPHeader.GetBytes(System.Byte[])
+  name: GetBytes(Byte[])
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetBytes_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPHeader.GetBytes(System.Byte[])
+  name.vb: GetBytes(Byte())
+  fullName: SIPSorcery.Net.RTPHeader.GetBytes(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPHeader.GetBytes(System.Byte())
+  nameWithType: RTPHeader.GetBytes(Byte[])
+  nameWithType.vb: RTPHeader.GetBytes(Byte())
 - uid: SIPSorcery.Net.RTPHeader.GetBytes*
   name: GetBytes
   href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetBytes_
@@ -14247,15 +14301,15 @@ references:
   commentId: F:SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
   fullName: SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
   nameWithType: RtpIceChannel.SDP_MLINE_INDEX
-- uid: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
-  name: Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
-  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Send_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
-  name.vb: Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
-  fullName: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
-  nameWithType: RtpIceChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte[])
-  nameWithType.vb: RtpIceChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name: Send(RTPChannelSocketsEnum, IPEndPoint, Byte[], Int32)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Send_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name.vb: Send(RTPChannelSocketsEnum, IPEndPoint, Byte(), Int32)
+  fullName: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.Send(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte(), System.Int32)
+  nameWithType: RtpIceChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte[], Int32)
+  nameWithType.vb: RtpIceChannel.Send(RTPChannelSocketsEnum, IPEndPoint, Byte(), Int32)
 - uid: SIPSorcery.Net.RtpIceChannel.Send*
   name: Send
   href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Send_
@@ -14339,6 +14393,15 @@ references:
   fullName.vb: SIPSorcery.Net.RTPPacket.RTPPacket(System.Byte())
   nameWithType: RTPPacket.RTPPacket(Byte[])
   nameWithType.vb: RTPPacket.RTPPacket(Byte())
+- uid: SIPSorcery.Net.RTPPacket.#ctor(System.Byte[],System.Int32)
+  name: RTPPacket(Byte[], Int32)
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket__ctor_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.RTPPacket.#ctor(System.Byte[],System.Int32)
+  name.vb: RTPPacket(Byte(), Int32)
+  fullName: SIPSorcery.Net.RTPPacket.RTPPacket(System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPPacket.RTPPacket(System.Byte(), System.Int32)
+  nameWithType: RTPPacket.RTPPacket(Byte[], Int32)
+  nameWithType.vb: RTPPacket.RTPPacket(Byte(), Int32)
 - uid: SIPSorcery.Net.RTPPacket.#ctor(System.Int32)
   name: RTPPacket(Int32)
   href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket__ctor_System_Int32_
@@ -14352,12 +14415,34 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPPacket.RTPPacket
   nameWithType: RTPPacket.RTPPacket
+- uid: SIPSorcery.Net.RTPPacket.CalculatedSize
+  name: CalculatedSize()
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_CalculatedSize
+  commentId: M:SIPSorcery.Net.RTPPacket.CalculatedSize
+  fullName: SIPSorcery.Net.RTPPacket.CalculatedSize()
+  nameWithType: RTPPacket.CalculatedSize()
+- uid: SIPSorcery.Net.RTPPacket.CalculatedSize*
+  name: CalculatedSize
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_CalculatedSize_
+  commentId: Overload:SIPSorcery.Net.RTPPacket.CalculatedSize
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPPacket.CalculatedSize
+  nameWithType: RTPPacket.CalculatedSize
 - uid: SIPSorcery.Net.RTPPacket.GetBytes
   name: GetBytes()
   href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_GetBytes
   commentId: M:SIPSorcery.Net.RTPPacket.GetBytes
   fullName: SIPSorcery.Net.RTPPacket.GetBytes()
   nameWithType: RTPPacket.GetBytes()
+- uid: SIPSorcery.Net.RTPPacket.GetBytes(System.Byte[])
+  name: GetBytes(Byte[])
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_GetBytes_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPPacket.GetBytes(System.Byte[])
+  name.vb: GetBytes(Byte())
+  fullName: SIPSorcery.Net.RTPPacket.GetBytes(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPPacket.GetBytes(System.Byte())
+  nameWithType: RTPPacket.GetBytes(Byte[])
+  nameWithType.vb: RTPPacket.GetBytes(Byte())
 - uid: SIPSorcery.Net.RTPPacket.GetBytes*
   name: GetBytes
   href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_GetBytes_
@@ -14374,9 +14459,22 @@ references:
 - uid: SIPSorcery.Net.RTPPacket.Payload
   name: Payload
   href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_Payload
-  commentId: F:SIPSorcery.Net.RTPPacket.Payload
+  commentId: P:SIPSorcery.Net.RTPPacket.Payload
   fullName: SIPSorcery.Net.RTPPacket.Payload
   nameWithType: RTPPacket.Payload
+- uid: SIPSorcery.Net.RTPPacket.Payload*
+  name: Payload
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_Payload_
+  commentId: Overload:SIPSorcery.Net.RTPPacket.Payload
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPPacket.Payload
+  nameWithType: RTPPacket.Payload
+- uid: SIPSorcery.Net.RTPPacket.PayloadSize
+  name: PayloadSize
+  href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_PayloadSize
+  commentId: F:SIPSorcery.Net.RTPPacket.PayloadSize
+  fullName: SIPSorcery.Net.RTPPacket.PayloadSize
+  nameWithType: RTPPacket.PayloadSize
 - uid: SIPSorcery.Net.RTPPacket.TryParse(System.ReadOnlySpan{System.Byte},SIPSorcery.Net.RTPPacket,System.Int32@)
   name: TryParse(ReadOnlySpan<Byte>, RTPPacket, out Int32)
   href: api/SIPSorcery.Net.RTPPacket.html#SIPSorcery_Net_RTPPacket_TryParse_System_ReadOnlySpan_System_Byte__SIPSorcery_Net_RTPPacket_System_Int32__
@@ -23072,6 +23170,15 @@ references:
   fullName.vb: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte())
   nameWithType: SrtcpTransformer.Transform(Byte[])
   nameWithType.vb: SrtcpTransformer.Transform(Byte())
+- uid: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[],System.Byte[],System.Int32)
+  name: Transform(Byte[], Byte[], Int32)
+  href: api/SIPSorcery.Net.SrtcpTransformer.html#SIPSorcery_Net_SrtcpTransformer_Transform_System_Byte___System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[],System.Byte[],System.Int32)
+  name.vb: Transform(Byte(), Byte(), Int32)
+  fullName: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[], System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte(), System.Byte(), System.Int32)
+  nameWithType: SrtcpTransformer.Transform(Byte[], Byte[], Int32)
+  nameWithType.vb: SrtcpTransformer.Transform(Byte(), Byte(), Int32)
 - uid: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[],System.Int32,System.Int32)
   name: Transform(Byte[], Int32, Int32)
   href: api/SIPSorcery.Net.SrtcpTransformer.html#SIPSorcery_Net_SrtcpTransformer_Transform_System_Byte___System_Int32_System_Int32_
@@ -23081,6 +23188,15 @@ references:
   fullName.vb: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte(), System.Int32, System.Int32)
   nameWithType: SrtcpTransformer.Transform(Byte[], Int32, Int32)
   nameWithType.vb: SrtcpTransformer.Transform(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: Transform(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.SrtcpTransformer.html#SIPSorcery_Net_SrtcpTransformer_Transform_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: Transform(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtcpTransformer.Transform(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: SrtcpTransformer.Transform(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: SrtcpTransformer.Transform(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.SrtcpTransformer.Transform*
   name: Transform
   href: api/SIPSorcery.Net.SrtcpTransformer.html#SIPSorcery_Net_SrtcpTransformer_Transform_
@@ -23451,6 +23567,15 @@ references:
   fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte(), System.Int32, System.Int32)
   nameWithType: SrtpHandler.ProtectRTCP(Byte[], Int32, Int32)
   nameWithType.vb: SrtpHandler.ProtectRTCP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: ProtectRTCP(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTCP_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: ProtectRTCP(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: SrtpHandler.ProtectRTCP(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: SrtpHandler.ProtectRTCP(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.SrtpHandler.ProtectRTCP(System.Byte[],System.Int32,System.Int32@)
   name: ProtectRTCP(Byte[], Int32, out Int32)
   href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTCP_System_Byte___System_Int32_System_Int32__
@@ -23476,6 +23601,15 @@ references:
   fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte(), System.Int32, System.Int32)
   nameWithType: SrtpHandler.ProtectRTP(Byte[], Int32, Int32)
   nameWithType.vb: SrtpHandler.ProtectRTP(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: ProtectRTP(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTP_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: ProtectRTP(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: SrtpHandler.ProtectRTP(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: SrtpHandler.ProtectRTP(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.SrtpHandler.ProtectRTP(System.Byte[],System.Int32,System.Int32@)
   name: ProtectRTP(Byte[], Int32, out Int32)
   href: api/SIPSorcery.Net.SrtpHandler.html#SIPSorcery_Net_SrtpHandler_ProtectRTP_System_Byte___System_Int32_System_Int32__
@@ -24067,6 +24201,15 @@ references:
   fullName.vb: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte())
   nameWithType: SrtpTransformer.Transform(Byte[])
   nameWithType.vb: SrtpTransformer.Transform(Byte())
+- uid: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[],System.Byte[],System.Int32)
+  name: Transform(Byte[], Byte[], Int32)
+  href: api/SIPSorcery.Net.SrtpTransformer.html#SIPSorcery_Net_SrtpTransformer_Transform_System_Byte___System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[],System.Byte[],System.Int32)
+  name.vb: Transform(Byte(), Byte(), Int32)
+  fullName: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[], System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte(), System.Byte(), System.Int32)
+  nameWithType: SrtpTransformer.Transform(Byte[], Byte[], Int32)
+  nameWithType.vb: SrtpTransformer.Transform(Byte(), Byte(), Int32)
 - uid: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[],System.Int32,System.Int32)
   name: Transform(Byte[], Int32, Int32)
   href: api/SIPSorcery.Net.SrtpTransformer.html#SIPSorcery_Net_SrtpTransformer_Transform_System_Byte___System_Int32_System_Int32_
@@ -24076,6 +24219,15 @@ references:
   fullName.vb: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte(), System.Int32, System.Int32)
   nameWithType: SrtpTransformer.Transform(Byte[], Int32, Int32)
   nameWithType.vb: SrtpTransformer.Transform(Byte(), Int32, Int32)
+- uid: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name: Transform(Byte[], Int32, Int32, Byte[], Int32)
+  href: api/SIPSorcery.Net.SrtpTransformer.html#SIPSorcery_Net_SrtpTransformer_Transform_System_Byte___System_Int32_System_Int32_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32)
+  name.vb: Transform(Byte(), Int32, Int32, Byte(), Int32)
+  fullName: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.SrtpTransformer.Transform(System.Byte(), System.Int32, System.Int32, System.Byte(), System.Int32)
+  nameWithType: SrtpTransformer.Transform(Byte[], Int32, Int32, Byte[], Int32)
+  nameWithType.vb: SrtpTransformer.Transform(Byte(), Int32, Int32, Byte(), Int32)
 - uid: SIPSorcery.Net.SrtpTransformer.Transform*
   name: Transform
   href: api/SIPSorcery.Net.SrtpTransformer.html#SIPSorcery_Net_SrtpTransformer_Transform_
