@@ -6,9 +6,9 @@
     <AssemblyName>webrtcecho</AssemblyName>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="SIPSorcery" Version="6.2.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+    </ItemGroup>
     
   <ItemGroup>
     <None Include=".azure\deployscripts\deploy.sh">
