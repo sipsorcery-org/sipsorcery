@@ -339,6 +339,12 @@ namespace SIPSorcery.Net
         /// the destination address
         /// </summary>
         public bool X_ICEIncludeAllInterfaceAddresses;
+
+        /// <summary>
+        /// Set to true to use the RSA key in the certificate for the DTLS handshake. The default
+        /// is to use ECDSA. Chrome has defaulted to ECDSA since 2016 (see https://developer.chrome.com/blog/webrtc-ecdsa).
+        /// </summary>
+        public bool X_UseRsaForDtlsCertificate;
     }
 
     /// <summary>

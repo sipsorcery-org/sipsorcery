@@ -86,7 +86,7 @@ namespace SIPSorcery
                 Log.LogInformation($"Call hungup by remote party.");
                 exitCts.Cancel();
             };
-            userAgent.ServerCallCancelled += (uas) => Log.LogInformation("Incoming call cancelled by caller.");
+            userAgent.ServerCallCancelled += (uas, cancelReq) => Log.LogInformation("Incoming call cancelled by caller.");
             userAgent.OnIncomingCall += async (ua, req) =>
             {
                 Log.LogInformation($"Incoming call request from {req.RemoteSIPEndPoint}: {req.StatusLine}.");

@@ -13,7 +13,10 @@
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.13" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="1.4.2" />
     <PackageReference Include="SIPSorceryMedia.Windows" Version="6.0.5" />
-    <PackageReference Include="SIPSorcery" Version="8.0.0" />
   </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+    </ItemGroup>
 
 </Project>

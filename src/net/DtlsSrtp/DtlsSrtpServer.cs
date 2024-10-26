@@ -6,11 +6,30 @@
 // Derived From:
 // https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/DtlsSrtpServer.java
 //
+// Notes:
+// I was unable to find good info on how the DTLS handshake works with regards the server
+// and client using different certificate type, e.g. RSA and ECDSA. Eventually I determined
+// that the crucial properties are:
+// - The type of the DTLS server's certificate. This certificate dictates which cipher suite
+//   can be used. The digital signature algorithm in the server's certificate and in the cipher
+//   suite MUST match.
+// - The client's certificate is NOT used to determine the cipher suite. The client's certificate
+//   is only used for authentication. It can be either RSA or ECDSA providing the server is
+//   capable of verifying it (at this stage all WebRTC implementations should implement both
+//   RSA and ECDSA).
+//
+// Based on this understanding the main failure condition is if the client only supports cipher
+// suites for ONE of RSA or ECDSA. If the server's certificate is for the other type then the handshake
+// cannot proceed.
+//
+// Aaron Clauson 25 Oct 2024.
+//
 // Author(s):
 // Rafael Soares (raf.csoares@kyubinteractive.com)
 //
 // History:
 // 01 Jul 2020	Rafael Soares   Created.
+// 21 Oct 2024  Aaron Clauson   Improved the cipher suite selection logic.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,6 +39,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
@@ -90,10 +110,11 @@ namespace SIPSorcery.Net
 
         Certificate mCertificateChain = null;
         AsymmetricKeyParameter mPrivateKey = null;
+        bool mIsEcdsaCertificate = false;
 
         private RTCDtlsFingerprint mFingerPrint;
 
-        //private AlgorithmCertificate algorithmCertificate;
+        private string mSignatureAlgorithm;
 
         public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
@@ -148,21 +169,49 @@ namespace SIPSorcery.Net
                 (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
             }
 
-            this.cipherSuites = base.GetCipherSuites();
+            // Check if the certificate is ECDSA or RSA
+            var certificate = certificateChain.GetCertificateAt(0);
+            var signatureAlgorithmOid = certificate.SignatureAlgorithm.Algorithm.Id;
 
-            // Add some additional cipher suites to test ECDSA. Bouncy Castle's default list does not include enough options to overlap with some common webrtc libraries.
-            //int[] newCipherSuites = new int[this.cipherSuites.Length + 1];
-            //Array.Copy(this.cipherSuites, newCipherSuites, this.cipherSuites.Length);
-            //newCipherSuites[this.cipherSuites.Length] = CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
-            //this.cipherSuites = newCipherSuites;
+            // Check if the certificate is ECDSA or RSA based on the OID
+            mIsEcdsaCertificate = signatureAlgorithmOid.StartsWith("1.2.840.10045.4.3"); // OID prefix for ECDSA
 
-            this.mPrivateKey = privateKey;
+            int[] newCipherSuites;
+
+            if (mIsEcdsaCertificate)
+            {
+                // Set only ECDSA-based cipher suites
+                newCipherSuites = new int[]
+                {
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,                // 0xC00A
+                    CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, // 0xCCA9
+                };
+            }
+            else
+            {
+                // Set only RSA-based cipher suites
+                newCipherSuites = new int[]
+                {
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,              // 0xC02F
+                    CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,  // 0xCCA8
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,                 // 0xC013
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA                  // 0xC014
+                };
+            }
+
+            // Update the cipher suites
+            this.cipherSuites = newCipherSuites;
+
+            // Set the private key and certificate chain
+            mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
 
-            //Generate FingerPrint
-            var certificate = mCertificateChain.GetCertificateAt(0);
-
+            // Generate fingerprint
             this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
+
+            mSignatureAlgorithm = certificate != null ? DtlsUtils.GetSignatureAlgorithm(certificate) : string.Empty;
         }
 
         public RTCDtlsFingerprint Fingerprint
@@ -208,12 +257,6 @@ namespace SIPSorcery.Net
         public override int GetSelectedCipherSuite()
         {
             /*
-             * TODO RFC 5246 7.4.3. In order to negotiate correctly, the server MUST check any candidate cipher suites against the
-             * "signature_algorithms" extension before selecting them. This is somewhat inelegant but is a compromise designed to
-             * minimize changes to the original cipher suite design.
-             */
-
-            /*
              * RFC 4429 5.1. A server that receives a ClientHello containing one or both of these extensions MUST use the client's
              * enumerated capabilities to guide its selection of an appropriate cipher suite. One of the proposed ECC cipher suites
              * must be negotiated only if the server can successfully complete the handshake while using the curves and point
@@ -221,7 +264,24 @@ namespace SIPSorcery.Net
              */
             bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
 
+            // Get available cipher suites
             int[] cipherSuites = GetCipherSuites();
+
+            // Convert server cipher suites to human-readable names
+            var serverCipherSuiteNames = cipherSuites
+                .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
+                .ToArray();
+
+            // Convert client-offered cipher suites to human-readable names
+            var clientCipherSuiteNames = this.mOfferedCipherSuites
+                .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
+                .ToArray();
+
+            // Log the offered cipher suites by both server and client
+            logger.LogTrace($"Server offered cipher suites:\n {string.Join("\n ", serverCipherSuiteNames)}");
+            logger.LogTrace($"Client offered cipher suites:\n {string.Join("\n ", clientCipherSuiteNames)}");
+
+            // Get available cipher suites
             for (int i = 0; i < cipherSuites.Length; ++i)
             {
                 int cipherSuite = cipherSuites[i];
@@ -230,11 +290,27 @@ namespace SIPSorcery.Net
                         && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
                         && TlsUtilities.IsValidCipherSuiteForVersion(cipherSuite, mServerVersion))
                 {
-                    return this.mSelectedCipherSuite = cipherSuite;
+                    // Cipher suite selected
+                    this.mSelectedCipherSuite = cipherSuite;
+
+                    if (mCertificateChain == null)
+                    {
+                        logger.LogWarning($"No certificate was set for {nameof(DtlsSrtpServer)}.");
+
+                        throw new TlsFatalAlert(AlertDescription.certificate_unobtainable);
+                    }
+
+                    // Log the selected cipher suite and certificate type
+                    string cipherSuiteName = DtlsUtils.CipherSuiteNames.ContainsKey(cipherSuite) ? DtlsUtils.CipherSuiteNames[cipherSuite] : cipherSuite.ToString();
+
+                    logger.LogInformation($"Selected cipher suite: {cipherSuiteName}. Using {mSignatureAlgorithm} certificate with fingerprint {this.mFingerPrint}.");
+
+                    return this.mSelectedCipherSuite;
                 }
             }
 
-            logger.LogWarning($"DTLS server no matching cipher suite. Our server cipher suites {string.Join(" ", cipherSuites)}, client offered suites {string.Join(" ", this.mOfferedCipherSuites)}.");
+            // If no matching cipher suite is found, throw a fatal alert
+            logger.LogWarning($"DTLS server no matching cipher suite. Most likely issue is the client not supporting the server certificate's digital signature algorithm of  {mSignatureAlgorithm}.");
 
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
@@ -512,7 +588,7 @@ namespace SIPSorcery.Net
             {
                 cipherSuites[i] = this.cipherSuites[i];
             }
-         
+
             return cipherSuites;
         }
 

@@ -51,7 +51,7 @@ namespace demo
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
             var userAgent = new SIPUserAgent(_sipTransport, null, true);
-            userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
+            userAgent.ServerCallCancelled += (uas, cancelReq) => Log.LogDebug("Incoming call cancelled by remote party.");
             userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
             userAgent.OnIncomingCall += async (ua, req) =>
             {
