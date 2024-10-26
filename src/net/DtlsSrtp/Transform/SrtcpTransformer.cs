@@ -64,6 +64,12 @@ namespace SIPSorcery.Net
             return Transform(pkt, 0, pkt.Length);
         }
 
+        
+        public int Transform(byte[] pkt,byte[] resultBuffer,int resultBufferLength)
+        {
+            return Transform(pkt, 0, pkt.Length, resultBuffer, resultBufferLength);
+        }
+
         public byte[] Transform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
@@ -87,9 +93,42 @@ namespace SIPSorcery.Net
 
                 // Secure packet into SRTCP format
                 context.TransformPacket(packet);
-                byte[] result = packet.GetData();
+                return packet.GetData();
+              
+            }
+            finally
+            {
+                //Unlock
+                if (!isLocked)
+                    Interlocked.CompareExchange(ref _isLocked, 0, 1);
+            }
+        }
 
-                return result;
+        public int Transform(byte[] pkt, int offset, int length,byte[] resultBuffer,int resultBufferLength)
+        {
+            var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
+            try
+            {
+                // Wrap the data into raw packet for readable format
+                var packet = !isLocked ? this.packet : new RawPacket();
+                packet.Wrap(pkt, offset, length);
+
+                // Associate the packet with its encryption context
+                long ssrc = packet.GetRTCPSSRC();
+                SrtcpCryptoContext context = null;
+                contexts.TryGetValue(ssrc, out context);
+
+                if (context == null)
+                {
+                    context = forwardEngine.GetDefaultContextControl().DeriveContext(ssrc);
+                    context.DeriveSrtcpKeys();
+                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                }
+
+                // Secure packet into SRTCP format
+                context.TransformPacket(packet);
+                return packet.GetDataIntoBuffer(resultBuffer,resultBufferLength);
+              
             }
             finally
             {

@@ -2615,11 +2615,16 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
         /// <returns></returns>
-        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer)
+        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer,int bufferLength=-1)
         {
+            if (bufferLength < 0)
+            {
+                bufferLength = buffer.Length;
+            }
+            
             STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
             sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
-            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer));
+            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer.Take(bufferLength).ToArray()));
 
             var request = sendReq.ToByteBuffer(null, false);
             var sendResult = protocol == ProtocolType.Tcp ?
@@ -2692,7 +2697,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer, int bufferLength=-1)
         {
             if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
                 NominatedEntry.LocalCandidate.IceServer != null &&
@@ -2706,7 +2711,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return base.Send(sendOn, dstEndPoint, buffer);
+                return base.Send(sendOn, dstEndPoint, buffer, bufferLength);
             }
         }
     }
