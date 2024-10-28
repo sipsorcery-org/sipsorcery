@@ -477,9 +477,9 @@ namespace SIPSorcery.Net
         internal List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
 
         /// <summary>
-        /// Creates a copy of the checklist of local and remote candidate pairs
+        /// Lock to co-ordinate access to the _checklist.
         /// </summary>
-        internal List<ChecklistEntry> Checklist { get { return _checklist.ToList(); } }
+        private readonly object _checklistLock = new object();
 
         /// <summary>
         /// For local candidates this implementation takes a shortcut to reduce complexity. 
@@ -524,7 +524,10 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return Math.Max(500, Ta * (Checklist.Count(x => x.State == ChecklistEntryState.Waiting) + Checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
+                    lock (_checklistLock)
+                    {
+                        return Math.Max(500, Ta * (_checklist.Count(x => x.State == ChecklistEntryState.Waiting) + _checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
+                    }
                 }
             }
         }
@@ -663,7 +666,7 @@ namespace SIPSorcery.Net
                                     _iceServers.FindAll(a =>
                                        a != null &&
                                        (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) ||
-                                       a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) : 
+                                       a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) :
                                     new List<RTCIceServer>();
             var supportTcp = tcpIceServers != null && tcpIceServers.Count > 0;
             if (supportTcp)
@@ -676,7 +679,7 @@ namespace SIPSorcery.Net
                     STUNUri.TryParse(serverUrl, out STUNUri uri);
                     if (uri != null && !RtpTcpSocketByUri.ContainsKey(uri))
                     {
-                        
+
                         if (uri != null)
                         {
                             NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, rtpPortRange, true, true, out var rtpTcpSocket, out _);
@@ -925,7 +928,10 @@ namespace SIPSorcery.Net
             _processIceServersTimer?.Dispose();
             _refreshTurnTimer?.Dispose();
             _candidates = new ConcurrentBag<RTCIceCandidate>();
-            _checklist?.Clear();
+            lock (_checklistLock)
+            {
+                _checklist?.Clear();
+            }
             _iceServerConnections?.Clear();
             IceGatheringState = RTCIceGatheringState.@new;
             IceConnectionState = RTCIceConnectionState.@new;
@@ -1148,7 +1154,7 @@ namespace SIPSorcery.Net
                     SendTurnCreatePermissionsRequest(NominatedEntry.RequestTransactionID, NominatedEntry.LocalCandidate.IceServer, NominatedEntry.RemoteCandidate.DestinationEndPoint);
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"Exception {nameof(RefreshTurn)}." + excp);
             }
@@ -1431,7 +1437,7 @@ namespace SIPSorcery.Net
                     supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
                 }
 
-                lock (_checklist)
+                lock (_checklistLock)
                 {
                     if (remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetwork && supportsIPv4 ||
                         remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 && supportsIPv6)
@@ -1481,35 +1487,38 @@ namespace SIPSorcery.Net
 
             var entryRemoteEP = entry.RemoteCandidate.DestinationEndPoint;
 
-            var existingEntry = _checklist.Where(x =>
-                x.LocalCandidate.type == entry.LocalCandidate.type
-                && x.RemoteCandidate.DestinationEndPoint != null
-                && x.RemoteCandidate.DestinationEndPoint.Address.Equals(entryRemoteEP.Address)
-                && x.RemoteCandidate.DestinationEndPoint.Port == entryRemoteEP.Port
-                && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol).SingleOrDefault();
-
-            if (existingEntry != null)
+            lock (_checklistLock)
             {
-                // Don't replace an existing checklist entry if it's already acting as the nominated entry.
-                if (!existingEntry.Nominated)
+                var existingEntry = _checklist.Where(x =>
+                    x.LocalCandidate.type == entry.LocalCandidate.type
+                    && x.RemoteCandidate.DestinationEndPoint != null
+                    && x.RemoteCandidate.DestinationEndPoint.Address.Equals(entryRemoteEP.Address)
+                    && x.RemoteCandidate.DestinationEndPoint.Port == entryRemoteEP.Port
+                    && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol).SingleOrDefault();
+
+                if (existingEntry != null)
                 {
-                    if (entry.Priority > existingEntry.Priority)
+                    // Don't replace an existing checklist entry if it's already acting as the nominated entry.
+                    if (!existingEntry.Nominated)
                     {
-                        logger.LogDebug($"Removing lower priority entry and adding candidate pair to checklist for: {entry.RemoteCandidate}");
-                        _checklist.Remove(existingEntry);
-                        _checklist.Add(entry);
-                    }
-                    else
-                    {
-                        logger.LogDebug($"Existing checklist entry has higher priority, NOT adding entry for: {entry.RemoteCandidate}");
+                        if (entry.Priority > existingEntry.Priority)
+                        {
+                            logger.LogDebug($"Removing lower priority entry and adding candidate pair to checklist for: {entry.RemoteCandidate}");
+                            _checklist.Remove(existingEntry);
+                            _checklist.Add(entry);
+                        }
+                        else
+                        {
+                            logger.LogDebug($"Existing checklist entry has higher priority, NOT adding entry for: {entry.RemoteCandidate}");
+                        }
                     }
                 }
-            }
-            else
-            {
-                // No existing entry.
-                logger.LogDebug($"Adding new candidate pair to checklist for: {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}");
-                _checklist.Add(entry);
+                else
+                {
+                    // No existing entry.
+                    logger.LogDebug($"Adding new candidate pair to checklist for: {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}");
+                    _checklist.Add(entry);
+                }
             }
         }
 
@@ -1582,16 +1591,16 @@ namespace SIPSorcery.Net
                 // Until that happens there is no work to do.
                 if (IceConnectionState == RTCIceConnectionState.checking)
                 {
-                    if (Checklist.Count > 0)
+                    lock (_checklistLock)
                     {
-                        if (RemoteIceUser == null || RemoteIcePassword == null)
+                        if (_checklist.Count > 0)
                         {
-                            logger.LogWarning("ICE RTP channel checklist processing cannot occur as either the remote ICE user or password are not set.");
-                            IceConnectionState = RTCIceConnectionState.failed;
-                        }
-                        else
-                        {
-                            lock (_checklist)
+                            if (RemoteIceUser == null || RemoteIcePassword == null)
+                            {
+                                logger.LogWarning("ICE RTP channel checklist processing cannot occur as either the remote ICE user or password are not set.");
+                                IceConnectionState = RTCIceConnectionState.failed;
+                            }
+                            else
                             {
                                 // The checklist gets sorted into priority order whenever a remote candidate and its corresponding candidate pairs
                                 // are added. At this point it can be relied upon that the checklist is correctly sorted by candidate pair priority.
@@ -1670,19 +1679,19 @@ namespace SIPSorcery.Net
                                 }
                             }
                         }
-                    }
-                    else if (_checklistStartedAt != DateTime.MinValue &&
-                        DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
-                    {
-                        // No checklist entries were made available before the failed timeout.
-                        logger.LogWarning($"ICE RTP channel failed to connect as no checklist entries became available within {DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds:0.##}s.");
+                        else if (_checklistStartedAt != DateTime.MinValue &&
+                            DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
+                        {
+                            // No checklist entries were made available before the failed timeout.
+                            logger.LogWarning($"ICE RTP channel failed to connect as no checklist entries became available within {DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds:0.##}s.");
 
-                        _checklistState = ChecklistState.Failed;
-                        //IceConnectionState = RTCIceConnectionState.disconnected;
-                        // No point going to and ICE disconnected state as there was never a connection and therefore
-                        // nothing to monitor for a re-connection.
-                        IceConnectionState = RTCIceConnectionState.failed;
-                        OnIceConnectionStateChange?.Invoke(IceConnectionState);
+                            _checklistState = ChecklistState.Failed;
+                            //IceConnectionState = RTCIceConnectionState.disconnected;
+                            // No point going to and ICE disconnected state as there was never a connection and therefore
+                            // nothing to monitor for a re-connection.
+                            IceConnectionState = RTCIceConnectionState.failed;
+                            OnIceConnectionStateChange?.Invoke(IceConnectionState);
+                        }
                     }
                 }
             }
@@ -1994,50 +2003,53 @@ namespace SIPSorcery.Net
         {
             if (IsController && (NominatedEntry == null || !NominatedEntry.Nominated || NominatedEntry.State != ChecklistEntryState.Succeeded))
             {
-                _checklist.Sort();
-
-                var findBetterOptionOrWait = possibleMatchingCheckEntry == null; //|| possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
-                var nominatedCandidate = _checklist.Find(
-                        x => x.Nominated
-                        && x.State == ChecklistEntryState.Succeeded
-                        && (x.LastCheckSentAt == DateTime.MinValue ||
-                            DateTime.Now.Subtract(x.LastCheckSentAt).TotalSeconds <= FAILED_TIMEOUT_PERIOD));
-
-                //We already have a good candidate, discard our succeded candidate
-                if (nominatedCandidate != null /*&& nominatedCandidate.RemoteCandidate.type != RTCIceCandidateType.relay*/)
+                lock (_checklistLock)
                 {
-                    possibleMatchingCheckEntry = null;
-                    findBetterOptionOrWait = false;
-                }
+                    _checklist.Sort();
 
-                if (findBetterOptionOrWait)
-                {
-                    //Search for another succeded non-nominated entries with better priority over our current object.
-                    var betterOptionEntry = _checklist.Find(x =>
-                       x.State == ChecklistEntryState.Succeeded &&
-                        !x.Nominated &&
-                        (possibleMatchingCheckEntry == null ||
-                         (x.Priority > possibleMatchingCheckEntry.Priority /*&& x.RemoteCandidate.type != RTCIceCandidateType.relay*/) ||
-                         possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+                    var findBetterOptionOrWait = possibleMatchingCheckEntry == null; //|| possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
+                    var nominatedCandidate = _checklist.Find(
+                            x => x.Nominated
+                            && x.State == ChecklistEntryState.Succeeded
+                            && (x.LastCheckSentAt == DateTime.MinValue ||
+                                DateTime.Now.Subtract(x.LastCheckSentAt).TotalSeconds <= FAILED_TIMEOUT_PERIOD));
 
-                    if (betterOptionEntry != null)
+                    //We already have a good candidate, discard our succeded candidate
+                    if (nominatedCandidate != null /*&& nominatedCandidate.RemoteCandidate.type != RTCIceCandidateType.relay*/)
                     {
-                        possibleMatchingCheckEntry = betterOptionEntry;
-                        findBetterOptionOrWait = false; //possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
+                        possibleMatchingCheckEntry = null;
+                        findBetterOptionOrWait = false;
                     }
 
-                    //if we still need to find a better option, we will search for matching entries with high priority that still processing
                     if (findBetterOptionOrWait)
                     {
-                        var waitOptionEntry = _checklist.Find(x =>
-                            (x.State == ChecklistEntryState.InProgress || x.State == ChecklistEntryState.Waiting) &&
-                             (possibleMatchingCheckEntry == null ||
-                              (x.Priority > possibleMatchingCheckEntry.Priority /*&& x.RemoteCandidate.type != RTCIceCandidateType.relay*/) ||
-                              possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+                        //Search for another succeded non-nominated entries with better priority over our current object.
+                        var betterOptionEntry = _checklist.Find(x =>
+                           x.State == ChecklistEntryState.Succeeded &&
+                            !x.Nominated &&
+                            (possibleMatchingCheckEntry == null ||
+                             (x.Priority > possibleMatchingCheckEntry.Priority /*&& x.RemoteCandidate.type != RTCIceCandidateType.relay*/) ||
+                             possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
 
-                        if (waitOptionEntry != null)
+                        if (betterOptionEntry != null)
                         {
-                            possibleMatchingCheckEntry = null;
+                            possibleMatchingCheckEntry = betterOptionEntry;
+                            findBetterOptionOrWait = false; //possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
+                        }
+
+                        //if we still need to find a better option, we will search for matching entries with high priority that still processing
+                        if (findBetterOptionOrWait)
+                        {
+                            var waitOptionEntry = _checklist.Find(x =>
+                                (x.State == ChecklistEntryState.InProgress || x.State == ChecklistEntryState.Waiting) &&
+                                 (possibleMatchingCheckEntry == null ||
+                                  (x.Priority > possibleMatchingCheckEntry.Priority /*&& x.RemoteCandidate.type != RTCIceCandidateType.relay*/) ||
+                                  possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
+
+                            if (waitOptionEntry != null)
+                            {
+                                possibleMatchingCheckEntry = null;
+                            }
                         }
                     }
                 }
@@ -2113,7 +2125,7 @@ namespace SIPSorcery.Net
                     ChecklistEntry matchingChecklistEntry = null;
 
                     // Find the checklist entry for this remote candidate and update its status.
-                    lock (_checklist)
+                    lock (_checklistLock)
                     {
                         // The matching checklist entry is chosen as:
                         // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
@@ -2216,7 +2228,7 @@ namespace SIPSorcery.Net
             string txID = Encoding.ASCII.GetString(transactionID);
             ChecklistEntry matchingChecklistEntry = null;
 
-            lock (_checklist)
+            lock (_checklistLock)
             {
                 matchingChecklistEntry = _checklist.Where(x => x.IsTransactionIDMatch(txID)).FirstOrDefault();
             }
@@ -2615,13 +2627,13 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
         /// <returns></returns>
-        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer,int bufferLength=-1)
+        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer, int bufferLength = -1)
         {
             if (bufferLength < 0)
             {
                 bufferLength = buffer.Length;
             }
-            
+
             STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
             sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
             sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer.Take(bufferLength).ToArray()));
@@ -2697,7 +2709,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer, int bufferLength=-1)
+        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer, int bufferLength = -1)
         {
             if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
                 NominatedEntry.LocalCandidate.IceServer != null &&
