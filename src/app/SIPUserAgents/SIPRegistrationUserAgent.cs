@@ -334,10 +334,10 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
+                logger.LogDebug($"Stopping SIP registration user agent for {m_sipAccountAOR}.");
+
                 if (!m_exit)
                 {
-                    logger.LogDebug($"Stopping SIP registration user agent for {m_sipAccountAOR}.");
-
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
 
@@ -347,7 +347,10 @@ namespace SIPSorcery.SIP.App
                         m_expiry = 0;
                         ThreadPool.QueueUserWorkItem(delegate { SendInitialRegister(); });
                     }
+                }
 
+                if (m_registrationTimer != null)
+                {
                     m_registrationTimer.Dispose();
                     m_registrationTimer = null;
                 }
