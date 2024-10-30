@@ -60,7 +60,7 @@ namespace SIPSorcery.Net
             m_primaryDiffPortEndPoint = m_primaryDiffPortSocket.Client.LocalEndPoint as IPEndPoint;
 
             m_secondaryDiffPortSocket = new UdpClient();
-            m_secondaryDiffPortSocket.Client = NetServices.CreateBoundUdpSocket(0, m_primaryEndPoint.Address);
+            m_secondaryDiffPortSocket.Client = NetServices.CreateBoundUdpSocket(0, m_secondaryEndPoint.Address);
             m_secondaryDiffPortEndPoint = m_secondaryDiffPortSocket.Client.LocalEndPoint as IPEndPoint;
 
             logger.LogDebug("STUN Server additional sockets, primary=" + IPSocket.GetSocketString(m_primaryDiffPortEndPoint) + ", secondary=" + IPSocket.GetSocketString(m_secondaryDiffPortEndPoint) + ".");
