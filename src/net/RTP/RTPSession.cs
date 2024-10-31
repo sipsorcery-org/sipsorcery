@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSession.cs
 //
 // Description: Represents an RTP session constituted of a single media stream. The session
@@ -2318,13 +2318,12 @@ namespace SIPSorcery.Net
                     return AudioStream;
                 }
             }
-            else
+            
+            if (HasVideo)
             {
-                if (HasVideo)
-                {
-                    return VideoStream;
-                }
+                return VideoStream;
             }
+            
 
             return null;
         }
