@@ -906,6 +906,13 @@ namespace SIPSorcery.Net
             {
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had an invalid port {candidate.port}.");
             }
+            else if(IPAddress.TryParse(candidate.address, out var addrIPv6) &&
+                    addrIPv6.AddressFamily == AddressFamily.InterNetworkV6 &&
+                    !Socket.OSSupportsIPv6 &&
+                    NetServices.HasActiveIPv6Address())
+            {
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate was for IPv6 but OS does not support {candidate.address}.");
+            }
             else
             {
                 // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
@@ -1114,7 +1121,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        //
         private void RefreshTurn(Object state)
         {
             try
