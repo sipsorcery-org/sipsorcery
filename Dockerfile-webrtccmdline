@@ -1,0 +1,24 @@
+# docker build -t webrtccmdline -f Dockerfile-webrtccmdline .
+# docker login
+# Either:
+# docker tag webrtccmdline:latest docker.io/azaclauson/webrtccmdline:latest
+# docker push azaclauson/webrtccmdline:latest
+# or:
+# az acr login --name sipsorcerycr
+# docker tag webrtccmdline:latest sipsorcerycr.azurecr.io/webrtccmdline:latest
+# docker push sipsorcerycr.azurecr.io/webrtccmdline:latest
+# To run a local container:
+# docker run -it --rm -p 8081:8081 -p 60042:60042/udp webrtccmdline --ws --stun stun:stun.l.google.com:19302
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY . .
+WORKDIR /src/examples/webrtccmdline
+RUN dotnet publish "webrtccmdline.csproj" -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS final
+WORKDIR /app
+EXPOSE 8080-8081
+EXPOSE 60042
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "webrtccmdline.dll", "--port", "60042", "--ws", "--stun", "stun:stun.l.google.com:19302"]
