@@ -582,6 +582,7 @@ namespace SIPSorcery.Net
         /// If both are null system <see cref="Dns">DNS resolver</see> will be used.
         /// </remarks>
         public Func<string, Task<IPAddress>> MdnsResolve;
+
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
         /// </summary>
@@ -596,7 +597,6 @@ namespace SIPSorcery.Net
         protected Dictionary<STUNUri, IceTcpReceiver> m_rtpTcpReceiverByUri = new Dictionary<STUNUri, IceTcpReceiver>();
 
         private bool m_tcpRtpReceiverStarted = false;
-
 
         /// <summary>
         /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
@@ -661,7 +661,7 @@ namespace SIPSorcery.Net
 
             // Create TCP Socket to implement TURN Control
             // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
-            // Ice Candidates returned by relay will always be UDP Based
+            // Ice Candidates returned by relay will always be UDP based.
             var tcpIceServers = _iceServers != null ?
                                     _iceServers.FindAll(a =>
                                        a != null &&
@@ -671,7 +671,7 @@ namespace SIPSorcery.Net
             var supportTcp = tcpIceServers != null && tcpIceServers.Count > 0;
             if (supportTcp)
             {
-                // Init one TCP Socket per IceServer as we need to connect to proper use a TcpSocket (unfortunally)
+                // Init one TCP Socket per IceServer as we need to connect to properly use a TcpSocket (unfortunately).
                 RtpTcpSocketByUri = new Dictionary<STUNUri, Socket>();
                 foreach (var tcpIceServer in tcpIceServers)
                 {
@@ -760,6 +760,7 @@ namespace SIPSorcery.Net
                 _connectivityChecksTimer = new Timer(DoConnectivityCheck, null, 0, Ta);
             }
         }
+
         protected void StartTcpRtpReceiver()
         {
             if (!m_tcpRtpReceiverStarted && RtpTcpSocketByUri != null && RtpTcpSocketByUri.Count > 0)
