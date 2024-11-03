@@ -1855,7 +1855,7 @@ namespace SIPSorcery.Net
             }
 
             // If RTCP is multiplexed we don't need a control socket.
-            int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2;
+            int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount;
             var rtpChannel = new RTPChannel(!rtpSessionConfig.IsRtcpMultiplexed, rtpSessionConfig.BindAddress, bindPort, rtpSessionConfig.RtpPortRange);
 
 

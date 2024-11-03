@@ -153,7 +153,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        
         private int socketLoop = 0;
         /// <summary>
         /// Handler for end of the begin receive call.
@@ -413,7 +412,6 @@ namespace SIPSorcery.Net
             }
         }
 
-
         /// <summary>
         /// Starts the UDP receiver that listens for RTCP (control) packets.
         /// </summary>
@@ -566,7 +564,7 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
-                logger.LogWarning(sockExcp, $"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning($"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
