@@ -41,33 +41,30 @@ namespace SIPSorcery.Net
 
         public struct H264Nal
         {
-            public readonly int Start;
-            public readonly int Length;
-
+            public byte[] NAL { get; }
             public bool IsLast { get; }
 
-            public H264Nal(int start, int length, bool isLast)
+            public H264Nal(byte[] nal, bool isLast)
             {
-                Start = start;
-                Length = length;
+                NAL = nal;
                 IsLast = isLast;
             }
         }
 
-        public static IEnumerable<H264Nal> ParseNals(byte[] accessUnit, int start, int length)
+        public static IEnumerable<H264Nal> ParseNals(byte[] accessUnit)
         {
             int zeroes = 0;
 
             // Parse NALs from H264 access unit, encoded as an Annex B bitstream.
             // NALs are delimited by 0x000001 or 0x00000001.
             int currPosn = 0;
-            for (int i = 0; i < length; i++)
+            for (int i = 0; i < accessUnit.Length; i++)
             {
-                if (accessUnit[start+i] == 0x00)
+                if (accessUnit[i] == 0x00)
                 {
                     zeroes++;
                 }
-                else if (accessUnit[start+i] == 0x01 && zeroes >= 2)
+                else if (accessUnit[i] == 0x01 && zeroes >= 2)
                 {
                     // This is a NAL start sequence.
                     int nalStart = i + 1;
@@ -77,7 +74,7 @@ namespace SIPSorcery.Net
                         int nalSize = endPosn - currPosn;
                         bool isLast = currPosn + nalSize == accessUnit.Length;
 
-                        yield return new H264Nal(start+currPosn, nalSize, isLast);
+                        yield return new H264Nal(accessUnit.Skip(currPosn).Take(nalSize).ToArray(), isLast);
                     }
 
                     currPosn = nalStart;
@@ -88,9 +85,9 @@ namespace SIPSorcery.Net
                 }
             }
 
-            if (currPosn < length)
+            if (currPosn < accessUnit.Length)
             {
-                yield return new H264Nal(start+currPosn, length - currPosn, true);
+                yield return new H264Nal(accessUnit.Skip(currPosn).ToArray(), true);
             }
         }
 

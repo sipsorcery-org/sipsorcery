@@ -15,33 +15,23 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.IO;
 
 namespace SIPSorcery.Net
 {
     public class RTPPacket
     {
         public RTPHeader Header;
-        public byte[] Payload { get; private set; }
-        public int PayloadSize = -1;
+        public byte[] Payload;
+
         public RTPPacket()
         {
             Header = new RTPHeader();
         }
 
-        
         public RTPPacket(int payloadSize)
         {
             Header = new RTPHeader();
             Payload = new byte[payloadSize];
-            this.PayloadSize = payloadSize;
-        }
-        
-        public RTPPacket(byte[] payloadBuffer, int payloadSize)
-        {
-            Header = new RTPHeader();
-            Payload = payloadBuffer;
-            this.PayloadSize = payloadSize;
         }
 
         public RTPPacket(byte[] packet)
@@ -49,33 +39,15 @@ namespace SIPSorcery.Net
             Header = new RTPHeader(packet);
             Payload = new byte[Header.PayloadSize];
             Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
-            this.PayloadSize = packet.Length;
         }
 
-
-        public int CalculatedSize()
-        {
-            return Header.Length + PayloadSize;
-        }
-
-        public int GetBytes(byte[] buffer)
-        {
-            if (buffer.Length < CalculatedSize())
-            {
-                throw new InvalidDataException("buffer is too small");
-            }
-
-            Header.GetBytes(buffer);
-            Array.Copy(Payload, 0, buffer, Header.Length, PayloadSize);
-            return Header.Length+PayloadSize;
-        }
         public byte[] GetBytes()
         {
             byte[] header = Header.GetBytes();
             byte[] packet = new byte[header.Length + Payload.Length];
 
             Array.Copy(header, packet, header.Length);
-            Array.Copy(Payload, 0, packet, header.Length, PayloadSize);
+            Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
 
             return packet;
         }

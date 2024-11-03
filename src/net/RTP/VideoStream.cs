@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -133,22 +132,13 @@ namespace SIPSorcery.net.RTP
         /// See <see href="https://www.itu.int/rec/dologin_pub.asp?lang=e&amp;id=T-REC-H.264-201602-S!!PDF-E&amp;type=items" /> Annex B for byte stream specification.
         /// </remarks>
         // The same URL without XML escape sequences: https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items
-        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit, int index=-1, int length=-1)
+        public void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
         {
-            if (index < 0)
-            {
-                index = 0;
-            }
-
-            if (length < 0)
-            {
-                length = accessUnit.Length;
-            }
             if (CheckIfCanSendRtpRaw())
             {
-                foreach (var nal in H264Packetiser.ParseNals(accessUnit,index,length))
+                foreach (var nal in H264Packetiser.ParseNals(accessUnit))
                 {
-                    SendH264Nal(duration, payloadTypeID, accessUnit, nal.IsLast,nal.Start,nal.Length);
+                    SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast);
                 }
             }
         }
@@ -161,19 +151,19 @@ namespace SIPSorcery.net.RTP
         /// <param name="nal">The buffer containing the NAL to send.</param>
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
-        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal,int arrIndex,int length)
+        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal)
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
 
-            byte nal0 = nal[arrIndex+0];
+            byte nal0 = nal[0];
 
-            if (length <= RTPSession.RTP_MAX_PAYLOAD)
+            if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
                 // Send as Single-Time Aggregation Packet (STAP-A).
-                byte[] payload = new byte[length];
+                byte[] payload = new byte[nal.Length];
                 int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
-                Buffer.BlockCopy(nal, arrIndex, payload, 0, length);
+                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
 
                 SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -181,29 +171,25 @@ namespace SIPSorcery.net.RTP
             }
             else
             {
-                arrIndex++;
-                length--;
-                //nal = nal.Skip(1).ToArray();
+                nal = nal.Skip(1).ToArray();
 
                 // Send as Fragmentation Unit A (FU-A):
-                for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD <length; index++)
+                for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
                 {
                     int offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                    int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < length) ? RTPSession.RTP_MAX_PAYLOAD : length - index * RTPSession.RTP_MAX_PAYLOAD;
+                    int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
 
                     bool isFirstPacket = index == 0;
-                    bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= length;
+                    bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
                     int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
                     byte[] h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
 
-                    byte[] payload = ArrayPool<byte>.Shared.Rent(payloadLength + h264RtpHdr.Length);
-                    //byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
+                    byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
                     Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
-                    Buffer.BlockCopy(nal, offset+arrIndex, payload, h264RtpHdr.Length, payloadLength);
+                    Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
 
-                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true,dataLength:payloadLength + h264RtpHdr.Length);
-                    ArrayPool<byte>.Shared.Return(payload);
+                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 }
             }
@@ -269,7 +255,7 @@ namespace SIPSorcery.net.RTP
                     SendVp8Frame(durationRtpUnits, payloadID, sample);
                     break;
                 case "H264":
-                    SendH264Frame(durationRtpUnits, payloadID, sample,0,sample.Length);
+                    SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
