@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSession.cs
 //
 // Description: Represents an RTP session constituted of a single media stream. The session
@@ -1855,7 +1855,7 @@ namespace SIPSorcery.Net
             }
 
             // If RTCP is multiplexed we don't need a control socket.
-            int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2;
+            int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount;
             var rtpChannel = new RTPChannel(!rtpSessionConfig.IsRtcpMultiplexed, rtpSessionConfig.BindAddress, bindPort, rtpSessionConfig.RtpPortRange);
 
 
@@ -2318,13 +2318,12 @@ namespace SIPSorcery.Net
                     return AudioStream;
                 }
             }
-            else
+            
+            if (HasVideo)
             {
-                if (HasVideo)
-                {
-                    return VideoStream;
-                }
+                return VideoStream;
             }
+            
 
             return null;
         }

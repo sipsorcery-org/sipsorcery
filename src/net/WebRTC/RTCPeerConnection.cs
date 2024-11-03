@@ -648,7 +648,7 @@ namespace SIPSorcery.Net
             _configuration?.iceServers,
             _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
             _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-            rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2,
+            rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2,
             rtpSessionConfig.RtpPortRange);
 
             if (rtpSessionConfig.IsMediaMultiplexed)
