@@ -41908,6 +41908,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.GetLocalIPv6AddressForInternet
   nameWithType: NetServices.GetLocalIPv6AddressForInternet
+- uid: SIPSorcery.Sys.NetServices.HasActiveIPv6Address
+  name: HasActiveIPv6Address()
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_HasActiveIPv6Address
+  commentId: M:SIPSorcery.Sys.NetServices.HasActiveIPv6Address
+  fullName: SIPSorcery.Sys.NetServices.HasActiveIPv6Address()
+  nameWithType: NetServices.HasActiveIPv6Address()
+- uid: SIPSorcery.Sys.NetServices.HasActiveIPv6Address*
+  name: HasActiveIPv6Address
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_HasActiveIPv6Address_
+  commentId: Overload:SIPSorcery.Sys.NetServices.HasActiveIPv6Address
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.HasActiveIPv6Address
+  nameWithType: NetServices.HasActiveIPv6Address
 - uid: SIPSorcery.Sys.NetServices.InternetDefaultAddress
   name: InternetDefaultAddress
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_InternetDefaultAddress
