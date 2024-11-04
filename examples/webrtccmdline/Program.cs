@@ -51,11 +51,11 @@ namespace SIPSorcery.Examples
         public bool UseSecureWebSocket { get; set; }
 
         [Option("wsport", Required = false,
-            HelpText = "The port to use for the web socket server. If not set defualt of 8081 will be used. Format \"--wsport 18081\".")]
+            HelpText = "The port to use for the web socket server. If not set default of 8081 will be used. Format \"--wsport 18081\".")]
         public int WebSocketServerPort { get; set; }
 
-        [Option("wsserver", Required = false,
-           HelpText = "The address of a web socket server to connect to establish a WebRTC connection. Format \"--wsserver=ws://127.0.0.1:8081\".")]
+        [Option("wsclient", Required = false,
+           HelpText = "The address of a web socket server to connect to establish a WebRTC connection. Format \"--wsclient ws://127.0.0.1:8081\".")]
         public string WebSocketServer { get; set; }
 
         [Option("offer", Required = false,
@@ -309,32 +309,55 @@ namespace SIPSorcery.Examples
             }
             else if (options.EchoServerUrl != null)
             {
+                ManualResetEvent gatheringComplete = new ManualResetEvent(false);
+
                 // Create offer and send to echo server.
                 var pc = await Createpc(null, _stunServer, _relayOnly, _noAudioTrack, _noDataChannel, _useRsa, _rtpPort);
 
-                var signaler = new HttpClient();
-
-                var offer = pc.createOffer(null);
-                await pc.setLocalDescription(offer);
-
-                var content = new StringContent(offer.toJSON(), Encoding.UTF8, "application/json");
-                var response = await signaler.PostAsync($"{options.EchoServerUrl}", content);
-                var answerStr = await response.Content.ReadAsStringAsync();
-
-                if (RTCSessionDescriptionInit.TryParse(answerStr, out var answerInit))
+                pc.onicegatheringstatechange += (iceGatheringState) =>
                 {
-                    var setAnswerResult = pc.setRemoteDescription(answerInit);
-                    if (setAnswerResult != SetDescriptionResultEnum.OK)
+                    logger.LogDebug($"ICE gathering state changed to {iceGatheringState}.");
+
+                    if (iceGatheringState == RTCIceGatheringState.complete)
                     {
-                        Console.WriteLine($"Set remote description failed {setAnswerResult}.");
+                        gatheringComplete.Set();
                     }
+                };
+
+                logger.LogDebug("Waiting for ICE gaterhing to complete.");
+
+                if (!gatheringComplete.WaitOne(TimeSpan.FromSeconds(10)))
+                {
+                    logger.LogWarning($"Gave up after 10s waiting for ICE gathering to complete.");
                 }
                 else
                 {
-                    Console.WriteLine("Failed to parse SDP answer from echo server.");
+                    logger.LogDebug($"Attempting to send offer to echo server at {options.EchoServerUrl}.");
+
+                    var signaler = new HttpClient();
+
+                    var offer = pc.createOffer(null);
+                    await pc.setLocalDescription(offer);
+
+                    var content = new StringContent(offer.toJSON(), Encoding.UTF8, "application/json");
+                    var response = await signaler.PostAsync($"{options.EchoServerUrl}", content);
+                    var answerStr = await response.Content.ReadAsStringAsync();
+
+                    if (RTCSessionDescriptionInit.TryParse(answerStr, out var answerInit))
+                    {
+                        var setAnswerResult = pc.setRemoteDescription(answerInit);
+                        if (setAnswerResult != SetDescriptionResultEnum.OK)
+                        {
+                            Console.WriteLine($"Set remote description failed {setAnswerResult}.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to parse SDP answer from echo server.");
+                    }
                 }
             }
-            else if(options.ActAsEchoServer)
+            else if (options.ActAsEchoServer)
             {
                 var echoServer = new EchoServer();
                 echoServer.Start();
@@ -492,7 +515,7 @@ namespace SIPSorcery.Examples
                                     {
                                         byte dtmfByte = 0x03;
 
-                                        if(x.Length >= 6)
+                                        if (x.Length >= 6)
                                         {
                                             dtmfByte = (byte)x.Substring(5).ToCharArray()[0];
                                         }
@@ -704,7 +727,7 @@ namespace SIPSorcery.Examples
 
             _peerConnection.OnRtpEvent += (ep, ev, hdr) =>
             {
-                if(_rtpEventSsrc == 0)
+                if (_rtpEventSsrc == 0)
                 {
                     if (ev.EndOfEvent && hdr.MarkerBit == 1)
                     {
