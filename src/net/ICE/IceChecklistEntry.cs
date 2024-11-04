@@ -288,9 +288,16 @@ namespace SIPSorcery.Net
                     if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
                         errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
                     {
-                        LocalCandidate.IceServer.SetAuthenticationFields(stunResponse);
-                        LocalCandidate.IceServer.GenerateNewTransactionID();
-                        retry = true;
+                        if (LocalCandidate.IceServer == null)
+                        {
+                            logger.LogWarning($"A STUN error response was received on an ICE candidate without a corresponding ICE server, ignoring.");
+                        }
+                        else
+                        {
+                            LocalCandidate.IceServer.SetAuthenticationFields(stunResponse);
+                            LocalCandidate.IceServer.GenerateNewTransactionID();
+                            retry = true;
+                        }
                     }
                 }
 

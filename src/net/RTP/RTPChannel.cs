@@ -42,10 +42,12 @@ namespace SIPSorcery.Net
     public class UdpReceiver
     {
         /// <summary>
-        /// MTU is 1452 bytes so this should be heaps.
-        /// TODO: What about fragmented UDP packets that are put back together by the OS?
+        /// MTU is 1452 bytes so this should be heaps [AC 03 Nov 2024: turns out it's not when considering UDP fragmentation can
+        /// result in a max UDP payload of 65535 - 8 (header) = 65527 bytes].
+        /// An issue was reported with a real World WeBRTC implementation producing UDP packet sizes of 2144 byes #1045. Consequently
+        /// updated from 2048 to 3000.
         /// </summary>
-        protected const int RECEIVE_BUFFER_SIZE = 2048;
+        protected const int RECEIVE_BUFFER_SIZE = 3000;
 
         protected static ILogger logger = Log.Logger;
 
@@ -153,7 +155,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        private int socketLoop = 0;
         /// <summary>
         /// Handler for end of the begin receive call.
         /// </summary>
@@ -210,17 +211,10 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
-                socketLoop = 0;
-                
             }
             catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
-                // not really safe. creates a loop with stack exhaustion 
-                socketLoop++;
-                if (socketLoop > 5)
-                {
-                    Close(resetSockExcp.Message);
-                }
+                // Thrown when close is called on a socket from this end. Safe to ignore.
             }
             catch (SocketException sockExcp)
             {
@@ -469,13 +463,8 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer,int bufferLength=-1)
+        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
-            if (bufferLength == -1)
-            {
-                bufferLength=buffer.Length;
-            }
-                
             if (m_isClosed)
             {
                 return SocketError.Disconnecting;
@@ -484,7 +473,7 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
             }
-            else if (buffer == null || bufferLength == 0)
+            else if (buffer == null || buffer.Length == 0)
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
             }
@@ -527,7 +516,7 @@ namespace SIPSorcery.Net
                         m_rtpReceiver.BeginReceiveFrom();
                     }
 
-                    sendSocket.BeginSendTo(buffer, 0, bufferLength, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
                     return SocketError.Success;
                 }
                 catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
