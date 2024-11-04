@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
-using SIPSorceryMedia.Abstractions;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -19,6 +15,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
+
         /// <summary>
         /// Checks that the SDP with Message Media is well formatted.
         /// </summary>

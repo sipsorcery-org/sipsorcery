@@ -42,10 +42,12 @@ namespace SIPSorcery.Net
     public class UdpReceiver
     {
         /// <summary>
-        /// MTU is 1452 bytes so this should be heaps.
-        /// TODO: What about fragmented UDP packets that are put back together by the OS?
+        /// MTU is 1452 bytes so this should be heaps [AC 03 Nov 2024: turns out it's not when considering UDP fragmentation can
+        /// result in a max UDP payload of 65535 - 8 (header) = 65527 bytes].
+        /// An issue was reported with a real World WeBRTC implementation producing UDP packet sizes of 2144 byes #1045. Consequently
+        /// updated from 2048 to 3000.
         /// </summary>
-        protected const int RECEIVE_BUFFER_SIZE = 2048;
+        protected const int RECEIVE_BUFFER_SIZE = 3000;
 
         protected static ILogger logger = Log.Logger;
 
