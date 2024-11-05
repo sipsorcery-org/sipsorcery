@@ -582,6 +582,7 @@ namespace SIPSorcery.Net
         /// If both are null system <see cref="Dns">DNS resolver</see> will be used.
         /// </remarks>
         public Func<string, Task<IPAddress>> MdnsResolve;
+
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
         /// </summary>
@@ -596,7 +597,6 @@ namespace SIPSorcery.Net
         protected Dictionary<STUNUri, IceTcpReceiver> m_rtpTcpReceiverByUri = new Dictionary<STUNUri, IceTcpReceiver>();
 
         private bool m_tcpRtpReceiverStarted = false;
-
 
         /// <summary>
         /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
@@ -661,7 +661,7 @@ namespace SIPSorcery.Net
 
             // Create TCP Socket to implement TURN Control
             // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
-            // Ice Candidates returned by relay will always be UDP Based
+            // Ice Candidates returned by relay will always be UDP based.
             var tcpIceServers = _iceServers != null ?
                                     _iceServers.FindAll(a =>
                                        a != null &&
@@ -671,7 +671,7 @@ namespace SIPSorcery.Net
             var supportTcp = tcpIceServers != null && tcpIceServers.Count > 0;
             if (supportTcp)
             {
-                // Init one TCP Socket per IceServer as we need to connect to proper use a TcpSocket (unfortunally)
+                // Init one TCP Socket per IceServer as we need to connect to properly use a TcpSocket (unfortunately).
                 RtpTcpSocketByUri = new Dictionary<STUNUri, Socket>();
                 foreach (var tcpIceServer in tcpIceServers)
                 {
@@ -760,6 +760,7 @@ namespace SIPSorcery.Net
                 _connectivityChecksTimer = new Timer(DoConnectivityCheck, null, 0, Ta);
             }
         }
+
         protected void StartTcpRtpReceiver()
         {
             if (!m_tcpRtpReceiverStarted && RtpTcpSocketByUri != null && RtpTcpSocketByUri.Count > 0)
@@ -905,6 +906,13 @@ namespace SIPSorcery.Net
             else if (candidate.port <= 0 || candidate.port > IPEndPoint.MaxPort)
             {
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had an invalid port {candidate.port}.");
+            }
+            else if(IPAddress.TryParse(candidate.address, out var addrIPv6) &&
+                    addrIPv6.AddressFamily == AddressFamily.InterNetworkV6 &&
+                    !Socket.OSSupportsIPv6 &&
+                    NetServices.HasActiveIPv6Address())
+            {
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate was for IPv6 but OS does not support {candidate.address}.");
             }
             else
             {
@@ -1114,7 +1122,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        //
         private void RefreshTurn(Object state)
         {
             try
@@ -2627,16 +2634,11 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
         /// <returns></returns>
-        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer, int bufferLength = -1)
+        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer)
         {
-            if (bufferLength < 0)
-            {
-                bufferLength = buffer.Length;
-            }
-
             STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
             sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
-            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer.Take(bufferLength).ToArray()));
+            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer));
 
             var request = sendReq.ToByteBuffer(null, false);
             var sendResult = protocol == ProtocolType.Tcp ?
@@ -2709,7 +2711,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer, int bufferLength = -1)
+        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
                 NominatedEntry.LocalCandidate.IceServer != null &&
@@ -2723,7 +2725,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return base.Send(sendOn, dstEndPoint, buffer, bufferLength);
+                return base.Send(sendOn, dstEndPoint, buffer);
             }
         }
     }

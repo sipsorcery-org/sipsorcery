@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // FileName: NetServices.cs
 //
 // Description:
@@ -795,5 +795,16 @@ namespace SIPSorcery.Sys
             return ipAddresses;
         }
 #endif
+
+        /// <summary>
+        /// Check if the OS has an active IPv6 address configured.
+        /// </summary>
+        public static bool HasActiveIPv6Address()
+        {
+            return NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                .Any(addr => addr.Address.AddressFamily == AddressFamily.InterNetworkV6);
+        }
     }
 }
