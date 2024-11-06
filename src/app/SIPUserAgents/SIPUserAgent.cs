@@ -1764,6 +1764,10 @@ namespace SIPSorcery.SIP.App
                 m_semaphoreSlim.Wait();
                 CallEndedSyncronized(callId);
             }
+			catch (ObjectDisposedException)
+			{
+				//Swallow it
+			}
             finally
             {
                 TryReleaseSemaphore();
