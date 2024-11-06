@@ -1373,107 +1373,117 @@ namespace SIPSorcery.Net
         {
             if (localCandidate == null)
             {
-                throw new ArgumentNullException("localCandidate", "The local candidate must be supplied for UpdateChecklist.");
+                logger.LogError($"{nameof(UpdateChecklist)} the local candidate supplied to UpdateChecklist was null.");
+                return;
             }
             else if (remoteCandidate == null)
             {
-                throw new ArgumentNullException("remoteCandidate", "The remote candidate must be supplied for UpdateChecklist.");
+                logger.LogError($"{nameof(UpdateChecklist)} the remote candidate supplied to UpdateChecklist was null.");
+                return;
             }
 
-            // Attempt to resolve the remote candidate address.
-            if (!IPAddress.TryParse(remoteCandidate.address, out var remoteCandidateIPAddr))
+            // This methd is called in a fire and forget fashion so any exceptions need to be handled here.
+            try
             {
-                if (remoteCandidate.address.ToLower().EndsWith(MDNS_TLD))
+                // Attempt to resolve the remote candidate address.
+                if (!IPAddress.TryParse(remoteCandidate.address, out var remoteCandidateIPAddr))
                 {
-                    var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
-                    if (addresses.Length == 0)
+                    if (remoteCandidate.address.ToLower().EndsWith(MDNS_TLD))
                     {
-                        logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
+                        var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
+                        if (addresses.Length == 0)
+                        {
+                            logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
+                        }
+                        else
+                        {
+                            remoteCandidateIPAddr = addresses[0];
+                            logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+
+                            var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
+                            remoteCandidate.SetDestinationEndPoint(remoteEP);
+                        }
                     }
                     else
                     {
-                        remoteCandidateIPAddr = addresses[0];
-                        logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                        // The candidate string can be a hostname or an IP address.
+                        var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, DnsClient.QueryType.A).ConfigureAwait(false);
 
-                        var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-                        remoteCandidate.SetDestinationEndPoint(remoteEP);
+                        if (lookupResult.Answers.Count > 0)
+                        {
+                            remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
+                            logger.LogWarning($"RTP ICE channel resolved remote candidate {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                        }
+                        else
+                        {
+                            logger.LogDebug($"RTP ICE channel failed to resolve remote candidate {remoteCandidate.address}.");
+                        }
+
+                        if (remoteCandidateIPAddr != null)
+                        {
+                            var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
+                            remoteCandidate.SetDestinationEndPoint(remoteEP);
+                        }
                     }
                 }
                 else
                 {
-                    // The candidate string can be a hostname or an IP address.
-                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, DnsClient.QueryType.A).ConfigureAwait(false);
+                    var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
+                    remoteCandidate.SetDestinationEndPoint(remoteEP);
+                }
 
-                    if (lookupResult.Answers.Count > 0)
+                // If the remote candidate is resolvable create a new checklist entry.
+                if (remoteCandidate.DestinationEndPoint != null)
+                {
+                    bool supportsIPv4 = true;
+                    bool supportsIPv6 = false;
+
+                    if (localCandidate.type == RTCIceCandidateType.relay)
                     {
-                        remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
-                        logger.LogWarning($"RTP ICE channel resolved remote candidate {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                        supportsIPv4 = localCandidate.DestinationEndPoint.AddressFamily == AddressFamily.InterNetwork;
+                        supportsIPv6 = localCandidate.DestinationEndPoint.AddressFamily == AddressFamily.InterNetworkV6;
                     }
                     else
                     {
-                        logger.LogDebug($"RTP ICE channel failed to resolve remote candidate {remoteCandidate.address}.");
+                        supportsIPv4 = base.RtpSocket.AddressFamily == AddressFamily.InterNetwork || base.IsDualMode;
+                        supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
                     }
 
-                    if (remoteCandidateIPAddr != null)
+                    lock (_checklistLock)
                     {
-                        var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-                        remoteCandidate.SetDestinationEndPoint(remoteEP);
+                        if (remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetwork && supportsIPv4 ||
+                            remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 && supportsIPv6)
+                        {
+                            ChecklistEntry entry = new ChecklistEntry(localCandidate, remoteCandidate, IsController);
+
+                            // Because only ONE checklist is currently supported each candidate pair can be set to
+                            // a "waiting" state. If an additional checklist is ever added then only one candidate
+                            // pair with the same foundation should be set to waiting across all checklists.
+                            // See https://tools.ietf.org/html/rfc8445#section-6.1.2.6 for a somewhat convoluted
+                            // explanation and example.
+                            entry.State = ChecklistEntryState.Waiting;
+
+                            AddChecklistEntry(entry);
+                        }
+
+                        // Finally sort the checklist to put it in priority order and if necessary remove lower 
+                        // priority pairs.
+                        _checklist.Sort();
+
+                        while (_checklist.Count > MAX_CHECKLIST_ENTRIES)
+                        {
+                            _checklist.RemoveAt(_checklist.Count - 1);
+                        }
                     }
-                }
-            }
-            else
-            {
-                var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-                remoteCandidate.SetDestinationEndPoint(remoteEP);
-            }
-
-            // If the remote candidate is resolvable create a new checklist entry.
-            if (remoteCandidate.DestinationEndPoint != null)
-            {
-                bool supportsIPv4 = true;
-                bool supportsIPv6 = false;
-
-                if (localCandidate.type == RTCIceCandidateType.relay)
-                {
-                    supportsIPv4 = localCandidate.DestinationEndPoint.AddressFamily == AddressFamily.InterNetwork;
-                    supportsIPv6 = localCandidate.DestinationEndPoint.AddressFamily == AddressFamily.InterNetworkV6;
                 }
                 else
                 {
-                    supportsIPv4 = base.RtpSocket.AddressFamily == AddressFamily.InterNetwork || base.IsDualMode;
-                    supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
-                }
-
-                lock (_checklistLock)
-                {
-                    if (remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetwork && supportsIPv4 ||
-                        remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 && supportsIPv6)
-                    {
-                        ChecklistEntry entry = new ChecklistEntry(localCandidate, remoteCandidate, IsController);
-
-                        // Because only ONE checklist is currently supported each candidate pair can be set to
-                        // a "waiting" state. If an additional checklist is ever added then only one candidate
-                        // pair with the same foundation should be set to waiting across all checklists.
-                        // See https://tools.ietf.org/html/rfc8445#section-6.1.2.6 for a somewhat convoluted
-                        // explanation and example.
-                        entry.State = ChecklistEntryState.Waiting;
-
-                        AddChecklistEntry(entry);
-                    }
-
-                    // Finally sort the checklist to put it in priority order and if necessary remove lower 
-                    // priority pairs.
-                    _checklist.Sort();
-
-                    while (_checklist.Count > MAX_CHECKLIST_ENTRIES)
-                    {
-                        _checklist.RemoveAt(_checklist.Count - 1);
-                    }
+                    logger.LogWarning($"RTP ICE Channel could not create a check list entry for a remote candidate with no destination end point, {remoteCandidate}.");
                 }
             }
-            else
+            catch (Exception excp)
             {
-                logger.LogWarning($"RTP ICE Channel could not create a check list entry for a remote candidate with no destination end point, {remoteCandidate}.");
+                logger.LogError($"Exception {nameof(UpdateChecklist)}." + excp);
             }
         }
 
