@@ -74,6 +74,9 @@ namespace SIPSorcery
         //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
         private static string SIPS_CERTIFICATE_PATH = "localhost.pfx";
 
+        private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+        private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
+
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
         static void Main(string[] args)
@@ -150,8 +153,9 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaFormats.Any(x => x.Key == (int)SDPWellKnownMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Client offer contained PCMU audio codec.");
-                            AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-                            rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
+                            //AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+                            //rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
+                            rtpSession = new VoIPMediaSession();
                             rtpSession.AcceptRtpFromAny = true;
 
                             var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
@@ -242,17 +246,36 @@ namespace SIPSorcery
             };
 
             // Task to handle user key presses.
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 try
                 {
                     while (!exitMre.WaitOne(0))
                     {
                         var keyProps = Console.ReadKey();
+
+                        if (keyProps.KeyChar == 'w')
+                        {
+                            Console.WriteLine();
+                            Console.WriteLine("Welcome requested by user...");
+
+                            if(rtpSession?.IsStarted == true &&
+                                rtpSession?.IsClosed == false)
+                            {
+                                await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+                            }
+                        }
+
                         if (keyProps.KeyChar == 'h' || keyProps.KeyChar == 'q')
                         {
                             Console.WriteLine();
                             Console.WriteLine("Hangup requested by user...");
+
+                            if (rtpSession?.IsStarted == true &&
+                                rtpSession?.IsClosed == false)
+                            {
+                                await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                            }
 
                             Hangup(uas).Wait();
 
