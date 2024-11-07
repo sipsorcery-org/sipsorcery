@@ -96,13 +96,13 @@ namespace SIPSorcery.Net
         /// </summary>
         public string Fmtp { get; }
 
-        public IEnumerable<string> SupportedRtcpFeedbackMessages
-        {
-            get
-            {
-                yield return "goog-remb";
-            }
-        }
+        //public IEnumerable<string> SupportedRtcpFeedbackMessages
+        //{
+        //    get
+        //    {
+        //        yield return "goog-remb";
+        //    }
+        //}
 
         /// <summary>
         /// The standard name of the media format.
