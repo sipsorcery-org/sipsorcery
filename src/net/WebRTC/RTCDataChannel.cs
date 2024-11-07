@@ -16,7 +16,6 @@
 
 using System;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -90,6 +89,7 @@ namespace SIPSorcery.Net
             _transport = transport;
 
             if (init == null) {
+                ordered = true;
                 return;
             }
             // TODO: Utilize ordered, maxPacketLifeTime, maxRetransmits, and protocol;
