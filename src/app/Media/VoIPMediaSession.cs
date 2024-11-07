@@ -69,7 +69,7 @@ namespace SIPSorcery.Media
         /// Default constructor which creates the simplest possible send only audio session. It does not
         /// wire up any devices or video processing.
         /// </summary>
-        public VoIPMediaSession(string musicFilePath = null, Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
+        public VoIPMediaSession(Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
         {
             _audioExtrasSource = new AudioExtrasSource();
             _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
