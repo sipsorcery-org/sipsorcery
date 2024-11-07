@@ -2389,15 +2389,15 @@ references:
   commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(SIPSorceryMedia.Abstractions.MediaEndPoints,System.Net.IPAddress,System.Int32,SIPSorcery.Media.VideoTestPatternSource)
   fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(SIPSorceryMedia.Abstractions.MediaEndPoints, System.Net.IPAddress, System.Int32, SIPSorcery.Media.VideoTestPatternSource)
   nameWithType: VoIPMediaSession.VoIPMediaSession(MediaEndPoints, IPAddress, Int32, VideoTestPatternSource)
-- uid: SIPSorcery.Media.VoIPMediaSession.#ctor(System.String,System.Func{SIPSorceryMedia.Abstractions.AudioFormat,System.Boolean})
-  name: VoIPMediaSession(String, Func<AudioFormat, Boolean>)
-  href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_System_String_System_Func_SIPSorceryMedia_Abstractions_AudioFormat_System_Boolean__
-  commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(System.String,System.Func{SIPSorceryMedia.Abstractions.AudioFormat,System.Boolean})
-  name.vb: VoIPMediaSession(String, Func(Of AudioFormat, Boolean))
-  fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(System.String, System.Func<SIPSorceryMedia.Abstractions.AudioFormat, System.Boolean>)
-  fullName.vb: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(System.String, System.Func(Of SIPSorceryMedia.Abstractions.AudioFormat, System.Boolean))
-  nameWithType: VoIPMediaSession.VoIPMediaSession(String, Func<AudioFormat, Boolean>)
-  nameWithType.vb: VoIPMediaSession.VoIPMediaSession(String, Func(Of AudioFormat, Boolean))
+- uid: SIPSorcery.Media.VoIPMediaSession.#ctor(System.Func{SIPSorceryMedia.Abstractions.AudioFormat,System.Boolean})
+  name: VoIPMediaSession(Func<AudioFormat, Boolean>)
+  href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_System_Func_SIPSorceryMedia_Abstractions_AudioFormat_System_Boolean__
+  commentId: M:SIPSorcery.Media.VoIPMediaSession.#ctor(System.Func{SIPSorceryMedia.Abstractions.AudioFormat,System.Boolean})
+  name.vb: VoIPMediaSession(Func(Of AudioFormat, Boolean))
+  fullName: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(System.Func<SIPSorceryMedia.Abstractions.AudioFormat, System.Boolean>)
+  fullName.vb: SIPSorcery.Media.VoIPMediaSession.VoIPMediaSession(System.Func(Of SIPSorceryMedia.Abstractions.AudioFormat, System.Boolean))
+  nameWithType: VoIPMediaSession.VoIPMediaSession(Func<AudioFormat, Boolean>)
+  nameWithType.vb: VoIPMediaSession.VoIPMediaSession(Func(Of AudioFormat, Boolean))
 - uid: SIPSorcery.Media.VoIPMediaSession.#ctor*
   name: VoIPMediaSession
   href: api/SIPSorcery.Media.VoIPMediaSession.html#SIPSorcery_Media_VoIPMediaSession__ctor_
@@ -21345,19 +21345,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SortMediaCapability
   nameWithType: SDPAudioVideoMediaFormat.SortMediaCapability
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
-  name: SupportedRtcpFeedbackMessages
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_SupportedRtcpFeedbackMessages
-  commentId: P:SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
-  nameWithType: SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
-- uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages*
-  name: SupportedRtcpFeedbackMessages
-  href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_SupportedRtcpFeedbackMessages_
-  commentId: Overload:SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
-  isSpec: "True"
-  fullName: SIPSorcery.Net.SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
-  nameWithType: SDPAudioVideoMediaFormat.SupportedRtcpFeedbackMessages
 - uid: SIPSorcery.Net.SDPAudioVideoMediaFormat.ToAudioFormat
   name: ToAudioFormat()
   href: api/SIPSorcery.Net.SDPAudioVideoMediaFormat.html#SIPSorcery_Net_SDPAudioVideoMediaFormat_ToAudioFormat
