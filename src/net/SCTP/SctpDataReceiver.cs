@@ -81,7 +81,7 @@ namespace SIPSorcery.Net
     {
         /// <summary>
         /// The window size is the maximum number of entries that can be recorded in the 
-        /// <see cref="_receivedChunks"/> dictionary.
+        /// receive dictionary.
         /// </summary>
         private const ushort WINDOW_SIZE_MINIMUM = 100;
 

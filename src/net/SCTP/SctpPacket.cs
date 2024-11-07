@@ -82,7 +82,7 @@ namespace SIPSorcery.Net
         public SctpHeader Header;
 
         /// <summary>
-        /// The list of one or recognised chunks after parsing with <see cref="GetChunks"/>
+        /// The list of one or recognised chunks after parsing with <see cref="ParseChunks"/>
         /// or chunks that have been manually added for an outgoing SCTP packet.
         /// </summary>
         public List<SctpChunk> Chunks;
