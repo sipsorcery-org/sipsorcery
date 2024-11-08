@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: BufferUtils.cs
 //
 // Description: Provides some useful methods for working with byte[] buffers.
@@ -89,6 +89,41 @@ namespace SIPSorcery.Sys
         public static string HexStr(byte[] buffer)
         {
             return buffer.HexStr();
+        }
+
+        /// <summary>
+        /// Finds the index of a specific byte pattern in a byte array.
+        /// </summary>
+        /// <param name="buffer">The byte array to search in.</param>
+        /// <param name="pattern">The byte pattern to search for.</param>
+        /// <param name="startIndex">The index in the buffer to start the search from.</param>
+        /// <returns>The index of the first occurrence of the pattern, or -1 if not found.</returns>
+        public static int IndexOf(byte[] buffer, byte[] pattern, int startIndex = 0)
+        {
+            if (buffer == null || pattern == null || buffer.Length == 0 || pattern.Length == 0 || pattern.Length > buffer.Length)
+            {
+                return -1;
+            }
+
+            for (int i = startIndex; i <= buffer.Length - pattern.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < pattern.Length; j++)
+                {
+                    if (buffer[i + j] != pattern[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
     }
 }

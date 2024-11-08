@@ -9,10 +9,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Ocsp;
 using SIPSorcery.Sys;
 using Xunit;
 
@@ -351,6 +353,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
+            logger.LogDebug(okResp.ToString());
+
             Assert.True(okResp.Header.RecordRoutes.Length == 2, "The wrong number of Record-Route headers were present in the parsed response.");
             Assert.True(okResp.Header.RecordRoutes.PopRoute().ToString() == "<sip:77.75.25.44:5060;lr=on>", "The top Record-Route header was incorrect.");
             SIPRoute nextRoute = okResp.Header.RecordRoutes.PopRoute();
@@ -489,6 +493,53 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.Equal(resp.RemoteSIPEndPoint, copy.RemoteSIPEndPoint);
             Assert.Equal(resp.SendFromHintChannelID, copy.SendFromHintChannelID);
             Assert.Equal(resp.SendFromHintConnectionID, copy.SendFromHintConnectionID);
+        }
+
+        /// <summary>
+        /// Tests that a SIP response with Chinese characters can be successfully parsed. See #848.
+        /// </summary>
+        [Fact]
+        public void ChineseCharactersParseTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipResponse =
+                "SIP/2.0 200 Ok" + m_CRLF +
+                "Via: SIP/2.0/UDP 172.17.3.2:5060; branch=z9hG4bKd9a520e54fca43438806fbdaf46e2532; rport=5060; received=172.17.3.2" + m_CRLF +
+                "To: \"被叫方名字\" <sip:5030003202@172.17.2.2;CallScope=2;CallPriority=1;tag=ENVNTODUZJ>" + m_CRLF +
+                "From: \"呼叫方名字\" <sip:57660000@172.17.2.2;tag=FLYTRWSZOS>" + m_CRLF +
+                "Call-ID: f99d53b50a254d9194381082b21af2cc" + m_CRLF +
+                "CSeq: 1 INVITE" + m_CRLF +
+                "Contact: sip: 172.17.2.2:5060" + m_CRLF +
+                "User-Agent: SCT_DSS V1.0" + m_CRLF +
+                "Server: sipsorcery_v6.0.6.5" + m_CRLF +
+                "Supported: replaces, norefersub, 100rel" + m_CRLF +
+                "Content-Type: application/sdp" + m_CRLF +
+                "Content-Length: 250" + m_CRLF +
+                m_CRLF +
+                "v=0" + m_CRLF +
+                "o=-1307081803 2 IN IP4 172.17.2.10" + m_CRLF +
+                "s=Asterisk" + m_CRLF +
+                "c=IN IP4 172.17.2.10" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 19722 RTP/AVP 0 8 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:8 PCMA/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=maxptime:150" + m_CRLF +
+                "a=sendrecv" + m_CRLF;
+
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipResponse), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
+
+            logger.LogDebug(okResp.ToString());
+
+            Assert.Equal("呼叫方名字", okResp.Header.From.FromName);
+            Assert.Equal("被叫方名字", okResp.Header.To.ToName);
+            Assert.StartsWith("v=", okResp.Body);
         }
     }
 
