@@ -1636,6 +1636,10 @@ namespace SIPSorcery.SIP.App
 
                     ClientCallAnswered?.Invoke(uac, sipResponse);
                 }
+                else if (string.IsNullOrWhiteSpace(sipResponse.Body))
+                {
+                    HandleErrorDuringAnswer(SetDescriptionResultEnum.NoRemoteMedia, "The remote party did not provide an SDP answer.");
+                }
                 else
                 {
                     var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
