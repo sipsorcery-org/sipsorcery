@@ -397,7 +397,11 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
+            if (RuntimeInformation.OSDescription.Contains("Darwin"))
+            {
+                logger.LogDebug("Test skipped on macOSX.");
+            }
+            else if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
             {
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
@@ -432,7 +436,11 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
+            if (RuntimeInformation.OSDescription.Contains("Darwin"))
+            {
+                logger.LogDebug("Test skipped on macOSX.");
+            }
+            else if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
             {
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
