@@ -97,7 +97,7 @@ namespace demo
                 {
                     logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
                 }
-                else if (pc.signalingState == RTCSignalingState.have_remote_offer)
+                else if (pc.signalingState == RTCSignalingState.stable)
                 {
                     logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
                 }
