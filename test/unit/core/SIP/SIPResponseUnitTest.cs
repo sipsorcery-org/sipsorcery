@@ -537,6 +537,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug(okResp.ToString());
 
+            Assert.Equal("呼叫方名字", okResp.Header.From.FromName);
+            Assert.Equal("被叫方名字", okResp.Header.To.ToName);
             Assert.StartsWith("v=", okResp.Body);
         }
     }
