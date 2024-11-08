@@ -49,7 +49,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
+    <PackageReleaseNotes>-v8.0.2: Bug fixes.
+-v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.
 -v6.2.4: WebRTC fix for DTLS change in Chrome v124.
 -v6.2.3: Bug fixes.
@@ -68,9 +69,9 @@
 -v6.0.2: Set .net6 targetted version as stable.
 -v6.0.1-pre: Added .net6 target.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>8.0.1</Version>
-    <AssemblyVersion>8.0.1</AssemblyVersion>
-    <FileVersion>8.0.1</FileVersion>
+    <Version>8.0.2</Version>
+    <AssemblyVersion>8.0.2</AssemblyVersion>
+    <FileVersion>8.0.2</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
