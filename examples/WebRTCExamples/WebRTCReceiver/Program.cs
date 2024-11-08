@@ -115,7 +115,6 @@ namespace demo
             //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
             //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
             var videoEP = new FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
