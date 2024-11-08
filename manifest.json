@@ -3777,7 +3777,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPMessageBuffer.html",
-          "hash": "aI62UzJXIGzre/OC7qiHH6ccAz2gENNPa/NvRDpXAKs="
+          "hash": "aENfcOOHFr3kYQBuv5/nLqMCM/KTtqcwiAbQBWwMO5w="
         }
       },
       "is_incremental": false,
@@ -4533,7 +4533,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.BufferUtils.html",
-          "hash": "9dswyJs8UtIzk/rqXSbJqwIweRz0jQRSJa14iBLqMIM="
+          "hash": "BAyfp1Irb5+bb+9seNEjCcsnds8NZB4pDT1hgDi4n30="
         }
       },
       "is_incremental": false,

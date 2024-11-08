@@ -40697,6 +40697,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.BufferUtils.HexStr
   nameWithType: BufferUtils.HexStr
+- uid: SIPSorcery.Sys.BufferUtils.IndexOf(System.Byte[],System.Byte[],System.Int32)
+  name: IndexOf(Byte[], Byte[], Int32)
+  href: api/SIPSorcery.Sys.BufferUtils.html#SIPSorcery_Sys_BufferUtils_IndexOf_System_Byte___System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.BufferUtils.IndexOf(System.Byte[],System.Byte[],System.Int32)
+  name.vb: IndexOf(Byte(), Byte(), Int32)
+  fullName: SIPSorcery.Sys.BufferUtils.IndexOf(System.Byte[], System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.BufferUtils.IndexOf(System.Byte(), System.Byte(), System.Int32)
+  nameWithType: BufferUtils.IndexOf(Byte[], Byte[], Int32)
+  nameWithType.vb: BufferUtils.IndexOf(Byte(), Byte(), Int32)
+- uid: SIPSorcery.Sys.BufferUtils.IndexOf*
+  name: IndexOf
+  href: api/SIPSorcery.Sys.BufferUtils.html#SIPSorcery_Sys_BufferUtils_IndexOf_
+  commentId: Overload:SIPSorcery.Sys.BufferUtils.IndexOf
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.BufferUtils.IndexOf
+  nameWithType: BufferUtils.IndexOf
 - uid: SIPSorcery.Sys.BufferUtils.ParseHexStr(System.String)
   name: ParseHexStr(String)
   href: api/SIPSorcery.Sys.BufferUtils.html#SIPSorcery_Sys_BufferUtils_ParseHexStr_System_String_
