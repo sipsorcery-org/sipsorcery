@@ -72,6 +72,8 @@ namespace demo
 
             logger = AddConsoleLogger();
 
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+
             var parseResult = Parser.Default.ParseArguments<Options>(args);
             _options = (parseResult as Parsed<Options>)?.Value;
             X509Certificate2 wssCertificate = (_options.WSSCertificate != null) ? LoadCertificate(_options.WSSCertificate) : null;
@@ -113,7 +115,6 @@ namespace demo
             //var videoEP = new SIPSorceryMedia.Windows.WindowsVideoEndPoint(new FFmpegVideoEncoder());
             //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
             var videoEP = new FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
