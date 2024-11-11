@@ -1,6 +1,5 @@
 | CI | win-x64 | linux-x64 | osx-x64 | Examples <br/> (win-x64) | Softphone <br/> (win-x64) |
 |-|-|-|-|-|-|
-| <sup>AppVeyor</sup> | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/cark9l28ovb8o886/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-5aavr/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/7mrg69mtolwceplg/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-jyl3x/branch/master) | [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true&passingText=ok)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
 | <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-win.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg) | | |
 
 
@@ -55,10 +54,10 @@ Class reference documentation and articles explaining common usage are available
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET audio device support on non-Windows platforms).
 
 ````bash
-dotnet new console --name SIPGetStarted --framework net6.0 --target-framework-override net6.0-windows10.0.22000
+dotnet new console --name SIPGetStarted --framework net8.0 --target-framework-override net8.0-windows10.0.17763.0
 cd SIPGetStarted
 dotnet add package SIPSorcery
-dotnet add package SIPSorceryMedia.Windows --prerelease
+dotnet add package SIPSorceryMedia.Windows
 # Paste the code below into Program.cs.
 dotnet run
 # If successful you will hear a "Hello World" announcement.
@@ -110,7 +109,7 @@ The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, w
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
 dotnet add package SIPSorcery
-dotnet add package SIPSorceryMedia.Encoders --prerelease
+dotnet add package SIPSorceryMedia.Encoders
 # Paste the code below into Program.cs.
 dotnet run
 ````

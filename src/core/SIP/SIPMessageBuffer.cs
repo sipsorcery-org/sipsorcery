@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPMessageBuffer.cs
 //
 // Description: Functionality to determine whether a SIP message is a request or
@@ -86,16 +86,14 @@ namespace SIPSorcery.SIP
         /// <param name="sipEncoding">SIP protocol encoding, according to RFC should be UTF-8 </param>
         /// <returns>If successful a SIP message or null if not.</returns>
         public static SIPMessageBuffer ParseSIPMessage(
-            byte[] buffer, 
-            Encoding sipEncoding,
-            Encoding sipBodyEncoding,
-            SIPEndPoint localSIPEndPoint, 
-            SIPEndPoint remoteSIPEndPoint)
+     byte[] buffer,
+     Encoding sipEncoding,
+     Encoding sipBodyEncoding,
+     SIPEndPoint localSIPEndPoint,
+     SIPEndPoint remoteSIPEndPoint)
         {
-
             if (buffer == null || buffer.Length < m_minFirstLineLength)
             {
-                // Ignore.
                 return null;
             }
             else if (buffer.Length > SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH)
@@ -104,67 +102,52 @@ namespace SIPSorcery.SIP
             }
             else if (!BufferUtils.HasString(buffer, 0, buffer.Length, SIP_MESSAGE_IDENTIFIER, m_CRLF))
             {
-                // Message does not contain "SIP" anywhere on the first line, ignore.
                 return null;
             }
             else
             {
-                var sipMessage = new SIPMessageBuffer(sipEncoding,sipBodyEncoding);
-
+                var sipMessage = new SIPMessageBuffer(sipEncoding, sipBodyEncoding);
                 sipMessage.RawBuffer = buffer;
                 sipMessage.LocalSIPEndPoint = localSIPEndPoint;
                 sipMessage.RemoteSIPEndPoint = remoteSIPEndPoint;
 
-                // For connection oriented transports the same connection should be used for responses and subsequent requests.
-                if (sipMessage.LocalSIPEndPoint != null && remoteSIPEndPoint.ConnectionID != null)
+                // Find the end of the first line in the byte buffer
+                int endFirstLinePosn = Array.IndexOf(buffer, (byte)'\n');
+                if (endFirstLinePosn == -1)
                 {
-                    sipMessage.LocalSIPEndPoint.ConnectionID = remoteSIPEndPoint.ConnectionID;
-                }
-
-                string message = sipEncoding.GetString(buffer);
-                int endFistLinePosn = message.IndexOf(m_CRLF);
-
-                if (endFistLinePosn != -1)
-                {
-                    sipMessage.FirstLine = message.Substring(0, endFistLinePosn);
-
-                    if (sipMessage.FirstLine.Substring(0, 3) == SIP_RESPONSE_PREFIX)
-                    {
-                        sipMessage.SIPMessageType = SIPMessageTypesEnum.Response;
-                    }
-                    else
-                    {
-                        sipMessage.SIPMessageType = SIPMessageTypesEnum.Request;
-                    }
-
-                    int endHeaderPosn = message.IndexOf(m_CRLF + m_CRLF);
-                    if (endHeaderPosn == -1)
-                    {
-                        // Assume flakey implementation if message does not contain the required CRLFCRLF sequence and treat the message as having no body.
-                        string headerString = message.Substring(endFistLinePosn + 2, message.Length - endFistLinePosn - 2);
-                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString);
-                    }
-                    else
-                    {
-                        string headerString = message.Substring(endFistLinePosn + 2, endHeaderPosn - endFistLinePosn - 2);
-                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString);
-
-                        if (message.Length > endHeaderPosn + 4)
-                        {
-                            sipMessage.Body = new byte[buffer.Length - (endHeaderPosn + 4)];
-                            Buffer.BlockCopy(buffer, endHeaderPosn + 4, sipMessage.Body, 0, buffer.Length - (endHeaderPosn + 4));
-                        }
-                    }
-
-                    return sipMessage;
-                }
-                else
-                {
-                    logger.LogWarning("Error ParseSIPMessage, there were no end of line characters in the string being parsed.");
+                    logger.LogWarning("Error ParseSIPMessage, no end of line character found for the first line.");
                     return null;
                 }
+
+                sipMessage.FirstLine = sipEncoding.GetString(buffer, 0, endFirstLinePosn + 1).TrimEnd('\r', '\n');
+                sipMessage.SIPMessageType = sipMessage.FirstLine.StartsWith(SIP_RESPONSE_PREFIX)
+                    ? SIPMessageTypesEnum.Response
+                    : SIPMessageTypesEnum.Request;
+
+                // Find the end of headers by searching for CRLFCRLF (in bytes)
+                byte[] doubleCRLF = { (byte)'\r', (byte)'\n', (byte)'\r', (byte)'\n' };
+                int endHeaderPosn = BufferUtils.IndexOf(buffer, doubleCRLF, endFirstLinePosn + 1);
+                if (endHeaderPosn == -1)
+                {
+                    // No CRLFCRLF found; assume there’s no body
+                    sipMessage.SIPHeaders = SIPHeader.SplitHeaders(sipEncoding.GetString(buffer, endFirstLinePosn + 1, buffer.Length - (endFirstLinePosn + 1)));
+                    return sipMessage;
+                }
+
+                // Extract headers based on the byte positions
+                sipMessage.SIPHeaders = SIPHeader.SplitHeaders(sipEncoding.GetString(buffer, endFirstLinePosn + 1, endHeaderPosn - (endFirstLinePosn + 1)));
+
+                // Copy the body if it exists, based on the byte position
+                if (buffer.Length > endHeaderPosn + 4)
+                {
+                    sipMessage.Body = new byte[buffer.Length - (endHeaderPosn + 4)];
+                    Buffer.BlockCopy(buffer, endHeaderPosn + 4, sipMessage.Body, 0, buffer.Length - (endHeaderPosn + 4));
+                }
+
+                return sipMessage;
             }
         }
+
         public static SIPMessageBuffer ParseSIPMessage(
             string message,
             SIPEndPoint localSIPEndPoint,

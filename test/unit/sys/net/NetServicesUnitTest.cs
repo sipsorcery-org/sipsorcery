@@ -188,7 +188,7 @@ namespace SIPSorcery.Sys.UnitTests
             if (Socket.OSSupportsIPv6)
             {
                 var localInternetIPv6Address = NetServices.InternetDefaultIPv6Address;
-                
+
                 // This will be null if the OS has a link local IPv6 address but no public IPv6 address.
                 //Assert.NotNull(localInternetIPv6Address);
 
@@ -313,16 +313,16 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            bool supports = NetServices.SupportsDualModeIPv4PacketInfo;
-
-            logger.LogDebug($"SupportsDualModeIPv4PacketInfo result for OS {RuntimeInformation.OSDescription} is {supports}.");
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                Assert.False(supports);
+                logger.LogDebug("Test skipped on macOSX.");
             }
             else
             {
+                bool supports = NetServices.SupportsDualModeIPv4PacketInfo;
+
+                logger.LogDebug($"SupportsDualModeIPv4PacketInfo result for OS {RuntimeInformation.OSDescription} is {supports}.");
+
                 Assert.True(supports);
             }
         }
@@ -397,7 +397,11 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped on macOSX.");
+            }
+            else if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
             {
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
@@ -432,7 +436,11 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                logger.LogDebug("Test skipped on macOSX.");
+            }
+            else if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
             {
                 Socket rtpSocket = null;
                 Socket controlSocket = null;

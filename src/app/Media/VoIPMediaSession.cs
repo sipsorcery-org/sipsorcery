@@ -69,24 +69,22 @@ namespace SIPSorcery.Media
         /// Default constructor which creates the simplest possible send only audio session. It does not
         /// wire up any devices or video processing.
         /// </summary>
-        public VoIPMediaSession(string musicFilePath = null, Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
+        public VoIPMediaSession(Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
         {
             _audioExtrasSource = new AudioExtrasSource();
             _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
             _audioExtrasSource.SetSource(AudioSourcesEnum.Music);
 
-            if(restrictFormats != null)
+            if (restrictFormats != null)
             {
                 _audioExtrasSource.RestrictFormats(restrictFormats);
             }
 
-
-            Media = new MediaEndPoints { AudioSource = _audioExtrasSource };
-
             var audioTrack = new MediaStreamTrack(_audioExtrasSource.GetAudioSourceFormats());
             base.addTrack(audioTrack);
-            Media.AudioSource.OnAudioSourceEncodedSample += SendAudio;
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
+
+            Media = new MediaEndPoints { AudioSource = _audioExtrasSource };
         }
 
         public VoIPMediaSession(MediaEndPoints mediaEndPoint, VideoTestPatternSource testPatternSource)
@@ -99,8 +97,7 @@ namespace SIPSorcery.Media
             int bindPort = 0,
             VideoTestPatternSource testPatternSource = null)
             : this(new VoIPMediaSessionConfig { MediaEndPoint = mediaEndPoint, BindAddress = bindAddress, BindPort = bindPort, TestPatternSource = testPatternSource })
-        {
-        }
+        { }
 
         public VoIPMediaSession(VoIPMediaSessionConfig config)
             : base(new RtpSessionConfig
@@ -162,7 +159,6 @@ namespace SIPSorcery.Media
 
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
             base.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
-            
         }
 
         private async void VideoSource_OnVideoSourceError(string errorMessage)
