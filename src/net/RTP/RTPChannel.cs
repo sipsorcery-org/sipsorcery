@@ -130,16 +130,17 @@ namespace SIPSorcery.Net
                 EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                 m_socket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
-            // Thrown when socket is closed. Can be safely ignored.
-            // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
-            // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
-            // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
             catch (ObjectDisposedException) 
             {
+                // Thrown when socket is closed. Can be safely ignored.
                 m_isRunningReceive = false;
             } 
             catch (SocketException sockExcp)
             {
+                // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
+                // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
+                // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
+
                 m_isRunningReceive = false;
                 logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {sockExcp.Message}");
                 //Close(sockExcp.Message);

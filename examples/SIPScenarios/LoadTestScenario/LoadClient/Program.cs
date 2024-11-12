@@ -41,6 +41,7 @@ namespace SIPSorcery
     {
         private static string TARGET_DST = "sip:127.0.0.1";
         private static int TIMEOUT_MILLISECONDS = 5000;
+        private static int CALL_COUNT = 1; // 100;
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -62,7 +63,7 @@ namespace SIPSorcery
 
             int successCount = 0;
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < CALL_COUNT; i++)
             {
                 bool success = await PlaceCall(exitCts.Token);
 
@@ -81,6 +82,9 @@ namespace SIPSorcery
 
             //Task.Run(() => OnKeyPress(exitCts));
             //exitCts.Token.WaitHandle.WaitOne();
+
+            // Give any call hangups time to complete.
+            await Task.Delay(500);
 
             Log.LogInformation("Exiting...");
         }
