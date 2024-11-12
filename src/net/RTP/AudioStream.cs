@@ -86,7 +86,7 @@ namespace SIPSorcery.net.RTP
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning($"A RTPEvent is in progress.");
+                    //logger.LogWarning($"{nameof(SendAudioFrame)} an RTPEvent is in progress.");
                     return;
                 }
 
@@ -147,7 +147,7 @@ namespace SIPSorcery.net.RTP
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning($"A RTPEvent is in progress.");
+                    logger.LogWarning($"{nameof(SendDtmfEvent)} an RTPEvent is already in progress.");
                     return;
                 }
 
