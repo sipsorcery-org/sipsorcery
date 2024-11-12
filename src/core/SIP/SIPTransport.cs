@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPTransport.cs
 //
 // Description: SIP transport layer implementation. Handles different network
@@ -29,8 +29,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-// ReSharper disable InconsistentNaming
-// ReSharper disable TemplateIsNotCompileTimeConstantProblem
 
 namespace SIPSorcery.SIP
 {
@@ -214,24 +212,26 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Creates a SIP transport class with default DNS resolver and SIP transaction engine.
         /// </summary>
-        public SIPTransport():this(false)
+        public SIPTransport() : this(false)
         {
         }
+
         public SIPTransport(Encoding sipEncoding, Encoding sipBodyEncoding) : this(false, sipEncoding, sipBodyEncoding)
         {
         }
-        public SIPTransport(bool stateless):this(stateless, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING)
+
+        public SIPTransport(bool stateless) : this(stateless, SIPConstants.DEFAULT_ENCODING, SIPConstants.DEFAULT_ENCODING)
         {
         }
 
         /// <summary>
-            /// Allows the transport layer to be created to operate in a stateless mode.
-            /// </summary>
-            /// <param name="stateless">If true the transport layer will NOT queue incoming messages
-            /// and will NOT use a transaction engine.</param>
-            /// <param name="sipEncoding"></param>
-            /// <param name="sipBodyEncoding"></param>
-            public SIPTransport(bool stateless,Encoding sipEncoding,Encoding sipBodyEncoding)
+        /// Allows the transport layer to be created to operate in a stateless mode.
+        /// </summary>
+        /// <param name="stateless">If true the transport layer will NOT queue incoming messages
+        /// and will NOT use a transaction engine.</param>
+        /// <param name="sipEncoding"></param>
+        /// <param name="sipBodyEncoding"></param>
+        public SIPTransport(bool stateless, Encoding sipEncoding, Encoding sipBodyEncoding)
         {
             m_sipEncoding = sipEncoding;
             m_sipBodyEncoding = sipBodyEncoding;
@@ -896,9 +896,9 @@ namespace SIPSorcery.SIP
         /// <param name="remoteEndPoint">The remote end point the message came from.</param>
         /// <param name="buffer">The raw message received.</param>
         private Task<SocketError> SIPMessageReceived(
-            SIPChannel sipChannel, 
-            SIPEndPoint localEndPoint, 
-            SIPEndPoint remoteEndPoint, 
+            SIPChannel sipChannel,
+            SIPEndPoint localEndPoint,
+            SIPEndPoint remoteEndPoint,
             byte[] buffer)
         {
             string rawSIPMessage = null;
@@ -938,7 +938,7 @@ namespace SIPSorcery.SIP
                                 return Task.FromResult(SocketError.InvalidArgument);
                             }
 
-                            var sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(buffer,m_sipEncoding,m_sipBodyEncoding,  localEndPoint, remoteEndPoint);
+                            var sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(buffer, m_sipEncoding, m_sipBodyEncoding, localEndPoint, remoteEndPoint);
 
                             if (sipMessageBuffer != null)
                             {
@@ -948,7 +948,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer,m_sipEncoding,m_sipBodyEncoding);
+                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer, m_sipEncoding, m_sipBodyEncoding);
 
                                         SIPResponseInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, sipResponse);
 
@@ -975,7 +975,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer,m_sipEncoding,m_sipBodyEncoding);
+                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer, m_sipEncoding, m_sipBodyEncoding);
 
                                         if (!sipRequest.IsValid(out var sipRequestErrorField, out var sipRequestValidationError))
                                         {

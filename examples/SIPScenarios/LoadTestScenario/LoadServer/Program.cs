@@ -238,7 +238,7 @@ namespace SIPSorcery
 
                     SIPUserAgent ua = new SIPUserAgent(_sipTransport, null);
                     ua.OnCallHungup += OnHangup;
-                    ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
+                    ua.ServerCallCancelled += (uas, cancelReq) => Log.LogDebug("Incoming call cancelled by remote party.");
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
                     ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
                     ua.OnTransactionTraceMessage += (tx, msg) => Log.LogDebug($"uas tx {tx.TransactionId}: {msg}");
@@ -280,7 +280,12 @@ namespace SIPSorcery
                                     }
                                     else
                                     {
+                                        var stopWatch = System.Diagnostics.Stopwatch.StartNew();
+
                                         await ua.SendDtmf(dtmfByte);
+
+                                        stopWatch.Stop();
+                                        Log.LogDebug($"DTMF {dtmfByte} sent in {stopWatch.ElapsedMilliseconds}ms.");
                                     }
 
                                     dtmfCode /= 10;
