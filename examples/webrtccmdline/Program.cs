@@ -607,12 +607,12 @@ namespace SIPSorcery.Examples
                 _peerConnection.Close("normal");
             }
 
-            List<RTCCertificate> presetCertificates = null;
-            if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
-            {
-                var localhostCert = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH, (string)null, X509KeyStorageFlags.Exportable);
-                presetCertificates = new List<RTCCertificate> { new RTCCertificate { Certificate = localhostCert } };
-            }
+            //List<RTCCertificate> presetCertificates = null;
+            //if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
+            //{
+            //    var localhostCert = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH, (string)null, X509KeyStorageFlags.Exportable);
+            //    presetCertificates = new List<RTCCertificate> { new RTCCertificate { Certificate = localhostCert } };
+            //}
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {

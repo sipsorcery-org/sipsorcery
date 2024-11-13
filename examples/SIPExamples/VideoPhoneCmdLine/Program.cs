@@ -89,7 +89,9 @@ namespace demo
         private MediaFormatManager<VideoFormat> _formatManager;
 
         public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
+#pragma warning disable CS0067
         public event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster;
+#pragma warning restore CS0067
 
         public DecoderVideoSink(IVideoEncoder videoDecoder)
         {
