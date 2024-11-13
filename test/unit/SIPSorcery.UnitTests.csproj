@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>  
   </PropertyGroup>
 
   <ItemGroup>

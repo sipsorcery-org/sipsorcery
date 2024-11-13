@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -14,8 +14,8 @@
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.12-pre" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="0.0.31-pre" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="0.0.13" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="6.0.5" />
   </ItemGroup>
 
     <ItemGroup>

@@ -130,7 +130,7 @@ namespace SIPSorcery.Net.UnitTests
 
             byte[] stunAttribute = new byte[] { 0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f };
 
-            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, stunAttribute);
+            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, stunAttribute, null);
 
             Assert.Equal(49608, xorAddressAttribute.Port);
             Assert.Equal("192.168.33.125", xorAddressAttribute.Address.ToString());
@@ -145,7 +145,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"));
+            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"), null);
 
             byte[] buffer = new byte[12];
             xorAddressAttribute.ToByteBuffer(buffer, 0);
@@ -257,7 +257,7 @@ namespace SIPSorcery.Net.UnitTests
                 }
                 else if (attribute.AttributeType == STUNAttributeTypesEnum.XORMappedAddress)
                 {
-                    STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, attribute.Value);
+                    STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, attribute.Value, stunHeader.TransactionId);
                     logger.LogDebug(" " + attribute.AttributeType + " " + xorAddressAttribute.Address + ":" + xorAddressAttribute.Port + ".");
 
                     Assert.Equal("59.167.172.177", xorAddressAttribute.Address.ToString());
