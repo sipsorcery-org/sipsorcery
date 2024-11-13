@@ -985,7 +985,7 @@ namespace SIPSorcery.SIP.UnitTests
             var telStr = "tel:+1-(201) 555 0123;phone-context=example.com";
             SIPURI sipURI = SIPURI.ParseSIPURI(telStr);
 
-            Assert.Equal(null, sipURI.User);
+            Assert.Null(sipURI.User);
             Assert.Equal("+1-(201) 555 0123", sipURI.Host);
             Assert.Equal("tel:+1-(201) 555 0123", sipURI.CanonicalAddress);
             Assert.True(sipURI.Parameters.Has("phone-context"), "The tel: URI parameters were not parsed correctly.");

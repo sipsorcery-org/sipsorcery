@@ -64,13 +64,27 @@ namespace SIPSorcery.Sys
             var i = salt.IndexOf('.');
             var iters = int.Parse(salt.Substring(0, i), System.Globalization.NumberStyles.HexNumber);
             salt = salt.Substring(i + 1);
+            byte[] key = null;
 
-            using (var pbkdf2 = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(value), Convert.FromBase64String(salt), iters))
+#if NET8_0_OR_GREATER
+            // Use the updated constructor for .NET 8.0 or later
+            using (var pbkdf2 = new Rfc2898DeriveBytes(
+                Encoding.UTF8.GetBytes(value),
+                Convert.FromBase64String(salt),
+                iters,
+                HashAlgorithmName.SHA256))
             {
-                var key = pbkdf2.GetBytes(24);
-
-                return Convert.ToBase64String(key);
+                key = pbkdf2.GetBytes(24);
             }
+#else
+    // Fallback to the existing approach for .NET Framework and .NET Standard
+    using (var pbkdf2 = new Rfc2898DeriveBytes(Encoding.UTF8.GetBytes(value), Convert.FromBase64String(salt), iters))
+    {
+        key = pbkdf2.GetBytes(24);
+    }
+#endif
+
+            return Convert.ToBase64String(key);
         }
     }
 
