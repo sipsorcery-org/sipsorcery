@@ -10,13 +10,13 @@ jobs:
 
     runs-on: windows-2022
 
-      - name: Check out repository
-        uses: actions/checkout@v3 
+    - name: Check out repository
+      uses: actions/checkout@v3 
 
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
 
     - name: Build with dotnet
       run: |
