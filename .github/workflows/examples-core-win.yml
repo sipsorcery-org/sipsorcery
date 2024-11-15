@@ -1,4 +1,4 @@
-name: egs-win-x64 
+name: examples-win-x64 
 
 on:
   push:
