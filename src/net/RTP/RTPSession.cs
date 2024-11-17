@@ -1744,7 +1744,6 @@ namespace SIPSorcery.Net
                     {
                         rtpPort = mediaStream.GetRTPChannel().RTPPort;
                     }
-
                 }
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(mediaStream.LocalTrack.Kind, rtpPort, mediaStream.LocalTrack.Capabilities);
@@ -1870,7 +1869,6 @@ namespace SIPSorcery.Net
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpChannel.Start();
-
 
             m_rtpChannelsCount++;
 
