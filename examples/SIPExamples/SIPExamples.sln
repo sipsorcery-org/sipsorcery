@@ -43,6 +43,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotifierClient", "NotifierC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Windows", "..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj", "{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -293,6 +295,18 @@ Global
 		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x64.Build.0 = Release|Any CPU
 		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x86.Build.0 = Release|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Debug|x64.Build.0 = Debug|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Debug|x86.Build.0 = Debug|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Release|x64.ActiveCfg = Release|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Release|x64.Build.0 = Release|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Release|x86.ActiveCfg = Release|Any CPU
+		{107D28D8-B3E1-408E-BBF1-87E56CEE2B1F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -283,6 +283,8 @@ namespace SIPSorcery.Media
 
             if (mediaType == SDPMediaTypesEnum.audio && Media.AudioSink != null)
             {
+                //logger.LogDebug($"{nameof(RtpMediaPacketReceived)} audio RTP packet received from {remoteEndPoint} ssrc {hdr.SyncSource} seqnum {hdr.SequenceNumber} timestamp {hdr.Timestamp} payload type {hdr.PayloadType}.");
+
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
         }
