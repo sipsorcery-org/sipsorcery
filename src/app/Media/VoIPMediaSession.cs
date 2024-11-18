@@ -178,7 +178,8 @@ namespace SIPSorcery.Media
         {
             // IMPTORTANT NOTE: The audio sink format cannot be set here as it is not known until the first RTP packet
             // is received from the remote party. All we know at this stage is which audio formats are supported but NOT
-            // which one the remote party has chosen to use.
+            // which one the remote party has chosen to use. Generally it seems the sending and reciving formats should be the same but
+            // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
             var audioFormat = audoFormats.First();
             logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate} (RTP clock rate {audioFormat.RtpClockRate}).");
@@ -190,7 +191,8 @@ namespace SIPSorcery.Media
         {
             // IMPTORTANT NOTE: The video sink format cannot be set here as it is not known until the first RTP packet
             // is received from the remote party. All we know at this stage is which audio formats are supported but NOT
-            // which one the remote party has chosen to use.
+            // which one the remote party has chosen to use. Generally it seems the sending and reciving formats should be the same but
+            // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
             var videoFormat = videoFormats.First();
             logger.LogDebug($"Setting video sink and source format to {videoFormat.FormatID}:{videoFormat.Codec}.");

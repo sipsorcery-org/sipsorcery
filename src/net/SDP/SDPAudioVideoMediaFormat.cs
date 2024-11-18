@@ -467,8 +467,8 @@ namespace SIPSorcery.Net
             else
             {
                 // Check if RTP events are supported and if required adjust the local format ID.
-                var aEventFormat = a.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
-                var bEventFormat = b.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                var aEventFormat = GetFormatForName(a, SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                var bEventFormat = GetFormatForName(b, SDP.TELEPHONE_EVENT_ATTRIBUTE);
 
                 if (!aEventFormat.IsEmpty() && !bEventFormat.IsEmpty())
                 {
@@ -479,6 +479,26 @@ namespace SIPSorcery.Net
                 {
                     return Empty;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Attempts to get a matching entry in a list of media formats for a specific format name.
+        /// </summary>
+        /// <param name="formats">The list of formats to search.</param>
+        /// <param name="formatName">The format name to search for.</param>
+        /// <returns>If found the matching format or the empty format if not.</returns>
+        public static SDPAudioVideoMediaFormat GetFormatForName(List<SDPAudioVideoMediaFormat> formats, string formatName)
+        {
+            if (formats == null || formats.Count == 0)
+            {
+                return Empty;
+            }
+            else
+            {
+                return formats.Any(x => x.Name()?.ToLower() == formatName?.ToLower()) ?
+                   formats.First(x => x.Name()?.ToLower() == formatName?.ToLower()) :
+                   Empty;
             }
         }
     }
