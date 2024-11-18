@@ -604,7 +604,6 @@ namespace SIPSorcery.Net
             }
         }
 
-
         protected void ResetRemoteSDPSsrcAttributes()
         {
             audioRemoteSDPSsrcAttributes.Clear();
