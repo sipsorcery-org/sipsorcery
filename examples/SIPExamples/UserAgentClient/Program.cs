@@ -83,7 +83,7 @@ namespace demo
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
             //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
-            audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA);
+            //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA);
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
             var offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);
