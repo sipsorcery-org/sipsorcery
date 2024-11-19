@@ -1007,19 +1007,31 @@ namespace SIPSorcery.SIP.App
 
                 try
                 {
-                    SDP offer = SDP.ParseSDPDescription(sipRequest.Body);
+                    SDP offer = !string.IsNullOrWhiteSpace(sipRequest.Body) ? SDP.ParseSDPDescription(sipRequest.Body) : null;
 
                     if (sipRequest.Header.CallId == _oldCallID)
                     {
                         // A transfer is in progress and this re-INVITE belongs to the original call. More than likely
                         // the purpose of the request is to place us on hold. We'll respond with OK but not update any local state.
                         var answerSdp = MediaSession.CreateAnswer(null);
-                        var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString());
-                        reInviteTransaction.SendFinalResponse(okResponse);
+
+                        if (answerSdp != null)
+                        {
+                            var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString());
+                            reInviteTransaction.SendFinalResponse(okResponse);
+                        }
+                        else
+                        {
+                            logger.LogWarning("Unable to create an answer for the re-INVITE request.");
+                            var notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, "Unable to create an answer.");
+                            reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                        }
                     }
                     else
                     {
-                        var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, offer);
+                        // TODO: We should accept an empty re-INVITE body and send a new offer in the response. The remote peer can then send
+                        // back teh SDP answer in the ACK.
+                        var setRemoteResult = offer != null ?  MediaSession.SetRemoteDescription(SdpType.offer, offer) : SetDescriptionResultEnum.Error;
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)
                         {
