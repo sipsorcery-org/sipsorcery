@@ -52,7 +52,7 @@ namespace demo
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
-            Log = AddConsoleLogger(LogEventLevel.Verbose);
+            Log = AddConsoleLogger(LogEventLevel.Debug);
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
             if (args?.Length > 0)
