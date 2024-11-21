@@ -420,7 +420,7 @@ namespace SIPSorcery.Media
                         }
                         else
                         {
-                            //Duplicate the last sample
+                            //Duplicate the last sample - fix odd shorts issue
                             state.QmfSignalHistory[23] = state.QmfSignalHistory[22];
                         }
 
