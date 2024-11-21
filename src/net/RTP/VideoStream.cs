@@ -29,8 +29,10 @@ namespace SIPSorcery.net.RTP
     public class VideoStream : MediaStream
     {
         protected static ILogger logger = Log.Logger;
-
         protected RtpVideoFramer RtpVideoFramer;
+
+        private SDPAudioVideoMediaFormat sendingFormat;
+        private bool sendingFormatFound = false;
 
         #region EVENTS
 
@@ -244,12 +246,18 @@ namespace SIPSorcery.net.RTP
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
         /// value is added to the previous RTP timestamp when building the RTP header.</param>
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
+        ///
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
-            var videoSendingFormat = GetSendingFormat();
-            int payloadID = Convert.ToInt32(videoSendingFormat.ID);
+            if (!sendingFormatFound)
+            {
+                sendingFormat = GetSendingFormat();
+                sendingFormatFound = true;
+            }
 
-            switch (videoSendingFormat.Name())
+            int payloadID = Convert.ToInt32(sendingFormat.ID);
+
+            switch (sendingFormat.Name())
             {
                 case "VP8":
                     SendVp8Frame(durationRtpUnits, payloadID, sample);
@@ -258,7 +266,7 @@ namespace SIPSorcery.net.RTP
                     SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
-                    throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
+                    throw new ApplicationException($"Unsupported video format selected {sendingFormat.Name()}.");
             }
         }
 

@@ -368,13 +368,13 @@ namespace SIPSorcery.Net
             {
                 foreach (var format in a)
                 {
-                    if (b.Any(x => SDPAudioVideoMediaFormat.AreMatch(format, x)))
+                    if (b.Any(x => AreMatch(format, x)))
                     {
                         compatible.Add(format);
                     }
                 }
             }
-
+            
             return compatible;
         }
 
