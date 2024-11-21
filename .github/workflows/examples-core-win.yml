@@ -1,4 +1,4 @@
-name: egs-win-x64 
+name: examples-win-x64 
 
 on:
   push:
@@ -9,17 +9,36 @@ jobs:
   build:
 
     runs-on: windows-2022
-
     steps:
-    - uses: actions/checkout@v1 # https://github.com/actions/checkout
-    #- name: Setup .NET Core
-    #  uses: actions/setup-dotnet@v1 # https://github.com/actions/setup-dotnet
-    #  with:
-    #    dotnet-version: 3.1.100
-    - name: Build with dotnet
-      run: |
-        dotnet build examples/sipexamples/sipexamples.sln --configuration Release
-        dotnet build examples/webrtcexamples/webrtcexamples.sln --configuration Release
-        dotnet build examples/icecmdline/icecmdline.sln --configuration Release
-        dotnet build examples/sipcmdline/sipcmdline.sln --configuration Release
-        dotnet build examples/stunserver/stunserver.sln --configuration Release
+    
+      - name: Check out repository
+        uses: actions/checkout@v3 
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build SIP Examples
+        run: |
+          dotnet build examples/sipexamples/sipexamples.sln
+          
+      - name: Build WebRTC Examples
+        run: |
+          dotnet build examples/webrtcexamples/webrtcexamples.sln
+          
+      - name: Build WebRTC Command Line Example
+        run: |
+          dotnet build examples/webrtccmdline/webrtccmdline.sln
+          
+      - name: Build SIP Command Line Example
+        run: | 
+          dotnet build examples/sipcmdline/sipcmdline.sln --configuration Release
+          
+      - name: Build STUN Server Example
+        run: |     
+          dotnet build examples/stunserver/stunserver.sln
+          
+      - name: Build Soft Phone Example
+        run: |        
+          dotnet build examples/softphone/sipsorcery.softphone.sln --configuration Release

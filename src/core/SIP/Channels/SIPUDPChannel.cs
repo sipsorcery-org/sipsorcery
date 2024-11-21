@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUDPChannel.cs
 //
 // Description: SIP transport for UDP.
@@ -116,9 +116,9 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
-                // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
+                // the BeginReceiveFrom will only throw if there is a problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
-                logger.LogError($"Exception Receive. {excp.Message}");
+                logger.LogError($"Exception SIPUDPChannel.Receive. {excp.Message}");
                 logger.LogDebug($"SIPUDPChannel socket on {ListeningEndPoint} listening halted.");
                 Closed = true;
             }
@@ -164,20 +164,25 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                if (remoteEP != null)
+                // New observation on Windows 11 on 11 Nov 2024. The remoteEP has a port of 0 on a User Agent Server. On a User Agent Client
+                // the port is set correctly. TODO: track down why the port is not available on the UAS. To replicate start a UAS, call from a UAC,
+                // kill the UAC process with ctrl-c beofre the SIP transaction completes.
+
+                if (remoteEP != null && remoteEP is IPEndPoint && (remoteEP as IPEndPoint).Port != 0)
                 {
                     // Note the SIPEndPoint is being used to take care of any IPv4 mapped to IPv6 addresses.
                     SIPEndPoint remSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, remoteEP as IPEndPoint);
 
                     // This exception can occur as the result of a Send operation. It's caused by an ICMP packet from a remote host
                     // rejecting an incoming UDP packet. If that happens we want to stop further sends to the socket for a short period.
-                    logger.LogWarning(sockExcp, $"SocketException SIPUDPChannel EndReceiveFrom from {remSIPEndPoint} ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                    logger.LogWarning($"SocketException SIPUDPChannel EndReceiveFrom from {remSIPEndPoint} ({sockExcp.ErrorCode}). {sockExcp.Message}");
 
                     m_sendFailures.TryAdd(remSIPEndPoint.GetIPEndPoint(), DateTime.Now);
                 }
                 else
                 {
-                    logger.LogError($"SocketException SIPUDPChannel EndReceiveFrom. {sockExcp}");
+                    //logger.LogError($"SocketException SIPUDPChannel EndReceiveFrom. {sockExcp}");
+                    logger.LogWarning($"SocketException SIPUDPChannel EndReceiveFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
                 }
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.

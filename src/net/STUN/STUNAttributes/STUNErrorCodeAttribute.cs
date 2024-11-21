@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNErrorCodeAttribute.cs
 //
 // Description: Implements STUN error attribute as defined in RFC5389.
@@ -35,8 +35,8 @@ namespace SIPSorcery.Net
         public STUNErrorCodeAttribute(byte[] attributeValue)
             : base(STUNAttributeTypesEnum.ErrorCode, attributeValue)
         {
-            ErrorClass = (byte)BitConverter.ToChar(attributeValue, 2);
-            ErrorNumber = (byte)BitConverter.ToChar(attributeValue, 3);
+            ErrorClass = attributeValue[2];
+            ErrorNumber = attributeValue[3];
             ReasonPhrase = Encoding.UTF8.GetString(attributeValue, 4, attributeValue.Length - 4);
         }
 

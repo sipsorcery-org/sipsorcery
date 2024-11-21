@@ -956,7 +956,6 @@ namespace SIPSorcery.net.RTP
                 SDPAudioVideoMediaFormat format;
                 if (MediaType == SDPMediaTypesEnum.audio)
                 {
-
                     format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
                         .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
                 }

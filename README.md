@@ -1,7 +1,7 @@
-| CI | win-x64 | linux-x64 | osx-x64 | Examples <br/> (win-x64) | Softphone <br/> (win-x64) |
-|-|-|-|-|-|-|
-| <sup>GitHub Actions</sup> | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-win.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) | ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg) | | |
-
+![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-win.yml/badge.svg) 
+![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) 
+![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
+![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg)
 
 ## What Is It?
 

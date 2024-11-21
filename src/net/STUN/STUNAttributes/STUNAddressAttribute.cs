@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNAddressAttribute.cs
 //
 // Description: Implements STUN address attribute as defined in RFC5389.
@@ -19,17 +19,23 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+    /// <remarks>
+    /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+    /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+    /// Reverted this obsoletion on 13 Nov 2024 AC. 
+    /// </remarks>
+    //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
     public class STUNAddressAttribute : STUNAddressAttributeBase
     {
         /// <summary>
-        /// Obsolete.
-        /// <br/> For IPv6 support, please parse using
-        /// <br/> <see cref="STUNXORAddressAttribute(STUNAttributeTypesEnum, byte[], byte[])"/>
-        /// <br/> <br/>
         /// Parses an IPv4 Address attribute.
         /// </summary>
-        [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
         public STUNAddressAttribute(byte[] attributeValue)
             : base(STUNAttributeTypesEnum.MappedAddress, attributeValue)
         {
@@ -46,13 +52,14 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Obsolete.
-        /// <br/> For IPv6 support, please parse using
-        /// <br/> <see cref="STUNXORAddressAttribute(STUNAttributeTypesEnum, byte[], byte[])"/>
-        /// <br/> <br/>
         /// Parses an IPv4 Address attribute.
         /// </summary>
-        [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
             : base(attributeType, attributeValue)
         {
@@ -69,13 +76,14 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Obsolete.
-        /// <br/> For IPv6 support, please parse using
-        /// <br/> <see cref="STUNXORAddressAttribute(STUNAttributeTypesEnum, byte[], byte[])"/>
-        /// <br/> <br/>
         /// Parses an IPv4 Address attribute.
         /// </summary>
-        [Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
             : base(attributeType, null)
         {
@@ -91,12 +99,12 @@ namespace SIPSorcery.Net
             if (BitConverter.IsLittleEndian)
             {
                 Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_IPV4_LENGTH)), 0, buffer, startIndex + 2, 2);
             }
             else
             {
                 Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_IPV4_LENGTH), 0, buffer, startIndex + 2, 2);
             }
 
             buffer[startIndex + 5] = (byte)Family;
@@ -111,7 +119,7 @@ namespace SIPSorcery.Net
             }
             Buffer.BlockCopy(Address.GetAddressBytes(), 0, buffer, startIndex + 8, 4);
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_IPV4_LENGTH;
         }
 
         public override string ToString()

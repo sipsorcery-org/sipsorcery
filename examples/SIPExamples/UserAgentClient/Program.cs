@@ -37,7 +37,7 @@ namespace demo
     class Program
     {
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sips:helloworld@sipsorcery.cloud";
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:aaron@127.0.0.1:5080";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:music@iptel.org";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -52,7 +52,7 @@ namespace demo
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
-            Log = AddConsoleLogger(LogEventLevel.Verbose);
+            Log = AddConsoleLogger(LogEventLevel.Debug);
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
             if (args?.Length > 0)
@@ -82,8 +82,8 @@ namespace demo
             sipTransport.EnableTraceLogs();
 
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
-            audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
-            //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.G722);
+            //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
+            //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA);
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
             var offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);

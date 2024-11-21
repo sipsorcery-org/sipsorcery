@@ -1,0 +1,47 @@
+name: Publish to Nuget
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on tag pushes starting with 'v'
+
+jobs:
+  build-and-publish:
+    strategy:
+      matrix:
+        framework: ['net8.0']
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v2
+
+      # Set up .NET SDK
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '8.0.x'
+
+      # Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore src/SIPSorcery.csproj
+
+      # Build the project
+      - name: Build
+        run: dotnet build src/SIPSorcery.csproj -c Release --no-restore
+
+      # Run unit tests
+      - name: Unit tests
+        run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework ${{ matrix.framework }} -c Release
+
+      # Pack the NuGet package
+      - name: Pack NuGet package
+        run: dotnet pack src/SIPSorcery.csproj -c Release -o ./artifacts
+
+      # Publish to NuGet
+      - name: Publish NuGet package
+        if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push ./artifacts/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key $NUGET_API_KEY

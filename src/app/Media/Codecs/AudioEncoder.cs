@@ -143,7 +143,9 @@ namespace SIPSorcery.Media
             if (format.Codec == AudioCodecsEnum.G729)
             {
                 if (_g729Decoder == null)
+                {
                     _g729Decoder = new G729Decoder();
+                }
 
                 byte[] decodedBytes = _g729Decoder.Process(encodedSample);
                 short[] decodedPcm = new short[decodedBytes.Length / sizeof(short)];
