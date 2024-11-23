@@ -33,8 +33,6 @@ namespace demo
 {
     class Program
     {
-        // FFmpeg path can be hard coded. On Win11 you can use: winget install "FFmpeg (Shared)"
-        //private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin";  //  /!\ A valid path to FFmpeg library
         //private const string MP4_PATH = @"media\max_intro.mp4";                          //  /!\ A valid path to Video file
         private const string MP4_PATH = @"media\big_buck_bunny.mp4";
 

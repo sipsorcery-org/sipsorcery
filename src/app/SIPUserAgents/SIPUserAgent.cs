@@ -1030,7 +1030,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         // TODO: We should accept an empty re-INVITE body and send a new offer in the response. The remote peer can then send
-                        // back teh SDP answer in the ACK.
+                        // back the SDP answer in the ACK.
                         var setRemoteResult = offer != null ?  MediaSession.SetRemoteDescription(SdpType.offer, offer) : SetDescriptionResultEnum.Error;
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)

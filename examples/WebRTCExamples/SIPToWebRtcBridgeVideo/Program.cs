@@ -75,7 +75,7 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             // Create a SIP user agent to receive a call from a remote SIP client.
             // Wire up event handlers for the different stages of the call.
@@ -188,7 +188,7 @@ namespace SIPSorcery
             pc.onconnectionstatechange += (state) =>
             {
                 Log.LogDebug($"Peer connection state change to {state}.");
-                RequestSIPAgentKeyFrame(_rtpSession);
+                //RequestSIPAgentKeyFrame(_rtpSession);
             };
             pc.OnRtpPacketReceived += ForwardAudioToSIP;
             pc.OnVideoFrameReceived += ForwardVideoFrameToSIP; // ForwardVideoFrameToPeerConnection;
