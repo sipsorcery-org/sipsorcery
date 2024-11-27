@@ -11,6 +11,10 @@
 // 28 Mar 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 13 Jul 2020  Aaron CLauson   Added command line options.
 //
+// Examples:
+// 1. TURN only connection establishment test. The browser client will need to be configured with a TURN server as well.
+// dotnet run --no-build --ws --stun turn:azamicrok8s --relayonly --accepticetypes=relay
+//
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
