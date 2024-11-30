@@ -1,33 +1,34 @@
-Readme for SIPSorcery Softphone
+## SIPSorcery Softphone Demo Application
 
 Date: 18 Feb 2016
+Updated: 30 Nov 2024
 Author: Aaron Clauson
-URL: https://github.com/sipsorcery/sipsorcery
+URL: https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/Softphone
 
-The SIPSorcery softphone is a demo application to prototype
-using .Net as a suitable runtime environment for a softphone application requiring
-deterministic audio sampling and playback, it's not.
+The SIPSorcery softphone is a demo application for the SIP stack in the SIPSorcery library.
+It supports audio calls and can also receive video calls. It is far from being
+a production application and is intended to be used as a learning tool.
 
-Settings that can be adjusted in the softphone.exe.config.
+## Audio
 
-Audio:
-------
-
-The bad news is that the softphone is barely usable due to the inability of .Net to
+~~The bad news is that the softphone is barely usable due to the inability of .Net to
 reliably deliver audio samples from the microphone. What tends to happen is that as 
 soon as incoming RTP packets start arriving the .Net runtime has periods where it's 
 busy doing its garbage collection and other housekeeping and the microphone samples
 jump from a 20ms period up to a 100 or 200ms period. The softphone supplied audio
 will still be usable at the remote end of the call but it will be jumpy and possibly
-have clicks and static.
+have clicks and static.~~
 
-I've only implemented support for the PCMU (G711 ULAW) codec so if the remote SIP 
+~~I've only implemented support for the PCMU (G711 ULAW) codec so if the remote SIP 
 device doesn't support it a call will not be possible.
 As far as audio devices go the default input and output devices are used and there
-is no user interface option facility to change that. Can be done via code.
+is no user interface option facility to change that. Can be done via code.~~
 
-Settings:
----------
+Since the above was written the audio performance in .NET has improved a lot and is 
+now usable. The softphone now supports the PCMU, PCMA and G722 audio codecs and the 
+VP8 video codec..
+
+## Settings
 
 STUNServerHostname - STUN is a protocol used to determine a machine's public IP address.
 This STUN server setting needs to be a public STUN server so that the application can
@@ -44,13 +45,18 @@ DnsServer - Optional, a custom DNS server to use. Relevant if default DNS server
 The sipsockets node can be used to configure the SIP transport layer. This is optional 
 and if the node is left commented then default values will be used.
 
-Calling:
---------
+## Calling
 
-The softphone supports SIP calls. For authenticated SIP calls check the desired radio button,
-enter the destination number in the text box and click the Call button.
+The softphone supports SIP calls. For authenticated SIP calls the SIP credentials in the previous section
+can be used.
 
-It's also possible to place anonymous SIP calls that won't use any preset SIP account information.
-To place an anonymous SIP call check the SIP radio button and then enter a SIP address in the 
-text box, e.g. music@iptel.org. The softphone will identify that it's a full SIP address and place
-a call to it directly. 
+## Video Call Testing
+
+A handy way to test the video calling feature of this application is to use the VideoPhoneCmdLine example
+see, https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/SIPExamples/VideoPhoneCmdLine/Program.cs.
+
+Command line to use to place a video call to this softphone application:
+
+````
+dotnet run --dst=127.0.0.1:5060 --tp
+````
