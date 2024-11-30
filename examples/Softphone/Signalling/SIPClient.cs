@@ -97,7 +97,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Places an outgoing SIP call.
         /// </summary>
-        /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the all will
+        /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the call will
         /// be placed anonymously directly to that URI. Alternatively it can be just the user portion of a URI in which case it will
         /// be sent to the configured SIP server.</param>
         public async Task Call(string destination)
@@ -301,9 +301,8 @@ namespace SIPSorcery.SoftPhone
             {
                 AudioSink = windowsAudioEndPoint,
                 AudioSource = windowsAudioEndPoint,
-                // TODO: Not working for calls to sip:music@iptel.org. AC 29 Sep 2024.
-                //VideoSink = windowsVideoEndPoint,
-                //VideoSource = windowsVideoEndPoint,
+                VideoSink = windowsVideoEndPoint,
+                VideoSource = windowsVideoEndPoint,
             };
 
             // Fallback video source if a Windows webcam cannot be accessed.
