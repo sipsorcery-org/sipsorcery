@@ -67,10 +67,17 @@ namespace SIPSorcery.net.RTP
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
         /// value is added to the previous RTP timestamp when building the RTP header.</param>
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        ///
+        private SDPAudioVideoMediaFormat sendingFormat;
+        private bool sendingFormatFound = false;
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
-            var audioFormat = GetSendingFormat();
-            SendAudioFrame(durationRtpUnits, audioFormat.ID, sample);
+            if (!sendingFormatFound)
+            {
+                sendingFormat = GetSendingFormat();
+                sendingFormatFound = true;
+            }
+            SendAudioFrame(durationRtpUnits, sendingFormat.ID, sample);
         }
 
         /// <summary>

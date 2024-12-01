@@ -1204,7 +1204,18 @@ namespace SIPSorcery.Net
             // In theory it would be better to an async/await but that would result in a breaking
             // change to the API and for a one off (once per class instance not once per method call)
             // delay of a few hundred milliseconds it was decided not to break the API.
-            _iceGatheringTask.Wait();
+            using (var ct = new CancellationTokenSource(TimeSpan.FromMilliseconds(2000)))
+            {
+                try
+                {
+                    _iceGatheringTask.Wait(ct.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Handle the timeout scenario here
+                    
+                }
+            }
 
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
