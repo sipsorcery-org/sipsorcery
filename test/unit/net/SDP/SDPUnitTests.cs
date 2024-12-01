@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -1279,6 +1280,35 @@ a=ssrc-group:FID 3366495178 777490417";
             Assert.Equal("10vMB2Ee;tcp", sdp.Media.First().MessageMediaFormat.Endpoint);
             Assert.Equal("text/plain", sdp.Media.First().MessageMediaFormat.AcceptTypes[0]);
             Assert.Equal("text/x-msrp-heartbeat", sdp.Media.First().MessageMediaFormat.AcceptTypes[1]);
+        }
+
+        /// <summary>
+        /// The media format negotiation rules specify that the first common format in the offer and answer
+        /// should be chiosen. This test checks that the media formats are maintained in the order they were added.
+        /// </summary>
+        [Fact]
+        public void Media_Formats_Order_Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var sdp = new SDP();
+
+            sdp.Media.Add(new SDPMediaAnnouncement()
+            {
+                Media = SDPMediaTypesEnum.audio,
+                MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>
+                {
+                    { 8, new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 8, "PCMA", 8000) },
+                    { 0, new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 0, "PCMU", 8000) },
+                    { 101, new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 101, "telephone-event", 8000) }
+                }
+            });
+
+            logger.LogDebug(sdp.ToString());
+
+            var sdpParsed = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal(8, sdpParsed.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).First().MediaFormats.First().Key);
         }
     }
 }
