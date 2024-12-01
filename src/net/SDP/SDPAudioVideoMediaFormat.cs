@@ -350,7 +350,7 @@ namespace SIPSorcery.Net
         /// <param name="a">The first list to match the media formats for.</param>
         /// <param name="b">The second list to match the media formats for.</param>
         /// <returns>A list of media formats that are compatible for BOTH lists.</returns>
-        public static List<SDPAudioVideoMediaFormat> GetCompatibleFormats(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b, bool preferH264 = true)
+        public static List<SDPAudioVideoMediaFormat> GetCompatibleFormats(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
         {
             List<SDPAudioVideoMediaFormat> compatible = new List<SDPAudioVideoMediaFormat>();
 
@@ -370,10 +370,6 @@ namespace SIPSorcery.Net
                 {
                     if (b.Any(x => AreMatch(format, x)))
                     {
-                        if (preferH264 && (format.Rtpmap ?? "").StartsWith("H264"))
-                        {
-                            return new List<SDPAudioVideoMediaFormat> { format };
-                        }
                         compatible.Add(format);
                     }
                 }
