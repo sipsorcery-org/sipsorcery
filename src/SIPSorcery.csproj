@@ -1,12 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Remove="net\TURN\**" />
-    <EmbeddedResource Remove="net\TURN\**" />
-    <None Remove="net\TURN\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="net\RTSP\RTSPClient.cs" />
     <Compile Remove="net\RTSP\RTSPConnection.cs" />
     <Compile Remove="net\RTSP\RTSPServer.cs" />
