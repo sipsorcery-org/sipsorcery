@@ -160,6 +160,7 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
         private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
+        private const int GATHER_TIMEOUT_MS = 2000;
 
         /// <summary>
         /// The period to wait for the SCTP association to complete before giving up.
@@ -1204,7 +1205,7 @@ namespace SIPSorcery.Net
             // In theory it would be better to an async/await but that would result in a breaking
             // change to the API and for a one off (once per class instance not once per method call)
             // delay of a few hundred milliseconds it was decided not to break the API.
-            using (var ct = new CancellationTokenSource(TimeSpan.FromMilliseconds(2000)))
+            using (var ct = new CancellationTokenSource(TimeSpan.FromMilliseconds(GATHER_TIMEOUT_MS)))
             {
                 try
                 {
@@ -1212,8 +1213,8 @@ namespace SIPSorcery.Net
                 }
                 catch (OperationCanceledException)
                 {
-                    // Handle the timeout scenario here
-                    
+                    logger.LogWarning($"ICE gathering timed out after {GATHER_TIMEOUT_MS}Ms");
+
                 }
             }
 
