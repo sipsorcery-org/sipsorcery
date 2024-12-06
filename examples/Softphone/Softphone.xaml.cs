@@ -138,7 +138,7 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Application closing, shutdown the SIP, Google Voice and STUN clients.
+        /// Application closing, shutdown the SIP and STUN clients.
         /// </summary>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
