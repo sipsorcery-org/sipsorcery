@@ -345,6 +345,11 @@ namespace SIPSorcery.Net
         /// is to use ECDSA. Chrome has defaulted to ECDSA since 2016 (see https://developer.chrome.com/blog/webrtc-ecdsa).
         /// </summary>
         public bool X_UseRsaForDtlsCertificate;
+
+        /// <summary>
+        /// Timeout for gathering local IP addresses
+        /// </summary>
+        public int X_GatherTimeoutMs = 30000;
     }
 
     /// <summary>

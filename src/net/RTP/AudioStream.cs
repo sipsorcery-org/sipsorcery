@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,8 +30,10 @@ namespace SIPSorcery.net.RTP
     public class AudioStream : MediaStream
     {
         protected static ILogger logger = Log.Logger;
-
         protected Boolean rtpEventInProgress = false;
+
+        private SDPAudioVideoMediaFormat sendingFormat;
+        private bool sendingFormatFound = false;
 
         #region EVENTS
 
@@ -68,8 +69,6 @@ namespace SIPSorcery.net.RTP
         /// value is added to the previous RTP timestamp when building the RTP header.</param>
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         ///
-        private SDPAudioVideoMediaFormat sendingFormat;
-        private bool sendingFormatFound = false;
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
             if (!sendingFormatFound)
@@ -107,15 +106,21 @@ namespace SIPSorcery.net.RTP
                     // paylaod.
                     // See https://github.com/sipsorcery/sipsorcery/issues/394.
 
-                    uint payloadDuration = 0;
+                    int maxPayload = RTPSession.RTP_MAX_PAYLOAD;
+                    int totalPackets = (buffer.Length + maxPayload - 1) / maxPayload;
 
-                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
+                    uint totalIncrement = 0;
+                    uint startTimestamp = LocalTrack.Timestamp; // Keep track of where we started.
+
+                    for (int index = 0; index < totalPackets; index++)
                     {
-                        int offset = (index == 0) ? 0 : (index * RTPSession.RTP_MAX_PAYLOAD);
-                        int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
-                        LocalTrack.Timestamp += payloadDuration;
-                        byte[] payload = new byte[payloadLength];
+                        int offset = index * maxPayload;
+                        int payloadLength = Math.Min(maxPayload, buffer.Length - offset);
 
+                        double fraction = (double)payloadLength / buffer.Length;
+                        uint packetDuration = (uint)Math.Round(fraction * duration);
+
+                        byte[] payload = new byte[payloadLength];
                         Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
 
                         // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
@@ -123,13 +128,21 @@ namespace SIPSorcery.net.RTP
                         // in a frame.
                         int markerBit = 0;
 
+                        // Send this packet at the current LocalTrack.Timestamp
                         SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                        //logger.LogDebug($"send audio { audioRtpChannel.RTPLocalEndPoint}->{AudioDestinationEndPoint}.");
 
-                        payloadDuration = (uint)(((decimal)payloadLength / buffer.Length) * duration); // Get the percentage duration of this payload.
+                        // After sending, increment the timestamp by this packet's portion.
+                        // This ensures the timestamp increments for the next packet, including the first one.
+                        LocalTrack.Timestamp += packetDuration;
+                        totalIncrement += packetDuration;
                     }
 
-                    LocalTrack.Timestamp += duration;
+                    // After all packets are sent, correct if we haven't incremented exactly by `duration`.
+                    if (totalIncrement != duration)
+                    {
+                        // Add or subtract the difference so total increment equals duration.
+                        LocalTrack.Timestamp += (duration - totalIncrement);
+                    }
                 }
                 catch (SocketException sockExcp)
                 {

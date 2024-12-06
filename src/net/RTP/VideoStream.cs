@@ -29,9 +29,10 @@ namespace SIPSorcery.net.RTP
     public class VideoStream : MediaStream
     {
         protected static ILogger logger = Log.Logger;
-        
-
         protected RtpVideoFramer RtpVideoFramer;
+
+        private SDPAudioVideoMediaFormat sendingFormat;
+        private bool sendingFormatFound = false;
 
         #region EVENTS
 
@@ -246,8 +247,6 @@ namespace SIPSorcery.net.RTP
         /// value is added to the previous RTP timestamp when building the RTP header.</param>
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
         ///
-        private SDPAudioVideoMediaFormat sendingFormat;
-        private bool sendingFormatFound = false;
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             if (!sendingFormatFound)
