@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorceryMedia.Abstractions;
+using static Org.BouncyCastle.Bcpg.Attr.ImageAttrib;
 
 namespace SIPSorcery.Net
 {
@@ -141,6 +142,51 @@ namespace SIPSorcery.Net
                 Rtpmap = SetRtpmap(videoFormat.FormatName, videoFormat.ClockRate, 0);
             }
         }
+
+        public bool IsH264
+        {
+            get
+            {
+                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("H264");
+            }
+        }
+
+        public bool CheckCompatible()
+        {
+            if (IsH264)
+            {
+                var parameters = ParseWebRtcParameters(Fmtp);
+                if (parameters.TryGetValue("packetization-mode", out string packetizationMode))
+                {
+                    if (packetizationMode != "1")
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private static Dictionary<string, string> ParseWebRtcParameters(string input)
+        {
+            var parameters = new Dictionary<string, string>();
+            if (string.IsNullOrEmpty(input))
+            {
+                return parameters;
+            }
+
+            foreach (var pair in input.Split(';'))
+            {
+                var keyValue = pair.Split('=');
+                if (keyValue.Length == 2)
+                {
+                    parameters[keyValue[0].Trim().ToLowerInvariant()] = keyValue[1].Trim();
+                }
+            }
+
+            return parameters;
+        }
+
 
         /// <summary>
         /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use 
@@ -324,23 +370,22 @@ namespace SIPSorcery.Net
         public static bool AreMatch(SDPAudioVideoMediaFormat format1, SDPAudioVideoMediaFormat format2)
         {
             // rtpmap takes priority as well known format ID's can be overruled.
-            if (format1.Rtpmap != null
-                && format2.Rtpmap != null &&
-                string.Equals(format1.Rtpmap.Trim(), format2.Rtpmap.Trim(), StringComparison.OrdinalIgnoreCase))
+            if (format1.Rtpmap != null && format2.Rtpmap != null)
             {
-                return true;
+                if (string.Equals(format1.Rtpmap.Trim(), format2.Rtpmap.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
-            else if (format1.ID < DYNAMIC_ID_MIN
+            if (format1.ID < DYNAMIC_ID_MIN
                 && format1.ID == format2.ID
                 && string.Equals(format1.Name(), format2.Name(), StringComparison.OrdinalIgnoreCase))
             {
                 // Well known format type.
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
+            
         }
 
         /// <summary>
@@ -368,9 +413,12 @@ namespace SIPSorcery.Net
             {
                 foreach (var format in a)
                 {
-                    if (b.Any(x => SDPAudioVideoMediaFormat.AreMatch(format, x)))
+                    if (b.Any(x => AreMatch(format, x)))
                     {
-                        compatible.Add(format);
+                        if (format.CheckCompatible())
+                        {
+                            compatible.Add(format);
+                        }
                     }
                 }
             }

@@ -414,7 +414,15 @@ namespace SIPSorcery.Media
                             state.QmfSignalHistory[i] = state.QmfSignalHistory[i + 2];
                         }
                         state.QmfSignalHistory[22] = inputBuffer[j++];
-                        state.QmfSignalHistory[23] = inputBuffer[j++];
+                        if (j < inputBufferCount)
+                        {
+                            state.QmfSignalHistory[23] = inputBuffer[j++];
+                        }
+                        else
+                        {
+                            //Duplicate the last sample - fix odd shorts issue
+                            state.QmfSignalHistory[23] = state.QmfSignalHistory[22];
+                        }
 
                         // Discard every other QMF output
                         sumeven = 0;

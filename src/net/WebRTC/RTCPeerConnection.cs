@@ -160,7 +160,7 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
         private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
-
+        
         /// <summary>
         /// The period to wait for the SCTP association to complete before giving up.
         /// In theory this should be very quick as the DTLS connection should already have been established
@@ -1204,7 +1204,18 @@ namespace SIPSorcery.Net
             // In theory it would be better to an async/await but that would result in a breaking
             // change to the API and for a one off (once per class instance not once per method call)
             // delay of a few hundred milliseconds it was decided not to break the API.
-            _iceGatheringTask.Wait();
+            using (var ct = new CancellationTokenSource(TimeSpan.FromMilliseconds(_configuration.X_GatherTimeoutMs)))
+            {
+                try
+                {
+                    _iceGatheringTask.Wait(ct.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    logger.LogWarning($"ICE gathering timed out after {_configuration.X_GatherTimeoutMs}Ms");
+
+                }
+            }
 
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
