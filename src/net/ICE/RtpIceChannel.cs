@@ -2585,7 +2585,7 @@ namespace SIPSorcery.Net
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, realm));
             stunRequest.AddUsernameAttribute(username);
 
-            // See <https://tools.ietf.org/html/rfc5389#section-15.4>
+            // See https://tools.ietf.org/html/rfc5389#section-15.4
             string key = $"{username}:{Encoding.UTF8.GetString(realm)}:{password}";
             var buffer = Encoding.UTF8.GetBytes(key);
             var md5Digest = new MD5Digest();
