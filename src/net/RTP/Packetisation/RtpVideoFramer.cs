@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
@@ -32,6 +33,7 @@ namespace SIPSorcery.Net
         private byte[] _currVideoFrame;
         private int _currVideoFramePosn = 0;
         private H264Depacketiser _h264Depacketiser;
+        private MJPEGDepacketiser _mJPEGDepacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
@@ -47,6 +49,10 @@ namespace SIPSorcery.Net
             if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
+            }
+            else if(_codec == VideoCodecsEnum.JPEG)
+            {
+                _mJPEGDepacketiser = new MJPEGDepacketiser();
             }
         }
 
@@ -98,6 +104,14 @@ namespace SIPSorcery.Net
                 //var hdr = rtpPacket.Header;
                 var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
+                if (frameStream != null)
+                {
+                    return frameStream.ToArray();
+                }
+            }
+            else if(_codec == VideoCodecsEnum.JPEG)
+            {
+                var frameStream = _mJPEGDepacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
                 if (frameStream != null)
                 {
                     return frameStream.ToArray();
