@@ -53,6 +53,10 @@
 
       // Start the session using the Session Description Protocol (SDP)
       const offer = await pc.createOffer();
+	  
+	  console.log("Offer");
+	  console.log(offer);
+	  
       await pc.setLocalDescription(offer);
 
       const baseUrl = "https://api.openai.com/v1/realtime";

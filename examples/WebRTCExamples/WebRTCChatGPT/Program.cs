@@ -45,7 +45,6 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Windows;
 
 namespace demo
@@ -142,15 +141,21 @@ namespace demo
 
         private static async Task<RTCPeerConnection> CreatePeerConnection()
         {
-            var peerConnection = new RTCPeerConnection(null);
+            var pcConfig = new RTCConfiguration
+            {
+                X_UseRtpFeedbackProfile = true,
+            };
+
+            var peerConnection = new RTCPeerConnection(pcConfig);
             await peerConnection.createDataChannel(OPENAPI_DATACHANNEL_NAME);
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, false, false);
             windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
 
-            var audioFormats = new List<AudioFormat> { new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU) };
-            MediaStreamTrack audioTrack = new MediaStreamTrack(audioFormats, MediaStreamStatusEnum.RecvOnly);
+            //var audioFormats = new List<AudioFormat> { new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU) };
+            //MediaStreamTrack audioTrack = new MediaStreamTrack(audioFormats, MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
             peerConnection.OnAudioFormatsNegotiated += (audioFormats) => windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
