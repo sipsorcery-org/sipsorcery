@@ -20,6 +20,10 @@
 //  --header "Content-Type: application/json" ^
 //  --data "{\"model\": \"gpt-4o-realtime-preview-2024-12-17\", \"voice\": \"verse\"}"
 //
+// Usage:
+// set OPENAPIKEY=your_openapi_key
+// dotnet run %OPENAPIKEY%
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
@@ -37,6 +41,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -63,21 +68,31 @@ namespace demo
 
     class Program
     {
+        private const string OPENAPI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
         private const string OPENAPI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
         private const string OPENAPI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
         private const string OPENAPI_DATACHANNEL_NAME = "oai-events";
 
-        /// <summary>
-        /// Ephemeral secrets can only be used once.
-        /// </summary>
-        private const string EPHEMERAL_SECRET = "xxx";
-
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        static async Task Main()
+        static async Task Main(string[] args)
         {
             Console.WriteLine("WebRTC ChatGPT Demo Program");
             Console.WriteLine("Press ctrl-c to exit.");
+
+            if(args.Length != 1)
+            {
+                Console.WriteLine("Please provide your OpenAPI key as a command line argument. It's used to get the single use ephemeral secret for the WebRTC connection.");
+                return;
+            }
+
+            var ephemeralKey = await CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, "verse");
+
+            if(string.IsNullOrWhiteSpace(ephemeralKey))
+            {
+                Console.WriteLine("Failed to get ephemeral key.");
+                return;
+            }
 
             logger = AddConsoleLogger();
 
@@ -89,7 +104,7 @@ namespace demo
             logger.LogDebug($"SDP offer:");
             logger.LogDebug(offerSdp.sdp);
 
-            var answerSdp = await GetOpenApiAnswerSdpAsync(EPHEMERAL_SECRET, offerSdp.sdp);
+            var answerSdp = await GetOpenApiAnswerSdpAsync(ephemeralKey, offerSdp.sdp);
 
             logger.LogDebug($"SDP answer:");
             logger.LogDebug(answerSdp);
@@ -114,9 +129,9 @@ namespace demo
                     }
                 };
 
-                logger.LogDebug($"Sending response.create message: {System.Text.Json.JsonSerializer.Serialize(responseCreate)}.");
+                logger.LogDebug($"Sending response.create message: {JsonSerializer.Serialize(responseCreate)}.");
 
-                openApiDataChannel.send(System.Text.Json.JsonSerializer.Serialize(responseCreate));
+                openApiDataChannel.send(JsonSerializer.Serialize(responseCreate));
             };
 
             openApiDataChannel.onmessage += (datachan, type, data) =>
@@ -218,19 +233,70 @@ namespace demo
             return peerConnection;
         }
 
+        private static async Task<string> CreateEphemeralKeyAsync(string sessionsUrl, string openApiToken, string model, string voice)
+        {
+            HttpClient httpClient = new HttpClient();
+
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", openApiToken);
+
+            // Create the request body
+            var requestBody = new
+            {
+                model = model,
+                voice = voice
+            };
+
+            // Serialize the request body to JSON
+            string jsonRequestBody = JsonSerializer.Serialize(requestBody);
+
+            // Create the content with appropriate headers
+            var content = new StringContent(jsonRequestBody, Encoding.UTF8);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+            // Make the POST request
+            var response = await httpClient.PostAsync(sessionsUrl, content);
+
+            // Check for success
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogError($"Failed to create ephemeral key. Status code {response.StatusCode}.");
+                logger.LogError(await response.Content.ReadAsStringAsync());
+                return string.Empty;
+            }
+
+            // Read the response body (assumed to contain the ephemeral key)
+            string responseContent = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                // Deserialize the response JSON
+                var responseJson = JsonSerializer.Deserialize<JsonElement>(responseContent);
+
+                // Extract the client_secret.value
+                string clientSecret = responseJson
+                    .GetProperty("client_secret")
+                    .GetProperty("value")
+                    .GetString();
+
+                logger.LogInformation("Ephemeral key created successfully.");
+                return clientSecret;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Failed to parse client secret: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
         private static async Task<string> GetOpenApiAnswerSdpAsync(string ephemeralKey, string offerSdp)
         {
             HttpClient httpClient = new HttpClient();
 
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", ephemeralKey);
-
-            // Prepare the request
-            //var request = new HttpRequestMessage(HttpMethod.Post, $"{OPENAPI_REALTIME_BASE_URL}?model={OPENAPI_MODEL}")
-            //{
-            //    Content = new StringContent(offerSdp, Encoding.UTF8, "application/sdp")
-            //};
+                new AuthenticationHeaderValue("Bearer", ephemeralKey);
 
             var request = new HttpRequestMessage(HttpMethod.Post, $"{OPENAPI_REALTIME_BASE_URL}?model={OPENAPI_MODEL}");
 
