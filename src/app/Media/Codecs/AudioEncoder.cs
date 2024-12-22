@@ -13,16 +13,20 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Concentus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorceryMedia.Abstractions;
+using Concentus.Enums;
 
 namespace SIPSorcery.Media
 {
     public class AudioEncoder : IAudioEncoder
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
+        private const int OPUS_SAMPLE_RATE = 48000;           // Opus codec sampling rate, 48KHz.
+        private const int OPUS_CHANNELS = 1;                  // Opus codec number of channels.
 
         private G722Codec _g722Codec;
         private G722CodecState _g722CodecState;
@@ -31,6 +35,9 @@ namespace SIPSorcery.Media
 
         private G729Encoder _g729Encoder;
         private G729Decoder _g729Decoder;
+
+        private IOpusDecoder _opusDecoder;
+        private IOpusEncoder _opusEncoder;
 
         private List<AudioFormat> _linearFormats = new List<AudioFormat>
         {
@@ -47,6 +54,7 @@ namespace SIPSorcery.Media
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G729),
+            new AudioFormat(111, "OPUS", OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
         };
 
         public List<AudioFormat> SupportedFormats
@@ -87,7 +95,9 @@ namespace SIPSorcery.Media
             else if (format.Codec == AudioCodecsEnum.G729)
             {
                 if (_g729Encoder == null)
+                {
                     _g729Encoder = new G729Encoder();
+                }
 
                 byte[] pcmBytes = new byte[pcm.Length * sizeof(short)];
                 Buffer.BlockCopy(pcm, 0, pcmBytes, 0, pcmBytes.Length);
@@ -113,6 +123,24 @@ namespace SIPSorcery.Media
             {
                 // Put on the wire as little endian.
                 return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
+            }
+            else if (format.Codec == AudioCodecsEnum.OPUS)
+            {
+                if (_opusEncoder == null)
+                {
+                    _opusEncoder = OpusCodecFactory.CreateEncoder(OPUS_SAMPLE_RATE, OPUS_CHANNELS, OpusApplication.OPUS_APPLICATION_VOIP);
+                }
+
+                // Opus expects PCM data in float format [-1.0, 1.0].
+                float[] pcmFloat = new float[pcm.Length];
+                for (int i = 0; i < pcm.Length; i++)
+                {
+                    pcmFloat[i] = pcm[i] / 32768f; // Convert to float range [-1.0, 1.0]
+                }
+
+                byte[] encodedSample = new byte[pcm.Length];
+                int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / OPUS_CHANNELS, encodedSample, encodedSample.Length);
+                return encodedSample.Take(encodedLength).ToArray();
             }
             else
             {
@@ -171,6 +199,26 @@ namespace SIPSorcery.Media
                 // arrive from somewhere like the SkypeBot SDK they will be in little endian format).
                 return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(encodedSample[i * 2 + 1] << 8 | encodedSample[i * 2])).ToArray();
             }
+            else if (format.Codec == AudioCodecsEnum.OPUS)
+            {
+                if (_opusDecoder == null)
+                {
+                    _opusDecoder = OpusCodecFactory.CreateDecoder(OPUS_SAMPLE_RATE, OPUS_CHANNELS);
+                }
+
+                float[] decodedPcmFloat = new float[encodedSample.Length * 2];
+                int decodedLength = _opusDecoder.Decode(encodedSample, decodedPcmFloat, decodedPcmFloat.Length, true);
+
+                // Convert float PCM to short PCM
+                short[] decodedPcm = new short[decodedLength];
+                for (int i = 0; i < decodedLength; i++)
+                {
+                    // Clamp the value to the valid range of -32768 to 32767
+                    decodedPcm[i] = ClampToShort(decodedPcmFloat[i] * 32767);
+                }
+
+                return decodedPcm;
+            }
             else
             {
                 throw new ApplicationException($"Audio format {format.Codec} cannot be decoded.");
@@ -181,6 +229,19 @@ namespace SIPSorcery.Media
         public short[] Resample(short[] pcm, int inRate, int outRate)
         {
             return PcmResampler.Resample(pcm, inRate, outRate);
+        }
+
+        private short ClampToShort(float value)
+        {
+            if (value > short.MaxValue)
+            {
+                return short.MaxValue;
+            }
+            if (value < short.MinValue)
+            {
+                return short.MinValue;
+            }
+            return (short)value;
         }
     }
 }

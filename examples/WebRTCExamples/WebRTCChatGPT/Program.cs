@@ -4,16 +4,17 @@
 // Description: An example WebRTC application that can be used to interact with
 // ChatGPT's real-time API https://platform.openai.com/docs/guides/realtime-webrtc.
 //
-// NOTE: As of 19 Dec 2024 this examle has never worked. It can establish the WebRTC connection
-// but does not get a response on the data channel. Testing with a js version in Chrome
-// was only able to randomly get one successful data channel response from 20 or 30
-// attempts so seems the OpenAI end may be having capacity issues.
+// NOTE: As of 22 Dec 2024 this example does work to establish an RTP flow but the
+// OPUS encoder is not currently working and need to track down why the data channel
+// messages aren't being received. The issues could be related.
 //
 // Remarks:
 // To get the ephemeral secret you first need an API key from OpenAI at
 // https://platform.openai.com/settings/organization/api-keys.
 //
-// The API key can then be used to create an ephemeral secret using the curl comamnd below,
+// If you don't want to pass your OpenAI API key to this app an alternative approach is
+// to create an ephemeral secret using the curl comamnd below and then hard code it into
+// the application.
 // NOTE each epehmeral key seems like it can ONLY be used once:
 // curl -v https://api.openai.com/v1/realtime/sessions ^
 //  --header "Authorization: Bearer %OPENAPI_TOKEN%" ^
@@ -134,23 +135,24 @@ namespace demo
                 openApiDataChannel.send(JsonSerializer.Serialize(responseCreate));
             };
 
+            openApiDataChannel.onclose += () => logger.LogDebug($"OpenAPI data channel {openApiDataChannel.label} closed.");
+
             openApiDataChannel.onmessage += (datachan, type, data) =>
             {
-                logger.LogInformation($"Data channel {datachan.label} message {type} received: {Encoding.UTF8.GetString(data)}.");
+                logger.LogInformation($"OpenAPI data channel {datachan.label} message {type} received: {Encoding.UTF8.GetString(data)}.");
             };
 
             // Plumbing code to facilitate a graceful exit.
-            CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             ManualResetEvent exitMre = new ManualResetEvent(false);
 
-            // Ctrl-c will gracefully exit the call at any point.
+            // Ctrl-c will gracefully exit the app at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
                 exitMre.Set();
             };
 
-            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+            // Wait for a signal saying the atempt failed or was cancelled with ctrl-c.
             exitMre.WaitOne();
         }
 
@@ -166,14 +168,19 @@ namespace demo
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, false, false);
+            windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
             windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
+            windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
 
-            //var audioFormats = new List<AudioFormat> { new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU) };
-            //MediaStreamTrack audioTrack = new MediaStreamTrack(audioFormats, MediaStreamStatusEnum.SendRecv);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             peerConnection.addTrack(audioTrack);
 
-            peerConnection.OnAudioFormatsNegotiated += (audioFormats) => windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
+            peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
+            {
+                logger.LogDebug($"Audio format negotiated {audioFormats.First().FormatName}.");
+                windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
+                windowsAudioEP.SetAudioSourceFormat(audioFormats.First());
+            };
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
@@ -197,11 +204,11 @@ namespace demo
 
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
-                logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+                //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
 
                 if (media == SDPMediaTypesEnum.audio)
                 {
-                    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                    //windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
 
