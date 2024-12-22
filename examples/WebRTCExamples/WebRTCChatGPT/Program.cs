@@ -4,10 +4,9 @@
 // Description: An example WebRTC application that can be used to interact with
 // ChatGPT's real-time API https://platform.openai.com/docs/guides/realtime-webrtc.
 //
-// NOTE: As of 22 Dec 2024 this examle has never worked. It can establish the WebRTC connection
-// but does not get a response on the data channel. Testing with a js version in Chrome
-// was only able to randomly get one successful data channel response from 20 or 30
-// attempts so seems the OpenAI end may be having capacity issues.
+// NOTE: As of 22 Dec 2024 this example does work to establish an RTP flow but the
+// OPUS encoder is not currently working and need to track down why the data channel
+// messages aren't being received. The issues could be related.
 //
 // Remarks:
 // To get the ephemeral secret you first need an API key from OpenAI at
