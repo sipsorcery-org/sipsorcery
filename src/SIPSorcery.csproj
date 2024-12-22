@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Concentus" Version="2.2.2" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="DnsClient" Version="1.8.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />

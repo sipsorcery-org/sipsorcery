@@ -136,23 +136,24 @@ namespace demo
                 openApiDataChannel.send(JsonSerializer.Serialize(responseCreate));
             };
 
+            openApiDataChannel.onclose += () => logger.LogDebug($"OpenAPI data channel {openApiDataChannel.label} closed.");
+
             openApiDataChannel.onmessage += (datachan, type, data) =>
             {
-                logger.LogInformation($"Data channel {datachan.label} message {type} received: {Encoding.UTF8.GetString(data)}.");
+                logger.LogInformation($"OpenAPI data channel {datachan.label} message {type} received: {Encoding.UTF8.GetString(data)}.");
             };
 
             // Plumbing code to facilitate a graceful exit.
-            CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             ManualResetEvent exitMre = new ManualResetEvent(false);
 
-            // Ctrl-c will gracefully exit the call at any point.
+            // Ctrl-c will gracefully exit the app at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
                 exitMre.Set();
             };
 
-            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+            // Wait for a signal saying the atempt failed or was cancelled with ctrl-c.
             exitMre.WaitOne();
         }
 
@@ -168,14 +169,19 @@ namespace demo
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, false, false);
+            windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
             windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
+            windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
 
-            //var audioFormats = new List<AudioFormat> { new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU) };
-            //MediaStreamTrack audioTrack = new MediaStreamTrack(audioFormats, MediaStreamStatusEnum.SendRecv);
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             peerConnection.addTrack(audioTrack);
 
-            peerConnection.OnAudioFormatsNegotiated += (audioFormats) => windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
+            peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
+            {
+                logger.LogDebug($"Audio format negotiated {audioFormats.First().FormatName}.");
+                windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
+                windowsAudioEP.SetAudioSourceFormat(audioFormats.First());
+            };
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
@@ -199,11 +205,11 @@ namespace demo
 
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
-                logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
+                //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
 
                 if (media == SDPMediaTypesEnum.audio)
                 {
-                    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                    //windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
 
