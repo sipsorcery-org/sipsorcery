@@ -26,7 +26,7 @@ There is no **Audio ouput** in this library. For this you can use [SIPSorcery.SD
 
 Install the [FFmpeg](https://www.ffmpeg.org/) binaries using the packages at https://www.gyan.dev/ffmpeg/builds/#release-builds and include the FFMPEG executable in your PATH to find them automatically.
 
-As of 14 Jan 2024 the command below works on Windows 11 and installs the required FFmpeg binaries and lbraries wheer teh can be found by SIPSorceryMedia.FFmpeg:
+As of 14 Jan 2024, the command below works on Windows 11 and installs the required FFmpeg binaries and libraries where they can be found by SIPSorceryMedia.FFmpeg:
 
 `winget install "FFmpeg (Shared)" --version 7.0`
 
