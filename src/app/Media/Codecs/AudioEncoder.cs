@@ -26,7 +26,8 @@ namespace SIPSorcery.Media
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int OPUS_SAMPLE_RATE = 48000;           // Opus codec sampling rate, 48KHz.
-        private const int OPUS_CHANNELS = 1;                  // Opus codec number of channels.
+        private const int OPUS_CHANNELS = 2;                  // Opus codec number of channels.
+        private const int OPUS_MAXIMUM_DECODE_BUFFER_LENGTH = 5760;
 
         private G722Codec _g722Codec;
         private G722CodecState _g722CodecState;
@@ -206,8 +207,8 @@ namespace SIPSorcery.Media
                     _opusDecoder = OpusCodecFactory.CreateDecoder(OPUS_SAMPLE_RATE, OPUS_CHANNELS);
                 }
 
-                float[] decodedPcmFloat = new float[encodedSample.Length * 2];
-                int decodedLength = _opusDecoder.Decode(encodedSample, decodedPcmFloat, decodedPcmFloat.Length, true);
+                float[] decodedPcmFloat = new float[OPUS_MAXIMUM_DECODE_BUFFER_LENGTH];
+                int decodedLength = _opusDecoder.Decode(encodedSample, decodedPcmFloat, decodedPcmFloat.Length, false);
 
                 // Convert float PCM to short PCM
                 short[] decodedPcm = new short[decodedLength];
