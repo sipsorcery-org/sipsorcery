@@ -150,7 +150,7 @@ namespace demo
             var dataChannel = await peerConnection.createDataChannel(OPENAPI_DATACHANNEL_NAME);
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, false, false);
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true), -1, -1, false, false);
             windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
             windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
             windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
@@ -199,20 +199,6 @@ namespace demo
             dataChannel.onopen += () =>
             {
                 logger.LogDebug("OpenAPI data channel opened.");
-
-                //var responseCreate = new ResponseCreate
-                //{
-                //    type = "response.create",
-                //    response = new ResponseDetails
-                //    {
-                //        modalities = new List<string> { "text" },
-                //        instructions = "Write a haiku about code"
-                //    }
-                //};
-
-                //logger.LogDebug($"Sending response.create message: {JsonSerializer.Serialize(responseCreate)}.");
-
-                //openApiDataChannel.send(JsonSerializer.Serialize(responseCreate));
             };
 
             dataChannel.onclose += () => logger.LogDebug($"OpenAPI data channel {dataChannel.label} closed.");
@@ -224,14 +210,14 @@ namespace demo
 
         private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
         {
-            logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+            //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
 
             var message = Encoding.UTF8.GetString(data);
             var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
 
             if(serverEvent != null)
             {
-                logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
+                //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
 
                 OpenAIServerEventBase serverEventModel = serverEvent.Type switch
                 {
@@ -240,9 +226,9 @@ namespace demo
                     _ => null
                 };
 
-                if(serverEventModel != null)
+                if(serverEventModel is OpenAIResponseAudioTranscriptDone)
                 {
-                    logger.LogInformation($"Server event model {serverEventModel.ToJson()}.");
+                    logger.LogInformation($"Transcript done: {(serverEventModel as OpenAIResponseAudioTranscriptDone)?.Transcript}.");
                 }
             }
             else

@@ -26,7 +26,7 @@ namespace SIPSorcery.Media
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int OPUS_SAMPLE_RATE = 48000;           // Opus codec sampling rate, 48KHz.
-        private const int OPUS_CHANNELS = 2;                  // Opus codec number of channels.
+        private const int OPUS_CHANNELS = 1;                  // Opus codec number of channels.
         private const int OPUS_MAXIMUM_DECODE_BUFFER_LENGTH = 5760;
 
         private G722Codec _g722Codec;
@@ -55,7 +55,9 @@ namespace SIPSorcery.Media
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G729),
-            new AudioFormat(111, "OPUS", OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
+
+            // Need more testing befoer adding OPUS by default. 24 Dec 2024 AC.
+            //new AudioFormat(111, "OPUS", OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
         };
 
         public List<AudioFormat> SupportedFormats
@@ -69,11 +71,16 @@ namespace SIPSorcery.Media
         /// <param name="includeLinearFormats">If set to true the linear audio formats will be added
         /// to the list of supported formats. The reason they are only included if explicitly requested
         /// is they are not very popular for other VoIP systems and thereofre needlessly pollute the SDP.</param>
-        public AudioEncoder(bool includeLinearFormats = false)
+        public AudioEncoder(bool includeLinearFormats = false, bool includeOpus = false)
         {
             if (includeLinearFormats)
             {
                 _supportedFormats.AddRange(_linearFormats);
+            }
+
+            if(includeOpus)
+            {
+                _supportedFormats.Add(new AudioFormat(111, "OPUS", OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
             }
         }
 

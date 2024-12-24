@@ -71,8 +71,8 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
            
-            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
-            audioSource.RestrictFormats(x => x.FormatName == "OPUS");
+            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(includeOpus: false), new AudioSourceOptions { AudioSource = AudioSourcesEnum.SineWave });
+            //audioSource.RestrictFormats(x => x.FormatName == "OPUS");
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
