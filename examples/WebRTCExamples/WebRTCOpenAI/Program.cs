@@ -4,11 +4,11 @@
 // Description: An example WebRTC application that can be used to interact with
 // OpenAI's real-time API https://platform.openai.com/docs/guides/realtime-webrtc.
 //
-// NOTE: As of 23 Dec 2024 this example does work to establish an RTP flowand is
-// able to receive data channel messages. There is an issue with the newly added
-// OPUS codec wiring that is not yet resolved.
+// NOTE: As of 24 Dec 2024 this example does work to establish an audio stream and is
+// able to receive data channel messages. There is no echo cancellation feature in this
+// demo so if not provided by the OS then ChatGPT will end up talking to itself.
 //
-// NOTE: As of 23 Dec 2024 the official OpenAPI dotnet SDK is missing the realtime
+// NOTE: As of 24 Dec 2024 the official OpenAPI dotnet SDK is missing the realtime
 // models that represent the JSON datachannel messages. As such some ruidimentary
 // models have been created.
 // The official SDK is available at https://github.com/openai/openai-dotnet.
@@ -62,18 +62,6 @@ using SIPSorceryMedia.Windows;
 
 namespace demo
 {
-    public class ResponseCreate
-    {
-        public string type { get; set; }
-        public ResponseDetails response { get; set; }
-    }
-
-    public class ResponseDetails
-    {
-        public List<string> modalities { get; set; }
-        public string instructions { get; set; }
-    }
-
     class Program
     {
         private const string OPENAPI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
