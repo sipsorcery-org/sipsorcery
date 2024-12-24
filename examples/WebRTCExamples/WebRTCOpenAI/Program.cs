@@ -2,11 +2,18 @@
 // Filename: Program.cs
 //
 // Description: An example WebRTC application that can be used to interact with
-// ChatGPT's real-time API https://platform.openai.com/docs/guides/realtime-webrtc.
+// OpenAI's real-time API https://platform.openai.com/docs/guides/realtime-webrtc.
 //
-// NOTE: As of 22 Dec 2024 this example does work to establish an RTP flow but the
-// OPUS encoder is not currently working and need to track down why the data channel
-// messages aren't being received. The issues could be related.
+// NOTE: As of 23 Dec 2024 this example does work to establish an RTP flowand is
+// able to receive data channel messages. There is an issue with the newly added
+// OPUS codec wiring that is not yet resolved.
+//
+// NOTE: As of 23 Dec 2024 the official OpenAPI dotnet SDK is missing the realtime
+// models that represent the JSON datachannel messages. As such some ruidimentary
+// models have been created.
+// The official SDK is available at https://github.com/openai/openai-dotnet.
+// The OpenAPI API realtime server events reference is available at
+// https://platform.openai.com/docs/api-reference/realtime-server-events.
 //
 // Remarks:
 // To get the ephemeral secret you first need an API key from OpenAI at
@@ -78,12 +85,14 @@ namespace demo
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("WebRTC ChatGPT Demo Program");
+            Console.WriteLine("WebRTC OpenAPI Demo Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
             if(args.Length != 1)
             {
                 Console.WriteLine("Please provide your OpenAPI key as a command line argument. It's used to get the single use ephemeral secret for the WebRTC connection.");
+                Console.WriteLine("The recommended approach is: set OPENAPIKEY=<your api key>");
+                Console.WriteLine("And then: dotnet run %OPENAPIKEY%");
                 return;
             }
 
@@ -114,33 +123,7 @@ namespace demo
 
             logger.LogInformation($"Set answer result {setAnswerResult}.");
 
-            var openApiDataChannel = peerConnection.DataChannels.FirstOrDefault(x => x.label == OPENAPI_DATACHANNEL_NAME);
-
-            openApiDataChannel.onopen += () =>
-            {
-                logger.LogDebug("OpenAPI data channel now available, sending test message.");
-
-                var responseCreate = new ResponseCreate
-                {
-                    type = "response.create",
-                    response = new ResponseDetails
-                    {
-                        modalities = new List<string> { "text" },
-                        instructions = "Write a haiku about code"
-                    }
-                };
-
-                logger.LogDebug($"Sending response.create message: {JsonSerializer.Serialize(responseCreate)}.");
-
-                openApiDataChannel.send(JsonSerializer.Serialize(responseCreate));
-            };
-
-            openApiDataChannel.onclose += () => logger.LogDebug($"OpenAPI data channel {openApiDataChannel.label} closed.");
-
-            openApiDataChannel.onmessage += (datachan, type, data) =>
-            {
-                logger.LogInformation($"OpenAPI data channel {datachan.label} message {type} received: {Encoding.UTF8.GetString(data)}.");
-            };
+            //var openApiDataChannel = peerConnection.DataChannels.FirstOrDefault(x => x.label == OPENAPI_DATACHANNEL_NAME);
 
             // Plumbing code to facilitate a graceful exit.
             ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -164,10 +147,10 @@ namespace demo
             };
 
             var peerConnection = new RTCPeerConnection(pcConfig);
-            await peerConnection.createDataChannel(OPENAPI_DATACHANNEL_NAME);
+            var dataChannel = await peerConnection.createDataChannel(OPENAPI_DATACHANNEL_NAME);
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, false, false);
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true), -1, -1, false, false);
             windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
             windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
             windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
@@ -181,8 +164,8 @@ namespace demo
                 windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
                 windowsAudioEP.SetAudioSourceFormat(audioFormats.First());
             };
-            peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
-            peerConnection.OnSendReport += RtpSession_OnSendReport;
+            //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
+            //peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
             peerConnection.onconnectionstatechange += async (state) =>
@@ -191,6 +174,7 @@ namespace demo
 
                 if (state == RTCPeerConnectionState.connected)
                 {
+                    await windowsAudioEP.StartAudio();
                     await windowsAudioEP.StartAudioSink();
                 }
                 else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
@@ -208,36 +192,49 @@ namespace demo
 
                 if (media == SDPMediaTypesEnum.audio)
                 {
-                    //windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
 
-            peerConnection.ondatachannel += (rdc) =>
+            dataChannel.onopen += () =>
             {
-                rdc.onopen += () => logger.LogDebug($"Data channel {rdc.label} opened.");
-                rdc.onclose += () => logger.LogDebug($"Data channel {rdc.label} closed.");
-                rdc.onmessage += (datachan, type, data) =>
-                {
-                    switch (type)
-                    {
-                        case DataChannelPayloadProtocols.WebRTC_Binary_Empty:
-                        case DataChannelPayloadProtocols.WebRTC_String_Empty:
-                            logger.LogInformation($"Data channel {datachan.label} empty message type {type}.");
-                            break;
-
-                        case DataChannelPayloadProtocols.WebRTC_Binary:
-                            logger.LogInformation($"Data channel {datachan.label} received {data.Length} binary bytes.");
-                            break;
-
-                        case DataChannelPayloadProtocols.WebRTC_String:
-                            var msg = Encoding.UTF8.GetString(data);
-                            logger.LogInformation($"Data channel {datachan.label} message {type} received: {msg}.");
-                            break;
-                    }
-                };
+                logger.LogDebug("OpenAPI data channel opened.");
             };
 
+            dataChannel.onclose += () => logger.LogDebug($"OpenAPI data channel {dataChannel.label} closed.");
+
+            dataChannel.onmessage += OnDataChannelMessage;
+
             return peerConnection;
+        }
+
+        private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
+        {
+            //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+
+            var message = Encoding.UTF8.GetString(data);
+            var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
+
+            if(serverEvent != null)
+            {
+                //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
+
+                OpenAIServerEventBase serverEventModel = serverEvent.Type switch
+                {
+                    "response.audio_transcript.delta" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
+                    "response.audio_transcript.done" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDone>(message, JsonOptions.Default),
+                    _ => null
+                };
+
+                if(serverEventModel is OpenAIResponseAudioTranscriptDone)
+                {
+                    logger.LogInformation($"Transcript done: {(serverEventModel as OpenAIResponseAudioTranscriptDone)?.Transcript}.");
+                }
+            }
+            else
+            {
+                logger.LogWarning($"Failed to parse server event for: {message}");
+            }
         }
 
         private static async Task<string> CreateEphemeralKeyAsync(string sessionsUrl, string openApiToken, string model, string voice)
@@ -247,6 +244,16 @@ namespace demo
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", openApiToken);
+
+            //OpenAI.RealtimeConversation.ConversationItemCreatedUpdate conversationItemCreatedUpdate = new OpenAI.RealtimeConversation.ConversationItemCreatedUpdate
+            //{
+            //    type = "conversation.create",
+            //    conversation = new OpenAI.RealtimeConversation.ConversationDetails
+            //    {
+            //        model = model,
+            //        voice = voice
+            //    }
+            //};
 
             // Create the request body
             var requestBody = new
@@ -302,8 +309,7 @@ namespace demo
             HttpClient httpClient = new HttpClient();
 
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", ephemeralKey);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ephemeralKey);
 
             var request = new HttpRequestMessage(HttpMethod.Post, $"{OPENAPI_REALTIME_BASE_URL}?model={OPENAPI_MODEL}");
 
@@ -321,7 +327,7 @@ namespace demo
                 return null;
             }
 
-            // The response should contain the answer SDP
+            // The response should contain the answer SDP.
             string answerSdp = await response.Content.ReadAsStringAsync();
             return answerSdp;
         }
