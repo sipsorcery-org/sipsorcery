@@ -37,13 +37,13 @@
 // 
 // History:
 // 19 Dec 2024	Aaron Clauson	Created, Dublin, Ireland.
+// 28 Dec 2024  Aaron Clauson   Switched to functional approach for the craic.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -59,14 +59,25 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
+using LanguageExt;
 
 namespace demo
 {
+    record Problem(string detail);
+
+    record PcContext(
+       RTCPeerConnection Pc,
+       string EphemeralKey = "",
+       string OfferSdp = "",
+       string AnswerSdp = ""
+    );
+
     class Program
     {
         private const string OPENAPI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
         private const string OPENAPI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
         private const string OPENAPI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
+        private const string OPENAPI_VERSE = "shimmer"; // Supported values are: 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', and 'verse'.
         private const string OPENAPI_DATACHANNEL_NAME = "oai-events";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -76,56 +87,69 @@ namespace demo
             Console.WriteLine("WebRTC OpenAPI Demo Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            if(args.Length != 1)
+            if (args.Length != 1)
             {
                 Console.WriteLine("Please provide your OpenAPI key as a command line argument. It's used to get the single use ephemeral secret for the WebRTC connection.");
-                Console.WriteLine("The recommended approach is: set OPENAPIKEY=<your api key>");
-                Console.WriteLine("And then: dotnet run %OPENAPIKEY%");
-                return;
-            }
-
-            var ephemeralKey = await CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, "verse");
-
-            if(string.IsNullOrWhiteSpace(ephemeralKey))
-            {
-                Console.WriteLine("Failed to get ephemeral key.");
+                Console.WriteLine("The recommended approach is to use an environment variable, for example: set OPENAPIKEY=<your api key>");
+                Console.WriteLine("Then execute the application using: dotnet run %OPENAPIKEY%");
                 return;
             }
 
             logger = AddConsoleLogger();
 
-            var peerConnection = await CreatePeerConnection();
+            var flow = await CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, OPENAPI_VERSE)
+                .BindAsync(async ephemeralKey =>
+                {
+                    logger.LogDebug("STEP 1: Create WebRTC PeerConnection & get SDP offer.");
 
-            var offerSdp = peerConnection.createOffer(null);
-            await peerConnection.setLocalDescription(offerSdp);
+                    var pc = await CreatePeerConnection();
+                    var offer = pc.createOffer();
+                    await pc.setLocalDescription(offer);
 
-            logger.LogDebug($"SDP offer:");
-            logger.LogDebug(offerSdp.sdp);
+                    logger.LogDebug("SDP offer:");
+                    logger.LogDebug(offer.sdp);
 
-            var answerSdp = await GetOpenApiAnswerSdpAsync(ephemeralKey, offerSdp.sdp);
+                    return Prelude.Right<Problem, PcContext>(
+                        new PcContext(pc, ephemeralKey, offer.sdp, string.Empty)
+                    );
+                })
+                .BindAsync(async ctx =>
+                {
+                    logger.LogDebug("STEP 2: Send offer to OpenAI REST server & get SDP answer."); 
 
-            logger.LogDebug($"SDP answer:");
-            logger.LogDebug(answerSdp);
+                    var answerEither = await GetOpenApiAnswerSdpAsync(ctx.EphemeralKey, ctx.OfferSdp);
+                    return answerEither.Map(answer => ctx with { AnswerSdp = answer });
+                })
+                .BindAsync(ctx =>
+                {
+                    logger.LogDebug("STEP 3: Set remote SDP & wait for ctrl-c to indicate exit.");
 
-            var setAnswerResult = peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = answerSdp, type = RTCSdpType.answer });
+                    logger.LogDebug("SDP answer:");
+                    logger.LogDebug(ctx.AnswerSdp);
 
-            logger.LogInformation($"Set answer result {setAnswerResult}.");
+                    var setAnswerResult = ctx.Pc.setRemoteDescription(
+                        new RTCSessionDescriptionInit { sdp = ctx.AnswerSdp, type = RTCSdpType.answer }
+                    );
+                    logger.LogInformation($"Set answer result {setAnswerResult}.");
 
-            //var openApiDataChannel = peerConnection.DataChannels.FirstOrDefault(x => x.label == OPENAPI_DATACHANNEL_NAME);
+                    ManualResetEvent exitMre = new(false);
+                    Console.CancelKeyPress += (_, e) =>
+                    {
+                        e.Cancel = true;
+                        exitMre.Set();
+                    };
+                    exitMre.WaitOne();
 
-            // Plumbing code to facilitate a graceful exit.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
+                    ctx.Pc.Close("User exit.");
 
-            // Ctrl-c will gracefully exit the app at any point.
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                exitMre.Set();
-            };
+                    return Prelude.Right<Problem, PcContext>(ctx);
+                });
 
-            // Wait for a signal saying the atempt failed or was cancelled with ctrl-c.
-            exitMre.WaitOne();
-        }
+            flow.Match(
+                Left: prob => Console.WriteLine($"There was a porblem setting up the connection. {prob.detail}"),
+                Right: _ => Console.WriteLine("All steps succeeded!")
+            );
+       }
 
         private static async Task<RTCPeerConnection> CreatePeerConnection()
         {
@@ -203,21 +227,24 @@ namespace demo
             var message = Encoding.UTF8.GetString(data);
             var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
 
-            if(serverEvent != null)
+            if (serverEvent != null)
             {
                 //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
 
-                OpenAIServerEventBase serverEventModel = serverEvent.Type switch
+                Option<OpenAIServerEventBase> serverEventModel = serverEvent.Type switch
                 {
                     "response.audio_transcript.delta" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
                     "response.audio_transcript.done" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDone>(message, JsonOptions.Default),
-                    _ => null
+                    _ => Option<OpenAIServerEventBase>.None
                 };
 
-                if(serverEventModel is OpenAIResponseAudioTranscriptDone)
+                serverEventModel.IfSome(e =>
                 {
-                    logger.LogInformation($"Transcript done: {(serverEventModel as OpenAIResponseAudioTranscriptDone)?.Transcript}.");
-                }
+                    if (e is OpenAIResponseAudioTranscriptDone done)
+                    {
+                        logger.LogInformation($"Transcript done: {done.Transcript}");
+                    }
+                });
             }
             else
             {
@@ -225,99 +252,55 @@ namespace demo
             }
         }
 
-        private static async Task<string> CreateEphemeralKeyAsync(string sessionsUrl, string openApiToken, string model, string voice)
-        {
-            HttpClient httpClient = new HttpClient();
-
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", openApiToken);
-
-            //OpenAI.RealtimeConversation.ConversationItemCreatedUpdate conversationItemCreatedUpdate = new OpenAI.RealtimeConversation.ConversationItemCreatedUpdate
-            //{
-            //    type = "conversation.create",
-            //    conversation = new OpenAI.RealtimeConversation.ConversationDetails
-            //    {
-            //        model = model,
-            //        voice = voice
-            //    }
-            //};
-
-            // Create the request body
-            var requestBody = new
-            {
-                model = model,
-                voice = voice
-            };
-
-            // Serialize the request body to JSON
-            string jsonRequestBody = JsonSerializer.Serialize(requestBody);
-
-            // Create the content with appropriate headers
-            var content = new StringContent(jsonRequestBody, Encoding.UTF8);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-            // Make the POST request
-            var response = await httpClient.PostAsync(sessionsUrl, content);
-
-            // Check for success
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogError($"Failed to create ephemeral key. Status code {response.StatusCode}.");
-                logger.LogError(await response.Content.ReadAsStringAsync());
-                return string.Empty;
-            }
-
-            // Read the response body (assumed to contain the ephemeral key)
-            string responseContent = await response.Content.ReadAsStringAsync();
-
-            try
-            {
-                // Deserialize the response JSON
-                var responseJson = JsonSerializer.Deserialize<JsonElement>(responseContent);
-
-                // Extract the client_secret.value
-                string clientSecret = responseJson
+        private static async Task<Either<Problem, string>> CreateEphemeralKeyAsync(string sessionsUrl, string openApiToken, string model, string voice)
+            => (await SendHttpPostAsync(
+                sessionsUrl,
+                openApiToken,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        model,
+                        voice
+                    }),
+                  "application/json"))
+            .Bind(responseContent =>
+                JsonSerializer.Deserialize<JsonElement>(responseContent)
                     .GetProperty("client_secret")
                     .GetProperty("value")
-                    .GetString();
+                    .GetString() ??
+                Prelude.Left<Problem, string>(new Problem("Failed to get ephemeral secret."))
+            );
 
-                logger.LogInformation("Ephemeral key created successfully.");
-                return clientSecret;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Failed to parse client secret: {ex.Message}");
-                return string.Empty;
-            }
-        }
+        private static Task<Either<Problem, string>> GetOpenApiAnswerSdpAsync(string ephemeralKey, string offerSdp)
+            => SendHttpPostAsync(
+                $"{OPENAPI_REALTIME_BASE_URL}?model={OPENAPI_MODEL}",
+                ephemeralKey,
+                offerSdp,
+                "application/sdp");
 
-        private static async Task<string> GetOpenApiAnswerSdpAsync(string ephemeralKey, string offerSdp)
+        private static async Task<Either<Problem, string>> SendHttpPostAsync(
+            string url,
+            string token,
+            string body,
+            string contentType)
         {
-            HttpClient httpClient = new HttpClient();
+            using var httpClient = new HttpClient();
 
             httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ephemeralKey);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{OPENAPI_REALTIME_BASE_URL}?model={OPENAPI_MODEL}");
+            var content = new StringContent(body, Encoding.UTF8);
+            content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
-            var content = new StringContent(offerSdp, Encoding.UTF8);
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/sdp");
-
-            request.Content = content;
-
-            var response = await httpClient.SendAsync(request);
+            var response = await httpClient.PostAsync(url, content);
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError($"Failed to get answer SDP. Status code {response.StatusCode}.");
-                logger.LogError(await response.Content.ReadAsStringAsync());
-                return null;
+                var errorBody = await response.Content.ReadAsStringAsync();
+                return new Problem($"HTTP POST to {url} failed: {response.StatusCode}. Error body: {errorBody}");
             }
 
-            // The response should contain the answer SDP.
-            string answerSdp = await response.Content.ReadAsStringAsync();
-            return answerSdp;
+            return await response.Content.ReadAsStringAsync();
         }
 
         /// <summary>

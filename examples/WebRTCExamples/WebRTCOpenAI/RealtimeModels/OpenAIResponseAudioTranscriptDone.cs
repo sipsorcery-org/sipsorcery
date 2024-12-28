@@ -8,10 +8,10 @@ namespace demo;
 public class OpenAIResponseAudioTranscriptDone : OpenAIServerEventBase
 {
     [JsonPropertyName("response_id")]
-    public string ResponseID { get; set; }
+    public string? ResponseID { get; set; }
 
     [JsonPropertyName("item_id")]
-    public string ItemID { get; set; }
+    public string? ItemID { get; set; }
 
     [JsonPropertyName("output_index")]
     public int OutputIndex { get; set; }
@@ -19,7 +19,7 @@ public class OpenAIResponseAudioTranscriptDone : OpenAIServerEventBase
     [JsonPropertyName("content_index")]
     public int ContentIndex { get; set; }
 
-    public string Transcript{ get; set; }
+    public string? Transcript{ get; set; }
 
     public override string ToJson()
     {

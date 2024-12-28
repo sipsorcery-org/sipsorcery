@@ -6,9 +6,9 @@ namespace demo;
 public class OpenAIServerEventBase
 {
     [JsonPropertyName("event_id")]
-    public string EventID { get; set; }
+    public string? EventID { get; set; }
 
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
     public virtual string ToJson()
     {
