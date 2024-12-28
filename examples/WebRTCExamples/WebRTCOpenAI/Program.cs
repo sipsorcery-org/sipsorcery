@@ -145,7 +145,6 @@ namespace demo
                     return Prelude.Right<Problem, PcContext>(ctx);
                 });
 
-            // Finally, handle success or failure
             flow.Match(
                 Left: prob => Console.WriteLine($"There was a porblem setting up the connection. {prob.detail}"),
                 Right: _ => Console.WriteLine("All steps succeeded!")
