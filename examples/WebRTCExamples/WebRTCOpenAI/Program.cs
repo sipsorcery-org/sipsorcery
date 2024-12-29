@@ -37,7 +37,7 @@
 // 
 // History:
 // 19 Dec 2024	Aaron Clauson	Created, Dublin, Ireland.
-// 28 Dec 2024  Aaron Clauson   Switched to functional approach for the craic.
+// 28 Dec 2024  Aaron Clauson   Switched to functional approach for The Craic.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -102,7 +102,6 @@ namespace demo
                 {
                     logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
                     return CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, OPENAPI_VERSE);
-                    // returns Task<Either<Problem, string>>
                 })
                 .BindAsync(async ephemeralKey =>
                 {
