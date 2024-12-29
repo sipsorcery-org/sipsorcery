@@ -97,10 +97,16 @@ namespace demo
 
             logger = AddConsoleLogger();
 
-            var flow = await CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, OPENAPI_VERSE)
+            var flow = await Prelude.Right<Problem, Unit>(default)
+                .BindAsync(_ =>
+                {
+                    logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
+                    return CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, OPENAPI_VERSE);
+                    // returns Task<Either<Problem, string>>
+                })
                 .BindAsync(async ephemeralKey =>
                 {
-                    logger.LogDebug("STEP 1: Create WebRTC PeerConnection & get SDP offer.");
+                    logger.LogDebug("STEP 2: Create WebRTC PeerConnection & get local SDP offer.");
 
                     var pc = await CreatePeerConnection();
                     var offer = pc.createOffer();
@@ -115,14 +121,14 @@ namespace demo
                 })
                 .BindAsync(async ctx =>
                 {
-                    logger.LogDebug("STEP 2: Send offer to OpenAI REST server & get SDP answer."); 
+                    logger.LogInformation("STEP 3: Send SDP offer to OpenAI REST server & get SDP answer."); 
 
                     var answerEither = await GetOpenApiAnswerSdpAsync(ctx.EphemeralKey, ctx.OfferSdp);
                     return answerEither.Map(answer => ctx with { AnswerSdp = answer });
                 })
                 .BindAsync(ctx =>
                 {
-                    logger.LogDebug("STEP 3: Set remote SDP & wait for ctrl-c to indicate exit.");
+                    logger.LogInformation("STEP 4: Set remote SDP");
 
                     logger.LogDebug("SDP answer:");
                     logger.LogDebug(ctx.AnswerSdp);
@@ -131,6 +137,14 @@ namespace demo
                         new RTCSessionDescriptionInit { sdp = ctx.AnswerSdp, type = RTCSdpType.answer }
                     );
                     logger.LogInformation($"Set answer result {setAnswerResult}.");
+
+                    return setAnswerResult == SetDescriptionResultEnum.OK ?
+                        Prelude.Right<Problem, PcContext>(ctx) :
+                        Prelude.Left<Problem, PcContext>(new Problem("Failed to set remote SDP."));
+                })
+                .BindAsync(ctx =>
+                {
+                    logger.LogInformation("STEP 5: Wait for ctrl-c to indicate user exit.");
 
                     ManualResetEvent exitMre = new(false);
                     Console.CancelKeyPress += (_, e) =>
@@ -146,8 +160,8 @@ namespace demo
                 });
 
             flow.Match(
-                Left: prob => Console.WriteLine($"There was a porblem setting up the connection. {prob.detail}"),
-                Right: _ => Console.WriteLine("All steps succeeded!")
+                Left: prob => Console.WriteLine($"There was a problem setting up the connection. {prob.detail}"),
+                Right: _ => Console.WriteLine("The call was successful.")
             );
        }
 
