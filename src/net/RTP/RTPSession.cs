@@ -705,7 +705,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                mediaStream.RtcpSession.Close(reason);
+                mediaStream.RtcpSession?.Close(reason);
                 mediaStream.RtcpSession = null;
             }
         }
