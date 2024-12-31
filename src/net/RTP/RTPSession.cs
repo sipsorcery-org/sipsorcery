@@ -26,7 +26,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -1923,7 +1922,6 @@ namespace SIPSorcery.Net
             if (!IsStarted)
             {
                 IsStarted = true;
-
 
                 foreach (var audioStream in AudioStreamList)
                 {

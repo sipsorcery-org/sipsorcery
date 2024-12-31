@@ -20,11 +20,10 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class VideoStream : MediaStream
     {
@@ -33,8 +32,6 @@ namespace SIPSorcery.net.RTP
 
         private SDPAudioVideoMediaFormat sendingFormat;
         private bool sendingFormatFound = false;
-
-        #region EVENTS
 
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common video formats is set.
@@ -53,10 +50,6 @@ namespace SIPSorcery.net.RTP
         /// </remarks>
         public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
 
-        #endregion EVENTS
-
-        #region PROPERTIES
-
         /// <summary>
         /// Indicates whether this session is using video.
         /// </summary>
@@ -74,11 +67,6 @@ namespace SIPSorcery.net.RTP
         /// process.
         /// </summary>
         public int MaxReconstructedVideoFrameSize { get; set; } = 1048576;
-
-
-        #endregion PROPERTIES
-
-        #region SEND PACKET
 
         /// <summary>
         /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
@@ -270,10 +258,6 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        #endregion SEND PACKET
-
-        #region RECEIVE PACKET
-
         public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
         {
             if (OnVideoFrameReceivedByIndex == null)
@@ -310,8 +294,6 @@ namespace SIPSorcery.net.RTP
                 }
             }
         }
-
-        #endregion RECEIVE PACKET
 
         public void CheckVideoFormatsNegotiation()
         {

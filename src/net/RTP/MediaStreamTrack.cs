@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
@@ -321,7 +320,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="audioFormat">The Audio Format to restrict</param>
         /// <returns>True if the operation has been performed</returns>
-        public Boolean RestrictCapabilities(AudioFormat audioFormat)
+        public bool RestrictCapabilities(AudioFormat audioFormat)
         {
             return RestrictCapabilities(new SDPAudioVideoMediaFormat(audioFormat));
         }        
