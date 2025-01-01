@@ -673,7 +673,6 @@ namespace SIPSorcery.Net
                 }
             }
 
-
             // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
             // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
             // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual 
