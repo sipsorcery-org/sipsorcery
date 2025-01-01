@@ -84,7 +84,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Timestamp that the RTCP session sender report scheduler was started at.
         /// </summary>
-        public DateTime StartedAt { get; private set; }
+        public DateTime StartedAt { get; private set; } = DateTime.MinValue;
 
         /// <summary>
         /// Timestamp that the last RTP or RTCP packet for was received at.
@@ -189,11 +189,20 @@ namespace SIPSorcery.Net
 
         public void Start()
         {
-            StartedAt = DateTime.Now;
+            if (StartedAt != DateTime.MinValue)
+            {
+                logger.LogWarning($"Start was called on RTCP session for {(!string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString())} but it has already been started.");
+            }
+            else
+            {
+                logger.LogDebug($"Starting RTCP session for {(!string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString())}.");
 
-            // Schedule an immediate sender report.
-            var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
-            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
+                StartedAt = DateTime.Now;
+
+                // Schedule an immediate sender report.
+                var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
+                m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
+            }
         }
 
         public void Close(string reason)
@@ -250,6 +259,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public void RecordRtpPacketSend(RTPPacket rtpPacket)
         {
+            if(StartedAt == DateTime.MinValue)
+            {
+                Start();
+            }
+
             PacketsSentCount++;
             OctetsSentCount += (uint)rtpPacket.Payload.Length;
             LastSeqNum = rtpPacket.Header.SequenceNumber;
@@ -266,6 +280,11 @@ namespace SIPSorcery.Net
         {
             try
             {
+                if (StartedAt == DateTime.MinValue)
+                {
+                    Start();
+                }
+
                 LastActivityAt = DateTime.Now;
                 IsTimedOut = false;
 

@@ -11,7 +11,6 @@
 
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 using Xunit;

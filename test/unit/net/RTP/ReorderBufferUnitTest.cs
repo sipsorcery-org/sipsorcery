@@ -1,10 +1,9 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.net.RTP;
 using Xunit;
 
-namespace SIPSorcery.UnitTests.net.RTP
+namespace SIPSorcery.UnitTests.Net
 {
     internal class DatetimeProvider : IDateTime
     {

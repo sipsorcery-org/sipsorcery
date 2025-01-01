@@ -1,7 +1,7 @@
 ﻿using System;
 using SIPSorcery.Net;
 
-namespace SIPSorcery.net.RTP.RTPHeaderExtensions
+namespace SIPSorcery.Net
 {
     // AbsSendTimeExtension is a extension payload format in
     // http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time

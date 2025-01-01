@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.net.RTP;
-using SIPSorceryMedia.Abstractions;
 using Xunit;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
 
-namespace SIPSorcery.UnitTests.net.RTP
+namespace SIPSorcery.UnitTests.Net
 {
     [Trait("Category", "unit")]
     public class RTPHeaderExtensionUnitTest

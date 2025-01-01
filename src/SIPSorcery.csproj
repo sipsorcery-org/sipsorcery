@@ -35,7 +35,7 @@
     <!-- Disable warning for missing XML doc comments. -->
     <NoWarn>$(NoWarn);CS1591;CS1573;CS1587</NoWarn>
     <Authors>Aaron Clauson, Christophe Irles, Rafael Soares &amp; Contributors</Authors>
-    <Copyright>Copyright © 2010-2024 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2010-2025 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorcery</Title>
     <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
