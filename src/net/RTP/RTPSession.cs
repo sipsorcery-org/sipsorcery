@@ -655,6 +655,7 @@ namespace SIPSorcery.Net
                 mediaStream.OnRtpPacketReceivedByIndex += RaisedOnRtpPacketReceived;
                 mediaStream.OnRtpHeaderReceivedByIndex += RaisedOnRtpHeaderReceived;
                 mediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
+                mediaStream.RtcpSession.OnReportReadyToSend += SendRtcpReport;
 
                 if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
