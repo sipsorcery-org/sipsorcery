@@ -19,11 +19,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class MediaStream
     {
@@ -70,8 +68,6 @@ namespace SIPSorcery.net.RTP
 
         public int Index = -1;
 
-        #region EVENTS
-
         /// <summary>
         /// Fires when the connection for a media type is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
@@ -115,11 +111,7 @@ namespace SIPSorcery.net.RTP
 
         public event Action<bool> OnIsClosedStateChanged;
 
-        #endregion EVENTS
-
-        #region PROPERTIES
-
-        public Boolean AcceptRtpFromAny { get; set; } = false;
+        public bool AcceptRtpFromAny { get; set; } = false;
 
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
@@ -236,10 +228,6 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        #endregion PROPERTIES
-
-        #region REORDER BUFFER
-
         public void AddBuffer(TimeSpan dropPacketTimeout)
         {
             RTPReorderBuffer = new RTPReorderBuffer(dropPacketTimeout);
@@ -250,7 +238,7 @@ namespace SIPSorcery.net.RTP
             RTPReorderBuffer = null;
         }
 
-        public Boolean UseBuffer()
+        public bool UseBuffer()
         {
             return RTPReorderBuffer != null;
         }
@@ -259,10 +247,6 @@ namespace SIPSorcery.net.RTP
         {
             return RTPReorderBuffer;
         }
-
-        #endregion REORDER BUFFER
-
-        #region SECURITY CONTEXT
 
         public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
@@ -281,9 +265,9 @@ namespace SIPSorcery.net.RTP
             return SecureContext;
         }
 
-        public Boolean IsSecurityContextReady()
+        public bool IsSecurityContextReady()
         {
-            return (SecureContext != null);
+            return SecureContext != null;
         }
 
         private (bool, byte[]) UnprotectBuffer(byte[] buffer)
@@ -333,16 +317,12 @@ namespace SIPSorcery.net.RTP
             return SrtpHandler;
         }
 
-        #endregion SECURITY CONTEXT
-
-        #region RTP CHANNEL
-
         public void AddRtpChannel(RTPChannel rtpChannel)
         {
             this.rtpChannel = rtpChannel;
         }
 
-        public Boolean HasRtpChannel()
+        public bool HasRtpChannel()
         {
             return rtpChannel != null;
         }
@@ -352,11 +332,7 @@ namespace SIPSorcery.net.RTP
             return rtpChannel;
         }
 
-        #endregion RTP CHANNEL
-
-    #region SEND PACKET
-
-        protected Boolean CheckIfCanSendRtpRaw()
+        protected bool CheckIfCanSendRtpRaw()
         {
             if (IsClosed)
             {
@@ -668,10 +644,6 @@ namespace SIPSorcery.net.RTP
             SendRtcpReport(reportBytes);
         }
 
-        #endregion SEND PACKET
-
-        #region RECEIVE PACKET
-
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
             RTPPacket rtpPacket;
@@ -757,10 +729,6 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        #endregion RECEIVE PACKET
-
-        #region TO RAISE EVENTS FROM INHERITED CLASS
-
         public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
         {
             OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
@@ -780,10 +748,6 @@ namespace SIPSorcery.net.RTP
         {
             OnTimeoutByIndex?.Invoke(Index, mediaType);
         }
-
-        #endregion TO RAISE EVENTS FROM INHERITED CLASS
-
-        #region PENDING PACKAGES LOGIC
 
         // Submit all previous cached packages to self
         protected virtual void DispatchPendingPackages()
@@ -842,8 +806,6 @@ namespace SIPSorcery.net.RTP
             }
             return false;
         }
-
-        #endregion
 
         protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
@@ -914,12 +876,13 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
         /// in order to commence sending RTCP reports.</returns>
-        public Boolean CreateRtcpSession()
+        public bool CreateRtcpSession()
         {
             if (RtcpSession == null)
             {
                 RtcpSession = new RTCPSession(MediaType, 0);
                 RtcpSession.OnTimeout += RaiseOnTimeoutByIndex;
+
                 return true;
             }
             return false;

@@ -120,6 +120,7 @@ namespace demo
                 windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
+            peerConnection.OnSendReportByIndex += RtpSession_OnSendReportByIndex;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
             peerConnection.onconnectionstatechange += async (state) =>
@@ -181,11 +182,16 @@ namespace demo
             }
         }
 
+        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+            => RtpSession_OnSendReportByIndex(0, mediaType, sentRtcpReport);
+
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
-        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+        private static void RtpSession_OnSendReportByIndex(int index, SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
+            logger.LogDebug($"RTCP report sent for index {index} and media {mediaType}.");
+
             if (sentRtcpReport.Bye != null)
             {
                 logger.LogDebug($"RTCP sent BYE {mediaType}.");
@@ -214,6 +220,8 @@ namespace demo
         /// </summary>
         private static void RtpSession_OnReceiveReport(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
+            logger.LogDebug($"RTCP report received for {mediaType}.");
+
             if (recvRtcpReport.Bye != null)
             {
                 logger.LogDebug($"RTCP recv BYE {mediaType}.");

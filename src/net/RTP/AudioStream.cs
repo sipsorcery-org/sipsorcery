@@ -21,30 +21,23 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class AudioStream : MediaStream
     {
         protected static ILogger logger = Log.Logger;
-        protected Boolean rtpEventInProgress = false;
+        protected bool rtpEventInProgress = false;
 
         private SDPAudioVideoMediaFormat sendingFormat;
         private bool sendingFormatFound = false;
-
-        #region EVENTS
 
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common audio formats is set.
         /// </summary>
         public event Action<int, List<AudioFormat>> OnAudioFormatsNegotiatedByIndex;
-
-        #endregion EVENTS
-
-        #region PROPERTIES
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -57,10 +50,6 @@ namespace SIPSorcery.net.RTP
                   || (RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive);
             }
         }
-
-        #endregion PROPERTIES
-
-        #region SEND PACKET
 
         /// <summary>
         /// Sends an audio sample to the remote peer.
@@ -246,8 +235,6 @@ namespace SIPSorcery.net.RTP
             var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
             return SendDtmfEvent(dtmfEvent, ct);
         }
-
-        #endregion SEND PACKET
 
         public void CheckAudioFormatsNegotiation()
         {
