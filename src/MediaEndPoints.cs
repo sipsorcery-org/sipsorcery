@@ -23,7 +23,8 @@ namespace SIPSorceryMedia.Abstractions
         Rate8KHz = 8000,
         Rate16KHz = 16000,
         Rate24kHz = 24000,
-        Rate44_1kHz = 44100
+        Rate44_1kHz = 44100,
+        Rate48kHz = 48000
     }
 
     public enum VideoPixelFormatsEnum
