@@ -21,7 +21,7 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="DnsClient" Version="1.8.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.1" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.7" />
     <PackageReference Include="System.Net.Security" Version="4.3.2" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
@@ -52,15 +52,16 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v8.0.6: Nuget publish.
+    <PackageReleaseNotes>-v8.0.7: Bug fixes and all sipsorcery packages release.
+-v8.0.6: Nuget publish.
 -v8.0.4: Bug fixes.
 -v8.0.3: Bug fixes.
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>8.0.6</Version>
-    <AssemblyVersion>8.0.6</AssemblyVersion>
-    <FileVersion>8.0.6</FileVersion>
+    <Version>8.0.7</Version>
+    <AssemblyVersion>8.0.7</AssemblyVersion>
+    <FileVersion>8.0.7</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

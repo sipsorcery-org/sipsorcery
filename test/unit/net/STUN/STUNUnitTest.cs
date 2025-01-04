@@ -417,5 +417,23 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(0x27ff2a171b888ffeU, 
                 NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value, 0));
         }
+
+        /// <summary>
+        /// Used as an ad-hoc way to parse STUN messages.
+        /// </summary>
+        [Fact]
+        public void ParseStunMessageUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] buffer = TypeExtensions.ParseHexStr(
+                "000100542112a4424f585055434d4e54425a4f4a00060015435242617a4d64534248616a494774433a45544d5300000000240004ff200000802a000852c0aba195cf65190025000000080014b05baf6be589d5ab202e9153547457eb1a20244c8028000464f37f6c");
+
+            STUNMessage stunRequest = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+
+            Assert.True(stunRequest.isFingerprintValid);
+            //Assert.True(stunRequest.CheckIntegrity(System.Text.Encoding.UTF8.GetBytes(icePassword)));
+        }
     }
 }
