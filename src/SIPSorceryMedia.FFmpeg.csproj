@@ -13,7 +13,7 @@
  
   <ItemGroup>
     <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.1" />
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.7" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="FFmpeg.AutoGen" Version="7.0.0" />
   </ItemGroup>
@@ -25,7 +25,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0;net7;net8</TargetFrameworks>
 		<Authors>Aaron Clauson, Christophe Irles, Rafael Soares and Contributors</Authors>
-		<Copyright>opyright © 2020-2024 Aaron Clauson, Christophe Irles, Rafael Soares and Contributors.</Copyright>
+		<Copyright>opyright © 2020-2025 Aaron Clauson, Christophe Irles, Rafael Soares and Contributors.</Copyright>
 		<PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
 		<Title>SIPSorceryMedia.FFmpeg</Title>
 		<Summary>FFmpeg media end points for real-time communications.</Summary>
@@ -41,7 +41,8 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryBranch>master</RepositoryBranch>
 		<PackageTags>WebRTC VoIP SIPSorcery Media FFmpeg</PackageTags>
-		<PackageReleaseNotes>-v1.4.2: Update to FFmpeg.AutoGen v7.0.0.
+		<PackageReleaseNotes>-v8.0.7: Updated to latest abstractions package.
+-v1.4.2: Update to FFmpeg.AutoGen v7.0.0.
 -v1.4.1: Bump SIPSorceryMedia.Abstractions to 1.2.1.
 -v1.4.0: Stable release.
 -v1.3.0-pre: Removed FFmpeg binaries from nuget package. On Windows use winget to obtain FFmpeg.
@@ -62,9 +63,9 @@
 -v0.0.1-pre: Initial release.
 		</PackageReleaseNotes>
 		<NeutralLanguage>en</NeutralLanguage>
-		<Version>1.4.2</Version>
-		<AssemblyVersion>1.4.2</AssemblyVersion>
-		<FileVersion>1.4.2</FileVersion>
+		<Version>8.0.7</Version>
+		<AssemblyVersion>8.0.7</AssemblyVersion>
+		<FileVersion>8.0.7</FileVersion>
 	</PropertyGroup>
 
 </Project>
