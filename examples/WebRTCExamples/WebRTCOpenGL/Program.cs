@@ -67,7 +67,7 @@ namespace demo
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                _audioScopeForm = new FormAudioScope();
+                _audioScopeForm = new FormAudioScope(false);
 
                 Application.Run(_audioScopeForm);
             });

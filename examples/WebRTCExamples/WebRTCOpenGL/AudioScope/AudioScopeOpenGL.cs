@@ -129,6 +129,9 @@ namespace AudioScope
             // Uncomment lne below to change the background color.
             //gl.ClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 
+            gl.Viewport(0, 0, width, height);
+            gl.Ortho2D(0, width, 0, height);
+
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);  // Clear The Screen And The Depth Buffer
 
             int windowID = gl.GetUniformLocation(_prog.ShaderProgramObject, "window");

@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Windows.Forms;
+
 namespace AudioScope
 {
     partial class FormAudioScope
@@ -51,7 +53,6 @@ namespace AudioScope
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.openGLControl1.DrawFPS = false;
-            this.openGLControl1.Location = new System.Drawing.Point(12, 12);
             this.openGLControl1.Name = "openGLControl1";
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl1.RenderContextType = SharpGL.RenderContextType.FBO;
@@ -60,6 +61,7 @@ namespace AudioScope
             this.openGLControl1.TabIndex = 0;
             this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl_OpenGLInitialized);
             this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.openGLControl1_OpenGLDraw);
+            this.openGLControl1.Dock = DockStyle.Fill;
             // 
             // FormAudioScopeSample
             // 

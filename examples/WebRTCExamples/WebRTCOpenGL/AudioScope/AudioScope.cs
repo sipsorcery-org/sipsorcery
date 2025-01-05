@@ -163,8 +163,6 @@ namespace AudioScope
 
         private static Complex[] MakeAnalytic(uint n, uint m)
         {
-            Console.WriteLine($"MakeAnalytic n={n}, m={m}.");
-
             var impulse = new Complex[m];
 
             var mid = (n - 1) / 2;
