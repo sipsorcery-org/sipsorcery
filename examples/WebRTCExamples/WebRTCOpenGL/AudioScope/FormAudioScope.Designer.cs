@@ -1,11 +1,25 @@
-﻿namespace AudioScope
+﻿//-----------------------------------------------------------------------------
+// Filename: FormAudioScopeDesigner.cs
+//
+// Description: Initialise the Winfows Form portion of the Audio Scope demo.
+
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 29 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+namespace AudioScope
 {
     partial class FormAudioScope
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
+
+        private SharpGL.OpenGLControl openGLControl1;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -19,8 +33,6 @@
             }
             base.Dispose(disposing);
         }
-
-        #region Windows Form Designer generated code
 
         /// <summary>
         /// Required method for Designer support - do not modify
@@ -39,7 +51,6 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.openGLControl1.DrawFPS = false;
-            this.openGLControl1.FrameRate = 1;
             this.openGLControl1.Location = new System.Drawing.Point(12, 12);
             this.openGLControl1.Name = "openGLControl1";
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
@@ -47,7 +58,6 @@
             this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.Manual;
             this.openGLControl1.Size = new System.Drawing.Size(AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT);
             this.openGLControl1.TabIndex = 0;
-            this.Load += new System.EventHandler(this.FormAudioScope_Load);
             this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl_OpenGLInitialized);
             this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.openGLControl1_OpenGLDraw);
             // 
@@ -55,7 +65,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(792, 467);
+            this.ClientSize = new System.Drawing.Size(AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT);
             this.Controls.Add(this.openGLControl1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FormAudioScopeSample";
@@ -63,10 +73,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.openGLControl1)).EndInit();
             this.ResumeLayout(false);
         }
-
-        #endregion
-        private SharpGL.OpenGLControl openGLControl1;
-
     }
 }
 

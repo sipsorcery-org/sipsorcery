@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: FormAudioScope.cs
+//
+// Description: Initialise the Windows Form portion of the Audio Scope demo.
+
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 29 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Numerics;
 using System.Windows.Forms;
 using SharpGL;
@@ -13,8 +28,6 @@ namespace AudioScope
         private AudioScope _audioScope;
         private AudioScopeOpenGL _audioScopeGL;
         private byte[] _pixelData;
-
-        public event EventHandler<byte[]> OnFrameReady;
 
         protected override CreateParams CreateParams
         {
@@ -54,19 +67,6 @@ namespace AudioScope
             this.Enabled = false;
         }
 
-        //public void RequestRender()
-        //{
-        //    // Must be on UI thread, so use Invoke if called from another thread
-        //    if (this.InvokeRequired)
-        //    {
-        //        this.Invoke(() => openGLControl1.DoRender());
-        //    }
-        //    else
-        //    {
-        //        openGLControl1.DoRender();
-        //    }
-        //}
-
         public byte[] ProcessAudioSample(Complex[] samples)
         {
             _audioScope.ProcessSample(samples);
@@ -76,12 +76,6 @@ namespace AudioScope
             this.openGLControl1.OpenGL.ReadPixels(0, 0, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, _pixelData);
 
             return _pixelData;
-        }
-
-        private void FormAudioScope_Load(object sender, EventArgs e)
-        {
-            //_audioScope.InitAudio(AudioSourceEnum.NAudio);
-            //_audioScope.Start();
         }
 
         private void OpenGLControl_OpenGLInitialized(object sender, EventArgs e)
@@ -96,11 +90,6 @@ namespace AudioScope
             _audioScopeGL.Draw(gl, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT);
 
             gl.Finish();
-            //gl.ReadPixels(0, 0, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, _pixelData);
-
-            //Console.WriteLine($"ReadPixels {Convert.ToBase64String(SHA256.HashData(_pixelData))}.");
-
-            //OnFrameReady?.Invoke(this, _pixelData);
         }
     }
 }

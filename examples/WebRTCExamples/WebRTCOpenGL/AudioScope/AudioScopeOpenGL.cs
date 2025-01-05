@@ -1,4 +1,19 @@
-﻿using System.IO;
+﻿//-----------------------------------------------------------------------------
+// Filename: AudioScopeOpenGL.cs
+//
+// Description: Initialise the OpenGL portion of the Audio Scope demo.
+
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 29 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System.IO;
 using SharpGL;
 using SharpGL.Shaders;
 using SharpGL.VertexBuffers;
@@ -41,7 +56,7 @@ namespace AudioScope
 
         public void Initialise(OpenGL gl)
         {
-            #region Load the main program.
+           // Load the main program.
 
             string fragmentShaderCode = null;
             using (StreamReader sr = new StreamReader(FRAGMENT_SHADER_PATH))
@@ -80,9 +95,7 @@ namespace AudioScope
                 throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link shader program with ID {0}.", _prog.ShaderProgramObject), _prog.GetInfoLog(gl));
             }
 
-            #endregion
-
-            #region Load clear program.
+            // Load clear program.
 
             string clearFragShaderCode = null;
             using (StreamReader sr = new StreamReader(CLEAR_FRAGMENT_SHADER_PATH))
@@ -109,13 +122,13 @@ namespace AudioScope
             }
 
             _clearRectangle = new float[] { -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f };
-
-            #endregion
         }
 
         public void Draw(OpenGL gl, int width, int height)
         {
+            // Uncomment lne below to change the background color.
             //gl.ClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);  // Clear The Screen And The Depth Buffer
 
             int windowID = gl.GetUniformLocation(_prog.ShaderProgramObject, "window");
@@ -145,8 +158,6 @@ namespace AudioScope
             clearVertexBuffer.Create(gl);
             clearVertexBuffer.Bind(gl);
             clearVertexBuffer.SetData(gl, 0, _clearRectangle, false, CLEAR_DATA_STRIDE);
-
-            //gl.DrawArrays(OpenGL.GL_TRIANGLES, 0, _clearRectangle.Length);
 
             // Attempt to get an available audio sample.
             var data = _audioScope.GetSample();
