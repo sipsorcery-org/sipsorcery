@@ -7,13 +7,13 @@
 
 **Connect to OpenAI's Realtime WebRTC Endpoint**
 
-The (WebRTCOpenAI)[https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/WebRTCExamples/WebRTCOpenAI/Program.cs] demonstrates a dotnet only (no native libraries) applicaiton that connects to OpenAI's new [WebRTC Realtime](https://platform.openai.com/docs/guides/realtime-webrtc) endpoint. This demo lets you talk in realtime to ChatGPT and get both a WebRTC audio stream response and a text transcript. Could video avatars be on the way?! A real Max Headroom!
+The [WebRTCOpenAI](https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/WebRTCExamples/WebRTCOpenAI/Program.cs) demonstrates a dotnet only (no native libraries) applicaiton that connects to OpenAI's new [WebRTC Realtime](https://platform.openai.com/docs/guides/realtime-webrtc) endpoint. This demo lets you talk in realtime to ChatGPT and get both a WebRTC audio stream response and a text transcript. Could video avatars be on the way?! A real Max Headroom!
 
 ![ChatGPT WebRTC Transcript](./img/openai.png)
 
 **Use WbeRTC + OpenGL for an Audio Scope**
 
-The (WebRTCOpenGL)[https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/WebRTCExamples/WebRTCOpenGL/Program.cs] demonstrates a way to combine some digital signal processing of a WebRTC audio stream and use OpenGL to render a video stream representation of it. It looks way better than it sounds. Try it out!
+The [WebRTCOpenGL](https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/WebRTCExamples/WebRTCOpenGL/Program.cs) demonstrates a way to combine some digital signal processing of a WebRTC audio stream and use OpenGL to render a video stream representation of it. It looks way better than it sounds. Try it out!
 
 ![AudioScope](./img/audio-scope.png)
 
