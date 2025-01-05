@@ -45,7 +45,7 @@
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl1.RenderContextType = SharpGL.RenderContextType.FBO;
             this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.Manual;
-            this.openGLControl1.Size = new System.Drawing.Size(768, 410);
+            this.openGLControl1.Size = new System.Drawing.Size(AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT);
             this.openGLControl1.TabIndex = 0;
             this.Load += new System.EventHandler(this.FormAudioScope_Load);
             this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl_OpenGLInitialized);

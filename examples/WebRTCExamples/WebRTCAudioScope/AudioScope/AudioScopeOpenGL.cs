@@ -115,6 +115,7 @@ namespace AudioScope
 
         public void Draw(OpenGL gl, int width, int height)
         {
+            //gl.ClearColor(1.0f, 0.0f, 1.0f, 1.0f);
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);  // Clear The Screen And The Depth Buffer
 
             int windowID = gl.GetUniformLocation(_prog.ShaderProgramObject, "window");

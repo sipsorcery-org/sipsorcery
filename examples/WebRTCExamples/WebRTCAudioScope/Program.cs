@@ -30,17 +30,25 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Encoders;
 using WebSocketSharp.Server;
 using AudioScope;
+using System.Collections.Concurrent;
+using System.Numerics;
+using SIPSorceryMedia.Abstractions;
 
 namespace demo
 {
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
+        private const int AUDIO_SAMPLING_INTERVAL_MILLISECONDS = 100;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         private static FormAudioScope _audioScopeForm;
-        private static System.Windows.Forms.Timer _renderTimer;
+        //private static System.Windows.Forms.Timer _renderTimer;
+        //private static ConcurrentQueue<byte[]> _frameQueue = new ConcurrentQueue<byte[]>();
+        //private static AutoResetEvent _frameReadyEvent = new AutoResetEvent(false);
+        //private static bool _isConnected = false;
+  
 
         static void Main()
         {
@@ -56,16 +64,21 @@ namespace demo
                 Application.SetCompatibleTextRenderingDefault(false);
 
                 _audioScopeForm = new FormAudioScope();
-                //_audioScopeForm.Activated += (sender, e) => { _isFormActivated = true; };
+                //_audioScopeForm.OnFrameReady += (sender, frame) =>
+                //{
+                //    //Console.WriteLine($"OnFrameReady {Convert.ToBase64String(SHA256.HashData(frame))}.");
 
-                // Optionally hide the form so it's never actually displayed
-                _audioScopeForm.ShowInTaskbar = false;      // if you don't want it in the taskbar
-                _audioScopeForm.WindowState = FormWindowState.Minimized; // or set Visible = false in the form constructor
+                //    if (_isConnected)
+                //    {
+                //        _frameQueue.Enqueue(frame);
+                //        _frameReadyEvent.Set();
+                //    }
+                //};
 
-                _renderTimer = new System.Windows.Forms.Timer();
-                _renderTimer.Interval = 1000;
-                _renderTimer.Tick += (s, e) => _audioScopeForm.RequestRender();
-                _renderTimer.Start();
+                //_renderTimer = new System.Windows.Forms.Timer();
+                //_renderTimer.Interval = AUDIO_SAMPLING_INTERVAL_MILLISECONDS;
+                //_renderTimer.Tick += (s, e) => _audioScopeForm.RequestRender();
+                //_renderTimer.Start();
 
                 Application.Run(_audioScopeForm);
             });
@@ -91,7 +104,7 @@ namespace demo
 
                 e.Cancel = true;
 
-                _renderTimer?.Dispose();
+                //_renderTimer?.Dispose();
                 _audioScopeForm.Invoke(() => _audioScopeForm.Close());
 
                 exitMre.Set();
@@ -110,7 +123,6 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            var testPatternSource = new VideoTestPatternSource();
             var videoEncoderEndPoint = new VideoEncoderEndPoint();
             var audioEncoder = new AudioEncoder();
 
@@ -119,7 +131,7 @@ namespace demo
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioEncoder.SupportedFormats, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
 
-            testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
+            //testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
             videoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
             //audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
@@ -139,14 +151,16 @@ namespace demo
                 }
             };
             
-            pc.onconnectionstatechange += async (state) =>
+            pc.onconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"Peer connection state change to {state}.");
 
                 if (state == RTCPeerConnectionState.connected)
                 {
+                    //_isConnected = true;
+                    //_ = Task.Run(() => StartAudioScopeSource(videoEncoderEndPoint));
                     //await audioSource.StartAudio();
-                    await testPatternSource.StartVideo();
+                    //await testPatternSource.StartVideo();
                 }
                 else if (state == RTCPeerConnectionState.failed)
                 {
@@ -154,15 +168,15 @@ namespace demo
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
-                    await testPatternSource.CloseVideo();
+                    //await testPatternSource.CloseVideo();
                     //await audioSource.CloseAudio();
                 }
             };
 
             // Diagnostics.
-            pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+            //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
@@ -171,12 +185,49 @@ namespace demo
 
                 if (media == SDPMediaTypesEnum.audio)
                 {
-                    //windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                    var audioFormat = audioTrack.GetFormatForPayloadID(rtpPkt.Header.PayloadType)?.ToAudioFormat();
+
+                    if (audioFormat != null)
+                    {
+                        var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, audioFormat.Value);
+                        Console.WriteLine($"Decoded {audioFormat.Value.FormatName} audio sample of length {decodedSample.Length} shorts.");
+
+                        var samples = decodedSample
+                            .Select(s => new Complex(s / 32768f, 0f))
+                            .ToArray();
+
+                        var frame = _audioScopeForm.Invoke(() => _audioScopeForm.ProcessAudioSample(samples));
+
+                        videoEncoderEndPoint.ExternalVideoSourceRawSample(AUDIO_SAMPLING_INTERVAL_MILLISECONDS,
+                            FormAudioScope.AUDIO_SCOPE_WIDTH,
+                            FormAudioScope.AUDIO_SCOPE_HEIGHT,
+                            frame,
+                            SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb);
+                    }
                 }
             };
 
             return Task.FromResult(pc);
         }
+
+        //private static void StartAudioScopeSource(VideoEncoderEndPoint videoEncoder)
+        //{
+        //    while (true)
+        //    {
+        //        while (_frameQueue.TryDequeue(out var frame))
+        //        {
+        //            //Console.WriteLine($"Got frame of length {frame.Length} bytes");
+
+        //            videoEncoder.ExternalVideoSourceRawSample(AUDIO_SAMPLING_INTERVAL_MILLISECONDS,
+        //                FormAudioScope.AUDIO_SCOPE_WIDTH,
+        //                FormAudioScope.AUDIO_SCOPE_HEIGHT,
+        //                frame,
+        //                SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb);
+        //        }
+
+        //        _frameReadyEvent.WaitOne();
+        //    }
+        //}
 
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.

@@ -132,46 +132,46 @@ namespace AudioScope
             return _lastSample;
         }
 
-        public void InitAudio(AudioSourceEnum audioSource)
-        {
-            if (audioSource == AudioSourceEnum.NAudio)
-            {
-                //_audioInBuffer = new CircularBuffer(BUFFER_SIZE * _waveFormat.BlockAlign * CIRCULAR_BUFFER_SAMPLES);
+        //public void InitAudio(AudioSourceEnum audioSource)
+        //{
+        //    if (audioSource == AudioSourceEnum.NAudio)
+        //    {
+        //        //_audioInBuffer = new CircularBuffer(BUFFER_SIZE * _waveFormat.BlockAlign * CIRCULAR_BUFFER_SAMPLES);
 
-                _waveInEvent = new WaveInEvent();
-                _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-                _waveInEvent.NumberOfBuffers = 3;
-                _waveInEvent.DeviceNumber = 0;
-                _waveInEvent.WaveFormat = _waveFormat;
-                _waveInEvent.DataAvailable += NAudioDataAvailable;
-            }
-            //else if (audioSource == AudioSourceEnum.PortAudio)
-            //{
-            //    PortAudio.Initialize();
-            //    StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = NUM_CHANNELS, sampleFormat = SampleFormat.Float32 };
-            //    _audStm = new Stream(stmInParams, null, SAMPLE_RATE, BUFFER_SIZE, StreamFlags.NoFlag, PortAudioInCallback, null);
-            //}
-            else if (audioSource == AudioSourceEnum.Simulation)
-            {
-                _simulationPeriodMilli = 1000; // 1000 * BUFFER_SIZE / SAMPLE_RATE;
-                _simulationTrigger = new Timer(GenerateSimulationSample);
-            }
-        }
+        //        _waveInEvent = new WaveInEvent();
+        //        _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+        //        _waveInEvent.NumberOfBuffers = 3;
+        //        _waveInEvent.DeviceNumber = 0;
+        //        _waveInEvent.WaveFormat = _waveFormat;
+        //        _waveInEvent.DataAvailable += NAudioDataAvailable;
+        //    }
+        //    //else if (audioSource == AudioSourceEnum.PortAudio)
+        //    //{
+        //    //    PortAudio.Initialize();
+        //    //    StreamParameters stmInParams = new StreamParameters { device = 0, channelCount = NUM_CHANNELS, sampleFormat = SampleFormat.Float32 };
+        //    //    _audStm = new Stream(stmInParams, null, SAMPLE_RATE, BUFFER_SIZE, StreamFlags.NoFlag, PortAudioInCallback, null);
+        //    //}
+        //    else if (audioSource == AudioSourceEnum.Simulation)
+        //    {
+        //        _simulationPeriodMilli = 1000; // 1000 * BUFFER_SIZE / SAMPLE_RATE;
+        //        _simulationTrigger = new Timer(GenerateSimulationSample);
+        //    }
+        //}
 
-        public void Start()
-        {
-            _waveInEvent?.StartRecording();
-            //_audStm?.Start();
-            _simulationTrigger?.Change(0, _simulationPeriodMilli);
-            _simulationStartTime = DateTime.Now;
-        }
+        //public void Start()
+        //{
+        //    _waveInEvent?.StartRecording();
+        //    //_audStm?.Start();
+        //    _simulationTrigger?.Change(0, _simulationPeriodMilli);
+        //    _simulationStartTime = DateTime.Now;
+        //}
 
-        public void Stop()
-        {
-            _waveInEvent?.StopRecording();
-            //_audStm?.Stop();
-            _simulationTrigger?.Dispose();
-        }
+        //public void Stop()
+        //{
+        //    _waveInEvent?.StopRecording();
+        //    //_audStm?.Stop();
+        //    _simulationTrigger?.Dispose();
+        //}
 
         //private StreamCallbackResult PortAudioInCallback(IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags statusFlags, IntPtr userDataPtr)
         //{
@@ -188,72 +188,72 @@ namespace AudioScope
         /// <summary>
         /// Event handler for audio sample being supplied by local capture device.
         /// </summary>
-        private void NAudioDataAvailable(object sender, WaveInEventArgs args)
-        {
-            //_audioInBuffer.Write(args.Buffer, 0, args.BytesRecorded);
-            //while (_audioInBuffer.Count > (BUFFER_SIZE * 4))
-            //{
-            //    int bytesPerSample = _waveFormat.BlockAlign;
+        //private void NAudioDataAvailable(object sender, WaveInEventArgs args)
+        //{
+        //    //_audioInBuffer.Write(args.Buffer, 0, args.BytesRecorded);
+        //    //while (_audioInBuffer.Count > (BUFFER_SIZE * 4))
+        //    //{
+        //    //    int bytesPerSample = _waveFormat.BlockAlign;
 
-            //    byte[] buffer = new byte[BUFFER_SIZE * bytesPerSample];
-            //    _audioInBuffer.Read(buffer, 0, BUFFER_SIZE * bytesPerSample);
+        //    //    byte[] buffer = new byte[BUFFER_SIZE * bytesPerSample];
+        //    //    _audioInBuffer.Read(buffer, 0, BUFFER_SIZE * bytesPerSample);
 
-            //    List<float> samples = new List<float>();
-            //    for (int i = 0; i < BUFFER_SIZE * bytesPerSample; i += bytesPerSample)
-            //    {
-            //        samples.Add(BitConverter.ToSingle(buffer, i));
-            //    }
+        //    //    List<float> samples = new List<float>();
+        //    //    for (int i = 0; i < BUFFER_SIZE * bytesPerSample; i += bytesPerSample)
+        //    //    {
+        //    //        samples.Add(BitConverter.ToSingle(buffer, i));
+        //    //    }
 
-            //    ProcessAudioInBuffer(samples.ToArray());
-            //}
+        //    //    ProcessAudioInBuffer(samples.ToArray());
+        //    //}
 
-            int bytesPerSample = _waveFormat.BlockAlign;
-            List<Complex> samples = new List<Complex>();
-            for (int i = 0; i < args.BytesRecorded; i += bytesPerSample)
-            {
-                samples.Add(BitConverter.ToSingle(args.Buffer, i));
+        //    int bytesPerSample = _waveFormat.BlockAlign;
+        //    List<Complex> samples = new List<Complex>();
+        //    for (int i = 0; i < args.BytesRecorded; i += bytesPerSample)
+        //    {
+        //        samples.Add(BitConverter.ToSingle(args.Buffer, i));
 
-                //if(samples.Count >= BUFFER_SIZE)
-                //{
-                //    // It's more important that we keep up compared to dropping samples.
-                //    break;
-                //}
-            }
+        //        //if(samples.Count >= BUFFER_SIZE)
+        //        //{
+        //        //    // It's more important that we keep up compared to dropping samples.
+        //        //    break;
+        //        //}
+        //    }
 
-            ProcessSample(samples.ToArray());
-        }
+        //    ProcessSample(samples.ToArray());
+        //}
 
-        private void GenerateSimulationSample(Object userState)
-        {
-            Complex[] sample = new Complex[BUFFER_SIZE];
+        //private void GenerateSimulationSample(Object userState)
+        //{
+        //    Complex[] sample = new Complex[BUFFER_SIZE];
 
-            double freq = 440.0;// + DateTime.Now.Subtract(_simulationStartTime).TotalSeconds * 100;
+        //    double freq = 440.0;// + DateTime.Now.Subtract(_simulationStartTime).TotalSeconds * 100;
 
-            //if(DateTime.Now.Second % 2 == 0)
-            //{
-            //    simulationFreq = 880.0;
-            //}
+        //    //if(DateTime.Now.Second % 2 == 0)
+        //    //{
+        //    //    simulationFreq = 880.0;
+        //    //}
 
-            for (int i = 0; i < sample.Length; i++)
-            {
-                //for (int j = 1; j < 7; j++)
-                //{
-                //    re += Math.Sin(2.0f * Math.PI * ((double)i / (simulationFreq * j)));
-                //}
+        //    for (int i = 0; i < sample.Length; i++)
+        //    {
+        //        //for (int j = 1; j < 7; j++)
+        //        //{
+        //        //    re += Math.Sin(2.0f * Math.PI * ((double)i / (simulationFreq * j)));
+        //        //}
 
-                //double re = Math.Sin(2.0f * Math.PI * ((double)i / simulationFreq ));
+        //        //double re = Math.Sin(2.0f * Math.PI * ((double)i / simulationFreq ));
 
-                //double re = Math.Sin(2 * Math.PI * i / (freq * 3)) +
-                //    Math.Cos(4 * Math.PI * i / (freq * 2)) +
-                //    Math.Cos(7 * Math.PI * i / (freq * 2));
+        //        //double re = Math.Sin(2 * Math.PI * i / (freq * 3)) +
+        //        //    Math.Cos(4 * Math.PI * i / (freq * 2)) +
+        //        //    Math.Cos(7 * Math.PI * i / (freq * 2));
 
-                double re = Math.Sin(2.0f * Math.PI * ((double)i / freq));
+        //        double re = Math.Sin(2.0f * Math.PI * ((double)i / freq));
 
-                sample[i] = (float)re;
-            }
+        //        sample[i] = (float)re;
+        //    }
 
-            ProcessSample(sample);
-        }
+        //    ProcessSample(sample);
+        //}
 
         /// <summary>
         /// Called to process the audio input once the required number of samples are available.
