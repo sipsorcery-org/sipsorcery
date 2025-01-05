@@ -39,13 +39,40 @@ namespace demo
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-        private static FormAudioScope _form;
+        private static FormAudioScope _audioScopeForm;
+        private static System.Windows.Forms.Timer _renderTimer;
 
         static void Main()
         {
             Console.WriteLine("WebRTC Audio Scope");
 
             logger = AddConsoleLogger();
+
+            // Spin up a dedicated STA thread to run WinForms
+            Thread uiThread = new Thread(() =>
+            {
+                // WinForms initialization must be on an STA thread
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+
+                _audioScopeForm = new FormAudioScope();
+                //_audioScopeForm.Activated += (sender, e) => { _isFormActivated = true; };
+
+                // Optionally hide the form so it's never actually displayed
+                _audioScopeForm.ShowInTaskbar = false;      // if you don't want it in the taskbar
+                _audioScopeForm.WindowState = FormWindowState.Minimized; // or set Visible = false in the form constructor
+
+                _renderTimer = new System.Windows.Forms.Timer();
+                _renderTimer.Interval = 1000;
+                _renderTimer.Tick += (s, e) => _audioScopeForm.RequestRender();
+                _renderTimer.Start();
+
+                Application.Run(_audioScopeForm);
+            });
+
+            uiThread.SetApartmentState(ApartmentState.STA);
+            uiThread.IsBackground = true;
+            uiThread.Start();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -54,16 +81,19 @@ namespace demo
             webSocketServer.Start();
 
             Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-            Console.WriteLine("Press ctrl-c to exit.");
-
-            _form = new FormAudioScope();
-            //_form.Controls.Add(_localVideoPicBox);
+            Console.WriteLine("Press ctrl-c to exit.");           
 
             // Ctrl-c will gracefully exit the call at any point.
             ManualResetEvent exitMre = new ManualResetEvent(false);
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
+                Console.WriteLine("Exiting...");
+
                 e.Cancel = true;
+
+                _renderTimer?.Dispose();
+                _audioScopeForm.Invoke(() => _audioScopeForm.Close());
+
                 exitMre.Set();
             };
 
@@ -137,25 +167,13 @@ namespace demo
 
             pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
-                logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, payload {rtpPkt.Header.PayloadType}, SeqNum {rtpPkt.Header.SequenceNumber}.");
+                //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, payload {rtpPkt.Header.PayloadType}, SeqNum {rtpPkt.Header.SequenceNumber}.");
 
                 if (media == SDPMediaTypesEnum.audio)
                 {
                     //windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
                 }
             };
-
-            // To test closing.
-            //_ = Task.Run(async () => 
-            //{ 
-            //    await Task.Delay(5000);
-
-            //    audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
-            //    videoEncoderEndPoint.OnVideoSourceEncodedSample -= pc.SendVideo;
-
-            //    logger.LogDebug("Closing peer connection.");
-            //    pc.Close("normal");
-            //});
 
             return Task.FromResult(pc);
         }

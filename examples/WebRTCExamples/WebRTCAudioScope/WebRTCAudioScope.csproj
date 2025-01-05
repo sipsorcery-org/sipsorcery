@@ -28,4 +28,22 @@
         <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="shaders\clear\clear.frag">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="shaders\clear\clear.vert">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="shaders\line\line.frag">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="shaders\line\line.geom">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="shaders\line\line.vert">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

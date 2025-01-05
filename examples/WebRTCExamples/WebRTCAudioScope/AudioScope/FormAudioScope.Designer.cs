@@ -1,4 +1,4 @@
-namespace AudioScope
+﻿namespace AudioScope
 {
     partial class FormAudioScope
     {
@@ -39,12 +39,12 @@ namespace AudioScope
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.openGLControl1.DrawFPS = false;
-            this.openGLControl1.FrameRate = 28;
+            this.openGLControl1.FrameRate = 1;
             this.openGLControl1.Location = new System.Drawing.Point(12, 12);
             this.openGLControl1.Name = "openGLControl1";
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl1.RenderContextType = SharpGL.RenderContextType.FBO;
-            this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.TimerBased;
+            this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.Manual;
             this.openGLControl1.Size = new System.Drawing.Size(768, 410);
             this.openGLControl1.TabIndex = 0;
             this.Load += new System.EventHandler(this.FormAudioScope_Load);

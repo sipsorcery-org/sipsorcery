@@ -296,7 +296,7 @@ namespace AudioScope
             //Complex secondPrevInput = new Complex(_previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE * 2], _previousResults[_previousResults.Length - DISPLAY_ARRAY_STRIDE * 2 + 1]);
             //Complex prevDiff = prevInput - secondPrevInput;
 
-            Console.WriteLine($"Output sample {_outputSampleCount}:");
+            //Console.WriteLine($"AudioScope output sample {_outputSampleCount}");
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
             {
