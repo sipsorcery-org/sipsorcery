@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPParameters.cs
 //
 // Description: SIP parameters as used in Contact, To, From and Via SIP headers.
@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -337,7 +338,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public static bool operator ==(SIPParameters x, SIPParameters y)
         {
-            if (x is null && y is null)
+            if (object.ReferenceEquals(x, y))
             {
                 return true;
             }
