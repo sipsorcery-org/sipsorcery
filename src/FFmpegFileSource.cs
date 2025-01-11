@@ -229,10 +229,14 @@ namespace SIPSorceryMedia.FFmpeg
                 _isClosed = true;
 
                 if (_FFmpegAudioSource != null)
+                {
                     await _FFmpegAudioSource.Close();
+                }
 
                 if (_FFmpegVideoSource != null)
+                {
                     await _FFmpegVideoSource.Close();
+                }
 
                 Dispose();
             }
@@ -245,10 +249,14 @@ namespace SIPSorceryMedia.FFmpeg
                 _isPaused = true;
 
                 if (_FFmpegAudioSource != null)
+                {
                     await _FFmpegAudioSource.Pause();
+                }
 
                 if (_FFmpegVideoSource != null)
-                    await  _FFmpegVideoSource.Pause();
+                {
+                    await _FFmpegVideoSource.Pause();
+                }
             }
         }
 
@@ -259,10 +267,14 @@ namespace SIPSorceryMedia.FFmpeg
                 _isPaused = false;
 
                 if (_FFmpegAudioSource != null)
+                {
                     await _FFmpegAudioSource.Resume();
+                }
 
                 if (_FFmpegVideoSource != null)
+                {
                     await _FFmpegVideoSource.Resume();
+                }
             }
         }
 
