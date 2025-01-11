@@ -160,7 +160,7 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     AVFrame* frameYUV420P = frame;
 
-                    if (frame->format == (int)AVPixelFormat.AV_PIX_FMT_YUV420P)
+                    if (frame->format != (int)AVPixelFormat.AV_PIX_FMT_YUV420P)
                     {
                         // The frame is not yuv420p so needs to be converted.
 
