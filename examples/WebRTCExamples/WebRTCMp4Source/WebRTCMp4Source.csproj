@@ -3,11 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8</TargetFramework>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>10</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,11 +27,10 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <!--<PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.7" />-->
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.7" />
   </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\SIPSorceryMedia.FFmpeg\src\SIPSorceryMedia.FFmpeg.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
     </ItemGroup>
 

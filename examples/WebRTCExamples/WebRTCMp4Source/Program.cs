@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -72,12 +71,12 @@ namespace demo
         {
             RTCConfiguration config = new RTCConfiguration
             {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+                //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
             };
             var pc = new RTCPeerConnection(config);
 
             SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
-            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
+            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, true, new AudioEncoder());
             mediaFileSource.RestrictFormats(x => x.Codec == VideoCodecsEnum.VP8);
 
             //mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.OPUS);
@@ -101,7 +100,7 @@ namespace demo
                 {
                     pc.Close("ice disconnection");
                 }
-                else if (state == RTCPeerConnectionState.closed)
+                else if (state is RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected)
                 {
                     await mediaFileSource.CloseVideo();
                 }
