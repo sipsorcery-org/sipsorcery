@@ -3,14 +3,12 @@ using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.FFmpeg
 {
-    public class FFmpegVideoSource: IVideoSource, IDisposable
+    public class FFmpegVideoSource : IVideoSource, IDisposable
     {
-
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoSource>();
 
         internal static List<VideoFormat> _supportedVideoFormats = Helper.GetSupportedVideoFormats();
@@ -19,9 +17,10 @@ namespace SIPSorceryMedia.FFmpeg
         internal bool _isPaused;
         internal bool _isClosed;
 
-        private String path;
+        private string path;
+        private object _initialiseLock = new object();
 
-        internal FFmpegVideoDecoder ? _videoDecoder;
+        internal FFmpegVideoDecoder? _videoDecoder;
 
         internal VideoFrameConverter? _videoFrameYUV420PConverter = null;
         internal VideoFrameConverter? _videoFrameBGR24Converter = null;
@@ -47,15 +46,15 @@ namespace SIPSorceryMedia.FFmpeg
             path = "";
         }
 
-        public unsafe void CreateVideoDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isCamera = false)
+        public unsafe void CreateVideoDecoder(string path, AVInputFormat* avInputFormat, bool repeat = false, bool isCamera = false)
         {
             this.path = path;
             _videoDecoder = new FFmpegVideoDecoder(path, avInputFormat, repeat, isCamera);
-            
+
             _videoDecoder.OnVideoFrame += VideoDecoder_OnVideoFrame;
             _videoDecoder.OnError += VideoDecoder_OnError;
             _videoDecoder.OnEndOfFile += VideoDecoder_OnEndOfFile;
-         }
+        }
 
         private void VideoDecoder_OnEndOfFile()
         {
@@ -71,7 +70,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public Boolean InitialiseDecoder(Dictionary<string, string>? decoderOptions = null)
         {
-            return _videoDecoder?.InitialiseSource(decoderOptions) == true ;
+            return _videoDecoder?.InitialiseSource(decoderOptions) == true;
         }
 
         public bool IsPaused() => _isPaused;
@@ -83,9 +82,12 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void SetVideoSourceFormat(VideoFormat videoFormat)
         {
-            logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
-            _videoFormatManager.SetSelectedFormat(videoFormat);
-            InitialiseDecoder();
+            lock (_initialiseLock)
+            {
+                logger.LogDebug($"{nameof(FFmpegVideoSource)} setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+                _videoFormatManager.SetSelectedFormat(videoFormat);
+                InitialiseDecoder();
+            }
         }
 
         public void RestrictFormats(Func<VideoFormat, bool> filter)
@@ -95,7 +97,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void SetVideoEncoderBitrate(long? avgBitrate = null, int? toleranceBitrate = null, long? minBitrate = null, long? maxBitrate = null)
         {
-            if(_videoEncoder != null)
+            if (_videoEncoder != null)
             {
                 _videoEncoder.SetBitrate(avgBitrate, toleranceBitrate, minBitrate, maxBitrate);
             }
@@ -115,67 +117,88 @@ namespace SIPSorceryMedia.FFmpeg
         public Task ResumeVideo() => Resume();
         public Task CloseVideo() => Close();
 
-        private unsafe void VideoDecoder_OnVideoFrame(ref AVFrame frame)
+        private unsafe void VideoDecoder_OnVideoFrame(AVFrame* frame)
         {
-            if ( (_videoDecoder != null) && (_videoEncoder != null) &&  ((OnVideoSourceEncodedSample != null) || (OnVideoSourceRawSampleFaster != null)) )
+            if (_videoDecoder != null && _videoEncoder != null && (OnVideoSourceEncodedSample != null || OnVideoSourceRawSampleFaster != null))
             {
                 int frameRate = (int)_videoDecoder.VideoAverageFrameRate;
                 uint timestampDuration = (uint)_videoDecoder.VideoFrameSpace;
 
-                var width = frame.width;
-                var height = frame.height;
+                var width = frame->width;
+                var height = frame->height;
+                AVPixelFormat actualFmt = (AVPixelFormat)frame->format;
 
                 // Manage Raw Sample
                 if (OnVideoSourceRawSampleFaster != null)
                 {
                     if (_videoFrameBGR24Converter == null ||
                         _videoFrameBGR24Converter.SourceWidth != width ||
-                        _videoFrameBGR24Converter.SourceHeight != height)
+                        _videoFrameBGR24Converter.SourceHeight != height ||
+                        _videoFrameBGR24Converter.SourcePixelFormat != actualFmt)
                     {
-                        _videoFrameBGR24Converter = new VideoFrameConverter(
-                            width, height,
-                            (AVPixelFormat)frame.format,
-                            width, height,
-                            AVPixelFormat.AV_PIX_FMT_BGR24);
-                        logger.LogDebug($"Frame format: [{frame.format}]");
+                        lock (_initialiseLock)
+                        {
+                            _videoFrameBGR24Converter = new VideoFrameConverter(
+                                width, 
+                                height,
+                                actualFmt,
+                                width, 
+                                height,
+                                AVPixelFormat.AV_PIX_FMT_BGR24);
+                            logger.LogDebug($"{nameof(FFmpegVideoSource)} RawSampleFaster frame format: [{frame->format}]");
+                        }
                     }
 
-                    var frameBGR24 = _videoFrameBGR24Converter.Convert(frame);
-                    if ((frameBGR24.width != 0) && (frameBGR24.height != 0))
-                    {
-                        RawImage imageRawSample = new RawImage
-                        {
-                            Width = width,
-                            Height = height,
-                            Stride = frameBGR24.linesize[0],
-                            Sample = (IntPtr)frameBGR24.data[0],
-                            PixelFormat = VideoPixelFormatsEnum.Rgb
-                        };
-                        OnVideoSourceRawSampleFaster?.Invoke(timestampDuration, imageRawSample);
-                    }
+                    //var frameBGR24 = _videoFrameBGR24Converter.Convert(frame);
+                    //if ((frameBGR24.width != 0) && (frameBGR24.height != 0))
+                    //{
+                    //    RawImage imageRawSample = new RawImage
+                    //    {
+                    //        Width = width,
+                    //        Height = height,
+                    //        Stride = frameBGR24.linesize[0],
+                    //        Sample = (IntPtr)frameBGR24.data[0],
+                    //        PixelFormat = VideoPixelFormatsEnum.Rgb
+                    //    };
+                    //    OnVideoSourceRawSampleFaster?.Invoke(timestampDuration, imageRawSample);
+                    //}
                 }
 
                 // Manage Encoded Sample
                 if (OnVideoSourceEncodedSample != null)
                 {
-                    if (_videoFrameYUV420PConverter == null ||
-                        _videoFrameYUV420PConverter.SourceWidth != width ||
-                        _videoFrameYUV420PConverter.SourceHeight != height)
-                    {
-                        _videoFrameYUV420PConverter = new VideoFrameConverter(
-                            width, height,
-                            (AVPixelFormat)frame.format,
-                            width, height,
-                            AVPixelFormat.AV_PIX_FMT_YUV420P);
-                        logger.LogDebug($"Frame format: [{frame.format}]");
-                    }
+                    ////if (actualFmt != AVPixelFormat.AV_PIX_FMT_YUV420P)
+                    ////{
+                    //    // No need to convert if the frame is already in YUV420P format.
 
-                    var frameYUV420P = _videoFrameYUV420PConverter.Convert(frame);
-                    if ((frameYUV420P.width != 0) && (frameYUV420P.height != 0))
+                    //    if (_videoFrameYUV420PConverter == null ||
+                    //        _videoFrameYUV420PConverter.SourceWidth != width ||
+                    //        _videoFrameYUV420PConverter.SourceHeight != height ||
+                    //        _videoFrameYUV420PConverter.SourcePixelFormat != actualFmt)
+                    //    {
+                    //        lock (_initialiseLock)
+                    //        {
+                    //            _videoFrameYUV420PConverter = new VideoFrameConverter(
+                    //                width, height,
+                    //                actualFmt,
+                    //                width, height,
+                    //                AVPixelFormat.AV_PIX_FMT_YUV420P);
+                    //            logger.LogDebug($"{nameof(FFmpegVideoSource)} SourceEncodedSample frame format: [{frame.format}]");
+                    //        }
+                    //    }
+                    ////}
+
+                    ////AVFrame frameYUV420P = actualFmt == AVPixelFormat.AV_PIX_FMT_YUV420P ? frame : _videoFrameYUV420PConverter!.Convert(frame);
+
+                    //AVFrame frameYUV420P = _videoFrameYUV420PConverter!.Convert(frame);
+
+                    var frameYUV420P = frame;
+
+                    if (frameYUV420P->width != 0 && frameYUV420P->height != 0)
                     {
                         AVCodecID? aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
-                        if(aVCodecId != null)
-                        { 
+                        if (aVCodecId != null)
+                        {
                             byte[]? encodedSample = _videoEncoder.Encode(aVCodecId.Value, frameYUV420P, frameRate);
 
                             if (encodedSample != null)
@@ -187,10 +210,36 @@ namespace SIPSorceryMedia.FFmpeg
                         }
                     }
                     else
+                    {
                         _forceKeyFrame = true;
+                    }
                 }
             }
         }
+
+        //private unsafe void VideoDecoder_OnVideoFrame(AVFrame* frame)
+        //{
+        //    logger.LogDebug($"OnVideoFrame format:[{frame->format}] - {frame->width}:{frame->height}.");
+
+        //    int frameRate = (int)(_videoDecoder?.VideoAverageFrameRate ?? 30);
+        //    uint timestampDuration = (uint)(_videoDecoder?.VideoFrameSpace ?? 33);
+
+        //    if (frame->width != 0 && frame->height != 0 && _videoEncoder != null)
+        //    {
+        //        AVCodecID? aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
+        //        if (aVCodecId != null)
+        //        {
+        //            byte[]? encodedSample = _videoEncoder.Encode(aVCodecId.Value, frame, frameRate);
+
+        //            if (encodedSample != null)
+        //            {
+        //                // Note the event handler can be removed while the encoding is in progress.
+        //                OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
+        //            }
+        //            _forceKeyFrame = false;
+        //        }
+        //    }
+        //}
 
         public Task Start()
         {
@@ -211,7 +260,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (!_isClosed)
             {
                 _isClosed = true;
-                if(_videoDecoder != null)
+                if (_videoDecoder != null)
                     await _videoDecoder.Close();
                 Dispose();
             }
@@ -235,12 +284,12 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _isPaused = false;
                 if (_videoDecoder != null)
-                     _videoDecoder.Resume();
+                    _videoDecoder.Resume();
             }
             return Task.CompletedTask;
         }
 
-        public void Dispose()
+        public unsafe void Dispose()
         {
             _isStarted = false;
 

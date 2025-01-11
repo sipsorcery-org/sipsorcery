@@ -1,14 +1,9 @@
 ﻿using DirectShowLib;
 using FFmpeg.AutoGen;
-using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.FFmpeg.Interop.Win32
 {
@@ -17,7 +12,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
         const string inputfmt = nameof(DShow);
 
         static private string[] DSHOW_VIDEO_DEVICE_LOG_OUTPUT = ["(video)", "camera", "webcam"];
-        static private string DSHOW_AUDIO_DEVICE_LOG_OUTPUT = "(audio)";
+        //static private string DSHOW_AUDIO_DEVICE_LOG_OUTPUT = "(audio)";
 
         static private string[] DSHOW_CAMERA_FORMAT_LOG_OUTPUT = ["pixel_format"];
 

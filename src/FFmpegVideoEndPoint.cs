@@ -20,11 +20,11 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
-        private bool _forceKeyFrame;
 
-#pragma warning disable CS0067
+#pragma warning disable  CS0067, CS0414
+        private bool _forceKeyFrame;
         public event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
-#pragma warning restore CS0067
+#pragma warning restore CS0067, CS0414
 
         public event VideoSinkSampleDecodedFasterDelegate? OnVideoSinkDecodedSampleFaster;
 

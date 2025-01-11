@@ -29,8 +29,8 @@ namespace SIPSorceryMedia.FFmpeg
         private VideoFrameConverter? _i420ToRgb;
         private bool _isEncoderInitialised = false;
         private bool _isDecoderInitialised = false;
-        private Object _encoderLock = new object();
-        private Object _decoderLock = new object();
+        private object _encoderLock = new object();
+        private object _decoderLock = new object();
 
         private long? _bit_rate = null;
         private int? _bit_rate_tolerance = null;
@@ -44,6 +44,11 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isDisposed;
 
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEncoder>();
+
+        public AVCodecContext* EncoderContext
+        {
+            get => _encoderContext;
+        }
 
         public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
         {
@@ -65,6 +70,7 @@ namespace SIPSorceryMedia.FFmpeg
         public byte[]? EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec)
         {
             byte* pSample = (byte*)rawImage.Sample;
+
             return EncodeVideo(rawImage.Width, rawImage.Height, pSample, rawImage.PixelFormat, codec);
         }
 
@@ -133,10 +139,12 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        private void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
+        public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
             if (!_isEncoderInitialised)
             {
+                logger.LogDebug($"Initialising ffmpeg based image encoder: CodecId:[{codecID}] - {width}:{height} - {fps} Fps");
+
                 _isEncoderInitialised = true;
 
                 _codecID = codecID;
@@ -193,7 +201,6 @@ namespace SIPSorceryMedia.FFmpeg
                     ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                 }
 
-
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
 
                 logger.LogDebug($"Successfully initialised ffmpeg based image encoder: CodecId:[{codecID}] - {width}:{height} - {fps} Fps");
@@ -206,7 +213,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             ResetEncoder();
         }
-        
+
         public void SetBitrate(long? avgBitrate, int? toleranceBitrate, long? minBitrate, long? maxBitrate)
         {
             _bit_rate = avgBitrate;
@@ -327,7 +334,7 @@ namespace SIPSorceryMedia.FFmpeg
                         avFrame = _encoderPixelConverter.Convert(sample);
                     }
 
-                    return Encode(codecID, avFrame, fps, keyFrame);
+                    return Encode(codecID, &avFrame, fps, keyFrame);
                 }
                 else
                 {
@@ -336,14 +343,16 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public byte[]? Encode(AVCodecID codecID, AVFrame avFrame, int fps, bool keyFrame = false)
+        public byte[]? Encode(AVCodecID codecID, AVFrame* avFrame, int fps, bool keyFrame = false)
         {
             if (!_isDisposed)
             {
                 lock (_encoderLock)
                 {
-                    int width = avFrame.width;
-                    int height = avFrame.height;
+                    logger.LogDebug($"[Encode] CodecId:[{codecID}] - {avFrame->width}:{avFrame->height} - {fps} Fps");
+
+                    int width = avFrame->width;
+                    int height = avFrame->height;
 
                     if (!_isEncoderInitialised)
                     {
@@ -362,26 +371,26 @@ namespace SIPSorceryMedia.FFmpeg
                     int _ySize = _linesizeY * height;
                     int _uSize = _linesizeU * height / 2;
 
-                    if (avFrame.format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(avFrame));
-                    if (avFrame.width != width) throw new ArgumentException("Invalid width.", nameof(avFrame));
-                    if (avFrame.height != height) throw new ArgumentException("Invalid height.", nameof(avFrame));
-                    if (avFrame.linesize[0] < _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(avFrame));
-                    if (avFrame.linesize[1] < _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(avFrame));
-                    if (avFrame.linesize[2] < _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(avFrame));
+                    if (avFrame->format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(avFrame));
+                    if (avFrame->width != width) throw new ArgumentException("Invalid width.", nameof(avFrame));
+                    if (avFrame->height != height) throw new ArgumentException("Invalid height.", nameof(avFrame));
+                    if (avFrame->linesize[0] < _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(avFrame));
+                    if (avFrame->linesize[1] < _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(avFrame));
+                    if (avFrame->linesize[2] < _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(avFrame));
 
                     if (keyFrame || _forceKeyFrame)
                     {
-                        avFrame.key_frame = 1;
+                        avFrame->flags |= ffmpeg.AV_FRAME_FLAG_KEY;
                         _forceKeyFrame = false;
                     }
 
-                    avFrame.pts = _pts++;
+                    avFrame->pts = _pts++;
 
                     var pPacket = ffmpeg.av_packet_alloc();
 
                     try
                     {
-                        ffmpeg.avcodec_send_frame(_encoderContext, &avFrame).ThrowExceptionIfError();
+                        ffmpeg.avcodec_send_frame(_encoderContext, avFrame).ThrowExceptionIfError();
                         int error = ffmpeg.avcodec_receive_packet(_encoderContext, pPacket);
 
                         if (error == 0)

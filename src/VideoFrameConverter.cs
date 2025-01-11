@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SIPSorceryMedia.FFmpeg
 {
@@ -25,12 +24,21 @@ namespace SIPSorceryMedia.FFmpeg
 
         public int SourceWidth => _srcWidth;
         public int SourceHeight => _srcHeight;
+        public AVPixelFormat SourcePixelFormat => _srcPixelFormat;
         public int DestinationWidth => _dstWidth;
         public int DestinationHeight => _dstHeight;
+        public AVPixelFormat DestinationPixelFormat => _dstPixelFormat;
 
-        public VideoFrameConverter(int srcWidth, int srcHeight, AVPixelFormat sourcePixelFormat,
-           int dstWidth, int dstHeight, AVPixelFormat destinationPixelFormat)
+        public VideoFrameConverter(
+           int srcWidth, 
+           int srcHeight, 
+           AVPixelFormat sourcePixelFormat,
+           int dstWidth, 
+           int dstHeight, 
+           AVPixelFormat destinationPixelFormat)
         {
+            logger.LogDebug($"Attempting to initialise video frame converter for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{destinationPixelFormat}.");
+
             _srcWidth = srcWidth;
             _srcHeight = srcHeight;
             _dstWidth = dstWidth;
@@ -62,15 +70,16 @@ namespace SIPSorceryMedia.FFmpeg
             _dstFrame->linesize.UpdateFrom(_dstLinesize);
             _dstFrame->format = (int)_dstPixelFormat;
 
-            logger.LogDebug($"Successfully initialised ffmpeg based image converted for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
+            logger.LogDebug($"Successfully initialised ffmpeg based image converter for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
         }
 
-        #region Dispose
         private bool IsDisposed => _convertedFrameBufferPtr == IntPtr.Zero;
+
         private void EnsureNotDisposed()
         {
             if (IsDisposed) throw new ObjectDisposedException(nameof(VideoFrameConverter));
         }
+
         public void Dispose()
         {
             if (IsDisposed) return;
@@ -79,7 +88,6 @@ namespace SIPSorceryMedia.FFmpeg
             _convertedFrameBufferPtr = IntPtr.Zero;
             ffmpeg.sws_freeContext(_pConvertContext);
         }
-        #endregion
 
         public AVFrame Convert(IntPtr srcData)
         {
@@ -161,13 +169,12 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 int result = ffmpeg.av_frame_copy_props(&frame, _dstFrame);
 
-
                 if (result >= 0)
+                {
                     result = ffmpeg.sws_scale(_pConvertContext,
                                 frame.data, frame.linesize, 0, frame.height,
                                 _dstData, _dstLinesize);
-
-
+                }
 
                 if (result < 0)
                 {
@@ -191,7 +198,6 @@ namespace SIPSorceryMedia.FFmpeg
                     height = _dstHeight,
                     format = (int)_dstPixelFormat
                 };
-
             }
             catch
             {
@@ -201,11 +207,6 @@ namespace SIPSorceryMedia.FFmpeg
                     height = 0
                 };
             }
-
-            //ffmpeg.sws_scale(_pConvertContext,
-            //    frame.data, frame.linesize, 0, frame.height,
-            //    _dstFrame->data, _dstFrame->linesize);
-            //return _dstFrame;
         }
 
         public byte[] ConvertFrame(ref AVFrame frame)

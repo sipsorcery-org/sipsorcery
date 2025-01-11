@@ -135,20 +135,33 @@ namespace SIPSorceryMedia.FFmpeg
                 ffmpeg.av_opt_set_int(_swrContext, "in_sample_rate", _audDecCtx->sample_rate, 0);
                 ffmpeg.av_opt_set_int(_swrContext, "out_sample_rate", clockRate, 0);
 
-                //FIX:Some Codec's Context Information is missing
-                // TODO: Seems like this ffmpeg preopty has now changed to ch_layout. AC 24 Sep 2024.
-                //if (_audDecCtx->channel_layout == 0)
-                //{
-                //    long in_channel_layout = ffmpeg.av_get_default_channel_layout(_audDecCtx->channels);
-                //    ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", in_channel_layout, 0);
-                //}
-                //else
-                //    ffmpeg.av_opt_set_channel_layout(_swrContext, "in_channel_layout", (long)_audDecCtx->channel_layout, 0);
+                if (_audDecCtx->ch_layout.order == AVChannelOrder.AV_CHANNEL_ORDER_UNSPEC)
+                {
+                    // Set the default channel layout based on the number of channels
+                    ffmpeg.av_channel_layout_default(&_audDecCtx->ch_layout, _audDecCtx->ch_layout.nb_channels);
+                }
+                
+                if (ffmpeg.av_opt_set_chlayout(_swrContext, "in_chlayout", &_audDecCtx->ch_layout, 0) < 0)
+                {
+                    RaiseError("Failed to set input channel layout in resampling context.");
+                    return false;
+                }
 
                 OutChannelCount = 1;
 
-                // TODO: Seems like this ffmpeg preopty has now changed to ch_layout. AC 24 Sep 2024
-                //ffmpeg.av_opt_set_channel_layout(_swrContext, "out_channel_layout", (long)ffmpeg.AV_CH_LAYOUT_MONO, 0);
+                // Declare and initialize an AVChannelLayout for mono layout
+                AVChannelLayout out_ch_layout;
+                ffmpeg.av_channel_layout_from_mask(&out_ch_layout, ffmpeg.AV_CH_LAYOUT_MONO);
+
+                // Set the output channel layout in the resampling context
+                if (ffmpeg.av_opt_set_chlayout(_swrContext, "out_chlayout", &out_ch_layout, 0) < 0)
+                {
+                    RaiseError("Failed to set output channel layout in resampling context.");
+                    return false;
+                }
+
+                // Free the channel layout after setting it
+                ffmpeg.av_channel_layout_uninit(&out_ch_layout);
 
                 if ( ffmpeg.swr_init(_swrContext) < 0 )
                 {
@@ -363,7 +376,6 @@ namespace SIPSorceryMedia.FFmpeg
                         if (_audDecCtx != null)
                         {
                             var pCodecContext = _audDecCtx;
-                            ffmpeg.avcodec_close(pCodecContext);
                             ffmpeg.avcodec_free_context(&pCodecContext);
                             _audDecCtx = null;
                         }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
@@ -23,7 +21,7 @@ namespace SIPSorceryMedia.FFmpeg
         internal byte[] buffer; // Avoid to create buffer of same size
 
         private int frameSize;
-        private String path;
+        private string path;
 
         private BasicBufferShort _incomingSamples = new BasicBufferShort(48000);
 
@@ -45,7 +43,9 @@ namespace SIPSorceryMedia.FFmpeg
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             if (audioEncoder == null)
+            {
                 throw new ApplicationException("Audio encoder provided is null");
+            }
 
             _audioFormatManager = new MediaFormatManager<AudioFormat>(audioEncoder.SupportedFormats);
             _audioEncoder = audioEncoder;
@@ -53,7 +53,7 @@ namespace SIPSorceryMedia.FFmpeg
             this.frameSize = (int)frameSize;
         }
 
-        public unsafe void CreateAudioDecoder(String path, AVInputFormat* avInputFormat, bool repeat = false, bool isMicrophone = false)
+        public unsafe void CreateAudioDecoder(string path, AVInputFormat* avInputFormat, bool repeat = false, bool isMicrophone = false)
         {
             this.path = path;
             _audioDecoder = new FFmpegAudioDecoder(path, avInputFormat, repeat, isMicrophone);
@@ -75,7 +75,7 @@ namespace SIPSorceryMedia.FFmpeg
             Dispose();
         }
 
-        public Boolean InitialiseDecoder()
+        public bool InitialiseDecoder()
         {
             return _audioDecoder?.InitialiseSource(_audioFormatManager.SelectedFormat.ClockRate) == true;
         }
@@ -120,7 +120,6 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if ( (OnAudioSourceEncodedSample == null) || (_audioDecoder == null) )
                 return;
-
 
             // Avoid to create several times buffer of the same size
             if (_currentNbSamples < avFrame.nb_samples)

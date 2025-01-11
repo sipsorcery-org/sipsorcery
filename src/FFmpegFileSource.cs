@@ -161,7 +161,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (_FFmpegVideoSource != null)
             {
-                logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+                logger.LogDebug($"{nameof(FFmpegFileSource)} setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
                 _FFmpegVideoSource.SetVideoSourceFormat(videoFormat);
             }
         }
