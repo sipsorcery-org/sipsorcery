@@ -239,7 +239,7 @@ namespace FFmpegEncodingTest
                         //i420Frame.key_frame = _forceKeyFrame ? 1 : 0;
                         i420Frame.pts = _presentationTimestamp;
 
-                        byte[] encodedBuffer = _ffmpegEncoder.Encode(AVCodecID.AV_CODEC_ID_VP8, i420Frame, FRAMES_PER_SECOND);
+                        byte[] encodedBuffer = _ffmpegEncoder.Encode(AVCodecID.AV_CODEC_ID_VP8, &i420Frame, FRAMES_PER_SECOND);
 
                         if (encodedBuffer != null)
                         {

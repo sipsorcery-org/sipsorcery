@@ -45,18 +45,10 @@ namespace SIPSorceryMedia.FFmpeg
 
         private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEncoder>();
 
-        public AVCodecContext* EncoderContext
-        {
-            get => _encoderContext;
-        }
-
         public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
         {
             _encoderOptions = encoderOptions ?? new Dictionary<string, string>();
             _HwDeviceType = HWDeviceType;
-
-            //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_VERBOSE);
-            //ffmpeg.av_log_set_level(ffmpeg.AV_LOG_TRACE);
         }
 
         public byte[]? EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
@@ -70,7 +62,6 @@ namespace SIPSorceryMedia.FFmpeg
         public byte[]? EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec)
         {
             byte* pSample = (byte*)rawImage.Sample;
-
             return EncodeVideo(rawImage.Width, rawImage.Height, pSample, rawImage.PixelFormat, codec);
         }
 
@@ -143,8 +134,6 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isEncoderInitialised)
             {
-                logger.LogDebug($"Initialising ffmpeg based image encoder: CodecId:[{codecID}] - {width}:{height} - {fps} Fps");
-
                 _isEncoderInitialised = true;
 
                 _codecID = codecID;
@@ -201,6 +190,7 @@ namespace SIPSorceryMedia.FFmpeg
                     ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
                 }
 
+
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
 
                 logger.LogDebug($"Successfully initialised ffmpeg based image encoder: CodecId:[{codecID}] - {width}:{height} - {fps} Fps");
@@ -213,7 +203,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             ResetEncoder();
         }
-
+        
         public void SetBitrate(long? avgBitrate, int? toleranceBitrate, long? minBitrate, long? maxBitrate)
         {
             _bit_rate = avgBitrate;
@@ -349,8 +339,6 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 lock (_encoderLock)
                 {
-                    logger.LogDebug($"[Encode] CodecId:[{codecID}] - {avFrame->width}:{avFrame->height} - {fps} Fps");
-
                     int width = avFrame->width;
                     int height = avFrame->height;
 

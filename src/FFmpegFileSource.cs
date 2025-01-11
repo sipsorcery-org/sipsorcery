@@ -90,7 +90,6 @@ namespace SIPSorceryMedia.FFmpeg
         private void _FFmpegAudioSource_OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
         {
             OnAudioSourceRawSample?.Invoke(samplingRate, durationMilliseconds, sample);
-
         }
 
         public bool IsPaused() => _isPaused;
@@ -161,7 +160,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (_FFmpegVideoSource != null)
             {
-                logger.LogDebug($"{nameof(FFmpegFileSource)} setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+                logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
                 _FFmpegVideoSource.SetVideoSourceFormat(videoFormat);
             }
         }

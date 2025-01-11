@@ -66,12 +66,10 @@ namespace SIPSorceryMedia.FFmpeg
             OnError?.Invoke(err);
         }
 
-        public unsafe bool InitialiseSource(Dictionary<string, string>? decoderOptions = null)
+        public unsafe Boolean InitialiseSource(Dictionary<string, string>? decoderOptions = null)
         {
             if (!_isInitialised)
             {
-                logger.LogDebug($"Initialising FFmpeg video decoder for source {_sourceUrl}.");
-
                 _isInitialised = true;
                 _isDisposed = false;
 
@@ -80,11 +78,11 @@ namespace SIPSorceryMedia.FFmpeg
 
                 AVDictionary* options = null;
 
-                if (decoderOptions != null)
+                if(decoderOptions != null)
                 {
                     foreach (String key in decoderOptions.Keys)
                     {
-                        if (ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0) < 0)
+                        if(ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0) < 0)
                             logger.LogWarning($"Cannot set option [{key}]=[{decoderOptions[key]}]");
                     }
                 }
@@ -134,7 +132,7 @@ namespace SIPSorceryMedia.FFmpeg
                     return false;
                 }
 
-                if (ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null) < 0)
+                if ( ffmpeg.avcodec_open2(_vidDecCtx, vidCodec, null) < 0)
                 {
                     var pCodecContext = _vidDecCtx;
                     ffmpeg.avcodec_free_context(&pCodecContext);
@@ -145,22 +143,23 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 _videoTimebase = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->time_base);
-                if (Double.IsNaN(_videoTimebase) || (_videoTimebase <= 0))
+                if (double.IsNaN(_videoTimebase) || _videoTimebase <= 0)
+                {
                     _videoTimebase = 0.001;
+                }
 
                 _videoAvgFrameRate = ffmpeg.av_q2d(_fmtCtx->streams[_videoStreamIndex]->avg_frame_rate);
-                if (Double.IsNaN(_videoAvgFrameRate) || (_videoAvgFrameRate <= 0))
+                if (double.IsNaN(_videoAvgFrameRate) || _videoAvgFrameRate <= 0)
+                {
                     _videoAvgFrameRate = 2;
+                }
 
                 _maxVideoFrameSpace = (int)(_videoAvgFrameRate > 0 ? 1000 / _videoAvgFrameRate : 1000 / Helper.DEFAULT_VIDEO_FRAME_RATE);
-
-                logger.LogDebug($"FFmpeg video decoder for source {_sourceUrl} successfully initialised.");
             }
-
             return true;
         }
 
-        public bool StartDecode()
+        public Boolean StartDecode()
         {
             if (!_isStarted)
             {
@@ -175,7 +174,7 @@ namespace SIPSorceryMedia.FFmpeg
             return _isStarted;
         }
 
-        public bool Pause()
+        public Boolean Pause()
         {
             if (!_isClosed)
             {
@@ -184,7 +183,7 @@ namespace SIPSorceryMedia.FFmpeg
             return _isPaused;
         }
 
-        public bool Resume()
+        public Boolean Resume()
         {
             if (_isPaused && !_isClosed)
             {
@@ -218,6 +217,8 @@ namespace SIPSorceryMedia.FFmpeg
 
                 bool canContinue = true;
                 bool managePacket = true;
+                
+
                 double firts_dpts = 0;
 
                 try
@@ -236,21 +237,12 @@ namespace SIPSorceryMedia.FFmpeg
                         {
                             managePacket = false;
                             if (error == eagain)
-                            {
-                                if (pkt != null)
-                                {
-                                    ffmpeg.av_packet_unref(pkt);
-                                }
-                            }
+                                ffmpeg.av_packet_unref(pkt);
                             else
-                            {
                                 canContinue = false;
-                            }
                         }
                         else
-                        {
                             managePacket = true;
-                        }
 
                         if (managePacket)
                         {
@@ -265,25 +257,25 @@ namespace SIPSorceryMedia.FFmpeg
                                 int recvRes = ffmpeg.avcodec_receive_frame(_vidDecCtx, avFrame);
                                 while (recvRes >= 0)
                                 {
-                                    Console.WriteLine($"video number samples {avFrame->nb_samples}, pts={avFrame->pts}, dts={(int)(_videoTimebase * avFrame->pts * 1000)}, width {avFrame->width}, height {avFrame->height}.");
+                                    //Console.WriteLine($"video number samples {frame->nb_samples}, pts={frame->pts}, dts={(int)(_videoTimebase * frame->pts * 1000)}, width {frame->width}, height {frame->height}.");
+
+                                    long pts = avFrame->pts;
 
                                     OnVideoFrame?.Invoke(avFrame);
 
                                     if (!_isCamera)
                                     {
                                         double dpts = 0;
-                                        if (avFrame->pts != ffmpeg.AV_NOPTS_VALUE)
+                                        if (pts != ffmpeg.AV_NOPTS_VALUE)
                                         {
-                                            dpts = _videoTimebase * avFrame->pts;
+                                            dpts = _videoTimebase * pts;
                                             if (firts_dpts == 0)
-                                            {
                                                 firts_dpts = dpts;
-                                            }
 
                                             dpts -= firts_dpts;
                                         }
 
-                                        Console.WriteLine($"Decoded video frame {avFrame->width}x{avFrame->height}, ts {avFrame->best_effort_timestamp}, delta {avFrame->best_effort_timestamp - firts_dpts}, dpts {dpts}.");
+                                        //Console.WriteLine($"Decoded video frame {frame->width}x{frame->height}, ts {frame->best_effort_timestamp}, delta {frame->best_effort_timestamp - prevVidTs}, dpts {dpts}.");
 
                                         int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
                                         if (sleep > Helper.MIN_SLEEP_MILLISECONDS)
@@ -302,10 +294,7 @@ namespace SIPSorceryMedia.FFmpeg
                                 }
                             }
 
-                            if (pkt != null)
-                            {
-                                ffmpeg.av_packet_unref(pkt);
-                            }
+                            ffmpeg.av_packet_unref(pkt);
                         }
                     }
 
@@ -320,7 +309,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                         if (!_isClosed && _repeat)
                         {
-                            if (ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL) < 0)
+                            if ( ffmpeg.avio_seek(_fmtCtx->pb, 0, ffmpeg.AVIO_SEEKABLE_NORMAL) < 0 )
                             {
                                 RaiseError("Cannot go to the beginning of the stream");
                                 return;
@@ -346,23 +335,15 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 finally
                 {
-                    //ffmpeg.av_frame_unref(avFrame);
-                    //ffmpeg.av_free(avFrame);
-                    if (avFrame != null)
-                    {
-                        ffmpeg.av_frame_free(&avFrame);
-                    }
+                    ffmpeg.av_frame_unref(avFrame);
+                    ffmpeg.av_free(avFrame);
 
-                    //ffmpeg.av_packet_unref(pkt);
-                    //ffmpeg.av_free(pkt);
-                    if (pkt != null)
-                    {
-                        ffmpeg.av_packet_free(&pkt);
-                    }
+                    ffmpeg.av_packet_unref(pkt);
+                    ffmpeg.av_free(pkt);
                 }
             }
 
-            if (needToRestartVideo)
+            if(needToRestartVideo)
             {
                 Dispose();
                 Task.Run(StartDecode);
