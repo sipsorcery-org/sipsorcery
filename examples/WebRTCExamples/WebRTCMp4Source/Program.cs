@@ -33,8 +33,8 @@ namespace demo
 {
     class Program
     {
-        //private const string MP4_PATH = @"media\max_intro.mp4";                          //  /!\ A valid path to Video file
-        private const string MP4_PATH = @"media\big_buck_bunny.mp4";
+        private const string MP4_PATH = @"media\max_intro.mp4";                          //  /!\ A valid path to Video file
+        //private const string MP4_PATH = @"media\big_buck_bunny.mp4";
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -79,7 +79,8 @@ namespace demo
             SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
             var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
             mediaFileSource.RestrictFormats(x => x.Codec == VideoCodecsEnum.VP8);
-            mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
+
+            //mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.OPUS);
             //mediaFileSource..OnEndOfFile += () => pc.Close("source eof");
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(mediaFileSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
@@ -107,6 +108,20 @@ namespace demo
                 else if (state == RTCPeerConnectionState.connected)
                 {
                     await mediaFileSource.StartVideo();
+                }
+            };
+
+            pc.onsignalingstatechange += () =>
+            {
+                logger.LogDebug($"Signalling state change to {pc.signalingState}.");
+
+                if (pc.signalingState == RTCSignalingState.have_local_offer)
+                {
+                    logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
+                }
+                else if (pc.signalingState == RTCSignalingState.stable)
+                {
+                    logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
                 }
             };
 

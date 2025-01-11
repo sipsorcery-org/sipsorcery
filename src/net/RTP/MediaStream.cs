@@ -140,9 +140,9 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// In order to detect RTP events from the remote party this property needs to 
-        /// be set to the payload ID they are using.
+        /// be negotiated to a common payload ID. RTP events are typically DTMF tones.
         /// </summary>
-        public int RemoteRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
+        public int NegotiatedRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
 
         /// <summary>
         /// To type of this media
@@ -172,7 +172,7 @@ namespace SIPSorcery.Net
                     if (MediaType == SDPMediaTypesEnum.audio)
                     {
                         if (m_localTrack.Capabilities != null && !m_localTrack.NoDtmfSupport &&
-                            !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
+                            !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID))
                         {
                             m_localTrack.Capabilities.Add(DefaultRTPEventFormat);
                         }
@@ -220,7 +220,7 @@ namespace SIPSorcery.Net
             {
                 return new SDPAudioVideoMediaFormat(
                                 SDPMediaTypesEnum.audio,
-                                RTPSession.DTMF_EVENT_PAYLOAD_ID,
+                                RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID,
                                 SDP.TELEPHONE_EVENT_ATTRIBUTE,
                                 RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
                                 SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
@@ -647,7 +647,7 @@ namespace SIPSorcery.Net
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
             RTPPacket rtpPacket;
-            if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
+            if (NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
@@ -919,7 +919,7 @@ namespace SIPSorcery.Net
                 if (MediaType == SDPMediaTypesEnum.audio)
                 {
                     format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
-                        .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
+                        .Where(x => x.ID != NegotiatedRtpEventPayloadID).FirstOrDefault();
                 }
                 else
                 {

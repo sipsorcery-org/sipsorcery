@@ -163,7 +163,6 @@ namespace SIPSorcery.Net
         public const string RTP_SECUREMEDIA_PROFILE = "RTP/SAVP";
         protected const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
         public const int DTMF_EVENT_DURATION = 1200;            // Default duration for a DTMF event.
-        public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
         /// <summary>
         /// When there are no RTP packets being sent for an audio or video stream webrtc.lib
@@ -1080,7 +1079,7 @@ namespace SIPSorcery.Net
                             SDPAudioVideoMediaFormat commonEventFormat = SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(announcement.MediaFormats.Values.ToList(), currentMediaStream.LocalTrack.Capabilities);
                             if (!commonEventFormat.IsEmpty())
                             {
-                                currentMediaStream.RemoteRtpEventPayloadID = commonEventFormat.ID;
+                                currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
                             }
                         }
 
@@ -1973,7 +1972,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sends a DTMF toneas an RTP event to the remote party. (on the primary one)
+        /// Sends a DTMF tone as an RTP event to the remote party. (on the primary one)
         /// </summary>
         /// <param name="key">The DTMF tone to send.</param>
         /// <param name="ct">RTP events can span multiple RTP packets. This token can

@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
         /// be used to cancel the send.</param>
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, NegotiatedRtpEventPayloadID);
             return SendDtmfEvent(dtmfEvent, ct);
         }
 
