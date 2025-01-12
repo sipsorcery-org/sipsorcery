@@ -531,7 +531,7 @@ namespace SIPSorcery.Examples
                                         Console.WriteLine();
                                         Console.WriteLine($" sending dtmf byte {dtmfByte}.");
 
-                                        var dtmfEvent = new RTPEvent(dtmfByte, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                                        var dtmfEvent = new RTPEvent(dtmfByte, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, _peerConnection.AudioStream.NegotiatedRtpEventPayloadID);
                                         await _peerConnection.SendDtmfEvent(dtmfEvent, CancellationToken.None).ConfigureAwait(false);
                                     }
                                     else
