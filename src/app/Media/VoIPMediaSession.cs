@@ -69,7 +69,7 @@ namespace SIPSorcery.Media
         /// Default constructor which creates the simplest possible send only audio session. It does not
         /// wire up any devices or video processing.
         /// </summary>
-        public VoIPMediaSession(Func<AudioFormat, bool> restrictFormats = null) : base(false, false, false)
+        public VoIPMediaSession(Func<AudioFormat, bool> restrictFormats = null, bool noDtmfSupport = false) : base(false, false, false)
         {
             _audioExtrasSource = new AudioExtrasSource();
             _audioExtrasSource.OnAudioSourceEncodedSample += SendAudio;
@@ -81,6 +81,7 @@ namespace SIPSorcery.Media
             }
 
             var audioTrack = new MediaStreamTrack(_audioExtrasSource.GetAudioSourceFormats());
+            audioTrack.NoDtmfSupport = noDtmfSupport;
             base.addTrack(audioTrack);
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
 
@@ -185,6 +186,11 @@ namespace SIPSorcery.Media
             logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate} (RTP clock rate {audioFormat.RtpClockRate}).");
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
+
+            if(AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
+            {
+                logger.LogDebug($"Audio track negotiated DTMF payload ID {AudioStream.NegotiatedRtpEventPayloadID}.");
+            }
         }
 
         private void VideoFormatsNegotiated(List<VideoFormat> videoFormats)
