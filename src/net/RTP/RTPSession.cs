@@ -175,7 +175,7 @@ namespace SIPSorcery.Net
 
         protected RtpSessionConfig rtpSessionConfig;
 
-        private Boolean m_acceptRtpFromAny = false;
+        private bool m_acceptRtpFromAny = false;
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private ulong m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
@@ -1050,17 +1050,17 @@ namespace SIPSorcery.Net
                     else
                     {
                         // As proved by Azure implementation, we need to send based on capabilities of remote track. Azure return SDP with only one possible Codec (H264 107)
-                        // but we receive frames based on our LocalRemoteTracks, so its possiblet o receive a frame with ID 122, for exemple, even when remote annoucement only have 107
+                        // but we receive frames based on our LocalRemoteTracks, so it's possible to receive a frame with ID 122, for exemple, even when remote annoucement only have 107
                         // Thats why we changed line below to keep local track capabilities untouched as we can always do it during send/receive moment
                         capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.RemoteTrack?.Capabilities, currentMediaStream.LocalTrack?.Capabilities);
-                        //Keep same order of LocalTrack priority to prevent incorrect sending format
+                        // Keep same order of LocalTrack priority to prevent incorrect sending format
                         SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
 
-                        // Keep the local track's RTP event capability
+                        // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
                         var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
-                        SDPAudioVideoMediaFormat localRTPEventCapabilities;
+                        SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
                         if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
                         {
                             localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
@@ -1071,7 +1071,10 @@ namespace SIPSorcery.Net
                         }
 
                         currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
-                        currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities);
+                        if (localRTPEventCapabilities != null)
+                        {
+                            currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
+                        }
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
@@ -1080,6 +1083,8 @@ namespace SIPSorcery.Net
                             if (!commonEventFormat.IsEmpty())
                             {
                                 currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
+                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
                         }
 
