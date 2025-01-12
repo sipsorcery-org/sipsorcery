@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenAI", "WebRTCOpenA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenGL", "WebRTCOpenGL\WebRTCOpenGL.csproj", "{581BE6CD-8699-40C0-A975-F2C1993B62B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenAIDebate", "WebRTCOpenAIDebate\WebRTCOpenAIDebate.csproj", "{80B272B9-89B9-4135-B6F1-6C07C326E2FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -349,6 +351,18 @@ Global
 		{581BE6CD-8699-40C0-A975-F2C1993B62B8}.Release|x64.Build.0 = Release|Any CPU
 		{581BE6CD-8699-40C0-A975-F2C1993B62B8}.Release|x86.ActiveCfg = Release|Any CPU
 		{581BE6CD-8699-40C0-A975-F2C1993B62B8}.Release|x86.Build.0 = Release|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Debug|x64.Build.0 = Debug|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Debug|x86.Build.0 = Debug|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Release|x64.ActiveCfg = Release|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Release|x64.Build.0 = Release|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Release|x86.ActiveCfg = Release|Any CPU
+		{80B272B9-89B9-4135-B6F1-6C07C326E2FD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
