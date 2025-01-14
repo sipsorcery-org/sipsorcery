@@ -51,8 +51,8 @@ namespace demo
     record DialogContext(
       PcContext AlicePcCtx,
       WindowsAudioEndPoint AliceAudioEP,
-      PcContext BobPcCtx,
-      WindowsAudioEndPoint BobAudioEP);
+      PcContext? BobPcCtx,
+      WindowsAudioEndPoint? BobAudioEP);
 
     enum VoicesEnum
     {
@@ -152,7 +152,9 @@ namespace demo
                 })
                 .BindAsync(async dialogCtx =>
                 {
-                    var connectProb = await WaitForConnectOrFail(dialogCtx.AlicePcCtx);
+                    // Wait for Alice's call to connect.
+
+                    var connectProb = await WaitForConnectOrFail(dialogCtx.AlicePcCtx).ConfigureAwait(false);
 
                     return connectProb switch
                     {
@@ -205,6 +207,8 @@ namespace demo
                  })
                 .BindAsync(async diaogCtx =>
                 {
+                    // Wait for Bob's call to connect.
+
                     var connectProb = await WaitForConnectOrFail(diaogCtx.BobPcCtx);
 
                     return connectProb switch
@@ -221,7 +225,7 @@ namespace demo
             }
             else
             {
-                logger.LogInformation($"Successfully establised both calls to AI's {ALICE_CALL_LABEL} and {BOB_CALL_LABEL}.");
+                logger.LogInformation($"Successfully establised both calls.");
 
                 var dc = (DialogContext)result;
 
@@ -231,29 +235,39 @@ namespace demo
                     dc.BobPcCtx.Pc.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
                 };
 
-                // Send Bob's audio to Alice.
+                //// Send Bob's audio to Alice.
                 dc.BobPcCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
                 {
                     dc.AlicePcCtx.Pc.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
                 };
 
-                // Trigger the conversation.
-                var responseCreate = new OpenAIResponseCreate
-                {
-                    EventID = Guid.NewGuid().ToString(),
-                    Response = new OpenAIResponseCreateResponse
+                var dataChannel = dc.AlicePcCtx.Pc.DataChannels.First();
+
+                await Task.Delay(2000);
+
+                //dataChannel.onopen += () =>
+                //{
+                    logger.LogDebug("Alice's data channel opened.");
+
+                    // Trigger the conversation.
+                    var responseCreate = new OpenAIResponseCreate
                     {
-                        Instructions = "Hi There!",
-                        Voice = VoicesEnum.shimmer.ToString()
-                    }
-                };
+                        EventID = Guid.NewGuid().ToString(),
+                        Response = new OpenAIResponseCreateResponse
+                        {
+                            //Instructions = "Hi There!  Give me an example of a funny insult that I can use in an English teaching example and that's not disrespectful.",
+                            Instructions = "Please repeat repeat this phrase in an Irish accent: 'You're a few kangaroos short in the top paddock mate.'",
+                            Voice = VoicesEnum.shimmer.ToString()
+                        }
+                    };
 
-                logger.LogInformation($"Sending initial response create to {ALICE_CALL_LABEL} on data channel {dc.AlicePcCtx.Pc.DataChannels.First().label}.");
-                logger.LogDebug(responseCreate.ToJson());
+                    logger.LogInformation($"Sending initial response create to {ALICE_CALL_LABEL} on data channel {dc.AlicePcCtx.Pc.DataChannels.First().label}.");
+                    logger.LogDebug(responseCreate.ToJson());
 
-                dc.AlicePcCtx.Pc.DataChannels.First().send(responseCreate.ToJson());
+                    dataChannel.send(responseCreate.ToJson());
+                //};
 
-                logger.LogInformation($"Waiting for AI's talkfest...");
+                logger.LogInformation($"ctrl-c to exit..");
 
                 // Ctrl-c will gracefully exit the call at any point.
                 ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -265,7 +279,7 @@ namespace demo
 
                     _pc?.Close("User exit");
 
-                    _audioScopeForm.Invoke(() => _audioScopeForm.Close());
+                    _audioScopeForm?.Invoke(() => _audioScopeForm.Close());
 
                     exitMre.Set();
                 };
@@ -325,12 +339,13 @@ namespace demo
 
         private static async Task<Problem?> WaitForConnectOrFail(PcContext pcCtx)
         {
-            // Wait for the peer connection to connect.
-            TaskCompletionSource<Problem?> connectedTcs = new TaskCompletionSource<Problem?>();
+            var semaphore = new SemaphoreSlim(0, 1);
+            Problem? result = null;
 
             if (pcCtx.Pc.connectionState == RTCPeerConnectionState.connected)
             {
-                connectedTcs.SetResult(null);
+                result = null;
+                semaphore.Release();
             }
             else if (pcCtx.Pc.connectionState is RTCPeerConnectionState.@new or RTCPeerConnectionState.connecting)
             {
@@ -340,16 +355,25 @@ namespace demo
 
                     if (state == RTCPeerConnectionState.connected)
                     {
-                        connectedTcs.SetResult(null);
+                        result = null;
+                        semaphore.Release();
+                    }
+                    else if(state is RTCPeerConnectionState.failed or RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected)
+                    {
+                        result = new Problem($"{pcCtx.CallLabel} call failed, connection state {pcCtx.Pc.connectionState}.");
+                        semaphore.Release();
                     }
                 };
             }
             else
             {
-                connectedTcs.SetResult(new Problem($"{pcCtx.CallLabel} call failed, connection state {pcCtx.Pc.connectionState}."));
+                result = new Problem($"{pcCtx.CallLabel} call failed, connection state {pcCtx.Pc.connectionState}.");
+                semaphore.Release();
             }
 
-            return await connectedTcs.Task;
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            return result;
         }
 
         private static async Task<RTCPeerConnection> CreatePeerConnectionOpenAI(string callLabel)
@@ -361,6 +385,7 @@ namespace demo
 
             var peerConnection = new RTCPeerConnection(pcConfig);
             var dataChannel = await peerConnection.createDataChannel(OPENAI_DATACHANNEL_NAME);
+
             var audioEncoder = new AudioEncoder(includeOpus: true);
             var opusOnly = audioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").ToList();
 
@@ -388,14 +413,17 @@ namespace demo
 
         private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data, string callLabel)
         {
-            logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+            //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
 
             var message = Encoding.UTF8.GetString(data);
+
+            //logger.LogDebug(message);
+
             var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
 
             if (serverEvent != null)
             {
-                logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
+                //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
 
                 Option<OpenAIServerEventBase> serverEventModel = serverEvent.Type switch
                 {

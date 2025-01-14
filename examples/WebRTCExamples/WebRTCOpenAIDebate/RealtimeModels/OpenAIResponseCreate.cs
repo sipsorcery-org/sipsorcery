@@ -22,7 +22,7 @@ public class OpenAIResponseCreate : OpenAIServerEventBase
 public class OpenAIResponseCreateResponse
 {
     [JsonPropertyName("modalities")]
-    public string[] Modalities { get; set; } = new[] { "audio" };
+    public string[] Modalities { get; set; } = new[] { "audio", "text" };
 
     [JsonPropertyName("instructions")]
     public string? Instructions { get; set; }
