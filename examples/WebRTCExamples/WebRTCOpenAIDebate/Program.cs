@@ -44,14 +44,15 @@ namespace demo
        RTCPeerConnection Pc,
        string EphemeralKey = "",
        string OfferSdp = "",
-       string AnswerSdp = ""
+       string AnswerSdp = "",
+       string CallLabel = ""
     );
 
     record DialogContext(
-      RTCPeerConnection FirstPc,
-      WindowsAudioEndPoint FirstAudioEP,
-      RTCPeerConnection SecondPc,
-      WindowsAudioEndPoint SecondAudioEP);
+      PcContext AlicePcCtx,
+      WindowsAudioEndPoint AliceAudioEP,
+      PcContext BobPcCtx,
+      WindowsAudioEndPoint BobAudioEP);
 
     enum VoicesEnum
     {
@@ -73,6 +74,8 @@ namespace demo
         private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
         private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
         private const string OPENAI_DATACHANNEL_NAME = "oai-events";
+        private const string ALICE_CALL_LABEL = "Alice";
+        private const string BOB_CALL_LABEL = "Bob";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -109,24 +112,26 @@ namespace demo
             uiThread.IsBackground = true;
             uiThread.Start();
 
-            var result = await PlaceCallToOpenAI(args[0], "First", VoicesEnum.shimmer)
-                .BindAsync(async firstCtx =>
+            var result = await PlaceCallToOpenAI(args[0], ALICE_CALL_LABEL, VoicesEnum.shimmer)
+                .BindAsync(async alicePcCtx =>
                 {
-                    var audioEncoder = new AudioEncoder(includeOpus: true);
-                    WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, false, false);
-                    windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
-                    var opusOnly = audioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").Single();
+                    // First call leg to AI Alice.
 
-                    windowsAudioEP.SetAudioSinkFormat(opusOnly);
-                    windowsAudioEP.SetAudioSourceFormat(opusOnly);
+                    var aliceAudioEncoder = new AudioEncoder(includeOpus: true);
+                    WindowsAudioEndPoint aliceWindowsAudioEP = new WindowsAudioEndPoint(aliceAudioEncoder, -1, -1, true, false);
+                    aliceWindowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
+                    var opusOnly = aliceAudioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").Single();
 
-                    firstCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                    aliceWindowsAudioEP.SetAudioSinkFormat(opusOnly);
+                    //aliceWindowsAudioEP.SetAudioSourceFormat(opusOnly);
+
+                    alicePcCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
                     {
                         if (media == SDPMediaTypesEnum.audio)
                         {
-                            windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                            aliceWindowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
 
-                            var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, opusOnly);
+                            var decodedSample = aliceAudioEncoder.DecodeAudio(rtpPkt.Payload, opusOnly);
 
                             var samples = decodedSample
                                 .Select(s => new Complex(s / 32768f, 0f))
@@ -136,35 +141,53 @@ namespace demo
                         }
                     };
 
-                    windowsAudioEP.OnAudioSourceEncodedSample += firstCtx.Pc.SendAudio;
+                    //aliceWindowsAudioEP.OnAudioSourceEncodedSample += aliceCtx.Pc.SendAudio;
 
-                    await windowsAudioEP.StartAudio();
-                    await windowsAudioEP.StartAudioSink();
+                    //await aliceWindowsAudioEP.StartAudio();
+                    await aliceWindowsAudioEP.StartAudioSink();
 
-                    logger.LogDebug("First call audio source and sink started.");
+                    logger.LogInformation($"{ALICE_CALL_LABEL} call successfully intiated, waiting for connect...");
 
-                    logger.LogInformation("Successfully placed first call to OpenAI, attempting second call...");
+                    return Prelude.Right<Problem, DialogContext>(new DialogContext(alicePcCtx, aliceWindowsAudioEP, null, null));
+                })
+                .BindAsync(async dialogCtx =>
+                {
+                    var connectProb = await WaitForConnectOrFail(dialogCtx.AlicePcCtx);
 
-                    return (await PlaceCallToOpenAI(args[0], "Second", VoicesEnum.ash))
-                        .Map(secondCtx => new DialogContext(firstCtx.Pc, windowsAudioEP, secondCtx.Pc, null));
+                    return connectProb switch
+                    {
+                        Problem p => Prelude.Left<Problem, DialogContext>(p),
+                        _ => Prelude.Right<Problem, DialogContext>(dialogCtx)
+                    };
+                })
+                .BindAsync(async dialogCtx =>
+                {
+                    var either = await PlaceCallToOpenAI(args[0], BOB_CALL_LABEL, VoicesEnum.ash);
+
+                    return either.Match(
+                        bobPcCtx => Prelude.Right<Problem, DialogContext>(
+                            dialogCtx with { BobPcCtx = bobPcCtx }
+                        ),
+                        problem => Prelude.Left<Problem, DialogContext>(problem)
+                    );
                 })
                 .BindAsync(async dialogCtx =>
                  {
-                     var audioEncoder = new AudioEncoder(includeOpus: true);
-                     WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
-                     var opusOnly = audioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").Single();
+                     // Second call leg to AI Bob.
 
-                     windowsAudioEP.SetAudioSinkFormat(opusOnly);
-                     
-                     dialogCtx.SecondPc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                     var bobAudioEncoder = new AudioEncoder(includeOpus: true);
+                     WindowsAudioEndPoint bobWindowsAudioEP = new WindowsAudioEndPoint(bobAudioEncoder, -1, -1, true, false);
+                     var opusOnly = bobAudioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").Single();
+
+                     bobWindowsAudioEP.SetAudioSinkFormat(opusOnly);
+
+                     dialogCtx.BobPcCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
                      {
-                         //dialogCtx.FirstPc.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
-
                          if (media == SDPMediaTypesEnum.audio)
                          {
-                             windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                             bobWindowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
 
-                             var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, opusOnly);
+                             var decodedSample = bobAudioEncoder.DecodeAudio(rtpPkt.Payload, opusOnly);
 
                              var samples = decodedSample
                                  .Select(s => new Complex(s / 32768f, 0f))
@@ -174,17 +197,22 @@ namespace demo
                          }
                      };
 
-                     dialogCtx.FirstPc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-                     {
-                         dialogCtx.SecondPc.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
-                     };
+                     await bobWindowsAudioEP.StartAudioSink();
 
-                     await windowsAudioEP.StartAudioSink();
+                     logger.LogDebug($"{BOB_CALL_LABEL} call audio source and sink started.");
 
-                     logger.LogDebug("Second call audio source and sink started.");
+                     return Prelude.Right<Problem, DialogContext>(dialogCtx with { BobAudioEP = bobWindowsAudioEP });
+                 })
+                .BindAsync(async diaogCtx =>
+                {
+                    var connectProb = await WaitForConnectOrFail(diaogCtx.BobPcCtx);
 
-                     return Prelude.Right<Problem, DialogContext>(dialogCtx with { SecondAudioEP = windowsAudioEP });
-                 });
+                    return connectProb switch
+                    {
+                        Problem p => Prelude.Left<Problem, DialogContext>(p),
+                        _ => Prelude.Right<Problem, DialogContext>(diaogCtx)
+                    };
+                });
 
             if (result.IsLeft)
             {
@@ -193,15 +221,43 @@ namespace demo
             }
             else
             {
-                logger.LogInformation("Successfully establised both calls to OpenAI.");
+                logger.LogInformation($"Successfully establised both calls to AI's {ALICE_CALL_LABEL} and {BOB_CALL_LABEL}.");
 
                 var dc = (DialogContext)result;
 
-                logger.LogDebug($"First {dc.FirstPc.DtlsCertificateFingerprint}, second {dc.SecondPc.DtlsCertificateFingerprint}.");
+                // Send Alice's audio to Bob.
+                dc.AlicePcCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                {
+                    dc.BobPcCtx.Pc.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
+                };
+
+                // Send Bob's audio to Alice.
+                dc.BobPcCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                {
+                    dc.AlicePcCtx.Pc.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
+                };
+
+                // Trigger the conversation.
+                var responseCreate = new OpenAIResponseCreate
+                {
+                    EventID = Guid.NewGuid().ToString(),
+                    Response = new OpenAIResponseCreateResponse
+                    {
+                        Instructions = "Hi There!",
+                        Voice = VoicesEnum.shimmer.ToString()
+                    }
+                };
+
+                logger.LogInformation($"Sending initial response create to {ALICE_CALL_LABEL} on data channel {dc.AlicePcCtx.Pc.DataChannels.First().label}.");
+                logger.LogDebug(responseCreate.ToJson());
+
+                dc.AlicePcCtx.Pc.DataChannels.First().send(responseCreate.ToJson());
+
+                logger.LogInformation($"Waiting for AI's talkfest...");
 
                 // Ctrl-c will gracefully exit the call at any point.
                 ManualResetEvent exitMre = new ManualResetEvent(false);
-                Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+                Console.CancelKeyPress += delegate (object? sender, ConsoleCancelEventArgs e)
                 {
                     Console.WriteLine("Exiting...");
 
@@ -239,7 +295,7 @@ namespace demo
                     logger.LogDebug(offer.sdp);
 
                     return Prelude.Right<Problem, PcContext>(
-                        new PcContext(pc, ephemeralKey, offer.sdp, string.Empty)
+                        new PcContext(pc, ephemeralKey, offer.sdp, string.Empty, callLabel)
                     );
                 })
                 .BindAsync(async ctx =>
@@ -265,6 +321,35 @@ namespace demo
                         Prelude.Right<Problem, PcContext>(ctx) :
                         Prelude.Left<Problem, PcContext>(new Problem("Failed to set remote SDP."));
                 });
+        }
+
+        private static async Task<Problem?> WaitForConnectOrFail(PcContext pcCtx)
+        {
+            // Wait for the peer connection to connect.
+            TaskCompletionSource<Problem?> connectedTcs = new TaskCompletionSource<Problem?>();
+
+            if (pcCtx.Pc.connectionState == RTCPeerConnectionState.connected)
+            {
+                connectedTcs.SetResult(null);
+            }
+            else if (pcCtx.Pc.connectionState is RTCPeerConnectionState.@new or RTCPeerConnectionState.connecting)
+            {
+                pcCtx.Pc.onconnectionstatechange += (state) =>
+                {
+                    logger.LogInformation($"{pcCtx.CallLabel} connection state changed to {state}.");
+
+                    if (state == RTCPeerConnectionState.connected)
+                    {
+                        connectedTcs.SetResult(null);
+                    }
+                };
+            }
+            else
+            {
+                connectedTcs.SetResult(new Problem($"{pcCtx.CallLabel} call failed, connection state {pcCtx.Pc.connectionState}."));
+            }
+
+            return await connectedTcs.Task;
         }
 
         private static async Task<RTCPeerConnection> CreatePeerConnectionOpenAI(string callLabel)
@@ -303,14 +388,14 @@ namespace demo
 
         private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data, string callLabel)
         {
-            //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+            logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
 
             var message = Encoding.UTF8.GetString(data);
             var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
 
             if (serverEvent != null)
             {
-                //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
+                logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
 
                 Option<OpenAIServerEventBase> serverEventModel = serverEvent.Type switch
                 {
@@ -341,7 +426,7 @@ namespace demo
                     new
                     {
                         model,
-                        voice
+                        voice,
                     }),
                   "application/json"))
             .Bind(responseContent =>
