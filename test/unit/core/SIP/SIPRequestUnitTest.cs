@@ -1573,9 +1573,9 @@ Diversion: <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=fu
                 "Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;" + m_CRLF +
                 "Max-Forwards: 67" + m_CRLF +
                 "Content-Length: 5" + m_CRLF +
-                "CONTENT-TYPE: application/vnd.microsoft.lync.pushNotification+xml; charset=\"Unicode (UTF-8)\"" + m_CRLF +
+                "CONTENT-TYPE: text/text" + m_CRLF +
                 "USER-AGENT: Agent" + m_CRLF + m_CRLF +
-                "{a:b}" + m_CRLF;
+                "abcd" + m_CRLF;
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest serviceReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
