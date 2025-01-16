@@ -84,7 +84,7 @@ namespace AudioScope
         private float[] _previousResults = new float[3 * 4];
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
-        private float[] _lastSample;
+        private float[] _lastSample = [];
 
         public AudioScope()
         {

@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.IO;
 using SharpGL;
 using SharpGL.Shaders;
@@ -44,10 +45,10 @@ namespace AudioScope
         /// </summary>
         private const int CLEAR_DATA_STRIDE = 2;
 
-        private AudioScope _audioScope = new AudioScope();
-        private SharpGL.Shaders.ShaderProgram _prog;
-        private SharpGL.Shaders.ShaderProgram _clearProg;
-        private float[] _clearRectangle;
+        private AudioScope _audioScope;
+        private SharpGL.Shaders.ShaderProgram? _prog;
+        private SharpGL.Shaders.ShaderProgram? _clearProg;
+        private float[]? _clearRectangle;
 
         public AudioScopeOpenGL(AudioScope audioScope)
         {
@@ -56,15 +57,15 @@ namespace AudioScope
 
         public void Initialise(OpenGL gl)
         {
-           // Load the main program.
+            // Load the main program.
 
-            string fragmentShaderCode = null;
+            string? fragmentShaderCode = null;
             using (StreamReader sr = new StreamReader(FRAGMENT_SHADER_PATH))
             {
                 fragmentShaderCode = sr.ReadToEnd();
             }
 
-            string vertexShaderCode = null;
+            string? vertexShaderCode = null;
             using (StreamReader sr = new StreamReader(VERTEX_SHADER_PATH))
             {
                 vertexShaderCode = sr.ReadToEnd();
@@ -73,7 +74,7 @@ namespace AudioScope
             _prog = new SharpGL.Shaders.ShaderProgram();
             _prog.Create(gl, vertexShaderCode, fragmentShaderCode, null);
 
-            string geometryShaderCode = null;
+            string? geometryShaderCode = null;
             if (File.Exists(GEOMETRY_SHADER_PATH))
             {
                 using (StreamReader sr = new StreamReader(GEOMETRY_SHADER_PATH))
@@ -97,13 +98,13 @@ namespace AudioScope
 
             // Load clear program.
 
-            string clearFragShaderCode = null;
+            string? clearFragShaderCode = null;
             using (StreamReader sr = new StreamReader(CLEAR_FRAGMENT_SHADER_PATH))
             {
                 clearFragShaderCode = sr.ReadToEnd();
             }
 
-            string clearVertexShaderCode = null;
+            string? clearVertexShaderCode = null;
             using (StreamReader sr = new StreamReader(CLEAR_VERTEX_SHADER_PATH))
             {
                 clearVertexShaderCode = sr.ReadToEnd();
@@ -134,6 +135,11 @@ namespace AudioScope
 
             gl.Clear(OpenGL.GL_COLOR_BUFFER_BIT | OpenGL.GL_DEPTH_BUFFER_BIT);  // Clear The Screen And The Depth Buffer
 
+            if (_prog == null)
+            {
+                throw new ApplicationException("The main program must be assigned for the audio scope to work properly.");
+            }
+
             int windowID = gl.GetUniformLocation(_prog.ShaderProgramObject, "window");
             int nID = gl.GetUniformLocation(_prog.ShaderProgramObject, "n");
             int baseHueID = gl.GetUniformLocation(_prog.ShaderProgramObject, "base_hue");
@@ -155,6 +161,11 @@ namespace AudioScope
             gl.Uniform1(desaturationID, 0.1f);
 
             // Run the clear program.
+            if (_clearProg == null)
+            {
+                throw new ApplicationException("The clear program must be assigned for teh audio scope to work properly.");
+            }
+
             gl.UseProgram(_clearProg.ShaderProgramObject);
 
             VertexBuffer clearVertexBuffer = new VertexBuffer();

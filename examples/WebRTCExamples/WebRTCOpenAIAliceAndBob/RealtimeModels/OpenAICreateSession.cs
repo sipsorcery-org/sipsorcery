@@ -13,8 +13,8 @@ public class OpenAICreateSession
     [JsonPropertyName("voice")]
     public string? voice { get; set; }
 
-    [JsonPropertyName("turn_detection")]
-    public object TurnDetection { get; set; }
+    //[JsonPropertyName("turn_detection")]
+    //public object TurnDetection { get; set; }
 
     public string ToJson()
     {

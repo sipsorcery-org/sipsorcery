@@ -22,8 +22,8 @@ namespace AudioScope
 {
     public partial class FormAudioScope : Form
     {
-        public const int AUDIO_SCOPE_WIDTH = 200;
-        public const int AUDIO_SCOPE_HEIGHT = 200;
+        public const int AUDIO_SCOPE_WIDTH = 400;
+        public const int AUDIO_SCOPE_HEIGHT = 400;
         public const int BYTES_PER_PIXEL = 3; // RGB = 3 bytes per pixel.
 
         private bool _showWindow;
@@ -88,32 +88,38 @@ namespace AudioScope
             }
         }
 
-        public byte[] ProcessAudioSample1(Complex[] samples)
+        public byte[] ProcessAudioSample(Complex[] samples, int scopeNumber)
         {
-            _audioScope1.ProcessSample(samples);
+            if (scopeNumber == 1)
+            {
+                _audioScope1.ProcessSample(samples);
 
-            openGLControl1.DoRender();
+                openGLControl1.DoRender();
 
-            this.openGLControl1.OpenGL.ReadPixels(0, 0, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, _pixelData1);
+                this.openGLControl1.OpenGL.ReadPixels(0, 0, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, _pixelData1);
 
-            // The pizel buffer is upside down at this point. Because the audio scope is a circular pattern the effect of the flip is inconsequential
-            // so the processing effort is skipped.
+                // The pizel buffer is upside down at this point. Because the audio scope is a circular pattern the effect of the flip is inconsequential
+                // so the processing effort is skipped.
 
-            return _pixelData1;
-        }
+                return _pixelData1;
+            }
+            else if (scopeNumber == 2)
+            {
+                _audioScope2.ProcessSample(samples);
 
-        public byte[] ProcessAudioSample2(Complex[] samples)
-        {
-            _audioScope2.ProcessSample(samples);
+                openGLControl2.DoRender();
 
-            openGLControl2.DoRender();
+                this.openGLControl2.OpenGL.ReadPixels(0, 0, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, _pixelData2);
 
-            this.openGLControl2.OpenGL.ReadPixels(0, 0, AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, _pixelData2);
+                // The pizel buffer is upside down at this point. Because the audio scope is a circular pattern the effect of the flip is inconsequential
+                // so the processing effort is skipped.
 
-            // The pizel buffer is upside down at this point. Because the audio scope is a circular pattern the effect of the flip is inconsequential
-            // so the processing effort is skipped.
-
-            return _pixelData2;
+                return _pixelData2;
+            }
+            else
+            {
+                throw new ApplicationException("Invalid scope number.");
+            }
         }
 
         private void OpenGLControl1_OpenGLInitialized(object sender, EventArgs e)

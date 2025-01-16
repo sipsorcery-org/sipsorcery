@@ -13,8 +13,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Windows.Forms;
-
 namespace AudioScope
 {
     partial class FormAudioScope
@@ -57,7 +55,7 @@ namespace AudioScope
             this.openGLControl1.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl1.RenderContextType = SharpGL.RenderContextType.FBO;
             this.openGLControl1.RenderTrigger = SharpGL.RenderTrigger.Manual;
-            this.openGLControl1.Size = new System.Drawing.Size(200, 200);
+            this.openGLControl1.Size = new System.Drawing.Size(AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT);
             this.openGLControl1.TabIndex = 0;
             this.openGLControl1.OpenGLInitialized += new System.EventHandler(this.OpenGLControl1_OpenGLInitialized);
             this.openGLControl1.OpenGLDraw += new SharpGL.RenderEventHandler(this.openGLControl1_OpenGLDraw);
@@ -68,7 +66,7 @@ namespace AudioScope
             this.openGLControl2.OpenGLVersion = SharpGL.Version.OpenGLVersion.OpenGL2_1;
             this.openGLControl2.RenderContextType = SharpGL.RenderContextType.FBO;
             this.openGLControl2.RenderTrigger = SharpGL.RenderTrigger.Manual;
-            this.openGLControl2.Size = new System.Drawing.Size(200, 200);
+            this.openGLControl2.Size = new System.Drawing.Size(AUDIO_SCOPE_WIDTH, AUDIO_SCOPE_HEIGHT);
             this.openGLControl2.TabIndex = 1;
             this.openGLControl2.OpenGLInitialized += new System.EventHandler(this.OpenGLControl2_OpenGLInitialized);
             this.openGLControl2.OpenGLDraw += new SharpGL.RenderEventHandler(this.openGLControl2_OpenGLDraw);
@@ -76,7 +74,7 @@ namespace AudioScope
 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 200);
+            this.ClientSize = new System.Drawing.Size(AUDIO_SCOPE_WIDTH * 2, AUDIO_SCOPE_HEIGHT);
             this.Controls.Add(this.openGLControl2);
             this.Controls.Add(this.openGLControl1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));

@@ -1727,7 +1727,7 @@ namespace SIPSorcery.Net
                 _connectedAt = DateTime.Now;
                 int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
-                logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+                logger.LogDebug($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
@@ -1740,7 +1740,7 @@ namespace SIPSorcery.Net
             else
             {
                 // The nominated entry has been changed.
-                logger.LogInformation($"ICE RTP channel remote nominated candidate changed from {NominatedEntry.RemoteCandidate.ToShortString()} to {entry.RemoteCandidate.ToShortString()}.");
+                logger.LogDebug($"ICE RTP channel remote nominated candidate changed from {NominatedEntry.RemoteCandidate.ToShortString()} to {entry.RemoteCandidate.ToShortString()}.");
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
