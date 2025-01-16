@@ -90,7 +90,7 @@ namespace demo
 
         private static FormAudioScope? _audioScopeForm;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Console.WriteLine("WebRTC OpenAI Alice & Bob Demo");
 
@@ -150,7 +150,7 @@ namespace demo
             var aliceCallTask = InitiatePeerConnection(openAIKey, aliceInitialContext);
             var bobCallTask = InitiatePeerConnection(openAIKey, bobInitialContext);
 
-            Task.WaitAll(aliceCallTask, bobCallTask);
+            _ = await Task.WhenAll(aliceCallTask, bobCallTask);
 
             if (aliceCallTask.Result.IsLeft)
             {
@@ -171,8 +171,10 @@ namespace demo
 
                 // Wait until both calls have their data channels connected which can only happen if the underlying
                 // peer connections are also connected.
-                aliceConncectedCtx.PcConnectedSemaphore.Wait();
-                bobConnectedCtx.PcConnectedSemaphore.Wait();
+                var waitForAlice = aliceConncectedCtx.PcConnectedSemaphore.WaitAsync();
+                var waitForBob = bobConnectedCtx.PcConnectedSemaphore.WaitAsync();
+
+                await Task.WhenAll(waitForAlice, waitForBob);
 
                 logger.LogInformation($"Both calls successfully connected.");
 
