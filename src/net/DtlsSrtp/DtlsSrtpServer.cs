@@ -303,7 +303,7 @@ namespace SIPSorcery.Net
                     // Log the selected cipher suite and certificate type
                     string cipherSuiteName = DtlsUtils.CipherSuiteNames.ContainsKey(cipherSuite) ? DtlsUtils.CipherSuiteNames[cipherSuite] : cipherSuite.ToString();
 
-                    logger.LogInformation($"Selected cipher suite: {cipherSuiteName}. Using {mSignatureAlgorithm} certificate with fingerprint {this.mFingerPrint}.");
+                    logger.LogDebug($"Selected cipher suite: {cipherSuiteName}. Using {mSignatureAlgorithm} certificate with fingerprint {this.mFingerPrint}.");
 
                     return this.mSelectedCipherSuite;
                 }
