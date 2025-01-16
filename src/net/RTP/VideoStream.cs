@@ -309,7 +309,7 @@ namespace SIPSorcery.Net
         public VideoStream(RtpSessionConfig config, int index) : base(config, index)
         {
             MediaType = SDPMediaTypesEnum.video;
-            RemoteRtpEventPayloadID = 0;
+            NegotiatedRtpEventPayloadID = 0;
         }
     }
 }

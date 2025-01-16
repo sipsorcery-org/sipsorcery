@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example of how top send DTMF tones in band (with specific RTP
+// Description: An example of how to send DTMF tones in band (with specific RTP
 // packets) as specified in RFC2833.
 //
 // Author(s):
@@ -20,7 +20,7 @@
 //
 // This example calls a destination (represented by DEFAULT_DESTINATION_SIP_URI)
 // and expects a SIP agent capable of receiving DTMF with RFC2833 to be listening.
-// What the receiving SIP does with the received DTMF is up to it. A good example
+// What the receiving SIP ageent does with the received DTMF is up to it. A good example
 // is to playback the presses via speech synthesis. The dialplan below is an
 // example of how to do that with Asterisk.
 //
@@ -43,16 +43,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery
 {
     class Program
     {
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*63@192.168.0.48";   // Custom Asterisk dialplan to speak back DTMF tones.
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:aaron@127.0.0.1:5080";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:aaron@127.0.0.1:5060";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
@@ -68,8 +68,7 @@ namespace SIPSorcery
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var winAudioEP = new WindowsAudioEndPoint(new AudioEncoder());
-            var voipMediaSession = new VoIPMediaSession(winAudioEP.ToMediaEndPoints());
+            var voipMediaSession = new VoIPMediaSession();
 
             Console.WriteLine($"Calling {DEFAULT_DESTINATION_SIP_URI}.");
 
@@ -91,10 +90,13 @@ namespace SIPSorcery
                 await Task.Delay(1000);
 
                 // Send the DTMF tones.
+                Console.WriteLine("Sending DTMF tone 5.");
                 await userAgent.SendDtmf(0x05);
                 await Task.Delay(2000);
+                Console.WriteLine("Sending DTMF tone 9.");
                 await userAgent.SendDtmf(0x09);
                 await Task.Delay(2000);
+                Console.WriteLine("Sending DTMF tone 2.");
                 await userAgent.SendDtmf(0x02);
                 await Task.Delay(2000);
 
@@ -114,46 +116,6 @@ namespace SIPSorcery
 
             // Clean up.
             sipTransport.Shutdown();
-        }
-
-        /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
         }
 
         /// <summary>

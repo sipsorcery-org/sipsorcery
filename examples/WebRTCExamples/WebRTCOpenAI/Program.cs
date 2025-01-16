@@ -8,11 +8,11 @@
 // able to receive data channel messages. There is no echo cancellation feature in this
 // demo so if not provided by the OS then ChatGPT will end up talking to itself.
 //
-// NOTE: As of 24 Dec 2024 the official OpenAPI dotnet SDK is missing the realtime
+// NOTE: As of 24 Dec 2024 the official OpenAI dotnet SDK is missing the realtime
 // models that represent the JSON datachannel messages. As such some ruidimentary
 // models have been created.
 // The official SDK is available at https://github.com/openai/openai-dotnet.
-// The OpenAPI API realtime server events reference is available at
+// The OpenAI API realtime server events reference is available at
 // https://platform.openai.com/docs/api-reference/realtime-server-events.
 //
 // Remarks:
@@ -24,13 +24,13 @@
 // the application.
 // NOTE each epehmeral key seems like it can ONLY be used once:
 // curl -v https://api.openai.com/v1/realtime/sessions ^
-//  --header "Authorization: Bearer %OPENAPI_TOKEN%" ^
+//  --header "Authorization: Bearer %OPENAI_TOKEN%" ^
 //  --header "Content-Type: application/json" ^
 //  --data "{\"model\": \"gpt-4o-realtime-preview-2024-12-17\", \"voice\": \"verse\"}"
 //
 // Usage:
-// set OPENAPIKEY=your_openapi_key
-// dotnet run %OPENAPIKEY%
+// set OPENAIKEY=your_openai_key
+// dotnet run %OPENAIKEY%
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -74,24 +74,24 @@ namespace demo
 
     class Program
     {
-        private const string OPENAPI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
-        private const string OPENAPI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
-        private const string OPENAPI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
-        private const string OPENAPI_VERSE = "shimmer"; // Supported values are: 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', and 'verse'.
-        private const string OPENAPI_DATACHANNEL_NAME = "oai-events";
+        private const string OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
+        private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
+        private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
+        private const string OPENAI_VERSE = "shimmer"; // Supported values are: 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', and 'verse'.
+        private const string OPENAI_DATACHANNEL_NAME = "oai-events";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("WebRTC OpenAPI Demo Program");
+            Console.WriteLine("WebRTC OpenAI Demo Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
             if (args.Length != 1)
             {
-                Console.WriteLine("Please provide your OpenAPI key as a command line argument. It's used to get the single use ephemeral secret for the WebRTC connection.");
-                Console.WriteLine("The recommended approach is to use an environment variable, for example: set OPENAPIKEY=<your api key>");
-                Console.WriteLine("Then execute the application using: dotnet run %OPENAPIKEY%");
+                Console.WriteLine("Please provide your OpenAI key as a command line argument. It's used to get the single use ephemeral secret for the WebRTC connection.");
+                Console.WriteLine("The recommended approach is to use an environment variable, for example: set OPENAIKEY=<your openai api key>");
+                Console.WriteLine("Then execute the application using: dotnet run %OPENAIKEY%");
                 return;
             }
 
@@ -101,7 +101,7 @@ namespace demo
                 .BindAsync(_ =>
                 {
                     logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
-                    return CreateEphemeralKeyAsync(OPENAPI_REALTIME_SESSIONS_URL, args[0], OPENAPI_MODEL, OPENAPI_VERSE);
+                    return CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, args[0], OPENAI_MODEL, OPENAI_VERSE);
                 })
                 .BindAsync(async ephemeralKey =>
                 {
@@ -122,7 +122,7 @@ namespace demo
                 {
                     logger.LogInformation("STEP 3: Send SDP offer to OpenAI REST server & get SDP answer."); 
 
-                    var answerEither = await GetOpenApiAnswerSdpAsync(ctx.EphemeralKey, ctx.OfferSdp);
+                    var answerEither = await GetOpenAIAnswerSdpAsync(ctx.EphemeralKey, ctx.OfferSdp);
                     return answerEither.Map(answer => ctx with { AnswerSdp = answer });
                 })
                 .BindAsync(ctx =>
@@ -172,7 +172,7 @@ namespace demo
             };
 
             var peerConnection = new RTCPeerConnection(pcConfig);
-            var dataChannel = await peerConnection.createDataChannel(OPENAPI_DATACHANNEL_NAME);
+            var dataChannel = await peerConnection.createDataChannel(OPENAI_DATACHANNEL_NAME);
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true), -1, -1, false, false);
@@ -223,10 +223,10 @@ namespace demo
 
             dataChannel.onopen += () =>
             {
-                logger.LogDebug("OpenAPI data channel opened.");
+                logger.LogDebug("OpenAI data channel opened.");
             };
 
-            dataChannel.onclose += () => logger.LogDebug($"OpenAPI data channel {dataChannel.label} closed.");
+            dataChannel.onclose += () => logger.LogDebug($"OpenAI data channel {dataChannel.label} closed.");
 
             dataChannel.onmessage += OnDataChannelMessage;
 
@@ -265,10 +265,10 @@ namespace demo
             }
         }
 
-        private static async Task<Either<Problem, string>> CreateEphemeralKeyAsync(string sessionsUrl, string openApiToken, string model, string voice)
+        private static async Task<Either<Problem, string>> CreateEphemeralKeyAsync(string sessionsUrl, string openAIToken, string model, string voice)
             => (await SendHttpPostAsync(
                 sessionsUrl,
-                openApiToken,
+                openAIToken,
                 JsonSerializer.Serialize(
                     new
                     {
@@ -284,9 +284,9 @@ namespace demo
                 Prelude.Left<Problem, string>(new Problem("Failed to get ephemeral secret."))
             );
 
-        private static Task<Either<Problem, string>> GetOpenApiAnswerSdpAsync(string ephemeralKey, string offerSdp)
+        private static Task<Either<Problem, string>> GetOpenAIAnswerSdpAsync(string ephemeralKey, string offerSdp)
             => SendHttpPostAsync(
-                $"{OPENAPI_REALTIME_BASE_URL}?model={OPENAPI_MODEL}",
+                $"{OPENAI_REALTIME_BASE_URL}?model={OPENAI_MODEL}",
                 ephemeralKey,
                 offerSdp,
                 "application/sdp");

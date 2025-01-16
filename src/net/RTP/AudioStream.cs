@@ -31,8 +31,12 @@ namespace SIPSorcery.Net
         protected static ILogger logger = Log.Logger;
         protected bool rtpEventInProgress = false;
 
-        private SDPAudioVideoMediaFormat sendingFormat;
         private bool sendingFormatFound = false;
+
+        /// <summary>
+        /// The audio format negotiated fir the audio stream by the SDP offer/answer exchange.
+        /// </summary>
+        public SDPAudioVideoMediaFormat NegotiatedFormat { get; private set; }
 
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common audio formats is set.
@@ -61,10 +65,10 @@ namespace SIPSorcery.Net
         {
             if (!sendingFormatFound)
             {
-                sendingFormat = GetSendingFormat();
+                NegotiatedFormat = GetSendingFormat();
                 sendingFormatFound = true;
             }
-            SendAudioFrame(durationRtpUnits, sendingFormat.ID, sample);
+            SendAudioFrame(durationRtpUnits, NegotiatedFormat.ID, sample);
         }
 
         /// <summary>
@@ -232,7 +236,7 @@ namespace SIPSorcery.Net
         /// be used to cancel the send.</param>
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, NegotiatedRtpEventPayloadID);
             return SendDtmfEvent(dtmfEvent, ct);
         }
 
