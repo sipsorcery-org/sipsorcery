@@ -38,6 +38,7 @@
 // History:
 // 19 Dec 2024	Aaron Clauson	Created, Dublin, Ireland.
 // 28 Dec 2024  Aaron Clauson   Switched to functional approach for The Craic.
+// 17 Jan 2025  Aaron Clauson   Added create resposne data channel message to trigger conversation start.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -67,6 +68,7 @@ namespace demo
 
     record PcContext(
        RTCPeerConnection Pc,
+       SemaphoreSlim PcConnectedSemaphore,
        string EphemeralKey = "",
        string OfferSdp = "",
        string AnswerSdp = ""
@@ -107,7 +109,8 @@ namespace demo
                 {
                     logger.LogDebug("STEP 2: Create WebRTC PeerConnection & get local SDP offer.");
 
-                    var pc = await CreatePeerConnection();
+                    var onConnectedSemaphore = new SemaphoreSlim(0, 1);
+                    var pc = await CreatePeerConnection(onConnectedSemaphore);
                     var offer = pc.createOffer();
                     await pc.setLocalDescription(offer);
 
@@ -115,7 +118,7 @@ namespace demo
                     logger.LogDebug(offer.sdp);
 
                     return Prelude.Right<Problem, PcContext>(
-                        new PcContext(pc, ephemeralKey, offer.sdp, string.Empty)
+                        new PcContext(pc, onConnectedSemaphore, ephemeralKey, offer.sdp, string.Empty)
                     );
                 })
                 .BindAsync(async ctx =>
@@ -141,9 +144,16 @@ namespace demo
                         Prelude.Right<Problem, PcContext>(ctx) :
                         Prelude.Left<Problem, PcContext>(new Problem("Failed to set remote SDP."));
                 })
+                .MapAsync(async ctx =>
+                {
+                    logger.LogInformation("STEP 5: Wait for data channel to connect and then trigger conversation.");
+
+                    await ctx.PcConnectedSemaphore.WaitAsync();
+
+                })
                 .BindAsync(ctx =>
                 {
-                    logger.LogInformation("STEP 5: Wait for ctrl-c to indicate user exit.");
+                    logger.LogInformation("STEP 6: Wait for ctrl-c to indicate user exit.");
 
                     ManualResetEvent exitMre = new(false);
                     Console.CancelKeyPress += (_, e) =>
@@ -164,7 +174,12 @@ namespace demo
             );
        }
 
-        private static async Task<RTCPeerConnection> CreatePeerConnection()
+        /// <summary>
+        /// Method to create the local peer connection instance and data channel.
+        /// </summary>
+        /// <param name="onConnectedSemaphore">A semaphore that will get set when the data channel on the peer connection is opened. Since the data channel
+        /// can only be opened once the peer connection is open this indicates both are ready for use.</param>
+        private static async Task<RTCPeerConnection> CreatePeerConnection(SemaphoreSlim onConnectedSemaphore)
         {
             var pcConfig = new RTCConfiguration
             {
@@ -224,6 +239,7 @@ namespace demo
             dataChannel.onopen += () =>
             {
                 logger.LogDebug("OpenAI data channel opened.");
+                onConnectedSemaphore.Release();
             };
 
             dataChannel.onclose += () => logger.LogDebug($"OpenAI data channel {dataChannel.label} closed.");
@@ -233,6 +249,9 @@ namespace demo
             return peerConnection;
         }
 
+        /// <summary>
+        /// Event handler for WebRTC data channel messages.
+        /// </summary>
         private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
         {
             //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
@@ -265,6 +284,10 @@ namespace demo
             }
         }
 
+        /// <summary>
+        /// Completes the steps required to get an ephemeral key from the OpenAI REST server. The ephemeral key is needed
+        /// to send an SDP offer, and get the SDP answer.
+        /// </summary>
         private static async Task<Either<Problem, string>> CreateEphemeralKeyAsync(string sessionsUrl, string openAIToken, string model, string voice)
             => (await SendHttpPostAsync(
                 sessionsUrl,
@@ -284,6 +307,13 @@ namespace demo
                 Prelude.Left<Problem, string>(new Problem("Failed to get ephemeral secret."))
             );
 
+        /// <summary>
+        /// Attempts to get the SDP answer from the OpenAI REST server. This is the way OpenAI does the signalling. The
+        /// ICE candidates will be returned in the SDP answer and are publicly accessible IP's.
+        /// </summary>
+        /// <remarks>
+        /// See https://platform.openai.com/docs/guides/realtime-webrtc#creating-an-ephemeral-token.
+        /// </remarks>
         private static Task<Either<Problem, string>> GetOpenAIAnswerSdpAsync(string ephemeralKey, string offerSdp)
             => SendHttpPostAsync(
                 $"{OPENAI_REALTIME_BASE_URL}?model={OPENAI_MODEL}",
@@ -291,6 +321,9 @@ namespace demo
                 offerSdp,
                 "application/sdp");
 
+        /// <summary>
+        /// Helper method to send an HTTP psot request with the required headers.
+        /// </summary>
         private static async Task<Either<Problem, string>> SendHttpPostAsync(
             string url,
             string token,
