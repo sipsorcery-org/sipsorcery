@@ -74,12 +74,24 @@ namespace demo
        string AnswerSdp = ""
     );
 
+    enum VoicesEnum
+    {
+        alloy,
+        ash,
+        ballad,
+        coral,
+        echo,
+        sage,
+        shimmer,
+        verse
+    }
+
     class Program
     {
         private const string OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
         private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
         private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
-        private const string OPENAI_VERSE = "shimmer"; // Supported values are: 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', and 'verse'.
+        private const VoicesEnum OPENAI_VERSE = VoicesEnum.shimmer;
         private const string OPENAI_DATACHANNEL_NAME = "oai-events";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -103,7 +115,7 @@ namespace demo
                 .BindAsync(_ =>
                 {
                     logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
-                    return CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, args[0], OPENAI_MODEL, OPENAI_VERSE);
+                    return CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, args[0], OPENAI_MODEL, OPENAI_VERSE.ToString());
                 })
                 .BindAsync(async ephemeralKey =>
                 {
@@ -123,7 +135,7 @@ namespace demo
                 })
                 .BindAsync(async ctx =>
                 {
-                    logger.LogInformation("STEP 3: Send SDP offer to OpenAI REST server & get SDP answer."); 
+                    logger.LogInformation("STEP 3: Send SDP offer to OpenAI REST server & get SDP answer.");
 
                     var answerEither = await GetOpenAIAnswerSdpAsync(ctx.EphemeralKey, ctx.OfferSdp);
                     return answerEither.Map(answer => ctx with { AnswerSdp = answer });
@@ -150,6 +162,11 @@ namespace demo
 
                     await ctx.PcConnectedSemaphore.WaitAsync();
 
+                    // NOTE: If you want to trigger the convesation by using the audio from your microphone comment
+                    // out this line.
+                    SendResponseCreate(ctx.Pc.DataChannels.First(), VoicesEnum.alloy, "Introduce urself.");
+
+                    return ctx;
                 })
                 .BindAsync(ctx =>
                 {
@@ -172,7 +189,28 @@ namespace demo
                 Left: prob => Console.WriteLine($"There was a problem setting up the connection. {prob.detail}"),
                 Right: _ => Console.WriteLine("The call was successful.")
             );
-       }
+        }
+
+        /// <summary>
+        /// Sends a response create message to the OpenAI data channel to trigger the conversation.
+        /// </summary>
+        private static void SendResponseCreate(RTCDataChannel dc, VoicesEnum voice, string message)
+        {
+            var responseCreate = new OpenAIResponseCreate
+            {
+                EventID = Guid.NewGuid().ToString(),
+                Response = new OpenAIResponseCreateResponse
+                {
+                    Instructions = message,
+                    Voice = voice.ToString()
+                }
+            };
+
+            logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+            logger.LogDebug(responseCreate.ToJson());
+
+            dc.send(responseCreate.ToJson());
+        }
 
         /// <summary>
         /// Method to create the local peer connection instance and data channel.
