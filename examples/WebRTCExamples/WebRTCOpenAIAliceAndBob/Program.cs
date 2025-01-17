@@ -192,20 +192,10 @@ namespace demo
                 // Trigger the conversation by getting Alice to say something witty.
                 var aliceDataChannel = aliceConncectedCtx.Pc.DataChannels.Where(x => x.label == OPENAI_DATACHANNEL_NAME).Single();
 
-                var responseCreate = new OpenAIResponseCreate
+                if (aliceDataChannel != null)
                 {
-                    EventID = Guid.NewGuid().ToString(),
-                    Response = new OpenAIResponseCreateResponse
-                    {
-                        Instructions = "Only talk in cheesy puns. Keep it short once you'vegot you pun in. To start the conversation please repeat repeat this phrase in your corniest accent: 'You're a few tinnies short of a six-pack.'",
-                        Voice = VoicesEnum.shimmer.ToString()
-                    }
-                };
-
-                logger.LogInformation($"Sending initial response create to first call data channel {aliceDataChannel?.label}.");
-                logger.LogDebug(responseCreate.ToJson());
-
-                aliceDataChannel?.send(responseCreate.ToJson());
+                    SendResponseCreate(aliceDataChannel, VoicesEnum.shimmer, "Only talk in cheesy puns. Keep it short once you'vegot you pun in. To start the conversation please repeat repeat this phrase in your corniest accent: 'You're a few tinnies short of a six-pack.'");
+                }
 
                 logger.LogInformation($"ctrl-c to exit..");
 
@@ -227,6 +217,27 @@ namespace demo
             Console.WriteLine("Exiting...");
 
             _audioScopeForm?.Invoke(() => _audioScopeForm.Close());
+        }
+
+        /// <summary>
+        /// Sends a response create message to the OpenAI data channel to trigger the conversation.
+        /// </summary>
+        private static void SendResponseCreate(RTCDataChannel dc, VoicesEnum voice, string message)
+        {
+            var responseCreate = new OpenAIResponseCreate
+            {
+                EventID = Guid.NewGuid().ToString(),
+                Response = new OpenAIResponseCreateResponse
+                {
+                    Instructions = message,
+                    Voice = voice.ToString()
+                }
+            };
+
+            logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+            logger.LogDebug(responseCreate.ToJson());
+
+            dc.send(responseCreate.ToJson());
         }
 
         /// <summary>
