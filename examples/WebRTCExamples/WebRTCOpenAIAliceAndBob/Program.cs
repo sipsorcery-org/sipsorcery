@@ -152,14 +152,13 @@ namespace demo
 
             Task.WaitAll(aliceCallTask, bobCallTask);
 
-            if (aliceCallTask.Result.IsLeft)
+            var combinedCtx = from aliceCtx in aliceCallTask.Result
+                           from bobCtx in bobCallTask.Result
+                           select (aliceCtx, bobCtx);
+
+            if (combinedCtx.IsLeft)
             {
-                logger.LogError($"First call failed. {((Problem)aliceCallTask.Result).detail}");
-                exitMre.Set();
-            }
-            else if (bobCallTask.Result.IsLeft)
-            {
-                logger.LogError($"Second call failed. {((Problem)bobCallTask.Result).detail}");
+                logger.LogError($"There was a problem initiating the connections. {((Problem)combinedCtx).detail}");
                 exitMre.Set();
             }
             else
@@ -196,8 +195,7 @@ namespace demo
                     EventID = Guid.NewGuid().ToString(),
                     Response = new OpenAIResponseCreateResponse
                     {
-                        //Instructions = "Hi There!  Give me an example of a funny insult that I can use in an English teaching example and that's not disrespectful.",
-                        Instructions = "Only talk in cheesy puns. To start the conversation please repeat repeat this phrase in your corniest accent: 'You're a few tinnies short of a six-pack.'",
+                        Instructions = "Only talk in cheesy puns. Keep it short once you'vegot you pun in. To start the conversation please repeat repeat this phrase in your corniest accent: 'You're a few tinnies short of a six-pack.'",
                         Voice = VoicesEnum.shimmer.ToString()
                     }
                 };
