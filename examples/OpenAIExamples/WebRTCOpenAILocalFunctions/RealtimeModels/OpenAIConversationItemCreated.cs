@@ -15,7 +15,8 @@ public class OpenAIConversationItemCreated : OpenAIServerEventBase
     [JsonPropertyName("previous_item_id")]
     public string? PreviousItemID { get; set; }
 
-    // TODO - Add the properties for the item object
+    [JsonPropertyName("item")]
+    public OpenAIConversationItem? Item { get; set; }
 
     public override string ToJson()
     {

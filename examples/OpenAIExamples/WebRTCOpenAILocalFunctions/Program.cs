@@ -320,6 +320,7 @@ namespace demo
                     OpenAIResponseCreated.TypeName => JsonSerializer.Deserialize<OpenAIResponseCreated>(message, JsonOptions.Default),
                     OpenAIResponseDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseDone>(message, JsonOptions.Default),
                     OpenAIResponseFunctionCallArgumentsDelta.TypeName => JsonSerializer.Deserialize<OpenAIResponseFunctionCallArgumentsDelta>(message, JsonOptions.Default),
+                    OpenAIResponseFunctionCallArgumentsDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseFunctionCallArgumentsDone>(message, JsonOptions.Default),
                     OpenAIResponseOutputItemAdded.TypeName => JsonSerializer.Deserialize<OpenAIResponseOutputItemAdded>(message, JsonOptions.Default),
                     OpenAIResponseOutputItemDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseOutputItemDone>(message, JsonOptions.Default),
                     OpenAISessionCreated.TypeName => JsonSerializer.Deserialize<OpenAISessionCreated>(message, JsonOptions.Default),
@@ -329,13 +330,31 @@ namespace demo
 
                 serverEventModel.IfSome(e =>
                 {
-                    if (e is OpenAIResponseAudioTranscriptDone done)
+                    var logMessage = e switch
                     {
-                        logger.LogInformation($"Transcript done: {done.Transcript}");
+                        OpenAIResponseAudioTranscriptDone transcriptionDone => $"Transcript done: {transcriptionDone.Transcript}",
+                        OpenAIResponseFunctionCallArgumentsDone argumentsDone => $"Function Arguments done: {message}\n{argumentsDone.ToJson()}\n{argumentsDone.ArgumentsToString()}",
+                        _ => string.Empty  //_ => $"Data Channel {e.Type} message received."
+
+                    };
+
+                    if (logMessage != string.Empty)
+                    {
+                        logger.LogInformation(logMessage);
                     }
-                    else
+
+                    if(e is OpenAIResponseFunctionCallArgumentsDone argsDone)
                     {
-                        logger.LogInformation($"Data Channel {e.Type} message received.");
+                        var result = argsDone.Name switch
+                        {
+                            "get_weather" => $"The weather in {argsDone.Arguments.GetNamedArgumentValue("location")} is sunny.",
+                            _ => "Unknown Function."
+                        };
+                        logger.LogInformation($"Call {argsDone.Name} with args {argsDone.ArgumentsToString()} result {result}.");
+
+                        var getWeatherResult = GetWeather(argsDone);
+                        logger.LogDebug(getWeatherResult.ToJson());
+                        dc.send(getWeatherResult.ToJson());
                     }
                 });
 
@@ -348,6 +367,25 @@ namespace demo
             {
                 logger.LogWarning($"Failed to parse server event for: {message}");
             }
+        }
+
+        private static OpenAIConversationItemCreate GetWeather(OpenAIResponseFunctionCallArgumentsDone argsDone)
+        {
+            return new OpenAIConversationItemCreate
+            {
+                EventID = Guid.NewGuid().ToString(),
+                PreviousItemID = argsDone.ItemID,
+                Item = new OpenAIConversationItem
+                {
+                    ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
+                    Type = OpenAIConversationConversationTypeEnum.function_call_output,
+                    Status = "completed",
+                    CallID = argsDone.CallID,
+                    //Name = argsDone.Name,
+                    //Arguments = argsDone.ArgumentsToString(),
+                    Output = $"The weather is sunny."
+                }
+            };
         }
 
         /// <summary>
