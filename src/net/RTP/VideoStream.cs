@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -239,6 +240,49 @@ namespace SIPSorcery.net.RTP
                 }
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="durationRtpUnits"></param>
+        /// <param name="payloadID"></param>
+        /// <param name="sample"></param>
+        public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, byte[] sample)
+        {
+            if (CheckIfCanSendRtpRaw())
+            {
+                try
+                {
+                    var frameData = MJPEGPacketiser.GetFrameData(sample, out var customData);
+
+                    var rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, 0);
+                    if (rtpHeader.Length + frameData.Data.Length <= RTPSession.RTP_MAX_PAYLOAD)
+                    {
+                        var payload = rtpHeader.Concat(frameData.Data).ToArray();
+                        SendRtpRaw(payload, LocalTrack.Timestamp, 1, payloadID, true);
+                    }
+                    else
+                    {
+                        var restBytes = frameData.Data;
+                        var offset = 0;
+                        while (restBytes.Length > 0)
+                        {
+                            var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeader.Length;
+                            var isLast = dataSize < restBytes.Length;
+                            var data = isLast ? restBytes : restBytes.Take(dataSize).ToArray();
+                            var markerBit = isLast ? 0 : 1;
+                            offset += RTPSession.RTP_MAX_PAYLOAD;
+
+                            rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
+                            restBytes = restBytes.Skip(data.Length).ToArray();
+                        }
+                    }
+                }
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError("SocketException SendMJEPGFrame. " + sockExcp.Message);
+                }
+            }
+        }
 
         /// <summary>
         /// Sends a video sample to the remote peer.
@@ -264,6 +308,9 @@ namespace SIPSorcery.net.RTP
                     break;
                 case "H264":
                     SendH264Frame(durationRtpUnits, payloadID, sample);
+                    break;
+                case "MJPEG":
+                    SendMJPEGFrame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {sendingFormat.Name()}.");
