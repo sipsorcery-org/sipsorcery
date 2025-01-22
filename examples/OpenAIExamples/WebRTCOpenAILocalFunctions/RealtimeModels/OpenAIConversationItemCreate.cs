@@ -33,14 +33,14 @@ public class OpenAIConversationItem
     [JsonPropertyName("type")]
     public OpenAIConversationConversationTypeEnum Type { get; set; }
 
-    //[JsonPropertyName("object")]
-    //public string Object => "realtime.item";
+    [JsonPropertyName("object")]
+    public string? Object { get; set; }
 
-    //[JsonPropertyName("status")]
-    //public string? Status { get; set; }
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
 
-    //[JsonPropertyName("role")]
-    //public string? Role { get; set; }
+    [JsonPropertyName("role")]
+    public string? Role { get; set; }
 
     [JsonPropertyName("content")]
     public List<OpenAIContentItem>? Content { get; set; }

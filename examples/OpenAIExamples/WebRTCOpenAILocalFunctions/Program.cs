@@ -311,6 +311,8 @@ namespace demo
                     OpenAIInputAudioBufferCommitted.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferCommitted>(message, JsonOptions.Default),
                     OpenAIInputAudioBufferSpeechStarted.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferSpeechStarted>(message, JsonOptions.Default),
                     OpenAIInputAudioBufferSpeechStopped.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferSpeechStopped>(message, JsonOptions.Default),
+                    OpenAIOuputAudioBufferAudioStarted.TypeName => JsonSerializer.Deserialize<OpenAIOuputAudioBufferAudioStarted>(message, JsonOptions.Default),
+                    OpenAIOuputAudioBufferAudioStopped.TypeName => JsonSerializer.Deserialize<OpenAIOuputAudioBufferAudioStopped>(message, JsonOptions.Default),
                     OpenAIRateLimitsUpdated.TypeName => JsonSerializer.Deserialize<OpenAIRateLimitsUpdated>(message, JsonOptions.Default),
                     OpenAIResponseAudioDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioDone>(message, JsonOptions.Default),
                     OpenAIResponseAudioTranscriptDelta.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
@@ -355,6 +357,18 @@ namespace demo
                         var getWeatherResult = GetWeather(argsDone);
                         logger.LogDebug(getWeatherResult.ToJson());
                         dc.send(getWeatherResult.ToJson());
+
+                        // Tell the AI to continue the conversation.
+                        var responseCreate = new OpenAIResponseCreate
+                        {
+                            EventID = Guid.NewGuid().ToString(),
+                            Response = new OpenAIResponseCreateResponse
+                            {
+                                Instructions = "Please give me the answer.",
+                            }
+                        };
+
+                        dc.send(responseCreate.ToJson());
                     }
                 });
 
@@ -369,21 +383,38 @@ namespace demo
             }
         }
 
+        /// <summary>
+        /// The local function to call and return the result to the AI to continue the conversation.
+        /// </summary>
         private static OpenAIConversationItemCreate GetWeather(OpenAIResponseFunctionCallArgumentsDone argsDone)
         {
+            var location = argsDone.Arguments.GetNamedArgumentValue("location") ?? string.Empty;
+
+            var weather = location switch
+            {
+                string s when s.Contains("Canberra", StringComparison.OrdinalIgnoreCase) => "It's cloudy and 15 degrees.",
+                string s when s.Contains("Dublin", StringComparison.OrdinalIgnoreCase) => "It's raining and 7 degrees.",
+                string s when s.Contains("Hobart", StringComparison.OrdinalIgnoreCase) => "It's sunny and 25 degrees.",
+                string s when s.Contains("Melbourne", StringComparison.OrdinalIgnoreCase) => "It's cold and wet and 11 degrees.",
+                string s when s.Contains("Sydney", StringComparison.OrdinalIgnoreCase) => "It's humid and stormy and 30 degrees.",
+                string s when s.Contains("Perth", StringComparison.OrdinalIgnoreCase) => "It's hot and dry and 40 degrees.",
+                _ => "It's sunny and 20 degrees."
+            };
+
             return new OpenAIConversationItemCreate
             {
                 EventID = Guid.NewGuid().ToString(),
-                PreviousItemID = argsDone.ItemID,
+                //PreviousItemID = argsDone.ItemID,
                 Item = new OpenAIConversationItem
                 {
-                    ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
+                    //ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
                     Type = OpenAIConversationConversationTypeEnum.function_call_output,
-                    Status = "completed",
+                    //Status = "completed",
                     CallID = argsDone.CallID,
                     //Name = argsDone.Name,
                     //Arguments = argsDone.ArgumentsToString(),
-                    Output = $"The weather is sunny."
+                    //Role = "tool",
+                    Output = weather
                 }
             };
         }
