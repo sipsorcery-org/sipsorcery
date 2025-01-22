@@ -138,11 +138,6 @@ namespace SIPSorcery.net.RTP.Packetisation
         private byte[] _quantizationTables = new byte[0];
         private int _quantizationTablesLength;
 
-        uint previous_timestamp = 0;
-        int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24 = 0; // used for diagnostics stats
-        List<KeyValuePair<int, byte[]>> temporary_rtp_payloads = new List<KeyValuePair<int, byte[]>>(); // used to assemble the RTP packets that form one RTP Frame
-        MemoryStream fragmented_nal = new MemoryStream(); // used to concatenate fragmented H264 NALs where NALs are splitted over RTP packets
-
         private static readonly byte[] StartMarkerBytes = { 0xFF, 0xD8 };
         private static readonly byte[] EndMarkerBytes = { 0xFF, 0xD9 };
         #endregion
