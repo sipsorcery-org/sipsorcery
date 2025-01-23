@@ -267,11 +267,13 @@ namespace SIPSorcery.net.RTP
                         while (restBytes.Length > 0)
                         {
                             var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeader.Length;
-                            var isLast = dataSize < restBytes.Length;
+                            var isLast = dataSize >= restBytes.Length;
                             var data = isLast ? restBytes : restBytes.Take(dataSize).ToArray();
                             var markerBit = isLast ? 0 : 1;
-                            offset += RTPSession.RTP_MAX_PAYLOAD;
+                            var payload = rtpHeader.Concat(data).ToArray();
+                            SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadID, true);
 
+                            offset += RTPSession.RTP_MAX_PAYLOAD;
                             rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
                             restBytes = restBytes.Skip(data.Length).ToArray();
                         }
@@ -309,7 +311,7 @@ namespace SIPSorcery.net.RTP
                 case "H264":
                     SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
-                case "MJPEG":
+                case "JPEG":
                     SendMJPEGFrame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
