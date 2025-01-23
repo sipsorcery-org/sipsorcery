@@ -34,7 +34,7 @@ namespace demo
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
+        private const string STUN_URL = "stun:stun.cloudflare.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
