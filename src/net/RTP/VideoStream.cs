@@ -292,7 +292,8 @@ namespace SIPSorcery.net.RTP
             else
             {
                 if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.H264)
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.H264 ||
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.H265)
                 {
                     logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
 

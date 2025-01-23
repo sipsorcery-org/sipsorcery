@@ -32,10 +32,11 @@ namespace SIPSorcery.Net
         private byte[] _currVideoFrame;
         private int _currVideoFramePosn = 0;
         private H264Depacketiser _h264Depacketiser;
+        private H265Depacketiser _h265Depacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
-            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264))
+            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.H265))
             {
                 throw new NotSupportedException("The RTP video framer currently only understands H264 and VP8 encoded frames.");
             }
@@ -47,6 +48,10 @@ namespace SIPSorcery.Net
             if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
+            }
+            else if(_codec == VideoCodecsEnum.H265)
+            {
+                _h265Depacketiser = new H265Depacketiser();
             }
         }
 
@@ -93,10 +98,16 @@ namespace SIPSorcery.Net
             }
             else if (_codec == VideoCodecsEnum.H264)
             {
-                //logger.LogDebug($"rtp H264 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
-
-                //var hdr = rtpPacket.Header;
                 var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+
+                if (frameStream != null)
+                {
+                    return frameStream.ToArray();
+                }
+            }
+            else if (_codec == VideoCodecsEnum.H265)
+            {
+                var frameStream = _h265Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if (frameStream != null)
                 {
