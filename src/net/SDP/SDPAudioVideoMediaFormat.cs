@@ -151,9 +151,17 @@ namespace SIPSorcery.Net
             }
         }
 
+        public bool IsMJPEG
+        {
+            get
+            {
+                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("JPEG");
+            }
+        }
+
         public bool CheckCompatible()
         {
-            if (IsH264)
+            if (IsH264 || IsMJPEG)
             {
                 var parameters = ParseWebRtcParameters(Fmtp);
                 if (parameters.TryGetValue("packetization-mode", out string packetizationMode))

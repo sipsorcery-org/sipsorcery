@@ -17,10 +17,13 @@ namespace SIPSorcery.net.RTP.Packetisation
         private const int JpegHeaderSize = 8;
         private const int JpegMaxSize = 16 * 1024 * 1024;
 
-        private static readonly ArraySegment<byte> JpegEndMarkerByteSegment =
+        private static byte[] StartMarkerBytes = { 0xFF, 0xD8 };
+        private static byte[] EndMarkerBytes = { 0xFF, 0xD9 };
+
+        private static ArraySegment<byte> JpegEndMarkerByteSegment =
             new ArraySegment<byte>(EndMarkerBytes);
 
-        private static readonly byte[] DefaultQuantizers =
+        private static byte[] DefaultQuantizers =
         {
             16, 11, 12, 14, 12, 10, 16, 14,
             13, 14, 18, 17, 16, 19, 24, 40,
@@ -40,22 +43,22 @@ namespace SIPSorcery.net.RTP.Packetisation
             99, 99, 99, 99, 99, 99, 99, 99
         };
 
-        private static readonly byte[] LumDcCodelens =
+        private static byte[] LumDcCodelens =
         {
             0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0
         };
 
-        private static readonly byte[] LumDcSymbols =
+        private static byte[] LumDcSymbols =
         {
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
         };
 
-        private static readonly byte[] LumAcCodelens =
+        private static byte[] LumAcCodelens =
         {
             0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d
         };
 
-        private static readonly byte[] LumAcSymbols =
+        private static byte[] LumAcSymbols =
         {
             0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
             0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
@@ -80,22 +83,22 @@ namespace SIPSorcery.net.RTP.Packetisation
             0xf9, 0xfa
         };
 
-        private static readonly byte[] ChmDcCodelens =
+        private static byte[] ChmDcCodelens =
         {
             0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0
         };
 
-        private static readonly byte[] ChmDcSymbols =
+        private static byte[] ChmDcSymbols =
         {
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
         };
 
-        private static readonly byte[] ChmAcCodelens =
+        private static byte[] ChmAcCodelens =
         {
             0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77
         };
 
-        private static readonly byte[] ChmAcSymbols =
+        private static byte[] ChmAcSymbols =
         {
             0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
             0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
@@ -120,8 +123,8 @@ namespace SIPSorcery.net.RTP.Packetisation
             0xf9, 0xfa
         };
 
-        private MemoryStream _frameStream;
-        private MemoryStream _returnFrame;
+        private MemoryStream _frameStream = new MemoryStream();
+        private MemoryStream _returnFrame = new MemoryStream();
         private bool _resetReturnFrame;
 
         private int _currentDri;
@@ -138,8 +141,7 @@ namespace SIPSorcery.net.RTP.Packetisation
         private byte[] _quantizationTables = new byte[0];
         private int _quantizationTablesLength;
 
-        private static readonly byte[] StartMarkerBytes = { 0xFF, 0xD8 };
-        private static readonly byte[] EndMarkerBytes = { 0xFF, 0xD9 };
+        
         #endregion
 
         public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
