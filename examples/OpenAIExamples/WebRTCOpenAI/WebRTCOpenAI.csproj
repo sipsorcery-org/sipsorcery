@@ -22,6 +22,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+        <ProjectReference Include="..\OpenAI.Realtime\OpenAI.Realtime.csproj" />
     </ItemGroup>
 
 </Project>

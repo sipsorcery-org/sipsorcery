@@ -6,7 +6,7 @@
 // is only required for System.Text.Json as Newtonsoft already supports this.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 09 Jun 2024  Aaron Clauson   Created, Dublin, Ireland.
