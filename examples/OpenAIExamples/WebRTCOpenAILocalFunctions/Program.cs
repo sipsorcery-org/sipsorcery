@@ -124,12 +124,6 @@ class Program
 
                 await ctx.PcConnectedSemaphore.WaitAsync();
 
-                UpdateSessionOptions(ctx.Pc.DataChannels.First());
-
-                // NOTE: If you want to trigger the convesation by using the audio from your microphone comment
-                // out this line.
-                SendResponseCreate(ctx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Introduce urself.");
-
                 return ctx;
             })
             .BindAsync(ctx =>
@@ -156,9 +150,56 @@ class Program
     }
 
     /// <summary>
-    /// Sends a response create message to the OpenAI data channel to trigger the conversation.
+    /// Event handler for WebRTC data channel messages.
     /// </summary>
-    private static void UpdateSessionOptions(RTCDataChannel dc)
+    private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
+    {
+        //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+
+        var message = Encoding.UTF8.GetString(data);
+        //logger.LogDebug($"Data channel message: {message}");
+
+        var serverEventModel = OpenAIDataChannelManager.ParseDataChannelMessage(data);
+
+        serverEventModel.IfSome(e =>
+        {
+            switch (e)
+            {
+                case OpenAIResponseFunctionCallArgumentsDone argumentsDone:
+                    logger.LogInformation($"Function Arguments done: {message}\n{argumentsDone.ToJson()}\n{argumentsDone.ArgumentsToString()}");
+                    OnFunctionArgumentsDone(dc, argumentsDone);
+                    break;
+
+                case OpenAISessionCreated sessionCreated:
+                    logger.LogInformation($"Session created: {sessionCreated.ToJson()}");
+                    OnSessionCreated(dc);
+                    SendResponseCreate(dc, OpenAIVoicesEnum.alloy, "Introduce urself. Keep it short.");
+                    break;
+
+                case OpenAISessionUpdated sessionUpdated:
+                    logger.LogInformation($"Session updated: {sessionUpdated.ToJson()}");
+                    break;
+
+                case OpenAIResponseAudioTranscriptDone transcriptionDone:
+                    logger.LogInformation($"Transcript done: {transcriptionDone.Transcript}");
+                    break;
+
+                default:
+                    //logger.LogInformation($"Data Channel {e.Type} message received.");
+                    break;
+            }
+        });
+
+        if (serverEventModel.IsNone)
+        {
+            logger.LogWarning($"Failed to parse server event for: {message}");
+        }
+    }
+
+    /// <summary>
+    /// Sends a session update message to add the get weather demo function.
+    /// </summary>
+    private static void OnSessionCreated(RTCDataChannel dc)
     {
         var sessionUpdate = new OpenAISessionUpdate
         {
@@ -166,6 +207,7 @@ class Program
             Session = new OpenAISession
             {
                 Model = OPENAI_MODEL,
+                Instructions = "You are a weather bot who favours brevity and accuracy.",
                 Tools = new System.Collections.Generic.List<OpenAITool>
                 {
                     new OpenAITool
@@ -194,99 +236,30 @@ class Program
         dc.send(sessionUpdate.ToJson());
     }
 
-    /// <summary>
-    /// Event handler for WebRTC data channel messages.
-    /// </summary>
-    private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
+    private static void OnFunctionArgumentsDone(RTCDataChannel dc, OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
-        logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
-
-        var message = Encoding.UTF8.GetString(data);
-
-        //logger.LogDebug($"Data channel message: {message}");
-
-        var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
-
-        if (serverEvent != null)
+        var result = argsDone.Name switch
         {
-            //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
+            "get_weather" => $"The weather in {argsDone.Arguments.GetNamedArgumentValue("location")} is sunny.",
+            _ => "Unknown Function."
+        };
+        logger.LogInformation($"Call {argsDone.Name} with args {argsDone.ArgumentsToString()} result {result}.");
 
-            Option<OpenAIServerEventBase> serverEventModel = serverEvent.Type switch
+        var getWeatherResult = GetWeather(argsDone);
+        logger.LogDebug(getWeatherResult.ToJson());
+        dc.send(getWeatherResult.ToJson());
+
+        // Tell the AI to continue the conversation.
+        var responseCreate = new OpenAIResponseCreate
+        {
+            EventID = Guid.NewGuid().ToString(),
+            Response = new OpenAIResponseCreateResponse
             {
-                OpenAIConversationItemCreated.TypeName => JsonSerializer.Deserialize<OpenAIConversationItemCreated>(message, JsonOptions.Default),
-                OpenAIInputAudioBufferCommitted.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferCommitted>(message, JsonOptions.Default),
-                OpenAIInputAudioBufferSpeechStarted.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferSpeechStarted>(message, JsonOptions.Default),
-                OpenAIInputAudioBufferSpeechStopped.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferSpeechStopped>(message, JsonOptions.Default),
-                OpenAIOuputAudioBufferAudioStarted.TypeName => JsonSerializer.Deserialize<OpenAIOuputAudioBufferAudioStarted>(message, JsonOptions.Default),
-                OpenAIOuputAudioBufferAudioStopped.TypeName => JsonSerializer.Deserialize<OpenAIOuputAudioBufferAudioStopped>(message, JsonOptions.Default),
-                OpenAIRateLimitsUpdated.TypeName => JsonSerializer.Deserialize<OpenAIRateLimitsUpdated>(message, JsonOptions.Default),
-                OpenAIResponseAudioDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioDone>(message, JsonOptions.Default),
-                OpenAIResponseAudioTranscriptDelta.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
-                OpenAIResponseAudioTranscriptDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDone>(message, JsonOptions.Default),
-                OpenAIResponseContentPartAdded.TypeName => JsonSerializer.Deserialize<OpenAIResponseContentPartAdded>(message, JsonOptions.Default),
-                OpenAIResponseContentPartDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseContentPartDone>(message, JsonOptions.Default),
-                OpenAIResponseCreated.TypeName => JsonSerializer.Deserialize<OpenAIResponseCreated>(message, JsonOptions.Default),
-                OpenAIResponseDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseDone>(message, JsonOptions.Default),
-                OpenAIResponseFunctionCallArgumentsDelta.TypeName => JsonSerializer.Deserialize<OpenAIResponseFunctionCallArgumentsDelta>(message, JsonOptions.Default),
-                OpenAIResponseFunctionCallArgumentsDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseFunctionCallArgumentsDone>(message, JsonOptions.Default),
-                OpenAIResponseOutputItemAdded.TypeName => JsonSerializer.Deserialize<OpenAIResponseOutputItemAdded>(message, JsonOptions.Default),
-                OpenAIResponseOutputItemDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseOutputItemDone>(message, JsonOptions.Default),
-                OpenAISessionCreated.TypeName => JsonSerializer.Deserialize<OpenAISessionCreated>(message, JsonOptions.Default),
-                OpenAISessionUpdated.TypeName => JsonSerializer.Deserialize<OpenAISessionUpdated>(message, JsonOptions.Default),
-                _ => Option<OpenAIServerEventBase>.None
-            };
-
-            serverEventModel.IfSome(e =>
-            {
-                var logMessage = e switch
-                {
-                    OpenAIResponseAudioTranscriptDone transcriptionDone => $"Transcript done: {transcriptionDone.Transcript}",
-                    OpenAIResponseFunctionCallArgumentsDone argumentsDone => $"Function Arguments done: {message}\n{argumentsDone.ToJson()}\n{argumentsDone.ArgumentsToString()}",
-                    _ => $"Data Channel {e.Type} message received."
-
-                };
-
-                if (logMessage != string.Empty)
-                {
-                    logger.LogInformation(logMessage);
-                }
-
-                if (e is OpenAIResponseFunctionCallArgumentsDone argsDone)
-                {
-                    var result = argsDone.Name switch
-                    {
-                        "get_weather" => $"The weather in {argsDone.Arguments.GetNamedArgumentValue("location")} is sunny.",
-                        _ => "Unknown Function."
-                    };
-                    logger.LogInformation($"Call {argsDone.Name} with args {argsDone.ArgumentsToString()} result {result}.");
-
-                    var getWeatherResult = GetWeather(argsDone);
-                    logger.LogDebug(getWeatherResult.ToJson());
-                    dc.send(getWeatherResult.ToJson());
-
-                    // Tell the AI to continue the conversation.
-                    var responseCreate = new OpenAIResponseCreate
-                    {
-                        EventID = Guid.NewGuid().ToString(),
-                        Response = new OpenAIResponseCreateResponse
-                        {
-                            Instructions = "Please give me the answer.",
-                        }
-                    };
-
-                    dc.send(responseCreate.ToJson());
-                }
-            });
-
-            if (serverEventModel.IsNone)
-            {
-                logger.LogWarning($"Failed to parse server event for: {message}");
+                Instructions = "Please give me the answer.",
             }
-        }
-        else
-        {
-            logger.LogWarning($"Failed to parse server event for: {message}");
-        }
+        };
+
+        dc.send(responseCreate.ToJson());
     }
 
     /// <summary>
@@ -341,7 +314,7 @@ class Program
         };
 
         logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
-        logger.LogDebug(responseCreate.ToJson());
+        //logger.LogDebug(responseCreate.ToJson());
 
         dc.send(responseCreate.ToJson());
     }
