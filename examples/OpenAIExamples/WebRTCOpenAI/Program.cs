@@ -151,7 +151,7 @@ class Program
 
                 // NOTE: If you want to trigger the convesation by using the audio from your microphone comment
                 // out this line.
-                SendResponseCreate(ctx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Introduce urself.");
+                SendResponseCreate(ctx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Introduce urself. Keep it short.");
 
                 return ctx;
             })
@@ -276,33 +276,19 @@ class Program
     /// </summary>
     private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
     {
-        //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+        logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
 
         var message = Encoding.UTF8.GetString(data);
         var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
 
-        if (serverEvent != null)
+        var serverEventModel = OpenAIDataChannelManager.ParseDataChannelMessage(data);
+        serverEventModel.IfSome(e =>
         {
-            //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
-
-            Option<OpenAIServerEventBase> serverEventModel = serverEvent.Type switch
+            if (e is OpenAIResponseAudioTranscriptDone done)
             {
-                "response.audio_transcript.delta" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
-                "response.audio_transcript.done" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDone>(message, JsonOptions.Default),
-                _ => Option<OpenAIServerEventBase>.None
-            };
+                logger.LogInformation($"Transcript done: {done.Transcript}");
+            }
+        });
 
-            serverEventModel.IfSome(e =>
-            {
-                if (e is OpenAIResponseAudioTranscriptDone done)
-                {
-                    logger.LogInformation($"Transcript done: {done.Transcript}");
-                }
-            });
-        }
-        else
-        {
-            logger.LogWarning($"Failed to parse server event for: {message}");
-        }
     }
 }

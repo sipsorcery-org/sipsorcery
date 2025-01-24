@@ -2,7 +2,7 @@
 
 public enum OpenAIToolChoiceEnum
 {
-    Auto,
-    None,
-    Required
+    auto,
+    none,
+    required
 }

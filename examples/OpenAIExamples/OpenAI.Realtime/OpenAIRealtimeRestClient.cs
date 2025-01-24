@@ -1,7 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: OpenAIRealtimeRestClient.cs
 //
-// Description: 
+// Description: Used to send requests to the OpenAI Realtime REST server to
+// do the initial session set up and the SDP offer/answer exchange.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

@@ -7,7 +7,7 @@
 
 **Connect to OpenAI's Realtime WebRTC Endpoint**
 
-The [WebRTCOpenAI](https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/WebRTCExamples/WebRTCOpenAI/Program.cs) demonstrates a dotnet only (no native libraries) applicaiton that connects to [OpenAI's new WebRTC Realtime](https://platform.openai.com/docs/guides/realtime-webrtc) endpoint. This demo lets you talk in realtime to ChatGPT and receive both a WebRTC audio stream response and a text transcript. Could video avatars be on the way?! A real Max Headroom!
+The [WebRTCOpenAI](https://github.com/sipsorcery-org/sipsorcery/blob/master/examples/OpenAIExamples/WebRTCOpenAI/Program.cs) demonstrates a dotnet only (no native libraries) applicaiton that connects to [OpenAI's new WebRTC Realtime](https://platform.openai.com/docs/guides/realtime-webrtc) endpoint. This demo lets you talk in realtime to ChatGPT and receive both a WebRTC audio stream response and a text transcript. Could video avatars be on the way?! A real Max Headroom!
 
 ![ChatGPT WebRTC Transcript](./img/openai.png)
 
