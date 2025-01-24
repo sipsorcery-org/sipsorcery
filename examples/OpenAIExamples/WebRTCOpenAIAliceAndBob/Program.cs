@@ -22,14 +22,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
-using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using AudioScope;
 using System.Numerics;
-using System.Text.Json;
 using System.Text;
 using SIPSorceryMedia.Windows;
 using LanguageExt;
@@ -70,6 +67,8 @@ class Program
     private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
     private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
     private const string OPENAI_DATACHANNEL_NAME = "oai-events";
+    private const string ALICE_CALL_LABEL = "Alice";
+    private const string BOB_CALL_LABEL = "Bob";
 
     private static Microsoft.Extensions.Logging.ILogger logger = LoggerFactory.Create(builder =>
         builder.AddSerilog(new LoggerConfiguration()
@@ -121,7 +120,7 @@ class Program
 
         // Initialise two peer connection contexts for Alice & Bob.
         var aliceInitialContext = new InitPcContext(
-                "Alice",          
+                ALICE_CALL_LABEL,          
                 string.Empty,
                 string.Empty,
                 string.Empty,
@@ -129,7 +128,7 @@ class Program
                 1);
 
         var bobInitialContext = new InitPcContext(
-                "Bob",
+                BOB_CALL_LABEL,
                 string.Empty,
                 string.Empty,
                 string.Empty,
@@ -181,10 +180,10 @@ class Program
             // Trigger the conversation by getting Alice to say something witty.
             var aliceDataChannel = aliceConncectedCtx.Pc.DataChannels.Where(x => x.label == OPENAI_DATACHANNEL_NAME).Single();
 
-            if (aliceDataChannel != null)
-            {
-                SendResponseCreate(aliceDataChannel, OpenAIVoicesEnum.shimmer, "Only talk in cheesy puns. Keep it short once you'vegot you pun in. To start the conversation please repeat repeat this phrase in your corniest accent: 'You're a few tinnies short of a six-pack.'");
-            }
+            //if (aliceDataChannel != null)
+            //{
+            //    SendResponseCreate(aliceDataChannel, OpenAIVoicesEnum.shimmer, "Only talk in cheesy puns. Keep it short once you'vegot you pun in. To start the conversation please repeat repeat this phrase in your corniest accent: 'You're a few tinnies short of a six-pack.'");
+            //}
 
             logger.LogInformation($"ctrl-c to exit..");
 
@@ -206,27 +205,6 @@ class Program
         Console.WriteLine("Exiting...");
 
         _audioScopeForm?.Invoke(() => _audioScopeForm.Close());
-    }
-
-    /// <summary>
-    /// Sends a response create message to the OpenAI data channel to trigger the conversation.
-    /// </summary>
-    private static void SendResponseCreate(RTCDataChannel dc, OpenAIVoicesEnum voice, string message)
-    {
-        var responseCreate = new OpenAIResponseCreate
-        {
-            EventID = Guid.NewGuid().ToString(),
-            Response = new OpenAIResponseCreateResponse
-            {
-                Instructions = message,
-                Voice = voice.ToString()
-            }
-        };
-
-        logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
-        logger.LogDebug(responseCreate.ToJson());
-
-        dc.send(responseCreate.ToJson());
     }
 
     /// <summary>
@@ -389,30 +367,80 @@ class Program
 
         //logger.LogDebug(message);
 
-        var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
+        var serverEventModel = OpenAIDataChannelManager.ParseDataChannelMessage(data);
 
-        if (serverEvent != null)
+        serverEventModel.IfSome(e =>
         {
-            //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
-
-            Option<OpenAIServerEventBase> serverEventModel = serverEvent.Type switch
+            switch (e)
             {
-                "response.audio_transcript.delta" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
-                "response.audio_transcript.done" => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDone>(message, JsonOptions.Default),
-                _ => Option<OpenAIServerEventBase>.None
-            };
+                case OpenAISessionCreated sessionCreated:
+                    //logger.LogInformation($"Session created: {sessionCreated.ToJson()}");
+                    OnSessionCreated(dc);
+                    if (callLabel == ALICE_CALL_LABEL)
+                    {
+                        SendResponseCreate(dc, OpenAIVoicesEnum.alloy, "Tell me your first Dad joke.");
+                    }
+                    break;
 
-            serverEventModel.IfSome(e =>
-            {
-                if (e is OpenAIResponseAudioTranscriptDone done)
-                {
-                    logger.LogInformation($"Transcript done {callLabel}: {done.Transcript}");
-                }
-            });
-        }
-        else
+                case OpenAISessionUpdated sessionUpdated:
+                    logger.LogInformation($"Session updated: {sessionUpdated.ToJson()}");
+                    break;
+
+                case OpenAIResponseAudioTranscriptDone transcriptionDone:
+                    logger.LogInformation($"Transcript done: {transcriptionDone.Transcript}");
+                    break;
+
+                default:
+                    //logger.LogInformation($"Data Channel {e.Type} message received.");
+                    break;
+            }
+        });
+
+        if (serverEventModel.IsNone)
         {
             logger.LogWarning($"Failed to parse server event for: {message}");
         }
+    }
+
+    /// <summary>
+    /// Sends a session update message to add the get weather demo function.
+    /// </summary>
+    private static void OnSessionCreated(RTCDataChannel dc)
+    {
+        var sessionUpdate = new OpenAISessionUpdate
+        {
+            EventID = Guid.NewGuid().ToString(),
+            Session = new OpenAISession
+            {
+                Model = OPENAI_MODEL,
+                Instructions = "You are a joke bot. Tell a Dad joke every chance you get.",
+            }
+        };
+
+        logger.LogInformation($"Sending OpenAI session update to data channel {dc.label}.");
+        logger.LogDebug(sessionUpdate.ToJson());
+
+        dc.send(sessionUpdate.ToJson());
+    }
+
+    /// <summary>
+    /// Sends a response create message to the OpenAI data channel to trigger the conversation.
+    /// </summary>
+    private static void SendResponseCreate(RTCDataChannel dc, OpenAIVoicesEnum voice, string message)
+    {
+        var responseCreate = new OpenAIResponseCreate
+        {
+            EventID = Guid.NewGuid().ToString(),
+            Response = new OpenAIResponseCreateResponse
+            {
+                Instructions = message,
+                Voice = voice.ToString()
+            }
+        };
+
+        logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+        logger.LogDebug(responseCreate.ToJson());
+
+        dc.send(responseCreate.ToJson());
     }
 }
