@@ -46,7 +46,7 @@ namespace SIPSorcery.Sys
                 return result;
             }
 
-            logger.LogError("StorageTypesConverter {StorageType} unknown.", storageType);
+            logger.LogStorageTypeUnknown(storageType);
 
             return StorageTypes.Unknown;
         }
