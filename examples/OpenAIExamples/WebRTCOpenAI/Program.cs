@@ -276,7 +276,7 @@ class Program
     /// </summary>
     private static void OnDataChannelMessage(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
     {
-        logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
+        //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
 
         var message = Encoding.UTF8.GetString(data);
         var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
