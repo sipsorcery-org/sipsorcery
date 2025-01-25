@@ -256,7 +256,7 @@ namespace SIPSorcery.Net
         {
             if (SecureContext != null)
             {
-                logger.LogTrace("Tried adding new SecureContext for media type {MediaType}, but one already existed", MediaType);
+                logger.LogRtpSessionSecureContextAlreadyExists(MediaType);
             }
 
             SecureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
@@ -286,7 +286,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning("SRTP unprotect failed for {MediaType}, result {Result}.", MediaType, res);
+                    logger.LogRtpSrtpRtcpUnprotectFailed(MediaType, res);
                 }
             }
             return (false, buffer);
@@ -340,25 +340,25 @@ namespace SIPSorcery.Net
         {
             if (IsClosed)
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on a closed RTP session.", MediaType);
+                logger.LogRtpSessionSendRtpRawOnClosedSession(MediaType);
                 return false;
             }
 
             if (LocalTrack == null)
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session without a local track.", MediaType);
+                logger.LogRtpSessionSendRtpRawNoLocalTrack(MediaType);
                 return false;
             }
 
             if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session with a Stream Status set to {StreamStatus}", MediaType, LocalTrack.StreamStatus);
+                logger.LogRtpSessionSendRtpRawInactiveStream(MediaType, LocalTrack.StreamStatus);
                 return false;
             }
 
             if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && SecureContext?.ProtectRtpPacket == null)
             {
-                logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
+                logger.LogRtpSessionSendRtpPacketSecureContextNotReady();
                 return false;
             }
 
@@ -465,7 +465,7 @@ namespace SIPSorcery.Net
                     int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
-                        logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
+                        logger.LogRtpChannelSendRtpPacketProtectionFailed(rtperr);
                     }
                     else
                     {
@@ -572,7 +572,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning("Can't create RTCPCompoundPacket from the provided RTCP bytes. {Message}", excp.Message);
+                    logger.LogRtpCannotCreateRtcpCompoundPacket(excp.Message);
                 }
 
                 if (rtcpCompoundPacket != null)
@@ -591,7 +591,7 @@ namespace SIPSorcery.Net
         {
             if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady())
             {
-                logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
+                logger.LogRtpSrtpReportNotReady();
                 return false;
             }
             else if (ControlDestinationEndPoint != null)
@@ -614,7 +614,7 @@ namespace SIPSorcery.Net
                     int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out int outBufLen);
                     if (rtperr != 0)
                     {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result {RtpError}.", rtperr);
+                        logger.LogRtpSrtpRtcpProtectFailed(rtperr);
                     }
                     else
                     {
@@ -674,7 +674,7 @@ namespace SIPSorcery.Net
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
                     // Cache pending packages to use it later to prevent missing frames
-                    // when DTLS was not completed yet as a Server bt already completed as a client
+                    // when DTLS was not completed yet as a Server but already completed as a client
                     AddPendingPackage(hdr, localPort, remoteEndPoint, buffer, videoStream);
                     return;
                 }
@@ -690,7 +690,7 @@ namespace SIPSorcery.Net
 
                 if (isValidSource)
                 {
-                    logger.LogDebug("Set remote track ({MediaType} - index={Index}) SSRC to {SyncSource}.", MediaType, Index, hdr.SyncSource);
+                    logger.LogRtpSessionSetRemoteTrackSsrc(MediaType, Index, hdr.SyncSource);
                     RemoteTrack.Ssrc = hdr.SyncSource;
                 }
             }
@@ -834,7 +834,7 @@ namespace SIPSorcery.Net
                 header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
                 !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
             {
-                logger.LogWarning("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
+                logger.LogRtpSequenceNumberJumped(trackType, track.LastRemoteSeqNum, header.SequenceNumber);
             }
         }
 
@@ -870,7 +870,7 @@ namespace SIPSorcery.Net
                 // AC 18 Aug 2020: Despite the carefully crafted rules below and https://github.com/sipsorcery/sipsorcery/issues/197
                 // there are still cases that were a problem in one scenario but acceptable in another. To accommodate a new property
                 // was added to allow the application to decide whether the RTP end point switches should be liberal or not.
-                logger.LogDebug("{MediaType} end point switched for RTP ssrc {Ssrc} from {ExpectedEndPoint} to {ReceivedOnEndPoint}.", MediaType, ssrc, expectedEndPoint, receivedOnEndPoint);
+                logger.LogRtpSessionEndPointSwitched(MediaType, ssrc, expectedEndPoint, receivedOnEndPoint);
 
                 DestinationEndPoint = receivedOnEndPoint;
                 if (RtpSessionConfig.IsRtcpMultiplexed)
@@ -886,7 +886,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("RTP packet with SSRC {Ssrc} received from unrecognised end point {ReceivedOnEndPoint}.", ssrc, receivedOnEndPoint);
+                logger.LogRtpSessionUnrecognisedEndPoint(ssrc, receivedOnEndPoint);
             }
 
             return isValidSource;
