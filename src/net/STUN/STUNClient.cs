@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.LogDebug("STUNClient attempting to determine public IP from {stunServer}.", stunServer);
+                logger.LogStunDeterminingPublicIP(stunServer);
 
                 using (UdpClient udpClient = new UdpClient(stunServer, port))
                 {
@@ -71,7 +71,7 @@ namespace SIPSorcery.Net
 
                             if (stunResponseBuffer != null && stunResponseBuffer.Length > 0)
                             {
-                                logger.LogDebug("STUNClient Response to initial STUN message received from {stunResponseEndPoint}.", stunResponseEndPoint);
+                                logger.LogStunInitialResponse(stunResponseEndPoint);
                                 STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
 
                                 if (stunResponse.Attributes.Count > 0)
@@ -94,7 +94,7 @@ namespace SIPSorcery.Net
 
                                     if(publicEndPoint != null)
                                     {
-                                        logger.LogDebug("STUNClient Public IP={publicEndPointAddress} Port={publicEndPointPort}.", publicEndPoint.Address, publicEndPoint.Port);
+                                        logger.LogStunPublicIPResult(publicEndPoint.Address, publicEndPoint.Port);
                                     }
                                 }
                             }
@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception recvExcp)
                         {
-                            logger.LogWarning(recvExcp, "Exception STUNClient Receive. {ErrorMessage}", recvExcp.Message);
+                            logger.LogStunClientReceiveError(recvExcp.Message, recvExcp);
                         }
                     }, state: null);
 
@@ -113,14 +113,14 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        logger.LogWarning("STUNClient server response timed out after {Timeout}s.", STUN_SERVER_RESPONSE_TIMEOUT);
+                        logger.LogStunClientTimeout(STUN_SERVER_RESPONSE_TIMEOUT);
                         return null;
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception STUNClient GetPublicIPAddress. {ErrorMessage}", excp.Message);
+                logger.LogStunClientGetPublicIPError(excp.Message, excp);
                 return null;
             }
         }

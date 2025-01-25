@@ -112,7 +112,8 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                throw new ApplicationException("There was an exception parsing an RTSP URL. " + excp.Message + " url=" + url);
+                logger.LogRtspUrlParseError(excp.Message, url, excp);
+                throw;
             }
         }
 
@@ -127,7 +128,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTSPURL ToString. {ErrorMessage}", excp.Message);
+                logger.LogRtspUrlToStringError(excp.Message, excp);
                 throw;
             }
         }
