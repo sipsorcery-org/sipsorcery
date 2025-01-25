@@ -357,8 +357,7 @@ namespace SIPSorcery.Net
 
                     break;
                 default:
-                    logger?.LogDebug($"Serialization for feedback report {Header.PacketType} and message type "
-                                        + $"{Header.FeedbackMessageType} not yet implemented.");
+                    logger?.LogDebug("Serialization for feedback report {PacketType} and message type {FeedbackMessageType} not yet implemented.", Header.PacketType, Header.FeedbackMessageType);
                     break;
                     //throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} and message type "
                     //+ $"{Header.FeedbackMessageType} not yet implemented.");

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPClientWebSocketChannel.cs
 //
 // Description: SIP channel for egress web socket connections. These are
@@ -173,7 +173,7 @@ namespace SIPSorcery.SIP
 
                 if (m_egressConnections.TryGetValue(connectionID, out var conn))
                 {
-                    logger.LogDebug($"Sending {buffer.Length} bytes on client web socket connection to {conn.ServerUri}.");
+                    logger.LogDebug("Sending {BufferLength} bytes on client web socket connection to {ServerUri}.", buffer.Length, conn.ServerUri);
 
                     ArraySegment<byte> segmentBuffer = new ArraySegment<byte>(buffer);
                     await conn.Client.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token).ConfigureAwait(false);
@@ -186,8 +186,7 @@ namespace SIPSorcery.SIP
                     ClientWebSocket clientWebSocket = new ClientWebSocket();
                     await clientWebSocket.ConnectAsync(serverUri, m_cts.Token).ConfigureAwait(false);
 
-                    logger.LogDebug($"Successfully connected web socket client to {serverUri}.");
-
+                    logger.LogDebug("Successfully connected web socket client to {ServerUri}.", serverUri);
                     ArraySegment<byte> segmentBuffer = new ArraySegment<byte>(buffer);
                     await clientWebSocket.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token).ConfigureAwait(false);
 
@@ -212,7 +211,7 @@ namespace SIPSorcery.SIP
 
                     if (!m_egressConnections.TryAdd(connectionID, newConn))
                     {
-                        logger.LogError($"Could not add web socket client connected to {serverUri} to channel collection, closing.");
+                        logger.LogError("Could not add web socket client connected to {ServerUri} to channel collection, closing.", serverUri);
                         await Close(connectionID, clientWebSocket).ConfigureAwait(false);
                     }
                     else
@@ -308,7 +307,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug($"Closing SIP Client Web Socket Channel.");
+                logger.LogDebug("Closing SIP Client Web Socket Channel.");
 
                 Closed = true;
                 m_cts.Cancel();
@@ -320,7 +319,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogWarning(excp, "Exception SIPClientWebSocketChannel Close. " + excp.Message);
+                logger.LogWarning(excp, "Exception SIPClientWebSocketChannel Close. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -376,14 +375,14 @@ namespace SIPSorcery.SIP
 
                         if (receiveTask.IsCompleted)
                         {
-                            logger.LogDebug($"Client web socket connection to {conn.ServerUri} received {receiveTask.Result.Count} bytes.");
+                            logger.LogDebug("Client web socket connection to {ServerUri} received {BytesReceived} bytes.", conn.ServerUri, receiveTask.Result.Count);
                             //SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray()).Wait();
                             ExtractSIPMessages(this, conn, conn.ReceiveBuffer, receiveTask.Result.Count);
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }
                         else
                         {
-                            logger.LogWarning($"Client web socket connection to {conn.ServerUri} returned without completing, closing.");
+                            logger.LogWarning("Client web socket connection to {ServerUri} returned without completing, closing.", conn.ServerUri);
                             Close(conn.ConnectionID, conn.Client);
                         }
                     }
@@ -391,13 +390,13 @@ namespace SIPSorcery.SIP
                     catch (AggregateException) { } // This gets thrown if task is cancelled.
                     catch (Exception excp)
                     {
-                        logger.LogError($"Exception SIPClientWebSocketChannel processing receive tasks. {excp.Message}");
+                        logger.LogError(excp, "Exception SIPClientWebSocketChannel processing receive tasks. {ErrorMessage}", excp.Message);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception SIPClientWebSocketChannel.MonitorReceiveTasks. {excp.Message}");
+                logger.LogError(excp, "Exception SIPClientWebSocketChannel.MonitorReceiveTasks. {ErrorMessage}", excp.Message);
             }
             finally
             {

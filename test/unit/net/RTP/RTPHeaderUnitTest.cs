@@ -30,7 +30,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetHeaderTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader rtpHeader = new RTPHeader();
@@ -39,7 +39,7 @@ namespace SIPSorcery.Net.UnitTests
             int byteNum = 1;
             foreach (byte headerByte in headerBuffer)
             {
-                logger.LogDebug(byteNum + ": " + headerByte.ToString("x"));
+                logger.LogDebug("{ByteNum}: {HeaderByte}", byteNum, headerByte.ToString("x"));
                 byteNum++;
             }
         }
@@ -47,24 +47,24 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void HeaderRoundTripTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
             RTPHeader dst = new RTPHeader(headerBuffer);
 
-            logger.LogDebug("Versions: " + src.Version + ", " + dst.Version);
-            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            logger.LogDebug("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-            logger.LogDebug("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-            logger.LogDebug("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-            logger.LogDebug("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-            logger.LogDebug("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-            logger.LogDebug("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-            logger.LogDebug("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
+            logger.LogDebug("Versions: {SrcVersion}, {DstVersion}", src.Version, dst.Version);
+            logger.LogDebug("PaddingFlag: {SrcPaddingFlag}, {DstPaddingFlag}", src.PaddingFlag, dst.PaddingFlag);
+            logger.LogDebug("HeaderExtensionFlag: {SrcHeaderExtensionFlag}, {DstHeaderExtensionFlag}", src.HeaderExtensionFlag, dst.HeaderExtensionFlag);
+            logger.LogDebug("CSRCCount: {SrcCSRCCount}, {DstCSRCCount}", src.CSRCCount, dst.CSRCCount);
+            logger.LogDebug("MarkerBit: {SrcMarkerBit}, {DstMarkerBit}", src.MarkerBit, dst.MarkerBit);
+            logger.LogDebug("PayloadType: {SrcPayloadType}, {DstPayloadType}", src.PayloadType, dst.PayloadType);
+            logger.LogDebug("SequenceNumber: {SrcSequenceNumber}, {DstSequenceNumber}", src.SequenceNumber, dst.SequenceNumber);
+            logger.LogDebug("Timestamp: {SrcTimestamp}, {DstTimestamp}", src.Timestamp, dst.Timestamp);
+            logger.LogDebug("SyncSource: {SrcSyncSource}, {DstSyncSource}", src.SyncSource, dst.SyncSource);
 
-            logger.LogDebug("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
+            logger.LogDebug("Raw Header: {RawHeader}", System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -80,7 +80,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CustomisedHeaderRoundTripTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
@@ -95,15 +95,15 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPHeader dst = new RTPHeader(headerBuffer);
 
-            logger.LogDebug("Versions: " + src.Version + ", " + dst.Version);
-            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            logger.LogDebug("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-            logger.LogDebug("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-            logger.LogDebug("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-            logger.LogDebug("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-            logger.LogDebug("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-            logger.LogDebug("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-            logger.LogDebug("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
+            logger.LogDebug("Versions: {SrcVersion}, {DstVersion}", src.Version, dst.Version);
+            logger.LogDebug("PaddingFlag: {SrcPaddingFlag}, {DstPaddingFlag}", src.PaddingFlag, dst.PaddingFlag);
+            logger.LogDebug("HeaderExtensionFlag: {SrcHeaderExtensionFlag}, {DstHeaderExtensionFlag}", src.HeaderExtensionFlag, dst.HeaderExtensionFlag);
+            logger.LogDebug("CSRCCount: {SrcCSRCCount}, {DstCSRCCount}", src.CSRCCount, dst.CSRCCount);
+            logger.LogDebug("MarkerBit: {SrcMarkerBit}, {DstMarkerBit}", src.MarkerBit, dst.MarkerBit);
+            logger.LogDebug("PayloadType: {SrcPayloadType}, {DstPayloadType}", src.PayloadType, dst.PayloadType);
+            logger.LogDebug("SequenceNumber: {SrcSequenceNumber}, {DstSequenceNumber}", src.SequenceNumber, dst.SequenceNumber);
+            logger.LogDebug("Timestamp: {SrcTimestamp}, {DstTimestamp}", src.Timestamp, dst.Timestamp);
+            logger.LogDebug("SyncSource: {SrcSyncSource}, {DstSyncSource}", src.SyncSource, dst.SyncSource);
 
             string rawHeader = null;
             foreach (byte headerByte in headerBuffer)
@@ -111,7 +111,7 @@ namespace SIPSorcery.Net.UnitTests
                 rawHeader += headerByte.ToString("x");
             }
 
-            logger.LogDebug("Raw Header: " + rawHeader);
+            logger.LogDebug("Raw Header: {RawHeader}", rawHeader);
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -127,7 +127,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
@@ -150,7 +150,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpWithExtensionTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
@@ -188,15 +188,15 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseChromeRtpPacketUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var buffer = TypeExtensions.ParseHexStr("800000099D5904B4838FCECF7F1E");
 
             RTPPacket rtp = new RTPPacket(buffer);
 
-            logger.LogDebug($"RTP SSRC: {rtp.Header.SyncSource}");
-            logger.LogDebug($"RTP length: {rtp.Header.Length}");
+            logger.LogDebug("RTP SSRC: {RtpSSRC}", rtp.Header.SyncSource);
+            logger.LogDebug("RTP length: {RtpLength}", rtp.Header.Length);
 
             Assert.NotNull(rtp);
         }
@@ -204,7 +204,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseHeaderExtensions()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpHeaderBytes = new byte[] {

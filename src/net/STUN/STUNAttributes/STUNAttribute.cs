@@ -178,7 +178,7 @@ namespace SIPSorcery.Net
                     {
                         if (stunAttributeLength + startAttIndex + 4 > endIndex)
                         {
-                            logger.LogWarning($"The attribute length on a STUN parameter was greater than the available number of bytes. Type: {attributeType}");
+                            logger.LogWarning("The attribute length on a STUN parameter was greater than the available number of bytes. Type: {AttributeType}", attributeType);
                         }
                         else
                         {

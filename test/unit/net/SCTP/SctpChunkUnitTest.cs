@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpChunkUnitTest.cs
 //
 // Description: Unit tests for the SctpChunk class.
@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripHeartBeatChunk()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SctpChunk heartbeatChunk = new SctpChunk(SctpChunkType.HEARTBEAT)

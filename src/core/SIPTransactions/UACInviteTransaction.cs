@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: UACInviteTransaction.cs
 //
 // Description: SIP Transaction that implements UAC (User Agent Client) functionality for
@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
 
         private Task<SocketError> UACInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
-            logger.LogWarning("UACInviteTransaction received unexpected request, " + sipRequest.Method + " from " + remoteEndPoint.ToString() + ", ignoring.");
+            logger.LogWarning("UACInviteTransaction received unexpected request, {Method} from {RemoteEndPoint}, ignoring.", sipRequest.Method, remoteEndPoint.ToString());
             return Task.FromResult(SocketError.Fault);
         }
 
@@ -132,7 +132,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception UACInviteTransaction_TransactionInformationResponseReceived. " + excp.Message);
+                logger.LogError(excp, "Exception UACInviteTransaction_TransactionInformationResponseReceived. {ErrorMessage}", excp.Message);
                 return SocketError.Fault;
             }
         }
@@ -178,7 +178,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception UACInviteTransaction_TransactionFinalResponseReceived. {excp.Message}");
+                logger.LogError(excp, "Exception UACInviteTransaction_TransactionFinalResponseReceived. {ErrorMessage}", excp.Message);
                 return SocketError.Fault;
             }
         }

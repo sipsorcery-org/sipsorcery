@@ -99,7 +99,7 @@ namespace SIPSorcery.Net
                 }
                 if (current.Header.SequenceNumber == node.Value.Header.SequenceNumber)
                 {
-                    logger.LogInformation("Duplicate seq number: " + current.Header.SequenceNumber);
+                    logger.LogInformation("Duplicate seq number: {SequenceNumber}", current.Header.SequenceNumber);
                     break;
                 }
 

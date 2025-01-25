@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPRequest.cs
 //
 // Description: SIP Request.
@@ -97,7 +97,7 @@ namespace SIPSorcery.SIP
                 if (sipRequest.Method == SIPMethodsEnum.UNKNOWN)
                 {
                     sipRequest.UnknownMethod = method;
-                    logger.LogWarning("Unknown SIP method received " + sipRequest.UnknownMethod + ".");
+                    logger.LogWarning("Unknown SIP method received {UnknownMethod}.", sipRequest.UnknownMethod);
                 }
 
                 statusLine = statusLine.Substring(firstSpacePosn).Trim();
@@ -125,8 +125,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception parsing SIP Request. " + excp.Message);
-                logger.LogError(sipMessage.RawMessage);
+                logger.LogError(excp, "Exception parsing SIP Request: {SipMessage}. {ErrorMessage}", sipMessage.RawMessage, excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Request, "Unknown error parsing SIP Request");
             }
         }
@@ -147,8 +146,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception ParseSIPRequest. " + excp.Message);
-                logger.LogError(sipMessageStr);
+                logger.LogError("Exception ParseSIPRequest: {SipMessage}. {ErrorMessage}", sipMessageStr, excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Request, "Unknown error parsing SIP Request");
             }
         }
@@ -172,7 +170,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPRequest ToString. " + excp.Message);
+                logger.LogError(excp, "Exception SIPRequest ToString. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

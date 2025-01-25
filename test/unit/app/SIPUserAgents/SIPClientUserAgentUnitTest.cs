@@ -19,7 +19,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void CallWithAdjustedInviteHeaderTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();

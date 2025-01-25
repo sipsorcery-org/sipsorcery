@@ -198,11 +198,11 @@ namespace SIPSorcery.Net
         {
             if (StartedAt != DateTime.MinValue)
             {
-                logger.LogWarning($"Start was called on RTCP session for {(!string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString())} but it has already been started.");
+                logger.LogWarning("Start was called on RTCP session for {CNameOrSsrc} but it has already been started.", !string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString());
             }
             else
             {
-                logger.LogDebug($"Starting RTCP session for {(!string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString())}.");
+                logger.LogDebug("Starting RTCP session for {CNameOrSsrc}.", !string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString());
 
                 StartedAt = DateTime.Now;
 
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
         {
             if (m_receptionReport != null && m_receptionReport.SSRC == ssrc)
             {
-                logger.LogDebug($"RTCP session removing reception report for remote ssrc {ssrc}.");
+                logger.LogDebug("RTCP session removing reception report for remote ssrc {Ssrc}.", ssrc);
                 m_receptionReport = null;
             }
         }
@@ -323,7 +323,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RTCPSession.ReportReceived. {excp.Message}");
+                logger.LogError(excp, "Exception RTCPSession.ReportReceived. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -344,14 +344,14 @@ namespace SIPSorcery.Net
                         {
                             if (!IsTimedOut)
                             {
-                                logger.LogWarning($"RTCP session for local ssrc {Ssrc} has not had any activity for over {NoActivityTimeoutMilliseconds / 1000} seconds.");
+                                logger.LogWarning("RTCP session for local ssrc {Ssrc} has not had any activity for over {NoActivityTimeoutSeconds} seconds.", Ssrc, NoActivityTimeoutMilliseconds / 1000);
                                 IsTimedOut = true;
 
                                 OnTimeout?.Invoke(MediaType);
                             }
                         }
 
-                        //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
+                        //logger.LogDebug("SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount}", Ssrc, LastSeqNum, PacketsSentCount, OctetsSentCount);
 
                         var report = GetRtcpReport();
 
@@ -378,7 +378,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 // RTCP reports are not critical enough to bubble the exception up to the application.
-                logger.LogError($"Exception SendReportTimerCallback. {excp.Message}");
+                logger.LogError(excp, "Exception SendReportTimerCallback. {ErrorMessage}", excp.Message);
                 m_rtcpReportTimer?.Dispose();
             }
         }

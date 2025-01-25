@@ -34,7 +34,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CreateClientInstanceUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
@@ -49,7 +49,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CreateServerInstanceUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             DtlsSrtpTransport dtlsTransport = new DtlsSrtpTransport(new DtlsSrtpServer());
@@ -64,7 +64,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void DoHandshakeUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var dtlsClient = new DtlsSrtpClient();
@@ -77,12 +77,12 @@ namespace SIPSorcery.Net.IntegrationTests
 
             dtlsClientTransport.OnDataReady += (buf) =>
             {
-                logger.LogDebug($"DTLS client transport sending {buf.Length} bytes to server.");
+                logger.LogDebug("DTLS client transport sending {BufferLength} bytes to server.", buf.Length);
                 dtlsServerTransport.WriteToRecvStream(buf);
             };
             dtlsServerTransport.OnDataReady += (buf) =>
             {
-                logger.LogDebug($"DTLS server transport sending {buf.Length} bytes to client.");
+                logger.LogDebug("DTLS server transport sending {BufferLength} bytes to client.", buf.Length);
                 dtlsClientTransport.WriteToRecvStream(buf);
             };
 
@@ -95,9 +95,9 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.True(serverTask.Result);
             Assert.True(clientTask.Result);
 
-            logger.LogDebug($"DTLS client fingerprint       : {dtlsClient.Fingerprint}.");
+            logger.LogDebug("DTLS client fingerprint       : {Fingerprint}", dtlsServer.Fingerprint);
             //logger.LogDebug($"DTLS client server fingerprint: {dtlsClient.ServerFingerprint}.");
-            logger.LogDebug($"DTLS server fingerprint       : {dtlsServer.Fingerprint}.");
+            logger.LogDebug("DTLS server fingerprint       : {Fingerprint}", dtlsServer.Fingerprint);
             //logger.LogDebug($"DTLS server client fingerprint: {dtlsServer.ClientFingerprint}.");
 
             Assert.NotNull(dtlsClient.GetRemoteCertificate());
@@ -114,7 +114,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void DoHandshakeClientTimeoutUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(new DtlsSrtpClient());
@@ -131,7 +131,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void DoHandshakeServerTimeoutUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(new DtlsSrtpServer());

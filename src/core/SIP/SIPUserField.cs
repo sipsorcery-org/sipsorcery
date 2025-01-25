@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserField.cs
 //
 // Description: 
@@ -150,8 +150,8 @@ namespace SIPSorcery.SIP
                 {
                     /*if(Regex.Match(Name, @"\s").Success)
                     {
-                        userFieldStr = "\"" + Name + "\" ";
-                    }
+                    userFieldStr = "\"" + Name + "\" ";
+                }
                     else
                     {
                         userFieldStr = Name + " ";
@@ -166,7 +166,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPUserField ToString. " + excp.Message);
+                logger.LogError(excp, "Exception SIPUserField ToString. {Message}", excp.Message);
                 throw;
             }
         }
@@ -188,7 +188,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPUserField ToParameterlessString. " + excp.Message);
+                logger.LogError(excp, "Exception SIPUserField ToParameterlessString. {Message}", excp.Message);
                 throw;
             }
         }

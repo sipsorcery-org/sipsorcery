@@ -37,7 +37,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseXtenINVITEUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -71,9 +71,9 @@ namespace SIPSorcery.SIP.UnitTests
 
             if (inviteReq.Body != null)
             {
-                logger.LogDebug("Body Length = " + inviteReq.Body.Length + ".");
+                logger.LogDebug("Body Length = {BodyLength}.", inviteReq.Body.Length);
             }
-            logger.LogDebug("Body:\r\n" + inviteReq.Body + ".");
+            logger.LogDebug("Body:\r\n{Body}.", inviteReq.Body);
 
             Assert.True(inviteReq.Method == SIPMethodsEnum.INVITE, "The SIP request method was not parsed correctly.");
             //Assert.True(inviteReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
@@ -88,7 +88,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MalformedContactHeaderUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -112,7 +112,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskACKUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseCiscoACKUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -175,7 +175,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseXtenByeUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -205,7 +205,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskBYEUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -235,7 +235,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void TopRouteUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -262,7 +262,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SubscribeRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -285,7 +285,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest subscribeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(subscribeReq.ToString());
+            logger.LogDebug("{SubsctibeRequest}", subscribeReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -293,7 +293,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SpaceInNamesRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -312,7 +312,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(registerReq.ToString());
+            logger.LogDebug("{RegisterRequest}", registerReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -323,7 +323,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void DodgyAastraRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -347,7 +347,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void NetgearInviteRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -385,7 +385,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(inviteReq.ToString());
+            logger.LogDebug("{InviteRequest}", inviteReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -393,7 +393,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RTCRegisterRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -419,7 +419,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CiscoRegisterRequest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -442,7 +442,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AuthenticatedRegisterRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -462,7 +462,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(registerReq.ToString());
+            logger.LogDebug("{RegisterRequest}", registerReq.ToString());
 
             SIPAuthenticationHeader authHeader = registerReq.Header.AuthenticationHeaders[0];
 
@@ -477,7 +477,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MicrosoftMessengerRegisterRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -497,13 +497,13 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(registerReq.ToString());
+            logger.LogDebug("{RegisterRequest}", registerReq.ToString());
         }
 
         [Fact]
         public void CreateBranchIdUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -524,10 +524,10 @@ namespace SIPSorcery.SIP.UnitTests
 
             string branchId = CallProperties.CreateBranchId();
 
-            logger.LogDebug("branchid=" + branchId);
+            logger.LogDebug("branchid={BranchId}", branchId);
 
             int length = branchId.Length - SIPConstants.SIP_BRANCH_MAGICCOOKIE.Length;
-            logger.LogDebug("length=" + length);
+            logger.LogDebug("length={Length}", length);
 
             Assert.True(branchId != null, "The branchid was not created correctly.");
 
@@ -537,7 +537,7 @@ namespace SIPSorcery.SIP.UnitTests
         /*[Test]
         public void LoopDetectUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
                
             string sipMsg = 
@@ -570,7 +570,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LooseRouteForProxyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -604,7 +604,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LooseRouteForProxyMultipleContactsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -638,7 +638,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LooseRouteNotForProxyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -670,7 +670,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void StrictRoutePriorToProxyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -695,9 +695,9 @@ namespace SIPSorcery.SIP.UnitTests
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            logger.LogDebug(inviteReq.ToString());
-            logger.LogDebug("Next Route=" + inviteReq.Header.Routes.TopRoute.ToString());
-            logger.LogDebug("Request URI=" + inviteReq.URI.ToString());
+            logger.LogDebug("{InviteRequest}", inviteReq.ToString());
+            logger.LogDebug("Next Route={TopRoute}", inviteReq.Header.Routes.TopRoute.ToString());
+            logger.LogDebug("Request URI={RequestURI}", inviteReq.URI.ToString());
 
             Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "Top route was not correct.");
             Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly adjusted.");
@@ -707,7 +707,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void StrictRouteAfterProxyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -732,8 +732,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            logger.LogDebug("Next Route=" + inviteReq.Header.Routes.TopRoute.ToString());
-            logger.LogDebug("Request URI=" + inviteReq.URI.ToString());
+            logger.LogDebug("Next Route={TopRoute}", inviteReq.Header.Routes.TopRoute.ToString());
+            logger.LogDebug("Request URI={RequestURI}", inviteReq.URI.ToString());
 
             Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "Top route was not correctly recognised.");
             Assert.True(inviteReq.Header.Routes.BottomRoute.ToString() == "<sip:303@sip.blueface.ie>", "Bottom route was not correctly placed.");
@@ -745,7 +745,7 @@ namespace SIPSorcery.SIP.UnitTests
         //[Ignore()]
         public void LooseRouteForProxyHostnameUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -778,7 +778,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SpuriousStartCharsInResponseUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // This is an example of a malformed response received in the wild. It matches the bnf format for a request,
@@ -805,7 +805,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RegisterZeroExpiryUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -823,7 +823,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(registerReq.ToString());
+            logger.LogDebug("{RegisterRequest}", registerReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -831,7 +831,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AvayaInviteUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -881,7 +881,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            logger.LogDebug(inviteReq.ToString());
+            logger.LogDebug("{InviteRequest}", inviteReq.ToString());
 
             Assert.True(inviteReq.URI.ToString() == "sip:8219522@sip.194.213.29.100", "The request URI was not updated to the strict route.");
             Assert.True(inviteReq.Header.Routes.TopRoute.URI.ToString() == "sip:194.213.29.100:5060", "The route set was not correctly updated.");
@@ -892,7 +892,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LocalphoneInviteUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -925,7 +925,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(inviteReq.ToString());
+            logger.LogDebug("{InviteRequest}", inviteReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -933,7 +933,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleRouteHeadersUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -975,7 +975,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SinologicInvalidInviteUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -997,13 +997,13 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(inviteReq.ToString());
+            logger.LogDebug("{InviteRequest}", inviteReq.ToString());
         }
 
         [Fact]
         public void ParseACKWithDomainNameInViaTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -1021,7 +1021,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            logger.LogDebug(ackReq.ToString());
+            logger.LogDebug("{AckRequest}", ackReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -1032,7 +1032,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ToStringSerialisationTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
@@ -1041,7 +1041,7 @@ namespace SIPSorcery.SIP.UnitTests
             registerRequest.Header.From.FromTag = "OLBDXPNBTJ";
             registerRequest.Header.CallId = "2b79ac74010c494aa1eaaacb9819d77d";
 
-            logger.LogDebug(registerRequest.ToString());
+            logger.LogDebug("{RegisterRequest}", registerRequest.ToString());
 
             string expectedSerialisation = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
@@ -1063,7 +1063,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CopyToStringSerialisationTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
@@ -1074,7 +1074,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPRequest copy = registerRequest.Copy();
 
-            logger.LogDebug(copy.ToString());
+            logger.LogDebug("{Copy}", copy.ToString());
 
             string expectedSerialisation = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
@@ -1096,7 +1096,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParsedToStringSerialisationTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipRequestStr = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
@@ -1112,7 +1112,7 @@ namespace SIPSorcery.SIP.UnitTests
 "";
             SIPRequest registerRequest = SIPRequest.ParseSIPRequest(sipRequestStr);
 
-            logger.LogDebug(registerRequest.ToString());
+            logger.LogDebug("{RequestRequest}", registerRequest.ToString());
 
             string expectedSerialisation = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
@@ -1134,7 +1134,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void BinarySerialisationRoundTripTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
@@ -1149,8 +1149,8 @@ namespace SIPSorcery.SIP.UnitTests
                 bodyHash = sha256.ComputeHash(req.BodyBuffer).HexStr();
             }
 
-            logger.LogDebug(req.ToString());
-            logger.LogDebug($"Body sha256: {bodyHash}.");
+            logger.LogDebug("{Req}", req.ToString());
+            logger.LogDebug("Body sha256: {bodyHash}.", bodyHash);
 
             SIPMessageBuffer msgBuffer = SIPMessageBuffer.ParseSIPMessage(req.GetBytes(), SIPEndPoint.Empty, SIPEndPoint.Empty);
             SIPRequest rndTripReq = SIPRequest.ParseSIPRequest(msgBuffer);
@@ -1161,8 +1161,8 @@ namespace SIPSorcery.SIP.UnitTests
                 rndTripBodyHash = sha256.ComputeHash(rndTripReq.BodyBuffer).HexStr();
             }
 
-            logger.LogDebug(rndTripReq.ToString());
-            logger.LogDebug($"Round Trip Body sha256: {rndTripBodyHash}.");
+            logger.LogDebug("{RndTripRequest}", rndTripReq.ToString());
+            logger.LogDebug("Round Trip Body sha256: {rndTripBodyHash}.", rndTripBodyHash);
 
             Assert.Equal(bodyHash, rndTripBodyHash);
         }
@@ -1173,7 +1173,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AuthenticateInviteRequestUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:100@sipsorcery.cloud SIP/2.0
@@ -1210,7 +1210,7 @@ a=ssrc:172341600 cname:ee6f407e-d848-44b3-a451-e8cf2d0e22d9
 
             var authenticatedReq = req.DuplicateAndAuthenticate(new List<SIPAuthenticationHeader> { authHeader }, "user", "password");
 
-            logger.LogDebug(authenticatedReq.ToString());
+            logger.LogDebug("{AuthenticationRequest}", authenticatedReq.ToString());
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -1218,7 +1218,7 @@ a=ssrc:172341600 cname:ee6f407e-d848-44b3-a451-e8cf2d0e22d9
         [Fact]
         public void SupportMultiplePAIHeaderTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
@@ -1255,7 +1255,7 @@ Content-Length: 0
         [Fact]
         public void SupportMultipleHistoryInfoHeaderWithCommaTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
@@ -1290,7 +1290,7 @@ Content-Length: 0
         [Fact]
         public void SupportMultiplePAIHeaderWithCommaTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
@@ -1326,7 +1326,7 @@ Content-Length: 0
         [Fact]
         public void GeneratePAIHeadersOnToStringTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
 
@@ -1368,7 +1368,7 @@ P-Asserted-Identity: <sip:+4188888888;cpc=ordinary@10.0.0.1;transport=udp;user=p
         [Fact]
         public void HistoryInfoHeaderSortedTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
@@ -1405,7 +1405,7 @@ Content-Length: 0
         [Fact]
         public void GenerateHistoryInfoHeadersOnToStringTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
 
@@ -1446,7 +1446,7 @@ History-Info: <sip:+4188888888@10.0.0.2:5060;transport=udp;cause=480>;index=1.1"
         [Fact]
         public void DiversionHeaderTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
@@ -1483,7 +1483,7 @@ Content-Length: 0
         [Fact]
         public void DiversionHeaderInOneLineTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
@@ -1519,7 +1519,7 @@ Content-Length: 0
         [Fact]
         public void GenerateDiversionHeadersOnToStringTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
 
@@ -1560,7 +1560,7 @@ Diversion: <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=fu
         [Fact]
         public void ParseSERVICEUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =

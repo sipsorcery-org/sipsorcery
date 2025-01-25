@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.UnitTests
         //[ExpectedException(typeof(XmlSchemaValidationException))]
         //public void InvalidXMLUnitTest()
         //{
-        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
         //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_presenceSchema == null)
@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP.UnitTests
         ////[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
         //public void ValidXMLUnitTest()
         //{
-        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
         //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_presenceSchema == null)
@@ -113,7 +113,7 @@ namespace SIPSorcery.SIP.UnitTests
         //[Fact]
         //public void GetAsXMLStringUnitTest()
         //{
-        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
         //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    SIPEventPresence presence = new SIPEventPresence(SIPURI.ParseSIPURI("sip:me@somewhere.com"));
@@ -130,7 +130,7 @@ namespace SIPSorcery.SIP.UnitTests
         //[Fact]
         //public void ParseFromXMLStringUnitTest()
         //{
-        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
         //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    string presenceXMLStr = "<?xml version='1.0' encoding='utf-16'?>" +

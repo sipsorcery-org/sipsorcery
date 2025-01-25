@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendJpegFrame. {ErrorMessage}", sockExcp.Message);
                 }
             }
         }
@@ -143,8 +143,8 @@ namespace SIPSorcery.Net
         /// and the timestamp incremented.</param>
         private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal)
         {
-            //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
-            //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
+            //logger.LogDebug("Send NAL {NALLength}, is last {IsLastNal}, timestamp {Timestamp}.", nal.Length, isLastNal, videoTrack.Timestamp);
+            //logger.LogDebug("nri {NALNri:X2}, type {NALType:X2}.", nalNri, nalType);
 
             byte nal0 = nal[0];
 
@@ -216,14 +216,13 @@ namespace SIPSorcery.Net
                         int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
                         SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                        //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
                     }
 
                     LocalTrack.Timestamp += duration;
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendVp8Frame.");
                 }
             }
         }
@@ -278,7 +277,7 @@ namespace SIPSorcery.Net
                 if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H264)
                 {
-                    logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
+                    logger.LogDebug("Video depacketisation codec set to {Codec} for SSRC {SSRC}.", format.ToVideoFormat().Codec, packet.Header.SyncSource);
 
                     RtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec, MaxReconstructedVideoFrameSize);
 
@@ -290,7 +289,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning($"Video depacketisation logic for codec {format.Name()} has not been implemented, PR's welcome!");
+                    logger.LogWarning("Video depacketisation logic for codec {CodecName} has not been implemented, PR's welcome!", format.Name());
                 }
             }
         }

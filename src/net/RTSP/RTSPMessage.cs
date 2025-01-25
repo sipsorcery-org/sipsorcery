@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTSPMessage.cs
 //
 // Description: RTSP message.
@@ -76,7 +76,7 @@ namespace SIPSorcery.Net
             {
                 message = message.Replace("\n", "LF");
                 message = message.Replace("\r", "CR");
-                logger.LogError("Exception ParseRTSPMessage. " + excp.Message + "\nRTSP Message=" + message + ".");
+                logger.LogError(excp, "Exception ParseRTSPMessage. {ErrorMessage}\nRTSP Message={RtpMessage}.", message, excp.Message);
                 return null;
             }
         }
@@ -134,7 +134,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception ParseRTSPMessage. " + excp.Message + "\nRTSP Message=" + message + ".");
+                logger.LogError(excp, "Exception ParseRTSPMessage. {ErrorMessage}\nRTSP Message={RtpMessage}.", excp.Message, message);
                 return null;
             }
         }

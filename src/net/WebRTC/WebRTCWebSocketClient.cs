@@ -72,7 +72,7 @@ namespace SIPSorcery.Net
         {
             _pc = await _createPeerConnection().ConfigureAwait(false);
 
-            logger.LogDebug($"websocket-client attempting to connect to {_webSocketServerUri}.");
+            logger.LogDebug("websocket-client attempting to connect to {WebSocketServerUri}.", _webSocketServerUri);
 
             var webSocketClient = new ClientWebSocket();
             // As best I can tell the point of the CreateClientBuffer call is to set the size of the internal
@@ -85,7 +85,7 @@ namespace SIPSorcery.Net
 
             if (webSocketClient.State == WebSocketState.Open)
             {
-                logger.LogDebug($"websocket-client starting receive task for server {_webSocketServerUri}.");
+                logger.LogDebug("websocket-client starting receive task for server {WebSocketServerUri}.", _webSocketServerUri);
 
                 _pc.onicecandidate += async (candidate) =>
                 {
@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
                 posn = 0;
             }
 
-            logger.LogDebug($"websocket-client receive loop exiting.");
+            logger.LogDebug("websocket-client receive loop exiting.");
         }
 
         private async Task<string> OnMessage(string jsonStr, RTCPeerConnection pc)
@@ -143,12 +143,12 @@ namespace SIPSorcery.Net
             }
             else if (RTCSessionDescriptionInit.TryParse(jsonStr, out var descriptionInit))
             {
-                logger.LogDebug($"Got remote SDP, type {descriptionInit.type}.");
+                logger.LogDebug("Got remote SDP, type {DescriptionType}.", descriptionInit.type);
 
                 var result = pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
-                    logger.LogWarning($"Failed to set remote description, {result}.");
+                    logger.LogWarning("Failed to set remote description, {Result}.", result);
                     pc.Close("failed to set remote description");
                 }
 
@@ -162,7 +162,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning($"websocket-client could not parse JSON message. {jsonStr}");
+                logger.LogWarning("websocket-client could not parse JSON message. {JsonStr}", jsonStr);
             }
 
             return null;
