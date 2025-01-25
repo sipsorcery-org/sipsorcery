@@ -315,12 +315,12 @@ namespace SIPSorcery.SIP
                                 host = srvHost;
                                 port = srvPort != 0 ? srvPort : port;
 
-                                logger.LogDebug("SIP DNS SRV for {uri} resolved to {host} and port {port}.", uri, host, port);
+                                logger.DnsSrvResolved(uri, host, port);
                             }
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning(srvExcp, "SIPDNS exception on SRV lookup. {ErrorMessage}.", srvExcp.Message);
+                            logger.DnsSrvException(srvExcp.Message, srvExcp);
                         }
                         queryType = preferIPv6 ? QueryType.AAAA : QueryType.A;
 
@@ -343,7 +343,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning(srvExcp, "SIPDNS exception on AAAA lookup. {ErrorMessage}.", srvExcp.Message);
+                            logger.DnsAAAAException(srvExcp.Message, srvExcp);
                             queryType = QueryType.A;
                         }
 
@@ -371,7 +371,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception srvExcp)
                         {
-                            logger.LogWarning(srvExcp, "SIPDNS exception on A lookup. {ErrorMessage}.", srvExcp.Message);
+                            logger.DnsAException(srvExcp.Message, srvExcp);
                             result = SIPEndPoint.Empty;
                         }
 
@@ -482,7 +482,7 @@ namespace SIPSorcery.SIP
 
                 if (addressList?.Length == 0)
                 {
-                    logger.LogWarning("Operating System DNS lookup failed for {MAddrOrHostAddress}.", uri.MAddrOrHostAddress);
+                    logger.DnsOSLookupFailed(uri.MAddrOrHostAddress);
                     return null;
                 }
                 else

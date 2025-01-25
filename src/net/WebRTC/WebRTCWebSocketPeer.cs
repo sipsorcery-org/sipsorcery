@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
 
             if (RTCIceCandidateInit.TryParse(e.Data, out var iceCandidateInit))
             {
-                logger.LogDebug("Got remote ICE candidate.");
+                logger.LogWebSocketClientGotRemoteIceCandidate();
 
                 bool useCandidate = true;
                 if (FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
 
                 if (!useCandidate)
                 {
-                    logger.LogDebug("WebRTCWebSocketPeer excluding ICE candidate due to filter: {Candidate}", iceCandidateInit.candidate);
+                    logger.LogWebRtcSignalingPeerExcludeIceCandidate(iceCandidateInit.candidate);
                 }
                 else
                 {
@@ -82,11 +82,11 @@ namespace SIPSorcery.Net
             }
             else if (RTCSessionDescriptionInit.TryParse(e.Data, out var descriptionInit))
             {
-                logger.LogDebug("Got remote SDP, type {DescriptionType}.", descriptionInit.type);
+                logger.LogWebSocketClientGotRemoteSdp(descriptionInit.type);
                 var result = _pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
-                    logger.LogWarning("Failed to set remote description, {Result}.", result);
+                    logger.LogWebRtcSetDescriptionError(result);
                     _pc.Close("failed to set remote description");
                     this.Close();
                 }
@@ -97,7 +97,7 @@ namespace SIPSorcery.Net
                         var answerSdp = _pc.createAnswer(AnswerOptions);
                         await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
-                        logger.LogDebug("Sending SDP answer to client {UserEndPoint}.", Context.UserEndPoint);
+                        logger.LogWebSocketClientSdpAnswer(Context.UserEndPoint);
                         // Don't log SDP can contain sensitive info, albeit very short lived.
                         //logger.LogDebug(answerSdp.sdp);
 
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("websocket-server could not parse JSON message. {MessageData}", e.Data);
+                logger.LogWebRtcSignalingJsonParseFailed(e.Data);
             }
         }
 
@@ -115,7 +115,7 @@ namespace SIPSorcery.Net
         {
             base.OnOpen();
 
-            logger.LogDebug("Web socket client connection from {UserEndPoint}.", Context.UserEndPoint);
+            logger.LogWebSocketClientConnection(Context.UserEndPoint);
 
             _pc = await CreatePeerConnection().ConfigureAwait(false);
 
@@ -133,7 +133,7 @@ namespace SIPSorcery.Net
                 var offerSdp = _pc.createOffer(OfferOptions);
                 await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
-                logger.LogDebug("Sending SDP offer to client {UserEndPoint}.", Context.UserEndPoint);
+                logger.LogWebSocketClientSdpOffer(Context.UserEndPoint);
                 // Don't log SDP can contain sensitive info, albeit very short lived.
                 //logger.LogDebug(offerSdp.sdp);
 
@@ -143,7 +143,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError("An error has occurred during the OnOpen event.\n{Exception}.", ex.ToString());
+                    logger.LogWebRtcSendOfferError("An error has occurred during the OnOpen event.", ex);
                 }
             }
         }

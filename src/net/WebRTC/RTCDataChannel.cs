@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
 
         internal void GotAck()
         {
-            logger.LogDebug("Data channel for label {label} now open.", label);
+            logger.LogWebRtcDataChannelOpen(label);
             IsOpened = true;
             readyState = RTCDataChannelState.open;
             onopen?.Invoke();
@@ -122,7 +122,7 @@ namespace SIPSorcery.Net
         {
             IsOpened = false;
             readyState = RTCDataChannelState.closed;
-            logger.LogDebug("Data channel with id {id} has been closed", id);
+            logger.LogWebRtcDataChannelClose(id);
             onclose?.Invoke();
         }
 
@@ -139,7 +139,7 @@ namespace SIPSorcery.Net
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning("WebRTC data channel send failed due to SCTP transport in state {TransportState}.", _transport.state);
+                logger.LogWebRtcDataChannelSendFailed(_transport.state);
             }
             else
             {
@@ -174,7 +174,7 @@ namespace SIPSorcery.Net
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning("WebRTC data channel send failed due to SCTP transport in state {TransportState}.", _transport.state);
+                logger.LogWebRtcDataChannelSendFailed(_transport.state);
             }
             else
             {
@@ -251,7 +251,7 @@ namespace SIPSorcery.Net
         /// </summary>
         internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
         {
-            //logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
+            //logger.LogWebRtcDcepDataChunk(streamID, streamSeqNum, ppID, label);
 
             // If the ppID is not recognised default to binary.
             DataChannelPayloadProtocols payloadType = DataChannelPayloadProtocols.WebRTC_Binary;

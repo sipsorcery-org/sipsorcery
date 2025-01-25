@@ -134,7 +134,7 @@ namespace SIPSorcery.Net
         {
             if (state != RTCSctpTransportState.Closed)
             {
-                logger.LogWarning("SCTP source port cannot be updated when the transport is in state {State}.", state);
+                logger.LogWebRtcIcePortStateError(state);
             }
             else
             {
@@ -150,7 +150,7 @@ namespace SIPSorcery.Net
         {
             if (state != RTCSctpTransportState.Closed)
             {
-                logger.LogWarning("SCTP destination port cannot be updated when the transport is in state {State}.", state);
+                logger.LogWebRtcIcePortStateError(state);
             }
             else
             {
@@ -289,7 +289,7 @@ namespace SIPSorcery.Net
                     {
                         if (!SctpPacket.VerifyChecksum(recvBuffer, 0, bytesRead))
                         {
-                            logger.LogWarning("SCTP packet received on DTLS transport dropped due to invalid checksum.");
+                            logger.LogRtcSctpDiscardedPacket();
                         }
                         else
                         {
@@ -298,7 +298,7 @@ namespace SIPSorcery.Net
                             if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                             {
                                 var initChunk = pkt.Chunks.First(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
-                                logger.LogDebug("SCTP INIT packet received, initial tag {InitiateTag}, initial TSN {InitialTSN}.", initChunk.InitiateTag, initChunk.InitialTSN);
+                                logger.LogRtcSctpInit(initChunk.InitiateTag, initChunk.InitialTSN);
 
                                 GotInit(pkt, null);
                             }
@@ -310,7 +310,7 @@ namespace SIPSorcery.Net
 
                                 if (cookie.IsEmpty())
                                 {
-                                    logger.LogWarning("SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
+                                    logger.LogRtcSctpWarning();
                                 }
                                 else
                                 {
@@ -332,31 +332,31 @@ namespace SIPSorcery.Net
                     else if (_isClosed)
                     {
                         // The DTLS transport has been closed or is no longer available.
-                        logger.LogWarning("SCTP the RTCSctpTransport DTLS transport returned an error.");
+                        logger.LogRtcSctpReceive();
                         break;
                     }
                 }
                 catch (ApplicationException appExcp)
                 {
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
-                    logger.LogWarning("SCTP error processing RTCSctpTransport receive. {Message}", appExcp.Message);
+                    logger.LogWebRtcSctpProcessError(appExcp.Message);
                 }
                 catch(TlsFatalAlert alert)  when (alert.InnerException is SocketException)
                 {
                     var sockExcp = alert.InnerException as SocketException;
-                    logger.LogWarning(sockExcp, "SCTP RTCSctpTransport receive socket failure {SocketErrorCode}.", sockExcp.SocketErrorCode);
+                    logger.LogWebRtcIceSocketError(sockExcp.SocketErrorCode, sockExcp);
                     break;
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError(excp, "SCTP fatal error processing RTCSctpTransport receive. {ErrorMessage}", excp.Message);
+                    logger.LogWebRtcScpError(excp.Message, excp);
                     break;
                 }
             }
 
             if (!_isClosed)
             {
-                logger.LogWarning("SCTP association {ID} receive thread stopped.", RTCSctpAssociation.ID);
+                logger.LogRtcSctpAssociation(RTCSctpAssociation.ID);
             }
 
             SetState(RTCSctpTransportState.Closed);
