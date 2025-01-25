@@ -66,14 +66,14 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    logger.LogWarning("Mangle SDP was called with an empty body or public IP address.");
+                    logger.LogSdpMangleEmptyValues();
                 }
 
                 return sdpBody;
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MangleSDP. {ErrorMessage}", excp.Message);
+                logger.LogSdpMangleError(excp.Message, exception: excp);
                 return sdpBody;
             }
         }
@@ -115,13 +115,13 @@ namespace SIPSorcery.SIP.App
                         sipRequest.Body = mangledSDP;
                         sipRequest.Header.ContentLength = sipRequest.Body.Length;
 
-                        logger.LogDebug("SDP mangled for {Status} response from {RemoteSIPEndPoint}, adjusted address {RemoteEndPointAddress}.", sipRequest.Method, sipRequest.RemoteSIPEndPoint, bottomViaIPAddress);
+                        logger.LogSdpMangledRequest(sipRequest.Method, sipRequest.RemoteSIPEndPoint, bottomViaIPAddress);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MangleSDP. {ErrorMessage}", excp.Message);
+                logger.LogSipRequestMangleError(excp.Message, excp);
             }
         }
 
@@ -160,13 +160,13 @@ namespace SIPSorcery.SIP.App
                         sipResponse.Body = mangledSDP;
                         sipResponse.Header.ContentLength = sipResponse.Body.Length;
 
-                        logger.LogDebug("SDP mangled for {Status} response from {RemoteSIPEndPoint}, adjusted address {RemoteEndPointAddress}.", sipResponse.Status, sipResponse.RemoteSIPEndPoint, remoteEndPoint.Address);
+                        logger.LogSdpMangledResponse(sipResponse.Status, sipResponse.RemoteSIPEndPoint, remoteEndPoint.Address);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MangleSIPResponse. {ErrorMessage}", excp.Message);
+                logger.LogSipResponseMangleError(excp.Message, excp);
             }
         }
 

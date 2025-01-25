@@ -273,7 +273,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransaction.{ErrorMessage}", excp.Message);
+                logger.LogExceptionSipTransaction(excp.Message, excp);
                 throw;
             }
         }
@@ -405,7 +405,7 @@ namespace SIPSorcery.SIP
                     // If reliable provisional responses are supported then need to send this response reliably.
                     if (ReliableProvisionalResponse != null)
                     {
-                        logger.LogWarning("A new reliable provisional response is being sent but the previous one was not yet acknowledged.");
+                        logger.LogPendingProvisionalResponseNotAcked();
                     }
 
                     ReliableProvisionalResponse = sipResponse;
@@ -454,7 +454,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception GetInformationalResponse. {ErrorMessage}", excp.Message);
+                logger.LogExceptionGetInformationalResponse(excp.Message, excp);
                 throw;
             }
         }
@@ -481,7 +481,7 @@ namespace SIPSorcery.SIP
 
             if (m_transactionState == SIPTransactionStatesEnum.Proceeding && RSeq == sipRequest.Header.RAckRSeq)
             {
-                logger.LogDebug("PRACK request matched the current outstanding provisional response, setting as delivered.");
+                logger.LogPrackRequestMatched();
                 DeliveryPending = false;
             }
 
@@ -503,13 +503,13 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.LogWarning("An ACK retransmit was required but there was no stored ACK request to send.");
+                    logger.LogAckRetransmitRequestMissing();
                     return Task.FromResult(SocketError.InvalidArgument);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ResendAckRequest: {ErrorMessage}", excp.Message);
+                logger.LogExceptionResendAckRequest(excp.Message, excp);
                 return Task.FromResult(SocketError.Fault);
             }
         }
@@ -526,13 +526,13 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.LogWarning("A PRACK retransmit was required but there was no stored PRACK request to send.");
+                    logger.LogPrackRetransmitMissing();
                     return Task.FromResult(SocketError.InvalidArgument);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ResendPrackRequest: {ErrorMessage}", excp.Message);
+                logger.LogExceptionResendPrackRequest(excp.Message, excp);
                 return Task.FromResult(SocketError.Fault);
             }
         }

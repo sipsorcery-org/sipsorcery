@@ -322,7 +322,7 @@ namespace SIPSorcery.SIP
             }
             catch(Exception excp)
             {
-                logger.LogWarning(excp, "Failed to parse UserParameters, error: {ErrorMessage}", excp.Message);
+                logger.LogUserParametersParseWarning(excp.Message, excp);
             }
         }
 
@@ -441,7 +441,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseSIPURI (URI={Uri}). {ErrorMessage}", uri, excp.Message);
+                logger.LogParseSIPURIError(uri, excp.Message, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "Unknown error parsing SIP URI.");
             }
         }
@@ -512,7 +512,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPURI ToString. {ErrorMessage}", excp.Message);
+                logger.LogSIPURIToStringError(excp.Message, excp);
                 throw;
             }
         }
@@ -541,7 +541,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPURI ToParamaterlessString. {ErrorMessage}", excp.Message);
+                logger.LogToParameterlessStringError(excp.Message, excp);
                 throw;
             }
         }

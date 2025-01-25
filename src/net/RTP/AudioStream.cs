@@ -138,7 +138,7 @@ namespace SIPSorcery.Net
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError(sockExcp, "SocketException SendAudioFrame. {ErrorMessage}", sockExcp.Message);
+                    logger.LogRtpSocketExceptionSendAudioFrame(sockExcp.Message, sockExcp);
                 }
             }
         }
@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning(nameof(SendDtmfEvent) + " an RTPEvent is already in progress.");
+                    logger.LogDtmfEventInProgress();
                     return;
                 }
 
@@ -215,11 +215,11 @@ namespace SIPSorcery.Net
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError(sockExcp, "SocketException SendDtmfEvent. {ErrorMessage}", sockExcp.Message);
+                    logger.LogRtpSocketExceptionSendDtmfEvent(sockExcp.Message, sockExcp);
                 }
                 catch (TaskCanceledException)
                 {
-                    logger.LogWarning("SendDtmfEvent was cancelled by caller.");
+                    logger.LogDtmfEventCancelled();
                 }
                 finally
                 {

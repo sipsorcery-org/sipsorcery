@@ -72,7 +72,7 @@ namespace SIPSorcery.Net
         {
             _pc = await _createPeerConnection().ConfigureAwait(false);
 
-            logger.LogDebug("websocket-client attempting to connect to {WebSocketServerUri}.", _webSocketServerUri);
+            logger.LogWebSocketClientConnecting(_webSocketServerUri);
 
             var webSocketClient = new ClientWebSocket();
             // As best I can tell the point of the CreateClientBuffer call is to set the size of the internal
@@ -85,11 +85,11 @@ namespace SIPSorcery.Net
 
             if (webSocketClient.State == WebSocketState.Open)
             {
-                logger.LogDebug("websocket-client starting receive task for server {WebSocketServerUri}.", _webSocketServerUri);
+                logger.LogWebSocketClientStartReceive(_webSocketServerUri);
 
                 _pc.onicecandidate += async (candidate) =>
                 {
-                    logger.LogDebug("WebRTCWebSocketClient sending ICE candidate to server.");
+                    logger.LogWebSocketClientSendingIceCandidate();
                     await webSocketClient.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(candidate.toJSON())), WebSocketMessageType.Text, true, cancellation);
                 };
 
@@ -131,24 +131,24 @@ namespace SIPSorcery.Net
                 posn = 0;
             }
 
-            logger.LogDebug("websocket-client receive loop exiting.");
+            logger.LogWebSocketClientReceiveLoopExit();
         }
 
         private async Task<string> OnMessage(string jsonStr, RTCPeerConnection pc)
         {
             if (RTCIceCandidateInit.TryParse(jsonStr, out var iceCandidateInit))
             {
-                logger.LogDebug("Got remote ICE candidate.");
+                logger.LogWebSocketClientGotRemoteIceCandidate();
                 pc.addIceCandidate(iceCandidateInit);
             }
             else if (RTCSessionDescriptionInit.TryParse(jsonStr, out var descriptionInit))
             {
-                logger.LogDebug("Got remote SDP, type {DescriptionType}.", descriptionInit.type);
+                logger.LogWebSocketClientGotRemoteSdp(descriptionInit.type);
 
                 var result = pc.setRemoteDescription(descriptionInit);
                 if (result != SetDescriptionResultEnum.OK)
                 {
-                    logger.LogWarning("Failed to set remote description, {Result}.", result);
+                    logger.LogWebRtcSetDescriptionError(result);
                     pc.Close("failed to set remote description");
                 }
 
@@ -162,7 +162,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("websocket-client could not parse JSON message. {JsonStr}", jsonStr);
+                logger.LogWebRtcSignalingJsonParseFailed(jsonStr);
             }
 
             return null;

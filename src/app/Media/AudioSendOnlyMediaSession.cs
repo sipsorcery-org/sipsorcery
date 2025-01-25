@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
@@ -35,7 +34,7 @@ namespace SIPSorcery.Media
         private void AudioFormatsNegotiated(List<AudioFormat> audioFormats)
         {
             var audioFormat = audioFormats.First();
-            logger.LogDebug("Setting audio source format to {AudioFormatID}:{AudioFormatCodec}.", audioFormat.FormatID, audioFormat.Codec);
+            logger.LogSettingAudioSourceFormat(audioFormat.FormatID, audioFormat.Codec);
             AudioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 

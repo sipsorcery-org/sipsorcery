@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP
                             }
                             else
                             {
-                                logger.LogWarning("SIPAuthorisationDigest did not recognised digest algorithm value of {DigestAlgorithms}, defaulting to {DigestAlgorithmsEnumMD5}.", headerValue, DigestAlgorithmsEnum.MD5);
+                                logger.LogUnrecognizedDigestAlgorithm(headerValue, DigestAlgorithmsEnum.MD5);
                                 authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
                             }
                         }

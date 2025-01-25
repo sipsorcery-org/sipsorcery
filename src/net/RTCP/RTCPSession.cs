@@ -198,11 +198,11 @@ namespace SIPSorcery.Net
         {
             if (StartedAt != DateTime.MinValue)
             {
-                logger.LogWarning("Start was called on RTCP session for {CNameOrSsrc} but it has already been started.", !string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString());
+                logger.LogRtcpSessionAlreadyStarted(Cname, Ssrc);
             }
             else
             {
-                logger.LogDebug("Starting RTCP session for {CNameOrSsrc}.", !string.IsNullOrWhiteSpace(Cname) ? Cname : Ssrc.ToString());
+                logger.LogRtcpSessionStart(Cname, Ssrc);
 
                 StartedAt = DateTime.Now;
 
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
         {
             if (m_receptionReport != null && m_receptionReport.SSRC == ssrc)
             {
-                logger.LogDebug("RTCP session removing reception report for remote ssrc {Ssrc}.", ssrc);
+                logger.LogRtcpSessionRemovingReport(ssrc);
                 m_receptionReport = null;
             }
         }
@@ -323,7 +323,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTCPSession.ReportReceived. {ErrorMessage}", excp.Message);
+                logger.LogRtcpSessionReportReceiveError(excp.Message, excp);
             }
         }
 
@@ -344,7 +344,7 @@ namespace SIPSorcery.Net
                         {
                             if (!IsTimedOut)
                             {
-                                logger.LogWarning("RTCP session for local ssrc {Ssrc} has not had any activity for over {NoActivityTimeoutSeconds} seconds.", Ssrc, NoActivityTimeoutMilliseconds / 1000);
+                                logger.LogRtcpSessionNoActivity(Ssrc, NoActivityTimeoutMilliseconds);
                                 IsTimedOut = true;
 
                                 OnTimeout?.Invoke(MediaType);
@@ -378,7 +378,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 // RTCP reports are not critical enough to bubble the exception up to the application.
-                logger.LogError(excp, "Exception SendReportTimerCallback. {ErrorMessage}", excp.Message);
+                logger.LogRtcpSessionSendReportError(excp.Message, excp);
                 m_rtcpReportTimer?.Dispose();
             }
         }

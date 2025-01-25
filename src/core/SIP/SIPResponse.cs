@@ -144,7 +144,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseSIPResponse: {SipMessage}. {ErrorMessage}", sipMessageBuffer.RawMessage,  excp.Message);
+                logger.LogParseSIPResponseError(sipMessageBuffer.RawMessage, excp.Message, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
         }
@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseSIPResponse: {SipMessage}. {ErrorMessage}", sipMessageStr, excp.Message);
+                logger.LogParseSIPResponseError(sipMessageStr, excp.Message, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
         }
@@ -290,7 +290,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPResponse.GetResponse. {ErrorMessage}", excp.Message);
+                logger.LogSIPResponseGetError(excp.Message, excp);
                 throw;
             }
         }
@@ -327,7 +327,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPResponse.GetResponse. {ErrorMessage}", excp.Message);
+                logger.LogSIPResponseGetError(excp.Message, excp);
                 throw;
             }
         }

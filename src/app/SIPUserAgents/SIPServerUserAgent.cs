@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (m_sipAccount == null)
                 {
-                    logger.LogWarning("Rejecting authentication required call for {TransactionRequestFrom}, SIP account not found.", m_uasTransaction.TransactionRequestFrom);
+                    logger.LogRejectingAuthCall(m_uasTransaction.TransactionRequestFrom);
                     Reject(SIPResponseStatusCodesEnum.Forbidden, null, null);
                 }
                 else
@@ -147,11 +147,11 @@ namespace SIPSorcery.SIP.App
                     {
                         if (authenticationResult.WasAuthenticatedByIP)
                         {
-                            logger.LogDebug("New call from {RemoteEndPoint} successfully authenticated by IP address.", remoteEndPoint);
+                            logger.LogCallAuthenticatedByIP(remoteEndPoint);
                         }
                         else
                         {
-                            logger.LogDebug("New call from {RemoteEndPoint} successfully authenticated by digest.", remoteEndPoint);
+                            logger.LogCallAuthenticatedByDigest(remoteEndPoint);
                         }
 
                         m_isAuthenticated = true;
@@ -160,7 +160,7 @@ namespace SIPSorcery.SIP.App
                     {
                         if (sipRequest.Header.HasAuthenticationHeader)
                         {
-                            logger.LogWarning("Call not authenticated for {SIPUsername}@{SIPDomain}, responding with {ErrorResponse}.", m_sipAccount.SIPUsername, m_sipAccount.SIPDomain, authenticationResult.ErrorResponse);
+                            logger.LogCallNotAuthenticated(m_sipAccount.SIPUsername, m_sipAccount.SIPDomain, authenticationResult.ErrorResponse);
                         }
 
                         // Send authorisation failure or required response
@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPServerUserAgent AuthenticateCall. {ErrorMessage}", excp.Message);
+                logger.LogAuthenticateCallError(excp.Message, excp);
                 Reject(SIPResponseStatusCodesEnum.InternalServerError, null, null);
             }
 
@@ -187,7 +187,7 @@ namespace SIPSorcery.SIP.App
                 {
                     if ((int)progressStatus >= 200)
                     {
-                        logger.LogDebug("UAS call was passed an invalid response status of {ProgressStatus}({ProgressStatusValue}), ignoring.", progressStatus, (int)progressStatus);
+                        logger.LogInvalidUASResponse(progressStatus, (int)progressStatus);
                     }
                     else
                     {
@@ -198,11 +198,11 @@ namespace SIPSorcery.SIP.App
                         if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding && progressStatus != SIPResponseStatusCodesEnum.Trying &&
                             !(progressStatus == SIPResponseStatusCodesEnum.SessionProgress && progressBody != null))
                         {
-                            logger.LogDebug("UAS call ignoring progress response with status of {ProgressStatus}({ProgressStatusValue}) as already in {TransactionState}.", progressStatus, (int)progressStatus, m_uasTransaction.TransactionState);
+                            logger.LogIgnoreProgressResponse(progressStatus, (int)progressStatus, m_uasTransaction.TransactionState);
                         }
                         else
                         {
-                            logger.LogDebug("UAS call progressing with {ProgressStatus}.", progressStatus);
+                            logger.LogUASCallProgressing(progressStatus);
                             SIPResponse progressResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
 
                             if (progressResponse.Status != SIPResponseStatusCodesEnum.Trying)
@@ -231,12 +231,12 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    logger.LogWarning("SIPServerUserAgent Progress fired on already answered call.");
+                    logger.LogProgressOnAnsweredCall();
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPServerUserAgent Progress. {ErrorMessage}", excp.Message);
+                logger.LogProgressError(excp.Message, excp);
             }
         }
 
@@ -263,7 +263,7 @@ namespace SIPSorcery.SIP.App
 
                 if (m_uasTransaction.TransactionFinalResponse != null)
                 {
-                    logger.LogDebug("UAS Answer was called on an already answered call, ignoring.");
+                    logger.LogUASAlreadyAnswered();
                     return null;
                 }
                 else
@@ -318,7 +318,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPServerUserAgent Answer. {ErrorMessage}", excp.Message);
+                logger.LogUASAnswerError(excp.Message, excp);
                 throw;
             }
         }
@@ -351,7 +351,7 @@ namespace SIPSorcery.SIP.App
                 {
                     if ((int)failureStatus < 400)
                     {
-                        logger.LogDebug("UAS Reject was passed an invalid response status of {FailureStatusCode}({FailureStatusValue}), ignoring.", failureStatus, (int)failureStatus);
+                        logger.LogUASRejectInvalidResponseStatus(failureStatus, (int)failureStatus);
                     }
                     else
                     {
@@ -359,7 +359,7 @@ namespace SIPSorcery.SIP.App
 
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
 
-                        logger.LogWarning("UAS call failed with a response status of {FailureStatus}{FailureReason}.", (int)failureStatus, failureReason);
+                        logger.LogUASCallFailed((int)failureStatus, failureReason);
                         SIPResponse failureResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, failureStatus, reasonPhrase);
 
                         if (customHeaders != null && customHeaders.Length > 0)
@@ -375,12 +375,12 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    logger.LogWarning("SIPServerUserAgent Reject fired on already answered call.");
+                    logger.LogAlreadyRejected();
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPServerUserAgent Reject. {ErrorMessage}", excp.Message);
+                logger.LogUASRejectError(excp.Message, excp);
             }
         }
 
@@ -394,7 +394,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SendNonInviteRequest. {ErrorMessage}", excp.Message);
+                logger.LogSendNonInviteRequestError(excp.Message, excp);
                 return Task.FromResult(SocketError.Fault);
             }
         }
@@ -426,7 +426,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPServerUserAgent Redirect. {ErrorMessage}", excp.Message);
+                logger.LogSIPServerUserAgentRedirectError(excp.Message, excp);
             }
         }
 
@@ -460,7 +460,7 @@ namespace SIPSorcery.SIP.App
                         var inviteContact = m_uasTransaction.TransactionRequest.Header.Contact.FirstOrDefault();
                         if (inviteContact == null)
                         {
-                            logger.LogWarning("The Contact header on the INVITE request was missing, BYE request cannot be generated.");
+                            logger.LogMissingContactHeader();
                         }
                         else
                         {
@@ -472,7 +472,7 @@ namespace SIPSorcery.SIP.App
                     }
                     catch (Exception excp)
                     {
-                        logger.LogError(excp, "Exception SIPServerUserAgent Hangup. {ErrorMessage}", excp.Message);
+                        logger.LogSIPServerUserAgentHangupError(excp.Message, excp);
                         throw;
                     }
                 }
@@ -483,7 +483,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.LogDebug("Response {StatusCode} {ReasonPhrase} for {TransactionRequestURI}.", sipResponse.StatusCode, sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.URI.ToString());
+                logger.LogResponse(sipResponse.StatusCode, sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.URI);
 
                 SIPNonInviteTransaction byeTransaction = sipTransaction as SIPNonInviteTransaction;
 
@@ -499,21 +499,21 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ByServerFinalResponseReceived. {ErrorMessage}", excp.Message);
+                logger.LogByServerFinalResponseError(excp.Message, excp);
                 return Task.FromResult(SocketError.Fault);
             }
         }
 
         private void UASTransactionCancelled(SIPTransaction sipTransaction, SIPRequest sipCancelRequest)
         {
-            logger.LogDebug("SIPServerUserAgent got cancellation request.");
+            logger.LogServerUserAgentCancellationRequest();
             m_isCancelled = true;
             CallCancelled?.Invoke(this, sipCancelRequest);
         }
 
         private void ClientTransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            logger.LogDebug("SIPServerUserAgent client failed with {FailureReason} in transaction state {TransactionState}.", failureReason, m_uasTransaction.TransactionState);
+            logger.LogServerUserAgentClientFailed(failureReason, m_uasTransaction.TransactionState);
 
             if (sipTransaction.HasTimedOut)
             {

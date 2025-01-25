@@ -71,7 +71,7 @@ namespace SIPSorcery.Net
             {
                 if (!SctpPacket.VerifyChecksum(packet, 0, packet.Length))
                 {
-                    logger.LogWarning("SCTP packet from UDP {RemoteEndPoint} dropped due to invalid checksum.", remoteEndPoint);
+                    logger.LogSctpPacketDroppedInvalidChecksum(remoteEndPoint);
                 }
                 else
                 {
@@ -90,11 +90,11 @@ namespace SIPSorcery.Net
 
                         if (cookie.IsEmpty())
                         {
-                            logger.LogWarning("SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
+                            logger.LogSctpErrorAcquiringHandshakeCookie();
                         }
                         else
                         {
-                            logger.LogDebug("SCTP creating new association for {RemoteEndPoint}.", remoteEndPoint);
+                            logger.LogSctpCreatingNewAssociation(remoteEndPoint);
 
                             var association = new SctpAssociation(this, cookie, localPort);
 
@@ -108,7 +108,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogError("SCTP failed to add new association to dictionary.");
+                                logger.LogSctpFailedToAddNewAssociation();
                             }
                         }
                     }
@@ -121,7 +121,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SctpTransport.OnEncapsulationSocketPacketReceived. {ErrorMessage}", excp.Message);
+                logger.LogSctpPacketReceivedException(excp.Message, excp);
             }
         }
 
@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
         /// <param name="reason"></param>
         private void OnEncapsulationSocketClosed(string reason)
         {
-            logger.LogInformation("SCTP transport encapsulation receiver closed with reason: {Reason}.", reason);
+            logger.LogSctpTransportClosed(reason);
         }
 
         public override void Send(string associationID, byte[] buffer, int offset, int length)
@@ -172,7 +172,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("SCTP transport failed to add association.");
+                logger.LogSctpTransportAssociationFailed();
                 association.Shutdown();
                 return null;
             }

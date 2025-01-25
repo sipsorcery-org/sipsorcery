@@ -181,7 +181,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception GetKeyValuePairsFromQuoted. {ErrorMessage}", excp.Message);
+                logger.LogGetKeyValuePairsQuotedError(excp.Message, excp);
                 throw;
             }
         }

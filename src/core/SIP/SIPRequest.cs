@@ -97,7 +97,7 @@ namespace SIPSorcery.SIP
                 if (sipRequest.Method == SIPMethodsEnum.UNKNOWN)
                 {
                     sipRequest.UnknownMethod = method;
-                    logger.LogWarning("Unknown SIP method received {UnknownMethod}.", sipRequest.UnknownMethod);
+                    logger.LogUnknownMethodReceived(sipRequest.UnknownMethod);
                 }
 
                 statusLine = statusLine.Substring(firstSpacePosn).Trim();
@@ -125,7 +125,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception parsing SIP Request: {SipMessage}. {ErrorMessage}", sipMessage.RawMessage, excp.Message);
+                logger.LogParseRawSIPRequestError(sipMessage.RawMessage, excp.Message, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Request, "Unknown error parsing SIP Request");
             }
         }
@@ -146,7 +146,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception ParseSIPRequest: {SipMessage}. {ErrorMessage}", sipMessageStr, excp.Message);
+                logger.LogParseSipRequestError(sipMessageStr, excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Request, "Unknown error parsing SIP Request");
             }
         }
@@ -170,7 +170,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPRequest ToString. {ErrorMessage}", excp.Message);
+                logger.LogSIPRequestToStringError(excp.Message, excp);
                 throw;
             }
         }

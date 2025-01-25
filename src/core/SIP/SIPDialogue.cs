@@ -362,7 +362,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPDialogue Hangup. {ErrorMessage}", excp.Message);
+                logger.LogHangupError(excp.Message, excp);
             }
         }
 

@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.App
 
         private void SIPServerUserAgent_CallCancelled(ISIPServerUserAgent uas, SIPRequest sipCancelRequest)
         {
-            logger.LogDebug("B2BUserAgent server call was cancelled with reason {CancelReason}", sipCancelRequest?.Header.Reason);
+            logger.LogB2BUserAgentServerCallCancelled(sipCancelRequest?.Header.Reason);
             m_uac?.Cancel();
         }
 
@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP.App
 
         public void Cancel(string? reason = null)
         {
-            logger.LogDebug("SIPB2BUserAgent Cancel.");
+            logger.LogSIPB2BUserAgentCallCancelled();
             m_uac.Cancel(reason);
 
             var busyResp = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.BusyHere, null);
@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP.App
         {
             if (!base.IsCancelled)
             {
-                logger.LogDebug("B2BUserAgent client call failed {Error}.", error);
+                logger.LogClientCallFailed(error);
 
                 var status = (errResponse != null) ? errResponse.Status : SIPResponseStatusCodesEnum.Decline;
                 var errResp = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, status, errResponse?.ReasonPhrase);
@@ -105,7 +105,7 @@ namespace SIPSorcery.SIP.App
 
         private void ClientCallAnswered(ISIPClientUserAgent uac, SIPResponse resp)
         {
-            logger.LogDebug("B2BUserAgent client call answered {ShortDescription}.", resp.ShortDescription);
+            logger.LogClientCallFailed(resp.ShortDescription);
 
             if (resp.Status == SIPResponseStatusCodesEnum.Ok)
             {

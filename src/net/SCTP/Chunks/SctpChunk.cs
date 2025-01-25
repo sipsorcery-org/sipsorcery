@@ -352,7 +352,7 @@ namespace SIPSorcery.Net
                     case SctpChunkType.SHUTDOWN:
                         return SctpShutdownChunk.ParseChunk(buffer, posn);
                     default:
-                        logger.LogDebug("TODO: Implement parsing logic for well known chunk type {ChunkType}.", (SctpChunkType)chunkType);
+                        logger.LogSctpImplementParsingLogic((SctpChunkType)chunkType);
                         return ParseBaseChunk(buffer, posn);
                 }
             }

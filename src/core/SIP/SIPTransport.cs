@@ -289,7 +289,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception AddSIPChannel. {ErrorMessage}", excp.Message);
+                logger.LogAddSIPChannelError(excp.Message, excp);
                 throw;
             }
         }
@@ -327,7 +327,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransport Shutdown. {ErrorMessage}", excp.Message);
+                logger.LogSIPTransportShutdownError(excp);
             }
         }
 
@@ -360,7 +360,7 @@ namespace SIPSorcery.SIP
                     // Keep the queue within size limits 
                     if (MaxInMessageQueueCount > 0 && m_inMessageQueue.Count >= MaxInMessageQueueCount)
                     {
-                        logger.LogWarning("SIPTransport queue full new message from {RemoteEndPoint} being discarded.", remoteEndPoint);
+                        logger.LogSIPTransportQueueFull(remoteEndPoint);
                     }
                     else
                     {
@@ -374,7 +374,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransport ReceiveMessage. {ErrorMessage}", excp.Message);
+                logger.LogSIPTransportReceiveMessage(excp);
                 throw;
             }
         }
@@ -638,7 +638,7 @@ namespace SIPSorcery.SIP
 
             if (m_transactionEngine == null)
             {
-                logger.LogWarning("SIP transport was requested to send a transaction in stateless mode (noop).");
+                logger.LogTransactionInStatelessModeWarning();
             }
             else if (!m_transactionEngine.Exists(sipTransaction.TransactionId))
             {
@@ -679,7 +679,7 @@ namespace SIPSorcery.SIP
             }
             else if (sipResponse.Header.Vias?.TopViaHeader == null)
             {
-                logger.LogWarning("There was no top Via header on a SIP response from {RemoteSIPEndPoint} in SendResponseAsync, response dropped.", sipResponse.RemoteSIPEndPoint);
+                logger.LogNoViaHeaderWarning(sipResponse.RemoteSIPEndPoint);
                 return SocketError.Fault;
             }
             else
@@ -754,7 +754,7 @@ namespace SIPSorcery.SIP
 
                 if (sendFromChannel == null)
                 {
-                    logger.LogWarning("An existing SIP channel could not be found to send response {ShortDescription}.", sipResponse.ShortDescription);
+                    logger.LogChannelNotFoundWarning(sipResponse.ShortDescription);
                     return Task.FromResult(SocketError.NotConnected);
                 }
                 else
@@ -880,7 +880,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransport ProcessReceiveQueue. {ErrorMessage}", excp.Message);
+                logger.LogSIPTransportProcessReceiveQueue(excp);
             }
             finally
             {
@@ -994,7 +994,7 @@ namespace SIPSorcery.SIP
                                             {
                                                 if (requestTransaction.TransactionFinalResponse != null)
                                                 {
-                                                    logger.LogWarning("Resending final response for {Method}, {URI}, cseq={CSeq}.", sipRequest.Method, sipRequest.URI, sipRequest.Header.CSeq);
+                                                    logger.LogResendingFinalResponseWarning(sipRequest.Method, sipRequest.URI, sipRequest.Header.CSeq);
                                                     requestTransaction.OnRetransmitFinalResponse();
                                                     return SendResponseAsync(requestTransaction.TransactionFinalResponse);
                                                 }
@@ -1024,7 +1024,7 @@ namespace SIPSorcery.SIP
                                             }
                                             else
                                             {
-                                                logger.LogWarning("Transaction already exists, ignoring duplicate request, {Method} {URI}.", sipRequest.Method, sipRequest.URI.ToString());
+                                                logger.LogTransactionExistsWarning(sipRequest.Method, sipRequest.URI.ToString());
                                             }
                                         }
                                         else if (m_transactionEngine != null && sipRequest.Method == SIPMethodsEnum.CANCEL &&
@@ -1103,7 +1103,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                Log.Logger.LogError(excp, "Exception SIPMessageReceived. {ErrorMessage}", excp.Message);
+                Log.Logger.LogSIPMessageReceived(excp);
                 SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
                 return Task.FromResult(SocketError.Fault);
             }
@@ -1289,7 +1289,7 @@ namespace SIPSorcery.SIP
                     sipChannel = new SIPClientWebSocketChannel();
                     break;
                 default:
-                    logger.LogWarning("Don't know how to create SIP channel for transport {protocol}.", protocol);
+                    logger.LogUnknownChannelTransportWarning(protocol.ToString());
                     break;
             }
 
@@ -1316,40 +1316,45 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void EnableTraceLogs()
         {
+            if (!logger.IsEnabled(LogLevel.Debug))
+            {
+                return;
+            }
+
             SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
             {
-                logger.LogDebug("Request received: {LocalEP}<-{RemoteEP} {StatusLine}", localEP, remoteEP, req.StatusLine);
-                logger.LogTrace("Request: {Request}", req.ToString());
+                logger.LogSIPRequestIn(localEP, remoteEP, req.StatusLine);
+                logger.LogSIPRequestInRequest(req);
             };
 
             SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
             {
-                logger.LogDebug("Request sent: {LocalEP}->{RemoteEP} {StatusLine}", localEP, remoteEP, req.StatusLine);
-                logger.LogTrace("Request sent: {Request}", req.ToString());
+                logger.LogSIPRequestOut(localEP, remoteEP, req.StatusLine);
+                logger.LogSIPRequestOutRequest(req);
             };
 
             SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
             {
-                logger.LogDebug("Response received: {LocalEP}<-{RemoteEP} {ShortDescription}", localEP, remoteEP, resp.ShortDescription);
-                logger.LogTrace("Response received: {Response}", resp.ToString());
+                logger.LogSIPResponseIn(localEP, remoteEP, resp.ShortDescription);
+                logger.LogSIPResponseInRequest(resp);
             };
 
             SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
             {
-                logger.LogDebug("Response sent: {LocalEP}->{RemoteEP} {ShortDescription}", localEP, remoteEP, resp.ShortDescription);
-                logger.LogTrace("Response sent: {Response}", resp.ToString());
+                logger.LogSIPResponseOut(localEP, remoteEP, resp.ShortDescription);
+                logger.LogSIPResponseOutRequest(resp);
             };
 
             SIPRequestRetransmitTraceEvent += (tx, req, count) =>
             {
-                logger.LogDebug("Request retransmit {Count} for request {StatusLine}, initial transmit {InitialTransmit}s ago.", count, req.StatusLine, DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###"));
-                logger.LogTrace("Request retransmitted: {Request}", req.ToString());
+                logger.LogSIPRequestRetransmit(count, req.StatusLine, DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds);
+                logger.LogSIPRequestRetransmitRequest(req);
             };
 
             SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
             {
-                logger.LogDebug("Response retransmit {Count} for response {ShortDescription}, initial transmit {InitialTransmit}s ago.", count, resp.ShortDescription, DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###"));
-                logger.LogTrace("Response retransmitted: {Response}", resp.ToString());
+                logger.LogSIPResponseRetransmit(count, resp.ShortDescription, DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds);
+                logger.LogSIPResponseRetransmitRequest(resp);
             };
         }
     }

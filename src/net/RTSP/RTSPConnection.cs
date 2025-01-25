@@ -59,7 +59,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception closeExcp)
             {
-                logger.LogWarning("Exception closing socket in RTSPConnection Close. " + closeExcp.Message);
+                logger.LogRtspConnectionCloseError(closeExcp.Message, closeExcp);
             }
         }
 
@@ -129,7 +129,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPConnection SocketReadCompleted. " + excp.Message);
+                logger.LogRtspConnectionSocketError(excp.Message, excp);
                 throw;
             }
         }
