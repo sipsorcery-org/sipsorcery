@@ -7,6 +7,11 @@ namespace demo;
 
 public class OpenAIResponseAudioTranscriptDelta : OpenAIServerEventBase
 {
+    public const string TypeName = "response.audio_transcript.delta";
+
+    [JsonPropertyName("type")]
+    public override string Type => TypeName;
+
     [JsonPropertyName("response_id")]
     public string? ResponseID { get; set; }
 

@@ -1557,6 +1557,35 @@ Diversion: <sip:+4188888888@10.0.0.2:5060>;reason=no-answer;counter=1;privacy=fu
             logger.LogDebug("-----------------------------------------");
         }
 
+        [Fact]
+        public void ParseSERVICEUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipMsg =
+                "SERVICE sip:user1@something.com SIP/2.0" + m_CRLF +
+                "From: <sip:user2@something.com>;epid=85D7DC3A61;tag=ddfb74b87" + m_CRLF +
+                "To: <sip:user1@something.com>" + m_CRLF +
+                "Call-ID: fc2gbd6449264ecfbe9rbf23f11f7be9" + m_CRLF +
+                "CSEQ: 73 SERVICE" + m_CRLF +
+                "CONTACT: <sip:user2@something.com>" + m_CRLF +
+                "Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;" + m_CRLF +
+                "Max-Forwards: 67" + m_CRLF +
+                "Content-Length: 5" + m_CRLF +
+                "CONTENT-TYPE: text/text" + m_CRLF +
+                "USER-AGENT: Agent" + m_CRLF + m_CRLF +
+                "abcd" + m_CRLF;
+
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest serviceReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            Assert.True(serviceReq.Method == SIPMethodsEnum.SERVICE, "The SIP request method was not parsed correctly.");
+            Assert.True(serviceReq.Header.CSeqMethod == SIPMethodsEnum.SERVICE, "The SIP request CSeq method was not parsed correctly.");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
     }
 
 #pragma warning restore SYSLIB0021

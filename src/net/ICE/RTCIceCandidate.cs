@@ -284,7 +284,7 @@ namespace SIPSorcery.Net
                 string candidateStr;
                 if (protocol == RTCIceProtocol.tcp)
                 {
-                    candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} tcptype {6} raddr {7} rport {8} generation 0",
+                    candidateStr = String.Format("{0} {1} tcp {2} {3} {4} typ {5} tcptype {6} raddr {7} rport {8} generation 0",
                         foundation,
                         component.GetHashCode(),
                         priority,

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPConstants.cs
 //
 // Description: SIP constants.
@@ -385,6 +385,7 @@ namespace SIPSorcery.SIP
         MESSAGE = 15,       // RFC3428.
         PRACK = 16,         // RFC3262.
         UPDATE = 17,        // RFC3311.
+        SERVICE = 18        // Not defined in RFC. But there are reported uses of this method. Example: https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/258ef387-09f9-416d-b7a8-3ec20f4d9944
     }
 
     public static class SIPMethods

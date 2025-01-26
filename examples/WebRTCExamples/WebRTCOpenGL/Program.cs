@@ -7,7 +7,7 @@
 // which is sent back in a video stream.
 //
 // The high level steps are:
-// 1. Establish a WebRTC peer connection with a rmote pper with a receive only
+// 1. Establish a WebRTC peer connection with a remote peer with a receive only
 // audio stream and a send only video stream.
 // 2. Receive audio packets from the remote peer and process them with the OpenGL
 // program to generate a visual representation of teh received audio samples.
@@ -56,7 +56,7 @@ namespace demo
 
         static void Main()
         {
-            Console.WriteLine("WebRTC OpenGL Demoe - Audio Scope");
+            Console.WriteLine("WebRTC OpenGL Demo - Audio Scope");
 
             logger = AddConsoleLogger();
 
