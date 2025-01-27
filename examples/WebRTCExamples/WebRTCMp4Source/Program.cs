@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -33,10 +32,8 @@ namespace demo
 {
     class Program
     {
-        // FFmpeg path can be hard coded. On Win11 you can use: winget install "FFmpeg (Shared)"
-        //private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin";  //  /!\ A valid path to FFmpeg library
-        //private const string MP4_PATH = @"media\max_intro.mp4";                          //  /!\ A valid path to Video file
-        private const string MP4_PATH = @"media\big_buck_bunny.mp4";
+        private const string MP4_PATH = @"media\max_intro.mp4";                          //  /!\ A valid path to Video file
+        //private const string MP4_PATH = @"media\big_buck_bunny.mp4";
 
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -74,14 +71,15 @@ namespace demo
         {
             RTCConfiguration config = new RTCConfiguration
             {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+                //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
             };
             var pc = new RTCPeerConnection(config);
 
             SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
-            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, false, new AudioEncoder());
+            var mediaFileSource = new SIPSorceryMedia.FFmpeg.FFmpegFileSource(MP4_PATH, true, new AudioEncoder());
             mediaFileSource.RestrictFormats(x => x.Codec == VideoCodecsEnum.VP8);
-            mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
+
+            //mediaFileSource.RestrictFormats(x => x.Codec == AudioCodecsEnum.OPUS);
             //mediaFileSource..OnEndOfFile += () => pc.Close("source eof");
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(mediaFileSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
@@ -102,13 +100,27 @@ namespace demo
                 {
                     pc.Close("ice disconnection");
                 }
-                else if (state == RTCPeerConnectionState.closed)
+                else if (state is RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected)
                 {
                     await mediaFileSource.CloseVideo();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
                     await mediaFileSource.StartVideo();
+                }
+            };
+
+            pc.onsignalingstatechange += () =>
+            {
+                logger.LogDebug($"Signalling state change to {pc.signalingState}.");
+
+                if (pc.signalingState == RTCSignalingState.have_local_offer)
+                {
+                    logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
+                }
+                else if (pc.signalingState == RTCSignalingState.stable)
+                {
+                    logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
                 }
             };
 

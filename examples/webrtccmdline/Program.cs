@@ -11,13 +11,21 @@
 // 28 Mar 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 13 Jul 2020  Aaron CLauson   Added command line options.
 //
+// Examples:
+// 1. TURN only connection establishment test. The browser client will need to be configured with a TURN server as well.
+// dotnet run --ws --stun turn:azamicrok8s --relayonly --accepticetypes=relay
+// dotnet run --wsclient ws://127.0.0.1:8081 --stun turn:azamicrok8s --relayonly --accepticetypes=relay
+//
+// 2. TURN TCP
+// dotnet run --ws --stun turn:azamicrok8s?transport=tcp --relayonly --accepticetypes=relay
+// dotnet run --wsclient ws://127.0.0.1:8081 --stun turn:azamicrok8s?transport=tcp --relayonly --accepticetypes=relay
+//
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -523,7 +531,7 @@ namespace SIPSorcery.Examples
                                         Console.WriteLine();
                                         Console.WriteLine($" sending dtmf byte {dtmfByte}.");
 
-                                        var dtmfEvent = new RTPEvent(dtmfByte, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                                        var dtmfEvent = new RTPEvent(dtmfByte, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, _peerConnection.AudioStream.NegotiatedRtpEventPayloadID);
                                         await _peerConnection.SendDtmfEvent(dtmfEvent, CancellationToken.None).ConfigureAwait(false);
                                     }
                                     else

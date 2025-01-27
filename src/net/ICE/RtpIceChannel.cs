@@ -76,6 +76,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto.Digests;
 using SIPSorcery.Sys;
 
 [assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
@@ -1726,7 +1727,7 @@ namespace SIPSorcery.Net
                 _connectedAt = DateTime.Now;
                 int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
-                logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+                logger.LogDebug($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
@@ -1739,7 +1740,7 @@ namespace SIPSorcery.Net
             else
             {
                 // The nominated entry has been changed.
-                logger.LogInformation($"ICE RTP channel remote nominated candidate changed from {NominatedEntry.RemoteCandidate.ToShortString()} to {entry.RemoteCandidate.ToShortString()}.");
+                logger.LogDebug($"ICE RTP channel remote nominated candidate changed from {NominatedEntry.RemoteCandidate.ToShortString()} to {entry.RemoteCandidate.ToShortString()}.");
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
@@ -2586,13 +2587,14 @@ namespace SIPSorcery.Net
 
             // See https://tools.ietf.org/html/rfc5389#section-15.4
             string key = $"{username}:{Encoding.UTF8.GetString(realm)}:{password}";
-            // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
-#pragma warning disable SYSLIB0021
-            MD5 md5 = new MD5CryptoServiceProvider();
-            byte[] md5Hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
-#pragma warning restore SYSLIB0021
+            var buffer = Encoding.UTF8.GetBytes(key);
+            var md5Digest = new MD5Digest();
+            var hash = new byte[md5Digest.GetDigestSize()];
 
-            return stunRequest.ToByteBuffer(md5Hash, true);
+            md5Digest.BlockUpdate(buffer, 0, buffer.Length);
+            md5Digest.DoFinal(hash, 0);
+
+            return stunRequest.ToByteBuffer(hash, true);
         }
 
         /// <summary>

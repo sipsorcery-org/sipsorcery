@@ -26,7 +26,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -164,7 +163,6 @@ namespace SIPSorcery.Net
         public const string RTP_SECUREMEDIA_PROFILE = "RTP/SAVP";
         protected const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
         public const int DTMF_EVENT_DURATION = 1200;            // Default duration for a DTMF event.
-        public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
         /// <summary>
         /// When there are no RTP packets being sent for an audio or video stream webrtc.lib
@@ -177,7 +175,7 @@ namespace SIPSorcery.Net
 
         protected RtpSessionConfig rtpSessionConfig;
 
-        private Boolean m_acceptRtpFromAny = false;
+        private bool m_acceptRtpFromAny = false;
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private ulong m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
@@ -656,6 +654,7 @@ namespace SIPSorcery.Net
                 mediaStream.OnRtpPacketReceivedByIndex += RaisedOnRtpPacketReceived;
                 mediaStream.OnRtpHeaderReceivedByIndex += RaisedOnRtpHeaderReceived;
                 mediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
+                mediaStream.RtcpSession.OnReportReadyToSend += SendRtcpReport;
 
                 if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
@@ -1051,17 +1050,17 @@ namespace SIPSorcery.Net
                     else
                     {
                         // As proved by Azure implementation, we need to send based on capabilities of remote track. Azure return SDP with only one possible Codec (H264 107)
-                        // but we receive frames based on our LocalRemoteTracks, so its possiblet o receive a frame with ID 122, for exemple, even when remote annoucement only have 107
+                        // but we receive frames based on our LocalRemoteTracks, so it's possible to receive a frame with ID 122, for exemple, even when remote annoucement only have 107
                         // Thats why we changed line below to keep local track capabilities untouched as we can always do it during send/receive moment
                         capabilities = SDPAudioVideoMediaFormat.GetCompatibleFormats(currentMediaStream.RemoteTrack?.Capabilities, currentMediaStream.LocalTrack?.Capabilities);
-                        //Keep same order of LocalTrack priority to prevent incorrect sending format
+                        // Keep same order of LocalTrack priority to prevent incorrect sending format
                         SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
                         currentMediaStream.RemoteTrack.Capabilities = capabilities;
 
-                        // Keep the local track's RTP event capability
+                        // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
                         var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
-                        SDPAudioVideoMediaFormat localRTPEventCapabilities;
+                        SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
                         if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
                         {
                             localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
@@ -1072,7 +1071,10 @@ namespace SIPSorcery.Net
                         }
 
                         currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
-                        currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities);
+                        if (localRTPEventCapabilities != null)
+                        {
+                            currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
+                        }
 
                         if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                         {
@@ -1080,7 +1082,9 @@ namespace SIPSorcery.Net
                             SDPAudioVideoMediaFormat commonEventFormat = SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(announcement.MediaFormats.Values.ToList(), currentMediaStream.LocalTrack.Capabilities);
                             if (!commonEventFormat.IsEmpty())
                             {
-                                currentMediaStream.RemoteRtpEventPayloadID = commonEventFormat.ID;
+                                currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
+                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
                         }
 
@@ -1924,7 +1928,6 @@ namespace SIPSorcery.Net
             {
                 IsStarted = true;
 
-
                 foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -1974,7 +1977,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sends a DTMF toneas an RTP event to the remote party. (on the primary one)
+        /// Sends a DTMF tone as an RTP event to the remote party. (on the primary one)
         /// </summary>
         /// <param name="key">The DTMF tone to send.</param>
         /// <param name="ct">RTP events can span multiple RTP packets. This token can

@@ -1,8 +1,7 @@
 ﻿using SIPSorcery.Net;
 using System;
-using System.Reflection.Emit;
 
-namespace SIPSorcery.net.RTP.RTPHeaderExtensions
+namespace SIPSorcery.Net
 {
     // CVO (Coordination of Video Orientation) is a extension payload format in https://www.3gpp.org/ftp/Specs/archive/26_series/26.114/26114-i70.zip
 

@@ -23,14 +23,14 @@
 // dotnet run -- --tp
 //
 // Calling application:
-// dotnet run --no-build -- --dst=127.0.0.1:5080 --tp
+// dotnet run --dst=127.0.0.1:5080 --tp
 //
 // Usage - with two webcams:
 // Listening application:
 // dotnet run
 //
 // Calling application:
-// dotnet run --no-build -- --dst=127.0.0.1:5080 --cam=1
+// dotnet run --dst=127.0.0.1:5080 --cam=1
 //-----------------------------------------------------------------------------
 
 using System;
@@ -290,7 +290,7 @@ namespace demo
                     if (!_options.NoAudio)
                     {
                         windowsAudioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-                        windowsAudioEndPoint.RestrictFormats(x => x.Codec == AudioCodecsEnum.G722);
+                        windowsAudioEndPoint.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU || x.Codec == AudioCodecsEnum.PCMA);
                     }
 
                     MediaEndPoints mediaEndPoints = null;

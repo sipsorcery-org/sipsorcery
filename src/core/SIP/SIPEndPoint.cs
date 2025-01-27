@@ -244,7 +244,7 @@ namespace SIPSorcery.SIP
 
         public static bool operator ==(SIPEndPoint endPoint1, SIPEndPoint endPoint2)
         {
-            if ((object)endPoint1 == null && (object)endPoint2 == null)
+            if (object.ReferenceEquals(endPoint1, endPoint2))
             {
                 return true;
             }

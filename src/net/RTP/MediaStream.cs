@@ -19,11 +19,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class MediaStream
     {
@@ -70,8 +68,6 @@ namespace SIPSorcery.net.RTP
 
         public int Index = -1;
 
-        #region EVENTS
-
         /// <summary>
         /// Fires when the connection for a media type is classified as timed out due to not
         /// receiving any RTP or RTCP packets within the given period.
@@ -115,11 +111,7 @@ namespace SIPSorcery.net.RTP
 
         public event Action<bool> OnIsClosedStateChanged;
 
-        #endregion EVENTS
-
-        #region PROPERTIES
-
-        public Boolean AcceptRtpFromAny { get; set; } = false;
+        public bool AcceptRtpFromAny { get; set; } = false;
 
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
@@ -148,9 +140,9 @@ namespace SIPSorcery.net.RTP
 
         /// <summary>
         /// In order to detect RTP events from the remote party this property needs to 
-        /// be set to the payload ID they are using.
+        /// be negotiated to a common payload ID. RTP events are typically DTMF tones.
         /// </summary>
-        public int RemoteRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
+        public int NegotiatedRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
 
         /// <summary>
         /// To type of this media
@@ -180,7 +172,7 @@ namespace SIPSorcery.net.RTP
                     if (MediaType == SDPMediaTypesEnum.audio)
                     {
                         if (m_localTrack.Capabilities != null && !m_localTrack.NoDtmfSupport &&
-                            !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
+                            !m_localTrack.Capabilities.Any(x => x.ID == RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID))
                         {
                             m_localTrack.Capabilities.Add(DefaultRTPEventFormat);
                         }
@@ -228,17 +220,13 @@ namespace SIPSorcery.net.RTP
             {
                 return new SDPAudioVideoMediaFormat(
                                 SDPMediaTypesEnum.audio,
-                                RTPSession.DTMF_EVENT_PAYLOAD_ID,
+                                RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID,
                                 SDP.TELEPHONE_EVENT_ATTRIBUTE,
                                 RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
                                 SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
                                 "0-16");
             }
         }
-
-        #endregion PROPERTIES
-
-        #region REORDER BUFFER
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
         {
@@ -250,7 +238,7 @@ namespace SIPSorcery.net.RTP
             RTPReorderBuffer = null;
         }
 
-        public Boolean UseBuffer()
+        public bool UseBuffer()
         {
             return RTPReorderBuffer != null;
         }
@@ -259,10 +247,6 @@ namespace SIPSorcery.net.RTP
         {
             return RTPReorderBuffer;
         }
-
-        #endregion REORDER BUFFER
-
-        #region SECURITY CONTEXT
 
         public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
@@ -281,9 +265,9 @@ namespace SIPSorcery.net.RTP
             return SecureContext;
         }
 
-        public Boolean IsSecurityContextReady()
+        public bool IsSecurityContextReady()
         {
-            return (SecureContext != null);
+            return SecureContext != null;
         }
 
         private (bool, byte[]) UnprotectBuffer(byte[] buffer)
@@ -333,16 +317,12 @@ namespace SIPSorcery.net.RTP
             return SrtpHandler;
         }
 
-        #endregion SECURITY CONTEXT
-
-        #region RTP CHANNEL
-
         public void AddRtpChannel(RTPChannel rtpChannel)
         {
             this.rtpChannel = rtpChannel;
         }
 
-        public Boolean HasRtpChannel()
+        public bool HasRtpChannel()
         {
             return rtpChannel != null;
         }
@@ -352,11 +332,7 @@ namespace SIPSorcery.net.RTP
             return rtpChannel;
         }
 
-        #endregion RTP CHANNEL
-
-    #region SEND PACKET
-
-        protected Boolean CheckIfCanSendRtpRaw()
+        protected bool CheckIfCanSendRtpRaw()
         {
             if (IsClosed)
             {
@@ -668,14 +644,10 @@ namespace SIPSorcery.net.RTP
             SendRtcpReport(reportBytes);
         }
 
-        #endregion SEND PACKET
-
-        #region RECEIVE PACKET
-
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
             RTPPacket rtpPacket;
-            if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
+            if (NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
                 {
@@ -700,7 +672,6 @@ namespace SIPSorcery.net.RTP
                     RemoteTrack.Ssrc = hdr.SyncSource;
                 }
             }
-
 
             // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
             // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
@@ -757,10 +728,6 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        #endregion RECEIVE PACKET
-
-        #region TO RAISE EVENTS FROM INHERITED CLASS
-
         public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
         {
             OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
@@ -780,10 +747,6 @@ namespace SIPSorcery.net.RTP
         {
             OnTimeoutByIndex?.Invoke(Index, mediaType);
         }
-
-        #endregion TO RAISE EVENTS FROM INHERITED CLASS
-
-        #region PENDING PACKAGES LOGIC
 
         // Submit all previous cached packages to self
         protected virtual void DispatchPendingPackages()
@@ -842,8 +805,6 @@ namespace SIPSorcery.net.RTP
             }
             return false;
         }
-
-        #endregion
 
         protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
@@ -914,12 +875,13 @@ namespace SIPSorcery.net.RTP
         /// </summary>
         /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
         /// in order to commence sending RTCP reports.</returns>
-        public Boolean CreateRtcpSession()
+        public bool CreateRtcpSession()
         {
             if (RtcpSession == null)
             {
                 RtcpSession = new RTCPSession(MediaType, 0);
                 RtcpSession.OnTimeout += RaiseOnTimeoutByIndex;
+
                 return true;
             }
             return false;
@@ -957,7 +919,7 @@ namespace SIPSorcery.net.RTP
                 if (MediaType == SDPMediaTypesEnum.audio)
                 {
                     format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
-                        .Where(x => x.ID != RemoteRtpEventPayloadID).FirstOrDefault();
+                        .Where(x => x.ID != NegotiatedRtpEventPayloadID).FirstOrDefault();
                 }
                 else
                 {

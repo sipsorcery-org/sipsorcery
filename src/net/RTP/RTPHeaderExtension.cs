@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
-using SIPSorcery.Net;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public abstract class RTPHeaderExtension
     {

@@ -16,8 +16,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -739,10 +737,113 @@ a=rtpmap:100 VP8/90000";
         }
 
         /// <summary>
+        /// Checks that an inactive audio track gets added if the offer contains inactive audio and sendrecv video but
+        /// the local peer connection only supports video.
+        /// </summary>
+        [Fact]
+        public void Check_Inactive_Audio_Negotiation_Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // By default offers made by us always put audio first. Create a remote SDP offer 
+            // with the video first.
+            string remoteSdp =
+            @"v=0
+o=- 62533 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0 1
+a=msid-semantic: WMS
+m=video 9 UDP/TLS/RTP/SAVPF 96 97
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:Hvje
+a=ice-pwd:CXdPuoviwBPUGkw1PystrRs1
+a=ice-options:trickle
+a=fingerprint:sha-256 D6:82:3F:4F:23:A4:09:5A:BC:99:42:7D:E6:94:D8:2F:41:56:CF:01:14:35:1A:61:7B:95:C8:F4:FC:D5:3A:16
+a=setup:actpass
+a=mid:0
+a=extmap:1 urn:ietf:params:rtp-hdrext:toffset
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:3 urn:3gpp:video-orientation
+a=extmap:4 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:5 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
+a=extmap:6 http://www.webrtc.org/experiments/rtp-hdrext/video-content-type
+a=extmap:7 http://www.webrtc.org/experiments/rtp-hdrext/video-timing
+a=extmap:8 http://www.webrtc.org/experiments/rtp-hdrext/color-space
+a=extmap:9 urn:ietf:params:rtp-hdrext:sdes:mid
+a=extmap:10 urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id
+a=extmap:11 urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id
+a=recvonly
+a=rtcp-mux
+a=rtcp-rsize
+a=rtpmap:96 VP8/90000
+a=rtcp-fb:96 goog-remb
+a=rtcp-fb:96 transport-cc
+a=rtcp-fb:96 ccm fir
+a=rtcp-fb:96 nack
+a=rtcp-fb:96 nack pli
+a=rtpmap:97 rtx/90000
+a=fmtp:97 apt=96
+m=audio 9 UDP/TLS/RTP/SAVPF 111 63 9 0 8 13 110 126
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:Hvje
+a=ice-pwd:CXdPuoviwBPUGkw1PystrRs1
+a=ice-options:trickle
+a=fingerprint:sha-256 D6:82:3F:4F:23:A4:09:5A:BC:99:42:7D:E6:94:D8:2F:41:56:CF:01:14:35:1A:61:7B:95:C8:F4:FC:D5:3A:16
+a=setup:actpass
+a=mid:1
+a=extmap:14 urn:ietf:params:rtp-hdrext:ssrc-audio-level
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:4 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:9 urn:ietf:params:rtp-hdrext:sdes:mid
+a=inactive
+a=rtcp-mux
+a=rtcp-rsize
+a=rtpmap:111 opus/48000/2
+a=rtcp-fb:111 transport-cc
+a=fmtp:111 minptime=10;useinbandfec=1
+a=rtpmap:63 red/48000/2
+a=fmtp:63 111/111
+a=rtpmap:9 G722/8000
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:13 CN/8000
+a=rtpmap:110 telephone-event/48000
+a=rtpmap:126 telephone-event/8000";
+
+            // Create a local session and add the video track first.
+            RTCPeerConnection pc = new RTCPeerConnection(null);
+            MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            pc.addTrack(localVideoTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = pc.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = pc.CreateAnswer(null);
+
+            logger.LogDebug($"Local answer: {answer}");
+
+            Assert.Equal(MediaStreamStatusEnum.Inactive, pc.AudioStream.LocalTrack.StreamStatus);
+            Assert.Equal(96, pc.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+
+            pc.Close("normal");
+        }
+
+        /// <summary>
         /// Tests that two peer connection instances can reach the connected state.
         /// </summary>
         [Fact]
-        public async void CheckPeerConnectionEstablishment()
+        public async Task CheckPeerConnectionEstablishment()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -801,7 +902,7 @@ a=rtpmap:100 VP8/90000";
         /// Tests that two peer connection instances can establish a data channel.
         /// </summary>
         [Fact]
-        public async void CheckDataChannelEstablishment()
+        public async Task CheckDataChannelEstablishment()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

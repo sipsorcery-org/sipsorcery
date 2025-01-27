@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SDP.cs
 //
 // Description: Session Description Protocol implementation as defined in RFC 2327.
@@ -108,7 +108,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -234,13 +233,21 @@ namespace SIPSorcery.Net
                                 break;
 
                             case var l when l.StartsWith("o="):
-                                string[] ownerFields = sdpLineTrimmed.Substring(2).Split(' ');
-                                sdp.Username = ownerFields[0];
-                                sdp.SessionId = ownerFields[1];
-                                UInt64.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
-                                sdp.NetworkType = ownerFields[3];
-                                sdp.AddressType = ownerFields[4];
-                                sdp.AddressOrHost = ownerFields[5];
+                                var ownerFields = sdpLineTrimmed.Substring(2).Split(new []{' '}, 6, StringSplitOptions.RemoveEmptyEntries);
+
+                                if (ownerFields.Length >= 5)
+                                {
+                                    sdp.Username = ownerFields[0];
+                                    sdp.SessionId = ownerFields[1];
+                                    sdp.AnnouncementVersion = UInt64.TryParse(ownerFields[2], out var version) ? version : 0;
+                                    sdp.NetworkType = ownerFields[3];
+                                    sdp.AddressType = ownerFields[4];
+                                    sdp.AddressOrHost = ownerFields.ElementAtOrDefault(5); // Safely handle missing elements
+                                }
+                                else
+                                {
+                                   logger.LogWarning($"The SDP message had an invalid SDP line format for 'o=': {sdpLineTrimmed}");
+                                }
                                 break;
 
                             case var l when l.StartsWith("s="):
@@ -779,7 +786,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception ParseSDPDescription. " + excp.Message);
+                logger.LogError("Exception ParseSDPDescription. " + excp);
                 throw;
             }
         }

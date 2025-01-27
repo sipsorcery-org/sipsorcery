@@ -5,6 +5,9 @@
     <script type="text/javascript">
 
         const STUN_URL = "stun:stun.l.google.com:19302";
+        const TURN_URL = "turn:coturn";
+        const TURN_USERNAME = "user";
+        const TURN_CREDENTIAL = "password";  
         const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
 
         var pc, ws, dc;
@@ -20,7 +23,13 @@
 			//});
 			
             pc = new RTCPeerConnection({ 
-				 iceServers: [{ urls: STUN_URL }]
+                //iceServers: [{ urls: STUN_URL }]
+                //iceServers: [
+                //    {
+                //        urls: TURN_URL,
+                //        username: TURN_USERNAME,
+                //        credential: TURN_CREDENTIAL
+                //    }]
 				 //certificates: [rsaCert]
 			});
 

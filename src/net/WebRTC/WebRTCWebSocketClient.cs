@@ -87,6 +87,12 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug($"websocket-client starting receive task for server {_webSocketServerUri}.");
 
+                _pc.onicecandidate += async (candidate) =>
+                {
+                    logger.LogDebug("WebRTCWebSocketClient sending ICE candidate to server.");
+                    await webSocketClient.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(candidate.toJSON())), WebSocketMessageType.Text, true, cancellation);
+                };
+
                 _ = Task.Run(() => ReceiveFromWebSocket(_pc, webSocketClient, cancellation)).ConfigureAwait(false);
             }
             else

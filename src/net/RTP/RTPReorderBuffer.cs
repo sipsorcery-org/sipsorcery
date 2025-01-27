@@ -1,9 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class RTPReorderBuffer
     {

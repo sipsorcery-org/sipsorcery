@@ -41,7 +41,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
 using Org.BouncyCastle.Crypto.Tls;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -402,7 +401,7 @@ namespace SIPSorcery.Net
 
                 if (!InitializeCertificates(configuration) && !InitializeCertificates2(configuration))
                 {
-                    logger.LogWarning("No DTLS certificate is provided in the configuration");
+                    logger.LogDebug("No DTLS certificate is provided in the configuration");
                 }
 
                 if (_configuration.X_UseRtpFeedbackProfile)
@@ -541,7 +540,7 @@ namespace SIPSorcery.Net
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
                         SetGlobalDestination(connectedEP, connectedEP);
-                        logger.LogInformation($"ICE changing connected remote end point to {connectedEP}.");
+                        logger.LogDebug($"ICE changing connected remote end point to {connectedEP}.");
                     }
 
                     if (connectionState == RTCPeerConnectionState.disconnected ||
@@ -560,7 +559,7 @@ namespace SIPSorcery.Net
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
                     SetGlobalDestination(connectedEP, connectedEP);
-                    logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
+                    logger.LogDebug($"ICE connected to remote end point {connectedEP}.");
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
                     _dtlsHandle = new DtlsSrtpTransport(
@@ -579,7 +578,7 @@ namespace SIPSorcery.Net
                     {
                         bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
-                        connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                        connectionState = handshakeResult ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
 
                         if (connectionState == RTCPeerConnectionState.connected)
@@ -1647,7 +1646,7 @@ namespace SIPSorcery.Net
             dataChannels.TryGetChannel(streamID, out var dc);
 
             string label = dc != null ? dc.label : "<none>";
-            logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
+            logger.LogDebug($"WebRTC data channel opened label {label} and stream ID {streamID}.");
 
             if (dc != null)
             {
