@@ -191,13 +191,16 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
-            if (state == RTCSctpTransportState.Connected)
-            {
-                RTCSctpAssociation?.Shutdown();
-            }
             lock (_lock)
             {
-                _isClosed = true;
+                if (!_isClosed)
+                {
+                    if (state == RTCSctpTransportState.Connected)
+                    {
+                        RTCSctpAssociation?.Shutdown();
+                    }
+                    _isClosed = true;
+                }
             }
         }
 
