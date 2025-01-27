@@ -107,8 +107,9 @@ namespace SIPSorcery.Net
         public event Action<RTCSctpTransportState> OnStateChanged;
 
         private bool _isStarted;
-        private bool _isClosed;
+        private volatile bool _isClosed;
         private Thread _receiveThread;
+        private readonly object _lock = new object();
 
         /// <summary>
         /// Creates a new SCTP transport that runs on top of an established DTLS connection.
@@ -190,11 +191,17 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
-            if (state == RTCSctpTransportState.Connected)
+            lock (_lock)
             {
-                RTCSctpAssociation?.Shutdown();
+                if (!_isClosed)
+                {
+                    if (state == RTCSctpTransportState.Connected)
+                    {
+                        RTCSctpAssociation?.Shutdown();
+                    }
+                    _isClosed = true;
+                }
             }
-            _isClosed = true;
         }
 
         /// <summary>
@@ -373,9 +380,12 @@ namespace SIPSorcery.Net
 
             if (!_isClosed)
             {
-                lock (transport)
+                lock (_lock)
                 {
-                    transport.Send(buffer, offset, length);
+                    if (!_isClosed)
+                    {
+                        transport.Send(buffer, offset, length);
+                    }
                 }
             }
         }
