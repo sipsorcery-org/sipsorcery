@@ -190,7 +190,8 @@ let main argv =
 
                 printfn "STEP 2: Create WebRTC PeerConnection & get local SDP offer."
 
-                let! pc = createPeerConnection logger (new SemaphoreSlim(0, 1))
+                let dcConnectedSemaphore = new SemaphoreSlim(0, 1)
+                let! pc = createPeerConnection logger dcConnectedSemaphore
                 let offer = pc.createOffer();
                 pc.setLocalDescription(offer) |> ignore;
 
@@ -202,6 +203,9 @@ let main argv =
 
                 match answerEither |> eitherToFSharpResult with
                 | Ok answer ->
+
+                    printfn "STEP 4: Set remote SDP"
+
                     printfn "SDP Answer:\n%s" answer
 
                     let remoteDescriptionInit = RTCSessionDescriptionInit()
@@ -212,6 +216,10 @@ let main argv =
 
                     if setAnswerResult = SetDescriptionResultEnum.OK then
                         printfn "SDP answer successfully set on peer connection."
+
+                        printfn "STEP 5: Wait for data channel to connect and then trigger conversation."
+
+                        dcConnectedSemaphore.WaitAsync() |> Async.AwaitTask |> ignore
                     else
                         printfn "Failed to set the OpenAI SDP Answer."
 
