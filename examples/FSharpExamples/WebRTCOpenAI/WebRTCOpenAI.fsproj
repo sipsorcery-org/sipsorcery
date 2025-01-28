@@ -11,9 +11,8 @@
 
    <ItemGroup>
       <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-      <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
-      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
       <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.7" />
    </ItemGroup>
 

@@ -45,30 +45,25 @@
 open demo
 open Microsoft.Extensions.Logging
 open Microsoft.FSharp.Core
-open Serilog
-open System
-open System.Threading
 open SIPSorcery.Media
 open SIPSorcery.Net
 open SIPSorceryMedia.Windows
+open System
+open System.Threading
 
 let OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions"
 let OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime"
 let OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17"
 let OPENAI_VOICE = OpenAIVoicesEnum.shimmer
 let OPENAI_DATACHANNEL_NAME = "oai-events"
-
+ 
 /// Initialize the logger
-let logger =
-    LoggerFactory.Create(fun builder ->
-        builder.AddSerilog(
-            LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .CreateLogger()
-        ) |> ignore
-    ).CreateLogger("demo")
+let logger = 
+    let factory = LoggerFactory.Create(fun builder -> 
+        builder
+            .SetMinimumLevel(LogLevel.Debug)
+            .AddConsole() |> ignore) 
+    factory.CreateLogger("demo")
 
 /// Convert Either<LError, string> to F# Result<string, string> by storing only error messages
 let eitherToFSharpResult (either: LanguageExt.Either<LanguageExt.Common.Error, string>) : Result<string, string> =
@@ -105,10 +100,10 @@ let getEphemeralKey (url: string) (openAIKey: string) (model: string) (voice: Op
 let OnDataChannelMessage (logger: ILogger) (dc: RTCDataChannel) (protocol: DataChannelPayloadProtocols) (data: byte[]) =
     match protocol with
     | DataChannelPayloadProtocols.WebRTC_Binary ->
-        logger.Debug($"Data channel {dc.label} received binary message of length {data.Length}.")
+        logger.LogDebug($"Data channel {dc.label} received binary message of length {data.Length}.")
     | DataChannelPayloadProtocols.WebRTC_String ->
         let message = System.Text.Encoding.UTF8.GetString(data)
-        logger.Debug($"Data channel {dc.label} received text message {message}.")
+        logger.LogDebug($"Data channel {dc.label} received text message {message}.")
     | _ -> ()
 
 /// <summary>
@@ -124,24 +119,24 @@ let createPeerConnection (logger: ILogger) (onConnectedSemaphore: SemaphoreSlim)
     // Sink (speaker) only audio end point.
     let windowsAudioEP = WindowsAudioEndPoint(AudioEncoder(includeOpus = true), -1, -1, false, false)
     windowsAudioEP.RestrictFormats(fun x -> x.FormatName = "OPUS")
-    windowsAudioEP.add_OnAudioSinkError(fun err -> logger.Warning($"Audio sink error. {err}."))
+    windowsAudioEP.add_OnAudioSinkError(fun err -> logger.LogWarning($"Audio sink error. {err}."))
     windowsAudioEP.add_OnAudioSourceEncodedSample(fun duration sample -> peerConnection.SendAudio(duration, sample))
 
     let audioTrack = MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv)
     peerConnection.addTrack(audioTrack)
 
     peerConnection.add_OnAudioFormatsNegotiated(fun audioFormats ->
-        logger.Debug($"Audio format negotiated {audioFormats.Head().FormatName}.")
+        logger.LogDebug($"Audio format negotiated {audioFormats.Head().FormatName}.")
         windowsAudioEP.SetAudioSinkFormat(audioFormats.Head())
         windowsAudioEP.SetAudioSourceFormat(audioFormats.Head())
     )
 
-    peerConnection.add_OnTimeout(fun mediaType -> logger.Debug($"Timeout on media {mediaType}."))
-    peerConnection.add_oniceconnectionstatechange(fun state -> logger.Debug($"ICE connection state changed to {state}."))
+    peerConnection.add_OnTimeout(fun mediaType -> logger.LogDebug($"Timeout on media {mediaType}."))
+    peerConnection.add_oniceconnectionstatechange(fun state -> logger.LogDebug($"ICE connection state changed to {state}."))
     peerConnection.add_onconnectionstatechange(fun state -> 
         Async.Start(
             async {
-                logger.Debug($"Peer connection state changed to {state}.")
+                logger.LogDebug($"Peer connection state changed to {state}.")
 
                 match state with
                 | RTCPeerConnectionState.connected ->
@@ -160,11 +155,11 @@ let createPeerConnection (logger: ILogger) (onConnectedSemaphore: SemaphoreSlim)
     )
 
     dataChannel.add_onopen(fun () ->
-        logger.Debug("OpenAI data channel opened.")
+        logger.LogDebug("OpenAI data channel opened.")
         onConnectedSemaphore.Release() |> ignore
     )
 
-    dataChannel.add_onclose(fun () -> logger.Debug($"OpenAI data channel {dataChannel.label} closed."))
+    dataChannel.add_onclose(fun () -> logger.LogDebug($"OpenAI data channel {dataChannel.label} closed."))
     dataChannel.add_onmessage(fun dc protocol data -> OnDataChannelMessage logger dc protocol data)
 
     return peerConnection
@@ -192,14 +187,43 @@ let main argv =
             
             match ephemeralKeyOption with
             | Some ephemeralKey ->
-                printfn "Ephemeral Key: %s" ephemeralKey
+
+                printfn "STEP 2: Create WebRTC PeerConnection & get local SDP offer."
+
+                let! pc = createPeerConnection logger (new SemaphoreSlim(0, 1))
+                let offer = pc.createOffer();
+                pc.setLocalDescription(offer) |> ignore;
+
+                printfn "SDP offer:\n%s" offer.sdp
+
+                printfn "STEP 3: Send SDP offer to OpenAI."
+
+                let! answerEither = OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(ephemeralKey, OPENAI_REALTIME_BASE_URL, OPENAI_MODEL, offer.sdp) |> Async.AwaitTask
+
+                match answerEither |> eitherToFSharpResult with
+                | Ok answer ->
+                    printfn "SDP Answer:\n%s" answer
+
+                    let remoteDescriptionInit = RTCSessionDescriptionInit()
+                    remoteDescriptionInit.``type`` <- RTCSdpType.answer
+                    remoteDescriptionInit.sdp <- answer
+
+                    let setAnswerResult = pc.setRemoteDescription(remoteDescriptionInit)
+
+                    if setAnswerResult = SetDescriptionResultEnum.OK then
+                        printfn "SDP answer successfully set on peer connection."
+                    else
+                        printfn "Failed to set the OpenAI SDP Answer."
+
+                | Error error ->
+                    printfn "Failed to get answer from OpenAI: %s" error
+                    
             | None ->
                 printfn "Failed to obtain an ephemeral key."
+
+            printfn "STEP 6: Wait for ctrl-c to indicate user exit."
         }
         |> Async.Start // This will start the async operation
-
-
-    printfn "STEP 6: Wait for ctrl-c to indicate user exit."
 
     let exitMre = new ManualResetEvent(false)
 
