@@ -122,21 +122,60 @@ namespace SIPSorcery.Sys
 
         public static string HexStr(this byte[] buffer, int length, char? separator = null)
         {
-            string rv = string.Empty;
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+            if (separator is { } s)
+            {
+                return string.Create(length * 3 - 1, (buffer, length, s), static (chars, state) =>
+                {
+                    var (buffer, length, s) = state;
+                    for (int i = 0, j = 0; i < length; i++)
+                    {
+                        var val = buffer[i];
+                        chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                        chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                        if (j < chars.Length)
+                        {
+                            chars[j++] = s;
+                        }
+                    }
+                });
+            }
+            else
+            {
+                return string.Create(length * 2, (buffer, length), static (chars, state) =>
+                {
+                    var (buffer, length) = state;
+                    for (int i = 0, j = 0; i < length; i++)
+                    {
+                        var val = buffer[i];
+                        chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                        chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                    }
+                });
+            }
+#else
+            var numberOfChars = length * 2;
+            if (separator.HasValue)
+            {
+                numberOfChars += length - 1;
+            }
 
-            for (int i = 0; i < length; i++)
+            var rv = new char[numberOfChars];
+
+            for (int i = 0, j = 0; i < length; i++)
             {
                 var val = buffer[i];
-                rv += hexmap[val >> 4];
-                rv += hexmap[val & 15];
+                rv[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                rv[j++] = char.ToUpperInvariant(hexmap[val & 15]);
 
-                if (separator != null && i != length - 1)
+                if (separator != null && i != length - 1 && separator is { } s)
                 {
-                    rv += separator;
+                    rv[j++] = s;
                 }
             }
 
-            return rv.ToUpper();
+            return new string(rv);
+#endif
         }
 
         public static byte[] ParseHexStr(string hexStr)
