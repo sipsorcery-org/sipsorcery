@@ -4,29 +4,9 @@
 // Description: An example WebRTC application that can be used to interact with
 // OpenAI's real-time API https://platform.openai.com/docs/guides/realtime-webrtc.
 //
-// NOTE: As of 24 Dec 2024 this example does work to establish an audio stream and is
+// NOTE: As of 28 Jan 2025 this example does work to establish an audio stream and is
 // able to receive data channel messages. There is no echo cancellation feature in this
 // demo so if not provided by the OS then ChatGPT will end up talking to itself.
-//
-// NOTE: As of 24 Dec 2024 the official OpenAI dotnet SDK is missing the realtime
-// models that represent the JSON datachannel messages. As such some ruidimentary
-// models have been created.
-// The official SDK is available at https://github.com/openai/openai-dotnet.
-// The OpenAI API realtime server events reference is available at
-// https://platform.openai.com/docs/api-reference/realtime-server-events.
-//
-// Remarks:
-// To get the ephemeral secret you first need an API key from OpenAI at
-// https://platform.openai.com/settings/organization/api-keys.
-//
-// If you don't want to pass your OpenAI API key to this app an alternative approach is
-// to create an ephemeral secret using the curl comamnd below and then hard code it into
-// the application.
-// NOTE each epehmeral key seems like it can ONLY be used once:
-// curl -v https://api.openai.com/v1/realtime/sessions ^
-//  --header "Authorization: Bearer %OPENAI_TOKEN%" ^
-//  --header "Content-Type: application/json" ^
-//  --data "{\"model\": \"gpt-4o-realtime-preview-2024-12-17\", \"voice\": \"verse\"}"
 //
 // Usage:
 // set OPENAIKEY=your_openai_key
@@ -231,7 +211,7 @@ let main argv =
 
             printfn "STEP 6: Wait for ctrl-c to indicate user exit."
         }
-        |> Async.Start // This will start the async operation
+        |> Async.Start
 
     let exitMre = new ManualResetEvent(false)
 
@@ -244,7 +224,7 @@ let main argv =
     // Attach the event handler for Ctrl-C (CancelKeyPress)
     Console.CancelKeyPress.AddHandler(handler)
 
-    // Wait until the signal is received
+    // Wait until the ctrl-c signal is received
     exitMre.WaitOne() |> ignore
 
     exitMre.Dispose()
