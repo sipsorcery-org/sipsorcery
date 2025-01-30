@@ -6,7 +6,7 @@
 //
 // NOTE: As of 28 Jan 2025 this example does work to establish an audio stream and is
 // able to receive data channel messages. There is no echo cancellation feature in this
-// demo so if not provided by the OS then ChatGPT will end up talking to itself.
+// demo so if not provided by the OS then the AI will end up talking to itself.
 //
 // Usage:
 // set OPENAIKEY=your_openai_key
@@ -22,6 +22,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+open AsyncResult
 open demo
 open Microsoft.Extensions.Logging
 open Microsoft.FSharp.Core
@@ -30,6 +31,13 @@ open SIPSorcery.Net
 open SIPSorceryMedia.Windows
 open System
 open System.Threading
+
+type LanguageExt.Option<'T> with
+    member this.ToFSharpOption() =
+        if this.IsSome then
+            Some this.Case
+        else
+            None
 
 let OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions"
 let OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime"
@@ -52,16 +60,24 @@ let eitherToFSharpResult (either: LanguageExt.Either<LanguageExt.Common.Error, s
         (fun (leftVal : LanguageExt.Common.Error) -> Error leftVal.Message)
     )
 
-let getOpenAIKey (argv : string[]) : Option<string> =
+/// Retrieve the OpenAI API key from the command line arguments.
+let getOpenAIKeyFromCmdLine (argv : string[]) : Result<string, string> =
     match argv |> Array.tryHead with
     | Some key when not (String.IsNullOrWhiteSpace(key)) -> 
-        Some key
+        Ok key 
     | _ -> 
-        None
+        Error """
+❌ Please provide your OpenAI key as a command line argument.
+It's required to obtain a single-use ephemeral secret to establish the WebRTC connection.
 
-/// Attempts to retrieve the OpenAI API key asynchronously.
-/// Returns a string on success or raises an exception on failure.
-let getEphemeralKey (url: string) (openAIKey: string) (model: string) (voice: OpenAIVoicesEnum) : Async<Option<string>> =
+🔹 Recommended approach: Use an environment variable.
+   Example: set OPENAIKEY=<your OpenAI API key>
+   Then run: dotnet run %OPENAIKEY%
+"""
+
+/// Attempts to retrieve the OpenAI API ephemeral key. This is the key used to send the SDP offer and get the SDP answer.
+/// from the OpenAI REST server.
+let getEphemeralKey (url: string) (openAIKey: string) (model: string) (voice: OpenAIVoicesEnum) : Async<Result<string, string>> =
     async {
             let! eitherResult = OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(url, openAIKey, model, voice) |> Async.AwaitTask 
 
@@ -69,28 +85,34 @@ let getEphemeralKey (url: string) (openAIKey: string) (model: string) (voice: Op
             | Ok key ->
                 match key |> String.IsNullOrWhiteSpace with
                     | true -> 
-                        printfn "Failed to obtain ephemeral key: key was empty."
-                        return None
-                    | false -> return Some key
+                        return Error "Failed to obtain ephemeral key: key was empty."
+                    | false -> return Ok key
             | Error error ->
-                printfn "Failed to obtain ephemeral key: %s" error
-                return None
+                return Error (sprintf "Failed to obtain ephemeral key: %s" error)
         }
 
-let OnDataChannelMessage (logger: ILogger) (dc: RTCDataChannel) (protocol: DataChannelPayloadProtocols) (data: byte[]) =
-    match protocol with
-    | DataChannelPayloadProtocols.WebRTC_Binary ->
-        logger.LogDebug($"Data channel {dc.label} received binary message of length {data.Length}.")
-    | DataChannelPayloadProtocols.WebRTC_String ->
-        let message = System.Text.Encoding.UTF8.GetString(data)
-        logger.LogDebug($"Data channel {dc.label} received text message {message}.")
-    | _ -> ()
+/// Attempts to get the SDP answer from the OpenAI REST server.
+let getAnswerSdp (ephemeralKey: string) (url: string) (model: string) (offerSdp: string) : Async<Result<string, string>> =
+    async {
+        let! eitherResult = OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(ephemeralKey, url, model, offerSdp) |> Async.AwaitTask 
+        return eitherResult |> eitherToFSharpResult
+    }
 
-/// <summary>
+/// Method to handle data channel messages.
+let OnDataChannelMessage (logger: ILogger) (dc: RTCDataChannel) (protocol: DataChannelPayloadProtocols) (data: byte[]) =
+    //let message = Encoding.UTF8.GetString(data)
+    
+    // Parse the message into a base event type
+    let serverEventModel = OpenAIDataChannelManager.ParseDataChannelMessage(data).ToFSharpOption()
+
+    match serverEventModel with
+    | Some (:? OpenAIResponseAudioTranscriptDone as doneEvent) ->
+        logger.LogDebug $"Transcript done: {doneEvent.Transcript}"
+    | Some _ -> ()
+    | None ->
+        logger.LogWarning "Failed to parse the openai data channel message."
+
 /// Method to create the local peer connection instance and data channel.
-/// </summary>
-/// <param name="onConnectedSemaphore">A semaphore that will get set when the data channel on the peer connection is opened. Since the data channel
-/// can only be opened once the peer connection is open this indicates both are ready for use.</param>
 let createPeerConnection (logger: ILogger) (onConnectedSemaphore: SemaphoreSlim) : Async<RTCPeerConnection> = async {
     let pcConfig = RTCConfiguration(X_UseRtpFeedbackProfile = true)
     let peerConnection = new RTCPeerConnection(pcConfig)
@@ -131,7 +153,14 @@ let createPeerConnection (logger: ILogger) (onConnectedSemaphore: SemaphoreSlim)
 
     peerConnection.add_OnRtpPacketReceived(fun rep media rtpPkt ->
         if media = SDPMediaTypesEnum.audio then
-            windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, uint32 rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit = 1, rtpPkt.Payload)
+            windowsAudioEP.GotAudioRtp(
+                rep, 
+                rtpPkt.Header.SyncSource, 
+                uint32 rtpPkt.Header.SequenceNumber, 
+                rtpPkt.Header.Timestamp, 
+                rtpPkt.Header.PayloadType, 
+                rtpPkt.Header.MarkerBit = 1, 
+                rtpPkt.Payload)
     )
 
     dataChannel.add_onopen(fun () ->
@@ -145,74 +174,40 @@ let createPeerConnection (logger: ILogger) (onConnectedSemaphore: SemaphoreSlim)
     return peerConnection
 }
 
-[<EntryPoint>]
-let main argv =
-    printfn "WebRTC OpenAI Demo Program"
+/// Method to set the SDP answer on the peer connection.
+let setSdpAnswer (pc: RTCPeerConnection) answerSdp : Result<string, string> =
 
-    match getOpenAIKey argv with
+    let remoteDescriptionInit = RTCSessionDescriptionInit()
+    remoteDescriptionInit.``type`` <- RTCSdpType.answer
+    remoteDescriptionInit.sdp <- answerSdp
+    let setAnswerResult = pc.setRemoteDescription(remoteDescriptionInit)
 
-    | None ->
-        printfn "Please provide your OpenAI key as a command line argument." 
-        printfn "It's used to get a single use ephemeral secret to establish the WebRTC connection."
-        printfn "The recommended approach is to use an environment variable, for example: set OPENAIKEY=<your openai api key>"
-        printfn "Then execute the application using: dotnet run %%OPENAIKEY%%"
+    if setAnswerResult = SetDescriptionResultEnum.OK then
+        printfn "SDP answer successfully set on peer connection."
+        Ok "Data channel connected successfully."
+    else
+        printfn "Failed to set the OpenAI SDP Answer."
+        Error "Failed to set the OpenAI SDP Answer."
 
-    | Some openAIKey ->
+/// Method to send a response create message to the OpenAI data channel.
+/// Response create messages trigger the OpenAI API to generate an audio response.
+let sendResponseCreate (logger: ILogger) (dc: RTCDataChannel) (voice : OpenAIVoicesEnum) message =
+    let responseCreate = 
+        OpenAIResponseCreate(
+            EventID = Guid.NewGuid().ToString(),
+            Response = OpenAIResponseCreateResponse(
+                Instructions = message,
+                Voice = voice.ToString()
+            )
+        )
 
-        printfn "STEP 1: Get ephemeral key from OpenAI."
+    logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+    logger.LogDebug(responseCreate.ToJson());
 
-        // Start the async block
-        async {
-            let! ephemeralKeyOption = getEphemeralKey OPENAI_REALTIME_SESSIONS_URL openAIKey OPENAI_MODEL OPENAI_VOICE
-            
-            match ephemeralKeyOption with
-            | Some ephemeralKey ->
+    dc.send(responseCreate.ToJson());
 
-                printfn "STEP 2: Create WebRTC PeerConnection & get local SDP offer."
-
-                let dcConnectedSemaphore = new SemaphoreSlim(0, 1)
-                let! pc = createPeerConnection logger dcConnectedSemaphore
-                let offer = pc.createOffer();
-                pc.setLocalDescription(offer) |> ignore;
-
-                printfn "SDP offer:\n%s" offer.sdp
-
-                printfn "STEP 3: Send SDP offer to OpenAI."
-
-                let! answerEither = OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(ephemeralKey, OPENAI_REALTIME_BASE_URL, OPENAI_MODEL, offer.sdp) |> Async.AwaitTask
-
-                match answerEither |> eitherToFSharpResult with
-                | Ok answer ->
-
-                    printfn "STEP 4: Set remote SDP"
-
-                    printfn "SDP Answer:\n%s" answer
-
-                    let remoteDescriptionInit = RTCSessionDescriptionInit()
-                    remoteDescriptionInit.``type`` <- RTCSdpType.answer
-                    remoteDescriptionInit.sdp <- answer
-
-                    let setAnswerResult = pc.setRemoteDescription(remoteDescriptionInit)
-
-                    if setAnswerResult = SetDescriptionResultEnum.OK then
-                        printfn "SDP answer successfully set on peer connection."
-
-                        printfn "STEP 5: Wait for data channel to connect and then trigger conversation."
-
-                        dcConnectedSemaphore.WaitAsync() |> Async.AwaitTask |> ignore
-                    else
-                        printfn "Failed to set the OpenAI SDP Answer."
-
-                | Error error ->
-                    printfn "Failed to get answer from OpenAI: %s" error
-                    
-            | None ->
-                printfn "Failed to obtain an ephemeral key."
-
-            printfn "STEP 6: Wait for ctrl-c to indicate user exit."
-        }
-        |> Async.Start
-
+/// Method to wait for the user to press ctrl-c before exiting.
+let waitForCtrlCToExit () =
     let exitMre = new ManualResetEvent(false)
 
     let handler = 
@@ -229,4 +224,46 @@ let main argv =
 
     exitMre.Dispose()
 
-    0
+[<EntryPoint>]
+let main argv =
+    printfn "F# WebRTC OpenAI Demo Program"
+
+    let workflow argv = asyncResult {
+        let! openAIKey = getOpenAIKeyFromCmdLine argv |> ofResult
+
+        printfn "STEP 1: Get ephemeral key from OpenAI."
+        let! ephemeralKey = getEphemeralKey OPENAI_REALTIME_SESSIONS_URL openAIKey OPENAI_MODEL OPENAI_VOICE |> ofAsyncResult
+
+        printfn "STEP 2: Create WebRTC PeerConnection & get local SDP offer."
+        let dcConnectedSemaphore = new SemaphoreSlim(0, 1)
+        let! pc = createPeerConnection logger dcConnectedSemaphore |> ofAsync
+        let offer = pc.createOffer();
+        pc.setLocalDescription(offer) |> ignore;
+
+        printfn "STEP 3: Send SDP offer to OpenAI."
+        let! answerSdp = getAnswerSdp ephemeralKey OPENAI_REALTIME_BASE_URL OPENAI_MODEL offer.sdp |> ofAsyncResult
+        printfn "SDP Answer:\n%s" answerSdp
+
+        printfn "STEP 4: Set remote SDP"
+        let! _ = setSdpAnswer pc answerSdp |> ofResult
+
+        printfn "STEP 5: Wait for data channel to connect."
+        do! dcConnectedSemaphore.WaitAsync() |> Async.AwaitTask |> ofAsync
+
+        printfn "STEP 6: Trigger the AI to start the conversation."
+        do sendResponseCreate logger (pc.DataChannels.Head()) OPENAI_VOICE "Introduce urself. Keep it short."
+
+        return "Workflow completed successfully."
+    }
+
+    let workflowResult = workflow argv |> Async.RunSynchronously
+
+    match workflowResult with
+        | Ok result -> 
+            printfn "Success: %s" result
+            printfn "Use ctrl-c to exit."
+            do waitForCtrlCToExit()
+            0
+        | Error error -> 
+            printfn "Error: %s" error
+            -1

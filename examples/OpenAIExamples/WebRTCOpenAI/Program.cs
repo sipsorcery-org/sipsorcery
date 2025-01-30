@@ -289,6 +289,5 @@ class Program
                 logger.LogInformation($"Transcript done: {done.Transcript}");
             }
         });
-
     }
 }
