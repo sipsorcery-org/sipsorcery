@@ -10,6 +10,8 @@ namespace SIPSorceryMedia.Abstractions
 
     public delegate void RawAudioSampleDelegate(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample);
 
+    public delegate void EncodedTextSampleDelegate(byte[] sample);
+
     public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
     public delegate void VideoSinkSampleDecodedDelegate(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat);
 
@@ -144,6 +146,12 @@ namespace SIPSorceryMedia.Abstractions
         H265,
 
         Unknown
+    }
+
+    public enum TextCodecsEnum
+    {
+        T140, //T.140 specifies that text and other T.140 elements must be transmitted in ISO 10646-1 code with UTF-8 transformation.
+        Unknown,
     }
 
     public struct AudioFormat
@@ -418,12 +426,105 @@ namespace SIPSorceryMedia.Abstractions
         public bool IsEmpty() => !_isNonEmpty;
     }
 
+    public struct TextFormat
+    {
+        public const int DYNAMIC_ID_MIN = 96;
+        public const int DYNAMIC_ID_MAX = 127;
+        public const int DEFAULT_CLOCK_RATE = 1000;
+
+        public static readonly TextFormat Empty = new TextFormat()
+        { ClockRate = DEFAULT_CLOCK_RATE };
+
+        public TextFormat(TextFormat format)
+        : this(format.FormatID, format.FormatName, format.ClockRate, format.Parameters)
+        { }
+
+        public TextFormat(TextCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
+        : this(formatID, codec.ToString(), clockRate, parameters)
+        { }
+
+        /// <summary>
+        /// Creates a new text format based on a dynamic codec (or an unsupported well known codec).
+        /// </summary>
+        public TextFormat(int formatID, string formatName, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
+        {
+            if (formatID < 0)
+            {
+                // Note format ID's less than the dynamic start range are allowed as the codec list
+                // does not currently support all well known codecs.
+                throw new ApplicationException("The format ID for an TextFormat must be greater than 0.");
+            }
+            else if (formatID > DYNAMIC_ID_MAX)
+            {
+                throw new ApplicationException($"The format ID for an TextFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
+            }
+            else if (string.IsNullOrWhiteSpace(formatName))
+            {
+                throw new ApplicationException($"The format name must be provided for a TextFormat.");
+            }
+            else if (clockRate <= 0)
+            {
+                throw new ApplicationException($"The clock rate for a TextFormat must be greater than 0.");
+            }
+
+            FormatID = formatID;
+            FormatName = formatName;
+            ClockRate = clockRate;
+            Parameters = parameters;
+
+            if (Enum.TryParse<TextCodecsEnum>(FormatName, out var textCodec))
+            {
+                Codec = textCodec;
+            }
+            else
+            {
+                Codec = TextCodecsEnum.Unknown;
+            }
+        }
+
+        public TextCodecsEnum Codec { get; set; }
+
+        /// <summary>
+        /// The format ID for the codec. If this is a well known codec it should be set to the
+        /// value from the codec enum. If the codec is a dynamic it must be set between 96–127
+        /// inclusive.
+        /// </summary>
+        public int FormatID { get; set; }
+
+        /// <summary>
+        /// The official name for the codec. This field is critical for dynamic codecs
+        /// where it is used to match the codecs in the SDP offer/answer.
+        /// </summary>
+        public string FormatName { get; set; }
+
+        /// <summary>
+        /// The rate used by decoded samples for this text format.
+        /// </summary>
+        /// <remarks>
+        /// Example, 1000 is the clock rate:
+        /// a=rtpmap:98 t140/1000
+        /// </remarks>
+        public int ClockRate { get; set; }
+
+        /// <summary>
+        /// This is the "a=fmtp" format parameter that will be set in the SDP offer/answer.
+        /// This field should be set WITHOUT the "a=fmtp:0" prefix.
+        /// </summary>
+        /// <remarks>
+        /// Example:
+        /// a=fmtp:100 98/98/98
+        /// </remarks>
+        public string Parameters { get; set; }
+    }
+
     public class MediaEndPoints
     {
         public IAudioSource AudioSource { get; set; }
         public IAudioSink AudioSink { get; set; }
         public IVideoSource VideoSource { get; set; }
         public IVideoSink VideoSink { get; set; }
+        public ITextSource TextSource { get; set; }
+        public ITextSink TextSink { get; set; }
     }
 
     public interface IAudioEncoder
@@ -448,6 +549,25 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="format">The audio format of the encoded sample.</param>
         /// <returns>An array containing the 16 bit signed PCM samples.</returns>
         short[] DecodeAudio(byte[] encodedSample, AudioFormat format);
+    }
+
+    public interface ITextEncoder
+    {
+        /// <summary>
+        /// Encode a text into a byte array.
+        /// </summary>
+        /// <param name="text">A symbol or text to be transmitted</param>
+        /// <param name="format">The text format of the sample.</param>
+        /// <returns>A byte array containing the encoded text sample</returns>
+        byte[] EncodeText(string text, TextFormat format);
+
+        /// <summary>
+        /// Decode a byte array into a string type text.
+        /// </summary>
+        /// <param name="encodedSample">A symbol or text that was received</param>
+        /// <param name="format">The text format of the sample.</param>
+        /// <returns></returns>
+        string DecodeText(byte[] encodedSample, TextFormat format);
     }
 
     public class RawImage
@@ -634,5 +754,27 @@ namespace SIPSorceryMedia.Abstractions
         Task StartVideoSink();
 
         Task CloseVideoSink();
+    }
+
+    public interface ITextSource
+    {
+        event EncodedTextSampleDelegate OnTextSourceEncodedSample;
+        Task CloseText();
+        TextFormat GetTextSourceFormat();
+        void SetTextSourceFormat(TextFormat textFormat);
+        Task StartText();
+        Task PauseText();
+        Task ResumeText();
+    }
+
+    public interface ITextSink
+    {
+        Task CloseTextSink();
+        void GotTextRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, int marker, byte[] payload);
+        void SetTextSinkFormat(TextFormat textFormat);
+        TextFormat GetTextSinkFormat();
+        Task StartTextSink();
+        Task PauseTextSink();
+        Task ResumeTextSink();
     }
 }
