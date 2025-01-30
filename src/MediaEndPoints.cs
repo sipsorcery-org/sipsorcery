@@ -150,8 +150,8 @@ namespace SIPSorceryMedia.Abstractions
 
     public enum TextCodecsEnum
     {
-        T140, //T.140 specifies that text and other T.140 elements must be transmitted in ISO 10646-1 code with UTF-8 transformation.
         Unknown,
+        T140, //T.140 specifies that text and other T.140 elements must be transmitted in ISO 10646-1 code with UTF-8 transformation.
     }
 
     public struct AudioFormat
