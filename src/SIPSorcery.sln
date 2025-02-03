@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29230.61
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{5A855FE1-8B93-429D-95A5-B8215CF62A9D}"
 EndProject
@@ -10,6 +10,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.UnitTests", "..\test\unit\SIPSorcery.UnitTests.csproj", "{94B30C42-3CE5-41D7-97A4-20AB1D062906}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.IntegrationTests", "..\test\integration\SIPSorcery.IntegrationTests.csproj", "{2E657CD6-B4F1-4952-8815-913898E2352F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorceryMedia.Abstractions", "..\..\sipsorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj", "{D0203F88-5EEC-498B-BCD8-0043A01D03AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,18 @@ Global
 		{2E657CD6-B4F1-4952-8815-913898E2352F}.Release|x64.Build.0 = Release|Any CPU
 		{2E657CD6-B4F1-4952-8815-913898E2352F}.Release|x86.ActiveCfg = Release|Any CPU
 		{2E657CD6-B4F1-4952-8815-913898E2352F}.Release|x86.Build.0 = Release|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Debug|x64.Build.0 = Debug|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Debug|x86.Build.0 = Debug|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Release|x64.ActiveCfg = Release|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Release|x64.Build.0 = Release|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Release|x86.ActiveCfg = Release|Any CPU
+		{D0203F88-5EEC-498B-BCD8-0043A01D03AD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

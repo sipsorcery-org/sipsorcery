@@ -897,6 +897,11 @@ namespace SIPSorcery.SIP.App
                 MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
             }
 
+            if (MediaSession.HasText)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, streamStatus);
+            }
+
             var sdp = MediaSession.CreateOffer(null);
             SendReInviteRequest(sdp);
         }
@@ -1054,6 +1059,11 @@ namespace SIPSorcery.SIP.App
                                 MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, GetStreamStatusForOnHoldState());
                             }
 
+                            if (MediaSession.HasText)
+                            {
+                                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, GetStreamStatusForOnHoldState());
+                            }
+
                             var answerSdp = MediaSession.CreateAnswer(null);
 
                             m_sipDialogue.RemoteSDP = sipRequest.Body;
@@ -1194,6 +1204,11 @@ namespace SIPSorcery.SIP.App
                     if (MediaSession.HasVideo)
                     {
                         MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
+                    }
+
+                    if (MediaSession.HasText)
+                    {
+                        MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, MediaStreamStatusEnum.SendRecv);
                     }
 
                     // The norefersub supported header means am event subscription is not expected.
@@ -1438,6 +1453,11 @@ namespace SIPSorcery.SIP.App
             if (MediaSession.HasVideo)
             {
                 MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
+            }
+
+            if (MediaSession.HasText)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, MediaStreamStatusEnum.SendRecv);
             }
 
             // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
@@ -1936,6 +1956,12 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaType">The media type, aduio or video, that timed out.</param>
         private void OnRtpTimeout(SDPMediaTypesEnum mediaType)
         {
+            // RtpTimeout on text media type is normal situation since there isn't a constant data flow.
+            if (mediaType == SDPMediaTypesEnum.text)
+            {
+                return;
+            }
+
             if (!IsOnLocalHold && !IsOnRemoteHold)
             {
                 logger.LogWarning($"RTP has timed out for media {mediaType} hanging up call.");

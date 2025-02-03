@@ -400,8 +400,8 @@ o=- 1986548327 0 IN IP4 127.0.0.1
 s=-
 c=IN IP4 127.0.0.1
 t=0 0
-m=video 60638 RTP/AVP 100
-a=rtpmap:100 VP8/90000
+m=video 60638 RTP/AVP 96
+a=rtpmap:96 VP8/90000
 a=sendrecv
 m=audio 60640 RTP/AVP 0 111
 a=rtpmap:0 PCMU/8000
@@ -416,7 +416,7 @@ a=sendrecv";
 
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { 
                 new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU),
-                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 110, "OPUS/48000/2")
+                new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.audio, 111, "OPUS/48000/2")
             });
             rtpSession.addTrack(localAudioTrack);
 
@@ -434,9 +434,8 @@ a=sendrecv";
 
             logger.LogDebug($"Local answer: {answer}");
 
-            // Since we set Remote Description FIRST, we expect to have values defined by the remote
             Assert.Equal(111, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "OPUS").ID);
-            Assert.Equal(100, rtpSession.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
+            Assert.Equal(96, rtpSession.VideoStream.LocalTrack.Capabilities.Single(x => x.Name() == "VP8").ID);
 
             //Assert.True(SDPAudioVideoMediaFormat.AreMatch(offer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio)., answer.Media.First().Media));
             //Assert.Equal(offer.Media.Last().Media, answer.Media.Last().Media);
@@ -529,6 +528,38 @@ a=rtpmap:111 OPUS/48000/2";
             rtpSession.Close("normal");
         }
 
+        [Fact]
+        public void CheckSelectedTextFormatParsedSDPUnitTest()
+        {
+            string remoteSdp =
+            @"v=0
+o=- 1986548327 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=text 11000 RTP/AVP 98 100
+a=rtpmap:98 t140/1000
+a=rtpmap:100 red/1000
+a=fmtp:100 98/98";
+
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            MediaStreamTrack localTextTrack = new MediaStreamTrack(new TextFormat(SDPWellKnownMediaFormatsEnum.T140));
+
+            rtpSession.addTrack(localTextTrack);
+
+            var offer = SDP.ParseSDPDescription(remoteSdp);
+
+            logger.LogDebug($"Remote offer: {offer}");
+
+            var result = rtpSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+            Assert.Equal(98, rtpSession.TextStream.LocalTrack.Capabilities.Single(x => x.Name() == "t140").ID);
+            Assert.Equal("t140", rtpSession.TextStream.GetSendingFormat().Name());
+        }
+
         /// <summary>
         /// Checks that the selected audio format is chosen correctly when the remote description
         /// has used a well known ID for a different media type.
@@ -563,6 +594,7 @@ a=rtpmap:12 PCMA/8000";
 
             logger.LogDebug($"Set remote description on local session result {result}.");
             Assert.Equal(SetDescriptionResultEnum.OK, result);
+            Assert.Equal(12, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
             Assert.Equal("PCMA", rtpSession.AudioStream.GetSendingFormat().Name());
 
             var answer = rtpSession.CreateAnswer(null);
