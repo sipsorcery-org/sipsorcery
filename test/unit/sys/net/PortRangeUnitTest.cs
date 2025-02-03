@@ -43,7 +43,7 @@ namespace SIPSorcery.UnitTests.sys.net
         [Fact]
         public void GetSequentialPortUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var portRange = new PortRange(6000, 6005);
@@ -60,7 +60,7 @@ namespace SIPSorcery.UnitTests.sys.net
         [Fact]
         public void GetShuffledPortsEvenlyDistributedUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var portRange = new PortRange(6000, 6011, shuffle: true);
@@ -84,7 +84,7 @@ namespace SIPSorcery.UnitTests.sys.net
             Assert.Equal(portCount.Count, portAssignedCount);
             for(int i = startPort; i<endPort; i += 2)
             {
-                logger.LogTrace($"shuffled PortRange Port {i}: Actual Count:{portCount[i]} Expected Count: {(N / portAssignedCount)} Acceptable Range: [{(N / portAssignedCount) * atLeastXPercentPerPort}, {(N / portAssignedCount) * ((1.0 - atLeastXPercentPerPort) + 1)}])");
+                logger.LogTrace("shuffled PortRange Port {Port}: Actual Count:{ActualCount} Expected Count: {ExpectedCount} Acceptable Range: [{a}, {b}])", i, portCount[i], (N / portAssignedCount), (N / portAssignedCount) * atLeastXPercentPerPort, (N / portAssignedCount) * ((1.0 - atLeastXPercentPerPort) + 1));
                 Assert.True(portCount.ContainsKey(i), $"Expected port {i} to be allocated at least once");
                 Assert.True(portCount[i] > (N / portAssignedCount) * atLeastXPercentPerPort);
                 Assert.True(portCount[i] < (N / portAssignedCount) * ((1.0 - atLeastXPercentPerPort) + 1));

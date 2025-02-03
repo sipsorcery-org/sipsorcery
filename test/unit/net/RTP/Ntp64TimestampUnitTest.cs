@@ -17,7 +17,7 @@ namespace SIPSorcery.UnitTests.net.RTP
 
         [Fact]
         public void InterpolatesNtpTimestampFromRtpTimestamp() {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var lastNtpTimestamp = 0x00000001_00000000ul;

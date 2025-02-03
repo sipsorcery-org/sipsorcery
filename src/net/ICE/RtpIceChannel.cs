@@ -175,7 +175,7 @@ namespace SIPSorcery.Net
                 catch (SocketException sockExcp)
                 {
                     m_isRunningReceive = false;
-                    logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in IceTcpReceiver.BeginReceiveFrom. {sockExcp.Message}");
+                    logger.LogWarning(sockExcp, "Socket error {SocketErrorCode} in IceTcpReceiver.BeginReceiveFrom. {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
                     //Close(sockExcp.Message);
                 }
                 catch (Exception excp)
@@ -184,7 +184,7 @@ namespace SIPSorcery.Net
                     // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
                     // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                     // case the socket can be considered to be unusable and there's no point trying another receive.
-                    logger.LogError(excp, $"Exception IceTcpReceiver.BeginReceiveFrom. {excp.Message}");
+                    logger.LogError(excp, "Exception IceTcpReceiver.BeginReceiveFrom. {ErrorMessage}", excp.Message);
                     Close(excp.Message);
                 }
             }
@@ -257,13 +257,13 @@ namespace SIPSorcery.Net
                     // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
                     // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
                     // error since the remote party may not have initialised their socket yet.
-                    logger.LogWarning(sockExcp, $"SocketException IceTcpReceiver.EndReceiveFrom ({sockExcp.SocketErrorCode}). {sockExcp.Message}");
+                    logger.LogWarning(sockExcp, "SocketException IceTcpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
                 }
                 catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
                 { }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception IceTcpReceiver.EndReceiveFrom. {excp}");
+                    logger.LogError(excp, "Exception IceTcpReceiver.EndReceiveFrom. {ErrorMessage}", excp.Message);
                     Close(excp.Message);
                 }
                 finally
@@ -744,7 +744,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                logger.LogDebug($"RTP ICE Channel discovered {_candidates.Count} local candidates.");
+                logger.LogDebug("RTP ICE Channel discovered {CandidateCount} local candidates.", _candidates.Count);
 
                 if (_iceServerConnections?.Count > 0)
                 {
@@ -791,7 +791,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                logger.LogDebug($"RTPIceChannel TCP for {RtpSocket.LocalEndPoint} started.");
+                logger.LogDebug("RTPIceChannel TCP for {LocalEndPoint} started.", RtpSocket.LocalEndPoint);
 
                 OnClosed -= CloseTcp;
                 OnClosed += CloseTcp;
@@ -820,7 +820,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTPChannel.Close. " + excp);
+                logger.LogError(excp, "Exception RTPChannel.Close. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -863,7 +863,7 @@ namespace SIPSorcery.Net
         {
             if (!_closed)
             {
-                logger.LogDebug($"RtpIceChannel for {base.RTPLocalEndPoint} closed.");
+                logger.LogDebug("RtpIceChannel for {RTPLocalEndPoint} closed.", base.RTPLocalEndPoint);
                 _closed = true;
                 _connectivityChecksTimer?.Dispose();
                 _processIceServersTimer?.Dispose();
@@ -920,7 +920,7 @@ namespace SIPSorcery.Net
                 // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
                 // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
 
-                logger.LogDebug($"RTP ICE Channel received remote candidate: {candidate}");
+                logger.LogDebug("RTP ICE Channel received remote candidate: {candidate}", candidate);
 
                 _remoteCandidates.Add(candidate);
                 _pendingRemoteCandidates.Enqueue(candidate);
@@ -1085,15 +1085,15 @@ namespace SIPSorcery.Net
                         {
                             if (stunUri.Scheme == STUNSchemesEnum.stuns || stunUri.Scheme == STUNSchemesEnum.turns)
                             {
-                                logger.LogWarning($"ICE channel does not currently support TLS for STUN and TURN servers, not checking {stunUri}.");
+                                logger.LogWarning("ICE channel does not currently support TLS for STUN and TURN servers, not checking {stunUri}.", stunUri);
                             }
                             else if (_policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun)
                             {
-                                logger.LogWarning($"ICE channel policy is relay only, ignoring STUN server {stunUri}.");
+                                logger.LogWarning("ICE channel policy is relay only, ignoring STUN server {stunUri}.", stunUri);
                             }
                             else if (!_iceServerConnections.ContainsKey(stunUri))
                             {
-                                logger.LogDebug($"Adding ICE server for {stunUri}.");
+                                logger.LogDebug("Adding ICE server for {stunUri}.", stunUri);
 
                                 var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
 
@@ -1101,7 +1101,7 @@ namespace SIPSorcery.Net
                                 if (IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
                                 {
                                     iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
-                                    logger.LogDebug($"ICE server end point for {iceServerState._uri} set to {iceServerState.ServerEndPoint}.");
+                                    logger.LogDebug("ICE server end point for {Uri} set to {EndPoint}.", iceServerState._uri, iceServerState.ServerEndPoint);
                                 }
 
                                 _iceServerConnections.TryAdd(stunUri, iceServerState);
@@ -1116,7 +1116,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"RTP ICE Channel could not parse ICE server URL {url}.");
+                            logger.LogWarning("RTP ICE Channel could not parse ICE server URL {url}.", url);
                         }
                     }
                 }
@@ -1143,28 +1143,27 @@ namespace SIPSorcery.Net
                 }
                 if (_activeIceServer.TurnTimeToExpiry.Subtract(DateTime.Now) <= TimeSpan.FromMinutes(1))
                 {
-                    logger.LogDebug($"Sending TURN refresh request to ICE server {_activeIceServer._uri}.");
+                    logger.LogDebug("Sending TURN refresh request to ICE server {Uri}.", _activeIceServer._uri);
                     _activeIceServer.Error = SendTurnRefreshRequest(_activeIceServer);
                 }
 
                 if (NominatedEntry.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
                 {
-                    logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {NominatedEntry.LocalCandidate.IceServer._uri} after {NominatedEntry.TurnPermissionsRequestSent} attempts.");
+                    logger.LogWarning("ICE RTP channel failed to get a Create Permissions response from {IceServerUri} after {TurnPermissionsRequestSent} attempts.", NominatedEntry.LocalCandidate.IceServer._uri, NominatedEntry.TurnPermissionsRequestSent);
                 }
                 else if (NominatedEntry.TurnPermissionsRequestSent != 1 || NominatedEntry.TurnPermissionsResponseAt == DateTime.MinValue || DateTime.Now.Subtract(NominatedEntry.TurnPermissionsResponseAt).TotalSeconds >
                          REFRESH_PERMISSION_PERIOD)
                 {
                     // Send Create Permissions request to TURN server for remote candidate.
                     NominatedEntry.TurnPermissionsRequestSent++;
-                    logger.LogDebug($"ICE RTP channel sending TURN permissions request {NominatedEntry.TurnPermissionsRequestSent} " +
-                                    $"to server {NominatedEntry.LocalCandidate.IceServer._uri} for peer {NominatedEntry.RemoteCandidate.DestinationEndPoint} " +
-                                    $"(TxID: {NominatedEntry.RequestTransactionID}).");
+                    logger.LogDebug("ICE RTP channel sending TURN permissions request {TurnPermissionsRequestSent} to server {IceServerUri} for peer {RemoteCandidate} (TxID: {RequestTransactionID}).",
+                        NominatedEntry.TurnPermissionsRequestSent, NominatedEntry.LocalCandidate.IceServer._uri, NominatedEntry.RemoteCandidate.DestinationEndPoint, NominatedEntry.RequestTransactionID);
                     SendTurnCreatePermissionsRequest(NominatedEntry.RequestTransactionID, NominatedEntry.LocalCandidate.IceServer, NominatedEntry.RemoteCandidate.DestinationEndPoint);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception {nameof(RefreshTurn)}." + excp);
+                logger.LogError(excp, "Exception " + nameof(RefreshTurn) + ". {ErrorMessage}", excp);
             }
         }
 
@@ -1179,7 +1178,7 @@ namespace SIPSorcery.Net
             if (_closed || IceGatheringState == RTCIceGatheringState.complete ||
                 !(IceConnectionState == RTCIceConnectionState.@new || IceConnectionState == RTCIceConnectionState.checking))
             {
-                logger.LogDebug($"ICE RTP channel stopping ICE server checks in gathering state {IceGatheringState} and connection state {IceConnectionState}.");
+                logger.LogDebug("ICE RTP channel stopping ICE server checks in gathering state {IceGatheringState} and connection state {IceConnectionState}.", IceGatheringState, IceConnectionState);
                 _refreshTurnTimer?.Dispose();
                 _refreshTurnTimer = new Timer(RefreshTurn, null, 0, 2000);
                 _processIceServersTimer.Dispose();
@@ -1234,7 +1233,7 @@ namespace SIPSorcery.Net
                     // If the ICE server hasn't yet been resolved initiate the DNS check.
                     else if (_activeIceServer.ServerEndPoint == null && _activeIceServer.DnsLookupSentAt == DateTime.MinValue)
                     {
-                        logger.LogDebug($"Attempting to resolve STUN server URI {_activeIceServer._uri}.");
+                        logger.LogDebug("Attempting to resolve STUN server URI {Uri}.", _activeIceServer._uri);
 
                         _activeIceServer.DnsLookupSentAt = DateTime.Now;
 
@@ -1245,12 +1244,12 @@ namespace SIPSorcery.Net
                             try
                             {
                                 var result = await STUNDns.Resolve(_activeIceServer._uri).ConfigureAwait(false);
-                                logger.LogDebug($"ICE server {_activeIceServer._uri} successfully resolved to {result}.");
+                                logger.LogDebug("ICE server {Uri} successfully resolved to {Result}.", _activeIceServer._uri, result);
                                 _activeIceServer.ServerEndPoint = result;
                             }
                             catch
                             {
-                                logger.LogWarning($"Unable to resolve ICE server end point for {_activeIceServer._uri}.");
+                                logger.LogWarning("Unable to resolve ICE server end point for {Uri}.", _activeIceServer._uri);
                                 _activeIceServer.Error = SocketError.HostNotFound;
                             }
                         });
@@ -1264,36 +1263,36 @@ namespace SIPSorcery.Net
                     // DNS lookup for ICE server host has timed out.
                     else if (_activeIceServer.ServerEndPoint == null)
                     {
-                        logger.LogWarning($"ICE server DNS resolution failed for {_activeIceServer._uri}.");
+                        logger.LogWarning("ICE server DNS resolution failed for {Uri}.", _activeIceServer._uri);
                         _activeIceServer.Error = SocketError.TimedOut;
                     }
                     // Maximum number of requests have been sent to the ICE server without a response.
                     else if (_activeIceServer.OutstandingRequestsSent >= IceServer.MAX_REQUESTS && _activeIceServer.LastResponseReceivedAt == DateTime.MinValue)
                     {
-                        logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} timed out after {_activeIceServer.OutstandingRequestsSent} requests.");
+                        logger.LogWarning("Connection attempt to ICE server {Uri} timed out after {RequestsSent} requests.", _activeIceServer._uri, _activeIceServer.OutstandingRequestsSent);
                         _activeIceServer.Error = SocketError.TimedOut;
                     }
                     // Maximum number of error response have been received for the requests sent to this ICE server.
                     else if (_activeIceServer.ErrorResponseCount >= IceServer.MAX_ERRORS)
                     {
-                        logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} cancelled after {_activeIceServer.ErrorResponseCount} error responses.");
+                        logger.LogWarning("Connection attempt to ICE server {Uri} cancelled after {ErrorResponseCount} error responses.", _activeIceServer._uri, _activeIceServer.ErrorResponseCount);
                         _activeIceServer.Error = SocketError.TimedOut;
                     }
                     // Send STUN binding request.
                     else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
                     {
-                        logger.LogDebug($"Sending STUN binding request to ICE server {_activeIceServer._uri}  with address {_activeIceServer.ServerEndPoint}.");
+                        logger.LogDebug("Sending STUN binding request to ICE server {Uri} with address {EndPoint}.", _activeIceServer._uri, _activeIceServer.ServerEndPoint);
                         _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
                     }
                     // Send TURN binding request.
                     else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.turn)
                     {
-                        logger.LogDebug($"Sending TURN allocate request to ICE server {_activeIceServer._uri} with address {_activeIceServer.ServerEndPoint}.");
+                        logger.LogDebug("Sending TURN allocate request to ICE server {Uri} with address {EndPoint}.", _activeIceServer._uri, _activeIceServer.ServerEndPoint);
                         _activeIceServer.Error = SendTurnAllocateRequest(_activeIceServer);
                     }
                     else
                     {
-                        logger.LogWarning($"The active ICE server reached an unexpected state {_activeIceServer._uri}.");
+                        logger.LogWarning("The active ICE server reached an unexpected state {Uri}.", _activeIceServer._uri);
                     }
                 }
                 finally
@@ -1324,7 +1323,7 @@ namespace SIPSorcery.Net
 
                 if (_policy == RTCIceTransportPolicy.all && svrRflxCandidate != null)
                 {
-                    logger.LogDebug($"Adding server reflex ICE candidate for ICE server {iceServer._uri} and {iceServer.ServerReflexiveEndPoint}.");
+                    logger.LogDebug("Adding server reflex ICE candidate for ICE server {Uri} and {EndPoint}.", iceServer._uri, iceServer.ServerReflexiveEndPoint);
 
                     // Note server reflexive candidates don't update the checklist pairs since it's merely an
                     // alternative way to represent an existing host candidate.
@@ -1344,7 +1343,7 @@ namespace SIPSorcery.Net
 
                 if (relayCandidate != null)
                 {
-                    logger.LogDebug($"Adding relay ICE candidate for ICE server {iceServer._uri} and {iceServer.RelayEndPoint}.");
+                    logger.LogDebug("Adding relay ICE candidate for ICE server {Uri} and {EndPoint}.", iceServer._uri, iceServer.RelayEndPoint);
 
                     _candidates.Add(relayCandidate);
                     OnIceCandidate?.Invoke(relayCandidate);
@@ -1374,12 +1373,12 @@ namespace SIPSorcery.Net
         {
             if (localCandidate == null)
             {
-                logger.LogError($"{nameof(UpdateChecklist)} the local candidate supplied to UpdateChecklist was null.");
+                logger.LogError(nameof(UpdateChecklist) + " the local candidate supplied to UpdateChecklist was null.");
                 return;
             }
             else if (remoteCandidate == null)
             {
-                logger.LogError($"{nameof(UpdateChecklist)} the remote candidate supplied to UpdateChecklist was null.");
+                logger.LogError(nameof(UpdateChecklist) + " the remote candidate supplied to UpdateChecklist was null.");
                 return;
             }
 
@@ -1394,12 +1393,12 @@ namespace SIPSorcery.Net
                         var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
                         if (addresses.Length == 0)
                         {
-                            logger.LogWarning($"RTP ICE channel MDNS resolver failed to resolve {remoteCandidate.address}.");
+                            logger.LogWarning("RTP ICE channel MDNS resolver failed to resolve {RemoteCandidateAddress}.", remoteCandidate.address);
                         }
                         else
                         {
                             remoteCandidateIPAddr = addresses[0];
-                            logger.LogDebug($"RTP ICE channel resolved MDNS hostname {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                            logger.LogDebug("RTP ICE channel resolved MDNS hostname {RemoteCandidateAddress} to {RemoteCandidateIPAddr}.", remoteCandidate.address, remoteCandidateIPAddr);
 
                             var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
                             remoteCandidate.SetDestinationEndPoint(remoteEP);
@@ -1413,11 +1412,11 @@ namespace SIPSorcery.Net
                         if (lookupResult.Answers.Count > 0)
                         {
                             remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
-                            logger.LogWarning($"RTP ICE channel resolved remote candidate {remoteCandidate.address} to {remoteCandidateIPAddr}.");
+                            logger.LogWarning("RTP ICE channel resolved remote candidate {RemoteCandidateAddress} to {RemoteCandidateIPAddr}.", remoteCandidate.address, remoteCandidateIPAddr);
                         }
                         else
                         {
-                            logger.LogDebug($"RTP ICE channel failed to resolve remote candidate {remoteCandidate.address}.");
+                            logger.LogDebug("RTP ICE channel failed to resolve remote candidate {RemoteCandidateAddress}.", remoteCandidate.address);
                         }
 
                         if (remoteCandidateIPAddr != null)
@@ -1479,12 +1478,12 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning($"RTP ICE Channel could not create a check list entry for a remote candidate with no destination end point, {remoteCandidate}.");
+                    logger.LogWarning("RTP ICE Channel could not create a check list entry for a remote candidate with no destination end point, {RemoteCandidate}.", remoteCandidate);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception {nameof(UpdateChecklist)}." + excp);
+                logger.LogError(excp, "Exception " + nameof(UpdateChecklist) + ". {ErrorMessage}", excp);
             }
         }
 
@@ -1521,20 +1520,20 @@ namespace SIPSorcery.Net
                     {
                         if (entry.Priority > existingEntry.Priority)
                         {
-                            logger.LogDebug($"Removing lower priority entry and adding candidate pair to checklist for: {entry.RemoteCandidate}");
+                            logger.LogDebug("Removing lower priority entry and adding candidate pair to checklist for: {RemoteCandidate}", entry.RemoteCandidate);
                             _checklist.Remove(existingEntry);
                             _checklist.Add(entry);
                         }
                         else
                         {
-                            logger.LogDebug($"Existing checklist entry has higher priority, NOT adding entry for: {entry.RemoteCandidate}");
+                            logger.LogDebug("Existing checklist entry has higher priority, NOT adding entry for: {RemoteCandidate}", entry.RemoteCandidate);
                         }
                     }
                 }
                 else
                 {
                     // No existing entry.
-                    logger.LogDebug($"Adding new candidate pair to checklist for: {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}");
+                    logger.LogDebug("Adding new candidate pair to checklist for: {LocalCandidate}->{RemoteCandidate}", entry.LocalCandidate.ToShortString(), entry.RemoteCandidate.ToShortString());
                     _checklist.Add(entry);
                 }
             }
@@ -1565,7 +1564,7 @@ namespace SIPSorcery.Net
 
                 case RTCIceConnectionState.failed:
                 case RTCIceConnectionState.closed:
-                    logger.LogDebug($"ICE RTP channel stopping connectivity checks in connection state {IceConnectionState}.");
+                    logger.LogDebug("ICE RTP channel stopping connectivity checks in connection state {IceConnectionState}.", IceConnectionState);
                     _connectivityChecksTimer?.Dispose();
                     break;
             }
@@ -1629,7 +1628,7 @@ namespace SIPSorcery.Net
 
                                 foreach (var failedEntry in failedEntries)
                                 {
-                                    logger.LogDebug($"ICE RTP channel checks for checklist entry have timed out, state being set to failed: {failedEntry.LocalCandidate.ToShortString()}->{failedEntry.RemoteCandidate.ToShortString()}.");
+                                    logger.LogDebug("ICE RTP channel checks for checklist entry have timed out, state being set to failed: {LocalCandidate}->{RemoteCandidate}.", failedEntry.LocalCandidate.ToShortString(), failedEntry.RemoteCandidate.ToShortString());
                                     failedEntry.State = ChecklistEntryState.Failed;
                                 }
 
@@ -1676,7 +1675,7 @@ namespace SIPSorcery.Net
                                             failedNominatedEntry.State = ChecklistEntryState.Failed;
                                             failedNominatedEntry.Nominated = false;
 
-                                            logger.LogDebug($"ICE RTP channel checks for succeded checklist entry have timed out, state being set to failed: {failedNominatedEntry.LocalCandidate.ToShortString()}->{failedNominatedEntry.RemoteCandidate.ToShortString()}.");
+                                            logger.LogDebug("ICE RTP channel checks for succeded checklist entry have timed out, state being set to failed: {LocalCandidate}->{RemoteCandidate}.", failedNominatedEntry.LocalCandidate.ToShortString(), failedNominatedEntry.RemoteCandidate.ToShortString());
                                         }
 
                                         //Try nominate another entry
@@ -1701,7 +1700,7 @@ namespace SIPSorcery.Net
                             DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
                         {
                             // No checklist entries were made available before the failed timeout.
-                            logger.LogWarning($"ICE RTP channel failed to connect as no checklist entries became available within {DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds:0.##}s.");
+                            logger.LogWarning("ICE RTP channel failed to connect as no checklist entries became available within {ElapsedSeconds}s.", DateTime.Now.Subtract(_checklistStartedAt).TotalSeconds);
 
                             _checklistState = ChecklistState.Failed;
                             //IceConnectionState = RTCIceConnectionState.disconnected;
@@ -1727,7 +1726,7 @@ namespace SIPSorcery.Net
                 _connectedAt = DateTime.Now;
                 int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
-                logger.LogDebug($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+                logger.LogDebug("ICE RTP channel connected after {Duration:0.##}ms {LocalCandidate}->{RemoteCandidate}.", duration, entry.LocalCandidate.ToShortString(), entry.RemoteCandidate.ToShortString());
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
@@ -1740,7 +1739,7 @@ namespace SIPSorcery.Net
             else
             {
                 // The nominated entry has been changed.
-                logger.LogDebug($"ICE RTP channel remote nominated candidate changed from {NominatedEntry.RemoteCandidate.ToShortString()} to {entry.RemoteCandidate.ToShortString()}.");
+                logger.LogDebug("ICE RTP channel remote nominated candidate changed from {OldCandidate} to {NewCandidate}.", NominatedEntry.RemoteCandidate.ToShortString(), entry.RemoteCandidate.ToShortString());
 
                 entry.Nominated = true;
                 entry.LastConnectedResponseAt = DateTime.Now;
@@ -1788,7 +1787,7 @@ namespace SIPSorcery.Net
             {
                 if (candidatePair.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
                 {
-                    logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {candidatePair.LocalCandidate.IceServer._uri} after {candidatePair.TurnPermissionsRequestSent} attempts.");
+                    logger.LogWarning("ICE RTP channel failed to get a Create Permissions response from {IceServerUri} after {TurnPermissionsRequestSent} attempts.", candidatePair.LocalCandidate.IceServer._uri, candidatePair.TurnPermissionsRequestSent);
                     candidatePair.State = ChecklistEntryState.Failed;
                 }
                 else
@@ -1796,7 +1795,7 @@ namespace SIPSorcery.Net
                     // Send Create Permissions request to TURN server for remote candidate.
                     candidatePair.TurnPermissionsRequestSent++;
 
-                    logger.LogDebug($"ICE RTP channel sending TURN permissions request {candidatePair.TurnPermissionsRequestSent} to server {candidatePair.LocalCandidate.IceServer._uri} for peer {candidatePair.RemoteCandidate.DestinationEndPoint} (TxID: {candidatePair.RequestTransactionID}).");
+                    logger.LogDebug("ICE RTP channel sending TURN permissions request {TurnPermissionsRequestSent} to server {IceServerUri} for peer {RemoteCandidate} (TxID: {RequestTransactionID}).", candidatePair.TurnPermissionsRequestSent, candidatePair.LocalCandidate.IceServer._uri, candidatePair.RemoteCandidate.DestinationEndPoint, candidatePair.RequestTransactionID);
                     SendTurnCreatePermissionsRequest(candidatePair.RequestTransactionID, candidatePair.LocalCandidate.IceServer, candidatePair.RemoteCandidate.DestinationEndPoint);
                 }
             }
@@ -1805,12 +1804,12 @@ namespace SIPSorcery.Net
                 if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
                 {
                     IPEndPoint relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
-                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {base.RTPLocalEndPoint} to relay at {relayServerEP} (use candidate {setUseCandidate}).");
+                    logger.LogDebug("ICE RTP channel sending connectivity check for {LocalCandidate}->{RemoteCandidate} from {LocalEndPoint} to relay at {RelayServerEndPoint} (use candidate {SetUseCandidate}).", candidatePair.LocalCandidate.ToShortString(), candidatePair.RemoteCandidate.ToShortString(), base.RTPLocalEndPoint, relayServerEP, setUseCandidate);
                 }
                 else
                 {
                     IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {base.RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
+                    logger.LogDebug("ICE RTP channel sending connectivity check for {LocalCandidate}->{RemoteCandidate} from {LocalEndPoint} to {RemoteEndPoint} (use candidate {SetUseCandidate}).", candidatePair.LocalCandidate.ToShortString(), candidatePair.RemoteCandidate.ToShortString(), base.RTPLocalEndPoint, remoteEndPoint, setUseCandidate);
                 }
                 SendSTUNBindingRequest(candidatePair, setUseCandidate);
             }
@@ -1858,7 +1857,7 @@ namespace SIPSorcery.Net
 
                 if (sendResult != SocketError.Success)
                 {
-                    logger.LogWarning($"Error sending STUN server binding request to {remoteEndPoint}. {sendResult}.");
+                    logger.LogWarning("Error sending STUN server binding request to {RemoteEndPoint}. {SendResult}.", remoteEndPoint, sendResult);
                 }
                 else
                 {
@@ -1884,7 +1883,7 @@ namespace SIPSorcery.Net
                     DateTime.Now.Subtract(candidatePair.LastBindingRequestReceivedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
                 {
                     int duration = (int)DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds;
-                    logger.LogWarning($"ICE RTP channel failed after {duration:0.##}s {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()}.");
+                    logger.LogWarning("ICE RTP channel failed after {Duration:0.##}s {LocalCandidate}->{RemoteCandidate}.", duration, candidatePair.LocalCandidate.ToShortString(), candidatePair.RemoteCandidate.ToShortString());
 
                     IceConnectionState = RTCIceConnectionState.failed;
                     OnIceConnectionStateChange?.Invoke(IceConnectionState);
@@ -1899,7 +1898,7 @@ namespace SIPSorcery.Net
                         if (IceConnectionState == RTCIceConnectionState.connected)
                         {
                             int duration = (int)DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds;
-                            logger.LogWarning($"ICE RTP channel disconnected after {duration:0.##}s {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()}.");
+                            logger.LogWarning("ICE RTP channel disconnected after {Duration:0.##}s {LocalCandidate}->{RemoteCandidate}.", duration, candidatePair.LocalCandidate.ToShortString(), candidatePair.RemoteCandidate.ToShortString());
 
                             IceConnectionState = RTCIceConnectionState.disconnected;
                             OnIceConnectionStateChange?.Invoke(IceConnectionState);
@@ -1907,7 +1906,7 @@ namespace SIPSorcery.Net
                     }
                     else if (IceConnectionState != RTCIceConnectionState.connected)
                     {
-                        logger.LogDebug($"ICE RTP channel has re-connected {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()}.");
+                        logger.LogDebug("ICE RTP channel has re-connected {LocalCandidate}->{RemoteCandidate}.", candidatePair.LocalCandidate.ToShortString(), candidatePair.RemoteCandidate.ToShortString());
 
                         // Re-connected.
                         IceConnectionState = RTCIceConnectionState.connected;
@@ -1981,7 +1980,7 @@ namespace SIPSorcery.Net
                         {
                             // If the channel is connected a mismatched txid can result if the connection is very busy, i.e. streaming 1080p video,
                             // it's likely to only be transient and does not impact the connection state.
-                            logger.LogWarning($"ICE RTP channel received a STUN {stunMessage.Header.MessageType} with a transaction ID that did not match a checklist entry.");
+                            logger.LogWarning("ICE RTP channel received a STUN {MessageType} with a transaction ID that did not match a checklist entry.", stunMessage.Header.MessageType);
                         }
                     }
                     else
@@ -1993,14 +1992,14 @@ namespace SIPSorcery.Net
                         {
                             if (matchingChecklistEntry.Nominated)
                             {
-                                logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding response {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
+                                logger.LogDebug("ICE RTP channel remote peer nominated entry from binding response {RemoteCandidate}", matchingChecklistEntry.RemoteCandidate.ToShortString());
 
                                 // This is the response to a connectivity check that had the "UseCandidate" attribute set.
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
                             else if (IsController)
                             {
-                                logger.LogDebug($"ICE RTP channel binding response state {matchingChecklistEntry.State} as Controller for {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
+                                logger.LogDebug("ICE RTP channel binding response state {State} as Controller for {RemoteCandidate}", matchingChecklistEntry.State, matchingChecklistEntry.RemoteCandidate.ToShortString());
                                 ProcessNominateLogicAsController(matchingChecklistEntry);
                             }
                         }
@@ -2008,7 +2007,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning($"ICE RTP channel received an unexpected STUN message {stunMessage.Header.MessageType} from {remoteEndPoint}.\nJson: {stunMessage}");
+                    logger.LogWarning("ICE RTP channel received an unexpected STUN message {MessageType} from {RemoteEndPoint}.\nJson: {StunMessage}", stunMessage.Header.MessageType, remoteEndPoint, stunMessage);
                 }
             }
         }
@@ -2116,7 +2115,7 @@ namespace SIPSorcery.Net
             if (_policy == RTCIceTransportPolicy.relay && !wasRelayed)
             {
                 // If the policy is "relay only" then direct binding requests are not accepted.
-                logger.LogWarning($"ICE RTP channel rejecting non-relayed STUN binding request from {remoteEndPoint}.");
+                logger.LogWarning("ICE RTP channel rejecting non-relayed STUN binding request from {RemoteEndPoint}.", remoteEndPoint);
 
                 STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                 stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
@@ -2131,7 +2130,7 @@ namespace SIPSorcery.Net
                 if (!result)
                 {
                     // Send STUN error response.
-                    logger.LogWarning($"ICE RTP channel STUN binding request from {remoteEndPoint} failed an integrity check, rejecting.");
+                    logger.LogWarning("ICE RTP channel STUN binding request from {RemoteEndPoint} failed an integrity check, rejecting.", remoteEndPoint);
                     STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                     stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
                     Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
@@ -2162,7 +2161,7 @@ namespace SIPSorcery.Net
                         RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
                         peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
                         peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
-                        logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
+                        logger.LogDebug("Adding peer reflex ICE candidate for {RemoteEndPoint}.", remoteEndPoint);
                         _remoteCandidates.Add(peerRflxCandidate);
 
                         // Add a new entry to the check list for the new peer reflexive candidate.
@@ -2202,13 +2201,13 @@ namespace SIPSorcery.Net
                             {
                                 // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
                                 // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
-                                logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
+                                logger.LogDebug("ICE RTP channel remote peer nominated entry from binding request: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
                             else if (matchingChecklistEntry.RemoteCandidate.ToString() != NominatedEntry.RemoteCandidate.ToString())
                             {
                                 // The remote peer is changing the nominated candidate.
-                                logger.LogDebug($"ICE RTP channel remote peer nominated a new candidate: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
+                                logger.LogDebug("ICE RTP channel remote peer nominated a new candidate: {RemoteCandidate}.", matchingChecklistEntry.RemoteCandidate.ToShortString());
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
                         }
@@ -2317,8 +2316,8 @@ namespace SIPSorcery.Net
 
             if (sendResult != SocketError.Success)
             {
-                logger.LogWarning($"Error sending STUN server binding request {iceServer.OutstandingRequestsSent} for " +
-                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+                logger.LogWarning("Error sending STUN server binding request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
             }
             else
             {
@@ -2340,12 +2339,7 @@ namespace SIPSorcery.Net
 
             STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate);
             allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
-            //allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
             allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
-            /*iceServer.Protocol == ProtocolType.Tcp?
-            STUNAttributeConstants.TcpTransportType :
-            STUNAttributeConstants.UdpTransportType));*/
-
             allocateRequest.Attributes.Add(
                 new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
                 iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
@@ -2368,8 +2362,8 @@ namespace SIPSorcery.Net
 
             if (sendResult != SocketError.Success)
             {
-                logger.LogWarning($"Error sending TURN Allocate request {iceServer.OutstandingRequestsSent} for " +
-                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+                logger.LogWarning("Error sending TURN Allocate request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
             }
             else
             {
@@ -2416,8 +2410,8 @@ namespace SIPSorcery.Net
 
             if (sendResult != SocketError.Success)
             {
-                logger.LogWarning($"Error sending TURN Refresh request {iceServer.OutstandingRequestsSent} for " +
-                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+                logger.LogWarning("Error sending TURN Refresh request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
             }
             else
             {
@@ -2458,8 +2452,8 @@ namespace SIPSorcery.Net
 
             if (sendResult != SocketError.Success)
             {
-                logger.LogWarning($"Error sending TURN Create Permissions request {iceServer.OutstandingRequestsSent} for " +
-                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+                logger.LogWarning("Error sending TURN Create Permissions request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
             }
             else
             {
@@ -2486,7 +2480,7 @@ namespace SIPSorcery.Net
             }
             else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
-                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
+                logger.LogWarning("The destination address for Send in RTPChannel cannot be {Address}.", dstEndPoint.Address);
                 return SocketError.DestinationAddressRequired;
             }
             else
@@ -2517,12 +2511,12 @@ namespace SIPSorcery.Net
                     {
                         if (sendSocket.Connected)
                         {
-                            logger.LogDebug($"SendOverTCP request disconnect.");
+                            logger.LogDebug("SendOverTCP request disconnect.");
                             sendSocket.Disconnect(true);
                         }
                         sendSocket.Connect(dstEndPoint);
 
-                        logger.LogDebug($"SendOverTCP status: {sendSocket.Connected} endpoint: {dstEndPoint}");
+                        logger.LogDebug("SendOverTCP status: {Status} endpoint: {EndPoint}", sendSocket.Connected, dstEndPoint);
                     }
 
                     //Fix ReceiveFrom logic if any previous exception happens
@@ -2545,7 +2539,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception RTPIceChannel.SendOverTCP. {excp}");
+                    logger.LogError(excp, "Exception RTPIceChannel.SendOverTCP. {ErrorMessage}", excp.Message);
                     return SocketError.Fault;
                 }
             }
@@ -2565,13 +2559,13 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
-                logger.LogWarning(sockExcp, $"SocketException RTPIceChannel EndSendToTCP ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning(sockExcp, "SocketException RTPIceChannel EndSendToTCP ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RTPIceChannel EndSendToTCP. {excp.Message}");
+                logger.LogError(excp, "Exception RTPIceChannel EndSendToTCP. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -2659,8 +2653,7 @@ namespace SIPSorcery.Net
 
             if (sendResult != SocketError.Success)
             {
-                logger.LogWarning($"Error sending TURN relay request to TURN server at " +
-                    $"{relayEndPoint}. {sendResult}.");
+                logger.LogWarning("Error sending TURN relay request to TURN server at {RelayEndPoint}. {SendResult}.", relayEndPoint, sendResult);
             }
             else
             {
@@ -2676,7 +2669,7 @@ namespace SIPSorcery.Net
             {
                 if (MdnsResolve != null)
                 {
-                    logger.LogWarning($"RTP ICE channel has both {nameof(MdnsGetAddresses)} and {nameof(MdnsGetAddresses)} set. Only {nameof(MdnsGetAddresses)} will be used.");
+                    logger.LogWarning("RTP ICE channel has both "+ nameof(MdnsGetAddresses) + " and " + nameof(MdnsGetAddresses) + " set. Only " + nameof(MdnsGetAddresses) + " will be used.");
                 }
                 return await MdnsGetAddresses(candidate.address).ConfigureAwait(false);
             }
@@ -2705,7 +2698,7 @@ namespace SIPSorcery.Net
 
             if (addresses.Length == 0)
             {
-                logger.LogWarning($"RTP ICE channel has no MDNS resolver set, and the system can not resolve remote candidate with MDNS hostname {candidate.address}.");
+                logger.LogWarning("RTP ICE channel has no MDNS resolver set, and the system can not resolve remote candidate with MDNS hostname {CandidateAddress}.", candidate.address);
                 // Supporting MDNS lookups means an additional nuget dependency. Hopefully
                 // support is coming to .Net Core soon (AC 12 Jun 2020).
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");

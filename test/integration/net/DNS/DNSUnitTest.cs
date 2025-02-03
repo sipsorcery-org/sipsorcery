@@ -42,7 +42,7 @@ namespace SIPSorcery.Net.IntegrationTests
         //[Fact]
         public async void LookupAnyRecordTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 100, null, false, false);
@@ -74,7 +74,7 @@ namespace SIPSorcery.Net.IntegrationTests
         //[Fact]
         public async void LookupAnyRecordAsyncCacheTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //1.queue dns lookup for async resolution
@@ -111,14 +111,14 @@ namespace SIPSorcery.Net.IntegrationTests
         //[Fact(Skip = "Need to investigate why this fails on Appveyor Windows CI.")]
         public async void LookupARecordMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DNSResponse result = DNSManager.Lookup("www.sipsorcery.com", QType.A, 10, null, false, false);
             var result = await SIPDns.LookupClient.QueryAsync("www.sipsorcery.com", QueryType.A);
 
             Assert.NotEmpty(result.Answers?.AddressRecords());
-            logger.LogDebug($"Lookup result {result.Answers.AddressRecords().First().Address}.");
+            logger.LogDebug("Lookup result {FirstAddress}.", result.Answers.AddressRecords().First().Address);
 
             Assert.Equal("67.222.131.148", result.Answers.AddressRecords().First().Address.ToString());
 
@@ -134,7 +134,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupAAAARecordMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DNSResponse result = DNSManager.Lookup("www.google.com", QType.AAAA, 10, null, false, false);
@@ -142,7 +142,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var aaaaResult in result.Answers?.AaaaRecords())
             {
-                logger.LogDebug($"AAAA Lookup result {aaaaResult.ToString()}.");
+                logger.LogDebug("AAAA Lookup result {AaaaResult}.", aaaaResult.ToString());
             }
 
             // Three's no guarantee that a particular DNS server will return AAAA records. The AppVeyor
@@ -170,7 +170,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupSrvRecordMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DNSResponse result = DNSManager.Lookup(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QType.SRV, 10, null, false, false);
@@ -178,7 +178,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var srvResult in result.Answers?.SrvRecords())
             {
-                logger.LogDebug($"SRV Lookup result {srvResult.ToString()}.");
+                logger.LogDebug("SRV Lookup result {SrvResult}.", srvResult.ToString());
             }
 
             Assert.Single(result.Answers?.SrvRecords());
@@ -191,12 +191,12 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void LookupCurrentHostNameMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string localHostname = System.Net.Dns.GetHostName();
 
-            logger.LogDebug($"Current host name {localHostname}");
+            logger.LogDebug("Current host name {LocalHostname}", localHostname);
 
             if (localHostname.EndsWith(STUNDns.MDNS_TLD))
             {
@@ -206,7 +206,7 @@ namespace SIPSorcery.Net.IntegrationTests
             {
                 var addressList = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList;
 
-                addressList.ToList().ForEach(x => logger.LogDebug(x.ToString()));
+                addressList.ToList().ForEach(x => logger.LogDebug("{IPAddress}", x.ToString()));
 
                 Assert.True(addressList.Count() > 0, "No address results were returned for a local hostname lookup.");
             }

@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPEventPresence Load. " + excp.Message);
+                logger.LogError(excp, "Exception SIPEventPresence Load. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

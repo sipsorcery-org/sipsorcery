@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPEventDialogInfo constructor. " + excp.Message);
+                logger.LogError(excp, "Exception SIPEventDialogInfo constructor. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

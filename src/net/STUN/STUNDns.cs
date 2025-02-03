@@ -146,7 +146,7 @@ namespace SIPSorcery.Net
 
                         if (addressList?.Length == 0)
                         {
-                            logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
+                            logger.LogWarning("Operating System DNS lookup failed for {Host}.", uri.Host);
                             useDnsClient = true;
                             //return null;
                         }
@@ -188,7 +188,7 @@ namespace SIPSorcery.Net
                             var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower()).ConfigureAwait(false);
                             if (result == null || result.Count() == 0)
                             {
-                                //logger.LogDebug($"STUNDns SRV lookup returned no results for {uri}.");
+                                //logger.LogDebug("STUNDns SRV lookup returned no results for {uri}.", uri);
                             }
                             else
                             {
@@ -208,7 +208,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception e)
                         {
-                            logger.LogDebug($"STUNDns SRV lookup failure for {uri}. {e?.InnerException?.Message}");
+                            logger.LogDebug(e, "STUNDns SRV lookup failure for {uri}. {ErrorMessage}", uri, e.InnerException?.Message);
                             return null;
                         }
                     }
@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogWarning(excp, $"STUNDns lookup failure for {host} and query {queryType}. {excp.Message}");
+                logger.LogWarning(excp, "STUNDns lookup failure for {Host} and query {QueryType}. {ErrorMessage}", host, queryType, excp.Message);
             }
 
             if (queryType == QueryType.AAAA)

@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task BlindTransferUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task BlindTransferCancelUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -165,7 +165,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task HangupUserAgentUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -232,7 +232,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IncomingCallNoSdpUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -272,7 +272,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IncomingCallNoSdpWithACKUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -337,7 +337,7 @@ a=sendrecv" + m_CRLF + m_CRLF;
         [Fact]
         public async Task AnswerAudioOnlyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -378,7 +378,7 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -391,25 +391,25 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult }.");
+            logger.LogDebug("Client agent answer result {CallResult}.", callResult);
 
             Assert.True(callResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
@@ -422,7 +422,7 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithEmptyContentUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -435,26 +435,26 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var callDescriptor = CreateCallDescriptor(dstUri, SDP.SDP_MIME_CONTENTTYPE, null);
             var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult}.");
+            logger.LogDebug("Client agent answer result {CallResult}.", callResult);
 
             Assert.True(callResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
@@ -468,7 +468,7 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithWrongContentFailsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -481,26 +481,26 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var callDescriptor = CreateCallDescriptor(dstUri, "multipart/mixed", "wrongcontent");
             var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult}.");
+            logger.LogDebug("Client agent answer result {CallResult}.", callResult);
 
             Assert.False(callResult);
         }
@@ -512,7 +512,7 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithCustomContentUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -525,20 +525,20 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var content = @"
@@ -553,7 +553,7 @@ a=sendrecv";
             var callDescriptor = CreateCallDescriptor(dstUri, "multipart/mixed", content);
             var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult}.");
+            logger.LogDebug("Client agent answer result {CallResult}.", callResult);
 
             Assert.True(callResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
@@ -563,7 +563,7 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithCustomMultiPartContentUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -576,20 +576,20 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var content = @"
@@ -617,7 +617,7 @@ Content-type: text/plain; charset=us-ascii
                 null, null, new List<string> { "Custom header" }, null, SIPCallDirection.Out, "multipart/mixed; boundary=\"testboundary\"", content, null);
             var callResult = await userAgentClient.Call(callDescriptor, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult}.");
+            logger.LogDebug("Client agent answer result {CallResult}.", callResult);
 
             Assert.True(callResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
@@ -632,7 +632,7 @@ Content-type: text/plain; charset=us-ascii
         [Fact]
         public async Task PlaceCallMismatchedCapabilitiesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -645,26 +645,26 @@ Content-type: text/plain; charset=us-ascii
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverAudioSession = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.PCMU);
 
                 var answerResult = await userAgentServer.Answer(uas, serverAudioSession).ConfigureAwait(false);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.False(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint(format => format.Codec == AudioCodecsEnum.G722);
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult }.");
+            logger.LogDebug("Client agent answer result {CallResult }.", callResult);
 
             Assert.False(callResult);
         }
@@ -676,7 +676,7 @@ Content-type: text/plain; charset=us-ascii
         [Fact]
         public async Task HandleMissingAudioTrackOnAnswerUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -723,7 +723,7 @@ a=sendrecv";
         [Fact]
         public async Task HandleInvalidSdpPortOnAnswerUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
@@ -771,7 +771,7 @@ a=sendrecv";
         [Fact]
         public async Task CheckCanPlaceCallUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // This transport will act as the call receiver. It allows the test to provide a 
@@ -838,7 +838,7 @@ a=sendrecv";
         [Fact]
         public async Task HandleInvalidSdpPortOnPlaceCallUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // This transport will act as the call receiver. It allows the test to provide a 
@@ -914,7 +914,7 @@ a=sendrecv";
         [Fact]
         public async Task AttendedTransfereeUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // User agents A and B can use the same transport as they don't auto-answer incoming calls.
@@ -931,9 +931,9 @@ a=sendrecv";
             sipTransportD.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
             var userAgentD = new SIPUserAgent(sipTransportD, null);
 
-            logger.LogDebug($"sip transport for UA's A and B listening on: {sipTransportCaller.GetSIPChannels()[0].ListeningSIPEndPoint}.");
-            logger.LogDebug($"sip transport for UA C listening on: {sipTransportC.GetSIPChannels()[0].ListeningSIPEndPoint}.");
-            logger.LogDebug($"sip transport for UA D listening on: {sipTransportD.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+            logger.LogDebug("sip transport for UA's A and B listening on: {ListeningSIPEndPoint}.", sipTransportCaller.GetSIPChannels()[0].ListeningSIPEndPoint);
+            logger.LogDebug("sip transport for UA C listening on: {ListeningSIPEndPoint}.", sipTransportC.GetSIPChannels()[0].ListeningSIPEndPoint);
+            logger.LogDebug("sip transport for UA D listening on: {ListeningSIPEndPoint}.", sipTransportD.GetSIPChannels()[0].ListeningSIPEndPoint);
 
             // Set up auto-answer for UA's C and D:
             foreach (var userAgent in new List<SIPUserAgent> { userAgentC, userAgentD })
@@ -944,22 +944,22 @@ a=sendrecv";
                 {
                     var uas = ua.AcceptCall(req);
                     bool answerResult = await ua.Answer(uas, CreateMediaSession());
-                    logger.LogDebug($"Answer incoming call result {answerResult}.");
+                    logger.LogDebug("Answer incoming call result {AnswerResult}.", answerResult);
                 };
             }
 
             // Place the two calls from A to C and B to D.
             var dstUriC = sipTransportC.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
-            logger.LogDebug($"UA-A attempting call UA-C on {dstUriC}.");
+            logger.LogDebug("UA-A attempting call UA-C on {dstUriC}.", dstUriC);
             var callResultAtoC = await userAgentA.Call(dstUriC.ToString(), null, null, CreateMediaSession());
-            logger.LogDebug($"Client agent answer result for A to C {callResultAtoC}.");
+            logger.LogDebug("Client agent answer result for A to C {callResultAtoC}.", callResultAtoC);
 
             Assert.True(callResultAtoC);
 
             var dstUriD = sipTransportD.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
-            logger.LogDebug($"UA-B attempting call UA-D on {dstUriD}.");
+            logger.LogDebug("UA-B attempting call UA-D on {dstUriD}.", dstUriD);
             var callResultBtoD = await userAgentB.Call(dstUriD.ToString(), null, null, CreateMediaSession());
-            logger.LogDebug($"Client agent answer result for B to D {callResultBtoD}.");
+            logger.LogDebug("Client agent answer result for B to D {callResultBtoD}.", callResultBtoD);
 
             Assert.True(callResultBtoD);
 
@@ -1000,7 +1000,7 @@ a=sendrecv";
         [Fact]
         public async Task CancelCallUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport aliceTransport = new SIPTransport();
@@ -1037,7 +1037,7 @@ a=sendrecv";
         [Fact]
         public async Task HangupOutgoingCallUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -1051,31 +1051,31 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult }.");
+            logger.LogDebug("Client agent answer result {CallResult }.", callResult);
 
             Assert.True(callResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
 
-            logger.LogDebug($"Hanging up client user agent call leg.");
+            logger.LogDebug("Hanging up client user agent call leg.");
 
             userAgentClient.Hangup();
         }
@@ -1086,7 +1086,7 @@ a=sendrecv";
         [Fact]
         public async Task HangupIncomingCallUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport serverTransport = new SIPTransport();
@@ -1100,31 +1100,31 @@ a=sendrecv";
 
             serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
             {
-                logger.LogDebug("Request received: " + req.StatusLine);
+                logger.LogDebug("Request received: {StatusLine}", req.StatusLine);
 
                 var uas = userAgentServer.AcceptCall(req);
                 var serverMediaEndPoint = CreateMockVoIPMediaEndPoint();
                 var answerResult = await userAgentServer.Answer(uas, serverMediaEndPoint);
 
-                logger.LogDebug($"Server agent answer result {answerResult}.");
+                logger.LogDebug("Server agent answer result {AnswerResult}.", answerResult);
 
                 Assert.True(answerResult);
             };
 
             var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+            logger.LogDebug("Attempting call to {Uri}.", dstUri.ToString());
 
             var clientMediaEndPoint = CreateMockVoIPMediaEndPoint();
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientMediaEndPoint);
 
-            logger.LogDebug($"Client agent answer result {callResult }.");
+            logger.LogDebug("Client agent answer result {CallResult }.", callResult);
 
             Assert.True(callResult);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
             Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
 
-            logger.LogDebug($"Hanging up client user agent call leg.");
+            logger.LogDebug("Hanging up client user agent call leg.");
 
             userAgentServer.Hangup();
         }

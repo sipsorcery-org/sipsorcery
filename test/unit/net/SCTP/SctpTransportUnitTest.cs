@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpTransportUnitTest.cs
 //
 // Description: Unit tests for the SctpTransport class.
@@ -38,7 +38,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetInitAckPacket()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var sctpTransport = new MockSctpTransport();
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(initAckChunk.StateCookie));
 
-            logger.LogDebug($"Cookie: {cookie.ToJson()}");
+            logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
 
             Assert.NotNull(cookie.CreatedAt);
             Assert.NotNull(cookie.HMAC);

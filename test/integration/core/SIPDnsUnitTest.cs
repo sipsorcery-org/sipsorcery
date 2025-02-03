@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void ResolveHostFromServiceTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -49,7 +49,7 @@ namespace SIPSorcery.SIP.IntegrationTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"resolved to SIP end point {result}.");
+            logger.LogDebug("resolved to SIP end point {result}.", result);
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void LookupLocalHostnameTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -76,7 +76,7 @@ namespace SIPSorcery.SIP.IntegrationTests
 
                 Assert.NotNull(result);
 
-                logger.LogDebug($"resolved to SIP end point {result}.");
+                logger.LogDebug("resolved to SIP end point {Result}.", result);
             }
         }
 
@@ -85,7 +85,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         {
             try
             {
-                logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
                 logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
                 //SIPDNSManager.UseNAPTRLookups = true;
@@ -96,7 +96,7 @@ namespace SIPSorcery.SIP.IntegrationTests
                 var result = SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false, cts.Token).Result;
 
                 Assert.NotNull(result);
-                logger.LogDebug($"resolved to SIP end point {result}.");
+                logger.LogDebug("resolved to SIP end point {Result}.", result);
                 //Assert.NotEmpty(result.SIPNAPTRResults);
                 //Assert.NotEmpty(result.SIPSRVResults);
                 //Assert.NotEmpty(result.EndPointResults);
@@ -119,7 +119,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void ResolveNoSRVFromCacheTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -132,7 +132,7 @@ namespace SIPSorcery.SIP.IntegrationTests
             //SIPEndPoint resultEP = result.GetSIPEndPoint();
             Assert.NotNull(result);
             Assert.NotEqual(SIPEndPoint.Empty, result);
-            logger.LogDebug($"resolved to SIP end point {result}.");
+            logger.LogDebug("resolved to SIP end point {Result}.", result);
             //Assert.NotEmpty(result.SIPSRVResults);
             //Assert.NotEmpty(result.EndPointResults);
 
@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP.IntegrationTests
             var resultCache = SIPDns.ResolveFromCache(lookupURI, false);
             Assert.NotNull(resultCache);
             Assert.NotEqual(SIPEndPoint.Empty, resultCache);
-            logger.LogDebug($"cache resolved to SIP end point {resultCache}.");
+            logger.LogDebug("cache resolved to SIP end point {ResultCache}.", resultCache);
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveWithSRVFromCacheTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -163,7 +163,7 @@ namespace SIPSorcery.SIP.IntegrationTests
             //SIPEndPoint resultEP = result.GetSIPEndPoint();
             Assert.NotNull(result);
             Assert.NotEqual(SIPEndPoint.Empty, result);
-            logger.LogDebug($"resolved to SIP end point {result}.");
+            logger.LogDebug("resolved to SIP end point {Result}.", result);
             //Assert.NotEmpty(result.SIPSRVResults);
             //Assert.NotEmpty(result.EndPointResults);
 
@@ -171,13 +171,13 @@ namespace SIPSorcery.SIP.IntegrationTests
             var resultCache = SIPDns.ResolveFromCache(lookupURI, false);
             Assert.NotNull(resultCache);
             Assert.NotEqual(SIPEndPoint.Empty, resultCache);
-            logger.LogDebug($"cache resolved to SIP end point {resultCache}.");
+            logger.LogDebug("cache resolved to SIP end point {ResultCache}.", resultCache);
         }
 
         [Fact]
         public async Task ResolveSIPServiceAsyncTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -188,7 +188,7 @@ namespace SIPSorcery.SIP.IntegrationTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"resolved to SIP end point {result}.");
+            logger.LogDebug("resolved to SIP end point {Result}.", result);
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void ResolveHostFromSecureSIPURITest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -209,7 +209,7 @@ namespace SIPSorcery.SIP.IntegrationTests
             Assert.Equal(5061, result.Port);
             Assert.Equal(SIPProtocolsEnum.tls, result.Protocol);
 
-            logger.LogDebug($"resolved to SIP end point {result}.");
+            logger.LogDebug("resolved to SIP end point {Result}.", result);
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void ResolveNonExistentServiceTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -233,7 +233,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void NonRespondingDNSServerTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var originalClient = SIPDns.LookupClient;
@@ -267,7 +267,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void LookupCNAMETest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -278,7 +278,7 @@ namespace SIPSorcery.SIP.IntegrationTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"resolved to SIP end point {result}.");
+            logger.LogDebug("resolved to SIP end point {Result}.", result);
         }
     }
 }

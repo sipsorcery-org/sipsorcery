@@ -37,7 +37,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupLocalhostTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("localhost", out var stunUri);
@@ -46,7 +46,7 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.NotNull(result);
             Assert.Equal(IPAddress.Loopback, result.Address);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupLocalhostIPv6TestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("localhost", out var stunUri);
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
 
             // Using System.Net.Dns.GetHostEntry doesn't return IPv6 results on Linux or WSL
             // even when there is an IPv6 address assigned. Works correctly on Mac and Windows.
@@ -85,7 +85,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupPrivateNetworkHostTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string localHostname = Dns.GetHostName();
@@ -96,14 +96,14 @@ namespace SIPSorcery.Net.IntegrationTests
             }
             else
             {
-                logger.LogDebug($"Attempting DNS lookup for {localHostname}.");
+                logger.LogDebug("Attempting DNS lookup for {localHostname}.", localHostname);
 
                 STUNUri.TryParse(localHostname, out var stunUri);
                 var result = await STUNDns.Resolve(stunUri).ConfigureAwait(false);
 
                 Assert.NotNull(result);
 
-                logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+                logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
             }
         }
 
@@ -113,7 +113,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupPrivateNetworkHostIPv6TestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string localHostname = Dns.GetHostName();
@@ -126,13 +126,13 @@ namespace SIPSorcery.Net.IntegrationTests
             {
                 STUNUri.TryParse(localHostname, out var stunUri);
 
-                logger.LogDebug($"Attempting DNS lookup for {stunUri}.");
+                logger.LogDebug("Attempting DNS lookup for {stunUri}.", stunUri);
 
                 var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
                 Assert.NotNull(result);
 
-                logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+                logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
             }
 
             // Using System.Net.Dns.GetHostEntry doesn't return IPv6 results on Linux or WSL
@@ -155,7 +155,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupHostWithExplicitPortTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("stun.sipsorcery.com:3478", out var stunUri);
@@ -163,7 +163,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
         }
 
         /// <summary>
@@ -172,13 +172,13 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupHostPreferIPv6TestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("www.google.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
 
             Assert.NotNull(result);
 
@@ -193,13 +193,13 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupHostPreferIPv6FallbackTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("www.sipsorcery.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
 
             Assert.NotNull(result);
             Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
@@ -211,7 +211,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupWithSRVTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("sipsorcery.com", out var stunUri);
@@ -219,7 +219,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             Assert.NotNull(result);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupWithSRVTestPreferIPv6Method()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("sipsorcery.com", out var stunUri);
@@ -239,7 +239,7 @@ namespace SIPSorcery.Net.IntegrationTests
             // No IPv6 DNS record available so should fallback to IPv4.
             Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
         }
 
         /// <summary>
@@ -248,13 +248,13 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupNonExistentHostTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("idontexist", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
 
             Assert.Null(result);
         }
@@ -265,13 +265,13 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void LookupNonExistentCanoncialHostTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNUri.TryParse("somehost.fsdfergerw.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true).ConfigureAwait(false);
 
-            logger.LogDebug($"STUN DNS lookup for {stunUri} resolved to {result}.");
+            logger.LogDebug("STUN DNS lookup for {stunUri} resolved to {result}.", stunUri, result);
 
             Assert.Null(result);
         }

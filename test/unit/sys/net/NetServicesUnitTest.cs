@@ -45,13 +45,13 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetLocalIPAddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("192.168.11.48"));
             Assert.NotNull(localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+            logger.LogDebug("Local address {localAddress}.", localAddress);
         }
 
         /// <summary>
@@ -60,13 +60,13 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetLocalForLoopbackAddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Loopback);
             Assert.Equal(IPAddress.Loopback, localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+            logger.LogDebug("Local address {localAddress}.", localAddress);
         }
 
         /// <summary>
@@ -75,13 +75,13 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetLocalForInternetAdressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("67.222.131.147"));
             Assert.NotNull(localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+            logger.LogDebug("Local address {localAddress}.", localAddress);
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Trait("Category", "IPv6")]
         public void GetLocalForIPv6LoopbackAddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (Socket.OSSupportsIPv6)
@@ -99,7 +99,7 @@ namespace SIPSorcery.Sys.UnitTests
                 var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
                 Assert.Equal(IPAddress.IPv6Loopback, localAddress);
 
-                logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug("Local address {localAddress}.", localAddress);
             }
             else
             {
@@ -114,7 +114,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Trait("Category", "IPv6")]
         public void GetLocalIPv6AddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (Socket.OSSupportsIPv6)
@@ -127,11 +127,11 @@ namespace SIPSorcery.Sys.UnitTests
                 }
                 else
                 {
-                    logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
+                    logger.LogDebug("IPv6 link local address for this host {ipv6LinkLocal}.", ipv6LinkLocal);
 
                     var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
 
-                    logger.LogDebug($"Local address {localAddress}.");
+                    logger.LogDebug("Local address {localAddress}.", localAddress);
 
                     Assert.NotNull(localAddress);
                     Assert.Equal(ipv6LinkLocal, localAddress);
@@ -149,7 +149,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetAllLocalIPAddressesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddresses = NetServices.LocalIPAddresses;
@@ -157,7 +157,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             foreach (var localAddress in localAddresses)
             {
-                logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug("Local address {localAddress}.", localAddress);
             }
         }
 
@@ -167,13 +167,13 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetInternetAddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localInternetAddresses = NetServices.InternetDefaultAddress;
             Assert.NotNull(localInternetAddresses);
 
-            logger.LogDebug($"Local Internet address {localInternetAddresses}.");
+            logger.LogDebug("Local Internet address {localInternetAddresses}.", localInternetAddresses);
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetInternetIPv6AddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (Socket.OSSupportsIPv6)
@@ -192,7 +192,7 @@ namespace SIPSorcery.Sys.UnitTests
                 // This will be null if the OS has a link local IPv6 address but no public IPv6 address.
                 //Assert.NotNull(localInternetIPv6Address);
 
-                logger.LogDebug($"Local Internet IPv6 address {localInternetIPv6Address}.");
+                logger.LogDebug("Local Internet IPv6 address {localInternetIPv6Address}.", localInternetIPv6Address);
             }
             else
             {
@@ -206,7 +206,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CreateRtpAndControlSocketsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Socket rtpSocket = null;
@@ -228,7 +228,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CreateRtpAndControlSocketsOnIP4AnyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Socket rtpSocket = null;
@@ -250,7 +250,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CreateRtpAndControlSocketsOnIP6AnyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (Socket.OSSupportsIPv6)
@@ -275,7 +275,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CreateRtpAndControlMultipleSocketsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             List<Socket> sockets = new List<Socket>();
@@ -310,7 +310,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CheckSupportsDualModeIPv4PacketInfoUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -321,7 +321,7 @@ namespace SIPSorcery.Sys.UnitTests
             {
                 bool supports = NetServices.SupportsDualModeIPv4PacketInfo;
 
-                logger.LogDebug($"SupportsDualModeIPv4PacketInfo result for OS {RuntimeInformation.OSDescription} is {supports}.");
+                logger.LogDebug("SupportsDualModeIPv4PacketInfo result for OS {OSDescription} is {supports}.", RuntimeInformation.OSDescription, supports);
 
                 Assert.True(supports);
             }
@@ -341,7 +341,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CheckCreateSocketFailsForInUseSocketUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (!Socket.OSSupportsIPv6)
@@ -360,9 +360,9 @@ namespace SIPSorcery.Sys.UnitTests
                 // It will be useful to detect if this behaviour ever changes hence the different asserts for
                 // the different Operating Systems.
 
-                logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}.");
-                logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}.");
-                logger.LogDebug($"RuntimeInformation.OSDescription: {RuntimeInformation.OSDescription}.");
+                logger.LogDebug("Environment.OSVersion: {OSVersion}.", Environment.OSVersion);
+                logger.LogDebug("Environment.OSVersion.Platform: {Platform}.", Environment.OSVersion.Platform);
+                logger.LogDebug("RuntimeInformation.OSDescription: {OSDescription}.", RuntimeInformation.OSDescription);
 
                 // Note Ubuntu on Windows Subsystem for Linux (WSL2) does NOT throw a binding exception and allows
                 // the duplicate binding the same as Windows.
@@ -394,7 +394,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CheckFailsOnDuplicateForIP4AnyThenIPv6AnyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -433,7 +433,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CheckFailsOnDuplicateForIP6AnyThenIPv4AnyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -467,7 +467,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetIPAddressesForInterfaceUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddresses = NetServices.GetLocalAddressesOnInterface(null);
@@ -475,7 +475,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             foreach (var localAddress in localAddresses)
             {
-                logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug("Local address {localAddress}.", localAddress);
             }
         }
 
@@ -497,11 +497,11 @@ namespace SIPSorcery.Sys.UnitTests
             {
                 if (bindAddress != null)
                 {
-                    logger.LogDebug($"DoTestReceive for {socket.LocalEndPoint} and bind address {bindAddress}.");
+                    logger.LogDebug("DoTestReceive for {LocalEndPoint} and bind address {bindAddress}.", socket.LocalEndPoint, bindAddress);
                 }
                 else
                 {
-                    logger.LogDebug($"DoTestReceive for {socket.LocalEndPoint}.");
+                    logger.LogDebug("DoTestReceive for {LocalEndPoint}.", socket.LocalEndPoint);
                 }
 
                 byte[] buffer = new byte[MAGIC_COOKIE.Length];
@@ -564,7 +564,7 @@ namespace SIPSorcery.Sys.UnitTests
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"DoTestReceive received failed with exception {excp.Message}");
+                logger.LogWarning(excp, "DoTestReceive received failed with exception {ErrorMessage}", excp.Message);
                 return false;
             }
         }

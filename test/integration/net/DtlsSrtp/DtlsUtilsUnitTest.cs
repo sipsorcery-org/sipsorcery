@@ -37,12 +37,12 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CreateSelfSignedCertifcateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
 
-            logger.LogDebug(tlsCert.ToString());
+            logger.LogDebug("{TlsCert}", tlsCert.ToString());
 
             Assert.NotNull(tlsCert);
             Assert.NotNull(pvtKey);
@@ -54,14 +54,14 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GetCertifcateFingerprintUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert();
             Assert.NotNull(tlsCert);
 
             var fingerprint = DtlsUtils.Fingerprint(tlsCert);
-            logger.LogDebug($"Fingerprint {fingerprint}.");
+            logger.LogDebug("Fingerprint {Fingerprint}.", fingerprint);
 
             Assert.NotNull(fingerprint.algorithm);
             Assert.NotNull(fingerprint.value);
@@ -77,7 +77,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void LoadSecretFromArchiveUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
 #if NETCOREAPP
@@ -100,7 +100,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void BouncyCertFromCoreFxCert()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
 #if NETCOREAPP
@@ -116,7 +116,7 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.NotNull(coreFxCert.PrivateKey);
 
             string coreFxFingerprint = DtlsUtils.Fingerprint(coreFxCert).ToString();
-            logger.LogDebug($"Core FX certificate fingerprint {coreFxFingerprint}.");
+            logger.LogDebug("Core FX certificate fingerprint {CoreFxFingerprint}.", coreFxFingerprint);
 
             var bcCert = Org.BouncyCastle.Security.DotNetUtilities.FromX509Certificate(coreFxCert);
             Assert.NotNull(bcCert);
@@ -125,7 +125,7 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.NotNull(bcKey);
 
             string bcFingerprint = DtlsUtils.Fingerprint(bcCert).ToString();
-            logger.LogDebug($"BouncyCastle certificate fingerprint {bcFingerprint}.");
+            logger.LogDebug("BouncyCastle certificate fingerprint {BcFingerprint}.", bcFingerprint);
 
             Assert.Equal(coreFxFingerprint, bcFingerprint);
         }

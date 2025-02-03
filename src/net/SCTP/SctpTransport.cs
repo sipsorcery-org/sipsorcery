@@ -239,12 +239,12 @@ namespace SIPSorcery.Net
             var cookieBuffer = cookieEcho.ChunkValue;
             var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
 
-            logger.LogDebug($"Cookie: {cookie.ToJson()}");
+            logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
 
             string calculatedHMAC = GetCookieHMAC(cookieBuffer);
             if (calculatedHMAC != cookie.HMAC)
             {
-                logger.LogWarning($"SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookie.HMAC}.");
+                logger.LogWarning("SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookieHMAC}.", calculatedHMAC, cookie.HMAC);
                 SendError(
                   true,
                   sctpPacket.Header.DestinationPort,
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
             }
             else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
             {
-                logger.LogWarning($"SCTP COOKIE ECHO chunk was stale, created at {cookie.CreatedAt}, now {DateTime.Now.ToString("o")}, lifetime {cookie.Lifetime}s.");
+                logger.LogWarning("SCTP COOKIE ECHO chunk was stale, created at {CreatedAt}, now {Now}, lifetime {Lifetime}s.", cookie.CreatedAt, DateTime.Now.ToString("o"), cookie.Lifetime);
                 var diff = DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt).AddSeconds(cookie.Lifetime));
                 SendError(
                   true,
