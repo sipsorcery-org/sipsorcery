@@ -30,7 +30,8 @@ namespace SIPSorcery.Net
         data = 4,
         control = 5,
         image = 6,
-        message = 7
+        message = 7,
+        text = 8
     }
 
     public class SDPMediaTypes
