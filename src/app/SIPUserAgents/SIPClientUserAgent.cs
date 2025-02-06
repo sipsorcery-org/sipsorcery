@@ -249,8 +249,9 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Cancels an in progress call. This method should be called prior to the remote user agent server answering the call.
+        /// <param name="reason">The reason for canceling the call.</param>
         /// </summary>
-        public void Cancel()
+        public void Cancel(string? reason = null)
         {
             try
             {
@@ -295,6 +296,12 @@ namespace SIPSorcery.SIP.App
 
                         cancelRequest.Header.AuthenticationHeaders.Clear();
                         cancelRequest.Header.AuthenticationHeaders.Add(authHeader);
+
+                        if (!string.IsNullOrEmpty(reason))
+                        {
+                            // The REASON header gets pre-appended automatically in the SIPHeader class as "Reason: " when ToString() is called on the SIP Header class.
+                            cancelRequest.Header.Reason = reason;
+                        }
                     }
 
                     m_cancelTransaction = new SIPNonInviteTransaction(m_sipTransport, cancelRequest, m_outboundProxy);
@@ -308,8 +315,12 @@ namespace SIPSorcery.SIP.App
                 logger.LogError(excp, "Exception CancelServerCall. {ErrorMessage}", excp.Message);
             }
         }
-        
-        public void Hangup()
+
+        /// <summary>
+        /// Hangs up an answered call. This method should be called after the remote user agent server answered the call.
+        /// <param name="reason">The reason for hanging up the call.</param>
+        /// </summary>
+        public void Hangup(string? reason = null)
         {
             if (m_sipDialogue == null)
             {
@@ -321,6 +332,13 @@ namespace SIPSorcery.SIP.App
                 //SIPRequest byeRequest = GetByeRequest(m_serverTransaction.TransactionFinalResponse, m_sipDialogue.RemoteTarget);
                 SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
                 byeRequest.SetSendFromHints(m_serverTransaction.TransactionRequest.LocalSIPEndPoint);
+                
+                if (!string.IsNullOrEmpty(reason))
+                {
+                    // The REASON header gets pre-appended automatically in the SIPHeader class as "Reason: " when ToString() is called on the SIP Header class.
+                    byeRequest.Header.Reason = reason;
+                }
+
                 m_byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                 m_byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                 m_byeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning("Bye request for {Uri} failed with {Reason}.", m_sipCallDescriptor.Uri, reason);
@@ -344,7 +362,7 @@ namespace SIPSorcery.SIP.App
             {
                 return;
             }
-            
+
             m_serverTransaction.AckAnswer(sipResponse, content, contentType);
             m_sipDialogue.SDP = content;
             m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -409,8 +427,8 @@ namespace SIPSorcery.SIP.App
                             m_serverAuthAttempts = 1;
 
                             // Resend INVITE with credentials.
-                            string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;                            
-                            var authRequest = m_serverTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, 
+                            string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
+                            var authRequest = m_serverTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
                                 username, m_sipCallDescriptor.Password);
 
                             // Create a new UAC transaction to establish the authenticated server call.
@@ -499,7 +517,7 @@ namespace SIPSorcery.SIP.App
                 return Task.FromResult(SocketError.Fault);
             }
         }
-        
+
         private Task<SocketError> ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
