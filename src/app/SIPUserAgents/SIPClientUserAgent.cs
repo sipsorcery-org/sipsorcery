@@ -52,6 +52,10 @@ namespace SIPSorcery.SIP.App
 
         public Func<SIPRequest, SIPRequest> AdjustInvite;
 
+        public Func<SIPRequest, SIPRequest> AdjustBye;
+
+        public Func<SIPRequest, SIPRequest> AdjustCancel;
+
         public UACInviteTransaction ServerTransaction
         {
             get { return m_serverTransaction; }
@@ -614,6 +618,11 @@ namespace SIPSorcery.SIP.App
             cancelHeader.ProxySendFrom = inviteHeader.ProxySendFrom;
             cancelHeader.Vias = inviteHeader.Vias;
 
+            if (AdjustCancel != null)
+            {
+                cancelRequest = AdjustCancel(cancelRequest);
+            }
+
             return cancelRequest;
         }
 
@@ -632,6 +641,11 @@ namespace SIPSorcery.SIP.App
             byeRequest.Header = byeHeader;
             byeRequest.Header.Routes = (inviteResponse.Header.RecordRoutes != null) ? inviteResponse.Header.RecordRoutes.Reversed() : null;
             byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+
+            if (AdjustBye != null)
+            {
+                byeRequest = AdjustBye(byeRequest);
+            }
 
             return byeRequest;
         }
