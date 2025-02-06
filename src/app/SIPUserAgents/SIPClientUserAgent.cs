@@ -300,7 +300,7 @@ namespace SIPSorcery.SIP.App
                         if (!string.IsNullOrEmpty(reason))
                         {
                             // The REASON header gets pre-appended automatically in the SIPHeader class as "Reason: " when ToString() is called on the SIP Header class.
-                            cancelRequest.Header.Reason = $"SIP;cause=487;text=\"{reason}\"";
+                            cancelRequest.Header.Reason = reason;
                         }
                     }
 
@@ -336,7 +336,7 @@ namespace SIPSorcery.SIP.App
                 if (!string.IsNullOrEmpty(reason))
                 {
                     // The REASON header gets pre-appended automatically in the SIPHeader class as "Reason: " when ToString() is called on the SIP Header class.
-                    byeRequest.Header.Reason = $"Q.850;cause=16;text=\"{reason}\"";
+                    byeRequest.Header.Reason = reason;
                 }
 
                 m_byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
