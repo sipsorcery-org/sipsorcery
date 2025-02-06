@@ -34,12 +34,12 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CreateChannelUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var udpChan = new SIPUDPChannel(IPAddress.Any, 0);
 
-            logger.LogDebug($"Listening end point {udpChan.ListeningSIPEndPoint}.");
+            logger.LogDebug("Listening end point {ListeningSIPEndPoint}.", udpChan.ListeningSIPEndPoint);
 
             udpChan.Close();
 
@@ -52,22 +52,22 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public async void InterChannelCommsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var udpChan1 = new SIPUDPChannel(IPAddress.Any, 0);
-            logger.LogDebug($"Listening end point {udpChan1.ListeningSIPEndPoint}.");
+            logger.LogDebug("Listening end point {ListeningSIPEndPoint}.", udpChan1.ListeningSIPEndPoint);
             var udpChan2 = new SIPUDPChannel(IPAddress.Any, 0);
-            logger.LogDebug($"Listening end point {udpChan2.ListeningSIPEndPoint}.");
+            logger.LogDebug("Listening end point {ListeningSIPEndPoint}.", udpChan2.ListeningSIPEndPoint);
 
             TaskCompletionSource<bool> gotMessage = new TaskCompletionSource<bool>();
             SIPEndPoint receivedFromEP = null;
             SIPEndPoint receivedOnEP = null;
             udpChan2.SIPMessageReceived = (SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer) =>
             {
-                logger.LogDebug($"SIP message received from {remoteEndPoint}.");
-                logger.LogDebug($"SIP message received on {localSIPEndPoint}.");
-                logger.LogDebug(Encoding.UTF8.GetString(buffer));
+                logger.LogDebug("SIP message received from {remoteEndPoint}.", remoteEndPoint);
+                logger.LogDebug("SIP message received on {localSIPEndPoint}.", localSIPEndPoint);
+                logger.LogDebug("{Buffer}", Encoding.UTF8.GetString(buffer));
 
                 receivedFromEP = remoteEndPoint;
                 receivedOnEP = localSIPEndPoint;
@@ -78,7 +78,7 @@ namespace SIPSorcery.SIP.UnitTests
             var dstEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, udpChan2.Port);
             var optionsReq = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemesEnum.sip, dstEndPoint));
 
-            logger.LogDebug($"Attempting to send OPTIONS request to {dstEndPoint}.");
+            logger.LogDebug("Attempting to send OPTIONS request to {dstEndPoint}.", dstEndPoint);
 
             // Give sockets a chance to start up.
             //await Task.Delay(500);
@@ -105,18 +105,18 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetDefaultContactURIUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var udpChan = new SIPUDPChannel(IPAddress.Any, 0);
 
-            logger.LogDebug($"Listening end point {udpChan.ListeningSIPEndPoint}.");
+            logger.LogDebug("Listening end point {ListeningSIPEndPoint}.", udpChan.ListeningSIPEndPoint);
 
             var contactURI = udpChan.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(udpChan.SIPProtocol, SIPChannel.InternetDefaultAddress, 0));
 
             Assert.NotNull(contactURI);
 
-            logger.LogDebug($"Contact URI: {contactURI}.");
+            logger.LogDebug("Contact URI: {contactURI}.", contactURI);
 
             udpChan.Close();
 

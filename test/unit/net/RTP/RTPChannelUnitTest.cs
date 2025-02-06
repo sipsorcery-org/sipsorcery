@@ -42,7 +42,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RtpChannelCreateManyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             List<RTPChannel> channels = new List<RTPChannel>();
@@ -67,7 +67,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async void RtpChannelLoopbackUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPChannel channel1 = new RTPChannel(false, null);
@@ -78,7 +78,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPChannel channel2 = new RTPChannel(false, null);
             channel2.OnRTPDataReceived += (lep, rep, pkt) =>
             {
-                logger.LogDebug($"RTP data receive packet length {pkt.Length}.");
+                logger.LogDebug("RTP data receive packet length {Length}.", pkt.Length);
                 testResult = true;
                 testCompleteEvent.Set();
             };
@@ -92,11 +92,11 @@ namespace SIPSorcery.Net.UnitTests
             IPAddress channel2Address = (channel2.RTPLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Loopback : IPAddress.Loopback;
             IPEndPoint channel2Dst = new IPEndPoint(channel2Address, channel2.RTPPort);
 
-            logger.LogDebug($"Attempting to send packet from {channel1.RTPLocalEndPoint} to {channel2Dst}.");
+            logger.LogDebug("Attempting to send packet from {LocalEndPoint} to {RemoteEndPoint}.", channel1.RTPLocalEndPoint, channel2Dst);
 
             var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x00 });
 
-            logger.LogDebug($"Send result {sendResult}.");
+            logger.LogDebug("Send result {SendResult}.", sendResult);
 
             testCompleteEvent.Wait(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
 
@@ -105,7 +105,7 @@ namespace SIPSorcery.Net.UnitTests
             channel1.Close("normal");
             channel2.Close("normal");
 
-            logger.LogDebug($"Test complete.");
+            logger.LogDebug("Test complete.");
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async void RtpChannelWithIPv4BindAddressLoopbackUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPChannel channel1 = new RTPChannel(false, IPAddress.Loopback);
@@ -126,7 +126,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPChannel channel2 = new RTPChannel(false, IPAddress.Loopback);
             channel2.OnRTPDataReceived += (lep, rep, pkt) =>
             {
-                logger.LogDebug($"RTP data receive packet length {pkt.Length}.");
+                logger.LogDebug("RTP data receive packet length {Length}.", pkt.Length);
                 testResult = true;
                 testCompleteEvent.Set();
             };
@@ -139,11 +139,11 @@ namespace SIPSorcery.Net.UnitTests
 
             IPEndPoint channel2Dst = new IPEndPoint(IPAddress.Loopback, channel2.RTPPort);
 
-            logger.LogDebug($"Attempting to send packet from {channel1.RTPLocalEndPoint} to {channel2Dst}.");
+            logger.LogDebug("Attempting to send packet from {LocalEndPoint} to {RemoteEndPoint}.", channel1.RTPLocalEndPoint, channel2Dst);
 
             var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x00 });
 
-            logger.LogDebug($"Send result {sendResult}.");
+            logger.LogDebug("Send result {SendResult}.", sendResult);
 
             testCompleteEvent.Wait(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
 
@@ -152,7 +152,7 @@ namespace SIPSorcery.Net.UnitTests
             channel1.Close("normal");
             channel2.Close("normal");
 
-            logger.LogDebug($"Test complete.");
+            logger.LogDebug("Test complete.");
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async void RtpChannelWithIPv6BindAddressLoopbackUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPChannel channel1 = new RTPChannel(false, IPAddress.IPv6Loopback);
@@ -173,7 +173,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPChannel channel2 = new RTPChannel(false, IPAddress.IPv6Loopback);
             channel2.OnRTPDataReceived += (lep, rep, pkt) =>
             {
-                logger.LogDebug($"RTP data receive packet length {pkt.Length}.");
+                logger.LogDebug("RTP data receive packet length {Length}.", pkt.Length);
                 testResult = true;
                 testCompleteEvent.Set();
             };
@@ -186,11 +186,11 @@ namespace SIPSorcery.Net.UnitTests
 
             IPEndPoint channel2Dst = new IPEndPoint(IPAddress.IPv6Loopback, channel2.RTPPort);
 
-            logger.LogDebug($"Attempting to send packet from {channel1.RTPLocalEndPoint} to {channel2Dst}.");
+            logger.LogDebug("Attempting to send packet from {LocalEndPoint} to {RemoteEndPoint}.", channel1.RTPLocalEndPoint, channel2Dst);
 
             var sendResult = channel1.Send(RTPChannelSocketsEnum.RTP, channel2Dst, new byte[] { 0x00 });
 
-            logger.LogDebug($"Send result {sendResult}.");
+            logger.LogDebug("Send result {SendResult}.", sendResult);
 
             testCompleteEvent.Wait(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
 
@@ -199,7 +199,7 @@ namespace SIPSorcery.Net.UnitTests
             channel1.Close("normal");
             channel2.Close("normal");
 
-            logger.LogDebug($"Test complete.");
+            logger.LogDebug("Test complete.");
         }
     }
 }

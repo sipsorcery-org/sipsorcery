@@ -265,7 +265,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-                                    logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
+                                    logger.LogWarning("Excluding unrecognised well known media format ID {FormatID}.", id);
                                 }
                             }
                         }

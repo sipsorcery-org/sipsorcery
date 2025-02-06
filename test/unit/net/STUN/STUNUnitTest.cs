@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWebRTCSTUNRequestTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunReq = new byte[]{ 0x00, 0x01, 0x00, 0x60, 0x21, 0x12, 0xa4, 0x42, 0x66, 0x55, 0x55, 0x43, 0x4b, 0x48, 0x74, 0x73, 0x68, 0x4e, 0x71, 0x56,
@@ -53,9 +53,9 @@ namespace SIPSorcery.Net.UnitTests
             STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(stunReq, stunReq.Length);
             STUNHeader stunHeader = stunMessage.Header;
 
-            logger.LogDebug("Request type = " + stunHeader.MessageType + ".");
-            logger.LogDebug("Length = " + stunHeader.MessageLength + ".");
-            logger.LogDebug("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
+            logger.LogDebug("Request type = {MessageType}.", stunHeader.MessageType);
+            logger.LogDebug("Length = {MessageLength}.", stunHeader.MessageLength);
+            logger.LogDebug("Transaction ID = {TransactionId}.", BitConverter.ToString(stunHeader.TransactionId));
 
             Assert.Equal(STUNMessageTypesEnum.BindingRequest, stunHeader.MessageType);
             Assert.Equal(96, stunHeader.MessageLength);
@@ -68,14 +68,14 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void BindingRequestWithUsernameToBytesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             initMessage.AddUsernameAttribute("someusernamex");
             byte[] stunMessageBytes = initMessage.ToByteBuffer(null, false);
 
-            logger.LogDebug(BitConverter.ToString(stunMessageBytes));
+            logger.LogDebug("STUN message bytes: {StunMessageBytes}", BitConverter.ToString(stunMessageBytes));
 
             Assert.True(stunMessageBytes.Length % 4 == 0);
         }
@@ -86,7 +86,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWebRTCSTUNResponseTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunResp = new byte[]{ 0x01, 0x01, 0x00, 0x2c, 0x21, 0x12, 0xa4, 0x42, 0x6a, 0x45, 0x38, 0x2b, 0x4e, 0x5a, 0x4b, 0x50,
@@ -98,19 +98,19 @@ namespace SIPSorcery.Net.UnitTests
 
             STUNHeader stunHeader = stunMessage.Header;
 
-            logger.LogDebug("Request type = " + stunHeader.MessageType + ".");
-            logger.LogDebug("Length = " + stunHeader.MessageLength + ".");
-            logger.LogDebug("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
+            logger.LogDebug("Request type = {MessageType}.", stunHeader.MessageType);
+            logger.LogDebug("Length = {MessageLength}.", stunHeader.MessageLength);
+            logger.LogDebug("Transaction ID = {TransactionId}.", BitConverter.ToString(stunHeader.TransactionId));
 
             foreach (STUNAttribute attribute in stunMessage.Attributes)
             {
                 if (attribute.AttributeType == STUNAttributeTypesEnum.Username)
                 {
-                    logger.LogDebug(" " + attribute.AttributeType + " " + Encoding.UTF8.GetString(attribute.Value) + ".");
+                    logger.LogDebug(" {AttributeType} {AttributeValue}.", attribute.AttributeType, Encoding.UTF8.GetString(attribute.Value));
                 }
                 else
                 {
-                    logger.LogDebug(" " + attribute.AttributeType + " " + attribute.Value + ".");
+                    logger.LogDebug(" {AttributeType} {AttributeValue}.", attribute.AttributeType, attribute.Value);
                 }
             }
 
@@ -125,7 +125,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseXORMappedAddressAttributeTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunAttribute = new byte[] { 0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f };
@@ -142,7 +142,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void PutXORMappedAddressAttributeToBufferTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"), null);
@@ -170,7 +170,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void PutResponseToBufferTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
@@ -188,7 +188,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void TestMessageIntegrityAttributeForBindingRequest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunReq = new byte[]{
@@ -204,9 +204,9 @@ namespace SIPSorcery.Net.UnitTests
             STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(stunReq, stunReq.Length);
             STUNHeader stunHeader = stunMessage.Header;
 
-            logger.LogDebug("Request type = " + stunHeader.MessageType + ".");
-            logger.LogDebug("Length = " + stunHeader.MessageLength + ".");
-            logger.LogDebug("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
+            logger.LogDebug("Request type = {MessageType}.", stunHeader.MessageType);
+            logger.LogDebug("Length = {MessageLength}.", stunHeader.MessageLength);
+            logger.LogDebug("Transaction ID = {TransactionId}.", BitConverter.ToString(stunHeader.TransactionId));
 
             Assert.Equal(STUNMessageTypesEnum.BindingRequest, stunHeader.MessageType);
             Assert.Equal(96, stunHeader.MessageLength);
@@ -227,7 +227,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseCoturnSTUNResponseTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunResp = new byte[]{ 0x01, 0x01, 0x00, 0x44, 0x21, 0x12, 0xa4, 0x42, 0x6b, 0x4c, 0xf3, 0x18, 0xd0, 0xa7, 0xf5, 0x40,
@@ -241,16 +241,16 @@ namespace SIPSorcery.Net.UnitTests
 
             STUNHeader stunHeader = stunMessage.Header;
 
-            logger.LogDebug("Request type = " + stunHeader.MessageType + ".");
-            logger.LogDebug("Length = " + stunHeader.MessageLength + ".");
-            logger.LogDebug("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
+            logger.LogDebug("Request type = {MessageType}.", stunHeader.MessageType);
+            logger.LogDebug("Length = {MessageLength}.", stunHeader.MessageLength);
+            logger.LogDebug("Transaction ID = {TransactionId}.", BitConverter.ToString(stunHeader.TransactionId));
 
             foreach (STUNAttribute attribute in stunMessage.Attributes)
             {
                 if (attribute.AttributeType == STUNAttributeTypesEnum.MappedAddress)
                 {
                     STUNAddressAttribute addressAttribute = new STUNAddressAttribute(attribute.Value);
-                    logger.LogDebug(" " + attribute.AttributeType + " " + addressAttribute.Address + ":" + addressAttribute.Port + ".");
+                    logger.LogDebug(" {AttributeType} {Address}:{Port}.", attribute.AttributeType, addressAttribute.Address, addressAttribute.Port);
 
                     Assert.Equal("59.167.172.177", addressAttribute.Address.ToString());
                     Assert.Equal(49026, addressAttribute.Port);
@@ -258,7 +258,7 @@ namespace SIPSorcery.Net.UnitTests
                 else if (attribute.AttributeType == STUNAttributeTypesEnum.XORMappedAddress)
                 {
                     STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, attribute.Value, stunHeader.TransactionId);
-                    logger.LogDebug(" " + attribute.AttributeType + " " + xorAddressAttribute.Address + ":" + xorAddressAttribute.Port + ".");
+                    logger.LogDebug(" {AttributeType} {Address}:{Port}.", attribute.AttributeType, xorAddressAttribute.Address, xorAddressAttribute.Port);
 
                     Assert.Equal("59.167.172.177", xorAddressAttribute.Address.ToString());
                     Assert.Equal(49026, xorAddressAttribute.Port);
@@ -266,7 +266,7 @@ namespace SIPSorcery.Net.UnitTests
 
                 else
                 {
-                    logger.LogDebug(" " + attribute.AttributeType + " " + attribute.Value + ".");
+                    logger.LogDebug(" {AttributeType} {AttributeValue}.", attribute.AttributeType, attribute.Value);
                 }
             }
 
@@ -279,7 +279,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GenerateHmacAndFingerprintTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string icePassword = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
@@ -294,9 +294,9 @@ namespace SIPSorcery.Net.UnitTests
             {
                 hmac += $"{buffer[i]:X2} ";
             }
-            logger.LogDebug(hmac);
+            logger.LogDebug("{Hmac}", hmac);
 
-            logger.LogDebug($"Fingerprint: {buffer[buffer.Length - 4]:X2} {buffer[buffer.Length - 3]:X2} {buffer[buffer.Length - 2]:X2} {buffer[buffer.Length - 1]:X2}.");
+            logger.LogDebug("Fingerprint: {Byte1:X2} {Byte2:X2} {Byte3:X2} {Byte4:X2}.", buffer[buffer.Length - 4], buffer[buffer.Length - 3], buffer[buffer.Length - 2], buffer[buffer.Length - 1]);
         }
 
         /// <summary>
@@ -331,7 +331,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void IntegrityCheckUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string icePassword = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
@@ -358,7 +358,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void KnownSTUNBindingRequestIntegrityCheckUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string icePassword = "DVJSBHBUIBFSZFKVECMPRISQ";
@@ -424,7 +424,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseStunMessageUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = TypeExtensions.ParseHexStr(

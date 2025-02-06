@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNServer.cs
 //
 // Description: Implements a STUN Server as defined in RFC3489.
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
             m_secondaryDiffPortSocket.Client = NetServices.CreateBoundUdpSocket(0, m_secondaryEndPoint.Address);
             m_secondaryDiffPortEndPoint = m_secondaryDiffPortSocket.Client.LocalEndPoint as IPEndPoint;
 
-            logger.LogDebug("STUN Server additional sockets, primary=" + IPSocket.GetSocketString(m_primaryDiffPortEndPoint) + ", secondary=" + IPSocket.GetSocketString(m_secondaryDiffPortEndPoint) + ".");
+            logger.LogDebug("STUN Server additional sockets, primary={PrimaryEndPoint}, secondary={SecondaryEndPoint}.", IPSocket.GetSocketString(m_primaryDiffPortEndPoint), IPSocket.GetSocketString(m_secondaryDiffPortEndPoint));
         }
 
         public void STUNPrimaryReceived(IPEndPoint localEndPoint, IPEndPoint receivedEndPoint, byte[] buffer, int bufferLength)
@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogDebug("Exception STUNPrimaryReceived. " + excp.Message);
+                logger.LogDebug(excp, "Exception STUNPrimaryReceived. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -200,7 +200,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogDebug("Exception STUNSecondaryReceived. " + excp.Message);
+                logger.LogDebug(excp, "Exception STUNSecondaryReceived. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -260,7 +260,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception StunServer Stop. " + excp.Message);
+                logger.LogError(excp, "Exception StunServer Stop. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -275,7 +275,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception FireSTUNPrimaryRequestInTraceEvent. " + excp.Message);
+                logger.LogError(excp, "Exception FireSTUNPrimaryRequestInTraceEvent. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -290,7 +290,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception FireSTUNecondaryRequestInTraceEvent. " + excp.Message);
+                logger.LogError(excp, "Exception FireSTUNSecondaryRequestInTraceEvent. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -305,7 +305,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception FireSTUNPrimaryResponseOutTraceEvent. " + excp.Message);
+                logger.LogError(excp, "Exception FireSTUNPrimaryResponseOutTraceEvent. {ErrorMessage}", excp.Message);
             }
         }
 
@@ -320,7 +320,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception FireSTUNSecondaryResponseOutTraceEvent. " + excp.Message);
+                logger.LogError(excp, "Exception FireSTUNSecondaryResponseOutTraceEvent. {ErrorMessage}", excp.Message);
             }
         }
     }

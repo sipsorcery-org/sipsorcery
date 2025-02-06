@@ -350,7 +350,7 @@ namespace SIPSorcery.Media
                         {
                             if (!string.IsNullOrWhiteSpace(_audioOpts.MusicFile))
                             {
-                                Log.LogWarning($"Music file not set or not found, using default music resource.");
+                                Log.LogWarning("Music file not set or not found, using default music resource.");
                             }
 
                             var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
@@ -381,7 +381,7 @@ namespace SIPSorcery.Media
         {
             if (!_isClosed && audioStream != null && audioStream.Length > 0)
             {
-                Log.LogDebug($"Sending audio stream length {audioStream.Length}.");
+                Log.LogDebug("Sending audio stream length {AudioStreamLength}.", audioStream.Length);
 
                 _streamSendInProgress = true;
                 _streamSourceRate = streamSampleRate;

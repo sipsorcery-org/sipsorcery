@@ -39,7 +39,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Commented out due to excluding xsd resources files that were breaking the WSL build. AC 14 Nov 2019
         //public void InvalidXMLUnitTest()
         //{
-        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
         //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_eventDialogSchema == null)
@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP.UnitTests
         //[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
         //public void ValidXMLUnitTest()
         //{
-        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
         //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_eventDialogSchema == null)
@@ -134,14 +134,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetAsXMLStringUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEventDialogInfo dialogInfo = new SIPEventDialogInfo(0, SIPEventDialogInfoStateEnum.full, SIPURI.ParseSIPURI("sip:test@test.com"));
             dialogInfo.DialogItems.Add(new SIPEventDialog("abcde", "terminated", 487, SIPEventDialogStateEvent.Cancelled, 2));
 
-            logger.LogDebug(dialogInfo.ToXMLText());
-
+            logger.LogDebug("{DialogInfo}", dialogInfo.ToXMLText());
             logger.LogDebug("-----------------------------------------");
         }
 
@@ -151,7 +150,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromXMLStringUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string eventDialogInfoStr = "<?xml version='1.0' encoding='utf-16'?>" +
@@ -187,7 +186,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromXMLStringMultiDialogsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string eventDialogInfoStr = "<?xml version='1.0' encoding='utf-16'?>" +
@@ -209,8 +208,7 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(dialogInfo.DialogItems[1].ID == "4353458", "The parsed event dialog event id for the second dialog was incorrect.");
             Assert.True(dialogInfo.DialogItems[1].State == "progressing", "The parsed event dialog event state for the second dialog was incorrect.");
 
-            logger.LogDebug(dialogInfo.ToXMLText());
-
+            logger.LogDebug("{DialogInfo}", dialogInfo.ToXMLText());
             logger.LogDebug("-----------------------------------------");
         }
 
@@ -221,7 +219,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromXMLStringDialogWithParticipantsUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string eventDialogInfoStr = "<?xml version='1.0' encoding='utf-16'?>" +
@@ -252,8 +250,7 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(dialogInfo.DialogItems[0].RemoteParticipant.TargetURI == SIPURI.ParseSIPURI("sip:user@10.1.1.7:5070"), "The remote participant target URI was incorrect.");
             Assert.True(dialogInfo.DialogItems[0].RemoteParticipant.CSeq == 1, "The remote participant CSeq was incorrect.");
 
-            logger.LogDebug(dialogInfo.ToXMLText());
-
+            logger.LogDebug("{DialogInfo}", dialogInfo.ToXMLText());
             logger.LogDebug("-----------------------------------------");
         }
 
@@ -263,7 +260,7 @@ namespace SIPSorcery.SIP.UnitTests
         /*[Fact]
         public void ParseSDPFromXMLStringDialogUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string CRLF = "\r\n";

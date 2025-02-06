@@ -34,7 +34,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseNoSchemeNoPortTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             bool result = STUNUri.TryParse("stun.sipsorcery.com", out var stunUri);
@@ -52,7 +52,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseNoSchemeTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             bool result = STUNUri.TryParse("stun.sipsorcery.com:4478", out var stunUri);
@@ -70,7 +70,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWithSchemeAndPortTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             bool result = STUNUri.TryParse("stuns:stun.sipsorcery.com:4478", out var stunUri);
@@ -88,7 +88,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWithIPv4AddressTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             bool result = STUNUri.TryParse("stuns:192.168.0.100:4478", out var stunUri);
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWithIPv6AddressTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             bool result = STUNUri.TryParse("turn:[::1]:14478", out var stunUri);

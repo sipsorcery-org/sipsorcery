@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Trait("Category", "IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (!Socket.OSSupportsIPv6)
@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP.IntegrationTests
                 serverReadyEvent.Wait();
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                 {
-                    logger.LogWarning($"Tasks timed out");
+                    logger.LogWarning("Tasks timed out");
                 }
 
                 if (testComplete.Task.IsCompleted == false)
@@ -103,7 +103,7 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public void IPv4LoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
@@ -129,7 +129,7 @@ serverReadyEvent);
             serverReadyEvent.Wait();
             if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
-                logger.LogWarning($"Tasks timed out");
+                logger.LogWarning("Tasks timed out");
             }
 
             if (testComplete.Task.IsCompleted == false)
@@ -151,7 +151,7 @@ serverReadyEvent);
         [Trait("Category", "IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (!Socket.OSSupportsIPv6)
@@ -185,7 +185,7 @@ serverReadyEvent);
                 serverReadyEvent.Wait();
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                 {
-                    logger.LogWarning($"Tasks timed out");
+                    logger.LogWarning("Tasks timed out");
                 }
 
                 if (testComplete.Task.IsCompleted == false)
@@ -206,7 +206,7 @@ serverReadyEvent);
         [Fact]
         public void IPv4TcpLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
@@ -234,7 +234,7 @@ serverReadyEvent);
             serverReadyEvent.Wait();
             if (!Task.WhenAny(new Task[] { clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
-                logger.LogWarning($"Tasks timed out");
+                logger.LogWarning("Tasks timed out");
             }
 
             if (testComplete.Task.IsCompleted == false)
@@ -259,7 +259,7 @@ serverReadyEvent);
         [Fact]
         public void IPv4TcpLoopbackConsecutiveSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // This test fails on WSL and Linux due to closed TCP sockets going into the TIME_WAIT state.
@@ -281,14 +281,14 @@ serverReadyEvent);
                     clientChannel.DisableLocalTCPSocketsCheck = true;
                     SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0)));
 
-                    logger.LogDebug($"Server URI {serverUri}.");
+                    logger.LogDebug("Server URI {serverUri}.", serverUri);
 
                     var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete, cancelServer, serverReadyEvent).ConfigureAwait(false); });
 
                     serverReadyEvent.Wait();
                     if (!Task.WhenAny(new Task[] { clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                     {
-                        logger.LogWarning($"Tasks timed out");
+                        logger.LogWarning("Tasks timed out");
                     }
 
                     if (testComplete.Task.IsCompleted == false)
@@ -299,8 +299,7 @@ serverReadyEvent);
 
                     Assert.True(testComplete.Task.Result);
 
-                    logger.LogDebug($"Completed for test run {i}.");
-
+                    logger.LogDebug("Completed for test run {TestRunNumber}.", i);
                     Task.Delay(1000).Wait();
                 }
 
@@ -319,7 +318,7 @@ serverReadyEvent);
         [Trait("Category", "IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (!Socket.OSSupportsIPv6)
@@ -340,7 +339,7 @@ serverReadyEvent);
 
                 var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
                 var verifyCert = serverCertificate.Verify();
-                logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
+                logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
                 var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 0);
                 serverChannel.DisableLocalTCPSocketsCheck = true;
@@ -362,7 +361,7 @@ serverReadyEvent);
 
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                 {
-                    logger.LogWarning($"Tasks timed out");
+                    logger.LogWarning("Tasks timed out");
                 }
 
                 if (testComplete.Task.IsCompleted == false)
@@ -387,7 +386,7 @@ serverReadyEvent);
         [Fact]
         public void IPv4TlsLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -404,7 +403,7 @@ serverReadyEvent);
 
                 var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
                 var verifyCert = serverCertificate.Verify();
-                logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
+                logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
                 var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
                 serverChannel.DisableLocalTCPSocketsCheck = true;
@@ -426,7 +425,7 @@ serverReadyEvent);
 
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                 {
-                    logger.LogWarning($"Tasks timed out");
+                    logger.LogWarning("Tasks timed out");
                 }
 
                 if (testComplete.Task.IsCompleted == false)
@@ -457,7 +456,7 @@ serverReadyEvent);
         [Fact]
         public void TcpTrickleReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -481,10 +480,10 @@ serverReadyEvent);
                 try
                 {
                     var tcpClient = listener.AcceptTcpClient();
-                    logger.LogDebug($"Dummy TCP listener accepted client with remote end point {tcpClient.Client.RemoteEndPoint}.");
+                    logger.LogDebug("Dummy TCP listener accepted client with remote end point {RemoteEndPoint}.", tcpClient.Client.RemoteEndPoint);
                     for (int i = 0; i < requestCount; i++)
                     {
-                        logger.LogDebug($"Sending request {i}.");
+                        logger.LogDebug("Sending request {RequestNumber}.", i);
 
                         var req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemesEnum.sip, tcpChannel.ListeningSIPEndPoint));
                         byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
@@ -498,22 +497,21 @@ serverReadyEvent);
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception on dummy TCP listener task. {excp.Message}");
+                    logger.LogError(excp, "Exception on dummy TCP listener task. {ErrorMessage}", excp.Message);
                     testComplete.SetResult(false);
                 }
             });
 
             transport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
-                logger.LogDebug($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
-                logger.LogDebug(sipRequest.ToString());
+                logger.LogDebug("Request received {LocalSIPEndPoint}<-{RemoteEndPoint}: {StatusLine}\n{SIPRequest}", localSIPEndPoint.ToString(), remoteEndPoint.ToString(), sipRequest.StatusLine, sipRequest.ToString());
                 Interlocked.Increment(ref recvdReqCount);
 
                 if (recvdReqCount == requestCount)
                 {
                     if (!testComplete.TrySetResult(true))
                     {
-                        logger.LogWarning($"TcpTrickleReceiveTest: FAILED to set result on CompletionSource.");
+                        logger.LogWarning("TcpTrickleReceiveTest: FAILED to set result on CompletionSource.");
                     }
                 }
 
@@ -522,22 +520,21 @@ serverReadyEvent);
 
             transport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
             {
-                logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
-                logger.LogDebug(sipResponse.ToString());
+                logger.LogDebug("Response received {LocalSIPEndPoint}<-{RemoteEndPoint}: {ShortDescription}\n{SIPResponse}", localSIPEndPoint.ToString(), remoteEndPoint.ToString(), sipResponse.ShortDescription, sipResponse.ToString());
 
                 return Task.FromResult(0);
             };
 
             if (!tcpChannel.ConnectClientAsync(actualEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT)))
             {
-                logger.LogWarning($"ConnectClientAsync timed out");
+                logger.LogWarning("ConnectClientAsync timed out");
             }
 
             logger.LogDebug("Test client connected.");
 
             if (!Task.WhenAny(new Task[] { testComplete.Task }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
-                logger.LogWarning($"Tasks timed out");
+                logger.LogWarning("Tasks timed out");
             }
 
             logger.LogDebug("Test completed, shutting down SIP transport layer.");
@@ -561,7 +558,7 @@ serverReadyEvent);
         [Fact]
         public async void WebSocketLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9000);
@@ -606,7 +603,7 @@ serverReadyEvent);
         [Fact]
         public async void WebSocketLoopbackLargeSendReceiveTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9001);
@@ -660,7 +657,7 @@ serverReadyEvent);
         public void TlsDoesNotGetStuckOnIncompleteTcpConnection()
         {
             // Arrange
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
@@ -699,7 +696,7 @@ serverReadyEvent);
                 // Assert
                 if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                 {
-                    logger.LogWarning($"Tasks timed out");
+                    logger.LogWarning("Tasks timed out");
                 }
 
                 if (testComplete.Task.IsCompleted == false)
@@ -732,7 +729,7 @@ serverReadyEvent);
             CancellationTokenSource cts,
             ManualResetEventSlim serverReadyEvent)
         {
-            logger.LogDebug($"RunServer test channel created on {testServerChannel.ListeningSIPEndPoint}.");
+            logger.LogDebug("RunServer test channel created on {ListeningSIPEndPoint}.", testServerChannel.ListeningSIPEndPoint);
 
             var serverSIPTransport = new SIPTransport();
 
@@ -742,12 +739,12 @@ serverReadyEvent);
 
                 serverSIPTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
                 {
-                    logger.LogDebug($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+                    logger.LogDebug("Request received {LocalSIPEndPoint}<-{RemoteEndPoint}: {StatusLine}", localSIPEndPoint.ToString(), remoteEndPoint.ToString(), sipRequest.StatusLine);
 
                     if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        logger.LogDebug(optionsResponse.ToString());
+                        logger.LogDebug("{OptionsResponse}", optionsResponse.ToString());
                         return serverSIPTransport.SendResponseAsync(optionsResponse);
                     }
 
@@ -756,14 +753,12 @@ serverReadyEvent);
 
                 serverSIPTransport.SIPRequestInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
                 {
-                    logger.LogDebug($"SERVER REQUEST IN {localSIPEndPoint}<-{remoteEndPoint}");
-                    logger.LogDebug(sipRequest.ToString());
+                    logger.LogDebug("SERVER REQUEST IN {localSIPEndPoint}<-{remoteEndPoint}\n{sipRequest}", localSIPEndPoint, remoteEndPoint, sipRequest.ToString());
                 };
 
                 serverSIPTransport.SIPResponseOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
-                    logger.LogDebug($"SERVER RESPONSE OUT {localSIPEndPoint}->{remoteEndPoint}");
-                    logger.LogDebug(sipResponse.ToString());
+                    logger.LogDebug("SERVER RESPONSE OUT {localSIPEndPoint}->{remoteEndPoint}\n{sipResponse}", localSIPEndPoint, remoteEndPoint, sipResponse.ToString());
                 };
 
                 serverReadyEvent.Set();
@@ -772,13 +767,13 @@ serverReadyEvent);
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RunServer. {excp.Message}");
+                logger.LogError(excp, "Exception RunServer. {ErrorMessage}", excp.Message);
             }
             finally
             {
-                logger.LogDebug($"Server task for completed for {testServerChannel.ListeningSIPEndPoint}.");
+                logger.LogDebug("Server task for completed for {ListeningSIPEndPoint}.", testServerChannel.ListeningSIPEndPoint);
                 serverSIPTransport.Shutdown();
-                logger.LogDebug($"Server task SIP transport shutdown.");
+                logger.LogDebug("Server task SIP transport shutdown.");
             }
         }
 
@@ -797,7 +792,7 @@ serverReadyEvent);
             CancellationTokenSource cts,
             ManualResetEventSlim serverReadyEvent)
         {
-            logger.LogDebug($"RunClient Starting client task for {testClientChannel.ListeningSIPEndPoint}.");
+            logger.LogDebug("RunClient Starting client task for {ListeningSIPEndPoint}.", testClientChannel.ListeningSIPEndPoint);
 
             var clientSIPTransport = new SIPTransport();
 
@@ -805,18 +800,18 @@ serverReadyEvent);
             {
                 clientSIPTransport.AddSIPChannel(testClientChannel);
 
-                logger.LogDebug($"RunClient test channel created on {testClientChannel.ListeningSIPEndPoint}.");
+                logger.LogDebug("RunClient test channel created on {ListeningSIPEndPoint}.", testClientChannel.ListeningSIPEndPoint);
 
                 clientSIPTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
-                    logger.LogDebug($"Expected response received {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
+                    logger.LogDebug("Expected response received {LocalSIPEndPoint}<-{RemoteEndPoint}: {ShortDescription}", localSIPEndPoint, remoteEndPoint, sipResponse.ShortDescription);
 
                     if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                     {
                         // Got the expected response, set the signal.
                         if (!tcs.TrySetResult(true))
                         {
-                            logger.LogWarning($"RunClient on test channel {testClientChannel.ListeningSIPEndPoint} FAILED to set result on CompletionSource.");
+                            logger.LogWarning("RunClient on test channel {ListeningSIPEndPoint} FAILED to set result on CompletionSource.", testClientChannel.ListeningSIPEndPoint);
                         }
                     }
 
@@ -825,19 +820,17 @@ serverReadyEvent);
 
                 clientSIPTransport.SIPRequestOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
                 {
-                    logger.LogDebug($"CLIENT REQUEST OUT {localSIPEndPoint}->{remoteEndPoint}");
-                    logger.LogDebug(sipRequest.ToString());
+                    logger.LogDebug("CLIENT REQUEST OUT {LocalSIPEndPoint}->{RemoteEndPoint}\n{SIPRequest}", localSIPEndPoint, remoteEndPoint, sipRequest.ToString());
                 };
 
                 clientSIPTransport.SIPResponseInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
-                    logger.LogDebug($"CLIENT RESPONSE IN {localSIPEndPoint}<-{remoteEndPoint}");
-                    logger.LogDebug(sipResponse.ToString());
+                    logger.LogDebug("CLIENT RESPONSE IN {LocalSIPEndPoint}<-{RemoteEndPoint}\n{SIPResponse}", localSIPEndPoint, remoteEndPoint, sipResponse.ToString());
                 };
 
                 var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
 
-                logger.LogDebug($"RunClient waiting for server to get ready on {serverUri.CanonicalAddress}.");
+                logger.LogDebug("RunClient waiting for server to get ready on {ServerUri}.", serverUri.CanonicalAddress);
                 serverReadyEvent.Wait(cts.Token);
 
                 await clientSIPTransport.SendRequestAsync(optionsRequest).ConfigureAwait(false);
@@ -846,13 +839,13 @@ serverReadyEvent);
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RunClient. {excp.Message}");
+                logger.LogError(excp, "Exception RunClient. {ErrorMessage}", excp.Message);
             }
             finally
             {
-                logger.LogDebug($"Client task completed for {testClientChannel.ListeningSIPEndPoint}.");
+                logger.LogDebug("Client task completed for {ListeningSIPEndPoint}.", testClientChannel.ListeningSIPEndPoint);
                 clientSIPTransport.Shutdown();
-                logger.LogDebug($"Client task SIP transport shutdown.");
+                logger.LogDebug("Client task SIP transport shutdown.");
             }
         }
     }

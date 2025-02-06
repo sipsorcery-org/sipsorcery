@@ -512,7 +512,7 @@ namespace SIPSorcery.Net
 
                     if (Width == 0 || Height == 0)
                     {
-                        logger.LogWarning("ProcessMjpegFrame could not determine either the width or height of the jpeg frame (width={0}, height={1}).", Width, Height);
+                        logger.LogWarning("ProcessMjpegFrame could not determine either the width or height of the jpeg frame (width={Width}, height={Height}).", Width, Height);
                     }
 
                     //Restart Interval 64 - 127

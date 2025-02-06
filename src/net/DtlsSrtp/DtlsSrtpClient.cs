@@ -396,16 +396,13 @@ namespace SIPSorcery.Net
                 description += cause;
             }
 
-            string alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
-            alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
-
             if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
             {
-                logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
+                logger.LogDebug("DTLS client raised close notification: {AlertMessage}", $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}{(!string.IsNullOrEmpty(description) ? $", {description}." : ".")}");
             }
             else
             {
-                logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
+                logger.LogWarning("DTLS client raised unexpected alert: {AlertMessage}", $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}{(!string.IsNullOrEmpty(description) ? $", {description}." : ".")}");
             }
         }
 
@@ -438,11 +435,11 @@ namespace SIPSorcery.Net
 
             if (alertType == AlertTypesEnum.close_notify)
             {
-                logger.LogDebug($"DTLS client received close notification: {AlertLevel.GetText(alertLevel)}, {description}.");
+                logger.LogDebug("DTLS client received close notification: {AlertLevel}, {Description}.", AlertLevel.GetText(alertLevel), description);
             }
             else
             {
-                logger.LogWarning($"DTLS client received unexpected alert: {AlertLevel.GetText(alertLevel)}, {description}.");
+                logger.LogWarning("DTLS client received unexpected alert: {AlertLevel}, {Description}.", AlertLevel.GetText(alertLevel), description);
             }
 
             OnAlert?.Invoke(level, alertType, description);

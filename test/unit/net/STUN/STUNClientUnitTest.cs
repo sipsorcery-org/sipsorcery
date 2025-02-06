@@ -34,12 +34,12 @@ namespace SIPSorcery.Net.UnitTests
         [Fact(Skip = "STUN server isn't kept running all the time.")]
         public void GetPublicIPStunClientTestMethod()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var publicIP = STUNClient.GetPublicIPAddress("stun.sipsorcery.com");
 
-            logger.LogDebug($"Public IP address {publicIP}.");
+            logger.LogDebug("Public IP address {publicIP}.", publicIP);
         }
     }
 }

@@ -58,14 +58,14 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPNonInviteClientUserAgent SendRequest to " + m_callDescriptor.Uri + ". " + excp.Message);
+                logger.LogError(excp, "Exception SIPNonInviteClientUserAgent SendRequest to {Uri}. {ErrorMessage}", m_callDescriptor.Uri, excp.Message);
                 throw;
             }
         }
 
         private void TransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            logger.LogWarning($"Attempt to send {sipTransaction.TransactionRequest.Method} to {m_callDescriptor.Uri} failed with {failureReason}.");
+            logger.LogWarning("Attempt to send {Method} to {Uri} failed with {FailureReason}.", sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri, failureReason);
         }
 
         private Task<SocketError> ServerResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
@@ -73,7 +73,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                logger.LogDebug("Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
+                logger.LogDebug("Server response {StatusCode} {ReasonPhrase} received for {Method} to {Uri}.", sipResponse.StatusCode, reasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
@@ -98,7 +98,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        logger.LogDebug("Send request failed with " + sipResponse.StatusCode + " but no authentication header was supplied for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
+                        logger.LogDebug("Send request failed with {StatusCode} but no authentication header was supplied for {Method} to {Uri}.", sipResponse.StatusCode, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
                         ResponseReceived?.Invoke(sipResponse);
                     }
                 }
@@ -109,7 +109,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPNonInviteClientUserAgent ServerResponseReceived (" + remoteEndPoint + "). " + excp.Message);
+                logger.LogError(excp, "Exception SIPNonInviteClientUserAgent ServerResponseReceived ({RemoteEndPoint}). {ErrorMessage}", remoteEndPoint, excp.Message);
             }
 
             return Task.FromResult(SocketError.Success);
@@ -120,8 +120,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         private Task<SocketError> AuthResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-            logger.LogDebug("Server response " + sipResponse.Status + " " + reasonPhrase + " received for authenticated " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".");
+            logger.LogDebug("Server response {StatusCode} {ReasonPhrase} received for authenticated {Method} to {Uri}.", sipResponse.Status, (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
 
             if (ResponseReceived != null)
             {
@@ -173,7 +172,7 @@ namespace SIPSorcery.SIP.App
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError("Exception Parsing CustomHeader for SIPNonInviteClientUserAgent GetRequest. " + excp.Message + m_callDescriptor.CustomHeaders);
+                    logger.LogError(excp, "Exception Parsing CustomHeader for SIPNonInviteClientUserAgent GetRequest. {ErrorMessage} {CustomHeaders}", excp.Message, m_callDescriptor.CustomHeaders);
                 }
 
                 if (!m_callDescriptor.Content.IsNullOrBlank())
@@ -187,7 +186,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPNonInviteClientUserAgent GetRequest. " + excp.Message);
+                logger.LogError(excp, "Exception SIPNonInviteClientUserAgent GetRequest. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

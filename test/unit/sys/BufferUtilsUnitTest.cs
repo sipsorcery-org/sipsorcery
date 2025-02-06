@@ -29,7 +29,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HasStringUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
@@ -42,7 +42,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void NotBeforeEndUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
@@ -55,7 +55,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -81,7 +81,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexSIPInviteUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -126,7 +126,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexNotFoundUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -152,12 +152,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HexStrUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = new byte[] { 1, 2, 3 };
 
-            logger.LogDebug($"HexStr result: {buffer.HexStr()}.");
+            logger.LogDebug("HexStr result: {HexStrResult}", BitConverter.ToString(buffer).Replace("-", ""));
 
             Assert.Equal("010203", buffer.HexStr());
         }
@@ -165,12 +165,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HexStrWithSeparatorUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = new byte[] { 1, 2, 3 };
 
-            logger.LogDebug($"HexStr result: {buffer.HexStr(':')}.");
+            logger.LogDebug("HexStr result: {HexStrResult}", BitConverter.ToString(buffer).Replace("-", ":"));
 
             Assert.Equal("01:02:03", buffer.HexStr(':'));
         }

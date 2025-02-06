@@ -641,7 +641,7 @@ namespace SIPSorcery.Net
                 str += "] ";
             }
             str += " ]";
-            logger.LogDebug($"LogRemoteSDPSsrcAttributes: {str}");
+            logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", str);
         }
 
         private void CreateRtcpSession(MediaStream mediaStream)
@@ -1009,7 +1009,7 @@ namespace SIPSorcery.Net
                     {
                         if (announcement.Transport != RTP_SECUREMEDIA_PROFILE)
                         {
-                            logger.LogError($"Error negotiating secure media. Invalid Transport {announcement.Transport}.");
+                            logger.LogError("Error negotiating secure media. Invalid Transport {Transport}.", announcement.Transport);
                             return SetDescriptionResultEnum.CryptoNegotiationFailed;
                         }
 
@@ -1022,7 +1022,7 @@ namespace SIPSorcery.Net
                             {
                                if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
                                {
-                                   logger.LogError($"Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.");
+                                    logger.LogError("Error negotiating secure media for type {MediaType}. Incompatible crypto parameter.", mediaType);
                                    return SetDescriptionResultEnum.CryptoNegotiationFailed;
                                }
 
@@ -1151,7 +1151,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception in RTPSession SetRemoteDescription. {excp.Message}.");
+                logger.LogError(excp, "Exception in RTPSession SetRemoteDescription. {ErrorMessage}.", excp.Message);
                 return SetDescriptionResultEnum.Error;
             }
         }
@@ -1192,7 +1192,7 @@ namespace SIPSorcery.Net
             {
                 if (announcement.Port < IPEndPoint.MinPort || announcement.Port > IPEndPoint.MaxPort)
                 {
-                    logger.LogWarning($"Remote {kind} announcement contained an invalid port number {announcement.Port}.");
+                    logger.LogWarning("Remote {SdpMediaType} announcement contained an invalid port number {Port}.", kind, announcement.Port);
 
                     // Set the remote port number to "9" which means ignore and wait for it be set some other way
                     // such as when a remote RTP packet or arrives or ICE negotiation completes.
@@ -2084,7 +2084,7 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
+            //logger.LogDebug("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
 
             #region RTCP packet.
 
@@ -2109,7 +2109,7 @@ namespace SIPSorcery.Net
                     int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
                     if (res != 0)
                     {
-                        logger.LogWarning($"SRTCP unprotect failed for {mediaStream.MediaType} track, result {res}.");
+                        logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", mediaStream.MediaType, res);
                         return;
                     }
                     else
@@ -2120,7 +2120,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
+                logger.LogWarning("Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{Ssrc}", ssrc);
             }
 
             var rtcpPkt = new RTCPCompoundPacket(buffer);
@@ -2129,7 +2129,7 @@ namespace SIPSorcery.Net
                 mediaStream = GetMediaStream(rtcpPkt);
                 if (rtcpPkt.Bye != null)
                 {
-                    logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}, reason {rtcpPkt.Bye.Reason}.");
+                    logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
 
                     // In some cases, such as a SIP re-INVITE, it's possible the RTP session
                     // will keep going with a new remote SSRC. 
@@ -2162,7 +2162,7 @@ namespace SIPSorcery.Net
                                 !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
                                 mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port))
                             {
-                                logger.LogDebug($"{mediaStream.MediaType} control end point switched from {mediaStream.ControlDestinationEndPoint} to {remoteEndPoint}.");
+                                logger.LogDebug("{MediaType} control end point switched from {ControlDestinationEndPoint} to {RemoteEndPoint}.", mediaStream.MediaType, mediaStream.ControlDestinationEndPoint, remoteEndPoint);
                                 mediaStream.ControlDestinationEndPoint = remoteEndPoint;
                             }
                         }
@@ -2205,7 +2205,7 @@ namespace SIPSorcery.Net
 
                 if (mediaStream == null)
                 {
-                    logger.LogWarning($"An RTP packet with SSRC {hdr.SyncSource} and payload ID {hdr.PayloadType} was received that could not be matched to an audio or video stream.");
+                    logger.LogWarning("An RTP packet with SSRC {SyncSource} and payload ID {PayloadType} was received that could not be matched to an audio or video stream.", hdr.SyncSource, hdr.PayloadType);
                     return;
                 }
 
