@@ -5,89 +5,115 @@
 <title>WebRTC Connection</title>
 </head>
 <body>
-  <label for="ephemeralKey">Enter Ephemeral Key (note each key can only be used once):</label>
-  <input type="text" id="ephemeralKey" placeholder="Ephemeral Key" style="width:300px;" />
-  <button id="startConnectionBtn">Start Connection</button>
 
-  <script>
-    async function init(ephemeralKey) {
-      const EPHEMERAL_KEY = ephemeralKey;
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+    <br/>
+    <label for="ephemeralKey">Enter Ephemeral Key (note each key can only be used once):</label>
+    <input type="text" id="ephemeralKey" placeholder="Ephemeral Key" style="width:300px;" />
+    <button id="startConnectionBtn">Start Connection</button>
 
-      // Create a peer connection
-      const pc = new RTCPeerConnection();
 
-      pc.onconnectionstatechange = () => {
-        console.log("onconnectionstatechange: " + pc.connectionState);
-      }
+    <script>
+        async function init(ephemeralKey) {
+            const EPHEMERAL_KEY = ephemeralKey;
 
-      // Set up to play remote audio from the model
-      const audioEl = document.createElement("audio");
-      audioEl.autoplay = true;
-      pc.ontrack = e => audioEl.srcObject = e.streams[0];
+            // Create a peer connection
+            const pc = new RTCPeerConnection();
 
-      // Add local audio track for microphone input in the browser
-      const ms = await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
-      pc.addTrack(ms.getTracks()[0]);
+            pc.onconnectionstatechange = () => {
+                console.log("onconnectionstatechange: " + pc.connectionState);
+            }
 
-      // Set up data channel for sending and receiving events
-      const dc = pc.createDataChannel("oai-events");
-      dc.addEventListener("message", (e) => {
-        // Realtime server events appear here!
-        console.log("Received event message:", e.data);
-      });
+            // Set up to play remote audio from the model
+            const audioEl = document.createElement("audio");
+            audioEl.autoplay = true;
+            const videoEl = document.getElementById("videoCtl");
 
-      // Wait for the data channel to open before sending
-      dc.addEventListener("open", () => {
-        const responseCreate = {
-          type: "response.create",
-          response: {
-            modalities: ["text"],
-            instructions: "Write a haiku about code",
-          },
-        };
-        console.log("Data channel open, sending response create message.");
-        dc.send(JSON.stringify(responseCreate));
-      });
+            pc.ontrack = (event) => {
+                console.log("ontrack event:", event);
 
-      // Start the session using the Session Description Protocol (SDP)
-      const offer = await pc.createOffer();
-	  
-	  console.log("Offer");
-	  console.log(offer);
-	  
-      await pc.setLocalDescription(offer);
+                // Check if the stream contains an audio track
+                if (event.track.kind === "audio") {
+                    console.log("Received remote audio track");
+                    const audioEl = document.createElement("audio");
+                    audioEl.autoplay = true;
+                    audioEl.srcObject = event.streams[0];
+                    document.body.appendChild(audioEl); // Optional: Add audio element to DOM
+                }
 
-      const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-4o-realtime-preview-2024-12-17";
-      const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
-        method: "POST",
-        body: offer.sdp,
-        headers: {
-          Authorization: `Bearer ${EPHEMERAL_KEY}`,
-          "Content-Type": "application/sdp"
-        },
-      });
+                // Check if the stream contains a video track
+                if (event.track.kind === "video") {
+                    console.log("Received remote video track");
+                    const videoEl = document.getElementById("videoCtl");
+                    videoEl.srcObject = event.streams[0];
+                }
+            };
 
-      const answer = {
-        type: "answer",
-        sdp: await sdpResponse.text(),
-      };
+            // Add local audio track for microphone input in the browser
+            const ms = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: true
+            });
+            //pc.addTrack(ms.getTracks()[0]);
+            ms.getTracks().forEach(track => pc.addTrack(track, ms));
 
-      console.log("Remote SDP answer received:", answer);
+            // Set up data channel for sending and receiving events
+            const dc = pc.createDataChannel("oai-events");
+            dc.addEventListener("message", (e) => {
+                // Realtime server events appear here!
+                console.log("Received event message:", e.data);
+            });
 
-      await pc.setRemoteDescription(answer);
-    }
+            // Wait for the data channel to open before sending
+            dc.addEventListener("open", () => {
+                const responseCreate = {
+                    type: "response.create",
+                    response: {
+                        modalities: ["text"],
+                        instructions: "Write a haiku about code",
+                    },
+                };
+                console.log("Data channel open, sending response create message.");
+                dc.send(JSON.stringify(responseCreate));
+            });
 
-    document.getElementById('startConnectionBtn').addEventListener('click', () => {
-      const key = document.getElementById('ephemeralKey').value.trim();
-      if (!key) {
-        alert('Please enter an ephemeral key.');
-        return;
-      }
-      init(key).catch(err => console.error("Error during init:", err));
-    });
-  </script>
+            // Start the session using the Session Description Protocol (SDP)
+            const offer = await pc.createOffer();
+
+            console.log("Offer");
+            console.log(offer);
+
+            await pc.setLocalDescription(offer);
+
+            const baseUrl = "https://api.openai.com/v1/realtime";
+            const model = "gpt-4o-realtime-preview-2024-12-17";
+            const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+                method: "POST",
+                body: offer.sdp,
+                headers: {
+                    Authorization: `Bearer ${EPHEMERAL_KEY}`,
+                    "Content-Type": "application/sdp"
+                },
+            });
+
+            const answer = {
+                type: "answer",
+                sdp: await sdpResponse.text(),
+            };
+
+            console.log("Remote SDP answer received:", answer);
+
+            await pc.setRemoteDescription(answer);
+        }
+
+        document.getElementById('startConnectionBtn').addEventListener('click', () => {
+            const key = document.getElementById('ephemeralKey').value.trim();
+            if (!key) {
+                alert('Please enter an ephemeral key.');
+                return;
+            }
+            init(key).catch(err => console.error("Error during init:", err));
+        });
+    </script>
 </body>
 </html>
