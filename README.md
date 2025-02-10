@@ -29,7 +29,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
    - [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery-org/SIPSorceryMedia.FFmpeg): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
    - [SIPSorceryMedia.SDL2](https://github.com/sipsorcery-org/SIPSorceryMedia.SDL2): An example of integrating the cross-platform [SDL2](https://www.libsdl.org/index.php) Simple Direct Media Layer library.
 
- - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via (Concentus)[https://github.com/lostromb/concentus]. Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
+ - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via [Concentus](https://github.com/lostromb/concentus). Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
 
 ## Installation
 
