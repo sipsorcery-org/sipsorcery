@@ -80,10 +80,10 @@ namespace SIPSorcery.SIP.App
             m_uac.AckAnswer(sipResponse, content, contentType);
         }
 
-        public void Cancel()
+        public void Cancel(string? reason = null)
         {
             logger.LogDebug("SIPB2BUserAgent Cancel.");
-            m_uac.Cancel();
+            m_uac.Cancel(reason);
 
             var busyResp = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.BusyHere, null);
             m_uasTransaction.SendFinalResponse(busyResp);
