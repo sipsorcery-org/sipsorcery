@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
 
         protected readonly Socket m_socket;
         protected byte[] m_recvBuffer;
-        protected bool m_isClosed;
+        protected bool m_isClosed, m_isClosing;
         protected bool m_isRunningReceive;
         protected IPEndPoint m_localEndPoint;
         protected AddressFamily m_addressFamily;
@@ -119,7 +119,7 @@ namespace SIPSorcery.Net
             {
                 m_isRunningReceive = false;
             }
-            if (m_isRunningReceive || m_isClosed)
+            if (m_isRunningReceive || m_isClosed || m_isClosing)
             {
                 return;
             }
@@ -215,7 +215,8 @@ namespace SIPSorcery.Net
             }
             catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
-                // Thrown when close is called on a socket from this end. Safe to ignore.
+                // Thrown when close is called on a socket
+                m_isClosing = true;
             }
             catch (SocketException sockExcp)
             {
