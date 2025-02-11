@@ -294,6 +294,21 @@ namespace SIPSorcery.SIP.App
         public event Action<UASInviteTransaction> OnReinviteRequest;
 
         /// <summary>
+        /// The remote call party has sent us a new re-INVITE request that
+        /// contains a new media stream type that was not in the original call.
+        /// Media session can be setup to support the request before answer sdp is sent.
+        /// </summary>
+        public event Func<SDPMediaTypesEnum, bool> OnRemoteMediaStreamAdded;
+
+        /// <summary>
+        /// The remote call party has sent us a new re-INVITE request that
+        /// contains a media stream type that was in the original call but has
+        /// been removed or set to inactive state.
+        /// Media session can be configured accordingly before answer sdp is sent.
+        /// </summary>
+        public event Func<SDPMediaTypesEnum, bool> OnRemoteMediaStreamRemoved;
+
+        /// <summary>
         /// Call was hungup by the remote party. Applies to calls initiated by us and calls received
         /// by us. An example of when this user agent will initiate a hang up is when a transfer is
         /// accepted by the remote calling party.
@@ -881,6 +896,27 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Send a re-INVITE request to add video media stream.
+        /// </summary>
+        public void AddVideo()
+        {
+            // Make sure video has been set-up before sending re-INVITE.
+            if (MediaSession.HasVideo)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, GetStreamStatusForOnHoldState());
+                var sdp = MediaSession.CreateOffer(null);
+                SendReInviteRequest(sdp);
+            }
+        }
+
+        public void RemoveVideo()
+        {
+            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.RecvOnly);
+            var sdp = MediaSession.CreateOffer(null);
+            SendReInviteRequest(sdp);
+        }
+
+        /// <summary>
         /// Updates the stream status of the RTP session and sends the re-INVITE request.
         /// </summary>
         private void ApplyHoldAndReinvite()
@@ -1029,9 +1065,30 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
+                        bool videoStreamAdded = false;
+                        bool videoStreamRemoved = false;
+                        static bool twoWayVideoPredicate(SDPMediaAnnouncement m) => m.Media == SDPMediaTypesEnum.video && m.MediaStreamStatus == MediaStreamStatusEnum.SendRecv && m.Port != 0;
+                        bool mediaSessionHasTwoWayVideo = MediaSession.RemoteDescription.Media.Any(twoWayVideoPredicate);
+                        bool offerHasTwoWayVideo = offer.Media.Any(twoWayVideoPredicate);
+
+                        // Offer contains a two-way video session but mediaSession does not.
+                        if (offerHasTwoWayVideo && !mediaSessionHasTwoWayVideo)
+                        {
+                            logger.LogDebug($"Re-INVITE remote party added video stream.");
+                            // Returns true when we have setup media session so we can start the video stream after sending OK.
+                            videoStreamAdded = OnRemoteMediaStreamAdded?.Invoke(SDPMediaTypesEnum.video) ?? false;
+                        }
+                        // Offer does not contain a two way video session but mediaSession does.
+                        else if (!offerHasTwoWayVideo && mediaSessionHasTwoWayVideo)
+                        {
+                            logger.LogDebug($"Re-INVITE remote party removed video stream.");
+                            // Returns true when we have removed video stream and closed it before sending OK.
+                            videoStreamRemoved = OnRemoteMediaStreamRemoved?.Invoke(SDPMediaTypesEnum.video) ?? false;
+                        }
+
                         // TODO: We should accept an empty re-INVITE body and send a new offer in the response. The remote peer can then send
                         // back the SDP answer in the ACK.
-                        var setRemoteResult = offer != null ?  MediaSession.SetRemoteDescription(SdpType.offer, offer) : SetDescriptionResultEnum.Error;
+                        var setRemoteResult = offer != null ? MediaSession.SetRemoteDescription(SdpType.offer, offer) : SetDescriptionResultEnum.Error;
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)
                         {
@@ -1062,6 +1119,12 @@ namespace SIPSorcery.SIP.App
 
                             var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, m_sipDialogue.SDP);
                             reInviteTransaction.SendFinalResponse(okResponse);
+
+                            if (videoStreamAdded)
+                            {
+                                // Starts only video stream when it has not been already started.
+                                await MediaSession.Start().ConfigureAwait(false);
+                            }
                         }
                     }
                 }
@@ -1468,7 +1531,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="remoteEndPoint">The remote end point the response came from.</param>
         /// <param name="sipTransaction">The UAS transaction the response is part of.</param>
         /// <param name="sipResponse">The SIP response.</param>
-        private Task<SocketError> ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private async Task<SocketError> ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
             {
@@ -1483,7 +1546,13 @@ namespace SIPSorcery.SIP.App
                 {
                     // Update the remote party's SDP.
                     m_sipDialogue.RemoteSDP = sipResponse.Body;
-                    MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+                    var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
+                    if (setDescriptionResult == SetDescriptionResultEnum.OK)
+                    {
+                        // When we receive OK for re-INVITE request, we need to start media streams that are not yet started
+                        // i.e added video stream, sent re-INVITE and other party accepts our request to add video.
+                        await MediaSession.Start().ConfigureAwait(false);
+                    }
                 }
             }
             else if ((sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised) && m_callDescriptor != null)
@@ -1502,7 +1571,7 @@ namespace SIPSorcery.SIP.App
                 logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
             }
 
-            return Task.FromResult(SocketError.Success);
+            return SocketError.Success;
         }
 
         /// <summary>
@@ -1635,7 +1704,7 @@ namespace SIPSorcery.SIP.App
 
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
-                if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsStarted ?? false))
+                if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsAudioStarted ?? false))
                 {
                     // This is a special case where no SDP answer was received in the Ok response or the ACK 
                     // BUT an SDP answer was supplied in a 183 Session Progress response. 
@@ -1780,10 +1849,10 @@ namespace SIPSorcery.SIP.App
                 m_semaphoreSlim.Wait();
                 CallEndedSyncronized(callId);
             }
-			catch (ObjectDisposedException)
-			{
-				//Swallow it
-			}
+            catch (ObjectDisposedException)
+            {
+                //Swallow it
+            }
             finally
             {
                 TryReleaseSemaphore();
@@ -1976,17 +2045,17 @@ namespace SIPSorcery.SIP.App
             TryReleaseSemaphore();
             m_semaphoreSlim.Dispose();
         }
-		
-		private void TryReleaseSemaphore()
-		{
-			try
-			{
-				m_semaphoreSlim.Release();
-			}
-			catch (ObjectDisposedException)
-			{
-				//Swallow it
-			}
-		}
+
+        private void TryReleaseSemaphore()
+        {
+            try
+            {
+                m_semaphoreSlim.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                //Swallow it
+            }
+        }
     }
 }

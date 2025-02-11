@@ -338,10 +338,16 @@ namespace SIPSorcery.Net
         public bool IsClosed { get; private set; }
 
         /// <summary>
-        /// Indicates whether the session has been started. Starting a session tells the RTP 
+        /// Indicates whether the audio session has been started. Starting a audio session tells the RTP 
         /// socket to start receiving,
         /// </summary>
-        public bool IsStarted { get; private set; }
+        public bool IsAudioStarted { get; private set; }
+
+        /// <summary>
+        /// Indicates whether the video session has been started. Starting a audio session tells the RTP 
+        /// socket to start receiving,
+        /// </summary>
+        public bool IsVideoStarted { get; private set; }
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -470,7 +476,7 @@ namespace SIPSorcery.Net
         ///  - The RTP Header extension URI,
         ///  - Object/Value of the header
         /// </summary>
-        public event Action< IPEndPoint, SDPMediaTypesEnum, String, Object> OnRtpHeaderReceived;
+        public event Action<IPEndPoint, SDPMediaTypesEnum, String, Object> OnRtpHeaderReceived;
 
         /// <summary>
         /// Gets fired when an RTP Header packet is received from a remote party.
@@ -1020,16 +1026,16 @@ namespace SIPSorcery.Net
                             var srtpHandler = currentMediaStream.GetOrCreateSrtpHandler();
                             if (!(srtpHandler.IsNegotiationComplete && srtpHandler.RemoteSecurityDescriptionUnchanged(announcement.SecurityDescriptions)))
                             {
-                               if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
-                               {
-                                   logger.LogError($"Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.");
-                                   return SetDescriptionResultEnum.CryptoNegotiationFailed;
-                               }
+                                if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
+                                {
+                                    logger.LogError($"Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.");
+                                    return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                                }
 
-                               if (srtpHandler.IsNegotiationComplete)
-                               {
-                                   currentMediaStream.SetSecurityContext(srtpHandler.ProtectRTP, srtpHandler.UnprotectRTP, srtpHandler.ProtectRTCP, srtpHandler.UnprotectRTCP);
-                               }
+                                if (srtpHandler.IsNegotiationComplete)
+                                {
+                                    currentMediaStream.SetSecurityContext(srtpHandler.ProtectRTP, srtpHandler.UnprotectRTP, srtpHandler.ProtectRTCP, srtpHandler.UnprotectRTCP);
+                                }
                             }
                         }
                         // If we had no crypto but we were definetely expecting something since we had a port value
@@ -1107,10 +1113,10 @@ namespace SIPSorcery.Net
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }
                     }
-                    else if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
+                    else if (currentMediaStream.RemoteTrack.Capabilities.Count != 0 && announcement.Port != 0 &&
+                        (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack?.Capabilities?.Count == 0)))
                     {
                         return SetDescriptionResultEnum.VideoIncompatible;
-
                     }
                 }
 
@@ -1309,6 +1315,10 @@ namespace SIPSorcery.Net
                     {
                         RequireRenegotiation = true;
                         videoStream.LocalTrack = null;
+
+                        CloseMediaStream("normal", videoStream);
+                        IsVideoStarted = false;              
+                        VideoStreamList.Remove(videoStream);
                         return true;
                     }
                 }
@@ -1554,7 +1564,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var videoStream in VideoStreamList)
                 {
-                    if (videoStream.LocalTrack == null)
+                    if (videoStream.LocalTrack != null)
                     {
                         return videoStream;
                     }
@@ -1745,7 +1755,11 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        rtpPort = mediaStream.GetRTPChannel().RTPPort;
+                        // If media stream does not have a Rtp channel it means this media type is not supported and rtpPort will remain zero.
+                        if (mediaStream.HasRtpChannel())
+                        {
+                            rtpPort = mediaStream.GetRTPChannel().RTPPort;
+                        }
                     }
                 }
 
@@ -1780,19 +1794,19 @@ namespace SIPSorcery.Net
                     {
                         if (srtpHandler.LocalSecurityDescription == null)
                         {
-                           // first time security negotiation in SDP offer
-                           uint tag = 1;
-                           foreach (SDPSecurityDescription.CryptoSuites cryptoSuite in SrtpCryptoSuites)
-                           {
-                               announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(tag, cryptoSuite));
-                               tag++;
-                           }
-                           
-                           srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
+                            // first time security negotiation in SDP offer
+                            uint tag = 1;
+                            foreach (SDPSecurityDescription.CryptoSuites cryptoSuite in SrtpCryptoSuites)
+                            {
+                                announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(tag, cryptoSuite));
+                                tag++;
+                            }
+
+                            srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
                         }
                         else
                         {
-                           // reuse negotiated security in SDP offer
+                            // reuse negotiated security in SDP offer
                             announcement.SecurityDescriptions.Add(srtpHandler.LocalSecurityDescription);
                         }
                     }
@@ -1800,32 +1814,32 @@ namespace SIPSorcery.Net
                     {
                         if (srtpHandler.LocalSecurityDescription != null)
                         {
-                           // try to reuse security negotiation in SDP answer
-                           var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
-                                                         .FirstOrDefault(s => s.Tag == srtpHandler.LocalSecurityDescription.Tag && s.CryptoSuite == srtpHandler.LocalSecurityDescription.CryptoSuite);
-                           if (sec == null)
-                           {
-                              throw new ApplicationException("Error reusing crypto attribute for SDP answer. No compatible offer.");
-                           }
-                           else
-                           { 
-                              announcement.SecurityDescriptions.Add(srtpHandler.LocalSecurityDescription);
-                           }
+                            // try to reuse security negotiation in SDP answer
+                            var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
+                                                          .FirstOrDefault(s => s.Tag == srtpHandler.LocalSecurityDescription.Tag && s.CryptoSuite == srtpHandler.LocalSecurityDescription.CryptoSuite);
+                            if (sec == null)
+                            {
+                                throw new ApplicationException("Error reusing crypto attribute for SDP answer. No compatible offer.");
+                            }
+                            else
+                            {
+                                announcement.SecurityDescriptions.Add(srtpHandler.LocalSecurityDescription);
+                            }
                         }
                         else
                         {
-                           // first time security negotiation in SDP answer
-                           var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
-                                                             .FirstOrDefault(s => SrtpCryptoSuites.Contains(s.CryptoSuite));
-                           if (sec == null)
-                           {
-                              throw new ApplicationException("Error creating crypto attribute for SDP answer. No compatible offer.");
-                           }
-                           else
-                           {
-                              announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(sec.Tag, sec.CryptoSuite));
-                              srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
-                           }
+                            // first time security negotiation in SDP answer
+                            var sec = RemoteDescription?.Media.FirstOrDefault(a => a.MLineIndex == mindex)?.SecurityDescriptions
+                                                              .FirstOrDefault(s => SrtpCryptoSuites.Contains(s.CryptoSuite));
+                            if (sec == null)
+                            {
+                                throw new ApplicationException("Error creating crypto attribute for SDP answer. No compatible offer.");
+                            }
+                            else
+                            {
+                                announcement.SecurityDescriptions.Add(SDPSecurityDescription.CreateNew(sec.Tag, sec.CryptoSuite));
+                                srtpHandler.SetupLocal(announcement.SecurityDescriptions, sdpType);
+                            }
                         }
                     }
 
@@ -1924,10 +1938,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public virtual Task Start()
         {
-            if (!IsStarted)
+            if (!IsAudioStarted)
             {
-                IsStarted = true;
-
                 foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -1935,9 +1947,13 @@ namespace SIPSorcery.Net
                         // The local audio track may have been disabled if there were no matching capabilities with
                         // the remote party.
                         audioStream.RtcpSession.Start();
+                        IsAudioStarted = true;
                     }
                 }
+            }
 
+            if (!IsVideoStarted)
+            {
                 foreach (var videoStream in VideoStreamList)
                 {
                     if (videoStream.HasVideo && videoStream.RtcpSession != null && videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -1945,11 +1961,12 @@ namespace SIPSorcery.Net
                         // The local video track may have been disabled if there were no matching capabilities with
                         // the remote party.
                         videoStream.RtcpSession.Start();
+                        IsVideoStarted = true;
                     }
                 }
-
-                OnStarted?.Invoke();
             }
+
+            OnStarted?.Invoke();
 
             return Task.CompletedTask;
         }
@@ -2001,22 +2018,11 @@ namespace SIPSorcery.Net
             {
                 IsClosed = true;
 
-
                 foreach (var audioStream in AudioStreamList)
                 {
                     if (audioStream != null)
                     {
-                        audioStream.IsClosed = true;
-                        CloseRtcpSession(audioStream, reason);
-
-                        if (audioStream.HasRtpChannel())
-                        {
-                            var rtpChannel = audioStream.GetRTPChannel();
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
-                            rtpChannel.OnClosed -= OnRTPChannelClosed;
-                            rtpChannel.Close(reason);
-                        }
+                        CloseMediaStream(reason, audioStream);
                     }
                 }
 
@@ -2024,22 +2030,27 @@ namespace SIPSorcery.Net
                 {
                     if (videoStream != null)
                     {
-                        videoStream.IsClosed = true;
-                        CloseRtcpSession(videoStream, reason);
-
-                        if (videoStream.HasRtpChannel())
-                        {
-                            var rtpChannel = videoStream.GetRTPChannel();
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
-                            rtpChannel.OnClosed -= OnRTPChannelClosed;
-                            rtpChannel.Close(reason);
-                        }
+                        CloseMediaStream(reason, videoStream);
                     }
                 }
 
                 OnRtpClosed?.Invoke(reason);
                 OnClosed?.Invoke();
+            }
+        }
+
+        private void CloseMediaStream(string reason, MediaStream mediaStream)
+        {
+            mediaStream.IsClosed = true;
+            CloseRtcpSession(mediaStream, reason);
+
+            if (mediaStream.HasRtpChannel())
+            {
+                var rtpChannel = mediaStream.GetRTPChannel();
+                rtpChannel.OnRTPDataReceived -= OnReceive;
+                rtpChannel.OnControlDataReceived -= OnReceive;
+                rtpChannel.OnClosed -= OnRTPChannelClosed;
+                rtpChannel.Close(reason);
             }
         }
 
@@ -2310,20 +2321,6 @@ namespace SIPSorcery.Net
             {
                 return stream;
             }
-
-            if (HasAudio)
-            {
-                if (!HasVideo)
-                {
-                    return AudioStream;
-                }
-            }
-            
-            if (HasVideo)
-            {
-                return VideoStream;
-            }
-            
 
             return null;
         }

@@ -187,7 +187,7 @@ namespace SIPSorcery.Media
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
 
-            if(AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
+            if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
             {
                 logger.LogDebug($"Audio track negotiated DTMF payload ID {AudioStream.NegotiatedRtpEventPayloadID}.");
             }
@@ -208,37 +208,34 @@ namespace SIPSorcery.Media
 
         public async override Task Start()
         {
-            if (!base.IsStarted)
+            await base.Start().ConfigureAwait(false);
+
+            if (HasAudio)
             {
-                await base.Start().ConfigureAwait(false);
-
-                if (HasAudio)
+                if (Media.AudioSource != null)
                 {
-                    if (Media.AudioSource != null)
-                    {
-                        await Media.AudioSource.StartAudio().ConfigureAwait(false);
-                    }
-                    if (Media.AudioSink != null)
-                    {
-                        await Media.AudioSink.StartAudioSink().ConfigureAwait(false);
-                    }
+                    await Media.AudioSource.StartAudio().ConfigureAwait(false);
                 }
-
-                if (HasVideo)
+                if (Media.AudioSink != null)
                 {
-                    if (Media.VideoSource != null)
-                    {
-                        if (!_videoCaptureDeviceFailed)
-                        {
-                            await Media.VideoSource.StartVideo().ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            logger.LogWarning($"Webcam video source failed before start, switching to test pattern source.");
+                    await Media.AudioSink.StartAudioSink().ConfigureAwait(false);
+                }
+            }
 
-                            // The webcam source failed to start. Switch to a test pattern source.
-                            await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
-                        }
+            if (HasVideo)
+            {
+                if (Media.VideoSource != null)
+                {
+                    if (!_videoCaptureDeviceFailed)
+                    {
+                        await Media.VideoSource.StartVideo().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Webcam video source failed before start, switching to test pattern source.");
+
+                        // The webcam source failed to start. Switch to a test pattern source.
+                        await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
                     }
                 }
             }
