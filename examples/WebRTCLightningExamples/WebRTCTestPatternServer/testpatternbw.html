@@ -1,0 +1,94 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.sipsorcery.com";
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+
+        var pc, ws, getBitrateInterval;
+        var lastBytesReceived = 0, lastTimestamp = 0;
+
+        async function start() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            getBitrateInterval = window.setInterval(getBitrate, 1000);
+
+            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
+            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            ws.onmessage = async function (evt) {
+                if (/^[\{"'\s]*candidate/.test(evt.data)) {
+                    pc.addIceCandidate(JSON.parse(evt.data));
+                }
+                else {
+                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
+                    pc.createAnswer()
+                        .then((answer) => pc.setLocalDescription(answer))
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                }
+            };
+        };
+
+        function getBitrate() {
+
+            pc.getReceivers().forEach(receiver => {
+                //console.log(sender);
+
+                //let parameters = sender.getParameters();
+                //console.log(`parameters.transactionId ${parameters.transactionId}.`);
+                //parameters.encodings.forEach(enc => {
+                //    console.log(enc);
+                //    console.log(`maxBitrate=${enc.maxBitrate}.`);
+                //});
+
+                receiver.getStats().then(stats => {
+                    stats.forEach(report => {
+                        if (report.type === "inbound-rtp" && report.kind === "video") {
+                            let timestamp = report["timestamp"];
+                            let bytesReceived = report["bytesReceived"];
+                            let bw = ((bytesReceived - lastBytesReceived) * 8) / ((timestamp - lastTimestamp) / 1000)
+
+                            document.querySelector("#videoBandwidth").innerText = bw.toFixed(0);
+
+                            lastBytesReceived = bytesReceived;
+                            lastTimestamp = timestamp;
+                        }
+                    });
+                });
+            });
+        };
+
+        async function closePeer() {
+            await pc.close();
+            await ws.close();
+            clearInterval(getBitrateInterval);
+        };
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+    <div>
+        Video Receive Bandwidth (bps): <span id="videoBandwidth"></span>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
