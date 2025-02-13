@@ -69,6 +69,20 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         [Fact]
+        public void GetEpochTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var dateTime = new DateTime(2025, 2, 12, 23, 39, 0);
+            var unixTime = dateTime.GetEpoch();
+
+            logger.LogDebug("Unix time: {unixTime}.", unixTime);
+
+            Assert.Equal(1739399940L, unixTime);
+        }
+
+        [Fact]
         public void ParseHexStrTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
