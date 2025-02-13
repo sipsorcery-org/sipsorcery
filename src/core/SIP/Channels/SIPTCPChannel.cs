@@ -690,7 +690,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public override void Close()
         {
-            if (!Closed == true)
+            if (!Closed)
             {
                 logger.LogDebug("Closing SIP {ProtDescr} Channel {ListeningEndPoint}.", ProtDescr, ListeningEndPoint);
 

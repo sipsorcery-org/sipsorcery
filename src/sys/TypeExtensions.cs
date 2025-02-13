@@ -65,12 +65,7 @@ namespace SIPSorcery.Sys
 
         public static bool NotNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
-            {
-                return false;
-            }
-
-            return true;
+            return !s.IsNullOrBlank();
         }
 
         public static long GetEpoch(this DateTime dateTime)

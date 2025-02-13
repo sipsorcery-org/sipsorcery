@@ -908,7 +908,7 @@ namespace SIPSorcery.Net
             {
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had an invalid port {candidate.port}.");
             }
-            else if(IPAddress.TryParse(candidate.address, out var addrIPv6) &&
+            else if (IPAddress.TryParse(candidate.address, out var addrIPv6) &&
                     addrIPv6.AddressFamily == AddressFamily.InterNetworkV6 &&
                     !Socket.OSSupportsIPv6 &&
                     NetServices.HasActiveIPv6Address())
@@ -1506,12 +1506,12 @@ namespace SIPSorcery.Net
 
             lock (_checklistLock)
             {
-                var existingEntry = _checklist.Where(x =>
+                var existingEntry = _checklist.SingleOrDefault(x =>
                     x.LocalCandidate.type == entry.LocalCandidate.type
                     && x.RemoteCandidate.DestinationEndPoint != null
                     && x.RemoteCandidate.DestinationEndPoint.Address.Equals(entryRemoteEP.Address)
                     && x.RemoteCandidate.DestinationEndPoint.Port == entryRemoteEP.Port
-                    && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol).SingleOrDefault();
+                    && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol);
 
                 if (existingEntry != null)
                 {
@@ -2270,8 +2270,7 @@ namespace SIPSorcery.Net
                 string txID = Encoding.ASCII.GetString(transactionID);
 
                 var entry = _iceServerConnections
-                           .Where(x => x.Value.IsTransactionIDMatch(txID))
-                           .SingleOrDefault();
+                           .SingleOrDefault(x => x.Value.IsTransactionIDMatch(txID));
 
                 if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
                 {
@@ -2669,7 +2668,7 @@ namespace SIPSorcery.Net
             {
                 if (MdnsResolve != null)
                 {
-                    logger.LogWarning("RTP ICE channel has both "+ nameof(MdnsGetAddresses) + " and " + nameof(MdnsGetAddresses) + " set. Only " + nameof(MdnsGetAddresses) + " will be used.");
+                    logger.LogWarning("RTP ICE channel has both " + nameof(MdnsGetAddresses) + " and " + nameof(MdnsGetAddresses) + " set. Only " + nameof(MdnsGetAddresses) + " will be used.");
                 }
                 return await MdnsGetAddresses(candidate.address).ConfigureAwait(false);
             }

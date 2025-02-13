@@ -232,14 +232,7 @@ namespace SIPSorcery.SIP
         /// <returns>True if the protocol is connectionless.</returns>
         public static bool IsConnectionless(SIPProtocolsEnum protocol)
         {
-            if (protocol == SIPProtocolsEnum.udp)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return protocol == SIPProtocolsEnum.udp;
         }
     }
 

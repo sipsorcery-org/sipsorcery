@@ -213,8 +213,8 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(6, stunMessage.Attributes.Count);
             Assert.Equal("69-64-38-2B-4C-45-44-57-4D-31-64-30", BitConverter.ToString(stunMessage.Header.TransactionId));
 
-            stunMessage.Attributes.Remove(stunMessage.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.MessageIntegrity).Single());
-            stunMessage.Attributes.Remove(stunMessage.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.FingerPrint).Single());
+            stunMessage.Attributes.Remove(stunMessage.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.MessageIntegrity));
+            stunMessage.Attributes.Remove(stunMessage.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.FingerPrint));
 
             byte[] buffer = stunMessage.ToByteBufferStringKey("r89XhWC9k2kW4Pns75vmwHIa", true);
 

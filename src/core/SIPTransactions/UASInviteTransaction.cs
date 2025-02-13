@@ -156,7 +156,7 @@ namespace SIPSorcery.SIP
             okResponse.Header.MaxForwards = Int32.MinValue;
             okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
             okResponse.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
-                + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
+                + (PrackSupported ? ", " + SIPExtensionHeaders.PRACK : "");
 
             okResponse.Body = messageBody;
             okResponse.Header.ContentType = contentType;
