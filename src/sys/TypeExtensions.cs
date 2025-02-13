@@ -73,7 +73,7 @@ namespace SIPSorcery.Sys
             return true;
         }
 
-        public static long GetEpoch(this DateTime dateTime)
+        public static long ToUnixTime(this DateTime dateTime)
         {
             return new DateTimeOffset(dateTime.ToUniversalTime()).ToUnixTimeSeconds();
         }
