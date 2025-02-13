@@ -603,15 +603,16 @@ namespace SIPSorcery.SIP
 
     ///<summary>
     /// List of SIP extensions to RFC3262.
-    /// </summary> 
+    /// </summary>
+    [Flags]
     public enum SIPExtensions
     {
         None = 0,
         Prack = 1,          // Reliable provisional responses as per RFC3262.
         NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
-        Replaces = 3,
-        SipRec = 4,
-        MultipleRefer = 5,
+        Replaces = 4,
+        SipRec = 8,
+        MultipleRefer = 16,
     }
 
     /// <summary>
@@ -627,49 +628,64 @@ namespace SIPSorcery.SIP
         public const string MULTIPLE_REFER = "multiple-refer";
 
         /// <summary>
-        /// Parses a string containing a list of SIP extensions into a list of extensions that this library
+        /// Parses a string containing a list of SIP extensions into a bitfield of extensions that this library
         /// understands.
         /// </summary>
         /// <param name="extensionList">The string containing the list of extensions to parse.</param>
         /// <param name="unknownExtensions">A comma separated list of the unsupported extensions.</param>
-        /// <returns>A list of extensions that were understood and a boolean indicating whether any unknown extensions were present.</returns>
-        public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out string unknownExtensions)
+        /// <returns>A <see cref="SIPExtensions"/> bitfield of SIP extensions that were understood.</returns>
+        public static SIPExtensions ParseSIPExtensions(string extensionList, out string unknownExtensions)
         {
-            List<SIPExtensions> knownExtensions = new List<SIPExtensions>();
+            SIPExtensions knownExtensions = 0;
+            var unknownExtensionsStringBuilder = new StringBuilder();
             unknownExtensions = null;
 
-            if (String.IsNullOrEmpty(extensionList) == false)
+            if (String.IsNullOrEmpty(extensionList))
             {
-                string[] extensions = extensionList.Trim().Split(',');
+                return knownExtensions;
+            }
 
-                foreach (string extension in extensions)
+            var extensions = extensionList.Split(',');
+
+            foreach (var extension in extensions)
+            {
+                if (!String.IsNullOrEmpty(extension))
                 {
-                    if (String.IsNullOrEmpty(extension) == false)
+                    var trimmedExtension = extension.Trim().ToLower();
+                    switch (trimmedExtension)
                     {
-                        string trimmedExtension = extension.Trim().ToLower();
-                        switch (trimmedExtension)
-                        {
-                            case PRACK:
-                                knownExtensions.Add(SIPExtensions.Prack);
-                                break;
-                            case NO_REFER_SUB:
-                                knownExtensions.Add(SIPExtensions.NoReferSub);
-                                break;
-                            case REPLACES:
-                                knownExtensions.Add(SIPExtensions.Replaces);
-                                break;
-                            case SIPREC:
-                                knownExtensions.Add(SIPExtensions.SipRec);
-                                break;
-                            case MULTIPLE_REFER:
-                                knownExtensions.Add(SIPExtensions.MultipleRefer);
-                                break;
-                            default:
-                                unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
-                                break;
-                        }
+                        case PRACK:
+                            knownExtensions |= SIPExtensions.Prack;
+                            break;
+
+                        case NO_REFER_SUB:
+                            knownExtensions |= SIPExtensions.NoReferSub;
+                            break;
+
+                        case REPLACES:
+                            knownExtensions |= SIPExtensions.Replaces;
+                            break;
+
+                        case SIPREC:
+                            knownExtensions |= SIPExtensions.SipRec;
+                            break;
+
+                        case MULTIPLE_REFER:
+                            knownExtensions |= SIPExtensions.MultipleRefer;
+                            break;
+
+                        default:
+                            unknownExtensionsStringBuilder.Append(extension.Trim());
+                            unknownExtensionsStringBuilder.Append(',');
+                            break;
                     }
                 }
+            }
+
+            if (unknownExtensionsStringBuilder.Length > 0)
+            {
+                unknownExtensionsStringBuilder.Length--; // Get rid of the last comma
+                unknownExtensions = unknownExtensionsStringBuilder.ToString();
             }
 
             return knownExtensions;

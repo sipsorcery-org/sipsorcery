@@ -777,8 +777,8 @@ namespace SIPSorcery.SIP.UnitTests
             string[] headersCollection = Regex.Split(inviteHeaders, "\r\n");
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
-            Assert.True(sipHeader.RequiredExtensions.Contains(SIPExtensions.Prack), "The required header extensions was missing Prack.");
-            Assert.True(sipHeader.SupportedExtensions.Contains(SIPExtensions.Prack), "The supported header extensions was missing Prack.");
+            Assert.True(sipHeader.RequiredExtensions.HasFlag(SIPExtensions.Prack), "The required header extensions was missing Prack.");
+            Assert.True(sipHeader.SupportedExtensions.HasFlag(SIPExtensions.Prack), "The supported header extensions was missing Prack.");
             Assert.True(sipHeader.UnknownRequireExtension != null, "The had unknown required header extension was not correctly set.");
 
             logger.LogDebug("---------------------------------------------------");
