@@ -16,6 +16,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -26,16 +29,33 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Media;
-using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Http;
+using SIPSorceryMedia.Abstractions;
+using System.Runtime.InteropServices;
+using System.Threading;
+using vpxmd;
 
 namespace demo;
 
+public enum ImageTypesEnum
+{
+    Free,
+    Paid
+}
+
 class Program
 {
+    private static string FREE_IMAGE_PATH = "media/simple_flower.jpg";
+    private static string PAID_IMAGE_PATH = "media/real_flowers.jpg";
+    private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
+    private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
+    private const int TEXT_MARGIN_PIXELS = 5;
+    private const int POINTS_PER_INCH = 72;
+    private const int BORDER_WIDTH = 5;
+    private const int QR_CODE_DIMENSION = 200;
+
     private const int WEBSOCKET_PORT = 8081;
     private const int TEST_PATTERN_FRAMES_PER_SECOND = 5; //30;
 
@@ -47,6 +67,8 @@ class Program
     static void Main(string[] args)
     {
         Console.WriteLine("WebRTC Lightning Demo");
+
+        logger = AddConsoleLogger();
 
         //Log.Logger = new LoggerConfiguration()
         //    .WriteTo.Console()
@@ -62,14 +84,19 @@ class Program
             config.WriteTo.Console()
                 .Enrich.FromLogContext();
         });
+        builder.Services.AddControllers();
 
         var app = builder.Build();
         //app.UseSerilogRequestLogging();
+        app.UseRouting();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+        app.MapControllers();
 
-        app.MapGet("/", async context =>
-        {
-            await context.Response.WriteAsync("WebRTC API is running!");
-        });
+        //app.MapGet("/", async context =>
+        //{
+        //    await context.Response.WriteAsync("WebRTC API is running!");
+        //});
 
         app.Run();
     }
@@ -110,7 +137,7 @@ class Program
         pc.addTrack(track);
 
         //testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
-        testPatternSource.OnVideoSourceRawSample += MesasureTestPatternSourceFrameRate;
+        //testPatternSource.OnVideoSourceRawSample += MesasureTestPatternSourceFrameRate;
         testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
         pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
 
@@ -155,21 +182,203 @@ class Program
         return Task.FromResult(pc);
     }
 
-    private static void MesasureTestPatternSourceFrameRate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+    private void SendSample(object state)
     {
-        if (_startTime == DateTime.MinValue)
+        if (WebRtcSession.IsClosed)
         {
-            _startTime = DateTime.Now;
+            Dispose();
+        }
+        else if (!_isDisposed)
+        {
+            int transparency = 0;
+            ImageType = ImageTypesEnum.Free;
+            string title = null;
+            Bitmap qrCode = null;
+
+            if (_isPaid)
+            {
+                ImageType = ImageTypesEnum.Paid;
+            }
+            else
+            {
+                if (DateTime.Now.Subtract(_startTime).TotalSeconds < FREE_PERIOD_SECONDS)
+                {
+                    BorderColor = Color.Blue;
+                    title = FREE_PERIOD_TITLE;
+                }
+                else if (DateTime.Now.Subtract(_startTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS))
+                {
+                    BorderColor = Color.Yellow;
+                    double remaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(_startTime).TotalSeconds;
+                    transparency = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (remaining / TRANSPARENCY_PERIOD_SECONDS));
+                    title = TRANSITION_PERIOD_TITLE;
+                    qrCode = _qrCodeImage;
+                }
+                else
+                {
+                    BorderColor = Color.Orange;
+                    transparency = MAX_ALPHA_TRANSPARENCY;
+                    title = TRANSITION_PERIOD_TITLE;
+                    qrCode = _qrCodeImage;
+                }
+            }
+
+            if (Monitor.TryEnter(WebRtcSession))
+            {
+                var sampleBuffer = WebRtcDaemon.GetVideoSample(ImageType, BorderColor, title, transparency, qrCode);
+
+                if (sampleBuffer != null && !_isDisposed)
+                {
+
+                    unsafe
+                    {
+                        byte[] encodedBuffer = null;
+
+                        fixed (byte* p = sampleBuffer)
+                        {
+                            byte[] convertedFrame = null;
+                            _colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _width, _height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
+
+                            fixed (byte* q = convertedFrame)
+                            {
+                                int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+
+                                if (encodeResult != 0)
+                                {
+                                    Console.WriteLine("VPX encode of video sample failed.");
+                                }
+                            }
+
+                            WebRtcSession.SendMedia(SDPMediaTypesEnum.video, _rtpTimestamp, encodedBuffer);
+                            _rtpTimestamp += VP8_TIMESTAMP_SPACING;
+                        }
+                    }
+
+                    _sendSampleTimer.Change(VIDEO_SAMPLING_PERIOD, Timeout.Infinite);
+                }
+
+                Monitor.Exit(WebRtcSession);
+            }
+        }
+    }
+
+    private static byte[] GetVideoSample(ImageTypesEnum imageType, Color borderColor, string title, int transparency, Bitmap qrCode)
+    {
+        try
+        {
+            unsafe
+            {
+                string imagePath = null;
+
+                switch (imageType)
+                {
+                    case ImageTypesEnum.Free:
+                        imagePath = FREE_IMAGE_PATH;
+                        break;
+                    case ImageTypesEnum.Paid:
+                        imagePath = PAID_IMAGE_PATH;
+                        break;
+                    default:
+                        imagePath = FREE_IMAGE_PATH;
+                        break;
+                }
+
+                Bitmap testPattern = new Bitmap(imagePath);
+
+                byte[] sampleBuffer = null;
+
+                var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
+                ApplyFilters(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), title, borderColor, transparency, qrCode);
+                sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+
+                stampedTestPattern.Dispose();
+                stampedTestPattern = null;
+
+                return sampleBuffer;
+            }
+        }
+        catch (Exception excp)
+        {
+            Console.WriteLine("Exception GetVideoSample. " + excp);
+            return null;
+        }
+    }
+
+    private static void ApplyFilters(System.Drawing.Image image, string timeStamp, string title, Color borderColor, int transparency, Bitmap qrCode)
+    {
+        int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
+
+        Graphics g = Graphics.FromImage(image);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+        // Draw border.
+        using (var pen = new Pen(borderColor, BORDER_WIDTH))
+        {
+            g.DrawLine(pen, new Point(0, 0), new Point(0, image.Height));
+            g.DrawLine(pen, new Point(0, 0), new Point(image.Width, 0));
+            g.DrawLine(pen, new Point(0, image.Height), new Point(image.Width, image.Height));
+            g.DrawLine(pen, new Point(image.Width, 0), new Point(image.Width, image.Height));
         }
 
-        _frameCount++;
-
-        if (DateTime.Now.Subtract(_startTime).TotalSeconds > 5)
+        // Add transparency.
+        using (Brush brush = new SolidBrush(Color.FromArgb(transparency, Color.Gray)))
         {
-            double fps = _frameCount / DateTime.Now.Subtract(_startTime).TotalSeconds;
-            Console.WriteLine($"Frame rate {fps:0.##}fps.");
-            _startTime = DateTime.Now;
-            _frameCount = 0;
+            g.FillRectangle(brush, new Rectangle(0, 0, image.Width, image.Height));
+        }
+
+        // Add header and footer text.
+        using (StringFormat format = new StringFormat())
+        {
+            format.LineAlignment = StringAlignment.Center;
+            format.Alignment = StringAlignment.Center;
+
+            using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
+            {
+                using (var gPath = new GraphicsPath())
+                {
+                    float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
+                    if (title != null)
+                    {
+                        gPath.AddString(title, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
+                    }
+
+                    gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
+                    g.FillPath(Brushes.White, gPath);
+                    g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
+                }
+            }
+        }
+
+        // Add QR Code.
+        if (qrCode != null)
+        {
+            int xCenter = (image.Width - QR_CODE_DIMENSION) / 2;
+            int yCenter = (image.Height - QR_CODE_DIMENSION) / 2;
+            Rectangle dstRect = new Rectangle(xCenter, yCenter, QR_CODE_DIMENSION, QR_CODE_DIMENSION);
+            g.DrawImage(qrCode, dstRect);
+        }
+    }
+
+    private static byte[] BitmapToRGB24(Bitmap bitmap)
+    {
+        try
+        {
+            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+            var length = bitmapData.Stride * bitmapData.Height;
+
+            byte[] bytes = new byte[length];
+
+            // Copy bitmap to byte[]
+            Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
+            bitmap.UnlockBits(bitmapData);
+
+            return bytes;
+        }
+        catch (Exception)
+        {
+            return [];
         }
     }
 
