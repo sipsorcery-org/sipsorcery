@@ -159,17 +159,9 @@ namespace SIPSorcery.SIP
 
         public static bool IsAllowedScheme(string schemeType)
         {
-            try
-            {
-                Enum.Parse(typeof(SIPSchemesEnum), schemeType, true);
-                return true;
+            return Enum.TryParse<SIPSchemesEnum>(schemeType, true, out _);
             }
-            catch
-            {
-                return false;
             }
-        }
-    }
 
     /// <summary>
     /// A list of the transport layer protocols that are supported (the network layers
@@ -213,16 +205,8 @@ namespace SIPSorcery.SIP
 
         public static bool IsAllowedProtocol(string protocol)
         {
-            try
-            {
-                Enum.Parse(typeof(SIPProtocolsEnum), protocol, true);
-                return true;
+            return Enum.TryParse<SIPProtocolsEnum>(protocol, true, out _);
             }
-            catch
-            {
-                return false;
-            }
-        }
 
         /// <summary>
         /// Returns true for connectionless transport protocols, such as UDP, and false for
@@ -392,15 +376,12 @@ namespace SIPSorcery.SIP
     {
         public static SIPMethodsEnum GetMethod(string method)
         {
-            SIPMethodsEnum sipMethod = SIPMethodsEnum.UNKNOWN;
-
-            try
+            if (Enum.TryParse<SIPMethodsEnum>(method, true, out var sipMethod))
             {
-                sipMethod = (SIPMethodsEnum)Enum.Parse(typeof(SIPMethodsEnum), method, true);
+                return sipMethod;
             }
-            catch { }
 
-            return sipMethod;
+            return SIPMethodsEnum.UNKNOWN;
         }
     }
 
