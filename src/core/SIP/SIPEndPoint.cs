@@ -137,11 +137,11 @@ namespace SIPSorcery.SIP
                 return null;
             }
 
-            if (sipEndPointStr.ToLower().StartsWith("udp:") ||
-                sipEndPointStr.ToLower().StartsWith("tcp:") ||
-                sipEndPointStr.ToLower().StartsWith("tls:") ||
-                sipEndPointStr.ToLower().StartsWith("ws:") ||
-                sipEndPointStr.ToLower().StartsWith("wss:"))
+            if (sipEndPointStr.StartsWith("udp:", StringComparison.OrdinalIgnoreCase) ||
+                sipEndPointStr.StartsWith("tcp:", StringComparison.OrdinalIgnoreCase) ||
+                sipEndPointStr.StartsWith("tls:", StringComparison.OrdinalIgnoreCase) ||
+                sipEndPointStr.StartsWith("ws:", StringComparison.OrdinalIgnoreCase)  ||
+                sipEndPointStr.StartsWith("wss:", StringComparison.OrdinalIgnoreCase))
             {
                 return ParseSerialisedSIPEndPoint(sipEndPointStr);
             }
