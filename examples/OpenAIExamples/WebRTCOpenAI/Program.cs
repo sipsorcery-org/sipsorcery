@@ -9,7 +9,7 @@
 // demo so if not provided by the OS then ChatGPT will end up talking to itself.
 //
 // NOTE: As of 24 Dec 2024 the official OpenAI dotnet SDK is missing the realtime
-// models that represent the JSON datachannel messages. As such some ruidimentary
+// models that represent the JSON datachannel messages. As such some rudimentary
 // models have been created.
 // The official SDK is available at https://github.com/openai/openai-dotnet.
 // The OpenAI API realtime server events reference is available at
@@ -22,7 +22,7 @@
 // If you don't want to pass your OpenAI API key to this app an alternative approach is
 // to create an ephemeral secret using the curl comamnd below and then hard code it into
 // the application.
-// NOTE each epehmeral key seems like it can ONLY be used once:
+// NOTE each ephemeral key seems like it can ONLY be used once:
 // curl -v https://api.openai.com/v1/realtime/sessions ^
 //  --header "Authorization: Bearer %OPENAI_TOKEN%" ^
 //  --header "Content-Type: application/json" ^

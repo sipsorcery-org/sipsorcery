@@ -51,7 +51,7 @@ namespace SIPSorcery.Sys
         private static readonly char[] hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
         /// <summary>    
-        /// Gets a value that indicates whether or not the collection is empty.    
+        /// Gets a value that indicates whether or not the string is empty.    
         /// </summary>    
         public static bool IsNullOrBlank(this string s)
         {
