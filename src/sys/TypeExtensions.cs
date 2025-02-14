@@ -73,6 +73,15 @@ namespace SIPSorcery.Sys
             return true;
         }
 
+        [Obsolete("Use ToUnixTime.")]
+        public static long GetEpoch(this DateTime dateTime)
+        {
+            var unixTime = dateTime.ToUniversalTime() -
+                new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            return Convert.ToInt64(unixTime.TotalSeconds);
+        }
+
         public static long ToUnixTime(this DateTime dateTime)
         {
             return new DateTimeOffset(dateTime.ToUniversalTime()).ToUnixTimeSeconds();
