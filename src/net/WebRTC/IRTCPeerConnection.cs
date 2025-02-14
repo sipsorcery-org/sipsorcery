@@ -223,7 +223,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return Certificate.NotAfter.GetEpoch();
+                    return Certificate.NotAfter.ToUnixTime();
                 }
             }
         }
@@ -261,7 +261,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    return Certificate.NotAfter.GetEpoch();
+                    return Certificate.NotAfter.ToUnixTime();
                 }
             }
         }
