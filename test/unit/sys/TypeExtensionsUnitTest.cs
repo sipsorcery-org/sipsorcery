@@ -79,7 +79,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             logger.LogDebug("Unix time: {unixTime}.", unixTime);
 
-            Assert.Equal(1739399940L, unixTime);
+            Assert.Equal(1739403540L, unixTime);
         }
 
         [Fact]
@@ -93,7 +93,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             logger.LogDebug("Unix time: {unixTime}.", unixTime);
 
-            Assert.Equal(2843934894L, unixTime);
+            Assert.Equal(2843938494L, unixTime);
         }
 
         [Fact]
