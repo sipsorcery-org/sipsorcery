@@ -41,15 +41,14 @@ namespace SIPSorcery.Sys
 
         public static StorageTypes GetStorageType(string storageType)
         {
-            try
+            if (Enum.TryParse<StorageTypes>(storageType, true, out var result))
             {
-                return (StorageTypes)Enum.Parse(typeof(StorageTypes), storageType, true);
+                return result;
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "StorageTypesConverter {StorageType} unknown.", storageType);
-                return StorageTypes.Unknown;
-            }
+
+            logger.LogError("StorageTypesConverter {StorageType} unknown.", storageType);
+
+            return StorageTypes.Unknown;
         }
     }
 }
