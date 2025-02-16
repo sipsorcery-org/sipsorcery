@@ -33,6 +33,8 @@ namespace SIPSorcery.Net
         public const string REMOTE_PORT_KEY = "rport";
         public const string CANDIDATE_PREFIX = "candidate";
 
+        public const ushort TCP_DISCARD_PORT = 9;
+
         /// <summary>
         /// The ICE server (STUN or TURN) the candidate was generated from.
         /// Will be null for non-ICE server candidates.
@@ -129,6 +131,7 @@ namespace SIPSorcery.Net
                 component = iceCandidate.component;
                 address = iceCandidate.address;
                 port = iceCandidate.port;
+                protocol = iceCandidate.protocol;
                 type = iceCandidate.type;
                 tcpType = iceCandidate.tcpType;
                 relatedAddress = iceCandidate.relatedAddress;
