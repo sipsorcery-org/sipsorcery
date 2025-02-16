@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -217,6 +218,14 @@ namespace SIPSorcery.Net
         /// </summary>
         public DateTime TurnPermissionsResponseAt { get; set; } = DateTime.MinValue;
 
+        public DateTime TurnConnectReportAt {  get; internal set; } = DateTime.MinValue;
+
+        public DateTime TurnConnectBindedAt { get; internal set; } = DateTime.MinValue;
+
+        public int TurnConnectRequestSent { get; internal set; }
+
+        public uint TurnConnectionId { get; internal set; }
+
         /// <summary>
         /// If a candidate has been nominated this field records the time the last
         /// STUN binding response was received from the remote peer.
@@ -229,7 +238,7 @@ namespace SIPSorcery.Net
         /// Timestamp for the most recent binding request received from the remote peer.
         /// </summary>
         public DateTime LastBindingRequestReceivedAt { get; set; }
-
+        
         /// <summary>
         /// Creates a new entry for the ICE session checklist.
         /// </summary>
@@ -286,7 +295,10 @@ namespace SIPSorcery.Net
                         stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as
                             STUNErrorCodeAttribute;
                     if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
-                        errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                        errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE
+                        // TODO: shouldn't be here, right...
+                        // || errCodeAttribute.ErrorCode == IceServer.STUN_CONNECTION_ALREADY_EXISTS
+                    )
                     {
                         if (LocalCandidate.IceServer == null)
                         {
@@ -298,6 +310,11 @@ namespace SIPSorcery.Net
                             LocalCandidate.IceServer.GenerateNewTransactionID();
                             retry = true;
                         }
+                    }
+                    else if (errCodeAttribute.ErrorCode == IceServer.STUN_CONNECTION_TIMEOUT_OR_FAILURE)
+                    {
+                        TurnConnectReportAt = DateTime.UtcNow;
+                        retry = true;
                     }
                 }
 
@@ -358,6 +375,42 @@ namespace SIPSorcery.Net
                 logger.LogWarning("ICE RTP channel TURN Create Permission error response was received from {RemoteEndPoint}.", remoteEndPoint);
                 TurnPermissionsResponseAt = DateTime.Now;
                 State = retry ? State : ChecklistEntryState.Failed;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.ConnectSuccess)
+            {
+                logger.LogDebug("A TURN Connect sucess response was received from ICE server {IceServer} (TxID: {TransactionId}).",
+                    LocalCandidate.IceServer._uri, Encoding.ASCII.GetString(stunResponse.Header.TransactionId));
+
+                TurnConnectionId = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.ConnectionId)
+                    is STUNConnectionIdAttribute connectionIdAttribute
+                    ? connectionIdAttribute.ConnectionId
+                    : 0;
+
+                TurnConnectReportAt = DateTime.UtcNow;
+                TurnConnectRequestSent = 0;
+
+                //After connect request, need ConnectBind
+                if (State == ChecklistEntryState.InProgress)
+                {
+                    State = ChecklistEntryState.Waiting;
+                    //Clear CheckSentAt Time to force send it again
+                    FirstCheckSentAt = DateTime.MinValue;
+                }
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.ConnectionBindSuccess)
+            {
+                logger.LogDebug("A TURN ConnectBind sucess response was received from ICE server {IceServer} (TxID: {TransactionId}).",
+                    LocalCandidate.IceServer._uri, Encoding.ASCII.GetString(stunResponse.Header.TransactionId));
+
+                TurnConnectBindedAt = TurnConnectReportAt = DateTime.Now;
+
+                //After TCP ConnectBind, we need underlying STUN bind.
+                if (State == ChecklistEntryState.InProgress)
+                {
+                    State = ChecklistEntryState.Waiting;
+                    //Clear CheckSentAt Time to force send it again
+                    FirstCheckSentAt = DateTime.MinValue;
+                }
             }
             else
             {
