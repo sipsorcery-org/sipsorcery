@@ -46,7 +46,7 @@ namespace SIPSorcery.Net
         /// <param name="id"><see cref="int"/> Id / extmap</param>
         /// <param name="uri"><see cref="String"/>uri</param>
         /// <param name="type"><see cref="RTPHeaderExtension"/>type (one or two bytes)</param>
-        /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supportef by this extension - set null/empty if all medias are supported</param>
+        /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supported by this extension - set null/empty if all medias are supported</param>
         public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
         {
             Id = id;
