@@ -128,21 +128,54 @@ namespace SIPSorcery.Sys
 
         public static string HexStr(this byte[] buffer, int length, char? separator = null)
         {
-            string rv = string.Empty;
-
-            for (int i = 0; i < length; i++)
+            if (separator is { } s)
             {
-                var val = buffer[i];
-                rv += hexmap[val >> 4];
-                rv += hexmap[val & 15];
+                int numberOfChars = length * 3 - 1;
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+                return string.Create(numberOfChars, (buffer, length, s), PopulateNewStringWithSeparator);
+#else
+                var rv = new char[numberOfChars];
+                PopulateNewStringWithSeparator(rv, (buffer, length, s));
+                return new string(rv);
+#endif
+            }
+            else
+            {
+                int numberOfChars = length * 2;
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+                return string.Create(numberOfChars, (buffer, length), PopulateNewStringWithoutSeparator);
+#else
+                var rv = new char[numberOfChars];
+                PopulateNewStringWithoutSeparator(rv, (buffer, length));
+                return new string(rv);
+#endif
+            }
 
-                if (separator != null && i != length - 1)
+            static void PopulateNewStringWithSeparator(Span<char> chars, (byte[] buffer, int length, char separator) state)
+            {
+                var (buffer, length, s) = state;
+                for (int i = 0, j = 0; i < length; i++)
                 {
-                    rv += separator;
+                    var val = buffer[i];
+                    chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                    chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                    if (j < chars.Length)
+                    {
+                        chars[j++] = s;
+                    }
                 }
             }
 
-            return rv.ToUpper();
+            static void PopulateNewStringWithoutSeparator(Span<char> chars, (byte[] buffer, int length) state)
+            {
+                var (buffer, length) = state;
+                for (int i = 0, j = 0; i < length; i++)
+                {
+                    var val = buffer[i];
+                    chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                    chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                }
+            }
         }
 
         public static byte[] ParseHexStr(string hexStr)
