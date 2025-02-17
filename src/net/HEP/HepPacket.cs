@@ -270,7 +270,7 @@ namespace SIPSorcery.Net
             offset += dstPortBuffer.Length;
 
             // Timestamp.
-            var timestampBuffer = HepChunk.GetBytes(ChunkTypeEnum.TimestampSeconds, (uint)timestamp.GetEpoch());
+            var timestampBuffer = HepChunk.GetBytes(ChunkTypeEnum.TimestampSeconds, (uint)timestamp.ToUnixTime());
             Buffer.BlockCopy(timestampBuffer, 0, packetBuffer, offset, timestampBuffer.Length);
             offset += timestampBuffer.Length;
 
