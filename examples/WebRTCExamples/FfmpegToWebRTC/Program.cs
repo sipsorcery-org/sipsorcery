@@ -26,6 +26,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
+using TinyJson;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -57,8 +58,8 @@ namespace SIPSorcery.Examples
     class Program
     {
         private const uint SSRC_REMOTE_VIDEO = 38106908;
-        private const int WEBSOCKET_PORT = 8081;
-        private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 -vcodec {0} -pix_fmt yuv420p -strict experimental -g 1 -ssrc {2} -f rtp rtp://127.0.0.1:{1} -sdp_file {3}";
+        private const int WEBSOCKET_PORT = 8089;
+        private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 {0} -pix_fmt yuv420p -strict experimental -g 1 -ssrc {2} -f rtp rtp://127.0.0.1:{1} -sdp_file {3}";
         private const string FFMPEG_SDP_FILE = "ffmpeg.sdp";
         private const int FFMPEG_DEFAULT_RTP_PORT = 5020;
 
@@ -69,10 +70,11 @@ namespace SIPSorcery.Examples
         /// - h264
         /// Note if you change this option you will need to delete the ffmpeg.sdp file.
         /// </summary>
-        private const string FFMPEG_VP8_CODEC = "vp8";
-        private const string FFMPEG_VP9_CODEC = "vp9";
-        private const string FFMPEG_H264_CODEC = "h264";
-        private const string FFMPEG_DEFAULT_CODEC = FFMPEG_VP8_CODEC;
+        private const string FFMPEG_VP8_CODEC = "-vcodec vp8";
+        private const string FFMPEG_VP9_CODEC = "-vcodec vp9";
+        private const string FFMPEG_H264_CODEC = "-vcodec h264";
+        private const string FFMPEG_H265_CODEC = "-c:v libx265";
+        private const string FFMPEG_DEFAULT_CODEC = FFMPEG_H265_CODEC;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -91,6 +93,7 @@ namespace SIPSorcery.Examples
                     case FFMPEG_VP8_CODEC:
                     case FFMPEG_VP9_CODEC:
                     case FFMPEG_H264_CODEC:
+                    case FFMPEG_H265_CODEC:
                         videoCodec = args[0].ToLower();
                         break;
 
@@ -119,16 +122,16 @@ namespace SIPSorcery.Examples
                 client.OnMessageReceived += WebSocketMessageReceived;
             });
 
-            if(File.Exists(FFMPEG_SDP_FILE))
-            {
-                var sdp = SDP.ParseSDPDescription(File.ReadAllText(FFMPEG_SDP_FILE));
-                var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
-                if(videoAnn.MediaFormats.Values.First().Name().ToLower() != videoCodec)
-                {
-                    logger.LogWarning($"Removing existing ffmpeg SDP file {FFMPEG_SDP_FILE} due to codec mismatch.");
-                    File.Delete(FFMPEG_SDP_FILE);
-                }
-            }
+            //if(File.Exists(FFMPEG_SDP_FILE))
+            //{
+            //    var sdp = SDP.ParseSDPDescription(File.ReadAllText(FFMPEG_SDP_FILE));
+            //    var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
+            //    if(videoAnn.MediaFormats.Values.First().Name().ToLower() != videoCodec)
+            //    {
+            //        logger.LogWarning($"Removing existing ffmpeg SDP file {FFMPEG_SDP_FILE} due to codec mismatch.");
+            //        File.Delete(FFMPEG_SDP_FILE);
+            //    }
+            //}
 
             Console.WriteLine("Start ffmpeg using the command below and then initiate a WebRTC connection from the browser");
             Console.WriteLine(ffmpegCommand);
@@ -214,8 +217,7 @@ namespace SIPSorcery.Examples
             await pc.setLocalDescription(offerInit);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-
-            context.WebSocket.Send(offerInit.sdp);
+            context.WebSocket.Send(offerInit.toJSON());
 
             return pc;
         }
@@ -261,6 +263,7 @@ namespace SIPSorcery.Examples
                 }
             };
 
+
             return pc;
         }
 
@@ -268,10 +271,10 @@ namespace SIPSorcery.Examples
         {
             try
             {
-                if (pc.remoteDescription == null)
+                if (RTCSessionDescriptionInit.TryParse(message, out var descriptionInit))
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    pc.setRemoteDescription(descriptionInit);
                 }
                 else
                 {

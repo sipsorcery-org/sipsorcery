@@ -31,6 +31,10 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
+using WebSocketSharp;
+using static DirectShowLib.MediaSubType;
+using System.Collections.Generic;
+using System.IO;
 
 namespace demo
 {
@@ -38,26 +42,38 @@ namespace demo
     {
         private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
 
-
-        private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
-        private const string REST_SIGNALING_MY_USER = "con";
-        private const string REST_SIGNALING_THEIR_USER = "bro";
-
         private static Microsoft.Extensions.Logging.ILogger logger = null;
 
         private static Form _form;
         private static PictureBox _picBox;
 
+        private static List<SDPAudioVideoMediaFormat> _videoFormats = new List<SDPAudioVideoMediaFormat> {
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 100, "H264", 90000),
+            new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 100, "H265", 90000)
+        };
+
+        //static H264Depacketiser _depacketiser = new H264Depacketiser();
+        static H265Depacketiser _depacketiser = new H265Depacketiser();
+        static BinaryWriter _writer = new BinaryWriter(File.Open(@"c:\temp\SIP 265.avi", FileMode.Create));
+
+
         static async Task Main(string[] args)
         {
+
+            
+
             Console.WriteLine("WebRTC Client Test Console");
 
             logger = AddConsoleLogger();
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            var restPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
-            await restPeer.Start(cts);
+
+            var webSocketClient = new WebRTCWebSocketClient("ws://localhost:8089/", CreatePeerConnection);
+            await webSocketClient.Start(CancellationToken.None);
+
+            //var restPeer = new WebRTCRestSignalingPeer(REST_SIGNALING_SERVER, REST_SIGNALING_MY_USER, REST_SIGNALING_THEIR_USER, CreatePeerConnection);
+            //await restPeer.Start(cts);
 
             // Open a Window to display the video feed from the WebRTC peer.
             _form = new Form();
@@ -73,6 +89,10 @@ namespace demo
 
             Application.EnableVisualStyles();
             Application.Run(_form);
+
+            //WebSocket webSocket = new WebSocket("ws://localhost:8089/");
+            //webSocket.OnMessage += WebSocket_OnMessage;
+            //webSocket.Connect();
         }
 
         private static Task<RTCPeerConnection> CreatePeerConnection()
@@ -82,69 +102,68 @@ namespace demo
             //var videoEP = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
             //var videoEP = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
 
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
-            var videoEP = new FFmpegVideoEndPoint();
+            //SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
+            //var videoEP = new FFmpegVideoEndPoint();
 
-            videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
-            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
+            //videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+            //videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
+            //{
+            //    _form.BeginInvoke(new Action(() =>
+            //    {
 
-                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
-                    {
-                        unsafe
-                        {
-                            Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
-                            _picBox.Image = bmpImage;
-                        }
-                    }
-                }));
-            };
+            //        if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
+            //        {
+            //            unsafe
+            //            {
+            //                Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
+            //                _picBox.Image = bmpImage;
+            //            }
+            //        }
+            //    }));
+            //};
 
-            videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
-            {
-                _form.BeginInvoke(new Action(() =>
-                {
-                    unsafe
-                    {
-                        fixed (byte* s = bmp)
-                        {
-                            Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
-                            _picBox.Image = bmpImage;
-                        }
-                    }
-                }));
-            };
+            //videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
+            //{
+            //    _form.BeginInvoke(new Action(() =>
+            //    {
+            //        unsafe
+            //        {
+            //            fixed (byte* s = bmp)
+            //            {
+            //                Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
+            //                _picBox.Image = bmpImage;
+            //            }
+            //        }
+            //    }));
+            //};
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
-            
+            //WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
-            peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(videoEP.GetVideoSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+
+            //MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
+            //peerConnection.addTrack(audioTrack);
+
+
+            //peerConnection.OnVideoFrameReceived += videoEP.GotVideoFrame;
+            //peerConnection.OnVideoFormatsNegotiated += (formats) => 
+            //    videoEP.SetVideoSinkFormat(formats.First());
+            //peerConnection.OnAudioFormatsNegotiated += (formats) =>
+            //    windowsAudioEP.SetAudioSinkFormat(formats.First());
+
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, _videoFormats, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(videoTrack);
-
-            peerConnection.OnVideoFrameReceived += videoEP.GotVideoFrame;
-            peerConnection.OnVideoFormatsNegotiated += (formats) => 
-                videoEP.SetVideoSinkFormat(formats.First());
-            peerConnection.OnAudioFormatsNegotiated += (formats) =>
-                windowsAudioEP.SetAudioSinkFormat(formats.First());
 
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
+            peerConnection.onicecandidate += PeerConnection_onicecandidate;
             peerConnection.onconnectionstatechange += async (state) =>
             {
                 logger.LogDebug($"Peer connection connected changed to {state}.");
 
                 if (state == RTCPeerConnectionState.connected)
                 {
-                    await windowsAudioEP.StartAudio();
-                }
-                else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
-                {
-                    await windowsAudioEP.CloseAudio();
+
                 }
             };
 
@@ -157,13 +176,27 @@ namespace demo
             peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
                 //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
-                if (media == SDPMediaTypesEnum.audio)
+
+                
+
+                var memoryStream =_depacketiser.ProcessRTPPayload(rtpPkt.Payload, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, out bool isKeyFrame);
+                if (isKeyFrame)
                 {
-                    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
+                    receivedKeyFrame = true;
+                }
+                if(memoryStream != null /*&& receivedKeyFrame*/){
+                    var array = memoryStream.ToArray();
+                    _writer.Write(array);
                 }
             };
 
             return Task.FromResult(peerConnection);
+        }
+        private static bool receivedKeyFrame = false;
+
+        private static void PeerConnection_onicecandidate(RTCIceCandidate obj)
+        {
+            logger.LogDebug($"IceCandidate found, not sent: {obj}");
         }
 
         /// <summary>
