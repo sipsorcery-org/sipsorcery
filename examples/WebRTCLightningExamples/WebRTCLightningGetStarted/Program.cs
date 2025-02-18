@@ -32,10 +32,7 @@ using SIPSorcery.Media;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 using Microsoft.Extensions.DependencyInjection;
-using SIPSorceryMedia.Abstractions;
 using System.Runtime.InteropServices;
-using System.Threading;
-using vpxmd;
 
 namespace demo;
 
@@ -56,13 +53,20 @@ class Program
     private const int BORDER_WIDTH = 5;
     private const int QR_CODE_DIMENSION = 200;
 
+    private const int FREE_PERIOD_SECONDS = 10;
+    private const int TRANSPARENCY_PERIOD_SECONDS = 10;
+    private const int MAX_ALPHA_TRANSPARENCY = 200;
+    private const string FREE_PERIOD_TITLE = "Taster Content";
+    private const string TRANSITION_PERIOD_TITLE = "Pay for More";
+
     private const int WEBSOCKET_PORT = 8081;
-    private const int TEST_PATTERN_FRAMES_PER_SECOND = 5; //30;
+    private const int FRAMES_PER_SECOND = 5; //30;
 
     private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
     private static int _frameCount = 0;
     private static DateTime _startTime;
+    private Bitmap _qrCodeImage;
 
     static void Main(string[] args)
     {
@@ -77,6 +81,7 @@ class Program
         //Log.Information("Starting ASP.NET server...");
 
         StartWebSocketServer();
+        SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
 
         var builder = WebApplication.CreateBuilder(args);
         builder.Host.UseSerilog((context, services, config) =>
@@ -114,32 +119,21 @@ class Program
 
     private static Task<RTCPeerConnection> CreatePeerConnection()
     {
-        //RTCConfiguration config = new RTCConfiguration
-        //{
-        //    iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
-        //    certificates = new List<RTCCertificate> { new RTCCertificate { Certificate = cert } }
-        //};
-        //var pc = new RTCPeerConnection(config);
         var pc = new RTCPeerConnection(null);
 
-        //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
-        SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
-        var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
-        testPatternSource.SetFrameRate(TEST_PATTERN_FRAMES_PER_SECOND);
-        //testPatternSource.SetMaxFrameRate(true);
-        //var videoEndPoint = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-        //videoEndPoint.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-        //testPatternSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
-        //var videoEndPoint = new SIPSorceryMedia.Windows.WindowsEncoderEndPoint();
-        //var videoEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
+        Bitmap sourceBitmap = new Bitmap(FREE_IMAGE_PATH);
 
-        MediaStreamTrack track = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+        var bitmapSource = new VideoBitmapSource(new FFmpegVideoEncoder());
+        bitmapSource.SetFrameRate(FRAMES_PER_SECOND);
+        bitmapSource.SetSourceBitmap(sourceBitmap);
+
+        MediaStreamTrack track = new MediaStreamTrack(bitmapSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(track);
 
         //testPatternSource.OnVideoSourceRawSample += videoEndPoint.ExternalVideoSourceRawSample;
         //testPatternSource.OnVideoSourceRawSample += MesasureTestPatternSourceFrameRate;
-        testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
-        pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
+        bitmapSource.OnVideoSourceEncodedSample += pc.SendVideo;
+        pc.OnVideoFormatsNegotiated += (formats) => bitmapSource.SetVideoSourceFormat(formats.First());
 
         pc.onconnectionstatechange += async (state) =>
         {
@@ -151,19 +145,16 @@ class Program
             }
             else if (state == RTCPeerConnectionState.closed)
             {
-                await testPatternSource.CloseVideo();
-                testPatternSource.Dispose();
+                await bitmapSource.CloseVideo();
+                bitmapSource.Dispose();
             }
             else if (state == RTCPeerConnectionState.connected)
             {
-                await testPatternSource.StartVideo();
+                await bitmapSource.StartVideo();
             }
         };
 
         // Diagnostics.
-        //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-        //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-        //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
         pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
         pc.onsignalingstatechange += () =>
         {
@@ -182,92 +173,38 @@ class Program
         return Task.FromResult(pc);
     }
 
-    private void SendSample(object state)
-    {
-        if (WebRtcSession.IsClosed)
-        {
-            Dispose();
-        }
-        else if (!_isDisposed)
-        {
-            int transparency = 0;
-            ImageType = ImageTypesEnum.Free;
-            string title = null;
-            Bitmap qrCode = null;
-
-            if (_isPaid)
-            {
-                ImageType = ImageTypesEnum.Paid;
-            }
-            else
-            {
-                if (DateTime.Now.Subtract(_startTime).TotalSeconds < FREE_PERIOD_SECONDS)
-                {
-                    BorderColor = Color.Blue;
-                    title = FREE_PERIOD_TITLE;
-                }
-                else if (DateTime.Now.Subtract(_startTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS))
-                {
-                    BorderColor = Color.Yellow;
-                    double remaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(_startTime).TotalSeconds;
-                    transparency = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (remaining / TRANSPARENCY_PERIOD_SECONDS));
-                    title = TRANSITION_PERIOD_TITLE;
-                    qrCode = _qrCodeImage;
-                }
-                else
-                {
-                    BorderColor = Color.Orange;
-                    transparency = MAX_ALPHA_TRANSPARENCY;
-                    title = TRANSITION_PERIOD_TITLE;
-                    qrCode = _qrCodeImage;
-                }
-            }
-
-            if (Monitor.TryEnter(WebRtcSession))
-            {
-                var sampleBuffer = WebRtcDaemon.GetVideoSample(ImageType, BorderColor, title, transparency, qrCode);
-
-                if (sampleBuffer != null && !_isDisposed)
-                {
-
-                    unsafe
-                    {
-                        byte[] encodedBuffer = null;
-
-                        fixed (byte* p = sampleBuffer)
-                        {
-                            byte[] convertedFrame = null;
-                            _colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _width, _height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
-
-                            fixed (byte* q = convertedFrame)
-                            {
-                                int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
-
-                                if (encodeResult != 0)
-                                {
-                                    Console.WriteLine("VPX encode of video sample failed.");
-                                }
-                            }
-
-                            WebRtcSession.SendMedia(SDPMediaTypesEnum.video, _rtpTimestamp, encodedBuffer);
-                            _rtpTimestamp += VP8_TIMESTAMP_SPACING;
-                        }
-                    }
-
-                    _sendSampleTimer.Change(VIDEO_SAMPLING_PERIOD, Timeout.Infinite);
-                }
-
-                Monitor.Exit(WebRtcSession);
-            }
-        }
-    }
-
-    private static byte[] GetVideoSample(ImageTypesEnum imageType, Color borderColor, string title, int transparency, Bitmap qrCode)
+    private static Bitmap GetVideoSample(ImageTypesEnum imageType, Color borderColour, string title, int transparency, Bitmap qrCode, bool isPaid)
     {
         try
         {
             unsafe
             {
+                if (isPaid)
+                {
+                    imageType = ImageTypesEnum.Paid;
+                }
+                else
+                {
+                    if (DateTime.Now.Subtract(_startTime).TotalSeconds < FREE_PERIOD_SECONDS)
+                    {
+                        borderColour = Color.Blue;
+                        title = FREE_PERIOD_TITLE;
+                    }
+                    else if (DateTime.Now.Subtract(_startTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS))
+                    {
+                        borderColour = Color.Yellow;
+                        double remaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(_startTime).TotalSeconds;
+                        transparency = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (remaining / TRANSPARENCY_PERIOD_SECONDS));
+                        title = TRANSITION_PERIOD_TITLE;
+                    }
+                    else
+                    {
+                        borderColour = Color.Orange;
+                        transparency = MAX_ALPHA_TRANSPARENCY;
+                        title = TRANSITION_PERIOD_TITLE;
+                    }
+                }
+
                 string imagePath = null;
 
                 switch (imageType)
@@ -285,16 +222,12 @@ class Program
 
                 Bitmap testPattern = new Bitmap(imagePath);
 
-                byte[] sampleBuffer = null;
-
                 var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
-                ApplyFilters(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), title, borderColor, transparency, qrCode);
-                sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+                ApplyFilters(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), title, borderColour, transparency, qrCode);
 
-                stampedTestPattern.Dispose();
-                stampedTestPattern = null;
+                testPattern.Dispose();
 
-                return sampleBuffer;
+                return stampedTestPattern as System.Drawing.Bitmap;
             }
         }
         catch (Exception excp)
@@ -358,27 +291,6 @@ class Program
             int yCenter = (image.Height - QR_CODE_DIMENSION) / 2;
             Rectangle dstRect = new Rectangle(xCenter, yCenter, QR_CODE_DIMENSION, QR_CODE_DIMENSION);
             g.DrawImage(qrCode, dstRect);
-        }
-    }
-
-    private static byte[] BitmapToRGB24(Bitmap bitmap)
-    {
-        try
-        {
-            BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
-            var length = bitmapData.Stride * bitmapData.Height;
-
-            byte[] bytes = new byte[length];
-
-            // Copy bitmap to byte[]
-            Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
-            bitmap.UnlockBits(bitmapData);
-
-            return bytes;
-        }
-        catch (Exception)
-        {
-            return [];
         }
     }
 
