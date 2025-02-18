@@ -2417,6 +2417,10 @@ namespace SIPSorcery.Net
             {
                 return GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
             }
+            else if (rtcpPkt.TWCCFeedback != null)
+            {
+                return GetMediaStream(rtcpPkt.TWCCFeedback.SenderSSRC);
+            }
 
             // No match on SR/RR SSRC. Check the individual reception reports for a known SSRC.
             List<ReceptionReportSample> receptionReports = null;
@@ -2542,6 +2546,23 @@ namespace SIPSorcery.Net
             else if (mediaType == SDPMediaTypesEnum.video)
             {
                 VideoStream?.SendRtcpFeedback(feedback);
+            }
+        }
+
+        /// <summary>
+        /// Allows sending of RTCPTWCC feedback reports (on the primary one)
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTCP report  being sent. Must be audio or video.</param>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpTWCCFeedback(SDPMediaTypesEnum mediaType, RTCPTWCCFeedback feedback)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                AudioStream.SendRtcpTWCCFeedback(feedback);
+            }
+            else if (mediaType == SDPMediaTypesEnum.video)
+            {
+                VideoStream?.SendRtcpTWCCFeedback(feedback);
             }
         }
 

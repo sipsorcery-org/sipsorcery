@@ -504,6 +504,13 @@ namespace SIPSorcery.Net
                             }
                             break;
 
+                        case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                            if (ext is TransportWideCCExtension transportWideCCExtension)
+                            {
+                                transportWideCCExtension.Set(value);
+                            }
+                            break;
+
                         // Not necessary to set something in AbsSendTimeExtension - just to be coherent here
                         case AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
                             if (ext is AbsSendTimeExtension absSendTimeExtension)
@@ -639,6 +646,16 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="feedback">The feedback report to send.</param>
         public void SendRtcpFeedback(RTCPFeedback feedback)
+        {
+            var reportBytes = feedback.GetBytes();
+            SendRtcpReport(reportBytes);
+        }
+
+        /// <summary>
+        /// Allows sending of RTCP TWCC feedback reports.
+        /// </summary>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpTWCCFeedback(RTCPTWCCFeedback feedback)
         {
             var reportBytes = feedback.GetBytes();
             SendRtcpReport(reportBytes);

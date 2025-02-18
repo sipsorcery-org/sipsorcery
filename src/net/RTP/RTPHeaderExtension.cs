@@ -30,6 +30,10 @@ namespace SIPSorcery.Net
                 case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
                     result = new AudioLevelExtension(id);
                     break;
+
+                case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                    result = new TransportWideCCExtension(id);
+                    break;
             }
 
             if ( (result != null) &&  result.IsMediaSupported(media) )
