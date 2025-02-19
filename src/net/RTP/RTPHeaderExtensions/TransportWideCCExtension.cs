@@ -1,5 +1,4 @@
 ﻿using System;
-using SIPSorcery.Net;
 
 namespace SIPSorcery.Net
 {
@@ -13,7 +12,12 @@ namespace SIPSorcery.Net
     /// </summary>
     public class TransportWideCCExtension : RTPHeaderExtension
     {
+        //
+
         public const string RTP_HEADER_EXTENSION_URI = "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
+        //public const string RTP_HEADER_EXTENSION_URI_ALT = "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02";
+
+
         internal const int RTP_HEADER_EXTENSION_SIZE = 2; // TWCC payload: 2 bytes for sequence number.
 
         /// <summary>
@@ -30,14 +34,6 @@ namespace SIPSorcery.Net
         {
         }
 
-        /// <summary>
-        /// Sets the TWCC sequence number.
-        /// </summary>
-        /// <param name="sequenceNumber">The 16-bit sequence number.</param>
-        public void SetSequenceNumber(ushort sequenceNumber)
-        {
-            SequenceNumber = sequenceNumber;
-        }
 
         /// <summary>
         /// Generic setter override. Expects a ushort representing the sequence number.

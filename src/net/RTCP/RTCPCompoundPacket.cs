@@ -102,22 +102,19 @@ namespace SIPSorcery.Net
                             break;
                         case (byte)RTCPReportTypesEnum.RTPFB:
                             // TODO: Interpret Generic RTP feedback reports.
-                            var typ = new RTCPHeader(buffer).FeedbackMessageType; ;
+                            var typ = RTCPHeader.ParseFeedbackType(buffer);
                             switch (typ) {
-                                default:
-                                    Feedback = new RTCPFeedback(buffer);
-                                    int rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
-                                    offset += rtpfbFeedbackLength;
-                                    break;
                                 case RTCPFeedbackTypesEnum.TWCC:
                                     TWCCFeedback = new RTCPTWCCFeedback(buffer);
-                                    int twccFeedbackLength = (TWCCFeedback != null) ? TWCCFeedback.GetBytes().Length : Int32.MaxValue;
+                                    int twccFeedbackLength = (TWCCFeedback.Header.Length + 1) * 4;
                                     offset += twccFeedbackLength;
                                     break;
+                                default:
+                                    Feedback = new RTCPFeedback(buffer);
+                                    int rtpfbFeedbackLength = Feedback.GetBytes().Length;
+                                    offset += rtpfbFeedbackLength;
+                                    break;
                             }
-                            
-                            //var rtpfbHeader = new RTCPHeader(buffer);
-                            //offset += rtpfbHeader.Length * 4 + 4;
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
@@ -134,6 +131,27 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+        }
+
+        public static string HexDump(byte[] bytes)
+        {
+            if (bytes == null) { return "<null>"; }
+
+            var sb = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                // Start a new line every 16 bytes.
+                if (i % 16 == 0)
+                {
+                    if (i > 0)
+                    {
+                        sb.AppendLine();
+                    }
+                    sb.Append($"{i:X4}: ");
+                }
+                sb.Append($"{bytes[i]:X2} ");
+            }
+            return sb.ToString();
         }
 
         /// <summary>

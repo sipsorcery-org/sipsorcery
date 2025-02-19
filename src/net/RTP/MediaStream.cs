@@ -65,6 +65,10 @@ namespace SIPSorcery.Net
         protected RTPChannel rtpChannel = null;
 
         protected bool _isClosed = false;
+        /// <summary>
+        /// Used for keeping track of TWCC packets
+        /// </summary>
+        private ushort _twccPacketCount = 0;
 
         public int Index = -1;
 
@@ -410,7 +414,7 @@ namespace SIPSorcery.Net
                     foreach (var ext in LocalTrack.HeaderExtensions.Values)
                     {
                         // We support up to 14 extensions .... Not clear at all how to manage more ...
-                        if ( (ext.Id < 1) && (ext.Id > 14) )
+                        if ( (ext.Id < 1) || (ext.Id > 14) )
                         {
                             continue;
                         }
@@ -505,9 +509,10 @@ namespace SIPSorcery.Net
                             break;
 
                         case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                        //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
                             if (ext is TransportWideCCExtension transportWideCCExtension)
                             {
-                                transportWideCCExtension.Set(value);
+                                transportWideCCExtension.Set(_twccPacketCount++);
                             }
                             break;
 

@@ -2051,7 +2051,7 @@ namespace SIPSorcery.Net
                 // whether or not the destination end point should be switched.
                 remoteEndPoint.Address = remoteEndPoint.Address.MapToIPv4();
             }
-
+            
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
@@ -2085,48 +2085,34 @@ namespace SIPSorcery.Net
         private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             //logger.LogDebug("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
-
             #region RTCP packet.
 
             // Get the SSRC in order to be able to figure out which media type 
             // This will let us choose the apropriate unprotect methods
-            uint ssrc;
-            if (BitConverter.IsLittleEndian)
-            {
-                ssrc = NetConvert.DoReverseEndian(BitConverter.ToUInt32(buffer, 4));
-            }
-            else
-            {
-                ssrc = BitConverter.ToUInt32(buffer, 4);
-            }
 
-            MediaStream mediaStream = GetMediaStream(ssrc);
-            if (mediaStream != null)
+            uint rawSsrc = BitConverter.ToUInt32(buffer, 4);
+            uint ssrc = BitConverter.IsLittleEndian ? NetConvert.DoReverseEndian(rawSsrc) : rawSsrc;
+
+            
+            var secureContext = PrimaryStream.GetSecurityContext();
+            if (secureContext != null)
             {
-                var secureContext = mediaStream.GetSecurityContext();
-                if (secureContext != null)
+                int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
+                if (res != 0)
                 {
-                    int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
-                    if (res != 0)
-                    {
-                        logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", mediaStream.MediaType, res);
-                        return;
-                    }
-                    else
-                    {
-                        buffer = buffer.Take(outBufLen).ToArray();
-                    }
+                    logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", PrimaryStream.MediaType, res);
+                    return;
                 }
-            }
-            else
-            {
-                logger.LogWarning("Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{Ssrc}", ssrc);
-            }
+                else
+                {
+                    buffer = buffer.Take(outBufLen).ToArray();
+                }
+            }           
 
             var rtcpPkt = new RTCPCompoundPacket(buffer);
             if (rtcpPkt != null)
             {
-                mediaStream = GetMediaStream(rtcpPkt);
+                var mediaStream = GetMediaStream(rtcpPkt);
                 if (rtcpPkt.Bye != null)
                 {
                     logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
@@ -2311,18 +2297,6 @@ namespace SIPSorcery.Net
                 return stream;
             }
 
-            if (HasAudio)
-            {
-                if (!HasVideo)
-                {
-                    return AudioStream;
-                }
-            }
-            
-            if (HasVideo)
-            {
-                return VideoStream;
-            }
             
 
             return null;
@@ -2419,7 +2393,7 @@ namespace SIPSorcery.Net
             }
             else if (rtcpPkt.TWCCFeedback != null)
             {
-                return GetMediaStream(rtcpPkt.TWCCFeedback.SenderSSRC);
+                return GetMediaStream(rtcpPkt.TWCCFeedback.MediaSSRC);
             }
 
             // No match on SR/RR SSRC. Check the individual reception reports for a known SSRC.

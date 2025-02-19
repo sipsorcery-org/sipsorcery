@@ -14,7 +14,7 @@ namespace SIPSorcery.Net
         /// <param name="id">extmap value</param>
         /// <param name="uri">URI of the extension - for example: "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" or "urn:3gpp:video-orientation" </param>
         /// <returns>A Specific RTPHeaderExtension</returns>
-        public static RTPHeaderExtension GetRTPHeaderExtension(int id, String uri, SDPMediaTypesEnum media)
+        public static RTPHeaderExtension GetRTPHeaderExtension(int id, string uri, SDPMediaTypesEnum media)
         {
             RTPHeaderExtension result = null;
             switch (uri)
@@ -32,6 +32,7 @@ namespace SIPSorcery.Net
                     break;
 
                 case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
                     result = new TransportWideCCExtension(id);
                     break;
             }
