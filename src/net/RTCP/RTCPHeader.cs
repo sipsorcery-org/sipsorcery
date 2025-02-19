@@ -33,7 +33,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Org.BouncyCastle.Bcpg;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
