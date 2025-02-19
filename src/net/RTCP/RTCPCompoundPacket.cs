@@ -287,7 +287,7 @@ namespace SIPSorcery.Net
                             break;
                         case (byte)RTCPReportTypesEnum.RTPFB:
                             // TODO: Interpret Generic RTP feedback reports.
-                            var typ = new RTCPHeader(buffer).FeedbackMessageType; ;
+                            var typ = RTCPHeader.ParseFeedbackType(buffer);
                             switch (typ)
                             {
                                 default:
