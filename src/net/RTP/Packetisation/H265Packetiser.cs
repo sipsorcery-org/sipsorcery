@@ -62,7 +62,7 @@ namespace SIPSorcery.net.RTP.Packetisation
         }
 
         /// <summary>
-        /// Constructs the RTP header for an H264 NAL. This method does NOT support
+        /// Constructs the RTP header for an H265 NAL. This method does NOT support
         /// aggregation packets where multiple NALs are sent as a single RTP payload.
         ///</summary>
         ///<remarks>
