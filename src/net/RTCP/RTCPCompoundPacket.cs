@@ -149,7 +149,7 @@ namespace SIPSorcery.Net
                     }
                     sb.Append(i.ToString("X4")).Append(": ");
                 }
-                sb.Append($"{bytes[i]:X2} ");
+                sb.Append(bytes[i]("X2")).Append(' ');
             }
             return sb.ToString();
         }
