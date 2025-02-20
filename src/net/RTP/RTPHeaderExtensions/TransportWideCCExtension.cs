@@ -1,4 +1,21 @@
-﻿using System;
+﻿/*
+ * File: TransportWideCCExtension.cs
+ * 
+ * Description:
+ *   Implements the Transport Wide Congestion Control (TWCC) RTP header extension.
+ *   This extension carries a 16-bit sequence number and adheres to the IETF draft:
+ *   http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+ *   It provides functionality to marshal and unmarshal the TWCC header extension.
+ * 
+ * Author:        Sean Tearney
+ * Date:          2025-02-22
+ * 
+ * License:       BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+ * 
+ * Change Log:
+ *   2025-02-20  Initial creation.
+ */
+using System;
 
 namespace SIPSorcery.Net
 {

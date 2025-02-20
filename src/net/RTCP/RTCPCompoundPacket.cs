@@ -101,7 +101,6 @@ namespace SIPSorcery.Net
                             offset += byeLength;
                             break;
                         case (byte)RTCPReportTypesEnum.RTPFB:
-                            // TODO: Interpret Generic RTP feedback reports.
                             var typ = RTCPHeader.ParseFeedbackType(buffer);
                             switch (typ) {
                                 case RTCPFeedbackTypesEnum.TWCC:
@@ -131,27 +130,6 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-        }
-
-        public static string HexDump(byte[] bytes)
-        {
-            if (bytes == null) { return "<null>"; }
-
-            var sb = new StringBuilder();
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                // Start a new line every 16 bytes.
-                if (i % 16 == 0)
-                {
-                    if (i > 0)
-                    {
-                        sb.AppendLine();
-                    }
-                    sb.Append(i.ToString("X4")).Append(": ");
-                }
-                sb.Append(bytes[i]("X2")).Append(' ');
-            }
-            return sb.ToString();
         }
 
         /// <summary>
@@ -286,7 +264,6 @@ namespace SIPSorcery.Net
                             offset += byeLength;
                             break;
                         case (byte)RTCPReportTypesEnum.RTPFB:
-                            // TODO: Interpret Generic RTP feedback reports.
                             var typ = RTCPHeader.ParseFeedbackType(buffer);
                             switch (typ)
                             {
@@ -305,8 +282,6 @@ namespace SIPSorcery.Net
                                     }
                                     break;
                             }
-                            //var rtpfbHeader = new RTCPHeader(buffer);
-                            //offset += rtpfbHeader.Length * 4 + 4;
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.

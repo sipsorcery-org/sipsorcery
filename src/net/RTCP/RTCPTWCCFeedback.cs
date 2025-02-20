@@ -1,7 +1,42 @@
-﻿using System;
+﻿/*
+* Filename: RTCPTWCCFeedback.cs
+*
+* Description:
+* Transport Wide Congestion Control (TWCC) Feedback Packet
+*         0                   1                   2                   3
+*         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+* header |V=2|P| FMT=15  |    PT=205     |             length            |
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*        |                     SSRC of packet sender                     |
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*        |                     SSRC of media source                      |
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+* TWCC   |           Base Sequence Number         | Packet Status Count  |
+* header +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*        |                  Reference Time (24 bits)   | Fbk pkt cnt (8 bits)|
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*        |                                                               |
+*        |             Packet Status Chunks (variable)                 |
+*        |                                                               |
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*        |                                                               |
+*        |               Receive Delta(s) (variable)                     |
+*        |                                                               |
+*        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*
+*
+* Author:        Sean Tearney
+* Date:          2025 - 02 - 22
+*
+* License:       BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+* 
+* Change Log:
+*   2025-02-20  Initial creation.
+*/
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
