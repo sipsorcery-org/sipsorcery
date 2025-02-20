@@ -147,7 +147,7 @@ namespace SIPSorcery.Net
                     {
                         sb.AppendLine();
                     }
-                    sb.Append($"{i:X4}: ");
+                    sb.Append(i.ToString("X4")).Append(": ");
                 }
                 sb.Append($"{bytes[i]:X2} ");
             }
