@@ -239,8 +239,6 @@ namespace SIPSorcery.Net
                     case 3: // One-bit Status Vector
                         ParseOneBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
                         break;
-                    default:
-                        throw new ArgumentException($"Invalid chunk type: {chunkType}");
                 }
             }
 
