@@ -176,8 +176,7 @@ namespace SIPSorcery.Net
             }
 
             ushort runLength = (ushort)(chunk & 0x0FFF);
-            Console.WriteLine($"Status Bits: {statusBits}, Interpreted Status: {symbol}, RunLength: {runLength}");
-
+            
             runLength = (ushort)Math.Min(runLength, remainingStatuses);
             for (int i = 0; i < runLength; i++)
             {
