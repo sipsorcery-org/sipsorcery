@@ -37,14 +37,16 @@ using System.Collections.Concurrent;
 
 namespace demo;
 
-public enum ImageTypesEnum
-{
-    Free,
-    Paid
-}
-
 class Program
 {
+    enum ImageTypesEnum
+    {
+        Free,
+        Paid
+    }
+
+    record FrameConfig(DateTime StartTime, Bitmap? QrCodeImage, int Opacity);
+
     private static string FREE_IMAGE_PATH = "media/simple_flower.jpg";
     private static string PAID_IMAGE_PATH = "media/real_flowers.jpg";
     private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
@@ -54,8 +56,8 @@ class Program
     private const int BORDER_WIDTH = 5;
     private const int QR_CODE_DIMENSION = 200;
 
-    private const int FREE_PERIOD_SECONDS = 10;
-    private const int TRANSPARENCY_PERIOD_SECONDS = 10;
+    private const int FREE_PERIOD_SECONDS = 3;
+    private const int TRANSPARENCY_PERIOD_SECONDS = 3;
     private const int MAX_ALPHA_TRANSPARENCY = 200;
     private const string FREE_PERIOD_TITLE = "Taster Content";
     private const string TRANSITION_PERIOD_TITLE = "Pay for More";
@@ -63,6 +65,7 @@ class Program
     private const int WEBSOCKET_PORT = 8081;
     private const int FRAMES_PER_SECOND = 5; //30;
     private const string BASE_URL = "https://localhost:5001";
+    private const int CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS = 100;
 
     private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
@@ -163,24 +166,7 @@ class Program
 
                 if (setBitmapSourceTimer == null)
                 {
-                    DateTime startTime = DateTime.Now;
-                    Bitmap qrCodeImage = null;
-
-                    setBitmapSourceTimer = new Timer(_ =>
-                    {
-                        var framedBitmap = GetFramedBitmap(ImageTypesEnum.Free, Color.Blue, FREE_PERIOD_TITLE, 20, qrCodeImage, false, startTime);
-                        bitmapSource.SetSourceBitmap(framedBitmap);
-                        framedBitmap.Dispose();
-
-                        if(DateTime.Now.Subtract(startTime).TotalSeconds > FREE_PERIOD_SECONDS && qrCodeImage == null) 
-                        {
-                            QRCodeGenerator qrGenerator = new QRCodeGenerator();
-                            QRCodeData qrCodeData = qrGenerator.CreateQrCode($"{BASE_URL}/pay?id={peerID}", QRCodeGenerator.ECCLevel.Q);
-                            QRCode qrCode = new QRCode(qrCodeData);
-                            qrCodeImage = qrCode.GetGraphic(20);
-                        }
-                    },
-                    null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+                    setBitmapSourceTimer = CreateGenerateBitmapTimer(bitmapSource, peerID);
                 }
             }
         };
@@ -204,7 +190,60 @@ class Program
         return Task.FromResult(pc);
     }
 
-    private static Bitmap GetFramedBitmap(ImageTypesEnum imageType, Color borderColour, string title, int transparency, Bitmap qrCode, bool isPaid, DateTime startTime)
+    private static Timer CreateGenerateBitmapTimer(VideoBitmapSource bitmapSource, string peerID)
+    {
+        var frameConfig = new FrameConfig(DateTime.Now, null, 0);
+
+        return new Timer(_ =>
+        {
+            frameConfig = GetUpdatedFrameConfig(frameConfig, peerID);
+
+            var framedBitmap = GetFramedBitmap(
+                ImageTypesEnum.Free,
+                Color.Blue,
+                FREE_PERIOD_TITLE,
+                frameConfig.Opacity,
+                frameConfig.QrCodeImage,
+                false,
+                frameConfig.StartTime);
+
+            if (framedBitmap != null)
+            {
+                bitmapSource.SetSourceBitmap(framedBitmap);
+                framedBitmap.Dispose();
+            }
+        },
+        null, TimeSpan.Zero, TimeSpan.FromMilliseconds(CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS));
+    }
+
+    private static FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
+    {
+        if (DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds > FREE_PERIOD_SECONDS &&
+            frameConfig.QrCodeImage == null)
+        {
+            return frameConfig with { QrCodeImage = GenerateQRCode(peerID) };
+        }
+
+        return frameConfig;
+    }
+
+    private static Bitmap GenerateQRCode(string peerID)
+    {
+        using QRCodeGenerator qrGenerator = new QRCodeGenerator();
+        using QRCodeData qrCodeData = qrGenerator.CreateQrCode($"{BASE_URL}/pay?id={peerID}", QRCodeGenerator.ECCLevel.Q);
+        using QRCode qrCode = new QRCode(qrCodeData);
+
+        return qrCode.GetGraphic(20);
+    }
+
+    private static Bitmap? GetFramedBitmap(
+        ImageTypesEnum imageType,
+        Color borderColour,
+        string title,
+        int transparency,
+        Bitmap? qrCode,
+        bool isPaid,
+        DateTime startTime)
     {
         try
         {
@@ -236,7 +275,7 @@ class Program
                     }
                 }
 
-                string imagePath = null;
+                string? imagePath = null;
 
                 switch (imageType)
                 {
@@ -254,21 +293,25 @@ class Program
                 Bitmap testPattern = new Bitmap(imagePath);
 
                 var stampedTestPattern = testPattern.Clone() as Image;
-                ApplyFilters(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), title, borderColour, transparency, qrCode);
+                if (stampedTestPattern != null)
+                {
+                    ApplyFilters(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), title, borderColour, transparency, qrCode);
 
-                testPattern.Dispose();
+                    testPattern.Dispose();
 
-                return stampedTestPattern as Bitmap;
+                    return stampedTestPattern as Bitmap;
+                }
             }
         }
         catch (Exception excp)
         {
             Console.WriteLine("Exception GetVideoSample. " + excp);
-            return null;
         }
+
+        return null;
     }
 
-    private static void ApplyFilters(Image image, string timeStamp, string title, Color borderColor, int transparency, Bitmap qrCode)
+    private static void ApplyFilters(Image image, string timeStamp, string title, Color borderColor, int transparency, Bitmap? qrCode)
     {
         int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
 
