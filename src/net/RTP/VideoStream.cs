@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -140,7 +141,7 @@ namespace SIPSorcery.net.RTP
             {
                 foreach (var nal in H264Packetiser.ParseNals(accessUnit))
                 {
-                    SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast);
+                    SendH26XNal(duration, payloadTypeID, nal.NAL, nal.IsLast);
                 }
             }
         }
@@ -153,7 +154,7 @@ namespace SIPSorcery.net.RTP
         /// <param name="nal">The buffer containing the NAL to send.</param>
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
-        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal)
+        private void SendH26XNal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, bool is265 = false)
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
@@ -185,11 +186,11 @@ namespace SIPSorcery.net.RTP
                     bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
                     int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
-                    byte[] h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
-
-                    byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
-                    Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
-                    Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
+                    byte[] rtpHdr = is265 ? H265Packetiser.GetH265RtpHeader(nal0, isFirstPacket, isFinalPacket) : H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
+                    
+                    byte[] payload = new byte[payloadLength + rtpHdr.Length];
+                    Buffer.BlockCopy(rtpHdr, 0, payload, 0, rtpHdr.Length);
+                    Buffer.BlockCopy(nal, offset, payload, rtpHdr.Length, payloadLength);
 
                     SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -199,6 +200,18 @@ namespace SIPSorcery.net.RTP
             if (isLastNal)
             {
                 LocalTrack.Timestamp += duration;
+            }
+        }
+
+        public void SendH265Frame(uint durationRtpUnits, int payloadID, byte[] sample)
+        {
+            if(CheckIfCanSendRtpRaw())
+            {
+                var nals = H265Packetiser.ParseNals(sample);
+                foreach (var nal in nals)
+                {
+                    SendH26XNal(durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
+                }
             }
         }
 
@@ -239,6 +252,51 @@ namespace SIPSorcery.net.RTP
                 }
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="durationRtpUnits"></param>
+        /// <param name="payloadID"></param>
+        /// <param name="sample"></param>
+        public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, byte[] sample)
+        {
+            if (CheckIfCanSendRtpRaw())
+            {
+                try
+                {
+                    var frameData = MJPEGPacketiser.GetFrameData(sample, out var customData);
+
+                    var rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, 0);
+                    if (rtpHeader.Length + frameData.Data.Length <= RTPSession.RTP_MAX_PAYLOAD)
+                    {
+                        var payload = rtpHeader.Concat(frameData.Data).ToArray();
+                        SendRtpRaw(payload, LocalTrack.Timestamp, 1, payloadID, true);
+                    }
+                    else
+                    {
+                        var restBytes = frameData.Data;
+                        var offset = 0;
+                        while (restBytes.Length > 0)
+                        {
+                            var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeader.Length;
+                            var isLast = dataSize >= restBytes.Length;
+                            var data = isLast ? restBytes : restBytes.Take(dataSize).ToArray();
+                            var markerBit = isLast ? 0 : 1;
+                            var payload = rtpHeader.Concat(data).ToArray();
+                            SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadID, true);
+
+                            offset += RTPSession.RTP_MAX_PAYLOAD;
+                            rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
+                            restBytes = restBytes.Skip(data.Length).ToArray();
+                        }
+                    }
+                }
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError("SocketException SendMJEPGFrame. " + sockExcp.Message);
+                }
+            }
+        }
 
         /// <summary>
         /// Sends a video sample to the remote peer.
@@ -264,6 +322,12 @@ namespace SIPSorcery.net.RTP
                     break;
                 case "H264":
                     SendH264Frame(durationRtpUnits, payloadID, sample);
+                    break;
+                case "H265":
+                    SendH265Frame(durationRtpUnits, payloadID, sample);
+                    break;
+                case "JPEG":
+                    SendMJPEGFrame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {sendingFormat.Name()}.");
@@ -293,7 +357,8 @@ namespace SIPSorcery.net.RTP
             {
                 if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H264 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.H265)
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.H265 ||
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.JPEG)
                 {
                     logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
 
