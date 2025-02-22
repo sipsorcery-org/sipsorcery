@@ -1310,5 +1310,39 @@ a=ssrc-group:FID 3366495178 777490417";
 
             Assert.Equal(8, sdpParsed.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).First().MediaFormats.First().Key);
         }
+
+        /// <summary>
+        /// Tests that parsing the number of ports parameter works correctly.
+        /// </summary>
+        /// <remarks>
+        /// https://datatracker.ietf.org/doc/html/rfc4566#section-5.14
+        /// </remarks>
+        [Fact]
+        public void Parse_Number_Of_Ports_Unit_Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 12228/2 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            Assert.True(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
+            Assert.True(sdp.Media[0].PortCount == 2, "The port count was not parsed correctly.");
+        }
     }
 }
