@@ -42,9 +42,11 @@ namespace SIPSorceryMedia.Abstractions
                     // No conversion needed.
                     return sample;
                 case VideoPixelFormatsEnum.Bgra:
-                    return PixelConverter.RGBAtoI420(sample, width, height, stride);
+                    return PixelConverter.BGRAtoI420(sample, width, height, stride);
                 case VideoPixelFormatsEnum.Bgr:
                     return PixelConverter.BGRtoI420(sample, width, height, stride);
+                case VideoPixelFormatsEnum.Rgba:
+                    return PixelConverter.RGBAtoI420(sample, width, height, stride);
                 case VideoPixelFormatsEnum.Rgb:
                     return PixelConverter.RGBtoI420(sample, width, height, stride);
                 default:
@@ -218,6 +220,55 @@ namespace SIPSorceryMedia.Abstractions
 
             return buffer;
         }
+
+        /// <summary>
+        /// Converts a BGRA sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="bgra">The BGRA image sample.</param>
+        /// <param name="width">The width in pixels of the BGRA sample.</param>
+        /// <param name="height">The height in pixels of the BGRA sample.</param>
+        /// <param name="stride">The stride of the BGRA sample.</param>
+        /// <returns>An I420 buffer representing the source image.</returns>
+        public static byte[] BGRAtoI420(byte[] bgra, int width, int height, int stride)
+        {
+            if (bgra == null || bgra.Length < (stride * height))
+            {
+                throw new ApplicationException($"BGRA buffer supplied to BGRAtoI420 was too small, expected {stride * height} but got {bgra?.Length}.");
+            }
+
+            int ySize = width * height;
+            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            int uOffset = ySize;
+            int vOffset = ySize + uvSize / 2;
+            int r, g, b, y, u, v;
+
+            byte[] buffer = new byte[ySize + uvSize];
+
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width; col++)
+                {
+                    // BGRA: Byte order is Blue, Green, Red, Alpha.
+                    b = bgra[row * stride + col * 4] & 0xff;
+                    g = bgra[row * stride + col * 4 + 1] & 0xff;
+                    r = bgra[row * stride + col * 4 + 2] & 0xff;
+                    // Alpha at index 3 is ignored.
+
+                    y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
+                    u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
+                    v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
+
+                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+
+                    int uvposn = (col / 2) + (row / 2) * (width / 2);
+                    buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
+                    buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
+                }
+            }
+
+            return buffer;
+        }
+
 
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] I420toRGB(byte[] data, int width, int height)
