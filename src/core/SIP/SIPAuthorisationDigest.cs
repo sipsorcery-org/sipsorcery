@@ -85,69 +85,102 @@ namespace SIPSorcery.SIP
         {
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(authorisationType);
 
-            string noDigestHeader = Regex.Replace(authorisationRequest, $@"^\s*{METHOD}\s*", "", RegexOptions.IgnoreCase);
-            string[] headerFields = noDigestHeader.Split(',');
-
-            if (headerFields != null && headerFields.Length > 0)
+            //string noDigestHeader = Regex.Replace(authorisationRequest, $@"^\s*{METHOD}\s*", "", RegexOptions.IgnoreCase);
+            ReadOnlySpan<char> noDigestHeader = authorisationRequest.AsSpan().Trim();
+            if (noDigestHeader.StartsWith(METHOD.AsSpan(), StringComparison.OrdinalIgnoreCase))
             {
-                foreach (string headerField in headerFields)
+                noDigestHeader = noDigestHeader.Slice(METHOD.Length + 1);
+            }
+
+            while (noDigestHeader.IsEmpty == false)
+            {
+                ReadOnlySpan<char> headerField;
+                int commaIndex = noDigestHeader.IndexOf(',');
+                if (commaIndex == -1)
                 {
-                    int equalsIndex = headerField.IndexOf('=');
+                    headerField = noDigestHeader.Trim();
+                    noDigestHeader = ReadOnlySpan<char>.Empty;
+                }
+                else
+                {
+                    headerField = noDigestHeader.Slice(0, commaIndex).Trim();
+                    noDigestHeader = noDigestHeader.Slice(commaIndex + 1);
+                }
 
-                    if (equalsIndex != -1 && equalsIndex < headerField.Length)
+                int equalsIndex = headerField.IndexOf('=');
+
+                if (equalsIndex != -1 && equalsIndex < headerField.Length)
+                {
+                    ReadOnlySpan<char> headerName = headerField.Slice(0, equalsIndex).Trim();
+                    ReadOnlySpan<char> headerValue = headerField.Slice(equalsIndex + 1).Trim(m_headerFieldRemoveChars);
+
+                    if (headerName.Equals(AuthHeaders.AUTH_REALM_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
-                        string headerName = headerField.Substring(0, equalsIndex).Trim();
-                        string headerValue = headerField.Substring(equalsIndex + 1).Trim(m_headerFieldRemoveChars);
+                        authRequest.Realm = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_NONCE_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        authRequest.Nonce = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_USERNAME_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        authRequest.Username = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_RESPONSE_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        authRequest.Response = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_URI_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        authRequest.URI = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_CNONCE_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        authRequest.Cnonce = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_NONCECOUNT_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+#if NETCOREAPP2_1_OR_GREATER
+                        Int32.TryParse(headerValue, out authRequest.NonceCount);
+#else
+                        Int32.TryParse(headerValue.ToString(), out authRequest.NonceCount);
+#endif
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_QOP_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+                        authRequest.Qop = BuildQop(headerValue);
 
-                        if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_REALM_KEY + "$", RegexOptions.IgnoreCase).Success)
+                        static string BuildQop(ReadOnlySpan<char> headerValue)
                         {
-                            authRequest.Realm = headerValue;
+                            Span<char> chars = stackalloc char[headerValue.Length];
+                            _ = headerValue.ToLowerInvariant(chars);
+                            return new string((ReadOnlySpan<char>)chars);
                         }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_NONCE_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.Nonce = headerValue;
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_USERNAME_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.Username = headerValue;
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_RESPONSE_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.Response = headerValue;
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_URI_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.URI = headerValue;
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_CNONCE_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.Cnonce = headerValue;
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_NONCECOUNT_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            Int32.TryParse(headerValue, out authRequest.NonceCount);
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_QOP_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.Qop = headerValue.ToLower();
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_OPAQUE_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            authRequest.Opaque = headerValue;
-                        }
-                        else if (Regex.Match(headerName, "^" + AuthHeaders.AUTH_ALGORITHM_KEY + "$", RegexOptions.IgnoreCase).Success)
-                        {
-                            //authRequest.Algorithhm = headerValue;
+#else
+                        authRequest.Qop = headerValue.ToString().ToLowerInvariant();
+#endif
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_OPAQUE_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        authRequest.Opaque = headerValue.ToString();
+                    }
+                    else if (headerName.Equals(AuthHeaders.AUTH_ALGORITHM_KEY.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        //authRequest.Algorithm = headerValue;
 
-                            if (Enum.TryParse<DigestAlgorithmsEnum>(headerValue.Replace("-",""), true, out var alg))
-                            {
-                                authRequest.DigestAlgorithm = alg;
-                            }
-                            else
-                            {
-                                logger.LogWarning("SIPAuthorisationDigest did not recognised digest algorithm value of {DigestAlgorithms}, defaulting to {DigestAlgorithmsEnumMD5}.", headerValue, DigestAlgorithmsEnum.MD5);
-                                authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
-                            }
+                        if (headerValue.Equals("MD5".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
+                        }
+                        else if (headerValue.Equals("SHA-256".AsSpan(), StringComparison.OrdinalIgnoreCase) || headerValue.Equals("SHA256".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            authRequest.DigestAlgorithm = DigestAlgorithmsEnum.SHA256;
+                        }
+                        else
+                        {
+                            logger.LogWarning("SIPAuthorisationDigest did not recognised digest algorithm value of {DigestAlgorithms}, defaulting to {DigestAlgorithmsEnumMD5}.", headerValue.ToString(), DigestAlgorithmsEnum.MD5);
+                            authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
                         }
                     }
                 }
