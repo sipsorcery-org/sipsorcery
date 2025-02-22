@@ -433,5 +433,109 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
 
             Assert.True(authResult.Authenticated);
         }
+
+        private const string BASIC_AUTH_HEADER = "Digest realm=\"sip.domain.com\",nonce=\"1234\",algorithm=MD5";
+        private const string FULL_AUTH_HEADER = "Digest username=\"alice\",realm=\"sip.domain.com\",nonce=\"1234abcd\",uri=\"sip:bob@domain.com\",response=\"a1b2c3d4\",algorithm=MD5,cnonce=\"9876\",opaque=\"opaque123\",qop=auth,nc=00000001";
+        private const string SHA256_AUTH_HEADER = "Digest username=\"bob\",realm=\"sip.domain.com\",nonce=\"5678\",algorithm=SHA-256";
+        private const string MALFORMED_AUTH_HEADER = "Digest realm=missing-quotes,nonce=\"1234\"";
+        private const string MIXED_CASE_AUTH_HEADER = "DIgEsT rEaLm=\"sip.domain.com\",NoNcE=\"1234\",algorithm=md5";
+
+        [Theory]
+        [InlineData(SIPAuthorisationHeadersEnum.WWWAuthenticate, BASIC_AUTH_HEADER, "sip.domain.com", "1234", DigestAlgorithmsEnum.MD5)]
+        [InlineData(SIPAuthorisationHeadersEnum.ProxyAuthenticate, BASIC_AUTH_HEADER, "sip.domain.com", "1234", DigestAlgorithmsEnum.MD5)]
+        public void BasicAuthHeaderParseTest(SIPAuthorisationHeadersEnum authType, string header, string expectedRealm, string expectedNonce, DigestAlgorithmsEnum expectedAlgorithm)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(authType, header);
+
+            Assert.Equal(authType, result.AuthorisationType);
+            Assert.Equal(expectedRealm, result.Realm);
+            Assert.Equal(expectedNonce, result.Nonce);
+            Assert.Equal(expectedAlgorithm, result.DigestAlgorithm);
+        }
+
+        [Theory]
+        [InlineData(SIPAuthorisationHeadersEnum.Authorize, FULL_AUTH_HEADER)]
+        public void FullAuthHeaderParseTest(SIPAuthorisationHeadersEnum authType, string header)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(authType, header);
+
+            Assert.Equal("alice", result.Username);
+            Assert.Equal("sip.domain.com", result.Realm);
+            Assert.Equal("1234abcd", result.Nonce);
+            Assert.Equal("sip:bob@domain.com", result.URI);
+            Assert.Equal("a1b2c3d4", result.Response);
+            Assert.Equal(DigestAlgorithmsEnum.MD5, result.DigestAlgorithm);
+            Assert.Equal("9876", result.Cnonce);
+            Assert.Equal("opaque123", result.Opaque);
+            Assert.Equal("auth", result.Qop);
+            Assert.Equal(1, result.NonceCount);
+        }
+
+        [Theory]
+        [InlineData(SIPAuthorisationHeadersEnum.ProxyAuthenticate, SHA256_AUTH_HEADER, DigestAlgorithmsEnum.SHA256)]
+        public void AlgorithmParseTest(SIPAuthorisationHeadersEnum authType, string header, DigestAlgorithmsEnum expectedAlgorithm)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(authType, header);
+            Assert.Equal(expectedAlgorithm, result.DigestAlgorithm);
+        }
+
+        [Theory]
+        [InlineData(SIPAuthorisationHeadersEnum.WWWAuthenticate, MIXED_CASE_AUTH_HEADER)]
+        public void CaseInsensitiveParseTest(SIPAuthorisationHeadersEnum authType, string header)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(authType, header);
+
+            Assert.Equal("sip.domain.com", result.Realm);
+            Assert.Equal("1234", result.Nonce);
+            Assert.Equal(DigestAlgorithmsEnum.MD5, result.DigestAlgorithm);
+        }
+
+        [Theory]
+        [InlineData(SIPAuthorisationHeadersEnum.WWWAuthenticate, "")]
+        [InlineData(SIPAuthorisationHeadersEnum.WWWAuthenticate, "NotDigest realm=\"test\"")]
+        public void EmptyOrInvalidHeaderTest(SIPAuthorisationHeadersEnum authType, string header)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(authType, header);
+
+            Assert.NotNull(result);
+            Assert.Equal(authType, result.AuthorisationType);
+            Assert.Null(result.Realm);
+            Assert.Null(result.Nonce);
+        }
+
+        [Theory]
+        [InlineData("Digest nc=1", 1)]
+        [InlineData("Digest nc=00000001", 1)]
+        [InlineData("Digest nc=invalid", 0)]
+        [InlineData("Digest nc=", 0)]
+        public void NonceCountParseTest(string header, int expectedCount)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.Authorize, header);
+            Assert.Equal(expectedCount, result.NonceCount);
+        }
+
+        [Theory]
+        [InlineData("Digest qop=auth", "auth")]
+        [InlineData("Digest qop=AUTH", "auth")]
+        [InlineData("Digest qop=Auth", "auth")]
+        public void QopParseTest(string header, string expectedQop)
+        {
+            var result = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.Authorize, header);
+            Assert.Equal(expectedQop, result.Qop);
+        }
+
+        [Fact]
+        public void ParseAuthorisationDigest_InvalidAlgorithm_DefaultsToMD5()
+        {
+            // Arrange
+            string authorisationRequest = "Digest username=\"user\", realm=\"realm\", nonce=\"nonce\", uri=\"uri\", response=\"response\", algorithm=\"invalid-algorithm\"";
+            SIPAuthorisationHeadersEnum authorisationType = SIPAuthorisationHeadersEnum.Authorize;
+
+            // Act
+            SIPAuthorisationDigest authDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorisationType, authorisationRequest);
+
+            // Assert
+            Assert.Equal(DigestAlgorithmsEnum.MD5, authDigest.DigestAlgorithm);
+        }
     }
 }
