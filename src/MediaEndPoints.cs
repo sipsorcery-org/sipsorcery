@@ -36,6 +36,7 @@ namespace SIPSorceryMedia.Abstractions
         Bgra = 2,       // 32 bits per pixel.
         I420 = 3,       // 12 bits per pixel.
         NV12 = 4,       // 12 bits per pixel.
+        Rgba = 5,       // 32 bits per pixel.
     }
 
     /// <summary>
