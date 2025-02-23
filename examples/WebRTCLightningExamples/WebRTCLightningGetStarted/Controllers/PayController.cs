@@ -9,19 +9,20 @@ public class PayController : ControllerBase
 {
     private readonly ILogger<PayController> _logger;
 
+    private static readonly PeerConnectionPayState _peerConnectionPayState = PeerConnectionPayState.Get;
+
     public PayController(ILogger<PayController> logger)
     {
         _logger = logger;
     }
 
     [HttpGet("{id}")]
-    public int Get(string id)
+    public IActionResult Get(string id)
     {
         _logger.LogDebug($"pay id={id}");
 
-        //WebRtcDaemon.GetInstance().Pay(id);
-
-        return 0;
+        return _peerConnectionPayState.TrySetPaid(id) ?
+            Ok() : BadRequest();
     }
 
     //[HttpGet("list")]

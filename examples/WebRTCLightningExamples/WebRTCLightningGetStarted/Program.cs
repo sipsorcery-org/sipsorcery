@@ -39,13 +39,13 @@ namespace demo;
 
 class Program
 {
-    enum ImageTypesEnum
-    {
-        Free,
-        Paid
-    }
-
-    record FrameConfig(DateTime StartTime, Bitmap? QrCodeImage, int Opacity);
+    record FrameConfig(
+        DateTime StartTime,
+        Bitmap? QrCodeImage,
+        int Opacity,
+        Color BorderColour,
+        string Title,
+        bool IsPaid);
 
     private static string FREE_IMAGE_PATH = "media/simple_flower.jpg";
     private static string PAID_IMAGE_PATH = "media/real_flowers.jpg";
@@ -69,7 +69,7 @@ class Program
 
     private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-    private static readonly ConcurrentDictionary<string, WebRTCWebSocketPeer> _connectedPeers = new();
+    private static readonly PeerConnectionPayState _peerConnectionPayState = PeerConnectionPayState.Get;
 
     static void Main(string[] args)
     {
@@ -106,14 +106,14 @@ class Program
         {
             var pc = await CreatePeerConnection(peer.ID);
             logger.LogDebug($"Peer connection {peer.ID} successfully created.");
-            _connectedPeers[peer.ID] = peer;
+            _peerConnectionPayState.TryAddPeer(peer.ID);
             pc.onconnectionstatechange += (state) =>
             {
                 if (state is RTCPeerConnectionState.closed or
                             RTCPeerConnectionState.failed or
                             RTCPeerConnectionState.disconnected)
                 {
-                    _connectedPeers.TryRemove(peer.ID, out _);
+                    _peerConnectionPayState.TryRemovePeer(peer.ID);
                 }
             };
             return pc;
@@ -139,78 +139,26 @@ class Program
         bitmapSource.OnVideoSourceEncodedSample += pc.SendVideo;
         pc.OnVideoFormatsNegotiated += (formats) => bitmapSource.SetVideoSourceFormat(formats.First());
 
-        Timer? setBitmapSourceTimer = null;
-
-        pc.onconnectionstatechange += async (state) =>
-        {
-            logger.LogDebug($"Peer connection state change to {state}.");
-
-            if (state == RTCPeerConnectionState.failed)
-            {
-                pc.Close("ice disconnection");
-            }
-            else if (state == RTCPeerConnectionState.closed)
-            {
-                if (setBitmapSourceTimer != null)
-                {
-                    await setBitmapSourceTimer.DisposeAsync();
-                    setBitmapSourceTimer = null;
-                }
-
-                await bitmapSource.CloseVideo();
-                bitmapSource.Dispose();
-            }
-            else if (state == RTCPeerConnectionState.connected)
-            {
-                await bitmapSource.StartVideo();
-
-                if (setBitmapSourceTimer == null)
-                {
-                    setBitmapSourceTimer = CreateGenerateBitmapTimer(bitmapSource, peerID);
-                }
-            }
-        };
-
-        // Diagnostics.
-        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
-        pc.onsignalingstatechange += () =>
-        {
-            if (pc.signalingState == RTCSignalingState.have_local_offer)
-            {
-                logger.LogDebug($"Local SDP set, type {pc.localDescription.type}.");
-                logger.LogDebug(pc.localDescription.sdp.ToString());
-            }
-            else if (pc.signalingState == RTCSignalingState.have_remote_offer)
-            {
-                logger.LogDebug($"Remote SDP set, type {pc.remoteDescription.type}.");
-                logger.LogDebug(pc.remoteDescription.sdp.ToString());
-            }
-        };
+        HandlePeerConnectionStateChange(pc, bitmapSource, peerID);
+        SetDiagnosticLogging(pc);
 
         return Task.FromResult(pc);
     }
 
     private static Timer CreateGenerateBitmapTimer(VideoBitmapSource bitmapSource, string peerID)
     {
-        var frameConfig = new FrameConfig(DateTime.Now, null, 0);
+        var frameConfig = new FrameConfig(DateTime.Now, null, 0, Color.Blue, FREE_PERIOD_TITLE, false);
 
         return new Timer(_ =>
         {
             frameConfig = GetUpdatedFrameConfig(frameConfig, peerID);
 
-            var framedBitmap = GetFramedBitmap(
-                ImageTypesEnum.Free,
-                Color.Blue,
-                FREE_PERIOD_TITLE,
-                frameConfig.Opacity,
-                frameConfig.QrCodeImage,
-                false,
-                frameConfig.StartTime);
+            var annotatedBitmap = GetAnnotatedBitmap(frameConfig);
 
-            if (framedBitmap != null)
+            if (annotatedBitmap != null)
             {
-                bitmapSource.SetSourceBitmap(framedBitmap);
-                framedBitmap.Dispose();
+                bitmapSource.SetSourceBitmap(annotatedBitmap);
+                annotatedBitmap.Dispose();
             }
         },
         null, TimeSpan.Zero, TimeSpan.FromMilliseconds(CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS));
@@ -218,13 +166,47 @@ class Program
 
     private static FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
     {
-        if (DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds > FREE_PERIOD_SECONDS &&
-            frameConfig.QrCodeImage == null)
+        if(_peerConnectionPayState.TryGetIsPaid(peerID))
         {
-            return frameConfig with { QrCodeImage = GenerateQRCode(peerID) };
+            return frameConfig with
+            {
+                BorderColour = Color.Pink,
+                Title = string.Empty,
+                IsPaid = true,
+                QrCodeImage = null,
+                Opacity = 0
+            };
         }
 
-        return frameConfig;
+        if (DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < FREE_PERIOD_SECONDS)
+        {
+            return frameConfig with
+            {
+                BorderColour = Color.Blue,
+                Title = FREE_PERIOD_TITLE
+            };
+        }
+        else if (DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS))
+        {
+            double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
+
+            return frameConfig with
+            {
+                BorderColour = Color.Yellow,
+                QrCodeImage = frameConfig.QrCodeImage ?? GenerateQRCode(peerID),
+                Opacity = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining/ TRANSPARENCY_PERIOD_SECONDS)),
+                Title = TRANSITION_PERIOD_TITLE
+            };
+        }
+        else
+        {
+            return frameConfig with
+            {
+                BorderColour = Color.Orange,
+                Opacity = MAX_ALPHA_TRANSPARENCY,
+                Title = TRANSITION_PERIOD_TITLE
+            };
+        }
     }
 
     private static Bitmap GenerateQRCode(string peerID)
@@ -236,76 +218,35 @@ class Program
         return qrCode.GetGraphic(20);
     }
 
-    private static Bitmap? GetFramedBitmap(
-        ImageTypesEnum imageType,
-        Color borderColour,
-        string title,
-        int transparency,
-        Bitmap? qrCode,
-        bool isPaid,
-        DateTime startTime)
+    private static Bitmap? GetAnnotatedBitmap(FrameConfig frameConfig)
     {
         try
         {
             unsafe
             {
-                if (isPaid)
+                string imagePath = frameConfig.IsPaid ? PAID_IMAGE_PATH : FREE_IMAGE_PATH;
+                Bitmap baseBitmap = new Bitmap(imagePath);
+
+                var baseImage = baseBitmap.Clone() as Image;
+                if (baseImage != null)
                 {
-                    imageType = ImageTypesEnum.Paid;
-                }
-                else
-                {
-                    if (DateTime.Now.Subtract(startTime).TotalSeconds < FREE_PERIOD_SECONDS)
-                    {
-                        borderColour = Color.Blue;
-                        title = FREE_PERIOD_TITLE;
-                    }
-                    else if (DateTime.Now.Subtract(startTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS))
-                    {
-                        borderColour = Color.Yellow;
-                        double remaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(startTime).TotalSeconds;
-                        transparency = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (remaining / TRANSPARENCY_PERIOD_SECONDS));
-                        title = TRANSITION_PERIOD_TITLE;
-                    }
-                    else
-                    {
-                        borderColour = Color.Orange;
-                        transparency = MAX_ALPHA_TRANSPARENCY;
-                        title = TRANSITION_PERIOD_TITLE;
-                    }
-                }
+                    ApplyFilters(
+                        baseImage,
+                        DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"),
+                        frameConfig.Title,
+                        frameConfig.BorderColour,
+                        frameConfig.Opacity,
+                        frameConfig.QrCodeImage);
 
-                string? imagePath = null;
+                    baseBitmap.Dispose();
 
-                switch (imageType)
-                {
-                    case ImageTypesEnum.Free:
-                        imagePath = FREE_IMAGE_PATH;
-                        break;
-                    case ImageTypesEnum.Paid:
-                        imagePath = PAID_IMAGE_PATH;
-                        break;
-                    default:
-                        imagePath = FREE_IMAGE_PATH;
-                        break;
-                }
-
-                Bitmap testPattern = new Bitmap(imagePath);
-
-                var stampedTestPattern = testPattern.Clone() as Image;
-                if (stampedTestPattern != null)
-                {
-                    ApplyFilters(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), title, borderColour, transparency, qrCode);
-
-                    testPattern.Dispose();
-
-                    return stampedTestPattern as Bitmap;
+                    return baseImage as Bitmap;
                 }
             }
         }
         catch (Exception excp)
         {
-            Console.WriteLine("Exception GetVideoSample. " + excp);
+            Console.WriteLine("Exception GetAnnotatedBitmap. " + excp);
         }
 
         return null;
@@ -366,6 +307,65 @@ class Program
             Rectangle dstRect = new Rectangle(xCenter, yCenter, QR_CODE_DIMENSION, QR_CODE_DIMENSION);
             g.DrawImage(qrCode, dstRect);
         }
+    }
+
+    private static void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource bitmapSource, string peerID)
+    {
+        Timer? setBitmapSourceTimer = null;
+
+        pc.onconnectionstatechange += async (state) =>
+        {
+            logger.LogDebug($"Peer connection state change to {state}.");
+
+            if (state == RTCPeerConnectionState.failed)
+            {
+                pc.Close("ice disconnection");
+            }
+            else if (state == RTCPeerConnectionState.closed)
+            {
+                await CloseCustomBitmapSource(setBitmapSourceTimer, bitmapSource);
+            }
+            else if (state == RTCPeerConnectionState.connected)
+            {
+                await bitmapSource.StartVideo();
+
+                if (setBitmapSourceTimer == null)
+                {
+                    setBitmapSourceTimer = CreateGenerateBitmapTimer(bitmapSource, peerID);
+                }
+            }
+        };
+    }
+
+    private static async Task CloseCustomBitmapSource(Timer? setBitmapSourceTimer, VideoBitmapSource bitmapSource)
+    {
+        if (setBitmapSourceTimer != null)
+        {
+            await setBitmapSourceTimer.DisposeAsync();
+            setBitmapSourceTimer = null;
+        }
+
+        await bitmapSource.CloseVideo();
+        bitmapSource.Dispose();
+    }
+
+    private static void SetDiagnosticLogging(RTCPeerConnection pc)
+    {
+        // Diagnostics.
+        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+        pc.onsignalingstatechange += () =>
+        {
+            if (pc.signalingState == RTCSignalingState.have_local_offer)
+            {
+                logger.LogDebug($"Local SDP set, type {pc.localDescription.type}.");
+                logger.LogDebug(pc.localDescription.sdp.ToString());
+            }
+            else if (pc.signalingState == RTCSignalingState.have_remote_offer)
+            {
+                logger.LogDebug($"Remote SDP set, type {pc.remoteDescription.type}.");
+                logger.LogDebug(pc.remoteDescription.sdp.ToString());
+            }
+        };
     }
 
     /// <summary>
