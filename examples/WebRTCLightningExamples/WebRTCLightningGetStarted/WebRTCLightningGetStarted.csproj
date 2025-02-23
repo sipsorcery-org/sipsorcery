@@ -9,6 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.28.3" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.66.0" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.66.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.67.0">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="NBitcoin" Version="7.0.46" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
@@ -24,6 +32,12 @@
     
     <ItemGroup>
       <None Include="wwwroot\index.html" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Protos\lightning.proto" GrpcServices="Client" />
+        <Protobuf Include="Protos\invoices.proto" GrpcServices="Client" />
+        <Protobuf Include="Protos\router.proto" GrpcServices="Client" />
     </ItemGroup>
 
 </Project>

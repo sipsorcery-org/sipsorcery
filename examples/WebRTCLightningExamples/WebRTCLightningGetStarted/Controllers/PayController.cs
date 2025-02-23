@@ -8,12 +8,14 @@ namespace demo;
 public class PayController : ControllerBase
 {
     private readonly ILogger<PayController> _logger;
+    private readonly PeerConnectionPayState _peerConnectionPayState;
 
-    private static readonly PeerConnectionPayState _peerConnectionPayState = PeerConnectionPayState.Get;
-
-    public PayController(ILogger<PayController> logger)
+    public PayController(
+        ILogger<PayController> logger,
+        PeerConnectionPayState peerConnectionPayState)
     {
         _logger = logger;
+        _peerConnectionPayState = peerConnectionPayState;
     }
 
     [HttpGet("{id}")]

@@ -55,25 +55,25 @@ public class VideoBitmapSource : IVideoSource, IDisposable
 
     private int _bitmapWidth;
     private int _bitmapHeight;
-    private byte[] _i420Buffer;
-    private byte[] _bgrBuffer;
+    private byte[] _i420Buffer = [];
+    private byte[] _bgrBuffer = [];
 
     /// <summary>
     /// Unencoded test pattern samples.
     /// </summary>
-    public event RawVideoSampleDelegate OnVideoSourceRawSample;
+    public event RawVideoSampleDelegate OnVideoSourceRawSample = delegate { };
 
 #pragma warning disable CS0067
-    public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
+    public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster = delegate { };
 #pragma warning restore CS0067
 
     /// <summary>
     /// If a video encoder has been set then this event contains the encoded video
     /// samples.
     /// </summary>
-    public event EncodedSampleDelegate OnVideoSourceEncodedSample;
+    public event EncodedSampleDelegate OnVideoSourceEncodedSample = delegate { };
 
-    public event SourceErrorDelegate OnVideoSourceError;
+    public event SourceErrorDelegate OnVideoSourceError = delegate { };
 
     public VideoBitmapSource(IVideoEncoder encoder)
     {
@@ -176,7 +176,7 @@ public class VideoBitmapSource : IVideoSource, IDisposable
         }
     }
 
-    private void SendFrame(object state)
+    private void SendFrame(object? state)
     {
         lock (_sendTimer)
         {
