@@ -856,7 +856,7 @@ namespace SIPSorcery.SIP
                 {
                     Value = headerValue
                 };
-                if (headerValue.StartsWith(SIPAuthorisationDigest.METHOD))
+                if (headerValue.StartsWith(SIPAuthorisationDigest.METHOD, StringComparison.OrdinalIgnoreCase))
                 {
                     authHeader.SIPDigest = SIPAuthorisationDigest.ParseAuthorisationDigest(authorizationType, headerValue);
                 }
