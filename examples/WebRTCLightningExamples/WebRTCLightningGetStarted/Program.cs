@@ -38,8 +38,11 @@ class Program
         });
 
         builder.Services.AddHostedService<WebSocketService>();
+        builder.Services.AddHostedService<LndInvoiceListener>();
         builder.Services.AddSingleton<WebRtcConnectionManager>();
         builder.Services.AddSingleton<PeerConnectionPayState>();
+        builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
+        builder.Services.AddTransient<ILightningService, LightningService>();
 
         builder.Services.AddControllers();
 

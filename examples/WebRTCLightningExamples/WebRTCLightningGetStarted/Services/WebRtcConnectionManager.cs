@@ -59,13 +59,16 @@ public class WebRtcConnectionManager
 
     private readonly ILogger<WebRtcConnectionManager> _logger;
     private readonly PeerConnectionPayState _peerConnectionPayState;
+    private readonly ILightningService _lightningService;
 
     public WebRtcConnectionManager(
         ILogger<WebRtcConnectionManager> logger,
-        PeerConnectionPayState peerConnectionPayState)
+        PeerConnectionPayState peerConnectionPayState,
+        ILightningService lightningService)
     {
         _logger = logger;
         _peerConnectionPayState = peerConnectionPayState;
+        _lightningService = lightningService;
     }
 
     public Task<RTCPeerConnection> CreatePeerConnection(string peerID)
@@ -105,9 +108,9 @@ public class WebRtcConnectionManager
     {
         var frameConfig = new FrameConfig(DateTime.Now, null, 0, Color.Blue, FREE_PERIOD_TITLE, false);
 
-        return new Timer(_ =>
+        return new Timer(async _ =>
         {
-            frameConfig = GetUpdatedFrameConfig(frameConfig, peerID);
+            frameConfig = await GetUpdatedFrameConfig(frameConfig, peerID);
 
             var annotatedBitmap = GetAnnotatedBitmap(frameConfig);
 
@@ -120,7 +123,7 @@ public class WebRtcConnectionManager
         null, TimeSpan.Zero, TimeSpan.FromMilliseconds(CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS));
     }
 
-    private FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
+    private async Task<FrameConfig> GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
     {
         if (_peerConnectionPayState.TryGetIsPaid(peerID))
         {
@@ -146,10 +149,16 @@ public class WebRtcConnectionManager
         {
             double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
 
+            var invoiceQrCode = frameConfig.QrCodeImage;
+            if(invoiceQrCode == null)
+            {
+                invoiceQrCode = await GenerateQRCode(peerID);
+            }
+
             return frameConfig with
             {
                 BorderColour = Color.Yellow,
-                QrCodeImage = frameConfig.QrCodeImage ?? GenerateQRCode(peerID),
+                QrCodeImage =invoiceQrCode,
                 Opacity = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining/ TRANSPARENCY_PERIOD_SECONDS)),
                 Title = TRANSITION_PERIOD_TITLE
             };
@@ -165,10 +174,13 @@ public class WebRtcConnectionManager
         }
     }
 
-    private static Bitmap GenerateQRCode(string peerID)
+    private async Task<Bitmap> GenerateQRCode(string peerID)
     {
+        var invoice = await _lightningService.CreateInvoiceAsync(10000, "Pay me for flowers LOLZ.", 600);
+
         using QRCodeGenerator qrGenerator = new QRCodeGenerator();
-        using QRCodeData qrCodeData = qrGenerator.CreateQrCode($"{BASE_URL}/pay?id={peerID}", QRCodeGenerator.ECCLevel.Q);
+        //using QRCodeData qrCodeData = qrGenerator.CreateQrCode($"{BASE_URL}/pay?id={peerID}", QRCodeGenerator.ECCLevel.Q);
+        using QRCodeData qrCodeData = qrGenerator.CreateQrCode(invoice.PaymentRequest, QRCodeGenerator.ECCLevel.Q);
         using QRCode qrCode = new QRCode(qrCodeData);
 
         return qrCode.GetGraphic(20);

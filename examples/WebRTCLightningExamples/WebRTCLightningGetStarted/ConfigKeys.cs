@@ -17,11 +17,11 @@ namespace demo;
 
 public class ConfigKeys
 {
-    public const string LND_URL = "LndUrl";
+    public const string LND_URL = "Lnd:Url";
 
-    public const string LND_MACAROON = "LndMacaroon";
+    public const string LND_MACAROON = "Lnd:Macaroon";
 
-    public const string LND_CERTIFICATE_PATH = "LndCertificatePath";
+    public const string LND_CERTIFICATE_PATH = "Lnd:CertificatePath";
 
-    public const string LND_CERTIFICATE_BASE64 = "LndCertificateBase64";
+    public const string LND_CERTIFICATE_BASE64 = "Lnd:CertificateBase64";
 }
