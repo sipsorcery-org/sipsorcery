@@ -20,6 +20,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
 using System;
+using System.Collections.Concurrent;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -56,6 +57,8 @@ public class WebRtcConnectionManager
     private const int CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS = 100;
 
     private const string BASE_URL = "https://localhost:5001";
+
+    private readonly ConcurrentDictionary<string, Task<Bitmap>> _qrCodeCache = new();
 
     private readonly ILogger<WebRtcConnectionManager> _logger;
     private readonly PeerConnectionPayState _peerConnectionPayState;
@@ -108,9 +111,9 @@ public class WebRtcConnectionManager
     {
         var frameConfig = new FrameConfig(DateTime.Now, null, 0, Color.Blue, FREE_PERIOD_TITLE, false);
 
-        return new Timer(async _ =>
+        return new Timer(_ =>
         {
-            frameConfig = await GetUpdatedFrameConfig(frameConfig, peerID);
+            frameConfig = GetUpdatedFrameConfig(frameConfig, peerID);
 
             var annotatedBitmap = GetAnnotatedBitmap(frameConfig);
 
@@ -123,7 +126,7 @@ public class WebRtcConnectionManager
         null, TimeSpan.Zero, TimeSpan.FromMilliseconds(CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS));
     }
 
-    private async Task<FrameConfig> GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
+    private FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
     {
         if (_peerConnectionPayState.TryGetIsPaid(peerID))
         {
@@ -149,17 +152,14 @@ public class WebRtcConnectionManager
         {
             double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
 
-            var invoiceQrCode = frameConfig.QrCodeImage;
-            if(invoiceQrCode == null)
-            {
-                invoiceQrCode = await GenerateQRCode(peerID);
-            }
+            // Request QR code generation asynchronously without blocking
+            var invoiceQrCodeTask = GenerateQRCode(peerID);
 
             return frameConfig with
             {
                 BorderColour = Color.Yellow,
-                QrCodeImage =invoiceQrCode,
-                Opacity = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining/ TRANSPARENCY_PERIOD_SECONDS)),
+                QrCodeImage = invoiceQrCodeTask.IsCompletedSuccessfully ? invoiceQrCodeTask.Result : null,
+                Opacity = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining / TRANSPARENCY_PERIOD_SECONDS)),
                 Title = TRANSITION_PERIOD_TITLE
             };
         }
@@ -174,16 +174,20 @@ public class WebRtcConnectionManager
         }
     }
 
-    private async Task<Bitmap> GenerateQRCode(string peerID)
+    private Task<Bitmap> GenerateQRCode(string peerID)
     {
-        var invoice = await _lightningService.CreateInvoiceAsync(10000, "Pay me for flowers LOLZ.", 600);
+        return _qrCodeCache.GetOrAdd(peerID, async _ =>
+        {
+            var invoice = await _lightningService.CreateInvoiceAsync(10000, "Pay me for flowers LOLZ.", 600);
 
-        using QRCodeGenerator qrGenerator = new QRCodeGenerator();
-        //using QRCodeData qrCodeData = qrGenerator.CreateQrCode($"{BASE_URL}/pay?id={peerID}", QRCodeGenerator.ECCLevel.Q);
-        using QRCodeData qrCodeData = qrGenerator.CreateQrCode(invoice.PaymentRequest, QRCodeGenerator.ECCLevel.Q);
-        using QRCode qrCode = new QRCode(qrCodeData);
+            using QRCodeGenerator qrGenerator = new();
+            using QRCodeData qrCodeData = qrGenerator.CreateQrCode(invoice.PaymentRequest, QRCodeGenerator.ECCLevel.Q);
+            using QRCode qrCode = new(qrCodeData);
 
-        return qrCode.GetGraphic(20);
+            Bitmap qrBitmap = qrCode.GetGraphic(20);
+
+            return qrBitmap;
+        });
     }
 
     private Bitmap? GetAnnotatedBitmap(FrameConfig frameConfig)

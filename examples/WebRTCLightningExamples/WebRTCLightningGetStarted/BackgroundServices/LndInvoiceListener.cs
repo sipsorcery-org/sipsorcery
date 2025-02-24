@@ -110,7 +110,7 @@ public class LndInvoiceListener : BackgroundService
         // Receive invoices
         await foreach (var invoice in invoiceStream.ResponseStream.ReadAllAsync(linkedTokenSource.Token))
         {
-            //string rHash = Encoders.Hex.EncodeData(invoice.RHash.ToByteArray());
+            string rHash = Encoders.Hex.EncodeData(invoice.RHash.ToByteArray());
 
             //var invoiceEvent = new LightningInvoiceEvent
             //{
@@ -119,7 +119,7 @@ public class LndInvoiceListener : BackgroundService
             //    RHash = rHash
             //};
 
-            //_logger.LogInformation($"Lightning invoice event received for rhash {invoiceEvent.RHash}, description {invoiceEvent.Description} and state {invoiceEvent.State}.");
+            _logger.LogInformation($"Lightning invoice event received for rhash {rHash}, description {invoice.Memo} and state {invoice.State}.");
            
             //using var scope = _serviceProvider.CreateScope();
             //Guid? paymentRequestID = null;
