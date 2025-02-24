@@ -2093,8 +2093,10 @@ namespace SIPSorcery.Net
             uint rawSsrc = BitConverter.ToUInt32(buffer, 4);
             uint ssrc = BitConverter.IsLittleEndian ? NetConvert.DoReverseEndian(rawSsrc) : rawSsrc;
 
-            
-            var secureContext = PrimaryStream.GetSecurityContext();
+
+            MediaStream mediaStream = GetMediaStream(ssrc);
+            var secureContext = mediaStream?.GetSecurityContext() ?? PrimaryStream.GetSecurityContext();
+
             if (secureContext != null)
             {
                 int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
