@@ -2114,7 +2114,7 @@ namespace SIPSorcery.Net
             var rtcpPkt = new RTCPCompoundPacket(buffer);
             if (rtcpPkt != null)
             {
-                var mediaStream = GetMediaStream(rtcpPkt);
+                mediaStream = GetMediaStream(rtcpPkt);
                 if (rtcpPkt.Bye != null)
                 {
                     logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
