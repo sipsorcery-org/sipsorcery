@@ -160,7 +160,7 @@ public class WebRtcConnectionManager
     }
 
     private Task<Lnrpc.AddInvoiceResponse> GetLightningInvoiceInternal(string peerID)
-        => _lightningService.CreateInvoiceAsync(10000, "Pay me for flowers LOLZ.", 600);
+        => _lightningService.CreateInvoiceAsync(10000, peerID, 600);
 
     private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource bitmapSource, string peerID)
     {

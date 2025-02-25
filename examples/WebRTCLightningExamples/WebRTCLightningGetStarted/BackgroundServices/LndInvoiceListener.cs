@@ -44,18 +44,21 @@ public class LndInvoiceListener : BackgroundService
     private readonly ILightningClientFactory _lightningClientFactory;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly IServiceProvider _serviceProvider;
+    private readonly PeerConnectionPayState _peerConnectionPayState;
 
     public LndInvoiceListener(
         ILogger<LndInvoiceListener> logger,
         IConfiguration config,
         ILightningClientFactory lightningClientFactory,
         IHostApplicationLifetime hostApplicationLifetime,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        PeerConnectionPayState peerConnectionPayState)
     {
         _logger = logger;
         _lightningClientFactory = lightningClientFactory;
         _hostApplicationLifetime = hostApplicationLifetime;
         _serviceProvider = serviceProvider;
+        _peerConnectionPayState = peerConnectionPayState;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancelToken)
@@ -112,33 +115,19 @@ public class LndInvoiceListener : BackgroundService
         {
             string rHash = Encoders.Hex.EncodeData(invoice.RHash.ToByteArray());
 
-            //var invoiceEvent = new LightningInvoiceEvent
-            //{
-            //    Description = invoice.Memo,
-            //    State = invoice.State.ToLightningInvoiceState(),
-            //    RHash = rHash
-            //};
-
             _logger.LogInformation($"Lightning invoice event received for rhash {rHash}, description {invoice.Memo} and state {invoice.State}.");
-           
+
             //using var scope = _serviceProvider.CreateScope();
-            //Guid? paymentRequestID = null;
-            //if (invoice.State == Invoice.Types.InvoiceState.Settled)
-            //{
-            //    var lightningTransactionService = scope.ServiceProvider.GetRequiredService<ILightningTransactionService>();
-            //    paymentRequestID = await lightningTransactionService.SettleLightningInvoice(rHash, invoice.AmtPaidMsat.ToBtcUnits());
-            //}
+            //scope.ServiceProvider.GetRequiredService<ILightningTransactionService>()
+
+            if (invoice.State == Invoice.Types.InvoiceState.Settled)
+            {
+                _peerConnectionPayState.TrySetPaid(invoice.Memo);
+            }
             //else if(invoice.State == Invoice.Types.InvoiceState.Canceled)
             //{
             //    var paymentRequestEventService = scope.ServiceProvider.GetRequiredService<IPaymentRequestEventService>();
             //    paymentRequestID = await paymentRequestEventService.RecordLightningInvoiceCancelled(rHash);
-            //}
-
-            //if (paymentRequestID is not null && paymentRequestID != Guid.Empty)
-            //{
-            //    var groupID = paymentRequestID.Value.ToString().ToLower();
-            //    _logger.LogInformation($"Sending lightning invoice event with state {invoiceEvent.State} to subscribers of payment request ID {groupID}.");
-            //    await _lightningWorkerHub.Clients.Group(groupID).SendLightningInvoiceEvent(invoiceEvent);
             //}
         }
     }
