@@ -14,7 +14,7 @@ namespace SIPSorcery.Net
         /// <param name="id">extmap value</param>
         /// <param name="uri">URI of the extension - for example: "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" or "urn:3gpp:video-orientation" </param>
         /// <returns>A Specific RTPHeaderExtension</returns>
-        public static RTPHeaderExtension GetRTPHeaderExtension(int id, String uri, SDPMediaTypesEnum media)
+        public static RTPHeaderExtension GetRTPHeaderExtension(int id, string uri, SDPMediaTypesEnum media)
         {
             RTPHeaderExtension result = null;
             switch (uri)
@@ -29,6 +29,11 @@ namespace SIPSorcery.Net
 
                 case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
                     result = new AudioLevelExtension(id);
+                    break;
+
+                case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
+                    result = new TransportWideCCExtension(id);
                     break;
             }
 
@@ -46,7 +51,7 @@ namespace SIPSorcery.Net
         /// <param name="id"><see cref="int"/> Id / extmap</param>
         /// <param name="uri"><see cref="String"/>uri</param>
         /// <param name="type"><see cref="RTPHeaderExtension"/>type (one or two bytes)</param>
-        /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supportef by this extension - set null/empty if all medias are supported</param>
+        /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supported by this extension - set null/empty if all medias are supported</param>
         public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
         {
             Id = id;

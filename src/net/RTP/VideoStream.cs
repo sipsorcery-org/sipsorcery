@@ -155,6 +155,9 @@ namespace SIPSorcery.Net
                 int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
                 Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
 
+                //For TWCC
+                SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+
                 SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -178,6 +181,9 @@ namespace SIPSorcery.Net
                     byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
                     Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
                     Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
+
+                    //For TWCC
+                    SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
 
                     SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -215,9 +221,9 @@ namespace SIPSorcery.Net
 
                         int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
+                        SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
                         SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     }
-
                     LocalTrack.Timestamp += duration;
                 }
                 catch (SocketException sockExcp)
