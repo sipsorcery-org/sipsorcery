@@ -491,10 +491,13 @@ namespace SIPSorcery.Net
                         // Leaving out the feedback attribute for now. It should only be added where it's present in a parsed SDP packet or
                         // is opted in in a produced SDP packet. AC 7 Nov 2024, see also https://github.com/sipsorcery-org/sipsorcery/issues/1130.
 
-                        //foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
-                        //{
-                        //    formatAttributes += MEDIA_FORMAT_FEEDBACK_PREFIX + mediaFormat.ID + " " + rtcpFeedbackMessage + m_CRLF;
-                        //}
+                        if (mediaFormat.Kind == SDPMediaTypesEnum.video)
+                        {
+                            foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
+                            {
+                                formatAttributes += MEDIA_FORMAT_FEEDBACK_PREFIX + mediaFormat.ID + " " + rtcpFeedbackMessage + m_CRLF;
+                            }
+                        }
 
                         if (mediaFormat.Fmtp != null)
                         {
