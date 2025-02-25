@@ -388,7 +388,7 @@ namespace SIPSorcery.SIP
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
 
-                if (PrackSupported == true)
+                if (PrackSupported)
                 {
                     if (RSeq == 0)
                     {

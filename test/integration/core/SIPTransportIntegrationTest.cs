@@ -85,7 +85,7 @@ namespace SIPSorcery.SIP.IntegrationTests
                     logger.LogWarning("Tasks timed out");
                 }
 
-                if (testComplete.Task.IsCompleted == false)
+                if (!testComplete.Task.IsCompleted)
                 {
                     // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                     testComplete.SetResult(false);
@@ -132,7 +132,7 @@ serverReadyEvent);
                 logger.LogWarning("Tasks timed out");
             }
 
-            if (testComplete.Task.IsCompleted == false)
+            if (!testComplete.Task.IsCompleted)
             {
                 // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                 testComplete.SetResult(false);
@@ -188,7 +188,7 @@ serverReadyEvent);
                     logger.LogWarning("Tasks timed out");
                 }
 
-                if (testComplete.Task.IsCompleted == false)
+                if (!testComplete.Task.IsCompleted)
                 {
                     // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                     testComplete.SetResult(false);
@@ -237,7 +237,7 @@ serverReadyEvent);
                 logger.LogWarning("Tasks timed out");
             }
 
-            if (testComplete.Task.IsCompleted == false)
+            if (!testComplete.Task.IsCompleted)
             {
                 // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                 testComplete.SetResult(false);
@@ -291,7 +291,7 @@ serverReadyEvent);
                         logger.LogWarning("Tasks timed out");
                     }
 
-                    if (testComplete.Task.IsCompleted == false)
+                    if (!testComplete.Task.IsCompleted)
                     {
                         // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                         testComplete.SetResult(false);
@@ -364,7 +364,7 @@ serverReadyEvent);
                     logger.LogWarning("Tasks timed out");
                 }
 
-                if (testComplete.Task.IsCompleted == false)
+                if (!testComplete.Task.IsCompleted)
                 {
                     // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                     testComplete.SetResult(false);
@@ -428,7 +428,7 @@ serverReadyEvent);
                     logger.LogWarning("Tasks timed out");
                 }
 
-                if (testComplete.Task.IsCompleted == false)
+                if (!testComplete.Task.IsCompleted)
                 {
                     // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                     testComplete.SetResult(false);
@@ -699,7 +699,7 @@ serverReadyEvent);
                     logger.LogWarning("Tasks timed out");
                 }
 
-                if (testComplete.Task.IsCompleted == false)
+                if (!testComplete.Task.IsCompleted)
                 {
                     // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                     testComplete.SetResult(false);

@@ -561,7 +561,7 @@ namespace SIPSorcery.SIP.App
         {
             if (m_uac != null)
             {
-                if (m_uac.IsUACAnswered == false)
+                if (!m_uac.IsUACAnswered)
                 {
                     m_uac.Cancel();
                 }
@@ -1778,10 +1778,10 @@ namespace SIPSorcery.SIP.App
                 m_semaphoreSlim.Wait();
                 CallEndedSyncronized(callId);
             }
-			catch (ObjectDisposedException)
-			{
-				//Swallow it
-			}
+            catch (ObjectDisposedException)
+            {
+                //Swallow it
+            }
             finally
             {
                 TryReleaseSemaphore();
@@ -1974,17 +1974,17 @@ namespace SIPSorcery.SIP.App
             TryReleaseSemaphore();
             m_semaphoreSlim.Dispose();
         }
-		
-		private void TryReleaseSemaphore()
-		{
-			try
-			{
-				m_semaphoreSlim.Release();
-			}
-			catch (ObjectDisposedException)
-			{
-				//Swallow it
-			}
-		}
+        
+        private void TryReleaseSemaphore()
+        {
+            try
+            {
+                m_semaphoreSlim.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                //Swallow it
+            }
+        }
     }
 }

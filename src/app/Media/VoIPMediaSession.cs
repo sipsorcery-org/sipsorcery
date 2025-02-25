@@ -187,7 +187,7 @@ namespace SIPSorcery.Media
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
 
-            if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
+            if (AudioStream != null && !AudioStream.LocalTrack.NoDtmfSupport)
             {
                 logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
             }

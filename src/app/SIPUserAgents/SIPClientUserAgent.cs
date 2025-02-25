@@ -561,7 +561,7 @@ namespace SIPSorcery.SIP.App
             inviteHeader.UserAgent = SIPConstants.SipUserAgentVersionString;
             inviteHeader.Routes = routeSet;
             inviteHeader.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
-                + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
+                + (PrackSupported ? ", " + SIPExtensionHeaders.PRACK : "");
 
             inviteRequest.Header = inviteHeader;
 
