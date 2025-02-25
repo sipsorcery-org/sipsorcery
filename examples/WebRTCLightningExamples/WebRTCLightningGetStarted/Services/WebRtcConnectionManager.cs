@@ -15,14 +15,12 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
-using QRCoder;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
 using System;
 using System.Collections.Concurrent;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,22 +29,8 @@ namespace demo;
 
 public class WebRtcConnectionManager
 {
-    record FrameConfig(
-        DateTime StartTime,
-        Bitmap? QrCodeImage,
-        int Opacity,
-        Color BorderColour,
-        string Title,
-        bool IsPaid);
-
     private static string FREE_IMAGE_PATH = "media/simple_flower.jpg";
     private static string PAID_IMAGE_PATH = "media/real_flowers.jpg";
-    private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
-    private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
-    private const int TEXT_MARGIN_PIXELS = 5;
-    private const int POINTS_PER_INCH = 72;
-    private const int BORDER_WIDTH = 5;
-    private const int QR_CODE_DIMENSION = 200;
 
     private const int FREE_PERIOD_SECONDS = 3;
     private const int TRANSPARENCY_PERIOD_SECONDS = 3;
@@ -56,22 +40,23 @@ public class WebRtcConnectionManager
     private const int FRAMES_PER_SECOND = 5; //30;
     private const int CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS = 100;
 
-    private const string BASE_URL = "https://localhost:5001";
-
-    private readonly ConcurrentDictionary<string, Task<Bitmap>> _qrCodeCache = new();
+    private readonly ConcurrentDictionary<string, Lazy<Task<Lnrpc.AddInvoiceResponse>>> _lightningInvoiceCache = new();
 
     private readonly ILogger<WebRtcConnectionManager> _logger;
     private readonly PeerConnectionPayState _peerConnectionPayState;
     private readonly ILightningService _lightningService;
+    private readonly IAnnotatedBitmapGenerator _annotatedBitmapGenerator;
 
     public WebRtcConnectionManager(
         ILogger<WebRtcConnectionManager> logger,
         PeerConnectionPayState peerConnectionPayState,
-        ILightningService lightningService)
+        ILightningService lightningService,
+        IAnnotatedBitmapGenerator annotatedBitmapGenerator)
     {
         _logger = logger;
         _peerConnectionPayState = peerConnectionPayState;
         _lightningService = lightningService;
+        _annotatedBitmapGenerator = annotatedBitmapGenerator;
     }
 
     public Task<RTCPeerConnection> CreatePeerConnection(string peerID)
@@ -109,13 +94,13 @@ public class WebRtcConnectionManager
 
     private Timer CreateGenerateBitmapTimer(VideoBitmapSource bitmapSource, string peerID)
     {
-        var frameConfig = new FrameConfig(DateTime.Now, null, 0, Color.Blue, FREE_PERIOD_TITLE, false);
+        var frameConfig = new FrameConfig(DateTime.Now, null, 0, Color.Blue, FREE_PERIOD_TITLE, false, FREE_IMAGE_PATH);
 
         return new Timer(_ =>
         {
             frameConfig = GetUpdatedFrameConfig(frameConfig, peerID);
 
-            var annotatedBitmap = GetAnnotatedBitmap(frameConfig);
+            var annotatedBitmap = _annotatedBitmapGenerator.GetAnnotatedBitmap(frameConfig);
 
             if (annotatedBitmap != null)
             {
@@ -135,8 +120,9 @@ public class WebRtcConnectionManager
                 BorderColour = Color.Pink,
                 Title = string.Empty,
                 IsPaid = true,
-                QrCodeImage = null,
-                Opacity = 0
+                LightningPaymentRequest = null,
+                Opacity = 0,
+                ImagePath = PAID_IMAGE_PATH
             };
         }
 
@@ -145,141 +131,36 @@ public class WebRtcConnectionManager
             return frameConfig with
             {
                 BorderColour = Color.Blue,
-                Title = FREE_PERIOD_TITLE
-            };
-        }
-        else if (DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS))
-        {
-            double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
-
-            // Request QR code generation asynchronously without blocking
-            var invoiceQrCodeTask = GenerateQRCode(peerID);
-
-            return frameConfig with
-            {
-                BorderColour = Color.Yellow,
-                QrCodeImage = invoiceQrCodeTask.IsCompletedSuccessfully ? invoiceQrCodeTask.Result : null,
-                Opacity = (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining / TRANSPARENCY_PERIOD_SECONDS)),
-                Title = TRANSITION_PERIOD_TITLE
+                Title = FREE_PERIOD_TITLE,
+                LightningPaymentRequest = null
             };
         }
         else
         {
+            // Request lightning invoice generation asynchronously without blocking
+            var lightningInvoiceTask = GetLightningInvoice(peerID);
+
+            bool isTransitionPeriod = DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS);
+            double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
+
             return frameConfig with
             {
-                BorderColour = Color.Orange,
-                Opacity = MAX_ALPHA_TRANSPARENCY,
+                BorderColour = isTransitionPeriod ? Color.Yellow : Color.Orange,
+                LightningPaymentRequest = lightningInvoiceTask.IsCompletedSuccessfully ? lightningInvoiceTask.Result.PaymentRequest : null,
+                Opacity = isTransitionPeriod ? (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining / TRANSPARENCY_PERIOD_SECONDS)) : MAX_ALPHA_TRANSPARENCY,
                 Title = TRANSITION_PERIOD_TITLE
             };
         }
     }
 
-    private Task<Bitmap> GenerateQRCode(string peerID)
+    private Task<Lnrpc.AddInvoiceResponse> GetLightningInvoice(string peerID)
     {
-        return _qrCodeCache.GetOrAdd(peerID, async _ =>
-        {
-            var invoice = await _lightningService.CreateInvoiceAsync(10000, "Pay me for flowers LOLZ.", 600);
-
-            using QRCodeGenerator qrGenerator = new();
-            using QRCodeData qrCodeData = qrGenerator.CreateQrCode(invoice.PaymentRequest, QRCodeGenerator.ECCLevel.Q);
-            using QRCode qrCode = new(qrCodeData);
-
-            Bitmap qrBitmap = qrCode.GetGraphic(20);
-
-            return qrBitmap;
-        });
+        var lazyTask = _lightningInvoiceCache.GetOrAdd(peerID, _ => new Lazy<Task<Lnrpc.AddInvoiceResponse>>(() => GetLightningInvoiceInternal(peerID)));
+        return lazyTask.Value;
     }
 
-    private Bitmap? GetAnnotatedBitmap(FrameConfig frameConfig)
-    {
-        try
-        {
-            unsafe
-            {
-                string imagePath = frameConfig.IsPaid ? PAID_IMAGE_PATH : FREE_IMAGE_PATH;
-                Bitmap baseBitmap = new Bitmap(imagePath);
-
-                var baseImage = baseBitmap.Clone() as Image;
-                if (baseImage != null)
-                {
-                    ApplyFilters(
-                        baseImage,
-                        DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"),
-                        frameConfig.Title,
-                        frameConfig.BorderColour,
-                        frameConfig.Opacity,
-                        frameConfig.QrCodeImage);
-
-                    baseBitmap.Dispose();
-
-                    return baseImage as Bitmap;
-                }
-            }
-        }
-        catch (Exception excp)
-        {
-            _logger.LogError("Exception GetAnnotatedBitmap. " + excp);
-        }
-
-        return null;
-    }
-
-    private void ApplyFilters(Image image, string timeStamp, string title, Color borderColor, int transparency, Bitmap? qrCode)
-    {
-        int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
-
-        Graphics g = Graphics.FromImage(image);
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-        // Draw border.
-        using (var pen = new Pen(borderColor, BORDER_WIDTH))
-        {
-            g.DrawLine(pen, new Point(0, 0), new Point(0, image.Height));
-            g.DrawLine(pen, new Point(0, 0), new Point(image.Width, 0));
-            g.DrawLine(pen, new Point(0, image.Height), new Point(image.Width, image.Height));
-            g.DrawLine(pen, new Point(image.Width, 0), new Point(image.Width, image.Height));
-        }
-
-        // Add transparency.
-        using (Brush brush = new SolidBrush(Color.FromArgb(transparency, Color.Gray)))
-        {
-            g.FillRectangle(brush, new Rectangle(0, 0, image.Width, image.Height));
-        }
-
-        // Add header and footer text.
-        using (StringFormat format = new StringFormat())
-        {
-            format.LineAlignment = StringAlignment.Center;
-            format.Alignment = StringAlignment.Center;
-
-            using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
-            {
-                using (var gPath = new GraphicsPath())
-                {
-                    float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
-                    if (title != null)
-                    {
-                        gPath.AddString(title, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
-                    }
-
-                    gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
-                    g.FillPath(Brushes.White, gPath);
-                    g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
-                }
-            }
-        }
-
-        // Add QR Code.
-        if (qrCode != null)
-        {
-            int xCenter = (image.Width - QR_CODE_DIMENSION) / 2;
-            int yCenter = (image.Height - QR_CODE_DIMENSION) / 2;
-            Rectangle dstRect = new Rectangle(xCenter, yCenter, QR_CODE_DIMENSION, QR_CODE_DIMENSION);
-            g.DrawImage(qrCode, dstRect);
-        }
-    }
+    private Task<Lnrpc.AddInvoiceResponse> GetLightningInvoiceInternal(string peerID)
+        => _lightningService.CreateInvoiceAsync(10000, "Pay me for flowers LOLZ.", 600);
 
     private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource bitmapSource, string peerID)
     {

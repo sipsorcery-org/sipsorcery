@@ -43,7 +43,8 @@ class Program
         builder.Services.AddSingleton<PeerConnectionPayState>();
         builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
         builder.Services.AddTransient<ILightningService, LightningService>();
-
+        builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapGenerator>();
+        
         builder.Services.AddControllers();
 
         var app = builder.Build();

@@ -4,13 +4,12 @@
 
     <script type="text/javascript">
 
-        const STUN_URL = "stun:stun.sipsorcery.com";
         const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
 
         var pc, ws;
 
         async function start() {
-            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+            pc = new RTCPeerConnection();
 
             pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));

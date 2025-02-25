@@ -272,7 +272,6 @@ public class VideoBitmapSource : IVideoSource, IDisposable
         }
     }
 
-
     public void Dispose()
     {
         _isClosed = true;
