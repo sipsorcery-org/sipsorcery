@@ -18,14 +18,14 @@ public class PayController : ControllerBase
         _peerConnectionPayState = peerConnectionPayState;
     }
 
-    [HttpGet("{id}")]
-    public IActionResult Get(string id)
-    {
-        _logger.LogDebug($"pay id={id}");
+    //[HttpGet("{id}")]
+    //public IActionResult Get(string id)
+    //{
+    //    _logger.LogDebug($"pay id={id}");
 
-        return _peerConnectionPayState.TrySetPaid(id) ?
-            Ok() : BadRequest();
-    }
+    //    return _peerConnectionPayState.TrySetPaid(id) ?
+    //        Ok() : BadRequest();
+    //}
 
     //[HttpGet("list")]
     //public string List()

@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using NBitcoin.DataEncoders;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
@@ -32,13 +33,16 @@ public class WebRtcConnectionManager
     private static string FREE_IMAGE_PATH = "media/simple_flower.jpg";
     private static string PAID_IMAGE_PATH = "media/real_flowers.jpg";
 
-    private const int FREE_PERIOD_SECONDS = 3;
+    private const int FREE_PERIOD_SECONDS = 6;
     private const int TRANSPARENCY_PERIOD_SECONDS = 3;
     private const int MAX_ALPHA_TRANSPARENCY = 200;
     private const string FREE_PERIOD_TITLE = "Taster Content";
     private const string TRANSITION_PERIOD_TITLE = "Pay for More";
     private const int FRAMES_PER_SECOND = 5; //30;
     private const int CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS = 100;
+    private const int INVOICE_PURCHASE_SECONDS = 10;
+    private const int INVOICE_AMOUNT_MILLISATS = 10000;
+    private const int INVOICE_EXPIRY_SECONDS = 60;
 
     private readonly ConcurrentDictionary<string, Lazy<Task<Lnrpc.AddInvoiceResponse>>> _lightningInvoiceCache = new();
 
@@ -62,7 +66,7 @@ public class WebRtcConnectionManager
     public Task<RTCPeerConnection> CreatePeerConnection(string peerID)
     {
         var pc = new RTCPeerConnection(null);
-        _peerConnectionPayState.TryAddPeer(peerID);
+        _peerConnectionPayState.TryAddPeer(peerID, DateTimeOffset.MinValue);
 
         Bitmap sourceBitmap = new Bitmap(FREE_IMAGE_PATH);
 
@@ -113,7 +117,9 @@ public class WebRtcConnectionManager
 
     private FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
     {
-        if (_peerConnectionPayState.TryGetIsPaid(peerID))
+        var remainingSeconds = _peerConnectionPayState.GetRemainingPaidSeconds(peerID);
+
+        if (remainingSeconds > 0)
         {
             return frameConfig with
             {
@@ -140,6 +146,15 @@ public class WebRtcConnectionManager
             // Request lightning invoice generation asynchronously without blocking
             var lightningInvoiceTask = GetLightningInvoice(peerID);
 
+            lightningInvoiceTask.ContinueWith(task =>
+            {
+                if (task.Status == TaskStatus.RanToCompletion)
+                {
+                    Lnrpc.AddInvoiceResponse response = task.Result;
+                    _peerConnectionPayState.TryAddInvoice(peerID, Encoders.Hex.EncodeData(response.RHash.ToByteArray()), INVOICE_PURCHASE_SECONDS);
+                }
+            });
+
             bool isTransitionPeriod = DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS);
             double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
 
@@ -160,7 +175,7 @@ public class WebRtcConnectionManager
     }
 
     private Task<Lnrpc.AddInvoiceResponse> GetLightningInvoiceInternal(string peerID)
-        => _lightningService.CreateInvoiceAsync(10000, peerID, 600);
+        => _lightningService.CreateInvoiceAsync(INVOICE_AMOUNT_MILLISATS, peerID, INVOICE_EXPIRY_SECONDS);
 
     private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource bitmapSource, string peerID)
     {

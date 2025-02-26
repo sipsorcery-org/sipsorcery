@@ -122,7 +122,7 @@ public class LndInvoiceListener : BackgroundService
 
             if (invoice.State == Invoice.Types.InvoiceState.Settled)
             {
-                _peerConnectionPayState.TrySetPaid(invoice.Memo);
+                _peerConnectionPayState.TrySetPaid(rHash);
             }
             //else if(invoice.State == Invoice.Types.InvoiceState.Canceled)
             //{
