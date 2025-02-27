@@ -87,7 +87,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
+                    logger.LogRtpVideoFramerError();
                     //logger.LogWarning("rtp video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
                 }
             }
@@ -105,7 +105,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("rtp unknown video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
+                logger.LogRtpUnknownVideo(hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
             }
 
             return null;

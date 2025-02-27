@@ -115,7 +115,7 @@ namespace SIPSorcery.SIP
                 int endFirstLinePosn = Array.IndexOf(buffer, (byte)'\n');
                 if (endFirstLinePosn == -1)
                 {
-                    logger.LogWarning("Error ParseSIPMessage, no end of line character found for the first line.");
+                    logger.LogMessageParseError();
                     return null;
                 }
 

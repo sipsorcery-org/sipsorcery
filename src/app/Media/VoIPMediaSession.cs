@@ -168,7 +168,7 @@ namespace SIPSorcery.Media
             {
                 _videoCaptureDeviceFailed = true;
 
-                logger.LogWarning("Video source for capture device failure. {ErrorMessage}", errorMessage);
+                logger.LogVideoCaptureDeviceFailure(errorMessage);
 
                 // Can't use the webcam, switch to the test pattern source.
                 await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
@@ -177,31 +177,31 @@ namespace SIPSorcery.Media
 
         private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
         {
-            // IMPTORTANT NOTE: The audio sink format cannot be set here as it is not known until the first RTP packet
+// IMPTORTANT NOTE: The audio sink format cannot be set here as it is not known until the first RTP packet
             // is received from the remote party. All we know at this stage is which audio formats are supported but NOT
             // which one the remote party has chosen to use. Generally it seems the sending and reciving formats should be the same but
             // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
             var audioFormat = audoFormats.First();
-            logger.LogDebug("Setting audio source format to {FormatID}:{Codec} {ClockRate} (RTP clock rate {RtpClockRate}).", audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
+            logger.LogSettingAudioFormat(audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
 
             if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
             {
-                logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
+                logger.LogAudioTrackDtmfNegotiated(AudioStream.NegotiatedRtpEventPayloadID);
             }
         }
 
         private void VideoFormatsNegotiated(List<VideoFormat> videoFormats)
         {
-            // IMPTORTANT NOTE: The video sink format cannot be set here as it is not known until the first RTP packet
+// IMPTORTANT NOTE: The video sink format cannot be set here as it is not known until the first RTP packet
             // is received from the remote party. All we know at this stage is which audio formats are supported but NOT
             // which one the remote party has chosen to use. Generally it seems the sending and reciving formats should be the same but
             // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
             var videoFormat = videoFormats.First();
-            logger.LogDebug("Setting video sink and source format to {VideoFormatID}:{VideoCodec}.", videoFormat.FormatID, videoFormat.Codec);
+            logger.LogSettingVideoFormat(videoFormat.FormatID, videoFormat.Codec);
             Media.VideoSource?.SetVideoSourceFormat(videoFormat);
             _videoTestPatternSource?.SetVideoSourceFormat(videoFormat);
         }
@@ -234,7 +234,7 @@ namespace SIPSorcery.Media
                         }
                         else
                         {
-                            logger.LogWarning("Webcam video source failed before start, switching to test pattern source.");
+                            logger.LogWebcamFailedSwitchingToPattern();
 
                             // The webcam source failed to start. Switch to a test pattern source.
                             await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
@@ -297,7 +297,7 @@ namespace SIPSorcery.Media
 
             if (mediaType == SDPMediaTypesEnum.audio && Media.AudioSink != null)
             {
-                logger.LogTrace(nameof(RtpMediaPacketReceived) + " audio RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
+                logger.LogRtpMediaPacketReceived(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
