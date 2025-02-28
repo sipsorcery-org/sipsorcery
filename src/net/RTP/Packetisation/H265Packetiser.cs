@@ -212,14 +212,14 @@ namespace SIPSorcery.net.RTP.Packetisation
         ///The field FuType MUST be equal to the field Type of the fragmented
         ///NAL unit.
         /// </remarks>
-        public static byte[] GetH265RtpHeader(byte nal0, bool isFirstPacket, bool isFinalPacket)
+        public static byte[] GetH265RtpHeader(byte[] nals, bool isFirstPacket, bool isFinalPacket)
         {
-            byte nalType = (byte)((nal0 >> 1) & 0x1F);
 
-            byte firstHdrByte = (byte)(nal0 & 0x81);
+            byte nalType = (byte)((nals[0] >> 1) & 0x3F);
 
-            byte fuIndicator = (byte)(firstHdrByte | (49 << 1));
-            byte fuHeader = nalType;
+            nals[0] = (byte)((nals[0] & 0x81) | (49 << 1));
+
+            byte fuHeader = (byte)(nalType & 0x3f);
             if (isFirstPacket)
             {
                 fuHeader += 0x80;
@@ -228,8 +228,7 @@ namespace SIPSorcery.net.RTP.Packetisation
             {
                 fuHeader += 0x40;
             }
-
-            return new byte[] { fuIndicator, fuHeader };
+            return new byte[] { nals[0], nals[1], fuHeader };
         }
     }
 }

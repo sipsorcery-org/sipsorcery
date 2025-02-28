@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
-            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264 || codec = VideoCodecsEnum.H265 || codec == VideoCodecsEnum.JPEG))
+            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.H265 || codec == VideoCodecsEnum.JPEG))
             {
                 throw new NotSupportedException("The RTP video framer currently only understands H264, VP8 and JPEG encoded frames.");
             }
