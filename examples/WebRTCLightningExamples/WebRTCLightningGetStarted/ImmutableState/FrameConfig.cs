@@ -19,7 +19,7 @@ using System.Drawing;
 namespace demo;
 
 public record FrameConfig(
-    DateTime StartTime,
+    DateTimeOffset StartTime,
     string? LightningPaymentRequest,
     int Opacity,
     Color BorderColour,

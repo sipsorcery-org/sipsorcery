@@ -23,7 +23,6 @@ using NBitcoin.DataEncoders;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace demo;
 
@@ -43,22 +42,19 @@ public class LndInvoiceListener : BackgroundService
     private readonly ILogger _logger;
     private readonly ILightningClientFactory _lightningClientFactory;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly PeerConnectionPayState _peerConnectionPayState;
+    private readonly LightningInvoiceEventService _lightningInvoiceEventService;
 
     public LndInvoiceListener(
         ILogger<LndInvoiceListener> logger,
         IConfiguration config,
         ILightningClientFactory lightningClientFactory,
         IHostApplicationLifetime hostApplicationLifetime,
-        IServiceProvider serviceProvider,
-        PeerConnectionPayState peerConnectionPayState)
+        LightningInvoiceEventService lightningInvoiceEventService)
     {
         _logger = logger;
         _lightningClientFactory = lightningClientFactory;
         _hostApplicationLifetime = hostApplicationLifetime;
-        _serviceProvider = serviceProvider;
-        _peerConnectionPayState = peerConnectionPayState;
+        _lightningInvoiceEventService = lightningInvoiceEventService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancelToken)
@@ -117,12 +113,9 @@ public class LndInvoiceListener : BackgroundService
 
             _logger.LogInformation($"Lightning invoice event received for rhash {rHash}, description {invoice.Memo} and state {invoice.State}.");
 
-            //using var scope = _serviceProvider.CreateScope();
-            //scope.ServiceProvider.GetRequiredService<ILightningTransactionService>()
-
             if (invoice.State == Invoice.Types.InvoiceState.Settled)
             {
-                _peerConnectionPayState.TrySetPaid(rHash);
+                _lightningInvoiceEventService.PublishInvoiceEvent(new InvoiceSettledNotification(rHash, invoice.Memo));
             }
             //else if(invoice.State == Invoice.Types.InvoiceState.Canceled)
             //{

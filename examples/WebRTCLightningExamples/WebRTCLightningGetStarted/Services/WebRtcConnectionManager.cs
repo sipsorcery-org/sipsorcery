@@ -15,12 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
-using NBitcoin.DataEncoders;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
 using System;
-using System.Collections.Concurrent;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
@@ -28,45 +26,46 @@ using System.Threading.Tasks;
 
 namespace demo;
 
-public class WebRtcConnectionManager
+public interface IWebRtcConnectionManager
 {
-    private static string FREE_IMAGE_PATH = "media/simple_flower.jpg";
-    private static string PAID_IMAGE_PATH = "media/real_flowers.jpg";
+    Task<RTCPeerConnection> CreatePeerConnection(string peerID);
+}
 
-    private const int FREE_PERIOD_SECONDS = 6;
-    private const int TRANSPARENCY_PERIOD_SECONDS = 3;
+public class WebRtcConnectionManager : IWebRtcConnectionManager, IDisposable
+{
+    private const string FREE_IMAGE_PATH = "media/simple_flower.jpg";
+    private const string PAID_IMAGE_PATH = "media/real_flowers.jpg";
+
+    private const int FREE_PERIOD_SECONDS = 15;
+    private const int TRANSITION_PERIOD_SECONDS = 8;
     private const int MAX_ALPHA_TRANSPARENCY = 200;
-    private const string FREE_PERIOD_TITLE = "Taster Content";
-    private const string TRANSITION_PERIOD_TITLE = "Pay for More";
+    private const string INITIALISING_TITLE = "Initialising";
+    private const string FREE_PERIOD_TITLE = "Free Period";
+    private const string TRANSITION_PERIOD_TITLE = "Transition Period";
+    private const string WAITING_FOR_PAYMENT_PERIOD_TITLE = "Waiting for Payment";
+    private const string PAID_PERIOD_TITLE = "Thanks for Paying!";
     private const int FRAMES_PER_SECOND = 5; //30;
     private const int CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS = 100;
-    private const int INVOICE_PURCHASE_SECONDS = 10;
-    private const int INVOICE_AMOUNT_MILLISATS = 10000;
-    private const int INVOICE_EXPIRY_SECONDS = 60;
-
-    private readonly ConcurrentDictionary<string, Lazy<Task<Lnrpc.AddInvoiceResponse>>> _lightningInvoiceCache = new();
 
     private readonly ILogger<WebRtcConnectionManager> _logger;
-    private readonly PeerConnectionPayState _peerConnectionPayState;
-    private readonly ILightningService _lightningService;
+    private readonly ILightningPaymentService _webRTCLightningPaymentService;
     private readonly IAnnotatedBitmapGenerator _annotatedBitmapGenerator;
+
+    private Timer? _setBitmapSourceTimer = null;
 
     public WebRtcConnectionManager(
         ILogger<WebRtcConnectionManager> logger,
-        PeerConnectionPayState peerConnectionPayState,
-        ILightningService lightningService,
+        ILightningPaymentService webRTCLightningPaymentService,
         IAnnotatedBitmapGenerator annotatedBitmapGenerator)
     {
         _logger = logger;
-        _peerConnectionPayState = peerConnectionPayState;
-        _lightningService = lightningService;
+        _webRTCLightningPaymentService = webRTCLightningPaymentService;
         _annotatedBitmapGenerator = annotatedBitmapGenerator;
     }
 
     public Task<RTCPeerConnection> CreatePeerConnection(string peerID)
     {
         var pc = new RTCPeerConnection(null);
-        _peerConnectionPayState.TryAddPeer(peerID, DateTimeOffset.MinValue);
 
         Bitmap sourceBitmap = new Bitmap(FREE_IMAGE_PATH);
 
@@ -83,22 +82,12 @@ public class WebRtcConnectionManager
         HandlePeerConnectionStateChange(pc, bitmapSource, peerID);
         SetDiagnosticLogging(pc);
 
-        pc.onconnectionstatechange += (state) =>
-        {
-            if (state is RTCPeerConnectionState.closed or
-                        RTCPeerConnectionState.failed or
-                        RTCPeerConnectionState.disconnected)
-            {
-                _peerConnectionPayState.TryRemovePeer(peerID);
-            }
-        };
-
         return Task.FromResult(pc);
     }
 
     private Timer CreateGenerateBitmapTimer(VideoBitmapSource bitmapSource, string peerID)
     {
-        var frameConfig = new FrameConfig(DateTime.Now, null, 0, Color.Blue, FREE_PERIOD_TITLE, false, FREE_IMAGE_PATH);
+        var frameConfig = new FrameConfig(DateTimeOffset.Now, null, 0, Color.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH);
 
         return new Timer(_ =>
         {
@@ -117,104 +106,161 @@ public class WebRtcConnectionManager
 
     private FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
     {
-        var remainingSeconds = _peerConnectionPayState.GetRemainingPaidSeconds(peerID);
+        var paymentState = _webRTCLightningPaymentService.GetPaymentState();
+        int remainingSeconds = (int)paymentState.PaidUntil.Subtract(DateTimeOffset.Now).TotalSeconds;
 
-        if (remainingSeconds > 0)
+        if (paymentState.IsFreePeriod)
         {
-            return frameConfig with
+            if (remainingSeconds > TRANSITION_PERIOD_SECONDS)
             {
-                BorderColour = Color.Pink,
-                Title = string.Empty,
-                IsPaid = true,
-                LightningPaymentRequest = null,
-                Opacity = 0,
-                ImagePath = PAID_IMAGE_PATH
-            };
-        }
-
-        if (DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < FREE_PERIOD_SECONDS)
-        {
-            return frameConfig with
-            {
-                BorderColour = Color.Blue,
-                Title = FREE_PERIOD_TITLE,
-                LightningPaymentRequest = null
-            };
-        }
-        else
-        {
-            // Request lightning invoice generation asynchronously without blocking
-            var lightningInvoiceTask = GetLightningInvoice(peerID);
-
-            lightningInvoiceTask.ContinueWith(task =>
-            {
-                if (task.Status == TaskStatus.RanToCompletion)
+                return frameConfig with
                 {
-                    Lnrpc.AddInvoiceResponse response = task.Result;
-                    _peerConnectionPayState.TryAddInvoice(peerID, Encoders.Hex.EncodeData(response.RHash.ToByteArray()), INVOICE_PURCHASE_SECONDS);
-                }
-            });
-
-            bool isTransitionPeriod = DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds < (FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS);
-            double freeSecondsRemaining = FREE_PERIOD_SECONDS + TRANSPARENCY_PERIOD_SECONDS - DateTime.Now.Subtract(frameConfig.StartTime).TotalSeconds;
-
-            return frameConfig with
+                    BorderColour = Color.Pink,
+                    Title = FREE_PERIOD_TITLE,
+                    IsPaid = false,
+                    LightningPaymentRequest = null,
+                    Opacity = 0,
+                    ImagePath = FREE_IMAGE_PATH
+                };
+            }
+            else if (remainingSeconds > 0)
             {
-                BorderColour = isTransitionPeriod ? Color.Yellow : Color.Orange,
-                LightningPaymentRequest = lightningInvoiceTask.IsCompletedSuccessfully ? lightningInvoiceTask.Result.PaymentRequest : null,
-                Opacity = isTransitionPeriod ? (int)(MAX_ALPHA_TRANSPARENCY - MAX_ALPHA_TRANSPARENCY * (freeSecondsRemaining / TRANSPARENCY_PERIOD_SECONDS)) : MAX_ALPHA_TRANSPARENCY,
-                Title = TRANSITION_PERIOD_TITLE
-            };
+                if(!paymentState.HasLightningInvoiceBeenRequested && paymentState.LightningPaymentRequest == null)
+                {
+                    _webRTCLightningPaymentService.RequestLightningInvoice();
+                }
+
+                int opacity = (int)(MAX_ALPHA_TRANSPARENCY * ((TRANSITION_PERIOD_SECONDS - remainingSeconds) / (double)TRANSITION_PERIOD_SECONDS));
+
+                return frameConfig with
+                {
+                    BorderColour = Color.Orange,
+                    Title = TRANSITION_PERIOD_TITLE,
+                    IsPaid = paymentState.isPaidPeriod,
+                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
+                    Opacity = opacity,
+                    ImagePath = FREE_IMAGE_PATH
+                };
+            }
+            else
+            {
+                return frameConfig with
+                {
+                    BorderColour = Color.Red,
+                    Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
+                    IsPaid = false,
+                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
+                    Opacity = MAX_ALPHA_TRANSPARENCY,
+                    ImagePath = FREE_IMAGE_PATH
+                };
+            }
         }
-    }
+        else if(paymentState.isPaidPeriod)
+        {
+            if (remainingSeconds > TRANSITION_PERIOD_SECONDS)
+            {
+                return frameConfig with
+                {
+                    BorderColour = Color.Blue,
+                    Title = PAID_PERIOD_TITLE,
+                    IsPaid = true,
+                    LightningPaymentRequest = null,
+                    Opacity = 0,
+                    ImagePath = PAID_IMAGE_PATH
+                };
+            }
+            else if (remainingSeconds > 0)
+            {
+                if (!paymentState.HasLightningInvoiceBeenRequested && paymentState.LightningPaymentRequest == null)
+                {
+                    _webRTCLightningPaymentService.RequestLightningInvoice();
+                }
 
-    private Task<Lnrpc.AddInvoiceResponse> GetLightningInvoice(string peerID)
-    {
-        var lazyTask = _lightningInvoiceCache.GetOrAdd(peerID, _ => new Lazy<Task<Lnrpc.AddInvoiceResponse>>(() => GetLightningInvoiceInternal(peerID)));
-        return lazyTask.Value;
-    }
+                int opacity = (int)(MAX_ALPHA_TRANSPARENCY * ((TRANSITION_PERIOD_SECONDS - remainingSeconds) / (double)TRANSITION_PERIOD_SECONDS));
 
-    private Task<Lnrpc.AddInvoiceResponse> GetLightningInvoiceInternal(string peerID)
-        => _lightningService.CreateInvoiceAsync(INVOICE_AMOUNT_MILLISATS, peerID, INVOICE_EXPIRY_SECONDS);
+                return frameConfig with
+                {
+                    BorderColour = Color.Orange,
+                    Title = TRANSITION_PERIOD_TITLE,
+                    IsPaid = true,
+                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
+                    Opacity = opacity,
+                    ImagePath = PAID_IMAGE_PATH
+                };
+            }
+            else
+            {
+                return frameConfig with
+                {
+                    BorderColour = Color.Red,
+                    Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
+                    IsPaid = true,
+                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
+                    Opacity = MAX_ALPHA_TRANSPARENCY,
+                    ImagePath = PAID_IMAGE_PATH
+                };
+            }
+        }
+
+        return frameConfig with
+        {
+            BorderColour = Color.Red,
+            Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
+            IsPaid = true,
+            LightningPaymentRequest = paymentState.LightningPaymentRequest,
+            Opacity = MAX_ALPHA_TRANSPARENCY,
+            ImagePath = FREE_IMAGE_PATH
+        };
+    }
 
     private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource bitmapSource, string peerID)
     {
-        Timer? setBitmapSourceTimer = null;
-
         pc.onconnectionstatechange += async (state) =>
         {
-            _logger.LogDebug($"Peer connection state change to {state}.");
+            _logger.LogDebug($"Peer {peerID} connection state change to {state}.");
+
+            if (state is RTCPeerConnectionState.closed or
+                        RTCPeerConnectionState.failed or
+                        RTCPeerConnectionState.disconnected)
+            {
+                await ClosePeerConnectionResources(peerID, _setBitmapSourceTimer, bitmapSource);
+            }
 
             if (state == RTCPeerConnectionState.failed)
             {
                 pc.Close("ice disconnection");
             }
-            else if (state == RTCPeerConnectionState.closed)
-            {
-                await CloseCustomBitmapSource(setBitmapSourceTimer, bitmapSource);
-            }
             else if (state == RTCPeerConnectionState.connected)
             {
+                _webRTCLightningPaymentService.SetInitialFreeSeconds(FREE_PERIOD_SECONDS);
+
+                _logger.LogDebug($"Starting bitmap source for peer {peerID}.");
                 await bitmapSource.StartVideo();
 
-                if (setBitmapSourceTimer == null)
+                if (_setBitmapSourceTimer == null)
                 {
-                    setBitmapSourceTimer = CreateGenerateBitmapTimer(bitmapSource, peerID);
+                    _logger.LogDebug($"Starting bitmap create bitmap frame for peer {peerID}.");
+                    _setBitmapSourceTimer = CreateGenerateBitmapTimer(bitmapSource, peerID);
                 }
             }
         };
     }
 
-    private async Task CloseCustomBitmapSource(Timer? setBitmapSourceTimer, VideoBitmapSource bitmapSource)
+    private async Task ClosePeerConnectionResources(string peerID, Timer? setBitmapSourceTimer, VideoBitmapSource bitmapSource)
     {
+        _logger.LogDebug($"{nameof(ClosePeerConnectionResources)} for peer ID {peerID}.");
+
         if (setBitmapSourceTimer != null)
         {
             await setBitmapSourceTimer.DisposeAsync();
             setBitmapSourceTimer = null;
         }
 
-        await bitmapSource.CloseVideo();
-        bitmapSource.Dispose();
+        if (bitmapSource != null && !bitmapSource.IsClosed)
+        {
+            await bitmapSource.CloseVideo();
+            bitmapSource.Dispose();
+        }
     }
 
     private void SetDiagnosticLogging(RTCPeerConnection pc)
@@ -234,5 +280,12 @@ public class WebRtcConnectionManager
                 _logger.LogDebug(pc.remoteDescription.sdp.ToString());
             }
         };
+    }
+
+    public void Dispose()
+    {
+        _logger.LogDebug($"{nameof(WebRtcConnectionManager)} dispose.");
+
+        _setBitmapSourceTimer?.Dispose();
     }
 }

@@ -75,6 +75,8 @@ public class VideoBitmapSource : IVideoSource, IDisposable
 
     public event SourceErrorDelegate OnVideoSourceError = delegate { };
 
+    public bool IsClosed => _isClosed;
+
     public VideoBitmapSource(IVideoEncoder encoder)
     {
         _videoEncoder = encoder;

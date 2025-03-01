@@ -39,12 +39,13 @@ class Program
 
         builder.Services.AddHostedService<WebSocketService>();
         builder.Services.AddHostedService<LndInvoiceListener>();
-        builder.Services.AddSingleton<WebRtcConnectionManager>();
-        builder.Services.AddSingleton<PeerConnectionPayState>();
+        builder.Services.AddSingleton<LightningInvoiceEventService>();
+        builder.Services.AddTransient<IWebRtcConnectionManagerFactory, WebRtcConnectionManagerFactory>();
+        builder.Services.AddTransient<ILightningPaymentService, LightningPaymentService>();
         builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
         builder.Services.AddTransient<ILightningService, LightningService>();
         builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapGenerator>();
-        
+
         builder.Services.AddControllers();
 
         var app = builder.Build();

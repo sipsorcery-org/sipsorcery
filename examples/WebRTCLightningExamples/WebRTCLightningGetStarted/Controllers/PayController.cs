@@ -1,4 +1,20 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿//-----------------------------------------------------------------------------
+// Filename: PayController.cs
+// 
+// Description: A web API controller that was used to test the payments mechanism
+// before the Lightning listener was wired up.
+// 
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+// 
+// History:
+// 01 Mar 2025	Aaron Clauson	Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 namespace demo;
@@ -8,14 +24,11 @@ namespace demo;
 public class PayController : ControllerBase
 {
     private readonly ILogger<PayController> _logger;
-    private readonly PeerConnectionPayState _peerConnectionPayState;
 
     public PayController(
-        ILogger<PayController> logger,
-        PeerConnectionPayState peerConnectionPayState)
+        ILogger<PayController> logger)
     {
         _logger = logger;
-        _peerConnectionPayState = peerConnectionPayState;
     }
 
     //[HttpGet("{id}")]

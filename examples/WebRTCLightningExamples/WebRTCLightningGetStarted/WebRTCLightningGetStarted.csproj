@@ -24,6 +24,7 @@
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.7" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.2" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
   </ItemGroup>
     
     <ItemGroup>

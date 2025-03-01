@@ -30,15 +30,15 @@ public class WebSocketService : BackgroundService
     private const int WEBSOCKET_PORT = 8081;
 
     private readonly ILogger<WebSocketService> _logger;
-    private readonly WebRtcConnectionManager _connectionManager;
+    private readonly IWebRtcConnectionManagerFactory _webRtcConnectionManagerFactory;
     private WebSocketServer _webSocketServer;
 
     public WebSocketService(
         ILogger<WebSocketService> logger,
-        WebRtcConnectionManager connectionManager)
+        IWebRtcConnectionManagerFactory webRtcConnectionManagerFactory)
     {
         _logger = logger;
-        _connectionManager = connectionManager;
+        _webRtcConnectionManagerFactory = webRtcConnectionManagerFactory;
         _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
     }
 
@@ -55,7 +55,8 @@ public class WebSocketService : BackgroundService
     {
         _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = async () =>
         {
-            var pc = await _connectionManager.CreatePeerConnection(peer.ID);
+            IWebRtcConnectionManager webRtcConnectionManager = _webRtcConnectionManagerFactory.CreateWebRTCConnectionManager(peer.ID);
+            var pc = await webRtcConnectionManager.CreatePeerConnection(peer.ID);
             _logger.LogInformation($"Peer connection {peer.ID} successfully created.");
             return pc;
         });
