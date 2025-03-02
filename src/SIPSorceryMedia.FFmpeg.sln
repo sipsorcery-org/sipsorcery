@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFmpegTranscodeTest", "..\t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FFmpegManagedTranscodeTest", "..\test\FFmpegManagedTranscodeTest\FFmpegManagedTranscodeTest.csproj", "{63DA3C7A-D4FB-4C68-AEE0-91D3EB3CD695}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery", "..\..\sipsorcery\src\SIPSorcery.csproj", "{76FF505E-253C-B75A-7385-7F313F829284}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,18 @@ Global
 		{63DA3C7A-D4FB-4C68-AEE0-91D3EB3CD695}.Release|x64.Build.0 = Release|Any CPU
 		{63DA3C7A-D4FB-4C68-AEE0-91D3EB3CD695}.Release|x86.ActiveCfg = Release|Any CPU
 		{63DA3C7A-D4FB-4C68-AEE0-91D3EB3CD695}.Release|x86.Build.0 = Release|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Debug|x64.Build.0 = Debug|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Debug|x86.Build.0 = Debug|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Release|x64.ActiveCfg = Release|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Release|x64.Build.0 = Release|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Release|x86.ActiveCfg = Release|Any CPU
+		{76FF505E-253C-B75A-7385-7F313F829284}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
