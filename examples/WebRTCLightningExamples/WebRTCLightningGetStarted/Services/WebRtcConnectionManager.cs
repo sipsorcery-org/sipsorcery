@@ -33,41 +33,30 @@ public interface IWebRtcConnectionManager
 
 public class WebRtcConnectionManager : IWebRtcConnectionManager, IDisposable
 {
-    private const string FREE_IMAGE_PATH = "media/simple_flower.jpg";
-    private const string PAID_IMAGE_PATH = "media/real_flowers.jpg";
-
-    private const int FREE_PERIOD_SECONDS = 15;
-    private const int TRANSITION_PERIOD_SECONDS = 8;
-    private const int MAX_ALPHA_TRANSPARENCY = 200;
-    private const string INITIALISING_TITLE = "Initialising";
-    private const string FREE_PERIOD_TITLE = "Free Period";
-    private const string TRANSITION_PERIOD_TITLE = "Transition Period";
-    private const string WAITING_FOR_PAYMENT_PERIOD_TITLE = "Waiting for Payment";
-    private const string PAID_PERIOD_TITLE = "Thanks for Paying!";
     private const int FRAMES_PER_SECOND = 5; //30;
     private const int CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS = 100;
 
     private readonly ILogger<WebRtcConnectionManager> _logger;
-    private readonly ILightningPaymentService _webRTCLightningPaymentService;
     private readonly IAnnotatedBitmapGenerator _annotatedBitmapGenerator;
+    private readonly IFrameConfigStateMachine _frameConfigStateMachine; 
 
     private Timer? _setBitmapSourceTimer = null;
 
     public WebRtcConnectionManager(
         ILogger<WebRtcConnectionManager> logger,
-        ILightningPaymentService webRTCLightningPaymentService,
-        IAnnotatedBitmapGenerator annotatedBitmapGenerator)
+        IAnnotatedBitmapGenerator annotatedBitmapGenerator,
+        IFrameConfigStateMachine frameConfigStateMachine)
     {
         _logger = logger;
-        _webRTCLightningPaymentService = webRTCLightningPaymentService;
         _annotatedBitmapGenerator = annotatedBitmapGenerator;
+        _frameConfigStateMachine = frameConfigStateMachine;
     }
 
     public Task<RTCPeerConnection> CreatePeerConnection(string peerID)
     {
         var pc = new RTCPeerConnection(null);
 
-        Bitmap sourceBitmap = new Bitmap(FREE_IMAGE_PATH);
+        Bitmap sourceBitmap = new Bitmap(FrameConfigStateMachine.FREE_IMAGE_PATH);
 
         var bitmapSource = new VideoBitmapSource(new FFmpegVideoEncoder());
         bitmapSource.SetFrameRate(FRAMES_PER_SECOND);
@@ -87,11 +76,9 @@ public class WebRtcConnectionManager : IWebRtcConnectionManager, IDisposable
 
     private Timer CreateGenerateBitmapTimer(VideoBitmapSource bitmapSource, string peerID)
     {
-        var frameConfig = new FrameConfig(DateTimeOffset.Now, null, 0, Color.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH);
-
         return new Timer(_ =>
         {
-            frameConfig = GetUpdatedFrameConfig(frameConfig, peerID);
+            var frameConfig = _frameConfigStateMachine.GetUpdatedFrameConfig();
 
             var annotatedBitmap = _annotatedBitmapGenerator.GetAnnotatedBitmap(frameConfig);
 
@@ -102,115 +89,6 @@ public class WebRtcConnectionManager : IWebRtcConnectionManager, IDisposable
             }
         },
         null, TimeSpan.Zero, TimeSpan.FromMilliseconds(CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS));
-    }
-
-    private FrameConfig GetUpdatedFrameConfig(FrameConfig frameConfig, string peerID)
-    {
-        var paymentState = _webRTCLightningPaymentService.GetPaymentState();
-        int remainingSeconds = (int)paymentState.PaidUntil.Subtract(DateTimeOffset.Now).TotalSeconds;
-
-        if (paymentState.IsFreePeriod)
-        {
-            if (remainingSeconds > TRANSITION_PERIOD_SECONDS)
-            {
-                return frameConfig with
-                {
-                    BorderColour = Color.Pink,
-                    Title = FREE_PERIOD_TITLE,
-                    IsPaid = false,
-                    LightningPaymentRequest = null,
-                    Opacity = 0,
-                    ImagePath = FREE_IMAGE_PATH
-                };
-            }
-            else if (remainingSeconds > 0)
-            {
-                if(!paymentState.HasLightningInvoiceBeenRequested && paymentState.LightningPaymentRequest == null)
-                {
-                    _webRTCLightningPaymentService.RequestLightningInvoice();
-                }
-
-                int opacity = (int)(MAX_ALPHA_TRANSPARENCY * ((TRANSITION_PERIOD_SECONDS - remainingSeconds) / (double)TRANSITION_PERIOD_SECONDS));
-
-                return frameConfig with
-                {
-                    BorderColour = Color.Orange,
-                    Title = TRANSITION_PERIOD_TITLE,
-                    IsPaid = paymentState.isPaidPeriod,
-                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
-                    Opacity = opacity,
-                    ImagePath = FREE_IMAGE_PATH
-                };
-            }
-            else
-            {
-                return frameConfig with
-                {
-                    BorderColour = Color.Red,
-                    Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
-                    IsPaid = false,
-                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
-                    Opacity = MAX_ALPHA_TRANSPARENCY,
-                    ImagePath = FREE_IMAGE_PATH
-                };
-            }
-        }
-        else if(paymentState.isPaidPeriod)
-        {
-            if (remainingSeconds > TRANSITION_PERIOD_SECONDS)
-            {
-                return frameConfig with
-                {
-                    BorderColour = Color.Blue,
-                    Title = PAID_PERIOD_TITLE,
-                    IsPaid = true,
-                    LightningPaymentRequest = null,
-                    Opacity = 0,
-                    ImagePath = PAID_IMAGE_PATH
-                };
-            }
-            else if (remainingSeconds > 0)
-            {
-                if (!paymentState.HasLightningInvoiceBeenRequested && paymentState.LightningPaymentRequest == null)
-                {
-                    _webRTCLightningPaymentService.RequestLightningInvoice();
-                }
-
-                int opacity = (int)(MAX_ALPHA_TRANSPARENCY * ((TRANSITION_PERIOD_SECONDS - remainingSeconds) / (double)TRANSITION_PERIOD_SECONDS));
-
-                return frameConfig with
-                {
-                    BorderColour = Color.Orange,
-                    Title = TRANSITION_PERIOD_TITLE,
-                    IsPaid = true,
-                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
-                    Opacity = opacity,
-                    ImagePath = PAID_IMAGE_PATH
-                };
-            }
-            else
-            {
-                return frameConfig with
-                {
-                    BorderColour = Color.Red,
-                    Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
-                    IsPaid = true,
-                    LightningPaymentRequest = paymentState.LightningPaymentRequest,
-                    Opacity = MAX_ALPHA_TRANSPARENCY,
-                    ImagePath = PAID_IMAGE_PATH
-                };
-            }
-        }
-
-        return frameConfig with
-        {
-            BorderColour = Color.Red,
-            Title = WAITING_FOR_PAYMENT_PERIOD_TITLE,
-            IsPaid = true,
-            LightningPaymentRequest = paymentState.LightningPaymentRequest,
-            Opacity = MAX_ALPHA_TRANSPARENCY,
-            ImagePath = FREE_IMAGE_PATH
-        };
     }
 
     private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource bitmapSource, string peerID)
@@ -232,8 +110,6 @@ public class WebRtcConnectionManager : IWebRtcConnectionManager, IDisposable
             }
             else if (state == RTCPeerConnectionState.connected)
             {
-                _webRTCLightningPaymentService.SetInitialFreeSeconds(FREE_PERIOD_SECONDS);
-
                 _logger.LogDebug($"Starting bitmap source for peer {peerID}.");
                 await bitmapSource.StartVideo();
 

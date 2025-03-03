@@ -39,12 +39,12 @@ public class WebRtcConnectionManagerFactory : IWebRtcConnectionManagerFactory
 
     public IWebRtcConnectionManager CreateWebRTCConnectionManager(string peerID)
     {
-        var lighntinPaymentService = _serviceProvider.GetRequiredService<ILightningPaymentService>();
         var annotatedBitmapGenerator = _serviceProvider.GetRequiredService<IAnnotatedBitmapGenerator>();
+        var frameConfigStateMachine = _serviceProvider.GetRequiredService<IFrameConfigStateMachine>();
 
         return new WebRtcConnectionManager(
             _loggerFactory.CreateLogger<WebRtcConnectionManager>(),
-            lighntinPaymentService,
-            annotatedBitmapGenerator);
+            annotatedBitmapGenerator,
+            frameConfigStateMachine);
     }
 }

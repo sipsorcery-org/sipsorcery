@@ -45,6 +45,7 @@ class Program
         builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
         builder.Services.AddTransient<ILightningService, LightningService>();
         builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapGenerator>();
+        builder.Services.AddTransient<IFrameConfigStateMachine, FrameConfigStateMachine>();
 
         builder.Services.AddControllers();
 
