@@ -230,5 +230,45 @@ namespace SIPSorcery.net.RTP.Packetisation
             }
             return new byte[] { nals[0], nals[1], fuHeader };
         }
+
+        public static IEnumerable<H265Nal> CreateAggregated(IEnumerable<H265Nal> nals, int RTP_MAX_PAYLOAD)
+        {
+            var newNalList = new List<H265Nal>();
+            var aggregated = new List<byte>();
+            var aggregatedLast = false;
+            var nalCount = 0;
+            foreach (var nal in nals)
+            {
+                if (nal.NAL.Length + aggregated.Count() <= RTP_MAX_PAYLOAD)
+                {
+                    if (nalCount == 0)
+                    {
+                        aggregated.Add((byte)((nal.NAL[0] & 0x81) | (48 << 1)));
+                        aggregated.Add(nal.NAL[1]);
+                    }
+                    var length = nal.NAL.Length;
+                    byte[] nalSize = new byte[2];
+                    nalSize[0] = (byte)(length >> 8);
+                    nalSize[1] = (byte)(length & 0xFF);
+                    aggregated.AddRange(nalSize);
+                    aggregated.AddRange(nal.NAL);
+                    aggregatedLast = nal.IsLast;
+                    nalCount++;
+                }
+                else
+                {
+                    if (nalCount > 0)
+                    {
+                        newNalList.Add(new H265Nal(aggregated.ToArray(), aggregatedLast));
+                        aggregated.Clear();
+                        aggregatedLast = false;
+                        nalCount = 0;
+                    }
+
+                    newNalList.Add(nal);
+                }
+            }
+            return newNalList;
+        }
     }
 }

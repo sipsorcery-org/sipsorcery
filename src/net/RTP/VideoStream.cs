@@ -209,7 +209,8 @@ namespace SIPSorcery.net.RTP
             if(CheckIfCanSendRtpRaw())
             {
                 var nals = H265Packetiser.ParseNals(sample);
-                foreach (var nal in nals)
+                var aggregatedNals = H265Packetiser.CreateAggregated(nals, RTPSession.RTP_MAX_PAYLOAD);
+                foreach (var nal in aggregatedNals)
                 {
                     SendH26XNal(durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
                 }
