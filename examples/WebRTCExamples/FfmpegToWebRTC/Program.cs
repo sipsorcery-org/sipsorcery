@@ -57,7 +57,8 @@ namespace SIPSorcery.Examples
     class Program
     {
         private const uint SSRC_REMOTE_VIDEO = 38106908;
-        private const int WEBSOCKET_PORT = 8089;
+        private const int WEBSOCKET_PORT = 8081;
+
         private const string FFMPEG_DEFAULT_COMMAND = "ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 {0} -pix_fmt yuv420p -strict experimental -g 1 -ssrc {2} -f rtp rtp://127.0.0.1:{1} -sdp_file {3}";
         private const string FFMPEG_SDP_FILE = "ffmpeg.sdp";
         private const int FFMPEG_DEFAULT_RTP_PORT = 5020;
