@@ -250,7 +250,7 @@ namespace SIPSorcery.Net
         {
             if (State != SctpAssociationState.Closed)
             {
-                logger.LogWarning($"SCTP source port cannot be updated when the association is in state {State}.");
+                logger.LogWarning("SCTP source port cannot be updated when the association is in state {State}.", State);
             }
             else
             {
@@ -266,7 +266,7 @@ namespace SIPSorcery.Net
         {
             if (State != SctpAssociationState.Closed)
             {
-                logger.LogWarning($"SCTP destination port cannot be updated when the association is in state {State}.");
+                logger.LogWarning("SCTP destination port cannot be updated when the association is in state {State}.", State);
             }
             else
             {
@@ -281,7 +281,7 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted || _wasShutdown || _initialisationFailed)
             {
-                logger.LogWarning($"SCTP association cannot be initialised after an abort or shutdown.");
+                logger.LogWarning("SCTP association cannot be initialised after an abort or shutdown.");
             }
             else if (State == SctpAssociationState.Closed)
             {
@@ -289,7 +289,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning($"SCTP association cannot be initialised in state {State}.");
+                logger.LogWarning("SCTP association cannot be initialised in state {State}.", State);
             }
         }
 
@@ -307,7 +307,7 @@ namespace SIPSorcery.Net
             // the same time using the same ports.
             if (_wasAborted || _wasShutdown)
             {
-                logger.LogWarning($"SCTP association cannot initialise with a cookie after an abort or shutdown.");
+                logger.LogWarning("SCTP association cannot initialise with a cookie after an abort or shutdown.");
             }
             else if (!(State == SctpAssociationState.Closed || State == SctpAssociationState.CookieEchoed))
             {
@@ -370,22 +370,19 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted)
             {
-                logger.LogWarning($"SCTP packet received but association has been aborted, ignoring.");
+                logger.LogWarning("SCTP packet received but association has been aborted, ignoring.");
             }
             else if (packet.Header.VerificationTag != VerificationTag)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong verification tag, expected " +
-                    $"{VerificationTag} got {packet.Header.VerificationTag}.");
+                logger.LogWarning("SCTP packet dropped due to wrong verification tag, expected {VerificationTag} got {VerificationTagHeader}.", VerificationTag, packet.Header.VerificationTag);
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.DestinationPort != _sctpSourcePort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP destination port, expected " +
-                                    $"{_sctpSourcePort} got {packet.Header.DestinationPort}.");
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP destination port, expected {SourcePort} got {DestinationPort}.", _sctpSourcePort, packet.Header.DestinationPort);
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.SourcePort != _sctpDestinationPort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP source port, expected " +
-                                    $"{_sctpDestinationPort} got {packet.Header.SourcePort}.");
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP source port, expected {DestinationPort} got {SourcePortHeader}.", _sctpDestinationPort, packet.Header.SourcePort);
             }
             else
             {
@@ -397,7 +394,7 @@ namespace SIPSorcery.Net
                     {
                         case SctpChunkType.ABORT:
                             string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
-                            logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
+                            logger.LogWarning("SCTP packet ABORT chunk received from remote party, reason {AbortReason}.", abortReason);
                             _wasAborted = true;
                             OnAbortReceived?.Invoke(abortReason);
                             break;
@@ -435,7 +432,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogTrace($"SCTP data chunk received on ID {ID} with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.ChunkFlags:X2}.");
+                                logger.LogTrace("SCTP data chunk received on ID {ID} with TSN {TSN}, payload length {PayloadLength}, flags {Flags}.", ID, dataChunk.TSN, dataChunk.UserData.Length, dataChunk.ChunkFlags);
 
                                 // A received data chunk can result in multiple data frames becoming available.
                                 // For example if a stream has out of order frames already received and the next
@@ -460,7 +457,7 @@ namespace SIPSorcery.Net
                             var errorChunk = chunk as SctpErrorChunk;
                             foreach (var err in errorChunk.ErrorCauses)
                             {
-                                logger.LogWarning($"SCTP error {err.CauseCode}.");
+                                logger.LogWarning("SCTP error {CauseCode}.", err.CauseCode);
                             }
                             break;
 
@@ -530,7 +527,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case var ct when ct == SctpChunkType.INIT_ACK && State != SctpAssociationState.CookieWait:
-                            logger.LogWarning($"SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.");
+                            logger.LogWarning("SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.", State);
                             break;
 
                         case SctpChunkType.SACK:
@@ -560,7 +557,7 @@ namespace SIPSorcery.Net
                             break;
 
                         default:
-                            logger.LogWarning($"SCTP association no rule for {chunkType} in state of {State}.");
+                            logger.LogWarning("SCTP association no rule for {ChunkType} in state of {State}.", chunkType, State);
                             break;
                     }
                 }
@@ -593,13 +590,13 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted)
             {
-                logger.LogWarning($"SCTP send data is not allowed on an aborted association.");
+                logger.LogWarning("SCTP send data is not allowed on an aborted association.");
             }
             else if (!(State == SctpAssociationState.Established ||
                       State == SctpAssociationState.ShutdownPending ||
                       State == SctpAssociationState.ShutdownReceived))
             {
-                logger.LogWarning($"SCTP send data is not allowed for an association in state {State}.");
+                logger.LogWarning("SCTP send data is not allowed for an association in state {State}.", State);
             }
             else
             {
@@ -641,7 +638,7 @@ namespace SIPSorcery.Net
                 // in the RFC that says to do it, but that's what usrsctp accepts.
                 uint? ackTSN = _dataReceiver.CumulativeAckTSN ?? _remoteInitialTSN - 1;
 
-                logger.LogTrace($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
+                logger.LogTrace("SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.", ID, ackTSN);
 
                 SetState(SctpAssociationState.ShutdownSent);
 
@@ -680,7 +677,7 @@ namespace SIPSorcery.Net
         /// <param name="state">The new association state.</param>
         internal void SetState(SctpAssociationState state)
         {
-            logger.LogTrace($"SCTP state for association {ID} changed to {state}.");
+            logger.LogTrace("SCTP state for association {ID} changed to {State}.", ID, state);
             State = state;
             OnAssociationStateChanged?.Invoke(state);
         }
@@ -771,7 +768,7 @@ namespace SIPSorcery.Net
                 _t1Init = null;
                 _initialisationFailed = true;
 
-                logger.LogWarning($"SCTP timed out waiting for INIT ACK chunk from remote peer.");
+                logger.LogWarning("SCTP timed out waiting for INIT ACK chunk from remote peer.");
 
                 SetState(SctpAssociationState.Closed);
             }
@@ -791,7 +788,7 @@ namespace SIPSorcery.Net
                 _t1Cookie = null;
                 _initialisationFailed = true;
 
-                logger.LogWarning($"SCTP timed out waiting for COOKIE ACK chunk from remote peer.");
+                logger.LogWarning("SCTP timed out waiting for COOKIE ACK chunk from remote peer.");
 
                 SetState(SctpAssociationState.Closed);
             }

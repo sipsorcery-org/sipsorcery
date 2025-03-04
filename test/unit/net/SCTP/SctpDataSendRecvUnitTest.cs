@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpDataSendRecvUnitTest.cs
 //
 // Description: Unit tests to check the SctpDataSender and SctpDataReceiver
@@ -112,7 +112,7 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (chunk.TSN == initialTSN && chunk.SendCount == 1)
                 {
-                    logger.LogDebug($"Data chunk {chunk.TSN} dropped.");
+                    logger.LogDebug("Data chunk {TSN} dropped.", chunk.TSN);
                 }
                 else
                 {
@@ -161,13 +161,13 @@ namespace SIPSorcery.Net.UnitTests
             // sender to the receiver of a remote peer and the return of the SACK. 
             Action<SctpDataChunk> doSend = (chunk) =>
             {
-                logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                logger.LogDebug("Data chunk {TSN} provided to receiver.", chunk.TSN);
                 var frames = receiver.OnDataChunk(chunk);
                 sender.GotSack(receiver.GetSackChunk());
 
                 if (frames.Count > 0)
                 {
-                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                    logger.LogDebug("Receiver got frame of length {Length}.", frames.First().UserData?.Length);
                     frame = frames.First();
                     frameReady.Set();
                 }
@@ -179,7 +179,7 @@ namespace SIPSorcery.Net.UnitTests
             Crypto.GetRandomBytes(buffer);
             string hash = Crypto.GetSHA256Hash(buffer);
 
-            logger.LogDebug($"Medium buffer hash {hash}.");
+            logger.LogDebug("Medium buffer hash {Hash}.", hash);
 
             sender.SendData(0, 0, buffer);
 
@@ -209,13 +209,13 @@ namespace SIPSorcery.Net.UnitTests
             // sender to the receiver of a remote peer and the return of the SACK. 
             Action<SctpDataChunk> doSend = (chunk) =>
             {
-                logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                logger.LogDebug("Data chunk {TSN} provided to receiver.", chunk.TSN);
                 var frames = receiver.OnDataChunk(chunk);
                 sender.GotSack(receiver.GetSackChunk());
-                
+
                 if (frames.Count > 0)
                 {
-                    logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                    logger.LogDebug("Receiver got frame of length {Length}.", frames.First().UserData?.Length);
                     frame = frames.First();
                     frameReady.Set();
                 }
@@ -227,7 +227,7 @@ namespace SIPSorcery.Net.UnitTests
             Crypto.GetRandomBytes(buffer);
             string hash = Crypto.GetSHA256Hash(buffer);
 
-            logger.LogDebug($"Max buffer hash {hash}.");
+            logger.LogDebug("Max buffer hash {Hash}.", hash);
 
             sender.SendData(0, 0, buffer);
 
@@ -262,17 +262,17 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (chunk.SendCount == 1 && Crypto.GetRandomInt(0, 99) % 5 == 0)
                 {
-                    logger.LogDebug($"Data chunk {chunk.TSN} dropped.");
+                    logger.LogDebug("Data chunk {TSN} dropped.", chunk.TSN);
                 }
                 else
                 {
-                    logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                    logger.LogDebug("Data chunk {TSN} provided to receiver.", chunk.TSN);
                     var frames = receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
 
                     if (frames.Count > 0)
                     {
-                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                        logger.LogDebug("Receiver got frame of length {Length}.", frames.First().UserData?.Length);
                         frame = frames.First();
                         frameReady.Set();
                     }
@@ -286,7 +286,7 @@ namespace SIPSorcery.Net.UnitTests
             Crypto.GetRandomBytes(buffer);
             string hash = Crypto.GetSHA256Hash(buffer);
 
-            logger.LogDebug($"Medium buffer hash {hash}.");
+            logger.LogDebug("Medium buffer hash {Hash}.", hash);
 
             sender.SendData(0, 0, buffer);
 
@@ -320,17 +320,17 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (chunk.SendCount == 1 && Crypto.GetRandomInt(0, 99) % 5 == 0)
                 {
-                    logger.LogDebug($"Data chunk {chunk.TSN} dropped.");
+                    logger.LogDebug("Data chunk {TSN} dropped.", chunk.TSN);
                 }
                 else
                 {
-                    logger.LogDebug($"Data chunk {chunk.TSN} provided to receiver.");
+                    logger.LogDebug("Data chunk {TSN} provided to receiver.", chunk.TSN);
                     var frames = receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
 
                     if (frames.Count > 0)
                     {
-                        logger.LogDebug($"Receiver got frame of length {frames.First().UserData?.Length}.");
+                        logger.LogDebug("Receiver got frame of length {Length}.", frames.First().UserData?.Length);
                         frame = frames.First();
                         frameReady.Set();
                     }
@@ -345,7 +345,7 @@ namespace SIPSorcery.Net.UnitTests
             Crypto.GetRandomBytes(buffer);
             string hash = Crypto.GetSHA256Hash(buffer);
 
-            logger.LogDebug($"Max buffer hash {hash}.");
+            logger.LogDebug("Max buffer hash {Hash}.", hash);
 
             await Task.Delay(50);
 

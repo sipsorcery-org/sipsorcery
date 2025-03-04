@@ -45,14 +45,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact(Skip = "Bit trickier to pass than anticipated.")]
         public void ShortTorturousInvite()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.True(File.Exists("wsinv.dat"), "The wsinv.dat torture test input file was missing.");
 
             string raw = File.ReadAllText("wsinv.dat");
 
-            logger.LogDebug(raw);
+            logger.LogDebug("SIP message content: {RawMessage}", raw);
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(raw), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(raw);
@@ -76,7 +76,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_1()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_2()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_3()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -204,7 +204,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_4()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -250,7 +250,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_5_1()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -289,7 +289,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_5_2()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_6()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -392,7 +392,7 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_7()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -443,7 +443,7 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_8()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -511,7 +511,7 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_9()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -578,7 +578,7 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_10_1()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -615,7 +615,7 @@ CRLF +
         [Trait("Category", "IPv6Torture")]
         public void RFC5118_4_10_2()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =

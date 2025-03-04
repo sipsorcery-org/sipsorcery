@@ -32,7 +32,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseHostCandidateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
@@ -41,7 +41,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceCandidateType.host, candidate.type);
             Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
 
-            logger.LogDebug(candidate.ToString());
+            logger.LogDebug("Candidate: {Candidate}", candidate.ToString());
         }
 
 
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseSvrRflxCandidateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var candidate = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0 network-cost 999");
@@ -60,7 +60,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceCandidateType.srflx, candidate.type);
             Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
 
-            logger.LogDebug(candidate.ToString());
+            logger.LogDebug("Candidate: {Candidate}", candidate.ToString());
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void EquivalentCandidateFoundationUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCIceCandidateInit initA = new RTCIceCandidateInit { usernameFragment = "abcd" };
@@ -84,7 +84,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.NotNull(candidateB);
             Assert.Equal(candidateA.foundation, candidateB.foundation);
 
-            logger.LogDebug(candidateA.ToString());
+            logger.LogDebug("CandidateA: {CandidateA}", candidateA.ToString());
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void NonEquivalentCandidateFoundationUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCIceCandidateInit initA = new RTCIceCandidateInit { usernameFragment = "abcd" };
@@ -108,8 +108,8 @@ namespace SIPSorcery.Net.UnitTests
             Assert.NotNull(candidateB);
             Assert.NotEqual(candidateA.foundation, candidateB.foundation);
 
-            logger.LogDebug(candidateA.ToString());
-            logger.LogDebug(candidateB.ToString());
+            logger.LogDebug("CandidateA: {CandidateA}", candidateA.ToString());
+            logger.LogDebug("CandidateB: {CandidateB}", candidateB.ToString());
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ToJsonUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
@@ -127,7 +127,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceCandidateType.host, candidate.type);
             Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
 
-            logger.LogDebug(candidate.toJSON());
+            logger.LogDebug("Candidate JSON: {CandidateJson}", candidate.toJSON());
 
             bool parseResult = RTCIceCandidateInit.TryParse(candidate.toJSON(), out var init);
 

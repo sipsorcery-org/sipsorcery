@@ -62,7 +62,6 @@ namespace demo
 
     class Program
     {
-        //private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -83,9 +82,6 @@ namespace demo
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, false);
-            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
@@ -113,7 +109,8 @@ namespace demo
             var peerConnection = new RTCPeerConnection(null);
 
             // Sink (speaker) only audio end point.
-            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
+            WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: false), -1, -1, true, false);
+            //windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
             windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
@@ -122,7 +119,7 @@ namespace demo
             peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
                 windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
-            peerConnection.OnSendReport += RtpSession_OnSendReport;
+            peerConnection.OnSendReportByIndex += RtpSession_OnSendReportByIndex;
             peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
             peerConnection.onconnectionstatechange += async (state) =>
@@ -136,7 +133,7 @@ namespace demo
                 else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
                 {
                     peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
-                    peerConnection.OnSendReport -= RtpSession_OnSendReport;
+                    peerConnection.OnSendReportByIndex -= RtpSession_OnSendReportByIndex;
 
                     await windowsAudioEP.CloseAudio();
                 }
@@ -187,8 +184,10 @@ namespace demo
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
-        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+        private static void RtpSession_OnSendReportByIndex(int index, SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
+            //logger.LogDebug($"RTCP report sent for index {index} and media {mediaType}.");
+
             if (sentRtcpReport.Bye != null)
             {
                 logger.LogDebug($"RTCP sent BYE {mediaType}.");
@@ -203,7 +202,7 @@ namespace demo
                 if (sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
                 {
                     var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
-                    logger.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+                    logger.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}, pkts lost {rrSample.PacketsLost}.");
                 }
                 else
                 {
@@ -217,20 +216,22 @@ namespace demo
         /// </summary>
         private static void RtpSession_OnReceiveReport(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
+            //logger.LogDebug($"RTCP report received for {mediaType}.");
+
             if (recvRtcpReport.Bye != null)
             {
                 logger.LogDebug($"RTCP recv BYE {mediaType}.");
             }
-            else
+            else if(recvRtcpReport.ReceiverReport != null)
             {
-                var rr = recvRtcpReport.ReceiverReport?.ReceptionReports?.FirstOrDefault();
+                var rr = recvRtcpReport.ReceiverReport.ReceptionReports?.FirstOrDefault();
                 if (rr != null)
                 {
-                    logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+                    logger.LogDebug($"RTCP {mediaType} Receiver Report SSRC {rr.SSRC}: pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
                 }
                 else
                 {
-                    logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+                    logger.LogDebug($"RTCP {mediaType} Receiver Report for SSRC {recvRtcpReport.ReceiverReport.SSRC}: empty.");
                 }
             }
         }

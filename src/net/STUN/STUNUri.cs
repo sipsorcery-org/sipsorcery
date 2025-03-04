@@ -268,7 +268,7 @@ namespace SIPSorcery.Net
 
         public static bool operator ==(STUNUri uri1, STUNUri uri2)
         {
-            if (uri1 is null && uri2 is null)
+            if (object.ReferenceEquals(uri1, uri2))
             {
                 return true;
             }

@@ -32,7 +32,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenPacketUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //var dataChanOpen = new DataChannelOpen("label");
@@ -53,7 +53,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenChunkNoPaddingUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DataChunk dcopen = DataChunk.mkDataChannelOpen("1234");
@@ -83,7 +83,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenChunkOneBytePaddingUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DataChunk dcopen = DataChunk.mkDataChannelOpen("123");
@@ -114,7 +114,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenChunkThreeBytesPaddingUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //DataChunk dcopen = DataChunk.mkDataChannelOpen("12356");

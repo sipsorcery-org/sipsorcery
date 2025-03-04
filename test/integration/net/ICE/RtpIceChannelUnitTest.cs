@@ -41,7 +41,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CreateInstanceUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPSession rtpSession = new RTPSession(true, true, true);
@@ -61,12 +61,12 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GetHostCandidatesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
 
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
 
             rtpIceChannel.StartGathering();
 
@@ -75,7 +75,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var hostCandidate in rtpIceChannel.Candidates)
             {
-                logger.LogDebug(hostCandidate.ToString());
+                logger.LogDebug("{HostCandidate}", hostCandidate.ToString());
             }
         }
 
@@ -86,13 +86,13 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GetHostCandidatesForRTPBindUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.InternetDefaultAddress;
             var rtpIceChannel = new RtpIceChannel(localAddress, RTCIceComponent.rtp, null);
 
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
 
             rtpIceChannel.StartGathering();
 
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var hostCandidate in rtpIceChannel.Candidates)
             {
-                logger.LogDebug(hostCandidate.ToString());
+                logger.LogDebug("{HostCandidate}", hostCandidate.ToString());
             }
         }
 
@@ -113,7 +113,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void SortChecklistUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
@@ -124,7 +124,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var hostCandidate in rtpIceChannel.Candidates)
             {
-                logger.LogDebug(hostCandidate.ToString());
+                logger.LogDebug("{HostCandidate}", hostCandidate.ToString());
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
@@ -135,7 +135,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var entry in rtpIceChannel._checklist)
             {
-                logger.LogDebug($"checklist entry priority {entry.Priority}.");
+                logger.LogDebug("checklist entry priority {Priority}.", entry.Priority);
             }
         }
 
@@ -145,7 +145,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void ChecklistConstructionUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
@@ -156,7 +156,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var hostCandidate in rtpIceChannel.Candidates)
             {
-                logger.LogDebug($"host candidate: {hostCandidate}");
+                logger.LogDebug("host candidate: {HostCandidate}", hostCandidate);
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
@@ -171,7 +171,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var entry in rtpIceChannel._checklist)
             {
-                logger.LogDebug($"checklist entry: {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}");
+                logger.LogDebug("checklist entry: {LocalCandidate}->{RemoteCandidate}", entry.LocalCandidate.ToShortString(), entry.RemoteCandidate.ToShortString());
             }
 
             Assert.Single(rtpIceChannel._checklist);
@@ -183,7 +183,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void ChecklistProcessingUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
@@ -194,7 +194,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var hostCandidate in rtpIceChannel.Candidates)
             {
-                logger.LogDebug($"host candidate: {hostCandidate}");
+                logger.LogDebug("host candidate: {HostCandidate}", hostCandidate);
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
@@ -207,7 +207,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             var checklistEntry = rtpIceChannel._checklist.Single();
 
-            logger.LogDebug($"Checklist entry state {checklistEntry.State}, last check sent at {checklistEntry.LastCheckSentAt}.");
+            logger.LogDebug("Checklist entry state {State}, last check sent at {LastCheckSentAt}.", checklistEntry.State, checklistEntry.LastCheckSentAt);
 
             Assert.Equal(ChecklistEntryState.InProgress, checklistEntry.State);
         }
@@ -218,7 +218,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void ChecklistProcessingToFailStateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
@@ -229,7 +229,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach (var hostCandidate in rtpIceChannel.Candidates)
             {
-                logger.LogDebug($"host candidate: {hostCandidate}");
+                logger.LogDebug("host candidate: {HostCandidate}", hostCandidate);
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
@@ -237,7 +237,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
             rtpIceChannel.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
 
-            logger.LogDebug($"ICE session retry interval {rtpIceChannel.RTO}ms.");
+            logger.LogDebug("ICE session retry interval {RTO}ms.", rtpIceChannel.RTO);
 
             await Task.Delay(1000).ConfigureAwait(false);
 
@@ -259,15 +259,15 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void CheckSuccessfulConnectionForHostCandidatesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannelA = new RtpIceChannel();
             rtpIceChannelA.IsController = true;
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelA.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannelA.RTPLocalEndPoint);
 
             var rtpIceChannelB = new RtpIceChannel();
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelB.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannelB.RTPLocalEndPoint);
 
             rtpIceChannelA.StartGathering();
             rtpIceChannelB.StartGathering();
@@ -310,7 +310,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void CheckStunServerGetServerRefelxiveCandidateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             using (MockTurnServer mockStunServer = new MockTurnServer())
@@ -325,7 +325,7 @@ namespace SIPSorcery.Net.IntegrationTests
                     }
                 };
                 var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
-                logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+                logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
 
                 ManualResetEventSlim gatheringCompleted = new ManualResetEventSlim();
                 rtpIceChannel.OnIceGatheringStateChange += (state) => { if (state == RTCIceGatheringState.complete) { gatheringCompleted.Set(); } };
@@ -356,7 +356,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void CheckTurnServerGetRelayCandidateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             using (MockTurnServer mockTurnServer = new MockTurnServer())
@@ -371,7 +371,7 @@ namespace SIPSorcery.Net.IntegrationTests
                     }
                 };
                 var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
-                logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+                logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
 
                 ManualResetEventSlim gatheringCompleted = new ManualResetEventSlim();
                 rtpIceChannel.OnIceGatheringStateChange += (state) => { if (state == RTCIceGatheringState.complete) { gatheringCompleted.Set(); } };
@@ -403,7 +403,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CheckSuccessfulConnectionForRelayCandidatesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             using (MockTurnServer mockTurnServer = new MockTurnServer())
@@ -416,10 +416,10 @@ namespace SIPSorcery.Net.IntegrationTests
                 };
                 var rtpIceChannelRelay = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers, RTCIceTransportPolicy.relay);
                 rtpIceChannelRelay.IsController = true;
-                logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelRelay.RTPLocalEndPoint}.");
+                logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannelRelay.RTPLocalEndPoint);
 
                 var rtpIceChannelHost = new RtpIceChannel();
-                logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelHost.RTPLocalEndPoint}.");
+                logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannelHost.RTPLocalEndPoint);
 
                 // Event triggers to time the unit test checks.
                 ManualResetEventSlim gatheringCompleted = new ManualResetEventSlim();
@@ -474,15 +474,15 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void CheckPeerReflexiveReplacedByHostCandidatesUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var rtpIceChannelA = new RtpIceChannel();
             rtpIceChannelA.IsController = true;
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelA.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannelA.RTPLocalEndPoint);
 
             var rtpIceChannelB = new RtpIceChannel();
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannelB.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannelB.RTPLocalEndPoint);
 
             // Set up the triggers so the test can proceed at the right pace.
             ManualResetEventSlim connected = new ManualResetEventSlim();
@@ -552,7 +552,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async void CheckIPAddressOnlyStunServerUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             using (MockTurnServer mockStunServer = new MockTurnServer())
@@ -567,7 +567,7 @@ namespace SIPSorcery.Net.IntegrationTests
                     }
                 };
                 var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
-                logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+                logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
 
                 ManualResetEventSlim gatheringCompleted = new ManualResetEventSlim();
                 rtpIceChannel.OnIceGatheringStateChange += (state) => { if (state == RTCIceGatheringState.complete) { gatheringCompleted.Set(); } };
@@ -599,7 +599,7 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void AddMulitpleIceServersTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var iceServers = new List<RTCIceServer> 
@@ -609,12 +609,12 @@ namespace SIPSorcery.Net.IntegrationTests
             };
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, iceServers);
-            logger.LogDebug($"RTP ICE channel RTP socket local end point {rtpIceChannel.RTPLocalEndPoint}.");
+            logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
             rtpIceChannel.StartGathering();
 
             foreach(var pair in rtpIceChannel._iceServerConnections)
             {
-                logger.LogDebug($"ICE server {pair.Key}, tx ID {pair.Value._id}");
+                logger.LogDebug("ICE server {ServerKey}, tx ID {TransactionID}", pair.Key, pair.Value._id);
 
                 Assert.Equal(1, rtpIceChannel._iceServerConnections.Values.Count(x => x._id == pair.Value._id));
             }

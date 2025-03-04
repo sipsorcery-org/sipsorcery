@@ -1,8 +1,6 @@
-﻿using SIPSorcery.Net;
-using System;
-using System.ComponentModel;
+﻿using System;
 
-namespace SIPSorcery.net.RTP.RTPHeaderExtensions
+namespace SIPSorcery.Net
 {
     // Code reference: https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#49
     //    0                   1

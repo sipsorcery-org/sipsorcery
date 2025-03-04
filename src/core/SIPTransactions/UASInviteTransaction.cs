@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: UASInviteTransaction.cs
 //
 // Description: SIP Transaction that implements UAS (User Agent Server) functionality for
@@ -100,7 +100,7 @@ namespace SIPSorcery.SIP
 
         private Task<SocketError> UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            logger.LogWarning("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
+            logger.LogWarning("UASInviteTransaction received unexpected response, {ReasonPhrase} from {RemoteEndPoint}, ignoring.", sipResponse.ReasonPhrase, remoteEndPoint.ToString());
             return Task.FromResult(SocketError.Fault);
         }
 
@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                logger.LogWarning("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
+                logger.LogWarning("A request was made to cancel transaction {TransactionId} that was not in the calling, trying or proceeding states, state={TransactionState}.", TransactionId, TransactionState);
             }
         }
 

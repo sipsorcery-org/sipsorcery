@@ -34,7 +34,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void TrimTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = null;
@@ -45,12 +45,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ZeroBytesTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = Encoding.UTF8.GetString(new byte[] { 0x00, 0x00, 0x00, 0x00 });
 
-            logger.LogDebug("Trimmed length=" + myString.Trim().Length + ".");
+            logger.LogDebug("Trimmed length={TrimmedLength}.", myString.Trim().Length);
 
             Assert.True(myString.IsNullOrBlank(), "String was not correctly detected as blank.");
         }
@@ -58,25 +58,53 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HexStrTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = { 0x00, 0x01, 0x02, 0x03 };
 
-            logger.LogDebug($"Hex string: {buffer.HexStr()}.");
+            logger.LogDebug("Hex string: {HexString}.", buffer.HexStr());
 
             Assert.Equal("00010203", buffer.HexStr());
         }
 
         [Fact]
+        public void ToUnixTimeTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var dateTime = new DateTime(2025, 2, 12, 23, 39, 0);
+            var unixTime = dateTime.ToUnixTime();
+
+            logger.LogDebug("Unix time: {unixTime}.", unixTime);
+
+            Assert.Equal(1739403540L, unixTime);
+        }
+
+        [Fact]
+        public void ToUnixTimeAfter2038Test()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var dateTime = new DateTime(2060, 2, 13, 22, 54, 54);
+            var unixTime = dateTime.ToUnixTime();
+
+            logger.LogDebug("Unix time: {unixTime}.", unixTime);
+
+            Assert.Equal(2843938494L, unixTime);
+        }
+
+        [Fact]
         public void ParseHexStrTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = TypeExtensions.ParseHexStr("00010203");
 
-            logger.LogDebug($"Hex string: {buffer.HexStr()}.");
+            logger.LogDebug("Hex string: {HexString}.", buffer.HexStr());
 
             Assert.Equal("00010203", buffer.HexStr());
         }

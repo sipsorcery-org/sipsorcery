@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -39,6 +40,7 @@ namespace SIPSorcery.Net
         public RTCPSDesReport SDesReport { get; private set; }
         public RTCPBye Bye { get; set; }
         public RTCPFeedback Feedback { get; set; }
+        public RTCPTWCCFeedback TWCCFeedback { get; set; }
 
         protected internal RTCPCompoundPacket()
         {
@@ -99,12 +101,19 @@ namespace SIPSorcery.Net
                             offset += byeLength;
                             break;
                         case (byte)RTCPReportTypesEnum.RTPFB:
-                            // TODO: Interpret Generic RTP feedback reports.
-                            Feedback = new RTCPFeedback(buffer);
-                            int rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
-                            offset += rtpfbFeedbackLength;
-                            //var rtpfbHeader = new RTCPHeader(buffer);
-                            //offset += rtpfbHeader.Length * 4 + 4;
+                            var typ = RTCPHeader.ParseFeedbackType(buffer);
+                            switch (typ) {
+                                case RTCPFeedbackTypesEnum.TWCC:
+                                    TWCCFeedback = new RTCPTWCCFeedback(buffer);
+                                    int twccFeedbackLength = (TWCCFeedback.Header.Length + 1) * 4;
+                                    offset += twccFeedbackLength;
+                                    break;
+                                default:
+                                    Feedback = new RTCPFeedback(buffer);
+                                    int rtpfbFeedbackLength = Feedback.GetBytes().Length;
+                                    offset += rtpfbFeedbackLength;
+                                    break;
+                            }
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
@@ -115,9 +124,8 @@ namespace SIPSorcery.Net
                             //offset += psfbHeader.Length * 4 + 4;
                             break;
                         default:
-                            logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");
                             offset = Int32.MaxValue;
-                            logger.LogWarning(packet.HexStr());
+                            logger.LogWarning("RTCPCompoundPacket did not recognise packet type ID {PacketTypeID}. {Packet}", packetTypeID, packet.HexStr());
                             break;
                     }
                 }
@@ -256,12 +264,24 @@ namespace SIPSorcery.Net
                             offset += byeLength;
                             break;
                         case (byte)RTCPReportTypesEnum.RTPFB:
-                            // TODO: Interpret Generic RTP feedback reports.
-                            rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
-                            int rtpfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
-                            offset += rtpfbFeedbackLength;
-                            //var rtpfbHeader = new RTCPHeader(buffer);
-                            //offset += rtpfbHeader.Length * 4 + 4;
+                            var typ = RTCPHeader.ParseFeedbackType(buffer);
+                            switch (typ)
+                            {
+                                default:
+                                    {
+                                        rtcpCompoundPacket.Feedback = new RTCPFeedback(buffer);
+                                        int rtpfbFeedbackLength = (rtcpCompoundPacket.Feedback != null) ? rtcpCompoundPacket.Feedback.GetBytes().Length : Int32.MaxValue;
+                                        offset += rtpfbFeedbackLength;
+                                    }
+                                    break;
+                                case RTCPFeedbackTypesEnum.TWCC:
+                                    {
+                                        rtcpCompoundPacket.TWCCFeedback = new RTCPTWCCFeedback(buffer);
+                                        int twccFeedbackLength = (rtcpCompoundPacket.TWCCFeedback != null) ? rtcpCompoundPacket.TWCCFeedback.GetBytes().Length : Int32.MaxValue;
+                                        offset += twccFeedbackLength;
+                                    }
+                                    break;
+                            }
                             break;
                         case (byte)RTCPReportTypesEnum.PSFB:
                             // TODO: Interpret Payload specific feedback reports.
@@ -272,9 +292,8 @@ namespace SIPSorcery.Net
                             //offset += psfbHeader.Length * 4 + 4;
                             break;
                         default:
-                            logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");
                             offset = Int32.MaxValue;
-                            logger.LogWarning(packet.HexStr());
+                            logger.LogWarning("RTCPCompoundPacket did not recognise packet type ID {PacketTypeID}. {Packet}", packetTypeID, packet.HexStr());
                             break;
                     }
                 }

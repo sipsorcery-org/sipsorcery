@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpAssociationUnitTest.cs
 //
 // Description: Unit tests for the SctpAssociation class.
@@ -40,7 +40,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ConnectAssociations()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
@@ -91,7 +91,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void SendDataChunk()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
@@ -113,7 +113,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void SendFragmentedDataChunk()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
@@ -138,7 +138,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void SendLargeFragmentedDataChunk()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
@@ -173,10 +173,10 @@ namespace SIPSorcery.Net.UnitTests
             var aAssoc = new SctpAssociation(aTransport, null, 5000, 5000, mtu, 0);
             aTransport.OnSctpPacket += aAssoc.OnPacketReceived;
             var aAssocTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            aAssoc.OnAborted += (reason) => logger.LogError($"Association A aborted with {reason}.");
+            aAssoc.OnAborted += (reason) => logger.LogError("Association A aborted with {reason}.", reason);
             aAssoc.OnAssociationStateChanged += (state) =>
             {
-                logger.LogDebug($"Association A changed to state {state}.");
+                logger.LogDebug("Association A changed to state {state}.", state);
                 if (state == SctpAssociationState.Established)
                 {
                     aAssocTcs.TrySetResult(true);
@@ -189,10 +189,10 @@ namespace SIPSorcery.Net.UnitTests
             bTransport.OnSctpPacket += bAssoc.OnPacketReceived;
             bTransport.OnCookieEcho += bAssoc.GotCookie;
             var bAssocTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnAborted += (reason) => logger.LogError($"Association B aborted with {reason}.");
+            bAssoc.OnAborted += (reason) => logger.LogError("Association B aborted with {reason}.", reason);
             bAssoc.OnAssociationStateChanged += (state) =>
             {
-                logger.LogDebug($"Association B changed to state {state}.");
+                logger.LogDebug("Association B changed to state {state}.", state);
                 if (state == SctpAssociationState.Established)
                 {
                     bAssocTcs.TrySetResult(true);

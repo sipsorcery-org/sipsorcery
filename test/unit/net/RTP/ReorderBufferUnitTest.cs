@@ -1,10 +1,9 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.net.RTP;
 using Xunit;
 
-namespace SIPSorcery.UnitTests.net.RTP
+namespace SIPSorcery.UnitTests.Net
 {
     internal class DatetimeProvider : IDateTime
     {
@@ -24,7 +23,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldReorder()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300));
             var packets = new[] { CreatePacket(1), CreatePacket(3), CreatePacket(4), CreatePacket(2) };
@@ -43,7 +42,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldReorder2()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300));
             var packets = new[] { CreatePacket(1), CreatePacket(3), CreatePacket(2), CreatePacket(0) };
@@ -62,7 +61,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldReorderWithWrapAround()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300));
             var packets = new[] { CreatePacket(65534), CreatePacket(3), CreatePacket(2), CreatePacket(0), CreatePacket(65535) };
@@ -81,7 +80,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldReturnPacketsInOrder()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
@@ -104,7 +103,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldRemoveDuplicate()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
@@ -124,7 +123,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldWaitForMissingPacket()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
@@ -146,7 +145,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldSkipPacketAfterSpecifiedTimeout()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
@@ -167,7 +166,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void ShouldSkipPacketAfterSpecifiedTimeoutWithWrapAround()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;

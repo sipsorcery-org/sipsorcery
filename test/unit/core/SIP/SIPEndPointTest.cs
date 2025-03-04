@@ -28,13 +28,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AllFieldsParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sips:10.0.0.100:5060;lr;transport=tcp;";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -46,13 +46,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HostOnlyParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "10.0.0.100";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -62,13 +62,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HostAndSchemeParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sip:10.0.0.100";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -80,13 +80,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HostAndPortParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "10.0.0.100:5065";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -96,13 +96,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HostAndTransportParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "10.0.0.100;transport=tcp";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -114,13 +114,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SchemeHostPortParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sips:10.0.0.100:5063";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -130,13 +130,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SchemeHostTransportParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sip:10.0.0.100:5063;lr;tag=123;transport=tcp;tag2=abcd";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -146,7 +146,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void EqualityTestNoPostHostTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100");
@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void EqualityTestTLSHostTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sips:10.0.0.100");
@@ -170,7 +170,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void EqualityTestRouteTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sip:10.0.0.100;lr");
@@ -184,12 +184,12 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv6LoopbackToStringTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0));
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.ToString() == "udp:[::1]:5060", "The SIP end point string representation was not correct.");
         }
@@ -200,13 +200,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv6LoopbackAndSchemeParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "udp:[::1]";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -219,13 +219,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv6LoopbackAndPortParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "tcp:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -239,13 +239,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv6LoopbackWithScehemeParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sip:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -259,13 +259,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void WebSocketLoopbackAndPortParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "ws:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.ws, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -279,13 +279,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SecureWebSocketLoopbackAndPortParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "wss:[fe80::54a9:d238:b2ee:ceb]:7060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.wss, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "fe80::54a9:d238:b2ee:ceb", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -299,13 +299,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv6WithConnectionIDParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "udp:[::1];xid=1234567";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
@@ -319,13 +319,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv6WithConnectionAndChannelIDParseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "udp:[::1];cid=123;xid=1234567";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
-            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+            logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
 
             Assert.True(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.True(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");

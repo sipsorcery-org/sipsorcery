@@ -26,7 +26,7 @@ using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class VideoStream : MediaStream
     {
@@ -35,8 +35,6 @@ namespace SIPSorcery.net.RTP
 
         private SDPAudioVideoMediaFormat sendingFormat;
         private bool sendingFormatFound = false;
-
-        #region EVENTS
 
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common video formats is set.
@@ -55,10 +53,6 @@ namespace SIPSorcery.net.RTP
         /// </remarks>
         public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
 
-        #endregion EVENTS
-
-        #region PROPERTIES
-
         /// <summary>
         /// Indicates whether this session is using video.
         /// </summary>
@@ -66,8 +60,8 @@ namespace SIPSorcery.net.RTP
         {
             get
             {
-                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
-                  && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+                return (LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                  || (RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive);
             }
         }
 
@@ -76,11 +70,6 @@ namespace SIPSorcery.net.RTP
         /// process.
         /// </summary>
         public int MaxReconstructedVideoFrameSize { get; set; } = 1048576;
-
-
-        #endregion PROPERTIES
-
-        #region SEND PACKET
 
         /// <summary>
         /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
@@ -117,7 +106,7 @@ namespace SIPSorcery.net.RTP
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendJpegFrame. {ErrorMessage}", sockExcp.Message);
                 }
             }
         }
@@ -169,6 +158,9 @@ namespace SIPSorcery.net.RTP
                 int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
                 Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
 
+                //For TWCC
+                SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+
                 SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -192,6 +184,9 @@ namespace SIPSorcery.net.RTP
                     byte[] payload = new byte[payloadLength + rtpHdr.Length];
                     Buffer.BlockCopy(rtpHdr, 0, payload, 0, rtpHdr.Length);
                     Buffer.BlockCopy(nal, offset, payload, rtpHdr.Length, payloadLength);
+
+                    //For TWCC
+                    SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
 
                     SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
@@ -242,15 +237,14 @@ namespace SIPSorcery.net.RTP
 
                         int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
+                        SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
                         SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                        //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
                     }
-
                     LocalTrack.Timestamp += duration;
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendVp8Frame.");
                 }
             }
         }
@@ -336,10 +330,6 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        #endregion SEND PACKET
-
-        #region RECEIVE PACKET
-
         public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
         {
             if (OnVideoFrameReceivedByIndex == null)
@@ -362,7 +352,7 @@ namespace SIPSorcery.net.RTP
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H265 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.JPEG)
                 {
-                    logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
+                    logger.LogDebug("Video depacketisation codec set to {Codec} for SSRC {SSRC}.", format.ToVideoFormat().Codec, packet.Header.SyncSource);
 
                     RtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec, MaxReconstructedVideoFrameSize);
 
@@ -374,12 +364,10 @@ namespace SIPSorcery.net.RTP
                 }
                 else
                 {
-                    logger.LogWarning($"Video depacketisation logic for codec {format.Name()} has not been implemented, PR's welcome!");
+                    logger.LogWarning("Video depacketisation logic for codec {CodecName} has not been implemented, PR's welcome!", format.Name());
                 }
             }
         }
-
-        #endregion RECEIVE PACKET
 
         public void CheckVideoFormatsNegotiation()
         {
@@ -395,7 +383,7 @@ namespace SIPSorcery.net.RTP
         public VideoStream(RtpSessionConfig config, int index) : base(config, index)
         {
             MediaType = SDPMediaTypesEnum.video;
-            RemoteRtpEventPayloadID = 0;
+            NegotiatedRtpEventPayloadID = 0;
         }
     }
 }

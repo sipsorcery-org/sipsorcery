@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Crypto.cs
 //
 // Description: Encrypts and decrypts data.
@@ -288,7 +288,7 @@ namespace SIPSorcery.Sys
             // Check that the file exists.
             if (!File.Exists(filepath))
             {
-                logger.LogError("Cannot open a non-existent file for a hash operation, " + filepath + ".");
+                logger.LogError("Cannot open a non-existent file for a hash operation, {FilePath}.",  filepath);
                 throw new IOException("Cannot open a non-existent file for a hash operation, " + filepath + ".");
             }
 
@@ -298,7 +298,7 @@ namespace SIPSorcery.Sys
             if (inputStream.Length == 0)
             {
                 inputStream.Close();
-                logger.LogError("Cannot perform a hash operation on an empty file, " + filepath + ".");
+                logger.LogError("Cannot perform a hash operation on an empty file, {FilePath}.", filepath);
                 throw new IOException("Cannot perform a hash operation on an empty file, " + filepath + ".");
             }
 
@@ -382,19 +382,19 @@ namespace SIPSorcery.Sys
         public static X509Certificate2 LoadCertificate(StoreLocation storeLocation, string certificateSubject, bool checkValidity)
         {
             X509Store store = new X509Store(storeLocation);
-            logger.LogDebug("Certificate store " + store.Location + " opened");
+            logger.LogDebug("Certificate store {StoreLocation} opened", store.Location);
             store.Open(OpenFlags.OpenExistingOnly);
             X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySubjectName, certificateSubject, checkValidity);
             if (collection != null && collection.Count > 0)
             {
                 X509Certificate2 serverCertificate = collection[0];
                 bool verifyCert = serverCertificate.Verify();
-                logger.LogDebug("X509 certificate loaded from current user store, subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
+                logger.LogDebug("X509 certificate loaded from current user store, subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
                 return serverCertificate;
             }
             else
             {
-                logger.LogWarning("X509 certificate with subject name=" + certificateSubject + ", not found in " + store.Location + " store.");
+                logger.LogWarning("X509 certificate with subject name={CertificateSubject}, not found in {StoreLocation} store.", certificateSubject, store.Location);
                 return null;
             }
         }

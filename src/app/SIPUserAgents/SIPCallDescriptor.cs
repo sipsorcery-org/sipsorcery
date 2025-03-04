@@ -448,7 +448,7 @@ namespace SIPSorcery.SIP.App
                             }
                             else if (customHeader.IndexOf(':') == -1)
                             {
-                                logger.LogWarning("ParseCustomHeaders skipping custom header due to missing colon, " + customHeader + ".");
+                                logger.LogWarning("ParseCustomHeaders skipping custom header due to missing colon, {CustomHeader}.", customHeader);
                                 continue;
                             }
                             else
@@ -459,7 +459,7 @@ namespace SIPSorcery.SIP.App
 
                                 if (Regex.Match(customHeader.Trim(), "^(Via|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
                                 {
-                                    logger.LogWarning("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
+                                    logger.LogWarning("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, {CustomHeader}.", customHeader);
                                     continue;
                                 }
                                 else
@@ -473,7 +473,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception ParseCustomHeaders (" + customHeaders + "). " + excp.Message);
+                logger.LogError(excp, "Exception ParseCustomHeaders ({CustomHeaders}). {Message}", customHeaders, excp.Message);
             }
 
             return customHeaderList;

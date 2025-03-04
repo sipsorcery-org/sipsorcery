@@ -225,7 +225,7 @@ namespace SIPSorcery.Net
                 // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
                 //var relayProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
                 var relayProtocol = RTCIceProtocol.udp;
-                
+
                 candidate.SetAddressProperties(relayProtocol, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
                     type, null, 0);
                 candidate.IceServer = this;
@@ -234,7 +234,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning($"Could not get ICE server candidate for {_uri} and type {type}.");
+                logger.LogWarning("Could not get ICE server candidate for {Uri} and type {Type}.", _uri, type);
                 return null;
             }
         }
@@ -289,7 +289,7 @@ namespace SIPSorcery.Net
                     // If the relay end point is set then this connection check has already been completed.
                     if (RelayEndPoint == null)
                     {
-                        logger.LogDebug($"TURN allocate success response received for ICE server check to {_uri}.");
+                        logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _uri);
 
                         var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
 
@@ -344,7 +344,7 @@ namespace SIPSorcery.Net
                         {
                             ServerEndPoint = new IPEndPoint(alternateServerAttribute.Address, alternateServerAttribute.Port);
 
-                            logger.LogWarning($"ICE session received an alternate respose for an Allocate request to {_uri}, changed server url to {ServerEndPoint}.");
+                            logger.LogWarning("ICE session received an alternate respose for an Allocate request to {Uri}, changed server url to {ServerEndPoint}.", _uri, ServerEndPoint);
 
                             // Set a new transaction ID.
                             GenerateNewTransactionID();
@@ -353,12 +353,12 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"ICE session received an error response for an Allocate request to {_uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
+                            logger.LogWarning("ICE session received an error response for an Allocate request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
                         }
                     }
                     else
                     {
-                        logger.LogWarning($"ICE session received an error response for an Allocate request to {_uri}.");
+                        logger.LogWarning("ICE session received an error response for an Allocate request to {Uri}.", _uri);
                     }
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
@@ -368,8 +368,7 @@ namespace SIPSorcery.Net
                     // If the server reflexive end point is set then this connection check has already been completed.
                     if (ServerReflexiveEndPoint == null)
                     {
-                        logger.LogDebug($"STUN binding success response received for ICE server check to {_uri}.");
-
+                        logger.LogDebug("STUN binding success response received for ICE server check to {Uri}.", _uri);
                         var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
 
                         if (mappedAddrAttr != null)
@@ -396,12 +395,12 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"ICE session received an error response for a Binding request to {_uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
+                            logger.LogWarning("ICE session received an error response for a Binding request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
                         }
                     }
                     else
                     {
-                        logger.LogWarning($"STUN binding error response received for ICE server check to {_uri}.");
+                        logger.LogWarning("STUN binding error response received for ICE server check to {Uri}.", _uri);
                         // The STUN response is for a check sent to an ICE server.
                         Error = SocketError.ConnectionRefused;
                     }
@@ -409,8 +408,8 @@ namespace SIPSorcery.Net
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
                 {
                     ErrorResponseCount = 0;
-                    
-                    logger.LogDebug($"STUN binding success response received for ICE server check to {_uri}.");
+
+                    logger.LogDebug("STUN binding success response received for ICE server check to {Uri}.", _uri);
 
                     var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
 
@@ -419,7 +418,7 @@ namespace SIPSorcery.Net
                         TurnTimeToExpiry = DateTime.Now +
                                            TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
                     }
-                    
+
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
                 {
@@ -438,19 +437,19 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"ICE session received an error response for a Refresh request to {_uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
+                            logger.LogWarning("ICE session received an error response for a Refresh request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
                         }
                     }
                     else
                     {
-                        logger.LogWarning($"STUN binding error response received for ICE server check to {_uri}.");
+                        logger.LogWarning("STUN binding error response received for ICE server check to {Uri}.", _uri);
                         // The STUN response is for a check sent to an ICE server.
                         Error = SocketError.ConnectionRefused;
                     }
                 }
                 else
                 {
-                    logger.LogWarning($"An unrecognised STUN {stunResponse.Header.MessageType} response for an ICE server check was received from {remoteEndPoint}.");
+                    logger.LogWarning("An unrecognised STUN {MessageType} response for an ICE server check was received from {RemoteEndPoint}.", stunResponse.Header.MessageType, remoteEndPoint);
                     ErrorResponseCount++;
                 }
             }

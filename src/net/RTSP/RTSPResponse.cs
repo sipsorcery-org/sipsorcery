@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTSPResponse.cs
 //
 // Description: RTSP response.
@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception parsing RTSP response. " + excp.Message);
+                logger.LogError(excp, "Exception parsing RTSP response. {ErrorMessage}", excp.Message);
                 throw new ApplicationException("There was an exception parsing an RTSP response. " + excp.Message);
             }
         }
@@ -123,7 +123,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPResponse ToString. " + excp.Message);
+                logger.LogError(excp, "Exception RTSPResponse ToString. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

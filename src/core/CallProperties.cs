@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -23,11 +22,7 @@ namespace SIPSorcery.SIP
     {
         public static string CreateNewCallId()
         {
-            Guid callIdGuid = Guid.NewGuid();
-
-            string callIdStr = Regex.Replace(callIdGuid.ToString(), "-", "");
-
-            return callIdStr;
+            return Guid.NewGuid().ToString("N");
         }
 
         public static string CreateNewTag()
@@ -59,7 +54,7 @@ namespace SIPSorcery.SIP
 
         public static string CreateBranchId()
         {
-            return SIPConstants.SIP_BRANCH_MAGICCOOKIE + Regex.Replace(Guid.NewGuid().ToString(), "-", "");
+            return SIPConstants.SIP_BRANCH_MAGICCOOKIE + Guid.NewGuid().ToString("N");
         }
     }
 }

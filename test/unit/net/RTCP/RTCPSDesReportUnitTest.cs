@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPSDesReportUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 8;
@@ -58,7 +58,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPSDesReportNotOnBoundaryUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 8;
@@ -81,7 +81,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPSDesReportOnBoundaryUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 8;

@@ -125,7 +125,7 @@ namespace SIPSorcery.Media
         {
             if (framesPerSecond < MINIMUM_FRAMES_PER_SECOND || framesPerSecond > MAXIMUM_FRAMES_PER_SECOND)
             {
-                logger.LogWarning($"Frames per second not in the allowed range of {MINIMUM_FRAMES_PER_SECOND} to {MAXIMUM_FRAMES_PER_SECOND}, ignoring.");
+                logger.LogWarning("{FramesPerSecond} fames per second not in the allowed range of {MinimumFramesPerSecond} to {MaximumFramesPerSecond}, ignoring.", framesPerSecond, MINIMUM_FRAMES_PER_SECOND, MAXIMUM_FRAMES_PER_SECOND);
             }
             else
             {

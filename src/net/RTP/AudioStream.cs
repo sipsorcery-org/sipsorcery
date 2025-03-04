@@ -21,30 +21,27 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class AudioStream : MediaStream
     {
         protected static ILogger logger = Log.Logger;
-        protected Boolean rtpEventInProgress = false;
+        protected bool rtpEventInProgress = false;
 
-        private SDPAudioVideoMediaFormat sendingFormat;
         private bool sendingFormatFound = false;
 
-        #region EVENTS
+        /// <summary>
+        /// The audio format negotiated fir the audio stream by the SDP offer/answer exchange.
+        /// </summary>
+        public SDPAudioVideoMediaFormat NegotiatedFormat { get; private set; }
 
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common audio formats is set.
         /// </summary>
         public event Action<int, List<AudioFormat>> OnAudioFormatsNegotiatedByIndex;
-
-        #endregion EVENTS
-
-        #region PROPERTIES
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -53,14 +50,10 @@ namespace SIPSorcery.net.RTP
         {
             get
             {
-                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
-                  && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+                return (LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                  || (RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive);
             }
         }
-
-        #endregion PROPERTIES
-
-        #region SEND PACKET
 
         /// <summary>
         /// Sends an audio sample to the remote peer.
@@ -72,10 +65,10 @@ namespace SIPSorcery.net.RTP
         {
             if (!sendingFormatFound)
             {
-                sendingFormat = GetSendingFormat();
+                NegotiatedFormat = GetSendingFormat();
                 sendingFormatFound = true;
             }
-            SendAudioFrame(durationRtpUnits, sendingFormat.ID, sample);
+            SendAudioFrame(durationRtpUnits, NegotiatedFormat.ID, sample);
         }
 
         /// <summary>
@@ -91,7 +84,7 @@ namespace SIPSorcery.net.RTP
             {
                 if (rtpEventInProgress)
                 {
-                    //logger.LogWarning($"{nameof(SendAudioFrame)} an RTPEvent is in progress.");
+                    //logger.LogWarning(nameof(SendAudioFrame) + " an RTPEvent is in progress.");
                     return;
                 }
 
@@ -145,7 +138,7 @@ namespace SIPSorcery.net.RTP
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendAudioFrame. {ErrorMessage}", sockExcp.Message);
                 }
             }
         }
@@ -166,7 +159,7 @@ namespace SIPSorcery.net.RTP
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning($"{nameof(SendDtmfEvent)} an RTPEvent is already in progress.");
+                    logger.LogWarning(nameof(SendDtmfEvent) + " an RTPEvent is already in progress.");
                     return;
                 }
 
@@ -222,7 +215,7 @@ namespace SIPSorcery.net.RTP
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendDtmfEvent. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendDtmfEvent. {ErrorMessage}", sockExcp.Message);
                 }
                 catch (TaskCanceledException)
                 {
@@ -243,11 +236,9 @@ namespace SIPSorcery.net.RTP
         /// be used to cancel the send.</param>
         public virtual Task SendDtmf(byte key, CancellationToken ct)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, NegotiatedRtpEventPayloadID);
             return SendDtmfEvent(dtmfEvent, ct);
         }
-
-        #endregion SEND PACKET
 
         public void CheckAudioFormatsNegotiation()
         {
