@@ -212,14 +212,14 @@ namespace SIPSorcery.net.RTP.Packetisation
         ///The field FuType MUST be equal to the field Type of the fragmented
         ///NAL unit.
         /// </remarks>
-        public static byte[] GetH265RtpHeader(byte nal0, bool isFirstPacket, bool isFinalPacket)
+        public static byte[] GetH265RtpHeader(byte[] nals, bool isFirstPacket, bool isFinalPacket)
         {
-            byte nalType = (byte)((nal0 >> 1) & 0x1F);
 
-            byte firstHdrByte = (byte)(nal0 & 0x81);
+            byte nalType = (byte)((nals[0] >> 1) & 0x3F);
 
-            byte fuIndicator = (byte)(firstHdrByte | (49 << 1));
-            byte fuHeader = nalType;
+            nals[0] = (byte)((nals[0] & 0x81) | (49 << 1));
+
+            byte fuHeader = (byte)(nalType & 0x3f);
             if (isFirstPacket)
             {
                 fuHeader += 0x80;
@@ -228,8 +228,47 @@ namespace SIPSorcery.net.RTP.Packetisation
             {
                 fuHeader += 0x40;
             }
+            return new byte[] { nals[0], nals[1], fuHeader };
+        }
 
-            return new byte[] { fuIndicator, fuHeader };
+        public static IEnumerable<H265Nal> CreateAggregated(IEnumerable<H265Nal> nals, int RTP_MAX_PAYLOAD)
+        {
+            var newNalList = new List<H265Nal>();
+            var aggregated = new List<byte>();
+            var aggregatedLast = false;
+            var nalCount = 0;
+            foreach (var nal in nals)
+            {
+                if (nal.NAL.Length + aggregated.Count() <= RTP_MAX_PAYLOAD)
+                {
+                    if (nalCount == 0)
+                    {
+                        aggregated.Add((byte)((nal.NAL[0] & 0x81) | (48 << 1)));
+                        aggregated.Add(nal.NAL[1]);
+                    }
+                    var length = nal.NAL.Length;
+                    byte[] nalSize = new byte[2];
+                    nalSize[0] = (byte)(length >> 8);
+                    nalSize[1] = (byte)(length & 0xFF);
+                    aggregated.AddRange(nalSize);
+                    aggregated.AddRange(nal.NAL);
+                    aggregatedLast = nal.IsLast;
+                    nalCount++;
+                }
+                else
+                {
+                    if (nalCount > 0)
+                    {
+                        newNalList.Add(new H265Nal(aggregated.ToArray(), aggregatedLast));
+                        aggregated.Clear();
+                        aggregatedLast = false;
+                        nalCount = 0;
+                    }
+
+                    newNalList.Add(nal);
+                }
+            }
+            return newNalList;
         }
     }
 }

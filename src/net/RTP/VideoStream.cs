@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto.Parameters;
 using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
@@ -158,8 +159,8 @@ namespace SIPSorcery.net.RTP
         {
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
-
-            byte nal0 = nal[0];
+            var naluHeaderSize = is265 ? 2 : 1;
+            byte[] naluHeader = is265 ? nal.Take(2).ToArray() : nal.Take(1).ToArray();
 
             if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
@@ -174,7 +175,7 @@ namespace SIPSorcery.net.RTP
             }
             else
             {
-                nal = nal.Skip(1).ToArray();
+                nal = nal.Skip(naluHeaderSize).ToArray();
 
                 // Send as Fragmentation Unit A (FU-A):
                 for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
@@ -186,7 +187,7 @@ namespace SIPSorcery.net.RTP
                     bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
                     int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
-                    byte[] rtpHdr = is265 ? H265Packetiser.GetH265RtpHeader(nal0, isFirstPacket, isFinalPacket) : H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
+                    byte[] rtpHdr = is265 ? H265Packetiser.GetH265RtpHeader(naluHeader, isFirstPacket, isFinalPacket) : H264Packetiser.GetH264RtpHeader(naluHeader[0], isFirstPacket, isFinalPacket);
                     
                     byte[] payload = new byte[payloadLength + rtpHdr.Length];
                     Buffer.BlockCopy(rtpHdr, 0, payload, 0, rtpHdr.Length);
@@ -208,7 +209,8 @@ namespace SIPSorcery.net.RTP
             if(CheckIfCanSendRtpRaw())
             {
                 var nals = H265Packetiser.ParseNals(sample);
-                foreach (var nal in nals)
+                var aggregatedNals = H265Packetiser.CreateAggregated(nals, RTPSession.RTP_MAX_PAYLOAD);
+                foreach (var nal in aggregatedNals)
                 {
                     SendH26XNal(durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
                 }
@@ -357,6 +359,7 @@ namespace SIPSorcery.net.RTP
             {
                 if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H264 ||
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.H265 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.JPEG)
                 {
                     logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");

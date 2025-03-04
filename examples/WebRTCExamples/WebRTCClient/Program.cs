@@ -119,7 +119,7 @@ namespace demo
 
             // Sink (speaker) only audio end point.
             WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(), -1, -1, true, false);
-            
+
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSinkFormats(), MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
@@ -127,7 +127,7 @@ namespace demo
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnVideoFrameReceived += videoEP.GotVideoFrame;
-            peerConnection.OnVideoFormatsNegotiated += (formats) => 
+            peerConnection.OnVideoFormatsNegotiated += (formats) =>
                 videoEP.SetVideoSinkFormat(formats.First());
             peerConnection.OnAudioFormatsNegotiated += (formats) =>
                 windowsAudioEP.SetAudioSinkFormat(formats.First());
