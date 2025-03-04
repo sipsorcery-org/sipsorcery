@@ -7,37 +7,24 @@ using SIPSorcery.Net;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// Implements depacktizer of H265 units. The implementation follows the RFC7798.
+    ///
+    /// The main focus is on handling Aggregated Units (AU) and Fragmentation Units (FU). The implementation does not support PACI packets.
+    /// </summary>
     public class H265Depacketiser 
     {
-        const int H265NalHeaderSize = 2;
-
-        public H265Depacketiser()
-        {
-            
-        }
-
-
+        const int VPS = 32;
         const int SPS = 33;
         const int PPS = 34;
-        const int IDR_SLICE = 1;
-        const int NON_IDR_SLICE = 5;
-
-        protected readonly int nalHeaderSize;
-
-        //private BinaryWriter _writer = new BinaryWriter(File.Open(@"c:\temp\H264DepacketiserInput.bin", FileMode.Create));
 
         //Payload Helper Fields
         uint previous_timestamp = 0;
-        int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24, decoding = 0; // used for diagnostics stats
         List<KeyValuePair<int, byte[]>> temporary_rtp_payloads = new List<KeyValuePair<int, byte[]>>(); // used to assemble the RTP packets that form one RTP Frame
-        MemoryStream fragmented_nal = new MemoryStream(); // used to concatenate fragmented H264 NALs where NALs are splitted over RTP packets
 
         int writeNumber = 0;
         public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
         {
-            //_writer.Write(rtpPayload);
-            //_writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x42 });
-
             List<byte[]> nal_units = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
 
             if (nal_units != null)
@@ -88,7 +75,6 @@ namespace SIPSorcery.Net
             {
                 temporary_rtp_payloads.Clear();
                 previous_timestamp = 0;
-                fragmented_nal.SetLength(0);
             }
 
             // Add to the list of payloads for the current Frame of video
@@ -109,7 +95,6 @@ namespace SIPSorcery.Net
                 List<byte[]> nal_units = ProcessH265PayloadFrame(temporary_rtp_payloads, out isKeyFrame);
                 temporary_rtp_payloads.Clear();
                 previous_timestamp = 0;
-                fragmented_nal.SetLength(0);
 
                 return nal_units;
             }
@@ -121,16 +106,6 @@ namespace SIPSorcery.Net
             }
         }
 
-
-        private void PrintPartOfArrayToConsole(byte[] array, int start, int end)
-        {
-            for (int i = start; i < end; i++)
-            {
-                Console.Write(array[i].ToString("X2") + " ");
-            }
-            Console.WriteLine();
-        }
-
         // Process a RTP Frame. A RTP Frame can consist of several RTP Packets which have the same Timestamp
         // Returns a list of NAL Units (with no 00 00 00 01 header and with no Size header)
         protected virtual List<byte[]> ProcessH265PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads, out bool isKeyFrame)
@@ -138,7 +113,6 @@ namespace SIPSorcery.Net
             bool? isKeyFrameNullable = null;
             List<byte[]> nal_units = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
 
-            List<KeyValuePair<int, byte[]>> tmpNals = new List<KeyValuePair<int, byte[]>>();
             //check payload for Payload headers 48 and 49
             for (int payload_index = 0; payload_index < rtp_payloads.Count; payload_index++)
             {
@@ -156,142 +130,129 @@ namespace SIPSorcery.Net
                 if (nal_header_type == 48)
                 {
                     //aggregated RTP Payload
-                    nalUnits = ExtractNalUnitsFromAggregatedRTP(rtp_payloads[payload_index].Value, true);
+                    nalUnits = ExtractNalUnitsFromAggregatedRTP(rtp_payloads[payload_index].Value);
                     foreach (var nalUnit in nalUnits)
                     {
-                        tmpNals.Add(new KeyValuePair<int, byte[]>(0, nalUnit));
+                        nal_units.Add(nalUnit);
                     }
                 }
                 else if (nal_header_type == 49)
                 {
-                    byte[] nalUnit = MergeFUNalUnitsAccrossMultipleRTPPackages(rtp_payloads, ref payload_index);
+                    
+                    byte[] nalUnit = MergeFUNalUnitsAccrossMultipleRTPPackages(rtp_payloads.Select(x => x.Value).ToList(), ref payload_index);
                     if (nalUnit != null)
                     {
-                        tmpNals.Add(new KeyValuePair<int, byte[]>(rtp_payloads[payload_index].Key, nalUnit));
+                        nal_units.Add(nalUnit);
                     }
                 }
                 else
                 {
-                    tmpNals.Add(rtp_payloads[payload_index]);
+                    nal_units.Add(rtp_payloads[payload_index].Value);
                 }
             }
-            rtp_payloads = tmpNals;
-
-
-
-            isKeyFrame = isKeyFrameNullable != null ? isKeyFrameNullable.Value : false;
+            isKeyFrame = CheckKeyFrame(nal_units);
 
             // Output all the NALs that form one RTP Frame (one frame of video)
-            return rtp_payloads.Select(payload => payload.Value).ToList();
+            return nal_units;
         }
 
-        private byte[] MergeFUNalUnitsAccrossMultipleRTPPackages(List<KeyValuePair<int, byte[]>> rtp_payloads, ref int payload_index)
+        private byte[] MergeFUNalUnitsAccrossMultipleRTPPackages(List<byte[]> rtp_payloads, ref int payload_index)
         {
-            List<byte> fuNal = new List<byte>();
-            bool nalUnitComplete = false;
-            
-            while (!nalUnitComplete)
+            using (MemoryStream fuNal = new MemoryStream())
             {
-                if(payload_index >= rtp_payloads.Count)
-                {
-                    //Invalid FU, havn't found fu_endOfNal
-                    return null;
-                }
-                byte fuHeader = rtp_payloads[payload_index].Value[2];
-                int fu_startOfNal = (fuHeader >> 7) & 0x01;  // start marker
-                int fu_endOfNal = (fuHeader >> 6) & 0x01;  // end marker
-                int fu_type = (fuHeader >> 1) & 0x3F; // FU Type
-                if(fu_startOfNal == 1)
-                {
-                    byte nalHeader1 = rtp_payloads[payload_index].Value[0];
-                    byte nalHeader2 = rtp_payloads[payload_index].Value[1];
-                    int nal_header_f_bit = (nalHeader1 >> 7) & 0x01;
-                    int nuhLayerId = ((nalHeader1 & 0x01) << 5) | ((nalHeader2 >> 3) & 0x1F);
-                    int nuhTemporalIdPlus1 = nalHeader2 & 0x07;
-                    var nalu1 = (byte)((nal_header_f_bit << 7) + (fu_type << 2) + (nuhLayerId >> 7));
-                    var nalu2 = (byte)((nuhLayerId << 1) + (nuhTemporalIdPlus1));
-                    fuNal.Add(nalu1);
-                    fuNal.Add(nalu2);
-                }
+                bool nalUnitComplete = false;
 
-                if (fuNal.Count == 0 && fu_startOfNal != 1)
+                while (!nalUnitComplete)
                 {
-                    //Invalid FU, first package should be start package
-                    return null;
-                }
+                    if (payload_index >= rtp_payloads.Count())
+                    {
+                        //Invalid FU, havn't found fu_endOfNal
+                        return null;
+                    }
+                    byte[] payload = rtp_payloads[payload_index];
 
-                //Copy payload except RTPPayload header and FU Header
-                byte[] partialNal = new byte[rtp_payloads[payload_index].Value.Length - 3];
-                Array.Copy(rtp_payloads[payload_index].Value, 3, partialNal, 0, rtp_payloads[payload_index].Value.Length - 3);
-                fuNal.AddRange(partialNal);
-                
-                if (fu_endOfNal == 1)
-                {
-                    nalUnitComplete = true;
+
+                    byte fuHeader = payload[2];
+                    int fu_startOfNal = (fuHeader >> 7) & 0x01;  // start marker
+                    int fu_endOfNal = (fuHeader >> 6) & 0x01;  // end marker
+                    int fu_type = (fuHeader >> 1) & 0x3F; // FU Type
+                    if (fu_startOfNal == 1)
+                    {
+                        byte nalHeader1 = payload[0];
+                        byte nalHeader2 = payload[1];
+                        int nal_header_f_bit = (nalHeader1 >> 7) & 0x01;
+                        int nuhLayerId = ((nalHeader1 & 0x01) << 5) | ((nalHeader2 >> 3) & 0x1F);
+                        int nuhTemporalIdPlus1 = nalHeader2 & 0x07;
+                        var fu_nalHeader1 = (byte)((nal_header_f_bit << 7) + (fu_type << 2) + (nuhLayerId >> 7));
+                        var fu_nalHeader2 = (byte)((nuhLayerId << 1) + (nuhTemporalIdPlus1));
+                        fuNal.WriteByte(fu_nalHeader1);
+                        fuNal.WriteByte(fu_nalHeader2);
+                    }
+
+                    if (fuNal.Length == 0 && fu_startOfNal != 1)
+                    {
+                        //Invalid FU, first package should be start package
+                        return null;
+                    }
+
+                    //Copy payload except Payload header and FU Header
+                    fuNal.Write(payload, 3, rtp_payloads[payload_index].Length - 3);
+
+                    if (fu_endOfNal == 1)
+                    {
+                        nalUnitComplete = true;
+                    }
+                    else
+                    {
+                        payload_index++;
+                    }
                 }
-                else
-                {
-                    payload_index++;
-                }
+                return fuNal.ToArray();
             }
-            
-
-            return fuNal.ToArray();
         }
 
-        private List<byte[]> ExtractNalUnitsFromAggregatedRTP(byte[] rtpPayload, bool firstAggregationUnit)
+        private List<byte[]> ExtractNalUnitsFromAggregatedRTP(byte[] rtpPayload)
         {
             List<byte[]> nalUnits = new List<byte[]>();
-            var foundAllUnits = false;
-            int startIndex = 2; //First two bytes are Payload Header
-            while (!foundAllUnits)
+            int startIndex = 2; //First two bytes are Payload Header, ignore
+            while (startIndex < rtpPayload.Length)
             {
-                //byte[] DONL = new byte[2];
-                //if (firstAggregationUnit)
-                //{
-                //    DONL[0] = rtpPayload[startIndex];
-                //    DONL[1] = rtpPayload[startIndex+1];
-                //    startIndex += 2; //DONL read
-                //}
+                if (startIndex + 2 >= rtpPayload.Length)
+                {
+                    //Not enough data for NAL size
+                    break;
+                }
 
-                UInt16 nalSize =  (UInt16)(rtpPayload[startIndex] << 8 | rtpPayload[startIndex+1]);
+                int nalSize =  rtpPayload[startIndex] << 8 | rtpPayload[startIndex+1];
                 startIndex += 2; //NALUnit size read
-                // The first two bytes of the NAL unit contain the NAL header
-                byte nalHeader1 = rtpPayload[startIndex];
-                byte nalHeader2 = rtpPayload[startIndex+1];
 
-                // Extract the fields from the NAL header
-                int nal_header_f_bit = (nalHeader1 >> 7) & 0x01;
-                int nal_header_type = (nalHeader1 >> 1) & 0x3F;
-                int nuhLayerId = ((nalHeader1 & 0x01) << 5) | ((nalHeader2 >> 3) & 0x1F);
-                int nuhTemporalIdPlus1 = nalHeader2 & 0x07;
+                if(startIndex + nalSize > rtpPayload.Length)
+                {
+                    //Not enough data for NALUnit
+                    break;
+                }
 
                 byte[] nal = new byte[nalSize];
-                Array.Copy(rtpPayload, startIndex, nal, 0, nalSize);
+                Buffer.BlockCopy(rtpPayload, startIndex, nal, 0, nalSize);
                 nalUnits.Add(nal);
                 startIndex += nalSize;
-
-                if ((startIndex +2) >= rtpPayload.Length)
-                {
-                    foundAllUnits = true;
-                }
             }
             return nalUnits;
         }
 
-        protected void CheckKeyFrame(int nal_type, ref bool? isKeyFrame)
+        protected bool CheckKeyFrame(List<byte[]> nalUnits)
         {
-            if (isKeyFrame == null)
+            foreach(var nalUnit in nalUnits)
             {
-                isKeyFrame = nal_type == SPS || nal_type == PPS ? new bool?(true) :
-                    (nal_type == NON_IDR_SLICE ? new bool?(false) : null);
+                int nal_type = (nalUnit[0] >> 1) & 0x3F; ;
+                if(nal_type == SPS ||
+                    nal_type == PPS ||
+                    nal_type == VPS)
+                {
+                    return true;
+                }
             }
-            else
-            {
-                isKeyFrame = nal_type == SPS || nal_type == PPS ?
-                    (isKeyFrame.Value ? isKeyFrame : new bool?(false)) :
-                    (nal_type == NON_IDR_SLICE ? new bool?(false) : isKeyFrame);
-            }
+            return false;
         }
     }
 }

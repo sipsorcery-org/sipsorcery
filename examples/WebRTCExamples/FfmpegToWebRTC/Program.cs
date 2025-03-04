@@ -26,7 +26,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
-using TinyJson;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -68,6 +67,7 @@ namespace SIPSorcery.Examples
         /// - vp8
         /// - vp9
         /// - h264
+        /// - libx265
         /// Note if you change this option you will need to delete the ffmpeg.sdp file.
         /// </summary>
         private const string FFMPEG_VP8_CODEC = "-vcodec vp8";
@@ -122,16 +122,16 @@ namespace SIPSorcery.Examples
                 client.OnMessageReceived += WebSocketMessageReceived;
             });
 
-            //if(File.Exists(FFMPEG_SDP_FILE))
-            //{
-            //    var sdp = SDP.ParseSDPDescription(File.ReadAllText(FFMPEG_SDP_FILE));
-            //    var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
-            //    if(videoAnn.MediaFormats.Values.First().Name().ToLower() != videoCodec)
-            //    {
-            //        logger.LogWarning($"Removing existing ffmpeg SDP file {FFMPEG_SDP_FILE} due to codec mismatch.");
-            //        File.Delete(FFMPEG_SDP_FILE);
-            //    }
-            //}
+            if (File.Exists(FFMPEG_SDP_FILE))
+            {
+
+                string codecName = GetCodecName();
+                if (!videoCodec.Contains(codecName))
+                {
+                    logger.LogWarning($"Removing existing ffmpeg SDP file {FFMPEG_SDP_FILE} due to codec mismatch.");
+                    File.Delete(FFMPEG_SDP_FILE);
+                }
+            }
 
             Console.WriteLine("Start ffmpeg using the command below and then initiate a WebRTC connection from the browser");
             Console.WriteLine(ffmpegCommand);
@@ -155,6 +155,20 @@ namespace SIPSorcery.Examples
             await Task.Run(() => OnKeyPress(exitCts.Token));
 
             _webSocketServer.Stop();
+        }
+
+        private static string GetCodecName()
+        {
+            var sdp = SDP.ParseSDPDescription(File.ReadAllText(FFMPEG_SDP_FILE));
+            var videoAnn = sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video);
+            var codec = videoAnn.MediaFormats.Values.First().Name().ToLower();
+            if (codec == "h265")
+            {
+                return "libx265";
+            }else
+            {
+                return codec;
+            }
         }
 
         private static async Task StartFfmpegListener(string sdpPath, CancellationToken cancel)
@@ -217,7 +231,7 @@ namespace SIPSorcery.Examples
             await pc.setLocalDescription(offerInit);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-            context.WebSocket.Send(offerInit.toJSON());
+            context.WebSocket.Send(offerInit.sdp);
 
             return pc;
         }
@@ -263,7 +277,6 @@ namespace SIPSorcery.Examples
                 }
             };
 
-
             return pc;
         }
 
@@ -271,10 +284,10 @@ namespace SIPSorcery.Examples
         {
             try
             {
-                if (RTCSessionDescriptionInit.TryParse(message, out var descriptionInit))
+                if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    pc.setRemoteDescription(descriptionInit);
+                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
                 }
                 else
                 {
