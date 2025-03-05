@@ -1,7 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿//-----------------------------------------------------------------------------
+// Filename: MJPEGDepacketiser.cs
+//
+// Description: The MJPEGDepacketiser class is responsible for processing RTP payloads containing MJPEG data.
+// It handles the extraction and reassembly of JPEG frames from RTP packets, including the management
+// of JPEG headers, quantization tables, and Huffman tables. The class provides methods for reading
+// various integer sizes from byte arrays, comparing byte sequences, and generating necessary JPEG
+// headers and tables for proper frame reconstruction.
+//
+// Author(s):
+// Morten Palner Drescher (mdr@milestone.dk)
+//
+// History:
+// 23 Jan 2025 Morten Palner Drescher  Created, Copenhagen, Denmark.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+using System;
 using System.IO;
-using System.Text;
 
 namespace SIPSorcery.net.RTP.Packetisation
 {

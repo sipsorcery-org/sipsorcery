@@ -20,7 +20,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Parameters;
 using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;

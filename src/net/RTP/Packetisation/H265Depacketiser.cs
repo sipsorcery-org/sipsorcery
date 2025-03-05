@@ -1,9 +1,23 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: H265Depacketiser.cs
+//
+// Description: Implements depacktizer of H265 units. The implementation follows the RFC7798.
+// The main focus is on handling Aggregated Units (AU) and Fragmentation Units (FU).
+// The implementation does not support PACI packets.
+//
+// Author(s):
+// Henrik Vincent Hein (helu@milestone.dk)
+//
+// History:
+// 28 Feb 2025    Henrik Vincent Hein	Created, Copenhagen, Denmark.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using SIPSorcery.Net;
 
 namespace SIPSorcery.Net
 {

@@ -1,13 +1,24 @@
-﻿using System;
-using System.Collections;
+﻿//-----------------------------------------------------------------------------
+// Filename: MJPEGPacketiser.cs
+//
+// Description: The MJPEGPacketiser class provides functionality to packetize MJPEG (Motion JPEG) data for transmission over RTP (Real-time Transport Protocol).
+// It includes methods to create RTP headers for MJPEG frames, process JPEG markers, and extract frame data.
+// The class supports handling of quantization tables and restart markers in MJPEG streams.
+// This class offers only support for YUV color space.
+//
+// Author(s):
+// Morten Palner Drescher (mdr@milestone.dk)
+//
+// History:
+// 21 Jan 2025    Morten Palner Drescher	Created, Copenhagen, Denmark.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Utilities;
 
 namespace SIPSorcery.net.RTP.Packetisation
 {

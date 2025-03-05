@@ -1,7 +1,23 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: H265Packetiser.cs
+//
+// Description: The H265Packetiser class provides methods to packetize H265 Network Abstraction Layer (NAL) units
+// for transmission over RTP (Real-time Transport Protocol). It includes functionalities to parse
+// H265 NAL units from an Annex B bitstream, construct RTP headers for H265 NAL units, and create
+// aggregated NAL units for efficient RTP payloads. The class supports single NAL unit packets,
+// fragmentation units as well as aggregation packets.
+//
+// Author(s):
+// Morten Palner Drescher (mdr@milestone.dk)
+//
+// History:
+// 04 Mar 2025    Morten Palner Drescher	Created, Copenhagen, Denmark.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SIPSorcery.net.RTP.Packetisation
 {
@@ -153,7 +169,26 @@ namespace SIPSorcery.net.RTP.Packetisation
         ///
         /// 4.4.2.  Aggregation Packets (APs)
         ///
-        /// Not supported in this RTSP implementation !!!
+        /// 0                   1                   2                   3
+       /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       ///|                          RTP Header                           |
+       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       ///|   PayloadHdr(Type= 48)        |         NALU 1 Size           |
+       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       ///|          NALU 1 HDR           |                               |
+       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+         NALU 1 Data           |
+       ///|                   . . .                                       |
+       ///|                                                               |
+       ///+               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       ///|  . . .        | NALU 2 Size                   | NALU 2 HDR    |
+       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       ///| NALU 2 HDR    |                                               |
+       ///+-+-+-+-+-+-+-+-+              NALU 2 Data                      |
+       ///|                   . . .                                       |
+       ///|                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+       ///|                               :...OPTIONAL RTP padding        |
+       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         ///
         ///
         ///
