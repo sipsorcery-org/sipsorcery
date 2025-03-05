@@ -14,12 +14,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorceryMedia.FFmpeg;
-using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace demo;
 
@@ -40,12 +40,12 @@ class Program
         builder.Services.AddHostedService<WebSocketService>();
         builder.Services.AddHostedService<LndInvoiceListener>();
         builder.Services.AddSingleton<LightningInvoiceEventService>();
-        builder.Services.AddTransient<IWebRtcConnectionManagerFactory, WebRtcConnectionManagerFactory>();
+        builder.Services.AddTransient<IPaidWebRtcConnectionFactory, PaidWebRtcConnectionFactory>();
         builder.Services.AddTransient<ILightningPaymentService, LightningPaymentService>();
         builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
         builder.Services.AddTransient<ILightningService, LightningService>();
-        builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapGenerator>();
-        builder.Services.AddTransient<IFrameConfigStateMachine, FrameConfigStateMachine>();
+        builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapService>();
+        builder.Services.AddTransient<IFrameConfigStateMachine, PaymentStateMachine>();
 
         var app = builder.Build();
 

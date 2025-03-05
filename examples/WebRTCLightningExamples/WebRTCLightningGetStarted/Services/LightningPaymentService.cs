@@ -30,13 +30,12 @@ public interface ILightningPaymentService
 
     event Action<string> OnLightningPaymentRequestGenerated;
 
-    void RequestLightningInvoice(string description);
+    void RequestLightningInvoice(string description, int expirySeconds);
 }
 
 public class LightningPaymentService : ILightningPaymentService, IDisposable
 {
     private const int INVOICE_AMOUNT_MILLISATS = 10000;
-    private const int INVOICE_EXPIRY_SECONDS = 20;
 
     private readonly ILogger _logger;
     private readonly ILightningService _lightningService;
@@ -83,13 +82,13 @@ public class LightningPaymentService : ILightningPaymentService, IDisposable
         }
     }
 
-    public void RequestLightningInvoice(string description)
+    public void RequestLightningInvoice(string description, int expirySeconds)
     {
         if (Interlocked.CompareExchange(ref _hasLightningInvoiceBeenRequested, 1, 0) == 0)
         {
-            _logger.LogDebug($"{nameof(RequestLightningInvoice)} for {INVOICE_AMOUNT_MILLISATS} msats and {INVOICE_EXPIRY_SECONDS} expiry seconds.");
+            _logger.LogDebug($"{nameof(RequestLightningInvoice)} for {INVOICE_AMOUNT_MILLISATS} msats and {expirySeconds} expiry seconds.");
 
-            _getInvoiceTask = _lightningService.CreateInvoiceAsync(INVOICE_AMOUNT_MILLISATS, description, INVOICE_EXPIRY_SECONDS);
+            _getInvoiceTask = _lightningService.CreateInvoiceAsync(INVOICE_AMOUNT_MILLISATS, description, expirySeconds);
 
             _getInvoiceTask
                 .ContinueWith(t =>

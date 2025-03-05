@@ -22,4 +22,3 @@ public enum LightningInvoiceNotificationTypeEnum
 }
 
 public record LightningInvoicedNotification(LightningInvoiceNotificationTypeEnum NotificationType, string RHash, string Description);
-
