@@ -1,6 +1,19 @@
-﻿using System;
-using System.Diagnostics;
-using System.Transactions;
+﻿/*
+* Filename: TWCCBitrateController.cs
+*
+* Description:
+* Uses TWCC Reports to adjust bitrates and framerates for video streams.
+*
+* Author:        Sean Tearney
+* Date:          2025 - 03 - 05
+*
+* License:       BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+* 
+* Change Log:
+*   2025-03-05  Initial creation.
+*/
+
+using System;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
