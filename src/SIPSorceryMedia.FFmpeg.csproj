@@ -22,10 +22,6 @@
   <ItemGroup>
 	  <None Include="icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\..\sipsorcery\src\SIPSorcery.csproj" />
-  </ItemGroup>
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0;net7;net8</TargetFrameworks>

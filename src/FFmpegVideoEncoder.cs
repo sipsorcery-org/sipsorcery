@@ -1,6 +1,5 @@
 ﻿using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Tsp;
 using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace SIPSorceryMedia.FFmpeg
 {
-    public sealed unsafe class FFmpegVideoEncoder : IVideoEncoder, IEncoder, IDisposable
+    public sealed unsafe class FFmpegVideoEncoder : IVideoEncoder, IDisposable
     {
         private static readonly List<VideoFormat> _supportedFormats = Helper.GetSupportedVideoFormats();
 
@@ -19,7 +18,8 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         private readonly Dictionary<string, string> _encoderOptions;
-        private TWCCBitrateController _twccBitrateController;
+        private Stopwatch _frameTimer;
+        public event EventHandler<VideoEncoderStatistics> OnVideoEncoderStatistics;
 
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
@@ -41,7 +41,6 @@ namespace SIPSorceryMedia.FFmpeg
         private long? _rc_max_rate = null;
 
         private int? _thread_count = null;
-        private readonly Stopwatch _stopwatch;
         private long _lastFrameTicks = 0;
 
         private bool _forceKeyFrame;
@@ -54,8 +53,6 @@ namespace SIPSorceryMedia.FFmpeg
         {
             _encoderOptions = encoderOptions ?? new Dictionary<string, string>();
             _HwDeviceType = HWDeviceType;
-            _twccBitrateController = new TWCCBitrateController(this);
-            _stopwatch = Stopwatch.StartNew();
         }
 
         public byte[]? EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
@@ -294,11 +291,16 @@ namespace SIPSorceryMedia.FFmpeg
 
         private bool CheckDropFrame()
         {
+            if (_frameTimer == null)
+            {
+                _frameTimer = new Stopwatch();
+                _frameTimer.Start();
+            }
             // Calculate frame interval in ticks based on Stopwatch frequency.
             // frameIntervalMs = 1000 / framerate, convert ms to ticks: frameIntervalTicks = frameIntervalMs * Stopwatch.Frequency / 1000
             long frameIntervalTicks = (long)(1000.0 / _encoderContext->framerate.num * Stopwatch.Frequency / 1000);
 
-            long nowTicks = _stopwatch.ElapsedTicks;
+            long nowTicks = _frameTimer.ElapsedTicks;
             if (_lastFrameTicks != 0)
             {
                 if (nowTicks - _lastFrameTicks < frameIntervalTicks)
@@ -316,10 +318,6 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isDisposed)
             {
-                if (CheckDropFrame())
-                {
-                    return null;
-                }
                 lock (_encoderLock)
                 {
                     if (!_isDisposed)
@@ -374,7 +372,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isDisposed)
             {
-                if (CheckDropFrame()) {
+                if (OnVideoEncoderStatistics != null && CheckDropFrame()) {
                     return null;
                 }
                 lock (_encoderLock)
@@ -415,7 +413,7 @@ namespace SIPSorceryMedia.FFmpeg
                     avFrame->pts = _pts++;
 
                     var pPacket = ffmpeg.av_packet_alloc();
-                    _twccBitrateController.CalculateMaxBitrate(width, height, fps, _codecID);
+                    OnVideoEncoderStatistics?.Invoke(this, new VideoEncoderStatistics(width, height, fps, FFmpegConvert.GetVideoCodecEnum(_codecID)));
                     try
                     {
                         ffmpeg.avcodec_send_frame(_encoderContext, avFrame).ThrowExceptionIfError();
@@ -461,7 +459,7 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public void Tune(int bitrate, int fps)
+        public void AdjustStream(int bitrate, int fps)
         {
             
             if (_encoderContext == null)
@@ -660,6 +658,8 @@ namespace SIPSorceryMedia.FFmpeg
                         ffmpeg.av_frame_free(pFrame);
                     }
                 }
+
+                _frameTimer?.Stop();
             }
         }
     }

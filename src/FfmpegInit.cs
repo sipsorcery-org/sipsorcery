@@ -184,5 +184,16 @@ namespace SIPSorceryMedia.FFmpeg
 
             return avCodecID;
         }
+
+        public static VideoCodecsEnum GetVideoCodecEnum(AVCodecID avCodecID)
+        {
+            switch (avCodecID)
+            {
+                case AVCodecID.AV_CODEC_ID_H264:
+                    return VideoCodecsEnum.H264;
+            }
+
+            return VideoCodecsEnum.VP8;
+        }
     }
 }
