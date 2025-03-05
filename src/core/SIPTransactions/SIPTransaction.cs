@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPTransaction.cs
 //
 // Description: SIP Transaction.
@@ -273,7 +273,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception SIPTransaction.{excp}");
+                logger.LogError(excp, "Exception SIPTransaction.{ErrorMessage}", excp.Message);
                 throw;
             }
         }
@@ -454,7 +454,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception GetInformationalResponse. " + excp.Message);
+                logger.LogError(excp, "Exception GetInformationalResponse. {ErrorMessage}", excp.Message);
                 throw;
             }
         }
@@ -509,7 +509,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception ResendAckRequest. {excp.Message}");
+                logger.LogError(excp, "Exception ResendAckRequest: {ErrorMessage}", excp.Message);
                 return Task.FromResult(SocketError.Fault);
             }
         }
@@ -532,7 +532,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception ResendPrackRequest. {excp.Message}");
+                logger.LogError(excp, "Exception ResendPrackRequest: {ErrorMessage}", excp.Message);
                 return Task.FromResult(SocketError.Fault);
             }
         }

@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AsyncResult.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+   <ItemGroup>
+      <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+      <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.7" />
+   </ItemGroup>
+
+   <ItemGroup>
+     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+     <ProjectReference Include="..\..\OpenAIExamples\OpenAI.Realtime\OpenAI.Realtime.csproj" />
+   </ItemGroup>
+
+</Project>

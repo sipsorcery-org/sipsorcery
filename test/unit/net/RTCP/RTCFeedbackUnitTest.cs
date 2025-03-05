@@ -36,7 +36,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripPictureLossIndicationReportUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint senderSsrc = 33;
@@ -45,7 +45,7 @@ namespace SIPSorcery.Net.UnitTests
             RTCPFeedback rtcpPli = new RTCPFeedback(senderSsrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
             byte[] buffer = rtcpPli.GetBytes();
 
-            logger.LogDebug($"Serialised PLI feedback report: {BufferUtils.HexStr(buffer)}.");
+            logger.LogDebug("Serialised PLI feedback report: {Buffer}", BufferUtils.HexStr(buffer));
 
             RTCPFeedback parsedPli = new RTCPFeedback(buffer);
 
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripREMBUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint senderSsrc = 33;
@@ -80,7 +80,7 @@ namespace SIPSorcery.Net.UnitTests
             };
             byte[] buffer = rtcpREMB.GetBytes();
 
-            logger.LogDebug($"Serialised REMB: {BufferUtils.HexStr(buffer)}.");
+            logger.LogDebug("Serialised REMB: {Buffer}", BufferUtils.HexStr(buffer));
 
             RTCPFeedback parsedREMB = new RTCPFeedback(buffer);
 

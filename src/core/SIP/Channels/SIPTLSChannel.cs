@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPTLSChannel.cs
 //
 // Description: SIP transport for TLS over TCP.
@@ -73,11 +73,11 @@ namespace SIPSorcery.SIP
 
             if (m_serverCertificate != null)
             {
-                logger.LogInformation($"SIP TLS Channel ready for {ListeningSIPEndPoint} and certificate {m_serverCertificate.Subject}.");
+                logger.LogInformation("SIP TLS Channel ready for {ListeningSIPEndPoint} and certificate {CertificateSubject}.", ListeningSIPEndPoint, m_serverCertificate.Subject);
             }
             else
             {
-                logger.LogInformation($"SIP TLS client only channel ready.");
+                logger.LogInformation("SIP TLS client only channel ready.");
             }
         }
 
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP
                     }
                     cts.Cancel();
 
-                    logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningSIPEndPoint}<-{streamConnection.RemoteSIPEndPoint}.");
+                    logger.LogDebug("SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningSIPEndPoint}<-{RemoteSIPEndPoint}.", ListeningSIPEndPoint, streamConnection.RemoteSIPEndPoint);
 
 
                     //// Display the properties and settings for the authenticated stream.
@@ -165,7 +165,7 @@ namespace SIPSorcery.SIP
             {
                 if (!sslStream.IsAuthenticated)
                 {
-                    logger.LogWarning($"SIP TLS channel failed to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
+                    logger.LogWarning("SIP TLS channel failed to establish SSL stream with {RemoteSIPEndPoint}.", streamConnection.RemoteSIPEndPoint);
                     networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
                     return SocketError.ProtocolNotSupported;
                 }
@@ -174,7 +174,7 @@ namespace SIPSorcery.SIP
                     streamConnection.SslStream = new SIPStreamWrapper(sslStream);
                     streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
-                    logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningSIPEndPoint}->{streamConnection.RemoteSIPEndPoint}.");
+                    logger.LogDebug("SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningSIPEndPoint}->{RemoteSIPEndPoint}.", ListeningSIPEndPoint, streamConnection.RemoteSIPEndPoint);
 
                     sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
 
@@ -183,7 +183,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                logger.LogWarning($"SIP TLS channel timed out attempting to establish SSL stream with {streamConnection.RemoteSIPEndPoint}.");
+                logger.LogWarning("SIP TLS channel timed out attempting to establish SSL stream with {RemoteSIPEndPoint}.", streamConnection.RemoteSIPEndPoint);
                 networkStream.Close(CLOSE_CONNECTION_TIMEOUT);
                 return SocketError.TimedOut;
             }
@@ -203,7 +203,7 @@ namespace SIPSorcery.SIP
                 if (bytesRead == 0)
                 {
                     // SSL stream was disconnected by the remote end point sending a FIN or RST.
-                    logger.LogDebug($"TLS socket disconnected by {sipStreamConnection.RemoteSIPEndPoint}.");
+                    logger.LogDebug("TLS socket disconnected by {RemoteSIPEndPoint}.", sipStreamConnection.RemoteSIPEndPoint);
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.ConnectionReset);
                 }
                 else
@@ -229,13 +229,13 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.LogWarning(ioExcp, $"IOException SIPTLSChannel OnReadCallback. {ioExcp.Message}");
+                    logger.LogWarning(ioExcp, "IOException SIPTLSChannel OnReadCallback. {ErrorMessage}", ioExcp.Message);
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogWarning(excp, $"Exception SIPTLSChannel OnReadCallback. {excp.Message}");
+                logger.LogWarning(excp, "Exception SIPTLSChannel OnReadCallback. {ErrorMessage}", excp.Message);
                 OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
             }
         }
@@ -253,7 +253,7 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                logger.LogWarning(sockExcp, $"SocketException SIP TLS Channel sending to {sipStreamConn.RemoteSIPEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                logger.LogWarning(sockExcp, "SocketException SIP TLS Channel sending to {RemoteSIPEndPoint}. ErrorCode {ErrorCode}. {ErrorMessage}", sipStreamConn.RemoteSIPEndPoint, sockExcp.SocketErrorCode, sockExcp.Message);
                 OnSIPStreamDisconnected(sipStreamConn, sockExcp.SocketErrorCode);
                 throw;
             }
@@ -287,19 +287,19 @@ namespace SIPSorcery.SIP
         /// Hook to do any validation required on the server certificate.
         /// </summary>
         private bool ValidateServerCertificate(
-            object sender,
-            X509Certificate certificate,
-            X509Chain chain,
-            SslPolicyErrors sslPolicyErrors)
+    object sender,
+    X509Certificate certificate,
+    X509Chain chain,
+    SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
             {
-                logger.LogDebug($"Successfully validated X509 certificate for {certificate.Subject}.");
+                logger.LogDebug("Successfully validated X509 certificate for {CertificateSubject}.", certificate.Subject);
                 return true;
             }
             else
             {
-                logger.LogWarning(String.Format("Certificate error: {0}", sslPolicyErrors));
+                logger.LogWarning("Certificate error: {SslPolicyErrors}", sslPolicyErrors);
                 return BypassCertificateValidation;
             }
         }
@@ -348,36 +348,30 @@ namespace SIPSorcery.SIP
 
         private void DisplaySecurityLevel(SslStream stream)
         {
-            logger.LogDebug(String.Format("Cipher: {0} strength {1}", stream.CipherAlgorithm, stream.CipherStrength));
-            logger.LogDebug(String.Format("Hash: {0} strength {1}", stream.HashAlgorithm, stream.HashStrength));
-            logger.LogDebug(String.Format("Key exchange: {0} strength {1}", stream.KeyExchangeAlgorithm, stream.KeyExchangeStrength));
-            logger.LogDebug(String.Format("Protocol: {0}", stream.SslProtocol));
+            logger.LogDebug("Cipher: {CipherAlgorithm} strength {CipherStrength}, Hash: {HashAlgorithm} strength {HashStrength}, Key exchange: {KeyExchangeAlgorithm} strength {KeyExchangeStrength}, Protocol: {SslProtocol}", stream.CipherAlgorithm, stream.CipherStrength, stream.HashAlgorithm, stream.HashStrength, stream.KeyExchangeAlgorithm, stream.KeyExchangeStrength, stream.SslProtocol);
         }
 
         private void DisplaySecurityServices(SslStream stream)
         {
-            logger.LogDebug(String.Format("Is authenticated: {0} as server? {1}", stream.IsAuthenticated, stream.IsServer));
-            logger.LogDebug(String.Format("IsSigned: {0}", stream.IsSigned));
-            logger.LogDebug(String.Format("Is Encrypted: {0}", stream.IsEncrypted));
+            logger.LogDebug("Is authenticated: {IsAuthenticated} as server? {IsServer}, IsSigned: {IsSigned}, Is Encrypted: {IsEncrypted}", stream.IsAuthenticated, stream.IsServer, stream.IsSigned, stream.IsEncrypted);
         }
 
         private void DisplayStreamProperties(SslStream stream)
         {
-            logger.LogDebug(String.Format("Can read: {0}, write {1}", stream.CanRead, stream.CanWrite));
-            logger.LogDebug(String.Format("Can timeout: {0}", stream.CanTimeout));
+            logger.LogDebug("Can read: {CanRead}, write {CanWrite}, Can timeout: {CanTimeout}", stream.CanRead, stream.CanWrite, stream.CanTimeout);
         }
 
         private void DisplayCertificateInformation(SslStream stream)
         {
-            logger.LogDebug(String.Format("Certificate revocation list checked: {0}", stream.CheckCertRevocationStatus));
+            logger.LogDebug("Certificate revocation list checked: {CheckCertRevocationStatus}", stream.CheckCertRevocationStatus);
 
             X509Certificate localCertificate = stream.LocalCertificate;
             if (stream.LocalCertificate != null)
             {
-                logger.LogDebug(String.Format("Local cert was issued to {0} and is valid from {1} until {2}.",
+                logger.LogDebug("Local cert was issued to {LocalCertSubject} and is valid from {LocalCertEffectiveDate} until {LocalCertExpirationDate}.",
                      localCertificate.Subject,
                      localCertificate.GetEffectiveDateString(),
-                     localCertificate.GetExpirationDateString()));
+                     localCertificate.GetExpirationDateString());
             }
             else
             {
@@ -387,10 +381,10 @@ namespace SIPSorcery.SIP
             X509Certificate remoteCertificate = stream.RemoteCertificate;
             if (stream.RemoteCertificate != null)
             {
-                logger.LogDebug(String.Format("Remote cert was issued to {0} and is valid from {1} until {2}.",
+                logger.LogDebug("Remote cert was issued to {RemoteCertSubject} and is valid from {RemoteCertEffectiveDate} until {RemoteCertExpirationDate}.",
                     remoteCertificate.Subject,
                     remoteCertificate.GetEffectiveDateString(),
-                    remoteCertificate.GetExpirationDateString()));
+                    remoteCertificate.GetExpirationDateString());
             }
             else
             {

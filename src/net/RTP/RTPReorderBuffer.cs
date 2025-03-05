@@ -1,9 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.net.RTP
+namespace SIPSorcery.Net
 {
     public class RTPReorderBuffer
     {
@@ -100,7 +99,7 @@ namespace SIPSorcery.net.RTP
                 }
                 if (current.Header.SequenceNumber == node.Value.Header.SequenceNumber)
                 {
-                    logger.LogInformation("Duplicate seq number: " + current.Header.SequenceNumber);
+                    logger.LogInformation("Duplicate seq number: {SequenceNumber}", current.Header.SequenceNumber);
                     break;
                 }
 

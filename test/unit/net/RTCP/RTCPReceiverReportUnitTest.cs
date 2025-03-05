@@ -38,7 +38,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPReceiverResportUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 1;
@@ -89,7 +89,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseReceiverReportUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var buffer = TypeExtensions.ParseHexStr("81C9000700000001679915EA000000000000212E000004B40000000000000000");
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseReceiverReportChromeUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var buffer = TypeExtensions.ParseHexStr("81C90007FA17FA1709CF4FFA000000000000496C00000021000000000000000080000003315A25AFFAF8545434C7");

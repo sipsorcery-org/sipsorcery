@@ -213,7 +213,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
+                        logger.LogWarning(excp, "DTLS handshake as client failed. {ErrorMessage}", excp.Message);
                     }
 
                     // Declare handshake as failed
@@ -279,7 +279,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
+                        logger.LogWarning(excp, "DTLS handshake as server failed. {ErrorMessage}", excp.Message);
                     }
 
                     // Declare handshake as failed
@@ -518,6 +518,10 @@ namespace SIPSorcery.Net
         {
             if (!_handshakeComplete)
             {
+                if (_isClosed)
+                {
+                    throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
+                }
                 // The timeout for the handshake applies from when it started rather than
                 // for each individual receive..
                 int millisecondsRemaining = GetMillisecondsRemaining();
@@ -530,10 +534,10 @@ namespace SIPSorcery.Net
 
                 if (millisecondsRemaining <= 0)
                 {
-                    logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
+                    logger.LogWarning("DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {ClientOrServer}.", TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
                     throw new TimeoutException();
                 }
-                else if (!_isClosed)
+                else
                 {
                     waitMillis = Math.Min(waitMillis, millisecondsRemaining);
                     var receiveLen = Read(buf, off, len, waitMillis);
@@ -551,11 +555,7 @@ namespace SIPSorcery.Net
 
                     return receiveLen;
                 }
-                else
-                {
-                    throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
-                    //return DTLS_RECEIVE_ERROR_CODE;
-                }
+                
             }
             else if (!_isClosed)
             {

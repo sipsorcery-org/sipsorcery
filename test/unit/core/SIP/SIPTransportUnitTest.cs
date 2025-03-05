@@ -38,7 +38,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public async Task TestSetRequestContactHostUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
@@ -68,7 +68,7 @@ dummy";
 
                 await transport.SendRequestAsync(inviteReq);
 
-                logger.LogDebug(inviteReq.ToString());
+                logger.LogDebug("{inviteReq}", inviteReq.ToString());
 
                 Assert.Equal(transport.ContactHost, inviteReq.Header.Contact[0].ContactURI.Host);
             }
@@ -81,7 +81,7 @@ dummy";
         [Fact]
         public async Task TestSetRequestContactHostIPAddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
@@ -111,7 +111,7 @@ dummy";
 
                 await transport.SendRequestAsync(inviteReq);
 
-                logger.LogDebug(inviteReq.ToString());
+                logger.LogDebug("{inviteReq}", inviteReq.ToString());
 
                 Assert.Equal($"{transport.ContactHost}:5060", inviteReq.Header.Contact[0].ContactURI.Host);
             }
@@ -123,7 +123,7 @@ dummy";
         [Fact]
         public async Task TestSetResponseContactHostUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
@@ -152,7 +152,7 @@ dummy";
 
                 await transport.SendResponseAsync(okResponse);
 
-                logger.LogDebug(okResponse.ToString());
+                logger.LogDebug("{okResponse}", okResponse.ToString());
 
                 Assert.Equal(transport.ContactHost, okResponse.Header.Contact[0].ContactURI.Host);
             }
@@ -165,7 +165,7 @@ dummy";
         [Fact]
         public async Task TestSetResponseContactHostIPAddressUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
@@ -194,7 +194,7 @@ dummy";
 
                 await transport.SendResponseAsync(okResponse);
 
-                logger.LogDebug(okResponse.ToString());
+                logger.LogDebug("{okResponse}", okResponse.ToString());
 
                 Assert.Equal($"{transport.ContactHost}:5060", okResponse.Header.Contact[0].ContactURI.Host);
             }
@@ -206,7 +206,7 @@ dummy";
         [Fact]
         public async Task TestSetRequestCustomHeaderFuncUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
@@ -242,7 +242,7 @@ dummy";
 
                 await transport.SendRequestAsync(inviteReq);
 
-                logger.LogDebug(inviteReq.ToString());
+                logger.LogDebug("{inviteReq}", inviteReq.ToString());
 
                 Assert.Equal(contactHost, inviteReq.Header.Contact[0].ContactURI.Host);
             }
@@ -254,7 +254,7 @@ dummy";
         [Fact]
         public async Task TestSetResponseCustomHeaderFuncUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
@@ -289,7 +289,7 @@ dummy";
 
                 await transport.SendResponseAsync(okResponse);
 
-                logger.LogDebug(okResponse.ToString());
+                logger.LogDebug("{okResponse}", okResponse.ToString());
 
                 Assert.Equal(contactHost, okResponse.Header.Contact[0].ContactURI.Host);
             }

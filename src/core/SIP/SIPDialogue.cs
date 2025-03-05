@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPDialogue.cs
 //
 // Description: Base class for SIP dialogues. 
@@ -362,7 +362,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPDialogue Hangup. " + excp.Message);
+                logger.LogError(excp, "Exception SIPDialogue Hangup. {ErrorMessage}", excp.Message);
             }
         }
 

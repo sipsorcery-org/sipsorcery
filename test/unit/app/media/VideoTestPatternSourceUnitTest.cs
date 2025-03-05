@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void CanInstantiateUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             VideoTestPatternSource testPatternSource = new VideoTestPatternSource();

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpPacketUnitTest.cs
 //
 // Description: Unit tests for the SctpPacket class.
@@ -71,7 +71,7 @@ namespace SIPSorcery.Net.UnitTests
 
             foreach(var unrecognisedParam in initChunk.UnrecognizedPeerParameters)
             {
-                logger.LogDebug($"Chunk Unrecognised Parameter {unrecognisedParam.ParameterType}.");
+                logger.LogDebug("Chunk Unrecognised Parameter {ParameterType}.", unrecognisedParam.ParameterType);
             }
         }
 
@@ -226,8 +226,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var rndTripBuffer = initPkt.GetBytes();
 
-            logger.LogDebug($"Before: {buffer.HexStr()}");
-            logger.LogDebug($"After : {rndTripBuffer.HexStr()}");
+            logger.LogDebug("Before: {BufferHexStr}", buffer.HexStr());
+            logger.LogDebug("After : {RndTripBufferHexStr}", rndTripBuffer.HexStr());
 
             Assert.True(SctpPacket.IsValid(rndTripBuffer, 0, rndTripBuffer.Length, 0x0U));
 
@@ -299,8 +299,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var rndTripBuffer = heartbeatPkt.GetBytes();
 
-            logger.LogDebug($"Before: {buffer.HexStr()}");
-            logger.LogDebug($"After : {rndTripBuffer.HexStr()}");
+            logger.LogDebug("Before: {BufferHexStr}", buffer.HexStr());
+            logger.LogDebug("After : {RndTripBufferHexStr}", rndTripBuffer.HexStr());
 
             Assert.True(SctpPacket.IsValid(rndTripBuffer, 0, rndTripBuffer.Length, 0x054a3af0U));
 
@@ -366,8 +366,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var rndTripBuffer = dataPkt.GetBytes();
 
-            logger.LogDebug($"Before: {buffer.HexStr()}");
-            logger.LogDebug($"After : {rndTripBuffer.HexStr()}");
+            logger.LogDebug("Before: {BufferHexStr}", buffer.HexStr());
+            logger.LogDebug("After : {RndTripBufferHexStr}", rndTripBuffer.HexStr());
 
             Assert.True(SctpPacket.IsValid(rndTripBuffer, 0, rndTripBuffer.Length, 0x2e0b82c7U));
 
@@ -395,7 +395,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseUsrSctpAbortPacket()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = {
@@ -421,7 +421,7 @@ namespace SIPSorcery.Net.UnitTests
             var abortChunk = sctpPkt.Chunks.First() as SctpAbortChunk;
             var cause = (SctpErrorProtocolViolation)(abortChunk.ErrorCauses.First());
 
-            logger.LogDebug($"ABORT reason={cause.AdditionalInformation}.");
+            logger.LogDebug("ABORT reason={Reason}.", cause.AdditionalInformation);
 
             Assert.Single(abortChunk.ErrorCauses);
             Assert.Equal("Cum ack 00000000 greater or equal than TSN c6e3ad3c", cause.AdditionalInformation);

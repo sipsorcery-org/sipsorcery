@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.net.RTP;
-using SIPSorceryMedia.Abstractions;
 using Xunit;
-using SIPSorcery.net.RTP.RTPHeaderExtensions;
 
-namespace SIPSorcery.UnitTests.net.RTP
+namespace SIPSorcery.UnitTests.Net
 {
     [Trait("Category", "unit")]
     public class RTPHeaderExtensionUnitTest
@@ -28,7 +23,7 @@ namespace SIPSorcery.UnitTests.net.RTP
             //  - the static method AbsSendTime() used by AbsSendTimeExtension.Marshal()
             //  - and a specific DateTimeOffset value
 
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             
             var extensionId = 2; // Id / Extmap of the extension
@@ -47,7 +42,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void RTPHeaderExtensionAudioLevel()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var extensionId = 2; // Id / Extmap of the extension
@@ -76,7 +71,7 @@ namespace SIPSorcery.UnitTests.net.RTP
         [Fact]
         public void RTPHeaderExtensionCVO()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var extensionId = 2; // Id / Extmap of the extension

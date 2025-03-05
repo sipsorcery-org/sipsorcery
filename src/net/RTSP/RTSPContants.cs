@@ -61,15 +61,12 @@ namespace SIPSorcery.Net
     {
         public static RTSPMethodsEnum GetMethod(string method)
         {
-            RTSPMethodsEnum rtspMethod = RTSPMethodsEnum.UNKNOWN;
-
-            try
+            if (Enum.TryParse<RTSPMethodsEnum>(method, true, out var parsed))
             {
-                rtspMethod = (RTSPMethodsEnum)Enum.Parse(typeof(RTSPMethodsEnum), method, true);
+                return parsed;
             }
-            catch { }
 
-            return rtspMethod;
+            return RTSPMethodsEnum.UNKNOWN;
         }
     }
 

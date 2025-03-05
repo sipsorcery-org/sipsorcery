@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpHeaderUnitTest.cs
 //
 // Description: Unit tests for the SctpHeader class.
@@ -33,7 +33,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripSctpHeader()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort srcPort = 7;

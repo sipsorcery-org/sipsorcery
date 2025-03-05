@@ -99,7 +99,7 @@ namespace demo
                 {
                     _logger.LogDebug($"RTP event received: {ev.EventID}.");
                     // Echo the DTMF event back.
-                    var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                    var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID);
                     await pc.SendDtmfEvent(echoEvent, CancellationToken.None).ConfigureAwait(false);
                 }
 
@@ -109,7 +109,7 @@ namespace demo
                     {
                         _logger.LogDebug($"RTP event received: {ev.EventID}.");
                         // Echo the DTMF event back.
-                        var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                        var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID);
                         await pc.SendDtmfEvent(echoEvent, CancellationToken.None).ConfigureAwait(false);
                     }
                     else if (!ev.EndOfEvent)
@@ -117,7 +117,7 @@ namespace demo
                         _rtpEventSsrc = hdr.SyncSource;
                         _logger.LogDebug($"RTP event received: {ev.EventID}.");
                         // Echo the DTMF event back.
-                        var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                        var echoEvent = new RTPEvent(ev.EventID, true, RTPEvent.DEFAULT_VOLUME, RTPSession.DTMF_EVENT_DURATION, RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID);
                         await pc.SendDtmfEvent(echoEvent, CancellationToken.None).ConfigureAwait(false);
                     }
                 }

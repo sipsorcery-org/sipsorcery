@@ -212,7 +212,7 @@ namespace SIPSorcery.Net
 
                 if (stop)
                 {
-                    logger.LogWarning($"SCTP unrecognised chunk type {chunkType} indicated no further chunks should be processed.");
+                    logger.LogWarning("SCTP unrecognised chunk type {chunkType} indicated no further chunks should be processed.", chunkType);
                     break;
                 }
 

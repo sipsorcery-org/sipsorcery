@@ -166,7 +166,7 @@ namespace SIPSorcery.Net
                 List<STUNAttribute> attributes = new List<STUNAttribute>();
                 int startAttIndex = startIndex;
 
-                while (startAttIndex < endIndex)
+                while (startAttIndex < endIndex - 4)
                 {
                     UInt16 stunAttributeType = NetConvert.ParseUInt16(buffer, startAttIndex);
                     UInt16 stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
@@ -178,7 +178,7 @@ namespace SIPSorcery.Net
                     {
                         if (stunAttributeLength + startAttIndex + 4 > endIndex)
                         {
-                            logger.LogWarning($"The attribute length on a STUN parameter was greater than the available number of bytes. Type: {attributeType}");
+                            logger.LogWarning("The attribute length on a STUN parameter was greater than the available number of bytes. Type: {AttributeType}", attributeType);
                         }
                         else
                         {

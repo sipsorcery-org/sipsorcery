@@ -77,7 +77,7 @@ namespace SIPSorcery.Net
             : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
         {
             _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {_rtcSctpTransport.IsDtlsClient}, ID {ID}.");
+            logger.LogDebug("SCTP creating DTLS based association, is DTLS client {IsDtlsClient}, ID {ID}.", _rtcSctpTransport.IsDtlsClient, ID);
 
             OnData += OnDataFrameReceived;
         }
@@ -101,8 +101,8 @@ namespace SIPSorcery.Net
                         case (byte)DataChannelMessageTypes.OPEN:
                             var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
 
-                            logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
-                                $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
+                            logger.LogDebug("DCEP OPEN channel type {ChannelType}, priority {Priority}, reliability {Reliability}, label {Label}, protocol {Protocol}.",
+                                dcepOpen.ChannelType, dcepOpen.Priority, dcepOpen.Reliability, dcepOpen.Label, dcepOpen.Protocol);
 
                             DataChannelTypes channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
                             if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
@@ -111,7 +111,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogWarning($"DECP OPEN channel type of {dcepOpen.ChannelType} not recognised, defaulting to {channelType}.");
+                                logger.LogWarning("DECP OPEN channel type of {ChannelType} not recognised, defaulting to {DefaultChannelType}.", dcepOpen.ChannelType, channelType);
                             }
 
                             OnNewDataChannel?.Invoke(
@@ -124,7 +124,7 @@ namespace SIPSorcery.Net
 
                             break;
                         default:
-                            logger.LogWarning($"DCEP message type {frame.UserData[0]} not recognised, ignoring.");
+                            logger.LogWarning("DCEP message type {MessageType} not recognised, ignoring.", frame.UserData[0]);
                             break;
                     }
                     break;

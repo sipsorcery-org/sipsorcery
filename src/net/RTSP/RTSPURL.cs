@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTSPURI.cs
 //
 // Description: RTSP URI.
@@ -127,7 +127,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPURL ToString. " + excp.Message);
+                logger.LogError(excp, "Exception RTSPURL ToString. {ErrorMessage}", excp.Message);
                 throw;
             }
         }
