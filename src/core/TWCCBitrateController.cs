@@ -14,9 +14,10 @@
 */
 
 using System;
+using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.core
 {
 
     public class BitrateUpdateEventArgs : EventArgs
