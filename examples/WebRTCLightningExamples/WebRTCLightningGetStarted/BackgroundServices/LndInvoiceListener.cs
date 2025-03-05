@@ -115,13 +115,14 @@ public class LndInvoiceListener : BackgroundService
 
             if (invoice.State == Invoice.Types.InvoiceState.Settled)
             {
-                _lightningInvoiceEventService.PublishInvoiceEvent(new InvoiceSettledNotification(rHash, invoice.Memo));
+                _lightningInvoiceEventService.PublishInvoiceEvent(
+                    new LightningInvoicedNotification(LightningInvoiceNotificationTypeEnum.Settled, rHash, invoice.Memo));
             }
-            //else if(invoice.State == Invoice.Types.InvoiceState.Canceled)
-            //{
-            //    var paymentRequestEventService = scope.ServiceProvider.GetRequiredService<IPaymentRequestEventService>();
-            //    paymentRequestID = await paymentRequestEventService.RecordLightningInvoiceCancelled(rHash);
-            //}
+            else if(invoice.State == Invoice.Types.InvoiceState.Canceled)
+            {
+                _lightningInvoiceEventService.PublishInvoiceEvent(
+                    new LightningInvoicedNotification(LightningInvoiceNotificationTypeEnum.Cancelled, rHash, invoice.Memo));
+            }
         }
     }
 

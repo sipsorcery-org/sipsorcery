@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: InvoiceSettledNotification.cs
+// Filename: LightningInvoicedNotification.cs
 //
-// Description: Event notification for a Lightning invoice settled event.
+// Description: Event notification for a Lightning invoice events.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -15,5 +15,11 @@
 
 namespace demo;
 
-public record InvoiceSettledNotification(string RHash, string Description);
+public enum LightningInvoiceNotificationTypeEnum
+{
+    Cancelled,
+    Settled
+}
+
+public record LightningInvoicedNotification(LightningInvoiceNotificationTypeEnum NotificationType, string RHash, string Description);
 

@@ -47,8 +47,6 @@ class Program
         builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapGenerator>();
         builder.Services.AddTransient<IFrameConfigStateMachine, FrameConfigStateMachine>();
 
-        builder.Services.AddControllers();
-
         var app = builder.Build();
 
         // Activate SIPSorcery library logging
@@ -59,10 +57,8 @@ class Program
         var logger = loggerFactory.CreateLogger<Program>();
         FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
 
-        app.UseRouting();
         app.UseDefaultFiles();
         app.UseStaticFiles();
-        app.MapControllers();
 
         app.Run();
     }

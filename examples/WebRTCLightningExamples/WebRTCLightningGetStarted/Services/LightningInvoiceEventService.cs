@@ -20,11 +20,11 @@ namespace demo;
 
 public class LightningInvoiceEventService
 {
-    private readonly ISubject<InvoiceSettledNotification> _invoiceSubject = new Subject<InvoiceSettledNotification>();
+    private readonly ISubject<LightningInvoicedNotification> _invoiceSubject = new Subject<LightningInvoicedNotification>();
 
-    public IObservable<InvoiceSettledNotification> InvoiceStream => _invoiceSubject;
+    public IObservable<LightningInvoicedNotification> InvoiceStream => _invoiceSubject;
 
-    public void PublishInvoiceEvent(InvoiceSettledNotification notification)
+    public void PublishInvoiceEvent(LightningInvoicedNotification notification)
     {
         _invoiceSubject.OnNext(notification);
     }

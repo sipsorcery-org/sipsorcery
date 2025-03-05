@@ -15,6 +15,7 @@
 
 using System;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin.DataEncoders;
@@ -25,16 +26,17 @@ public interface ILightningPaymentService
 {
     event Action OnLightningInvoiceSettled;
 
-    string? GetLightningPaymentRequest();
+    event Action OnLightningInvoiceExpired;
 
-    void RequestLightningInvoice();
+    event Action<string> OnLightningPaymentRequestGenerated;
+
+    void RequestLightningInvoice(string description);
 }
 
 public class LightningPaymentService : ILightningPaymentService, IDisposable
 {
     private const int INVOICE_AMOUNT_MILLISATS = 10000;
-    private const int INVOICE_EXPIRY_SECONDS = 60;
-    private const string INVOICE_DESCRIPTION = "Plz Pay LOLZZZ";
+    private const int INVOICE_EXPIRY_SECONDS = 20;
 
     private readonly ILogger _logger;
     private readonly ILightningService _lightningService;
@@ -43,10 +45,12 @@ public class LightningPaymentService : ILightningPaymentService, IDisposable
     private readonly IDisposable _subscription;
 
     public event Action OnLightningInvoiceSettled = () => { };
+    public event Action OnLightningInvoiceExpired = () => { };
+    public event Action<string> OnLightningPaymentRequestGenerated = (payreq) => { };
 
-    private bool _hasLightningInvoiceBeenRequested = false;
+    private int _hasLightningInvoiceBeenRequested = 0;
+
     private string? _lightningInvoiceRHash;
-    private string? _lightningPaymentRequest;
 
     public LightningPaymentService(
         ILogger<LightningPaymentService> logger,
@@ -59,36 +63,33 @@ public class LightningPaymentService : ILightningPaymentService, IDisposable
         _subscription = lightningInvoiceEventService.InvoiceStream.Subscribe(OnInvoiceSettled);
     }
 
-    public string? GetLightningPaymentRequest()
+    public void OnInvoiceSettled(LightningInvoicedNotification notification)
     {
-        return _lightningPaymentRequest;
-    }
-
-    public void OnInvoiceSettled(InvoiceSettledNotification notification)
-    {
-        //_logger.LogDebug($"{nameof(LightningPaymentService)} Handle notification recevied for rhash {notification.RHash} and payment state rhash {_paymentState.LightningInvoiceRHash}.");
-
         if (notification.RHash == _lightningInvoiceRHash)
         {
-            _logger.LogDebug($"{nameof(LightningPaymentService)} invoice {notification.RHash} successfully settled.");
+            if (notification.NotificationType == LightningInvoiceNotificationTypeEnum.Settled)
+            {
+                _logger.LogDebug($"{nameof(LightningPaymentService)} invoice {notification.RHash} successfully settled.");
+                OnLightningInvoiceSettled?.Invoke();
+            }
+            else if(notification.NotificationType == LightningInvoiceNotificationTypeEnum.Cancelled)
+            {
+                _logger.LogDebug($"{nameof(LightningPaymentService)} invoice {notification.RHash} expired.");
+                OnLightningInvoiceExpired?.Invoke();
+            }
 
-            OnLightningInvoiceSettled?.Invoke();
-
-            _hasLightningInvoiceBeenRequested = false;
+            _hasLightningInvoiceBeenRequested = 0;
             _lightningInvoiceRHash = null;
-            _lightningPaymentRequest = null;
         }
     }
 
-    public void RequestLightningInvoice()
+    public void RequestLightningInvoice(string description)
     {
-        if (!_hasLightningInvoiceBeenRequested)
+        if (Interlocked.CompareExchange(ref _hasLightningInvoiceBeenRequested, 1, 0) == 0)
         {
-            _hasLightningInvoiceBeenRequested = true;
-
             _logger.LogDebug($"{nameof(RequestLightningInvoice)} for {INVOICE_AMOUNT_MILLISATS} msats and {INVOICE_EXPIRY_SECONDS} expiry seconds.");
 
-            _getInvoiceTask = _lightningService.CreateInvoiceAsync(INVOICE_AMOUNT_MILLISATS, INVOICE_DESCRIPTION, INVOICE_EXPIRY_SECONDS);
+            _getInvoiceTask = _lightningService.CreateInvoiceAsync(INVOICE_AMOUNT_MILLISATS, description, INVOICE_EXPIRY_SECONDS);
 
             _getInvoiceTask
                 .ContinueWith(t =>
@@ -100,9 +101,10 @@ public class LightningPaymentService : ILightningPaymentService, IDisposable
 
                         //_logger.LogDebug($"{nameof(RequestLightningInvoice)} successfully generated invoice with rhash {rHash}.");
 
-                        _hasLightningInvoiceBeenRequested = false;
+                        _hasLightningInvoiceBeenRequested = 0;
                         _lightningInvoiceRHash = rHash;
-                        _lightningPaymentRequest = response.PaymentRequest;
+
+                        OnLightningPaymentRequestGenerated?.Invoke(response.PaymentRequest);
                     }
                 });
         }

@@ -15,7 +15,6 @@
 
 using System;
 using System.Drawing;
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Stateless;
 
@@ -26,16 +25,17 @@ public enum PaymentStatus
     Initial,
     FreePeriod,
     FreeTransition,
-    FreeWaiting,
+    FreeWaitingForPayment,
     PaidPeriod,
     PaidTransition,
-    PaidWaiting
+    PaidWaitingForPayment
 }
 
 public enum PaymentTrigger
 {
     Tick,
-    InvoicePaid
+    InvoicePaid,
+    InvoiceExpired
 }
 
 public interface IFrameConfigStateMachine
@@ -51,18 +51,22 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
     private const int FREE_PERIOD_SECONDS = 8;
     private const int TRANSITION_PERIOD_SECONDS = 7;
     private const int PAID_PERIOD_SECONDS = 10;
+    private const int PAID_WAITING_SECONDS = 15;
     private const int MAX_ALPHA_TRANSPARENCY = 200;
     private const string INITIALISING_TITLE = "Initialising";
     private const string FREE_PERIOD_TITLE = "Free Period";
     private const string TRANSITION_PERIOD_TITLE = "Transition Period";
     private const string WAITING_FOR_PAYMENT_PERIOD_TITLE = "Waiting for Payment";
     private const string PAID_PERIOD_TITLE = "Thanks for Paying!";
+    private const string INVOICE_DESCRIPTION = "Pay for more time!";
 
     private readonly ILogger _logger;
     private readonly ILightningPaymentService _lightningPaymentService;
     private readonly StateMachine<PaymentStatus, PaymentTrigger> _paymentStateMachine;
     private readonly FrameConfig _frameConfig;
+
     private DateTimeOffset _stateEntryTime = DateTimeOffset.MinValue;
+    private string? _lightningPaymentRequest = null;
 
     public FrameConfigStateMachine(
         ILogger<FrameConfigStateMachine> logger,
@@ -71,8 +75,6 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
         _logger = logger;
         _lightningPaymentService = lightningPaymentService;
         _paymentStateMachine = CreatePaymentStateMachine();
-
-        _lightningPaymentService.OnLightningInvoiceSettled += () => _paymentStateMachine.Fire(PaymentTrigger.InvoicePaid);
 
         _frameConfig = new FrameConfig(DateTimeOffset.Now, null, 0, Color.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH);
     }
@@ -95,12 +97,13 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
             .PermitIf(PaymentTrigger.Tick, PaymentStatus.FreeTransition, () => HasExpired(PaymentStatus.FreePeriod));
 
         machine.Configure(PaymentStatus.FreeTransition)
-               .OnEntry(_lightningPaymentService.RequestLightningInvoice)
-               .IgnoreIf(PaymentTrigger.Tick, () => !HasExpired(PaymentStatus.FreeTransition))
-               .PermitIf(PaymentTrigger.Tick, PaymentStatus.FreeWaiting, () => HasExpired(PaymentStatus.FreeTransition))
-               .Permit(PaymentTrigger.InvoicePaid, PaymentStatus.PaidPeriod);
+            .OnEntry(() => _lightningPaymentService.RequestLightningInvoice(INVOICE_DESCRIPTION))
+            .IgnoreIf(PaymentTrigger.Tick, () => !HasExpired(PaymentStatus.FreeTransition))
+            .PermitIf(PaymentTrigger.Tick, PaymentStatus.FreeWaitingForPayment, () => HasExpired(PaymentStatus.FreeTransition))
+            .PermitReentry(PaymentTrigger.InvoiceExpired)
+            .Permit(PaymentTrigger.InvoicePaid, PaymentStatus.PaidPeriod);
 
-        machine.Configure(PaymentStatus.FreeWaiting)
+        machine.Configure(PaymentStatus.FreeWaitingForPayment)
             .Ignore(PaymentTrigger.Tick)
             .Permit(PaymentTrigger.InvoicePaid, PaymentStatus.PaidPeriod);
 
@@ -109,22 +112,26 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
             .PermitIf(PaymentTrigger.Tick, PaymentStatus.PaidTransition, () => HasExpired(PaymentStatus.PaidPeriod));
 
         machine.Configure(PaymentStatus.PaidTransition)
-            .OnEntry(_lightningPaymentService.RequestLightningInvoice)
+            .OnEntry(() => _lightningPaymentService.RequestLightningInvoice(INVOICE_DESCRIPTION))
             .IgnoreIf(PaymentTrigger.Tick, () => !HasExpired(PaymentStatus.PaidTransition))
-            .PermitIf(PaymentTrigger.Tick, PaymentStatus.PaidWaiting, () => HasExpired(PaymentStatus.PaidTransition))
+            .PermitIf(PaymentTrigger.Tick, PaymentStatus.PaidWaitingForPayment, () => HasExpired(PaymentStatus.PaidTransition))
+            .PermitReentry(PaymentTrigger.InvoiceExpired)
             .Permit(PaymentTrigger.InvoicePaid, PaymentStatus.PaidPeriod);
 
-        machine.Configure(PaymentStatus.PaidWaiting)
-            .Ignore(PaymentTrigger.Tick)
+        machine.Configure(PaymentStatus.PaidWaitingForPayment)
+            .IgnoreIf(PaymentTrigger.Tick, () => !HasExpired(PaymentStatus.PaidWaitingForPayment))
+            .PermitIf(PaymentTrigger.Tick, PaymentStatus.FreePeriod, () => HasExpired(PaymentStatus.PaidWaitingForPayment))
             .Permit(PaymentTrigger.InvoicePaid, PaymentStatus.PaidPeriod);
+
+        _lightningPaymentService.OnLightningInvoiceSettled += () => _paymentStateMachine.Fire(PaymentTrigger.InvoicePaid);
+        _lightningPaymentService.OnLightningInvoiceExpired += () => _paymentStateMachine.Fire(PaymentTrigger.InvoiceExpired);
+        _lightningPaymentService.OnLightningPaymentRequestGenerated += (payreq) => _lightningPaymentRequest = payreq;
 
         return machine;
     }
 
     public FrameConfig GetUpdatedFrameConfig()
     {
-        int secondsRemaining = SecondsRemaining(_stateEntryTime, _paymentStateMachine.State);
-
         try
         {
             _paymentStateMachine.Fire(PaymentTrigger.Tick);
@@ -134,9 +141,9 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
             _logger.LogError("State machine internal exception. {excp}", excp);
         }
 
-        var paymentRequest = _lightningPaymentService.GetLightningPaymentRequest();
+        int secondsRemaining = SecondsRemaining(_stateEntryTime, _paymentStateMachine.State);
 
-        return GetFrameConfig(_paymentStateMachine.State, secondsRemaining, paymentRequest);
+        return GetFrameConfig(_paymentStateMachine.State, secondsRemaining, _lightningPaymentRequest);
     }
 
     private bool HasExpired(PaymentStatus currentState)
@@ -150,15 +157,20 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
         {
             PaymentStatus.FreePeriod => FREE_PERIOD_SECONDS - secondsInCurrentState,
             PaymentStatus.FreeTransition => TRANSITION_PERIOD_SECONDS - secondsInCurrentState,
-            PaymentStatus.FreeWaiting => 0,
+            PaymentStatus.FreeWaitingForPayment => 0,
             PaymentStatus.PaidPeriod => PAID_PERIOD_SECONDS - secondsInCurrentState,
             PaymentStatus.PaidTransition => TRANSITION_PERIOD_SECONDS - secondsInCurrentState,
-            PaymentStatus.PaidWaiting => 0,
+            PaymentStatus.PaidWaitingForPayment => PAID_WAITING_SECONDS - secondsInCurrentState,
             _ => 0
         };
 
         return secondsRemaining < 0 ? 0 : secondsRemaining;
     }
+
+    private int GetOpacity(int maxAlphaTransparency, int periodSeconds, int secondsRemaining)
+        =>
+            periodSeconds == 0 || secondsRemaining == 0 ? maxAlphaTransparency :
+            (int)(maxAlphaTransparency * ((periodSeconds - secondsRemaining) / (double)periodSeconds));
 
     private FrameConfig GetFrameConfig(PaymentStatus paymentStatus, int secondsRemaining, string? lightningPaymentRequest)
     {
@@ -175,7 +187,7 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
                     ImagePath = FREE_IMAGE_PATH
                 };
             case PaymentStatus.FreeTransition:
-                int opacityFree = (int)(MAX_ALPHA_TRANSPARENCY * ((TRANSITION_PERIOD_SECONDS - secondsRemaining) / (double)TRANSITION_PERIOD_SECONDS));
+                int opacityFree = GetOpacity(MAX_ALPHA_TRANSPARENCY, TRANSITION_PERIOD_SECONDS, secondsRemaining);
                 return _frameConfig with
                 {
                     BorderColour = Color.Orange,
@@ -185,7 +197,7 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
                     Opacity = opacityFree,
                     ImagePath = FREE_IMAGE_PATH
                 };
-            case PaymentStatus.FreeWaiting:
+            case PaymentStatus.FreeWaitingForPayment:
                 return _frameConfig with
                 {
                     BorderColour = Color.Red,
@@ -206,7 +218,7 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
                     ImagePath = PAID_IMAGE_PATH
                 };
             case PaymentStatus.PaidTransition:
-                int opacityPaid = (int)(MAX_ALPHA_TRANSPARENCY * ((TRANSITION_PERIOD_SECONDS - secondsRemaining) / (double)TRANSITION_PERIOD_SECONDS));
+                int opacityPaid = GetOpacity(MAX_ALPHA_TRANSPARENCY, TRANSITION_PERIOD_SECONDS, secondsRemaining);
                 return _frameConfig with
                 {
                     BorderColour = Color.Orange,
@@ -216,7 +228,7 @@ public class FrameConfigStateMachine : IFrameConfigStateMachine
                     Opacity = opacityPaid,
                     ImagePath = PAID_IMAGE_PATH
                 };
-            case PaymentStatus.PaidWaiting:
+            case PaymentStatus.PaidWaitingForPayment:
                 return _frameConfig with
                 {
                     BorderColour = Color.Red,
