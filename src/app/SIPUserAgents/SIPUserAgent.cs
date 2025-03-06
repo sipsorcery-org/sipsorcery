@@ -917,6 +917,27 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Send a re-INVITE request to add text media stream.
+        /// </summary>
+        public void AddText()
+        {
+            // Make sure text has been set-up before sending re-INVITE.
+            if (MediaSession.HasText)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, GetStreamStatusForOnHoldState());
+                var sdp = MediaSession.CreateOffer(null);
+                SendReInviteRequest(sdp);
+            }
+        }
+
+        public void RemoveText()
+        {
+            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.text, MediaStreamStatusEnum.RecvOnly);
+            var sdp = MediaSession.CreateOffer(null);
+            SendReInviteRequest(sdp);
+        }
+
+        /// <summary>
         /// Updates the stream status of the RTP session and sends the re-INVITE request.
         /// </summary>
         private void ApplyHoldAndReinvite()
@@ -1070,26 +1091,11 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        bool videoStreamAdded = false;
-                        bool videoStreamRemoved = false;
-                        static bool twoWayVideoPredicate(SDPMediaAnnouncement m) => m.Media == SDPMediaTypesEnum.video && m.MediaStreamStatus == MediaStreamStatusEnum.SendRecv && m.Port != 0;
-                        bool mediaSessionHasTwoWayVideo = MediaSession.RemoteDescription.Media.Any(twoWayVideoPredicate);
-                        bool offerHasTwoWayVideo = offer.Media.Any(twoWayVideoPredicate);
+                        bool streamAdded = false;
 
-                        // Offer contains a two-way video session but mediaSession does not.
-                        if (offerHasTwoWayVideo && !mediaSessionHasTwoWayVideo)
-                        {
-                            logger.LogDebug($"Re-INVITE remote party added video stream.");
-                            // Returns true when we have setup media session so we can start the video stream after sending OK.
-                            videoStreamAdded = OnRemoteMediaStreamAdded?.Invoke(SDPMediaTypesEnum.video) ?? false;
-                        }
-                        // Offer does not contain a two way video session but mediaSession does.
-                        else if (!offerHasTwoWayVideo && mediaSessionHasTwoWayVideo)
-                        {
-                            logger.LogDebug($"Re-INVITE remote party removed video stream.");
-                            // Returns true when we have removed video stream and closed it before sending OK.
-                            videoStreamRemoved = OnRemoteMediaStreamRemoved?.Invoke(SDPMediaTypesEnum.video) ?? false;
-                        }
+                        // Process both video and text streams
+                        HandleStreamChange(SDPMediaTypesEnum.video, offer, ref streamAdded);
+                        HandleStreamChange(SDPMediaTypesEnum.text, offer, ref streamAdded);
 
                         // TODO: We should accept an empty re-INVITE body and send a new offer in the response. The remote peer can then send
                         // back the SDP answer in the ACK.
@@ -1130,7 +1136,7 @@ namespace SIPSorcery.SIP.App
                             var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, m_sipDialogue.SDP);
                             reInviteTransaction.SendFinalResponse(okResponse);
 
-                            if (videoStreamAdded)
+                            if (streamAdded)
                             {
                                 // Starts only video stream when it has not been already started.
                                 await MediaSession.Start().ConfigureAwait(false);
@@ -1191,6 +1197,29 @@ namespace SIPSorcery.SIP.App
             {
                 SIPResponse notSupportedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
                 await m_transport.SendResponseAsync(notSupportedResponse).ConfigureAwait(false);
+            }
+        }
+
+        private void HandleStreamChange(SDPMediaTypesEnum type, SDP offer, ref bool streamAdded)
+        {
+            static bool IsTwoWayStream(SDPMediaAnnouncement m, SDPMediaTypesEnum type) =>
+                m.Media == type && m.MediaStreamStatus == MediaStreamStatusEnum.SendRecv && m.Port != 0;
+
+            bool mediaSessionHasStream = MediaSession.RemoteDescription.Media.Any(m => IsTwoWayStream(m, type));
+            bool offerHasStream = offer.Media.Any(m => IsTwoWayStream(m, type));
+
+            if (offerHasStream && !mediaSessionHasStream)
+            {
+                logger.LogDebug("Re-INVITE remote party added {Type} stream.", type);
+                if (OnRemoteMediaStreamAdded?.Invoke(type) ?? false)
+                {
+                    streamAdded = true;
+                }
+            }
+            else if (!offerHasStream && mediaSessionHasStream)
+            {
+                logger.LogDebug("Re-INVITE remote party removed {Type} stream.", type);
+                OnRemoteMediaStreamRemoved?.Invoke(type);
             }
         }
 
