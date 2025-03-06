@@ -19,6 +19,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing;
 using System;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace demo;
 
@@ -35,6 +36,8 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
     private const int POINTS_PER_INCH = 72;
     private const int BORDER_WIDTH = 5;
     private const int QR_CODE_DIMENSION = 200;
+
+    private readonly ConcurrentDictionary<string, Lazy<Bitmap>> _qrCodeCache = new();
 
     private readonly ILogger _logger;
 
@@ -123,16 +126,48 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
             }
         }
 
-        // TODO. VERY INEFFICIENT. Need to find a way to optimise this and avoid the problems that come with using shared Bitmaps for multi-threaded access.
-        // Add QR Code.
         if (!string.IsNullOrWhiteSpace(lightningPaymentRequest))
         {
-            using var qrCode = GenerateQRCode(lightningPaymentRequest);
+            using var qrCode = GetCachedQRCode(lightningPaymentRequest);
 
             int xCenter = (image.Width - QR_CODE_DIMENSION) / 2;
             int yCenter = (image.Height - QR_CODE_DIMENSION) / 2;
             Rectangle dstRect = new Rectangle(xCenter, yCenter, QR_CODE_DIMENSION, QR_CODE_DIMENSION);
             g.DrawImage(qrCode, dstRect);
+        }
+        else
+        {
+            ClearQRCodeCache();
+        }
+    }
+
+    private Bitmap GetCachedQRCode(string lightningPaymentRequest)
+    {
+        if (string.IsNullOrWhiteSpace(lightningPaymentRequest))
+        {
+            throw new ArgumentException("Payment request must be provided", nameof(lightningPaymentRequest));
+        }
+
+        // Use Lazy to ensure only one QR code is generated per unique payment request.
+        var lazyQr = _qrCodeCache.GetOrAdd(lightningPaymentRequest, key =>
+            new Lazy<Bitmap>(() => GenerateQRCode(key))
+        );
+
+        // Clone the bitmap to ensure thread safety.
+        return (Bitmap)lazyQr.Value.Clone();
+    }
+
+    private void ClearQRCodeCache()
+    {
+        foreach (var key in _qrCodeCache.Keys)
+        {
+            if (_qrCodeCache.TryRemove(key, out var lazyBitmap))
+            {
+                if (lazyBitmap.IsValueCreated)
+                {
+                    lazyBitmap.Value.Dispose();
+                }
+            }
         }
     }
 
