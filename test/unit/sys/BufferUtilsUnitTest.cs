@@ -53,6 +53,32 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         [Fact]
+        public void GetStringPositionWithEmptyFindUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipMsg =
+                "REGISTER sip:Blue Face SIP/2.0\r\n" +
+                "Via: SIP/2.0/UDP 127.0.0.1:1720;branch=z9hG4bKlgnUQcaywCOaPcXR\r\n" +
+                "Max-Forwards: 70\r\n" +
+                "User-Agent: PA168S\r\n" +
+                "From: \"user\" <sip:user@Blue Face>;tag=81swjAV7dHG1yjd5\r\n" +
+                "To: \"user\" <sip:user@Blue Face>\r\n" +
+                "Call-ID: DHZVs1HFuMoTQ6LO@82.114.95.1\r\n" +
+                "CSeq: 15754 REGISTER\r\n" +
+                "Contact: <sip:user@127.0.0.1:1720>\r\n" +
+                "Expires: 30\r\n" +
+                "Content-Length: 0\r\n\r\n";
+
+            byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
+
+            int index = BufferUtils.GetStringPosition(sample, 0, Int32.MaxValue, string.Empty, null);
+
+            Assert.Equal(-1, index);
+        }
+
+        [Fact]
         public void GetStringIndexUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);

@@ -309,13 +309,27 @@ namespace SIPSorcery.Net
                                 break;
 
                             case var l when l.StartsWith("m="):
-                                Match mediaMatch = Regex.Match(sdpLineTrimmed.Substring(2), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)(\s*)(?<formats>.*)$");
+                                Match mediaMatch = Regex.Match(
+                                        sdpLineTrimmed.Substring(2),
+                                        @"(?<type>\w+)\s+(?<port>\d+)(?:\/(?<portCount>\d+))?\s+(?<transport>\S+)\s*(?<formats>.*)$"
+                                    );
                                 if (mediaMatch.Success)
                                 {
                                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();
                                     announcement.MLineIndex = mLineIndex;
                                     announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
-                                    Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+
+                                    // Parse the primary port.
+                                    int.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+                                    if (mediaMatch.Groups["portCount"].Success)
+                                    {
+                                        int portCount;
+                                        if (Int32.TryParse(mediaMatch.Result("${portCount}"), out portCount))
+                                        {
+                                            announcement.PortCount = portCount;
+                                        }
+                                    }
+
                                     announcement.Transport = mediaMatch.Result("${transport}");
                                     announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
                                     if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video)

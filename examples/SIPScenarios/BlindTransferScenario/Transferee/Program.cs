@@ -56,7 +56,7 @@ namespace SIPSorcery
             EnableTraceLogs(_sipTransport);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
+            userAgent.ServerCallCancelled += (uas, cancelReq) => Log.LogDebug("Incoming call cancelled by remote party.");
             userAgent.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
             userAgent.OnIncomingCall += async (ua, req) =>
             {

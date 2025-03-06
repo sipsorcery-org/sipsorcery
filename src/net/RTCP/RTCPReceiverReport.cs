@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPReceiverReport.cs
 //
 // Description:
@@ -98,8 +98,12 @@ namespace SIPSorcery.Net
             int rrIndex = 8;
             for (int i = 0; i < Header.ReceptionReportCount; i++)
             {
-                var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
-                ReceptionReports.Add(rr);
+                var pkt = packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray();
+                if (pkt.Length >= ReceptionReportSample.PAYLOAD_SIZE)
+                {
+                    var rr = new ReceptionReportSample(pkt);
+                    ReceptionReports.Add(rr);
+                }
             }
         }
 

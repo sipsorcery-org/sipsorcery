@@ -97,13 +97,14 @@ namespace SIPSorcery.Net
         /// </summary>
         public string Fmtp { get; }
 
-        //public IEnumerable<string> SupportedRtcpFeedbackMessages
-        //{
-        //    get
-        //    {
-        //        yield return "goog-remb";
-        //    }
-        //}
+        public IEnumerable<string> SupportedRtcpFeedbackMessages
+        {
+            get
+            {
+                yield return "transport-cc";
+                //yield return "goog-remb";
+            }
+        }
 
         /// <summary>
         /// The standard name of the media format.
@@ -151,9 +152,25 @@ namespace SIPSorcery.Net
             }
         }
 
+        public bool IsMJPEG
+        {
+            get
+            {
+                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("JPEG");
+            }
+        }
+
+        public bool isH265
+        {
+            get
+            {
+                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("H265");
+            }
+        }
+
         public bool CheckCompatible()
         {
-            if (IsH264)
+            if (IsH264 || IsMJPEG || isH265)
             {
                 var parameters = ParseWebRtcParameters(Fmtp);
                 if (parameters.TryGetValue("packetization-mode", out string packetizationMode))
