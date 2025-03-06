@@ -392,7 +392,7 @@ namespace SIPSorcery.Net
                 BindAddress = configuration?.X_BindAddress,
                 BindPort = bindPort,
                 RtpPortRange = portRange,
-                UseTCP = configuration.X_ICEForceTCP
+                UseTCP = configuration?.X_ICEForceTCP ?? false
             })
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);

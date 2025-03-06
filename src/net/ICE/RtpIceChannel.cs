@@ -1833,6 +1833,9 @@ namespace SIPSorcery.Net
             bool isRelayCheck = candidatePair.LocalCandidate.type == RTCIceCandidateType.relay;
             bool isProtoTcp = candidatePair.LocalCandidate.protocol == RTCIceProtocol.tcp;
 
+            // check if relay is requested
+            if (isRelayCheck)
+            {
             // allow peer to send/connect to relay first
             if (candidatePair.TurnPermissionsResponseAt == DateTime.MinValue)
             {
@@ -1914,6 +1917,7 @@ namespace SIPSorcery.Net
                 {
                     candidatePair.State = ChecklistEntryState.Frozen;
                 }
+            }
             }
             else
             {
