@@ -175,3 +175,5 @@ docfx/*
 **/.ionide
 .fake
 .ionide
+
+**/appsettings.Development.json
