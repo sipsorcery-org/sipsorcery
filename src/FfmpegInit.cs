@@ -191,9 +191,21 @@ namespace SIPSorceryMedia.FFmpeg
                 case VideoCodecsEnum.VP8:
                     avCodecID = AVCodecID.AV_CODEC_ID_VP8;
                     break;
+                case VideoCodecsEnum.VP9:
+                    avCodecID = AVCodecID.AV_CODEC_ID_VP9;
+                    break;
                 case VideoCodecsEnum.H264:
                     avCodecID = AVCodecID.AV_CODEC_ID_H264;
                     break;
+                case VideoCodecsEnum.H265:
+                    avCodecID = AVCodecID.AV_CODEC_ID_HEVC;
+                    break;
+
+                // Currently disabled because MJPEG doesn't work with the current pipeline that forces pixel conversion to YUV420P
+                // TODO: Fix pixel format conversion in Decode->Encode pipeline
+                //case VideoCodecsEnum.JPEG:
+                //    avCodecID = AVCodecID.AV_CODEC_ID_MJPEG;
+                //    break;
             }
 
             return avCodecID;
