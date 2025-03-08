@@ -282,8 +282,17 @@ namespace SIPSorceryMedia.FFmpeg
                     default:
                         break;
                 }
+                    else if (_codecID == AVCodecID.AV_CODEC_ID_HEVC
+                        && Marshal.PtrToStringAnsi((IntPtr)codec->name) == "hevc")
+                    {
+                        //ffmpeg.av_opt_set(_encoderContext->priv_data, "forced-idr", "1", 0).ThrowExceptionIfError();
 
-                foreach (var option in encOpts)
+                        //ffmpeg.av_opt_set(_encoderContext->priv_data, "crf", "28", 0);
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                    }
+
+                foreach (var option in _encoderOptions)
                 {
                     try
                     {
@@ -331,7 +340,39 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         ffmpeg.avcodec_free_context(pCtx);
                     }
+                }
+            }
+        }
+
+        private void ResetDecoder()
+        {
+            lock (_decoderLock)
+            {
+                if (!_isDisposed && _decoderContext != null && _isDecoderInitialised)
+                {
+                    _isDecoderInitialised = false;
+                    fixed (AVCodecContext** pCtx = &_decoderContext)
+                    {
+                        ffmpeg.avcodec_free_context(pCtx);
+                    }
+
+                    if (_frame != null)
+                    {
+                        fixed (AVFrame** pFrame = &_frame)
+                        {
+                            ffmpeg.av_frame_free(pFrame);
+                        }
+                    }
+
+                    if (_gpuFrame != null)
+                    {
+                        fixed (AVFrame** pFrame = &_gpuFrame)
+                        {
+                            ffmpeg.av_frame_free(pFrame);
                     _negotiatedPixFmt = null;
+                }
+            }
+        }
                 }
             }
         }
@@ -663,6 +704,9 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 width = 0;
                 height = 0;
+
+                if (_isDecoderInitialised && _codecID != codecID)
+                    ResetDecoder();
 
                 if (!_isDecoderInitialised)
                 {

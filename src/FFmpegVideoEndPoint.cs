@@ -97,6 +97,20 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if ( (!_isClosed) && (payload != null) && (OnVideoSinkDecodedSampleFaster != null) )
             {
+                if (_videoFormatManager.SelectedFormat.Codec != format.Codec)
+                {
+                    if (_videoFormatManager.GetSourceFormats().Exists(f => f.Codec == format.Codec))
+                    { 
+                        logger.LogWarning("Video format {format} is not selected but supported, continuing by using it.", format.FormatName);
+                        _videoFormatManager.SetSelectedFormat(format);
+                    }
+                    else
+                    {
+                        logger.LogError("Video format {format} is not supported by this endpoint.", format.FormatName);
+                        return;
+                    }
+                }
+
                 AVCodecID? codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
                 if(codecID != null)
                 { 
