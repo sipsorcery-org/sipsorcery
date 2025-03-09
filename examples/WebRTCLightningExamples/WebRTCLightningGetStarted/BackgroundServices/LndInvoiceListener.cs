@@ -84,7 +84,7 @@ public class LndInvoiceListener : BackgroundService
                 _logger.LogError($"{nameof(LndInvoiceListener)} listener exception. {ex}");
             }
 
-            _logger.LogDebug($"{nameof(LndInvoiceListener)} delaying {RESTART_DELAY_SECONDS}s before attempting to reconnect the grpc listener.");
+            _logger.LogDebug($"{nameof(LndInvoiceListener)} delaying {RESTART_DELAY_SECONDS}s before attempting to reconnect the grpc listener at.");
             await Task.Delay(1000 * RESTART_DELAY_SECONDS);
         }
     }
