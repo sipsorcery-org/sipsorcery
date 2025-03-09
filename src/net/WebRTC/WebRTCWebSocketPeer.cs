@@ -147,5 +147,11 @@ namespace SIPSorcery.Net
                 }
             }
         }
+
+        protected override void OnClose(CloseEventArgs e)
+        {
+            _pc?.Close("Signalling web socket closed.");
+            base.OnClose(e);
+        }
     }
 }

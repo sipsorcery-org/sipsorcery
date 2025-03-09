@@ -175,3 +175,8 @@ docfx/*
 **/.ionide
 .fake
 .ionide
+
+**/appsettings.Development.json
+**/btc-data
+**/lnd-data
+**/rtl-data
