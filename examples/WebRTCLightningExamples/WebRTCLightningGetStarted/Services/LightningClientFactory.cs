@@ -17,6 +17,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NBitcoin.DataEncoders;
 using System;
 using System.IO;
 using System.Linq;
@@ -42,7 +43,7 @@ public class LightningClientFactory : ILightningClientFactory
     private IConfiguration _config;
 
     private readonly string _lndUrl;
-    private readonly string _lndMacaroon;
+    private readonly string _lndMacaroonHex;
     private readonly X509Certificate2 _lndCertificate;
 
     public LightningClientFactory(
@@ -53,10 +54,28 @@ public class LightningClientFactory : ILightningClientFactory
         _config = config;
 
         _lndUrl = config[ConfigKeys.LND_URL] ?? string.Empty;
-        _lndMacaroon = config[ConfigKeys.LND_MACAROON]  ?? string.Empty;
+        _lndMacaroonHex = LoadLndMacaroonAsHex();
         _lndCertificate = LoadLndPublicCertificate() ?? new X509Certificate2([]);
+    }
 
-        //_logger.LogInformation($"{nameof(LightningClientFactory)} initialised with url {_lndUrl} and certificate thumbprint {_lndCertificate.Thumbprint}.");
+    private string LoadLndMacaroonAsHex()
+    {
+        var macaroonFilePath = _config[ConfigKeys.LND_MACAROON_PATH];
+
+        if (!string.IsNullOrWhiteSpace(macaroonFilePath))
+        {
+            if(!File.Exists(macaroonFilePath))
+            {
+                _logger.LogError($"Macaroon file does not exist at {macaroonFilePath}.");
+            }
+            else
+            {
+                var macaroonBytes = File.ReadAllBytes(macaroonFilePath);
+                return Encoders.Hex.EncodeData(macaroonBytes);
+            }
+        }
+
+        return _config[ConfigKeys.LND_MACAROON_HEX] ?? string.Empty;
     }
 
     private X509Certificate2? LoadLndPublicCertificate()
@@ -144,7 +163,7 @@ public class LightningClientFactory : ILightningClientFactory
 
     private Task AddMacaroon(AuthInterceptorContext context, Metadata metadata)
     {
-        metadata.Add(new Metadata.Entry("macaroon", _lndMacaroon));
+        metadata.Add(new Metadata.Entry("macaroon", _lndMacaroonHex));
         return Task.CompletedTask;
     }
 
