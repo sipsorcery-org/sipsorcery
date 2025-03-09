@@ -30,7 +30,7 @@ jobs:
 
       # Pack the NuGet package
       - name: Pack NuGet package
-        run: dotnet pack src/SIPSorceryMedia.FFmpeg -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorceryMedia.FFmpeg.csproj -c Release -o ./artifacts
 
       # Publish to NuGet
       - name: Publish NuGet package
