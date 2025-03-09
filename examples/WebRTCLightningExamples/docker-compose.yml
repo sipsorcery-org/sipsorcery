@@ -1,0 +1,79 @@
+version: '3.3'
+
+services:
+  bitcoind:
+    image: bitcoin/bitcoin:28.1
+    container_name: bitcoind
+    environment:
+      - BITCOIN_NETWORK=signet
+    volumes:
+      - ./btc-data:/home/bitcoin/.bitcoin
+    ports:
+      - "38332:38332"  # RPC port for Signet
+      - "48332:48332"  # ZMQ raw tx
+      - "48333:38333"  # ZMQ raw block
+    command: >
+      bitcoind -signet
+      -debug=net
+      -debug=rpc
+      -server=1
+      -whitelist=127.0.0.1
+      -zmqpubrawtx=tcp://0.0.0.0:48332
+      -zmqpubrawblock=tcp://0.0.0.0:48333
+      -datadir=/home/bitcoin/.bitcoin
+      -signetchallenge=5121033da06bd7068e9859ee902a0608df9b948829718c60c587f2e497ad4d7420e43151AE
+      -rpcbind=0.0.0.0
+      -rpcport=38332
+      -rpcuser=user
+      -rpcpassword=password
+      -rpcallowip=0.0.0.0/0
+      -addnode=192.168.1.180
+      -addnode=54.220.84.212
+      -addnode=54.76.175.25
+      -deprecatedrpc=create_bdb
+
+  lnd:
+    image: lightninglabs/lnd:v0.18.5-beta
+    container_name: lnd
+    environment:
+      - BITCOIN_NETWORK=signet
+    volumes:
+      - ./lnd-data:/root/.lnd
+    ports:
+      - "9735:9735"   # Lightning peer port
+      - "8080:8080"   # REST API
+      - "10009:10009" # gRPC port
+    depends_on:
+      - bitcoind
+    command: >
+      lnd --bitcoin.node=bitcoind
+      --bitcoin.signet
+      --bitcoin.basefee=1000
+      --bitcoin.feerate=100
+      --bitcoind.rpchost=bitcoind:38332
+      --bitcoind.rpcuser=user
+      --bitcoind.rpcpass=password
+      --bitcoind.zmqpubrawtx=tcp://bitcoind:48332
+      --bitcoind.zmqpubrawblock=tcp://bitcoind:48333
+      --alias=sipsorcery-signet
+      --listen=0.0.0.0:9735
+      --accept-keysend
+      --restlisten=0.0.0.0:8080
+      --rpclisten=0.0.0.0:10009
+      --protocol.wumbo-channels
+
+  rtl:
+    image: shahanafarooqui/rtl:v0.15.4
+    container_name: rtl
+    volumes:
+      - ./rtl-data:/home/rtl/.rtl
+      - ./lnd-data/data/chain/bitcoin/signet/admin.macaroon:/home/rtl/.rtl/admin.macaroon
+      - ./lnd-data/tls.cert:/home/rtl/.rtl/tls.cert
+      - ./lnd-data/lnd.conf:/home/rtl/.rtl/lnd.conf
+      - ./RTL-Config.json:/RTL/RTL-Config.json  # Mount the RTL config file
+    ports:
+      - "3000:3000"  # RTL web interface
+    depends_on:
+      - lnd
+    command: >
+      node rtl --port 3000 --config-path /RTL/RTL-Config.json
