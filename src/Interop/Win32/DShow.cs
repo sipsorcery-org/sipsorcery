@@ -1,52 +1,64 @@
-﻿using DirectShowLib;
-using FFmpeg.AutoGen;
+﻿using FFmpeg.AutoGen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SIPSorceryMedia.FFmpeg.Interop.Win32
 {
     internal class DShow
     {
-        const string inputfmt = nameof(DShow);
+        private static readonly string inputfmt = nameof(DShow).ToLower();
 
-        static private string[] DSHOW_VIDEO_DEVICE_LOG_OUTPUT = ["(video)", "camera", "webcam"];
-        //static private string DSHOW_AUDIO_DEVICE_LOG_OUTPUT = "(audio)";
+        private static readonly string[] DSHOW_CAMERA_FORMAT_LOG_OUTPUT = ["pixel_format"];
 
-        static private string[] DSHOW_CAMERA_FORMAT_LOG_OUTPUT = ["pixel_format"];
+        private static List<Camera>? _cachedCameras;
 
         /// <summary>
         /// Gets all DirectShow camera and input devices.
         /// </summary>
-        /// <remarks>This includes FFmpeg and falls back to DirectShowLib.</remarks>
         /// <returns>a <see cref="List{T}"/> of <see cref="Camera"/>s found on the system.</returns>
-        public static List<Camera>? GetCameraDevices()
+        public static unsafe List<Camera>? GetCameraDevices()
         {
-            var ffmpegcams = ParseDShowLogsForCameras(GetDShowLogsForDevice());
-            // FFmpeg doesn't implement avdevice_list_input_sources() for the DShow input format yet.
-            // Get DShowLib cameras in case of something wrong.
-            var dshowcams = GetDShowLibCameras();
+            _cachedCameras ??= [];
 
-            return (ffmpegcams?.Union(dshowcams ?? Enumerable.Empty<Camera>()) ?? dshowcams)?.ToList();
+            AVDeviceInfoList* dvls = null;
+            ffmpeg.avdevice_list_input_sources(ffmpeg.av_find_input_format(inputfmt), null, null, &dvls);
+
+            if (dvls is not null)
+            {
+                var devNames = new Span<IntPtr>(dvls->devices, dvls->nb_devices).ToArray()
+                    .Where(dv => new Span<AVMediaType>(((AVDeviceInfo*)dv)->media_types, ((AVDeviceInfo*)dv)->nb_media_types)
+                                    .ToArray().Any(t => t == AVMediaType.AVMEDIA_TYPE_VIDEO))
+                    .Select(dv => Marshal.PtrToStringAnsi((IntPtr)((AVDeviceInfo*)dv)->device_description) ?? string.Empty)
+                    .Distinct().Except([string.Empty])
+                    .Except(_cachedCameras.Select(c => c.Name))
+                    .ToArray();
+
+                ffmpeg.avdevice_free_list_devices(&dvls);
+
+                if (GetDShowCameras(devNames) is var add && add is not null)
+                    _cachedCameras.AddRange(add);
+
+                return _cachedCameras;
+            }
+            return null;
         }
 
-        private static List<Camera>? ParseDShowLogsForCameras(string? logs)
+        private static List<Camera>? GetDShowCameras(string[]? videoDevs)
         {
-            return logs?.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries)
-                .Where(logline => DSHOW_VIDEO_DEVICE_LOG_OUTPUT.Any(logline.ToLower().Contains))
-                .Select(splitline =>
+            return videoDevs?
+                .Select(cam =>
                 {
-                    var cam = splitline.Split(['"'], StringSplitOptions.RemoveEmptyEntries).First();
-
                     var opts = GetDShowLogsForDevice(cam)?
-                        .Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries)
-                        .Where(s => s.Contains("="))
+                        .Split(['\n'], StringSplitOptions.RemoveEmptyEntries)
+                        .Where(s => s.Contains('='))
                         .Select(optline =>
                             optline.Split(["min", "max"], StringSplitOptions.RemoveEmptyEntries)
                             .Select((sections, i) => sections
                                 .Split([' '], StringSplitOptions.RemoveEmptyEntries)
-                                .Where(s => s.Contains("="))
+                                .Where(s => s.Contains('='))
                                 .Select(opt =>
                                 {
                                     var kp = opt.Split(['='], StringSplitOptions.RemoveEmptyEntries);
@@ -104,30 +116,28 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
                                 }
                                 .Distinct();
                             })
-                            .SelectMany(f => f)
-                            .ToList()
+                            .SelectMany(f => f).Distinct().ToList()
                     };
-
                 })
                 .ToList();
         }
 
-        private static unsafe string? GetDShowLogsForDevice(string? name = null)
+        private static unsafe string? GetDShowLogsForDevice(string name)
         {
-            AVInputFormat* avInputFormat = ffmpeg.av_find_input_format(inputfmt.ToLower());
+            AVInputFormat* avInputFormat = ffmpeg.av_find_input_format(inputfmt);
             AVFormatContext* pFormatCtx = ffmpeg.avformat_alloc_context();
             AVDictionary* options = null;
 
-            ffmpeg.av_dict_set(&options, string.IsNullOrEmpty(name) ? "list_devices" : "list_options", "true", 0);
+            ffmpeg.av_dict_set(&options, "list_options", "true", 0);
 
             UseSpecificLogCallback();
 
-            ffmpeg.avformat_open_input(&pFormatCtx, string.IsNullOrEmpty(name) ? null : $"video={name}", avInputFormat, &options); // Here nb is < 0 ... But we have anyway an output from av_log which can be parsed ...
+            ffmpeg.avformat_open_input(&pFormatCtx, $"video={name}", avInputFormat, &options);
             ffmpeg.avformat_close_input(&pFormatCtx);
+            ffmpeg.avformat_free_context(pFormatCtx);
 
             // We no more need to use temporarily a specific callback to log FFmpeg entries
             FFmpegInit.UseDefaultLogCallback();
-
             // returns logs 
             return storedLogs;
         }
@@ -153,29 +163,6 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
                 storedLogs += Encoding.Default.GetString(lineBuffer, num);
             };
             ffmpeg.av_log_set_callback(logCallback);
-        }
-
-        private static List<Camera>? GetDShowLibCameras()
-        {
-            List<Camera>? result = null;
-            var dsDevices = DsDevice.GetDevicesOfCat(FilterCategory.VideoInputDevice);
-            for (int i = 0; i < dsDevices.Length; i++)
-            {
-                var dsDevice = dsDevices[i];
-                if ((dsDevice.Name != null) && (dsDevice.Name.Length > 0))
-                {
-                    var camera = new Camera()
-                    {
-                        Name = dsDevice.Name,
-                        Path = $"video={dsDevice.Name}"
-                    };
-
-                    result ??= [];
-
-                    result.Add(camera);
-                }
-            }
-            return result;
         }
     }
 }
