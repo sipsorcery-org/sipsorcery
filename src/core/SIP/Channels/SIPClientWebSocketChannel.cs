@@ -371,7 +371,7 @@ namespace SIPSorcery.SIP
                         var receiveTasks = m_egressConnections.Select(x => x.Value.ReceiveTask).ToArray();
                         int completedTaskIndex = Task.WaitAny(receiveTasks);
                         Task<WebSocketReceiveResult> receiveTask = receiveTasks[completedTaskIndex];
-                        var conn = m_egressConnections.Where(x => x.Value.ReceiveTask.Id == receiveTask.Id).Single().Value;
+                        var conn = m_egressConnections.Single(x => x.Value.ReceiveTask.Id == receiveTask.Id).Value;
 
                         if (receiveTask.IsCompleted)
                         {

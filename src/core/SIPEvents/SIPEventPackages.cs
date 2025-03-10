@@ -104,7 +104,7 @@ namespace SIPSorcery.SIP
 
         public static string GetEventHeader(SIPEventPackagesEnum eventPackage)
         {
-            switch(eventPackage)
+            switch (eventPackage)
             {
                 case SIPEventPackagesEnum.Dialog:
                     return DIALOG_EVENT_VALUE;

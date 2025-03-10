@@ -147,7 +147,7 @@ namespace SIPSorcery.SIP
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
                 if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
                 {
-                    if (_sendOkAckManually == false)
+                    if (!_sendOkAckManually)
                     {
                         AckRequest = GetAcknowledgeRequest(sipResponse, SIPMethodsEnum.ACK, sipResponse.Header.CSeq, null, null);
                         await SendRequestAsync(AckRequest).ConfigureAwait(false);

@@ -302,8 +302,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var answer = localSession.CreateAnswer(null);
 
-            Assert.Equal(MediaStreamStatusEnum.SendRecv, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaStreamStatus);
-            Assert.Equal(MediaStreamStatusEnum.Inactive, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, answer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.Inactive, answer.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaStreamStatus);
 
             localSession.Close("normal");
             remoteSession.Close("normal");
@@ -346,8 +346,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var answer = localSession.CreateAnswer(null);
 
-            Assert.Equal(MediaStreamStatusEnum.Inactive, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaStreamStatus);
-            Assert.Equal(MediaStreamStatusEnum.SendRecv, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.Inactive, answer.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, answer.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaStreamStatus);
 
             localSession.Close("normal");
             remoteSession.Close("normal");
