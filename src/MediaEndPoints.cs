@@ -153,6 +153,7 @@ namespace SIPSorceryMedia.Abstractions
     {
         Unknown,
         T140, //T.140 specifies that text and other T.140 elements must be transmitted in ISO 10646-1 code with UTF-8 transformation.
+        RED,
     }
 
     public struct AudioFormat
@@ -560,7 +561,7 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="text">A symbol or text to be transmitted</param>
         /// <param name="format">The text format of the sample.</param>
         /// <returns>A byte array containing the encoded text sample</returns>
-        byte[] EncodeText(string text, TextFormat format);
+        byte[] EncodeText(char[] text, TextFormat format);
 
         /// <summary>
         /// Decode a byte array into a string type text.
@@ -568,7 +569,7 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="encodedSample">A symbol or text that was received</param>
         /// <param name="format">The text format of the sample.</param>
         /// <returns></returns>
-        string DecodeText(byte[] encodedSample, TextFormat format);
+        char[] DecodeText(byte[] encodedSample, TextFormat format);
     }
 
     public class RawImage
