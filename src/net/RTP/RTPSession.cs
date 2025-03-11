@@ -2095,7 +2095,7 @@ namespace SIPSorcery.Net
 
 
             MediaStream mediaStream = GetMediaStream(ssrc);
-            var secureContext = mediaStream?.GetSecurityContext() ?? PrimaryStream.GetSecurityContext();
+            var secureContext = mediaStream?.GetSecurityContext() ?? PrimaryStream?.GetSecurityContext();
 
             if (secureContext != null)
             {
