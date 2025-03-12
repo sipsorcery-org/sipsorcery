@@ -1153,7 +1153,7 @@ namespace SIPSorcery.SIP
             if (m_sipRoutes.Count > 0)
             {
                 m_sipRoutes.RemoveAt(m_sipRoutes.Count - 1);
-            };
+            }
         }
 
         public SIPRouteSet Reversed()

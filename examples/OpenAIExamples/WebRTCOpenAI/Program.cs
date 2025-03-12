@@ -218,7 +218,7 @@ class Program
         WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true), -1, -1, false, false);
         windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
         windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
-        windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
+        windowsAudioEP.OnAudioSourceEncodedSample += peerConnection.SendAudio;
 
         MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
         peerConnection.addTrack(audioTrack);

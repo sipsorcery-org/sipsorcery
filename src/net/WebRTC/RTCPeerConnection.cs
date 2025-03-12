@@ -1301,7 +1301,7 @@ namespace SIPSorcery.Net
                     announcement.IceRole = IceRole;
                     announcement.DtlsFingerprint = dtlsFingerprint;
 
-                    if (iceCandidatesAdded == false && !excludeIceCandidates)
+                    if (!iceCandidatesAdded && !excludeIceCandidates)
                     {
                         AddIceCandidates(announcement);
                         iceCandidatesAdded = true;
@@ -1349,7 +1349,7 @@ namespace SIPSorcery.Net
                     dataChannelAnnouncement.IceRole = IceRole;
                     dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
 
-                    if (iceCandidatesAdded == false && !excludeIceCandidates)
+                    if (!iceCandidatesAdded && !excludeIceCandidates)
                     {
                         AddIceCandidates(dataChannelAnnouncement);
                         iceCandidatesAdded = true;

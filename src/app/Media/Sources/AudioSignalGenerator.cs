@@ -156,7 +156,6 @@ namespace SIPSorcery.Media
 
                         break;
 
-
                     case SignalGeneratorType.Square:
 
                         // Square Generator

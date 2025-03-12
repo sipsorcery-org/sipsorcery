@@ -854,12 +854,12 @@ a=sendrecv";
             Assert.Equal("BUNDLE 0 1", rndTripSdp.Group);
             Assert.Single(sdp.Media.First().IceCandidates);
             Assert.Single(rndTripSdp.Media.First().IceCandidates);
-            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().SsrcAttributes, x => x.SSRC == 1676157391U);
-            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3966011320U);
-            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 1316862390U);
-            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().SsrcAttributes, x => x.SSRC == 1676157391U);
-            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3966011320U);
-            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 1316862390U);
+            Assert.Contains(sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).SsrcAttributes, x => x.SSRC == 1676157391U);
+            Assert.Contains(sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 3966011320U);
+            Assert.Contains(sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 1316862390U);
+            Assert.Contains(rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).SsrcAttributes, x => x.SSRC == 1676157391U);
+            Assert.Contains(rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 3966011320U);
+            Assert.Contains(rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 1316862390U);
         }
 
         /// <summary>
@@ -971,8 +971,8 @@ a=sendrecv";
 
             SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
 
-            Assert.Equal(96, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Key);
-            Assert.Equal("H263-1998", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Name());
+            Assert.Equal(96, rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaFormats.Single().Key);
+            Assert.Equal("H263-1998", rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaFormats.Single().Value.Name());
         }
 
         /// <summary>
@@ -1002,8 +1002,8 @@ a=sendrecv";
 
             SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
 
-            Assert.Equal(111, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().Key);
-            Assert.Equal("opus", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats.Single().Value.Name());
+            Assert.Equal(111, rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.Single().Key);
+            Assert.Equal("opus", rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.Single().Value.Name());
         }
 
         /// <summary>
@@ -1040,10 +1040,10 @@ a=ssrc:2404235415 cname:{7c06c5db-d3db-4891-b729-df4919014c3f}";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
-            Assert.Equal(96, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Key);
-            Assert.Equal("VP8", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Name());
-            Assert.Equal("VP8/90000", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Rtpmap);
-            Assert.Equal("max-fs=12288;max-fr=60", sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats.Single().Value.Fmtp);
+            Assert.Equal(96, sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaFormats.Single().Key);
+            Assert.Equal("VP8", sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaFormats.Single().Value.Name());
+            Assert.Equal("VP8/90000", sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaFormats.Single().Value.Rtpmap);
+            Assert.Equal("max-fs=12288;max-fr=60", sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaFormats.Single().Value.Fmtp);
         }
 
         /// <summary>
@@ -1077,8 +1077,8 @@ a=fmtp:MCPTT mc_queueing;mc_priority=4";
 
             SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
 
-            Assert.Equal("MCPTT", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Key);
-            Assert.Equal("mc_queueing;mc_priority=4", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Value.Fmtp);
+            Assert.Equal("MCPTT", rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.application).ApplicationMediaFormats.Single().Key);
+            Assert.Equal("mc_queueing;mc_priority=4", rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.application).ApplicationMediaFormats.Single().Value.Fmtp);
         }
 
         /// <summary>
@@ -1119,8 +1119,8 @@ a=sendrecv
             SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
 
             Assert.Equal("A session description", rndTripSdp.SessionDescription);
-            Assert.Equal("speech", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaDescription);
-            Assert.Equal("video title", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaDescription);
+            Assert.Equal("speech", rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.audio).MediaDescription);
+            Assert.Equal("video title", rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).MediaDescription);
         }
 
         /// <summary>
@@ -1158,7 +1158,7 @@ a=sendrecv
 
             SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
 
-            Assert.Equal(256000U, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().TIASBandwidth);
+            Assert.Equal(256000U, rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).TIASBandwidth);
         }
 
         /// <summary>
@@ -1245,10 +1245,10 @@ a=ssrc-group:FID 3366495178 777490417";
             Assert.Equal("BUNDLE 0", rndTripSdp.Group);
             Assert.Null(sdp.Media.First().IceCandidates);
             Assert.Null(rndTripSdp.Media.First().IceCandidates);
-            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3366495178U);
-            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 777490417U);
-            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3366495178U);
-            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 777490417U);
+            Assert.Contains(sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 3366495178U);
+            Assert.Contains(sdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 777490417U);
+            Assert.Contains(rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 3366495178U);
+            Assert.Contains(rndTripSdp.Media.Single(x => x.Media == SDPMediaTypesEnum.video).SsrcAttributes, x => x.SSRC == 777490417U);
         }
 
         /// <summary>

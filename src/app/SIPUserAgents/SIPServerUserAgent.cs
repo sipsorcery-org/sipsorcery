@@ -452,7 +452,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Only need to send a BYE request if the client didn't already do so.
-                if (clientHungup == false)
+                if (!clientHungup)
                 {
                     try
                     {
