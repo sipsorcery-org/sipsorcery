@@ -167,7 +167,7 @@ namespace SIPSorcery.Media
 
             if (Media.TextSink != null)
             {
-                base.OnRtpPacketReceived += RtpTextPacketReceived;
+                base.OnRtpPacketReceived += RtpMediaPacketReceived;
             }
 
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
@@ -273,6 +273,18 @@ namespace SIPSorcery.Media
                         await Media.TextSink.StartTextSink().ConfigureAwait(false);
                     }
                 }
+
+                if (HasText)
+                {
+                    if (Media.TextSource != null)
+                    {
+                        await Media.TextSource.StartText().ConfigureAwait(false);   
+                    }
+                    if (Media.TextSink != null)
+                    {
+                        await Media.TextSink.StartTextSink().ConfigureAwait(false);
+                    }
+                }
             }
         }
 
@@ -342,14 +354,10 @@ namespace SIPSorcery.Media
 
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
-        }
-
-        protected void RtpTextPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
-        {
-            var hdr = rtpPacket.Header;
-
-            if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
+            else if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
             {
+                logger.LogTrace($"{nameof(RtpMediaPacketReceived)} text RTP packet received from {remoteEndPoint} ssrc {hdr.SyncSource} seqnum {hdr.SequenceNumber} timestamp {hdr.Timestamp} payload type {hdr.PayloadType}.");
+
                 Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.Payload);
             }
         }

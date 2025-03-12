@@ -1801,7 +1801,6 @@ namespace SIPSorcery.Net
             return newTextStream;
         }
 
-
         protected virtual AudioStream GetNextAudioStreamByLocalTrack()
         {
             int index = AudioStreamList.Count;
@@ -1990,6 +1989,25 @@ namespace SIPSorcery.Net
                                 else
                                 {
                                     localAddress = NetServices.GetLocalAddressForRemote(videoStream.DestinationEndPoint.Address);
+                                }
+                            }
+                        }
+                    }
+
+                    if (localAddress == null)
+                    {
+                        foreach (var textStream in TextStreamList)
+                        {
+                            if (textStream.DestinationEndPoint != null && textStream.DestinationEndPoint.Address != null)
+                            {
+                                if (IPAddress.Any.Equals(textStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(textStream.DestinationEndPoint.Address))
+                                {
+                                    // If the remote party has set an inactive media stream via the connection address then we do the same.
+                                    localAddress = textStream.DestinationEndPoint.Address;
+                                }
+                                else
+                                {
+                                    localAddress = NetServices.GetLocalAddressForRemote(textStream.DestinationEndPoint.Address);
                                 }
                             }
                         }
@@ -2268,6 +2286,20 @@ namespace SIPSorcery.Net
                 }
             }
 
+            foreach (var textstram in TextStreamList)
+            {
+                if (textstram.LocalTrack != null)
+                {
+                    mediaStream.Add(textstram);
+                }
+                else if (textstram.RtcpSession != null && !textstram.RtcpSession.IsClosed && textstram.RemoteTrack != null)
+                {
+                    var inactiveTextTrack = new MediaStreamTrack(textstram.MediaType, false, textstram.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
+                    textstram.LocalTrack = inactiveTextTrack;
+                    mediaStream.Add(textstram);
+                }
+            }
+
             return mediaStream;
         }
 
@@ -2399,6 +2431,24 @@ namespace SIPSorcery.Net
                     if (textStream != null)
                     {
                         CloseMediaStream(reason, textStream);
+                    }
+                }
+
+                foreach (var textStream in TextStreamList)
+                {
+                    if (textStream != null)
+                    {
+                        textStream.IsClosed = true;
+                        CloseRtcpSession(textStream, reason);
+
+                        if (textStream.HasRtpChannel())
+                        {
+                            var rtpChannel = textStream.GetRTPChannel();
+                            rtpChannel.OnRTPDataReceived -= OnReceive;
+                            rtpChannel.OnControlDataReceived -= OnReceive;
+                            rtpChannel.OnClosed -= OnRTPChannelClosed;
+                            rtpChannel.Close(reason);
+                        }
                     }
                 }
 
