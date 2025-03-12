@@ -1138,7 +1138,7 @@ namespace SIPSorcery.SIP.App
 
                             if (streamAdded)
                             {
-                                // Starts only video stream when it has not been already started.
+                                // Starts only a stream that has not been already started.
                                 await MediaSession.Start().ConfigureAwait(false);
                             }
                         }

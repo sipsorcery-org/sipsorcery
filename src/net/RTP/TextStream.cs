@@ -19,14 +19,14 @@ namespace SIPSorcery.Net
         private bool sendingFormatFound = false;
 
         /// <summary>
-        /// The audio format negotiated fir the audio stream by the SDP offer/answer exchange.
+        /// The text format negotiated fir the text stream by the SDP offer/answer exchange.
         /// </summary>
         public SDPAudioVideoMediaFormat NegotiatedFormat { get; private set; }
 
         public Action<int, List<TextFormat>> OnTextFormatsNegotiatedByIndex { get; internal set; }
 
         /// <summary>
-        /// Indicates whether this session is using video.
+        /// Indicates whether this session is using text.
         /// </summary>
         public bool HasText
         {
