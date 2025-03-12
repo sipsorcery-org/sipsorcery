@@ -81,6 +81,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Tls;
 using SIPSorcery.Sys;
 
 [assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
@@ -606,6 +607,10 @@ namespace SIPSorcery.Net
 
         private bool m_tcpRtpReceiverStarted = false;
 
+        public Dictionary<STUNUri, TlsClientProtocol> RtpTLSByUri { get; private set; } = new Dictionary<STUNUri, TlsClientProtocol>();
+
+        protected Dictionary<STUNUri, IceTcpReceiver> m_rtpTLSByUri = new Dictionary<STUNUri, IceTcpReceiver>();
+
         /// <summary>
         /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
         /// with ICE connectivity checks.
@@ -710,6 +715,8 @@ namespace SIPSorcery.Net
                                 throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
                             }
 
+                            //if (uri.Scheme == STUNSchemesEnum.turns || uri.Transport == STUNProtocolsEnum.tls)
+                            //    logger.LogWarning("You are using experimental function (TLS-over-TCP) which are")
 
                             RtpTcpSocketByUri.Add(uri, rtpTcpSocket);
                         }
@@ -2785,11 +2792,8 @@ namespace SIPSorcery.Net
 
         private SocketError SendOverTCP(STUNUri uri, byte[] buffer, IPEndPoint dstEndPoint)
         {
-            //Connect to destination
-            RtpTcpSocketByUri.TryGetValue(uri, out Socket sendSocket);
-            //LastRtpDestination = dstEndPoint;
-
-            if (sendSocket == null)
+            if (!RtpTcpSocketByUri.TryGetValue(uri, out Socket sendSocket)
+                && !RtpTLSByUri.TryGetValue(uri, out TlsClientProtocol tlsClient))
             {
                 return SocketError.Fault;
             }
