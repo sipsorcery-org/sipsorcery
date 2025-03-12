@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,8 @@ namespace demo
             //voipMediaSession.AudioLocalTrack.Capabilities.Clear();
             //voipMediaSession.AudioLocalTrack.Capabilities.Add(
             //    new SDPAudioVideoMediaFormat(new AudioFormat(AudioCodecsEnum.L16, 118, 8000)));
-
+            voipMediaSession.OnAudioFormatsNegotiated += (formats) => voipMediaSession.AudioExtrasSource.SetAudioSourceFormat(formats.First());
+            
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
@@ -161,6 +163,11 @@ namespace demo
 
             // Clean up.
             sipTransport.Shutdown();
+        }
+
+        private static void VoipMediaSession_OnAudioFormatsNegotiated(System.Collections.Generic.List<AudioFormat> obj)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>

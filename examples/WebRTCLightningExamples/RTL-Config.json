@@ -1,0 +1,37 @@
+{
+  "port": "3000",
+  "defaultNodeIndex": 1,
+  "dbDirectoryPath": "/home/rtl/.rtl",
+  "SSO": {
+    "rtlSSO": 0,
+    "rtlCookiePath": "",
+    "logoutRedirectLink": ""
+  },
+  "nodes": [
+    {
+      "index": 1,
+      "lnNode": "Lnd Signet",
+      "lnImplementation": "LND",
+      "authentication": {
+        "macaroonPath": "/home/rtl/.rtl",
+        "configPath": "/home/rtl/.rtl/lnd.conf"
+      },
+      "settings": {
+        "blockExplorerUrl": "https://mempool.space",
+        "lnServerUrl": "https://lnd:8080",
+        "userPersona": "MERCHANT",
+        "themeMode": "DAY",
+        "themeColor": "YELLOW",
+        "unannouncedChannels": false,
+        "logLevel": "ERROR",
+        "fiatConversion": false,
+        "enableOffers": false,
+        "enablePeerswap": false,
+        "bitcoindConfigPath": "",
+        "channelBackupPath": "/home/rtl/.rtl/backup",
+        "logFile": "/RTL/logs/RTL-Node-1.log"
+      }
+    }
+  ],
+  "multiPassHashed": "fa587b9ece6846b3ef84acfefb06d7a4ceba017b33df00938844fedb9d4ef0d4"
+}
