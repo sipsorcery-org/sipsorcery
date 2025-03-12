@@ -124,14 +124,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum knownFormat)
         {
-            if (AudioVideoWellKnown.WellKnownAudioFormats.ContainsKey(knownFormat))
-            {
-                Kind = SDPMediaTypesEnum.audio;
-            }
-            else
-            {
-                Kind = SDPMediaTypesEnum.video;
-            }
+            Kind = AudioVideoWellKnown.WellKnownAudioFormats.ContainsKey(knownFormat) ? SDPMediaTypesEnum.audio :
+                SDPMediaTypesEnum.video;
 
             ID = (int)knownFormat;
             Rtpmap = null;

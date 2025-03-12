@@ -2286,20 +2286,6 @@ namespace SIPSorcery.Net
                 }
             }
 
-            foreach (var textstram in TextStreamList)
-            {
-                if (textstram.LocalTrack != null)
-                {
-                    mediaStream.Add(textstram);
-                }
-                else if (textstram.RtcpSession != null && !textstram.RtcpSession.IsClosed && textstram.RemoteTrack != null)
-                {
-                    var inactiveTextTrack = new MediaStreamTrack(textstram.MediaType, false, textstram.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    textstram.LocalTrack = inactiveTextTrack;
-                    mediaStream.Add(textstram);
-                }
-            }
-
             return mediaStream;
         }
 
@@ -2431,24 +2417,6 @@ namespace SIPSorcery.Net
                     if (textStream != null)
                     {
                         CloseMediaStream(reason, textStream);
-                    }
-                }
-
-                foreach (var textStream in TextStreamList)
-                {
-                    if (textStream != null)
-                    {
-                        textStream.IsClosed = true;
-                        CloseRtcpSession(textStream, reason);
-
-                        if (textStream.HasRtpChannel())
-                        {
-                            var rtpChannel = textStream.GetRTPChannel();
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
-                            rtpChannel.OnClosed -= OnRTPChannelClosed;
-                            rtpChannel.Close(reason);
-                        }
                     }
                 }
 

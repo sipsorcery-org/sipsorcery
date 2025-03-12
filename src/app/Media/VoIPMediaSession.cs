@@ -141,8 +141,8 @@ namespace SIPSorcery.Media
                 {
                     // The test pattern source is used as failover if the webcam initialisation fails.
                     // It's also used as the video stream if the call is put on hold.
-                    //_videoTestPatternSource = config.TestPatternSource;
-                    //_videoTestPatternSource.OnVideoSourceEncodedSample += base.SendVideo;
+                    _videoTestPatternSource = config.TestPatternSource;
+                    _videoTestPatternSource.OnVideoSourceEncodedSample += base.SendVideo;
                     //_videoTestPatternSource.OnVideoSourceRawSample += Media.VideoSource.ExternalVideoSourceRawSample;
                 }
             }
@@ -259,18 +259,6 @@ namespace SIPSorcery.Media
 
                         // The webcam source failed to start. Switch to a test pattern source.
                         await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
-                    }
-                }
-
-                if (HasText)
-                {
-                    if (Media.TextSource != null)
-                    {
-                        await Media.TextSource.StartText().ConfigureAwait(false);   
-                    }
-                    if (Media.TextSink != null)
-                    {
-                        await Media.TextSink.StartTextSink().ConfigureAwait(false);
                     }
                 }
 
