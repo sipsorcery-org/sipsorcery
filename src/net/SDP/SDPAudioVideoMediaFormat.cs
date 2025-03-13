@@ -127,6 +127,7 @@ namespace SIPSorcery.Net
         {
             Kind = AudioVideoWellKnown.WellKnownAudioFormats.ContainsKey(knownFormat) ? SDPMediaTypesEnum.audio :
                 SDPMediaTypesEnum.video;
+
             ID = (int)knownFormat;
             Rtpmap = null;
             Fmtp = null;
@@ -285,15 +286,41 @@ namespace SIPSorcery.Net
             Rtpmap = SetRtpmap(videoFormat.FormatName, videoFormat.ClockRate);
         }
 
-        private string SetRtpmap(string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT)
-            =>
-             Kind == SDPMediaTypesEnum.video ? $"{name}/{clockRate}" :
-            (channels == DEFAULT_AUDIO_CHANNEL_COUNT) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
+        public SDPAudioVideoMediaFormat(TextFormat textFormat)
+        {
+            Kind = SDPMediaTypesEnum.text;
+            ID = textFormat.FormatID;
+            Rtpmap = null;  
+            Fmtp = textFormat.Parameters;
+            _isEmpty = false;
+
+            Rtpmap = SetRtpmap(textFormat.FormatName, textFormat.ClockRate);
+        }
+
+        private string SetRtpmap(string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT) => Kind == SDPMediaTypesEnum.video || Kind == SDPMediaTypesEnum.text
+                ? $"{name}/{clockRate}"
+                : (channels == DEFAULT_AUDIO_CHANNEL_COUNT) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
+
         public bool IsEmpty() => _isEmpty;
-        public int ClockRate() => Kind == SDPMediaTypesEnum.video ? ToVideoFormat().ClockRate : ToAudioFormat().ClockRate;
-        public int Channels() =>
-             Kind == SDPMediaTypesEnum.video ? 0 :
-            TryParseRtpmap(Rtpmap, out _, out _, out var channels) ? channels : DEFAULT_AUDIO_CHANNEL_COUNT;
+        public int ClockRate()
+        {
+            if (Kind == SDPMediaTypesEnum.video)
+            {
+                return ToVideoFormat().ClockRate;
+            }
+            else if (Kind == SDPMediaTypesEnum.text)
+            {
+                return ToTextFormat().ClockRate;
+            }
+            else
+            {
+                return ToAudioFormat().ClockRate;
+            }
+        }
+
+        public int Channels() => Kind == SDPMediaTypesEnum.video || Kind == SDPMediaTypesEnum.text
+                ? 0
+                : TryParseRtpmap(Rtpmap, out _, out _, out var channels) ? channels : DEFAULT_AUDIO_CHANNEL_COUNT;
 
         public string Name()
         {
@@ -377,6 +404,24 @@ namespace SIPSorcery.Net
             else
             {
                 return VideoFormat.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Maps a video SDP media type to a media abstraction layer text format.
+        /// </summary>
+        /// <returns>A text format value.</returns>
+        public TextFormat ToTextFormat()
+        {
+            // Rtpmap taks priority over well known media type as ID's can be changed.
+            // But we don't currently support any of the well known text types any way.
+            if (TryParseRtpmap(Rtpmap, out var name, out int clockRate, out _))
+            {
+                return new TextFormat(ID, name, clockRate, Fmtp);
+            }
+            else
+            {
+                return TextFormat.Empty;
             }
         }
 
