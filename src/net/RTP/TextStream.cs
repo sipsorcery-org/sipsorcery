@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning($"An RTPEvent is in progress.");
+                    logger.LogWarning("An RTPEvent is in progress.");
                     return;
                 }
 
@@ -93,7 +93,7 @@ namespace SIPSorcery.Net
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendT140Frame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendT140Frame. {ErrorMessage}", sockExcp.Message);
                 }
             }
         }

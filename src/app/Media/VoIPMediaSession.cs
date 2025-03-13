@@ -225,7 +225,7 @@ namespace SIPSorcery.Media
         private void TextFormatsNegotiated(List<TextFormat> textFormats)
         {
             var textFormat = textFormats.First();
-            logger.LogDebug($"Setting text sink and source format to {textFormat.FormatID} {textFormat.FormatName}. (RTP clock rate {textFormat.ClockRate}).");
+            logger.LogDebug("Setting text sink and source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
             Media.TextSource?.SetTextSourceFormat(textFormat);
         }
 
@@ -253,7 +253,7 @@ namespace SIPSorcery.Media
                 }
                 else
                 {
-                    logger.LogWarning($"Webcam video source failed before start, switching to test pattern source.");
+                    logger.LogWarning("Webcam video source failed before start, switching to test pattern source.");
 
                     // The webcam source failed to start. Switch to a test pattern source.
                     await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
@@ -342,7 +342,7 @@ namespace SIPSorcery.Media
             }
             else if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
             {
-                logger.LogTrace($"{nameof(RtpMediaPacketReceived)} text RTP packet received from {remoteEndPoint} ssrc {hdr.SyncSource} seqnum {hdr.SequenceNumber} timestamp {hdr.Timestamp} payload type {hdr.PayloadType}.");
+                logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
                 Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.Payload);
             }
