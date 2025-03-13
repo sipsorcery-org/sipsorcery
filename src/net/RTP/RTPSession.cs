@@ -392,6 +392,9 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool IsClosed { get; private set; }
 
+        [Obsolete("Use IsAudioStarted.")]
+        public bool IsStarted => IsAudioStarted;
+
         /// <summary>
         /// Indicates whether the audio session has been started. Starting a audio session tells the RTP 
         /// socket to start receiving,
