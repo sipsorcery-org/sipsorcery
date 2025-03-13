@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPAuthorisationDigest.cs
 //
 // Description: Implements Digest Authentication as defined in RFC2617.
@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP
                             }
                             else
                             {
-                                logger.LogWarning($"SIPAuthorisationDigest did not recognised digest algorithm value of {headerValue}, defaulting to {DigestAlgorithmsEnum.MD5}.");
+                                logger.LogWarning("SIPAuthorisationDigest did not recognised digest algorithm value of {DigestAlgorithms}, defaulting to {DigestAlgorithmsEnumMD5}.", headerValue, DigestAlgorithmsEnum.MD5);
                                 authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
                             }
                         }

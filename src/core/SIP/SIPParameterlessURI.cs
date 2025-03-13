@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPParameterlessURI.cs
 //
 // Description: SIP URI that discards any parameters or headers. This type of URI is used for
@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPParameterlessURI ToString. " + excp.Message);
+                logger.LogError(excp, "Exception SIPParameterlessURI ToString. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

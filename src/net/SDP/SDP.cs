@@ -228,7 +228,7 @@ namespace SIPSorcery.Net
                             case var l when l.StartsWith("v="):
                                 if (!Decimal.TryParse(sdpLineTrimmed.Substring(2), out sdp.Version))
                                 {
-                                    logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: " + sdpLine + ".");
+                                    logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: {sdpLine}.", sdpLine);
                                 }
                                 break;
 
@@ -246,7 +246,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-                                   logger.LogWarning($"The SDP message had an invalid SDP line format for 'o=': {sdpLineTrimmed}");
+                                    logger.LogWarning("The SDP message had an invalid SDP line format for 'o=': {sdpLineTrimmed}", sdpLineTrimmed);
                                 }
                                 break;
 
@@ -309,13 +309,27 @@ namespace SIPSorcery.Net
                                 break;
 
                             case var l when l.StartsWith("m="):
-                                Match mediaMatch = Regex.Match(sdpLineTrimmed.Substring(2), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)(\s*)(?<formats>.*)$");
+                                Match mediaMatch = Regex.Match(
+                                        sdpLineTrimmed.Substring(2),
+                                        @"(?<type>\w+)\s+(?<port>\d+)(?:\/(?<portCount>\d+))?\s+(?<transport>\S+)\s*(?<formats>.*)$"
+                                    );
                                 if (mediaMatch.Success)
                                 {
                                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();
                                     announcement.MLineIndex = mLineIndex;
                                     announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
-                                    Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+
+                                    // Parse the primary port.
+                                    int.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+                                    if (mediaMatch.Groups["portCount"].Success)
+                                    {
+                                        int portCount;
+                                        if (Int32.TryParse(mediaMatch.Result("${portCount}"), out portCount))
+                                        {
+                                            announcement.PortCount = portCount;
+                                        }
+                                    }
+
                                     announcement.Transport = mediaMatch.Result("${transport}");
                                     announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
                                     if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video || announcement.Media == SDPMediaTypesEnum.text)
@@ -329,7 +343,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-                                    logger.LogWarning("A media line in SDP was invalid: " + sdpLineTrimmed.Substring(2) + ".");
+                                    logger.LogWarning("A media line in SDP was invalid: {sdpLine}.", sdpLineTrimmed.Substring(2));
                                 }
 
                                 mLineIndex++;
@@ -381,12 +395,12 @@ namespace SIPSorcery.Net
                                     }
                                     else
                                     {
-                                        logger.LogWarning($"ICE role was not recognised from SDP attribute: {sdpLineTrimmed}.");
+                                        logger.LogWarning("ICE role was not recognised from SDP attribute: {sdpLineTrimmed}.", sdpLineTrimmed);
                                     }
                                 }
                                 else
                                 {
-                                    logger.LogWarning($"ICE role SDP attribute was missing the mandatory colon: {sdpLineTrimmed}.");
+                                    logger.LogWarning("ICE role SDP attribute was missing the mandatory colon: {sdpLineTrimmed}.", sdpLineTrimmed);
                                 }
                                 break;
 
@@ -471,7 +485,7 @@ namespace SIPSorcery.Net
                                             }
                                             else
                                             {
-                                                logger.LogWarning("Non-numeric audio/video media format attribute in SDP: " + sdpLine);
+                                                logger.LogWarning("Non-numeric audio/video media format attribute in SDP: {sdpLine}", sdpLine);
                                             }
                                         }
                                         else
@@ -539,7 +553,7 @@ namespace SIPSorcery.Net
                                             }
                                             else
                                             {
-                                                logger.LogWarning("Invalid media format parameter attribute in SDP: " + sdpLine);
+                                                logger.LogWarning("Invalid media format parameter attribute in SDP: {sdpLine}", sdpLine);
                                             }
                                         }
                                         else
@@ -587,7 +601,7 @@ namespace SIPSorcery.Net
                                     }
                                     catch (FormatException fex)
                                     {
-                                        logger.LogWarning("Error Parsing SDP-Line(a=crypto) " + fex);
+                                        logger.LogWarning("Error Parsing SDP-Line(a=crypto) {Exception}", fex);
                                     }
                                 }
                                 break;
@@ -682,12 +696,12 @@ namespace SIPSorcery.Net
                                     }
                                     else
                                     {
-                                        logger.LogWarning($"An sctp-port value of {sctpPortStr} was not recognised as a valid port.");
+                                        logger.LogWarning("An sctp-port value of {sctpPortStr} was not recognised as a valid port.", sctpPortStr);
                                     }
 
                                     if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
                                     {
-                                        logger.LogWarning($"A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.");
+                                        logger.LogWarning("A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.", maxMessageSizeStr);
                                     }
                                 }
                                 else
@@ -707,7 +721,7 @@ namespace SIPSorcery.Net
                                     }
                                     else
                                     {
-                                        logger.LogWarning($"An sctp-port value of {sctpPortStr} was not recognised as a valid port.");
+                                        logger.LogWarning("An sctp-port value of {sctpPortStr} was not recognised as a valid port.", sctpPortStr);
                                     }
                                 }
                                 else
@@ -722,7 +736,7 @@ namespace SIPSorcery.Net
                                     string maxMessageSizeStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                     if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
                                     {
-                                        logger.LogWarning($"A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.");
+                                        logger.LogWarning("A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.", maxMessageSizeStr);
                                     }
                                 }
                                 else
@@ -786,7 +800,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception ParseSDPDescription. " + excp);
+                logger.LogError(excp, "Exception ParseSDPDescription. {ErrorMessage}", excp.Message);
                 throw;
             }
         }

@@ -52,16 +52,18 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v8.0.7: Bug fixes and all sipsorcery packages release.
+    <PackageReleaseNotes>-v8.0.10: H265 and MJEG packetisation (thanks to @Drescher86), RTCP feedback improvements (thanks to @ispysoftware).
+-v8.0.9: Minor improvements and bug fixes.
+-v8.0.7: Bug fixes and all sipsorcery packages release.
 -v8.0.6: Nuget publish.
 -v8.0.4: Bug fixes.
 -v8.0.3: Bug fixes.
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>8.0.7</Version>
-    <AssemblyVersion>8.0.7</AssemblyVersion>
-    <FileVersion>8.0.7</FileVersion>
+    <Version>8.0.10</Version>
+    <AssemblyVersion>8.0.10</AssemblyVersion>
+    <FileVersion>8.0.10</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPByeUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 23;
@@ -56,7 +56,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripByeWithReasonUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 19;
@@ -79,7 +79,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPByeOnBoundaryUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 123121231;
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripByeWithTimeoutReasonUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint ssrc = 19;

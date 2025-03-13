@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPHeader.cs
 //
 // Description: RTCP Header as defined in RFC3550.
@@ -126,6 +126,21 @@ namespace SIPSorcery.Net
             {
                 return false;
             }
+        }
+
+        public static RTCPFeedbackTypesEnum ParseFeedbackType(byte[] packet)
+        {
+            if (packet.Length < HEADER_BYTES_LENGTH)
+            {
+                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
+            }
+            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                firstWord = NetConvert.DoReverseEndian(firstWord);
+            }
+            return (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
         }
 
         /// <summary>

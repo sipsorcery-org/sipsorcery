@@ -65,6 +65,10 @@ namespace SIPSorcery.Net
         protected RTPChannel rtpChannel = null;
 
         protected bool _isClosed = false;
+        /// <summary>
+        /// Used for keeping track of TWCC packets
+        /// </summary>
+        private ushort _twccPacketCount = 0;
 
         public int Index = -1;
 
@@ -252,7 +256,7 @@ namespace SIPSorcery.Net
         {
             if (SecureContext != null)
             {
-                logger.LogTrace($"Tried adding new SecureContext for media type {MediaType}, but one already existed");
+                logger.LogTrace("Tried adding new SecureContext for media type {MediaType}, but one already existed", MediaType);
             }
 
             SecureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
@@ -282,7 +286,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
+                    logger.LogWarning("SRTP unprotect failed for {MediaType}, result {Result}.", MediaType, res);
                 }
             }
             return (false, buffer);
@@ -336,19 +340,19 @@ namespace SIPSorcery.Net
         {
             if (IsClosed)
             {
-                logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an closed RTP session.");
+                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on a closed RTP session.", MediaType);
                 return false;
             }
 
             if (LocalTrack == null)
             {
-                logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session without a local track.");
+                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session without a local track.", MediaType);
                 return false;
             }
 
             if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
             {
-                logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session with a Stream Status set to {LocalTrack.StreamStatus}");
+                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session with a Stream Status set to {StreamStatus}", MediaType, LocalTrack.StreamStatus);
                 return false;
             }
 
@@ -410,7 +414,7 @@ namespace SIPSorcery.Net
                     foreach (var ext in LocalTrack.HeaderExtensions.Values)
                     {
                         // We support up to 14 extensions .... Not clear at all how to manage more ...
-                        if ( (ext.Id < 1) && (ext.Id > 14) )
+                        if ( (ext.Id < 1) || (ext.Id > 14) )
                         {
                             continue;
                         }
@@ -461,7 +465,7 @@ namespace SIPSorcery.Net
                     int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
-                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                        logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
                     }
                     else
                     {
@@ -501,6 +505,14 @@ namespace SIPSorcery.Net
                             if (ext is AudioLevelExtension audioLevelExtension)
                             {
                                 audioLevelExtension.Set(value);
+                            }
+                            break;
+
+                        case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                        //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
+                            if (ext is TransportWideCCExtension transportWideCCExtension)
+                            {
+                                transportWideCCExtension.Set(_twccPacketCount++);
                             }
                             break;
 
@@ -560,7 +572,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning($"Can't create RTCPCompoundPacket from the provided RTCP bytes. {excp.Message}");
+                    logger.LogWarning("Can't create RTCPCompoundPacket from the provided RTCP bytes. {Message}", excp.Message);
                 }
 
                 if (rtcpCompoundPacket != null)
@@ -584,7 +596,7 @@ namespace SIPSorcery.Net
             }
             else if (ControlDestinationEndPoint != null)
             {
-                //logger.LogDebug($"SendRtcpReport: {reportBytes.HexStr()}");
+                //logger.LogDebug("SendRtcpReport: {ReportBytes}", reportBytes.HexStr());
 
                 var sendOnSocket = RtpSessionConfig.IsRtcpMultiplexed ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
 
@@ -602,7 +614,7 @@ namespace SIPSorcery.Net
                     int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out int outBufLen);
                     if (rtperr != 0)
                     {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                        logger.LogWarning("SRTP RTCP packet protection failed, result {RtpError}.", rtperr);
                     }
                     else
                     {
@@ -644,6 +656,16 @@ namespace SIPSorcery.Net
             SendRtcpReport(reportBytes);
         }
 
+        /// <summary>
+        /// Allows sending of RTCP TWCC feedback reports.
+        /// </summary>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpTWCCFeedback(RTCPTWCCFeedback feedback)
+        {
+            var reportBytes = feedback.GetBytes();
+            SendRtcpReport(reportBytes);
+        }
+
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
             RTPPacket rtpPacket;
@@ -668,7 +690,7 @@ namespace SIPSorcery.Net
 
                 if (isValidSource)
                 {
-                    logger.LogDebug($"Set remote track ({MediaType} - index={Index}) SSRC to {hdr.SyncSource}.");
+                    logger.LogDebug("Set remote track ({MediaType} - index={Index}) SSRC to {SyncSource}.", MediaType, Index, hdr.SyncSource);
                     RemoteTrack.Ssrc = hdr.SyncSource;
                 }
             }
@@ -812,7 +834,7 @@ namespace SIPSorcery.Net
                 header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
                 !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
             {
-                logger.LogWarning($"{trackType} stream sequence number jumped from {track.LastRemoteSeqNum} to {header.SequenceNumber}.");
+                logger.LogWarning("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
             }
         }
 
@@ -848,7 +870,7 @@ namespace SIPSorcery.Net
                 // AC 18 Aug 2020: Despite the carefully crafted rules below and https://github.com/sipsorcery/sipsorcery/issues/197
                 // there are still cases that were a problem in one scenario but acceptable in another. To accommodate a new property
                 // was added to allow the application to decide whether the RTP end point switches should be liberal or not.
-                logger.LogDebug($"{MediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
+                logger.LogDebug("{MediaType} end point switched for RTP ssrc {Ssrc} from {ExpectedEndPoint} to {ReceivedOnEndPoint}.", MediaType, ssrc, expectedEndPoint, receivedOnEndPoint);
 
                 DestinationEndPoint = receivedOnEndPoint;
                 if (RtpSessionConfig.IsRtcpMultiplexed)
@@ -864,7 +886,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning($"RTP packet with SSRC {ssrc} received from unrecognised end point {receivedOnEndPoint}.");
+                logger.LogWarning("RTP packet with SSRC {Ssrc} received from unrecognised end point {ReceivedOnEndPoint}.", ssrc, receivedOnEndPoint);
             }
 
             return isValidSource;

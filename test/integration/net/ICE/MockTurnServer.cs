@@ -52,11 +52,11 @@ namespace SIPSorcery.Net.IntegrationTests
 
             ListeningEndPoint = _clientSocket.LocalEndPoint as IPEndPoint;
 
-            logger.LogDebug($"MockTurnServer listening on {ListeningEndPoint}.");
+            logger.LogDebug("MockTurnServer listening on {ListeningEndPoint}.", ListeningEndPoint);
 
             _listener = new UdpReceiver(_clientSocket);
             _listener.OnPacketReceived += OnPacketReceived;
-            _listener.OnClosed += (reason) => logger.LogDebug($"MockTurnServer on {ListeningEndPoint} closed.");
+            _listener.OnClosed += (reason) => logger.LogDebug("MockTurnServer on {ListeningEndPoint} closed.", ListeningEndPoint);
             _listener.BeginReceiveFrom();
         }
 
@@ -68,7 +68,7 @@ namespace SIPSorcery.Net.IntegrationTests
             {
                 case STUNMessageTypesEnum.Allocate:
 
-                    logger.LogDebug($"MockTurnServer received Allocate request from {remoteEndPoint}.");
+                    logger.LogDebug("MockTurnServer received Allocate request from {RemoteEndPoint}.", remoteEndPoint);
 
                     if (_relaySocket == null)
                     {
@@ -79,11 +79,11 @@ namespace SIPSorcery.Net.IntegrationTests
 
                         _relayEndPoint = _relaySocket.LocalEndPoint as IPEndPoint;
 
-                        logger.LogDebug($"MockTurnServer created relay socket on {_relayEndPoint}.");
+                        logger.LogDebug("MockTurnServer created relay socket on {RelayEndPoint}.", _relayEndPoint);
 
                         _relayListener = new UdpReceiver(_relaySocket);
                         _relayListener.OnPacketReceived += OnRelayPacketReceived;
-                        _relayListener.OnClosed += (reason) => logger.LogDebug($"MockTurnServer relay on {_relayEndPoint} closed.");
+                        _relayListener.OnClosed += (reason) => logger.LogDebug("MockTurnServer relay on {RelayEndPoint} closed.", _relayEndPoint);
                         _relayListener.BeginReceiveFrom();
                     }
 
@@ -97,7 +97,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                 case STUNMessageTypesEnum.BindingRequest:
 
-                    logger.LogDebug($"MockTurnServer received Binding request from {remoteEndPoint}.");
+                    logger.LogDebug("MockTurnServer received Binding request from {RemoteEndPoint}.", remoteEndPoint);
 
                     STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
                     stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                 case STUNMessageTypesEnum.CreatePermission:
 
-                    logger.LogDebug($"MockTurnServer received CreatePermission request from {remoteEndPoint}.");
+                    logger.LogDebug("MockTurnServer received CreatePermission request from {RemoteEndPoint}.", remoteEndPoint);
 
                     STUNMessage permResponse = new STUNMessage(STUNMessageTypesEnum.CreatePermissionSuccessResponse);
                     permResponse.Header.TransactionId = stunMessage.Header.TransactionId;
@@ -116,18 +116,18 @@ namespace SIPSorcery.Net.IntegrationTests
 
                 case STUNMessageTypesEnum.SendIndication:
 
-                    logger.LogDebug($"MockTurnServer received SendIndication request from {remoteEndPoint}.");
+                    logger.LogDebug("MockTurnServer received SendIndication request from {RemoteEndPoint}.", remoteEndPoint);
                     var buffer = stunMessage.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Data).Value;
                     var destEP = (stunMessage.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress) as STUNXORAddressAttribute).GetIPEndPoint();
 
-                    logger.LogDebug($"MockTurnServer relaying {buffer.Length} bytes to {destEP}.");
+                    logger.LogDebug("MockTurnServer relaying {BufferLength} bytes to {DestinationEndPoint}.", buffer.Length, destEP);
 
                     _relaySocket.SendTo(buffer, destEP);
 
                     break;
 
                 default:
-                    logger.LogDebug($"MockTurnServer received unknown STUN message from {remoteEndPoint}.");
+                    logger.LogDebug("MockTurnServer received unknown STUN message from {RemoteEndPoint}.", remoteEndPoint);
                     break;
             }
         }

@@ -92,6 +92,12 @@ namespace SIPSorcery.Net
         // Media Announcement fields.
         public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;   // Media type for the stream.
         public int Port;                        // For UDP transports should be in the range 1024 to 65535 and for RTP compliance should be even (only even ports used for data).
+        /// <summary>
+        /// Gets or sets the number of consecutive ports specified for the media stream in the SDP.
+        /// When the SDP media line includes a port range (e.g., "30000/2"), this property holds the count of ports.
+        /// Typically, a value of 2 indicates that two ports are allocated: one for RTP and the following port for RTCP.
+        /// </summary>
+        public int PortCount { get; set; }
         public string Transport = "RTP/AVP";    // Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
         public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
         public string IcePwd;                   // If ICE is being used the password for the STUN requests.
@@ -265,7 +271,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-                                    logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
+                                    logger.LogWarning("Excluding unrecognised well known media format ID {FormatID}.", id);
                                 }
                             }
                         }
@@ -485,10 +491,13 @@ namespace SIPSorcery.Net
                         // Leaving out the feedback attribute for now. It should only be added where it's present in a parsed SDP packet or
                         // is opted in in a produced SDP packet. AC 7 Nov 2024, see also https://github.com/sipsorcery-org/sipsorcery/issues/1130.
 
-                        //foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
-                        //{
-                        //    formatAttributes += MEDIA_FORMAT_FEEDBACK_PREFIX + mediaFormat.ID + " " + rtcpFeedbackMessage + m_CRLF;
-                        //}
+                        if (mediaFormat.Kind == SDPMediaTypesEnum.video)
+                        {
+                            foreach (var rtcpFeedbackMessage in mediaFormat.SupportedRtcpFeedbackMessages)
+                            {
+                                formatAttributes += MEDIA_FORMAT_FEEDBACK_PREFIX + mediaFormat.ID + " " + rtcpFeedbackMessage + m_CRLF;
+                            }
+                        }
 
                         if (mediaFormat.Fmtp != null)
                         {

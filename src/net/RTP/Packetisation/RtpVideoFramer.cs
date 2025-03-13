@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
@@ -32,12 +33,14 @@ namespace SIPSorcery.Net
         private byte[] _currVideoFrame;
         private int _currVideoFramePosn = 0;
         private H264Depacketiser _h264Depacketiser;
+        private H265Depacketiser _h265Depacketiser;
+        private MJPEGDepacketiser _mJPEGDepacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
-            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264))
+            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.H265 || codec == VideoCodecsEnum.JPEG))
             {
-                throw new NotSupportedException("The RTP video framer currently only understands H264 and VP8 encoded frames.");
+                throw new NotSupportedException("The RTP video framer currently only understands H264, VP8 and JPEG encoded frames.");
             }
 
             _codec = codec;
@@ -47,6 +50,14 @@ namespace SIPSorcery.Net
             if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
+            }
+            else if(_codec == VideoCodecsEnum.JPEG)
+            {
+                _mJPEGDepacketiser = new MJPEGDepacketiser();
+            }
+            else if(_codec == VideoCodecsEnum.H265)
+            {
+                _h265Depacketiser = new H265Depacketiser();
             }
         }
 
@@ -58,7 +69,7 @@ namespace SIPSorcery.Net
 
             if (_codec == VideoCodecsEnum.VP8)
             {
-                //logger.LogDebug($"rtp VP8 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+                //logger.LogDebug("rtp VP8 video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
 
                 if (_currVideoFramePosn + payload.Length >= _maxFrameSize)
                 {
@@ -88,14 +99,11 @@ namespace SIPSorcery.Net
                 else
                 {
                     logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
-                    //logger.LogWarning($"rtp video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+                    //logger.LogWarning("rtp video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
                 }
             }
             else if (_codec == VideoCodecsEnum.H264)
             {
-                //logger.LogDebug($"rtp H264 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
-
-                //var hdr = rtpPacket.Header;
                 var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
                 if (frameStream != null)
@@ -103,9 +111,26 @@ namespace SIPSorcery.Net
                     return frameStream.ToArray();
                 }
             }
+            else if (_codec == VideoCodecsEnum.H265)
+            {
+                var frameStream = _h265Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+
+                if (frameStream != null)
+                {
+                    return frameStream.ToArray();
+                }
+            }
+            else if(_codec == VideoCodecsEnum.JPEG)
+            {
+                var frameStream = _mJPEGDepacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                if (frameStream != null)
+                {
+                    return frameStream.ToArray();
+                }
+            }
             else
             {
-                logger.LogWarning($"rtp unknown video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
+                logger.LogWarning("rtp unknown video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
             }
 
             return null;

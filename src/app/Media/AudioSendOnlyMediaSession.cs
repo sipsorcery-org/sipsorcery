@@ -32,10 +32,10 @@ namespace SIPSorcery.Media
             base.addTrack(audioTrack);
         }
 
-        private void AudioFormatsNegotiated(List<AudioFormat> audoFormats)
+        private void AudioFormatsNegotiated(List<AudioFormat> audioFormats)
         {
-            var audioFormat = audoFormats.First();
-            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec}.");
+            var audioFormat = audioFormats.First();
+            logger.LogDebug("Setting audio source format to {AudioFormatID}:{AudioFormatCodec}.", audioFormat.FormatID, audioFormat.Codec);
             AudioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 

@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
 
         protected readonly Socket m_socket;
         protected byte[] m_recvBuffer;
-        protected bool m_isClosed;
+        protected bool m_isClosed, m_isClosing;
         protected bool m_isRunningReceive;
         protected IPEndPoint m_localEndPoint;
         protected AddressFamily m_addressFamily;
@@ -119,7 +119,7 @@ namespace SIPSorcery.Net
             {
                 m_isRunningReceive = false;
             }
-            if (m_isRunningReceive || m_isClosed)
+            if (m_isRunningReceive || m_isClosed || m_isClosing)
             {
                 return;
             }
@@ -142,7 +142,7 @@ namespace SIPSorcery.Net
                 // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
 
                 m_isRunningReceive = false;
-                logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {sockExcp.Message}");
+                logger.LogWarning("Socket error {SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {Message}", sockExcp.SocketErrorCode, sockExcp.Message);
                 //Close(sockExcp.Message);
             }
             catch (Exception excp)
@@ -151,7 +151,7 @@ namespace SIPSorcery.Net
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
                 // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
-                logger.LogError(excp, $"Exception UdpReceiver.BeginReceiveFrom. {excp.Message}");
+                logger.LogError(excp, "Exception UdpReceiver.BeginReceiveFrom. {ErrorMessage}", excp.Message);
                 Close(excp.Message);
             }
         }
@@ -215,7 +215,8 @@ namespace SIPSorcery.Net
             }
             catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
             {
-                // Thrown when close is called on a socket from this end. Safe to ignore.
+                // Thrown when close is called on a socket
+                m_isClosing = true;
             }
             catch (SocketException sockExcp)
             {
@@ -228,13 +229,13 @@ namespace SIPSorcery.Net
                 // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
                 // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
                 // error since the remote party may not have initialised their socket yet.
-                logger.LogWarning(sockExcp, $"SocketException UdpReceiver.EndReceiveFrom ({sockExcp.SocketErrorCode}). {sockExcp.Message}");
+                logger.LogWarning(sockExcp, "SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception UdpReceiver.EndReceiveFrom. {excp}");
+                logger.LogError(excp, "Exception UdpReceiver.EndReceiveFrom. {ErrorMessage}", excp.Message);
                 Close(excp.Message);
             }
             finally
@@ -398,7 +399,7 @@ namespace SIPSorcery.Net
             {
                 m_rtpReceiverStarted = true;
 
-                logger.LogDebug($"RTPChannel for {RtpSocket.LocalEndPoint} started.");
+                logger.LogDebug("RTPChannel for {LocalEndPoint} started.", RtpSocket.LocalEndPoint);
 
                 m_rtpReceiver = new UdpReceiver(RtpSocket);
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
@@ -436,11 +437,11 @@ namespace SIPSorcery.Net
 
                     if (m_controlReceiver == null)
                     {
-                        logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
+                        logger.LogDebug("RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.", RTPPort, closeReason);
                     }
                     else
                     {
-                        logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}, Control receiver on port {ControlPort}. Reason: {closeReason}.");
+                        logger.LogDebug("RTPChannel closing, RTP receiver on port {RTPPort}, Control receiver on port {ControlPort}. Reason: {closeReason}.", RTPPort, ControlPort, closeReason);
                     }
 
                     m_isClosed = true;
@@ -451,7 +452,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError("Exception RTPChannel.Close. " + excp);
+                    logger.LogError(excp, "Exception RTPChannel.Close. {ErrorMessage}", excp);
                 }
             }
         }
@@ -480,7 +481,7 @@ namespace SIPSorcery.Net
             }
             else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
-                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
+                logger.LogWarning("The destination address for Send in RTPChannel cannot be {Address}.", dstEndPoint.Address);
                 return SocketError.DestinationAddressRequired;
             }
             else
@@ -530,7 +531,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception RTPChannel.Send. {excp}");
+                    logger.LogError(excp, "Exception RTPChannel.Send. {ErrorMesssage}", excp.Message);
                     return SocketError.Fault;
                 }
             }
@@ -554,13 +555,13 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
-                logger.LogWarning($"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                logger.LogWarning(sockExcp, "SocketException RTPChannel EndSendTo ({SocketErrorCode}). {Message}", sockExcp.ErrorCode, sockExcp.Message);
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RTPChannel EndSendTo. {excp.Message}");
+                logger.LogError(excp, "Exception RTPChannel EndSendTo. {Message}", excp.Message);
             }
         }
 

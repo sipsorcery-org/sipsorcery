@@ -70,7 +70,7 @@ namespace SIPSorcery.Media
         /// </summary>
         /// <param name="includeLinearFormats">If set to true the linear audio formats will be added
         /// to the list of supported formats. The reason they are only included if explicitly requested
-        /// is they are not very popular for other VoIP systems and thereofre needlessly pollute the SDP.</param>
+        /// is they are not very popular for other VoIP systems and therefore needlessly pollute the SDP.</param>
         public AudioEncoder(bool includeLinearFormats = false, bool includeOpus = false)
         {
             if (includeLinearFormats)

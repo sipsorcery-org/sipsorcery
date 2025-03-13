@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Text;
 
 namespace SIPSorcery.Sys
@@ -30,50 +31,48 @@ namespace SIPSorcery.Sys
         /// <returns>The start position in the buffer of the requested string or -1 if not found.</returns>
         public static int GetStringPosition(byte[] buffer, int startPosition, int endPosition, string find, string end)
         {
-            if (buffer == null || buffer.Length == 0 || find == null)
+            if (buffer == null || buffer.Length == 0 || find == null || find.Length == 0)
             {
                 return -1;
             }
-            else
+
+            byte[] findArray = Encoding.UTF8.GetBytes(find);
+            byte[] endArray = (end != null) ? Encoding.UTF8.GetBytes(end) : null;
+
+            int findPosn = 0;
+            int endPosn = 0;
+
+            for (int index = startPosition; index < endPosition && index < buffer.Length; index++)
             {
-                byte[] findArray = Encoding.UTF8.GetBytes(find);
-                byte[] endArray = (end != null) ? Encoding.UTF8.GetBytes(end) : null;
-
-                int findPosn = 0;
-                int endPosn = 0;
-
-                for (int index = startPosition; index < endPosition && index < buffer.Length; index++)
+                if (buffer[index] == findArray[findPosn])
                 {
-                    if (buffer[index] == findArray[findPosn])
-                    {
-                        findPosn++;
-                    }
-                    else
-                    {
-                        findPosn = 0;
-                    }
-
-                    if (endArray != null && buffer[index] == endArray[endPosn])
-                    {
-                        endPosn++;
-                    }
-                    else
-                    {
-                        endPosn = 0;
-                    }
-
-                    if (findPosn == findArray.Length)
-                    {
-                        return index - findArray.Length + 1;
-                    }
-                    else if (endArray != null && endPosn == endArray.Length)
-                    {
-                        return -1;
-                    }
+                    findPosn++;
+                }
+                else
+                {
+                    findPosn = 0;
                 }
 
-                return -1;
+                if (endArray != null && buffer[index] == endArray[endPosn])
+                {
+                    endPosn++;
+                }
+                else
+                {
+                    endPosn = 0;
+                }
+
+                if (findPosn == findArray.Length)
+                {
+                    return index - findArray.Length + 1;
+                }
+                else if (endArray != null && endPosn == endArray.Length)
+                {
+                    return -1;
+                }
             }
+
+            return -1;
         }
 
         public static bool HasString(byte[] buffer, int startPosition, int endPosition, string find, string end)

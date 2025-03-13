@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseResponseUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseResponseWithBodyUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -100,7 +100,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseResponseNoEndDoubleCRLFUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -126,7 +126,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseCiscoOptionsResponseUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
@@ -168,7 +168,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
@@ -189,7 +189,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            logger.LogDebug("Content-Length " + contentLength + ".");
+            logger.LogDebug("Content-Length {contentLength}.", contentLength);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -200,7 +200,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestExtraSpacingTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
@@ -221,7 +221,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            logger.LogDebug("Content-Length " + contentLength + ".");
+            logger.LogDebug("Content-Length {contentLength}.", contentLength);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -232,7 +232,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
@@ -253,7 +253,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            logger.LogDebug("Content-Length " + contentLength + ".");
+            logger.LogDebug("Content-Length {contentLength}.", contentLength);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -265,7 +265,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestExtraSpacingTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
@@ -295,7 +295,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveNoContentLengthHeaderRequestTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
@@ -323,7 +323,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveSingleRequestTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
@@ -430,7 +430,7 @@ CRLF +
         [Fact]
         public void ParseMultiRequestAndResponseTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
@@ -480,13 +480,13 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
-            logger.LogDebug("Request1=" + UTF8Encoding.UTF8.GetString(request1Bytes));
+            logger.LogDebug("Request1={Request1}", UTF8Encoding.UTF8.GetString(request1Bytes));
 
             byte[] request2Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out _);
-            logger.LogDebug("Request2=" + UTF8Encoding.UTF8.GetString(request2Bytes));
+            logger.LogDebug("Request2={Request2}", UTF8Encoding.UTF8.GetString(request2Bytes));
 
             byte[] response1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out _);
-            logger.LogDebug("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
+            logger.LogDebug("Response1={Response1}", UTF8Encoding.UTF8.GetString(response1Bytes));
 
             Assert.True(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
         }
@@ -497,7 +497,7 @@ CRLF +
         [Fact]
         public void ParseRequestOneByteMissingTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
@@ -528,7 +528,7 @@ CRLF +
         [Fact]
         public void ParseRequestOneByteExtraTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
@@ -561,7 +561,7 @@ CRLF +
         [Fact]
         public void ParseRequestBytesReadShortTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
@@ -592,7 +592,7 @@ CRLF +
         [Fact]
         public void ParseRequestWithLeadingNATKeepAliveBytesTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
@@ -616,7 +616,7 @@ CRLF +
             int skippedBytes = 0;
             byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
 
-            logger.LogDebug(Encoding.UTF8.GetString(request1Bytes));
+            logger.LogDebug("{RequestBytes}", Encoding.UTF8.GetString(request1Bytes));
 
             Assert.True(request1Bytes != null, "The parsed bytes should have been populated.");
             Assert.True(skippedBytes == 4, "The number of skipped bytes was incorrect.");
@@ -628,7 +628,7 @@ CRLF +
         [Fact]
         public void TestProcessRecevieWithBytesToSkipTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
@@ -660,7 +660,7 @@ CRLF +
         [Fact]
         public void IsPingUnitTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = new byte[] { 0x0d, 0x0a };//"\r\n"
@@ -699,7 +699,7 @@ CRLF +
         [Fact]
         public void ParseWithDefaultEncodingPersistsEndPoints()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
