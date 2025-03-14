@@ -164,7 +164,9 @@ namespace SIPSorcery.Net
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as client.");
+            logger.LogDtlsHandshakeStartUnchecked("client");
+
+            logger.LogDtlsHandshakeStartAsClient();
 
             if (!_handshaking && !_handshakeComplete)
             {
@@ -202,7 +204,7 @@ namespace SIPSorcery.Net
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, $"DTLS handshake as client timed out waiting for handshake to complete.");
+                        logger.LogDtlsHandshakeTimeout("client", excp);
                         handshakeError = "timeout";
                     }
                     else
@@ -213,7 +215,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, "DTLS handshake as client failed. {ErrorMessage}", excp.Message);
+                        logger.LogDtlsHandshakeFailed("client", excp.Message, excp);
                     }
 
                     // Declare handshake as failed
@@ -231,7 +233,9 @@ namespace SIPSorcery.Net
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as server.");
+            logger.LogDtlsHandshakeStartUnchecked("server");
+
+            logger.LogDtlsHandshakeStartAsServer();
 
             if (!_handshaking && !_handshakeComplete)
             {
@@ -268,7 +272,7 @@ namespace SIPSorcery.Net
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, $"DTLS handshake as server timed out waiting for handshake to complete.");
+                        logger.LogDtlsHandshakeTimeout("server", excp);
                         handshakeError = "timeout";
                     }
                     else
@@ -279,7 +283,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Crypto.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, "DTLS handshake as server failed. {ErrorMessage}", excp.Message);
+                        logger.LogDtlsHandshakeFailed("server", excp.Message, excp);
                     }
 
                     // Declare handshake as failed
@@ -534,7 +538,7 @@ namespace SIPSorcery.Net
 
                 if (millisecondsRemaining <= 0)
                 {
-                    logger.LogWarning("DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {ClientOrServer}.", TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
+                    logger.LogDtlsHandshakeTimedOut(TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
                     throw new TimeoutException();
                 }
                 else

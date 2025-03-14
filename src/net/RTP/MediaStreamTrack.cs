@@ -124,11 +124,11 @@ namespace SIPSorcery.Net
             {
                 if (!IsRemote)
                 {
-                    _maxBandwith = value;
+                    _maxBandwith = value; 
                 }
                 else
                 {
-                    logger.LogWarning("The maximum bandwith cannot be set for remote tracks.");
+                    logger.LogRtpMaximumBandwidthRemoteTrack();
                 }
             }
         }
