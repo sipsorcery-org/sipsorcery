@@ -288,7 +288,7 @@ namespace SIPSorcery.Net
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendMJEPGFrame. " + sockExcp.Message);
+                    logger.LogSendMJEPGFrameSocketError(sockExcp.Message, sockExcp);
                 }
             }
         }
