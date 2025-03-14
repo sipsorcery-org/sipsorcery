@@ -36,10 +36,23 @@ namespace SIPSorcery.Media
 
         [LoggerMessage(
             EventId = 0,
-            EventName = "RtpMediaPacketReceived",
+            EventName = "RtpAudioPacketReceived",
             Level = LogLevel.Trace,
             Message = "audio RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.")]
-        public static partial void LogRtpMediaPacketReceived(
+        public static partial void LogRtpAudioPacketReceived(
+            this ILogger logger,
+            IPEndPoint remoteEndPoint,
+            uint syncSource,
+            ushort sequenceNumber,
+            uint timestamp,
+            int payloadType);
+
+        [LoggerMessage(
+            EventId = 0,
+            EventName = "RtpTextPacketReceived",
+            Level = LogLevel.Trace,
+            Message = "RtpMediaPacketReceived text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.")]
+        public static partial void LogRtpTextPacketReceived(
             this ILogger logger,
             IPEndPoint remoteEndPoint,
             uint syncSource,
@@ -76,6 +89,16 @@ namespace SIPSorcery.Media
             this ILogger logger,
             int videoFormatID,
             VideoCodecsEnum videoCodec);
+
+        [LoggerMessage(
+            EventId = 0,
+            EventName = "TextFormatNegotiated",
+            Level = LogLevel.Debug,
+            Message = "Setting text sink and source format to {TextFormatID}:{TextCodec}")]
+        public static partial void LogTextFormatNegotiated(
+            this ILogger logger,
+            int textFormatID,
+            TextCodecsEnum textCodec);
 
         [LoggerMessage(
             EventId = 0,

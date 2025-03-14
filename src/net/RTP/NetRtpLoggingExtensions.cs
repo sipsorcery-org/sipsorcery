@@ -376,7 +376,7 @@ namespace SIPSorcery.Net
             EventId = 0,
             EventName = "RtpSrtpRtcpProtectFailed",
             Level = LogLevel.Warning,
-            Message = "SRTP RTCP packet protection failed, result {rtpError}.")] 
+            Message = "SRTP RTCP packet protection failed, result {rtpError}.")]
         public static partial void LogRtpSrtpRtcpProtectFailed(
             this ILogger logger,
             int rtpError);
@@ -390,7 +390,7 @@ namespace SIPSorcery.Net
             this ILogger logger);
 
         [LoggerMessage(
-            EventId = 0, 
+            EventId = 0,
             EventName = "RtpInvalidPortNumber",
             Level = LogLevel.Warning,
             Message = "Remote {sdpMediaType} announcement contained an invalid port number {port}.")]
@@ -457,7 +457,7 @@ namespace SIPSorcery.Net
 
         [LoggerMessage(
             EventId = 0,
-            EventName = "RtpSecureMediaIncompatibleCrypto", 
+            EventName = "RtpSecureMediaIncompatibleCrypto",
             Level = LogLevel.Error,
             Message = "Error negotiating secure media for type {mediaType}. Incompatible crypto parameter.")]
         public static partial void LogRtpSecureMediaIncompatibleCrypto(
@@ -467,7 +467,7 @@ namespace SIPSorcery.Net
         [LoggerMessage(
             EventId = 0,
             EventName = "RtpSecureMediaNoCompatibleCrypto",
-            Level = LogLevel.Error, 
+            Level = LogLevel.Error,
             Message = "Error negotiating secure media. No compatible crypto suite.")]
         public static partial void LogRtpSecureMediaNoCompatibleCrypto(
             this ILogger logger);
@@ -531,7 +531,7 @@ namespace SIPSorcery.Net
 
         [LoggerMessage(
             EventId = 0,
-            EventName = "RtpEndReceiveFromError",  
+            EventName = "RtpEndReceiveFromError",
             Level = LogLevel.Error,
             Message = "Exception UdpReceiver.EndReceiveFrom. {errorMessage}")]
         public static partial void LogRtpEndReceiveFromError(
@@ -547,8 +547,36 @@ namespace SIPSorcery.Net
         public static partial void LogRtpUnknownVideo(
             this ILogger logger,
             ushort sequenceNumber,
-            uint timestamp, 
+            uint timestamp,
             int markerBit,
             int payloadLength);
+
+        [LoggerMessage(
+            EventId = 0,
+            EventName = "RtpEventInProgress",
+            Level = LogLevel.Warning,
+            Message = "An RTPEvent is in progress.")]
+        public static partial void LogRtpEventInProgress(
+            this ILogger logger);
+
+        [LoggerMessage(
+            EventId = 2,
+            EventName = "SendT140FrameSocketError",
+            Level = LogLevel.Error,
+            Message = "SocketException SendT140Frame. {ErrorMessage}")]
+        public static partial void LogSendT140FrameSocketError(
+            this ILogger logger,
+            string errorMessage,
+            Exception ex);
+
+        [LoggerMessage(
+            EventId = 2,
+            EventName = "SendMJEPGFrameSocketError",
+            Level = LogLevel.Error,
+            Message = "SocketException SendMJEPGFrame. {ErrorMessage}")]
+        public static partial void LogSendMJEPGFrameSocketError(
+            this ILogger logger,
+            string errorMessage,
+            Exception ex);
     }
 }
