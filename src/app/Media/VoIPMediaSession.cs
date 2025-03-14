@@ -225,7 +225,7 @@ namespace SIPSorcery.Media
         private void TextFormatsNegotiated(List<TextFormat> textFormats)
         {
             var textFormat = textFormats.First();
-            logger.LogDebug("Setting text sink and source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
+            logger.LogTextFormatNegotiated(textFormat.FormatID, textFormat.Codec);
             Media.TextSource?.SetTextSourceFormat(textFormat);
         }
 
@@ -336,13 +336,13 @@ namespace SIPSorcery.Media
 
             if (mediaType == SDPMediaTypesEnum.audio && Media.AudioSink != null)
             {
-                logger.LogRtpMediaPacketReceived(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
+                logger.LogRtpAudioPacketReceived(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
             else if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
             {
-                logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
+                logger.LogRtpTextPacketReceived(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
                 Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.Payload);
             }

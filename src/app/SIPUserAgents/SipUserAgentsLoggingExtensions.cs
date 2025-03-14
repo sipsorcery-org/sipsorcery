@@ -1564,5 +1564,23 @@ namespace SIPSorcery.SIP.App
         public static partial void LogUserAgentStop(
             this ILogger logger,
             string id);
+
+        [LoggerMessage(
+            EventId = 1,
+            EventName = "ReInviteRemotePartyStreamAdded", 
+            Level = LogLevel.Debug,
+            Message = "Re-INVITE remote party added {Type} stream.")]
+        public static partial void LogReInviteRemotePartyStreamAdded(
+            this ILogger logger,
+            SDPMediaTypesEnum type);
+
+        [LoggerMessage(
+            EventId = 2,
+            EventName = "ReInviteRemotePartyStreamRemoved", 
+            Level = LogLevel.Debug,
+            Message = "Re-INVITE remote party removed {Type} stream.")]
+        public static partial void LogReInviteRemotePartyStreamRemoved(
+            this ILogger logger,
+            SDPMediaTypesEnum type);
     }
 }

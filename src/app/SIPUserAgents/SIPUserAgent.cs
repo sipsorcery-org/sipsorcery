@@ -1210,7 +1210,7 @@ namespace SIPSorcery.SIP.App
 
             if (offerHasStream && !mediaSessionHasStream)
             {
-                logger.LogDebug("Re-INVITE remote party added {Type} stream.", type);
+                logger.LogReInviteRemotePartyStreamAdded(type);
                 if (OnRemoteMediaStreamAdded?.Invoke(type) ?? false)
                 {
                     streamAdded = true;
@@ -1218,7 +1218,7 @@ namespace SIPSorcery.SIP.App
             }
             else if (!offerHasStream && mediaSessionHasStream)
             {
-                logger.LogDebug("Re-INVITE remote party removed {Type} stream.", type);
+                logger.LogReInviteRemotePartyStreamRemoved(type);
                 OnRemoteMediaStreamRemoved?.Invoke(type);
             }
         }
