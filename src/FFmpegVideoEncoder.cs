@@ -283,7 +283,7 @@ namespace SIPSorceryMedia.FFmpeg
                         break;
                 }
                     else if (_codecID == AVCodecID.AV_CODEC_ID_HEVC
-                        && Marshal.PtrToStringAnsi((IntPtr)codec->name) == "hevc")
+                        && Marshal.PtrToStringAnsi((IntPtr)codec->name) == "libx265")
                     {
                         //ffmpeg.av_opt_set(_encoderContext->priv_data, "forced-idr", "1", 0).ThrowExceptionIfError();
 
