@@ -13,9 +13,7 @@
   </PropertyGroup>
  
   <ItemGroup>
-    <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.7" />
-    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="FFmpeg.AutoGen" Version="7.0.0" />
   </ItemGroup>
   
