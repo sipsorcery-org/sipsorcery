@@ -29,14 +29,12 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Windows;
 
 namespace demo
 {
     class Program
     {
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sips:helloworld@sipsorcery.cloud";
         private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:music@iptel.org";
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
