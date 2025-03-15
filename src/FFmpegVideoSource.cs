@@ -187,7 +187,7 @@ namespace SIPSorceryMedia.FFmpeg
                             paddedSrcWidth, height,
                             srcfmt,
                             width, height,
-                            AVPixelFormat.AV_PIX_FMT_BGR24);
+                            AVPixelFormat.AV_PIX_FMT_RGB24);
                         logger.LogDebug("Frame format: [{fmt}]", srcfmt);
                     }
 

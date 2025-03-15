@@ -642,7 +642,7 @@ namespace SIPSorceryMedia.FFmpeg
                             width, height,
                             (AVPixelFormat)decodedFrame->format,
                             width, height,
-                            AVPixelFormat.AV_PIX_FMT_BGR24);
+                            AVPixelFormat.AV_PIX_FMT_RGB24);
                     }
 
                     //logger.LogDebug($"[DecodeFaster]"
