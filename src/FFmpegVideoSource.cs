@@ -101,7 +101,40 @@ namespace SIPSorceryMedia.FFmpeg
             }
             else
             {
+                logger.LogError("Video Encoder is not yet initialized.");
                 throw new NullReferenceException("Video Encoder is not yet initialized.");
+            }
+        }
+
+        public void SetEncoderWrapper(string wrapperName)
+        {
+            if (_videoEncoder != null)
+            {
+                _videoEncoder.SetEncoderWrapper(wrapperName);
+            }
+            else
+            {
+                logger.LogError("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Encoder is not yet initialized.");
+            }
+        }
+
+        public bool SetEncoderForCodec(VideoCodecsEnum codec, string name)
+        {
+            if (_videoEncoder != null)
+            {
+                if (FFmpegConvert.GetAVCodecID(codec) is var cdc && cdc is not null)
+                    return _videoEncoder.SetSpecificEncoderForCodec((AVCodecID)cdc, name);
+                else
+                {
+                    logger.LogError("Codec {codec} is not supported by this endpoint.", codec);
+                    throw new InvalidOperationException($"Codec {codec} is not supported by this endpoint.");
+                }
+            }
+            else
+            {
+                logger.LogError("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Encoder is not yet initialized.");
             }
         }
 

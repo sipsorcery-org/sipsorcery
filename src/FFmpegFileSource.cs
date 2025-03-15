@@ -302,5 +302,16 @@ namespace SIPSorceryMedia.FFmpeg
                 _FFmpegVideoSource = null;
             }
         }
+
+        public void SetEncoderWrapper(string v)
+        {
+            _FFmpegVideoSource?.SetEncoderWrapper(v);
+        }
+
+        public bool SetEncoderForCodec(VideoCodecsEnum codec, string name)
+        {
+            return _FFmpegVideoSource?.SetEncoderForCodec(codec, name) ?? false;
+        }
+
     }
 }
