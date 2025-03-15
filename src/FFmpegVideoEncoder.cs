@@ -4,6 +4,7 @@ using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace SIPSorceryMedia.FFmpeg
@@ -27,6 +28,8 @@ namespace SIPSorceryMedia.FFmpeg
         private AVHWDeviceType _HwDeviceType;
         private AVFrame* _frame;
         private AVFrame* _gpuFrame;
+
+        private AVPixelFormat? _negotiatedPixFmt;
 
         private VideoFrameConverter? _encoderPixelConverter;
         private VideoFrameConverter? _i420ToRgb;
@@ -221,7 +224,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _encoderContext->framerate.den = 1;
                 _encoderContext->framerate.num = fps;
 
-                _encoderContext->pix_fmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
+                _encoderContext->pix_fmt = _negotiatedPixFmt ?? codec->pix_fmts[0];
 
                 if (_bit_rate != null) _encoderContext->bit_rate = (long)_bit_rate;
                 if (_bit_rate_tolerance != null) _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance;
@@ -297,6 +300,7 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         ffmpeg.avcodec_free_context(pCtx);
                     }
+                    _negotiatedPixFmt = null;
                 }
             }
         }
@@ -458,23 +462,24 @@ namespace SIPSorceryMedia.FFmpeg
                         _encoderContext->height = height;
                     }
 
-                    int _linesizeY = width;
-                    int _linesizeU = width / 2;
-                    int _linesizeV = width / 2;
+                    //int _linesizeY = width;
+                    //int _linesizeU = width / 2;
+                    //int _linesizeV = width / 2;
 
-                    int _ySize = _linesizeY * height;
-                    int _uSize = _linesizeU * height / 2;
+                    //int _ySize = _linesizeY * height;
+                    //int _uSize = _linesizeU * height / 2;
 
-                    if (avFrame->format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(avFrame));
-                    if (avFrame->width != width) throw new ArgumentException("Invalid width.", nameof(avFrame));
-                    if (avFrame->height != height) throw new ArgumentException("Invalid height.", nameof(avFrame));
-                    if (avFrame->linesize[0] < _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(avFrame));
-                    if (avFrame->linesize[1] < _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(avFrame));
-                    if (avFrame->linesize[2] < _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(avFrame));
+                    //if (avFrame->format != (int)_encoderContext->pix_fmt) throw new ArgumentException("Invalid pixel format.", nameof(avFrame));
+                    //if (avFrame->width != width) throw new ArgumentException("Invalid width.", nameof(avFrame));
+                    //if (avFrame->height != height) throw new ArgumentException("Invalid height.", nameof(avFrame));
+                    //if (avFrame->linesize[0] < _linesizeY) throw new ArgumentException("Invalid Y linesize.", nameof(avFrame));
+                    //if (avFrame->linesize[1] < _linesizeU) throw new ArgumentException("Invalid U linesize.", nameof(avFrame));
+                    //if (avFrame->linesize[2] < _linesizeV) throw new ArgumentException("Invalid V linesize.", nameof(avFrame));
 
                     if (keyFrame || _forceKeyFrame)
                     {
                         avFrame->flags |= ffmpeg.AV_FRAME_FLAG_KEY;
+                        avFrame->pict_type = AVPictureType.AV_PICTURE_TYPE_I;
                         _forceKeyFrame = false;
                     }
 
@@ -728,6 +733,51 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 _frameTimer?.Stop();
+            }
+        }
+
+        // true:
+        //    fmt = match from sourcePixFmts
+        // false:
+        //    found no matching format, fmt = first of the codec supported formats
+        internal bool NegotiatePixelFormat(AVCodecID codecid, int width, int height, int frameRate, AVPixelFormat[]? sourcePixFmts, out AVPixelFormat fmt)
+        {
+            if (_negotiatedPixFmt != null && _codecID == codecid)
+            {
+                fmt = (AVPixelFormat)_negotiatedPixFmt;
+                return true;
+            }
+
+            lock (_encoderLock)
+            {
+                if (_isEncoderInitialised)
+                    ResetEncoder();
+
+                InitialiseEncoder(codecid, width, height, frameRate);
+
+                if (logger.IsEnabled(LogLevel.Trace))
+                    logger.LogTrace("Negotiating pixel format for codec [{name}].", GetNameString(_encoderContext->codec->name));
+
+                var fmts = _encoderContext->codec->pix_fmts;
+                while (*fmts != AVPixelFormat.AV_PIX_FMT_NONE
+                    && sourcePixFmts?.Length > 0 && !sourcePixFmts.Contains(*fmts))
+                {
+                    if (logger.IsEnabled(LogLevel.Trace))
+                        logger.LogTrace("Skipping unsupported pixel format {fmt}.", *fmts);
+                    fmts++;
+                }
+
+                fmt = *fmts;
+                var ok = _encoderContext->codec->pix_fmts[0] != fmt;
+
+                ResetEncoder();
+                
+                _negotiatedPixFmt = fmt;
+
+                if (logger.IsEnabled(LogLevel.Trace))
+                    logger.LogTrace("Negotiated pixel format {fmt}", fmt);
+
+                return ok;
             }
         }
 

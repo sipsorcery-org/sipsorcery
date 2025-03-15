@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.FFmpeg
@@ -27,6 +26,9 @@ namespace SIPSorceryMedia.FFmpeg
         internal VideoFrameConverter? _videoFrameBGR24Converter = null;
 
         internal FFmpegVideoEncoder? _videoEncoder;
+        internal AVPixelFormat[]? _sourcePixFmts;
+        internal AVPixelFormat? _negotiatedPixFmt;
+
         internal bool _forceKeyFrame;
 
         internal MediaFormatManager<VideoFormat> _videoFormatManager;
@@ -57,12 +59,12 @@ namespace SIPSorceryMedia.FFmpeg
             _videoDecoder.OnEndOfFile += VideoDecoder_OnEndOfFile;
         }
 
-        private void VideoDecoder_OnEndOfFile()
+        internal void VideoDecoder_OnEndOfFile()
         {
             VideoDecoder_OnError("End of file");
         }
 
-        private void VideoDecoder_OnError(string errorMessage)
+        internal void VideoDecoder_OnError(string errorMessage)
         {
             logger.LogDebug($"Video - Source error for {path} - ErrorMessage:[{errorMessage}]");
             OnVideoSourceError?.Invoke(errorMessage);
@@ -158,22 +160,35 @@ namespace SIPSorceryMedia.FFmpeg
                 var paddedSrcWidth = frame->linesize[0];
                 var width = frame->width;
                 var height = frame->height;
+                var srcfmt = (AVPixelFormat)frame->format;
+
+                var vcdc = _videoFormatManager.SelectedFormat.Codec;
+                var aVCodecId = FFmpegConvert.GetAVCodecID(vcdc);
+
+                if (aVCodecId == null)
+                {
+                    logger.LogError("Codec {codec} is not supported by this endpoint.", vcdc);
+                    throw new InvalidOperationException($"Codec {vcdc} is not supported by this endpoint.");
+                }
+
+                if (!NegotiatePixelFormat(aVCodecId, width, height, frameRate, srcfmt))
+                    return;
 
                 // Manage Raw Sample
                 if (OnVideoSourceRawSampleFaster != null)
                 {
                     if (_videoFrameBGR24Converter == null ||
-                        _videoFrameBGR24Converter.SourceWidth != paddedSrcWidth ||
+                    _videoFrameBGR24Converter.SourceWidth != paddedSrcWidth ||
                         _videoFrameBGR24Converter.SourceHeight != height)
                     {
                         _videoFrameBGR24Converter = new VideoFrameConverter(
                             // Note deliberately using the PADDED source width for the RGB conversion. Not sure why RGB needs padded width and YUV doesn't??
                             // In addition using the unpadded source width here resulted in sproadic segfaults.
-                            paddedSrcWidth, height, 
-                            (AVPixelFormat)frame->format,
+                            paddedSrcWidth, height,
+                            srcfmt,
                             width, height,
                             AVPixelFormat.AV_PIX_FMT_BGR24);
-                        logger.LogDebug($"Frame format: [{(AVPixelFormat)frame->format}]");
+                        logger.LogDebug("Frame format: [{fmt}]", srcfmt);
                     }
 
                     var frameBGR24 = _videoFrameBGR24Converter.Convert(*frame);
@@ -194,56 +209,75 @@ namespace SIPSorceryMedia.FFmpeg
                 // Manage Encoded Sample
                 if (OnVideoSourceEncodedSample != null)
                 {
-                    AVFrame* frameYUV420P = frame;
+                    AVFrame* readyFrame = frame;
 
-                    if (frame->format != (int)AVPixelFormat.AV_PIX_FMT_YUV420P)
+                    if (srcfmt != _negotiatedPixFmt)
                     {
-                        // The frame is not yuv420p so needs to be converted.
-
                         if (_videoFrameYUV420PConverter == null ||
                             _videoFrameYUV420PConverter.SourceWidth != width ||
                             _videoFrameYUV420PConverter.SourceHeight != height)
                         {
                             _videoFrameYUV420PConverter = new VideoFrameConverter(
                                 // Note deliberately using the UNPADDED source width for the I420 conversion. Not sure why RGB needs padded width and YUV doesn't??
-                                width, height, 
-                                (AVPixelFormat)frame->format,
                                 width, height,
-                                AVPixelFormat.AV_PIX_FMT_YUV420P);
-                            logger.LogDebug($"Frame format: [{(AVPixelFormat)frame->format}]");
+                                srcfmt,
+                                width, height,
+                                (AVPixelFormat)_negotiatedPixFmt!);
+                            logger.LogDebug("Frame format: [{fmt}]", srcfmt);
                         }
 
                         var convertedFrame = _videoFrameYUV420PConverter.Convert(*frame);
                         if (convertedFrame.width != 0 && convertedFrame.height != 0)
                         {
-                            frameYUV420P = &convertedFrame;
+                            readyFrame = &convertedFrame;
                         }
                     }
+
+                    // let the encoder decide on I-frames
+                    if (readyFrame->pict_type == AVPictureType.AV_PICTURE_TYPE_I)
+                        readyFrame->pict_type = AVPictureType.AV_PICTURE_TYPE_NONE;
 
                     // Now a frame in the correct pixel format is availble so it can be encoded.
-                    if (frameYUV420P != null &&
-                        frameYUV420P->width != 0 && 
-                        frameYUV420P->height != 0)
-                    {
-                        AVCodecID? aVCodecId = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
-                        if (aVCodecId != null)
-                        {
-                            byte[]? encodedSample = _videoEncoder.Encode(aVCodecId.Value, frameYUV420P, frameRate);
+                    byte[]? encodedSample = _videoEncoder.Encode(aVCodecId.Value, readyFrame, frameRate, _forceKeyFrame);
 
-                            if (encodedSample != null)
-                            {
-                                // Note the event handler can be removed while the encoding is in progress.
-                                OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
-                            }
-                            _forceKeyFrame = false;
-                        }
-                    }
-                    else
+                    if (encodedSample != null)
                     {
-                        _forceKeyFrame = true;
+                        // Note the event handler can be removed while the encoding is in progress.
+                        OnVideoSourceEncodedSample?.Invoke(timestampDuration, encodedSample);
                     }
+                    _forceKeyFrame = false;
                 }
             }
+        }
+
+        // true:
+        //     already found matching/conversion format in _negotiatedPixFmt
+        // false:
+        //     negotiation was performed, _negotiatedPixFmt is matching/conversion format
+        internal virtual bool NegotiatePixelFormat(AVCodecID? codecid, int width, int height, int frameRate, AVPixelFormat srcfmt)
+        {
+            if (_negotiatedPixFmt != null && _negotiatedPixFmt != AVPixelFormat.AV_PIX_FMT_NONE)
+                return true;
+
+            if (_videoEncoder != null && codecid != null)
+            {
+                _videoEncoder.NegotiatePixelFormat((AVCodecID)codecid, width, height, frameRate,
+                _sourcePixFmts, out var fmt);
+
+                OnNegotiatedPixelFormat(srcfmt, fmt);
+            }
+            else
+            {
+                logger.LogError("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Encoder is not yet initialized.");
+            }
+
+            return false;
+        }
+
+        internal unsafe virtual void OnNegotiatedPixelFormat(AVPixelFormat ongoingFmt, AVPixelFormat chosenPixFmt)
+        {
+            _negotiatedPixFmt = chosenPixFmt;
         }
 
         public Task Start()
@@ -316,7 +350,9 @@ namespace SIPSorceryMedia.FFmpeg
 
             _videoFrameBGR24Converter?.Dispose();
             _videoFrameYUV420PConverter?.Dispose();
-        }
 
+            _sourcePixFmts = null;
+            _negotiatedPixFmt = null;
+        }
     }
 }
