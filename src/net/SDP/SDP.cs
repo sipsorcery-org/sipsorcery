@@ -332,7 +332,7 @@ namespace SIPSorcery.Net
 
                                     announcement.Transport = mediaMatch.Result("${transport}");
                                     announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
-                                    if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video)
+                                    if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video || announcement.Media == SDPMediaTypesEnum.text)
                                     {
                                         announcement.MediaStreamStatus = sdp.SessionMediaStreamStatus != null ? sdp.SessionMediaStreamStatus.Value :
                                             MediaStreamStatusEnum.SendRecv;
@@ -462,7 +462,7 @@ namespace SIPSorcery.Net
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
+                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video || activeAnnouncement.Media == SDPMediaTypesEnum.text)
                                     {
                                         // Parse the rtpmap attribute for audio/video announcements.
                                         Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
@@ -526,7 +526,7 @@ namespace SIPSorcery.Net
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
+                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video || activeAnnouncement.Media == SDPMediaTypesEnum.text)
                                     {
                                         // Parse the fmtp attribute for audio/video announcements.
                                         Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");

@@ -143,6 +143,7 @@ namespace SIPSorcery.UnitTests
         public bool IsClosed { get; private set; }
         public bool HasAudio => true;
         public bool HasVideo => false;
+        public bool HasText => false;
         public IPAddress RtpBindAddress => null;
 
 #pragma warning disable 67
@@ -212,6 +213,11 @@ namespace SIPSorcery.UnitTests
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SendText(string text, CancellationToken token)
         {
             throw new NotImplementedException();
         }

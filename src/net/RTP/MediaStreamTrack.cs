@@ -190,6 +190,18 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Add a local text track.
+        /// </summary>
+        /// <param name="format">The text format that the local application supports.</param>
+        /// <param name="streamStatus">Optional. The stream status for the text track, e.g. whether
+        /// send and receive or only one of.</param>
+        public MediaStreamTrack(
+            TextFormat format,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this (SDPMediaTypesEnum.text, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format)}, streamStatus)
+        { }
+
+        /// <summary>
         /// Add a local audio track.
         /// </summary>
         /// <param name="format">The audio format that the local application supports.</param>

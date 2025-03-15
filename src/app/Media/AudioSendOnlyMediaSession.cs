@@ -41,7 +41,7 @@ namespace SIPSorcery.Media
 
         public async override Task Start()
         {
-            if (!base.IsStarted)
+            if (!base.IsAudioStarted)
             {
                 await base.Start().ConfigureAwait(false);
                 await AudioExtrasSource.StartAudio().ConfigureAwait(false);

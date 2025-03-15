@@ -147,6 +147,13 @@ namespace SIPSorcery.Media
                 }
             }
 
+            if (Media.TextSource != null)
+            {
+                var textTrack = new MediaStreamTrack(config.MediaEndPoint.TextSource.GetTextSourceFormat());
+                base.addTrack(textTrack);
+                Media.TextSource.OnTextSourceEncodedSample += base.SendText;
+            }
+
             if (Media.VideoSink != null)
             {
                 Media.VideoSink.OnVideoSinkDecodedSample += VideoSinkSampleReady;
@@ -158,8 +165,14 @@ namespace SIPSorcery.Media
                 base.OnRtpPacketReceived += RtpMediaPacketReceived;
             }
 
+            if (Media.TextSink != null)
+            {
+                base.OnRtpPacketReceived += RtpMediaPacketReceived;
+            }
+
             base.OnAudioFormatsNegotiated += AudioFormatsNegotiated;
             base.OnVideoFormatsNegotiated += VideoFormatsNegotiated;
+            base.OnTextFormatsNegotiated += TextFormatsNegotiated;
         }
 
         private async void VideoSource_OnVideoSourceError(string errorMessage)
@@ -170,8 +183,11 @@ namespace SIPSorcery.Media
 
                 logger.LogWarning("Video source for capture device failure. {ErrorMessage}", errorMessage);
 
-                // Can't use the webcam, switch to the test pattern source.
-                await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
+                if (_videoTestPatternSource != null)
+                {
+                    // Can't use the webcam, switch to the test pattern source.
+                    await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
+                }
             }
         }
 
@@ -206,42 +222,56 @@ namespace SIPSorcery.Media
             _videoTestPatternSource?.SetVideoSourceFormat(videoFormat);
         }
 
+        private void TextFormatsNegotiated(List<TextFormat> textFormats)
+        {
+            var textFormat = textFormats.First();
+            logger.LogDebug("Setting text sink and source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
+            Media.TextSource?.SetTextSourceFormat(textFormat);
+        }
+
         public async override Task Start()
         {
-            if (!base.IsStarted)
+            await base.Start().ConfigureAwait(false);
+
+            if (HasAudio)
             {
-                await base.Start().ConfigureAwait(false);
-
-                if (HasAudio)
+                if (Media.AudioSource != null)
                 {
-                    if (Media.AudioSource != null)
-                    {
-                        await Media.AudioSource.StartAudio().ConfigureAwait(false);
-                    }
-                    if (Media.AudioSink != null)
-                    {
-                        await Media.AudioSink.StartAudioSink().ConfigureAwait(false);
-                    }
+                    await Media.AudioSource.StartAudio().ConfigureAwait(false);
                 }
-
-                if (HasVideo)
+                if (Media.AudioSink != null)
                 {
-                    if (Media.VideoSource != null)
-                    {
-                        if (!_videoCaptureDeviceFailed)
-                        {
-                            await Media.VideoSource.StartVideo().ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            logger.LogWarning("Webcam video source failed before start, switching to test pattern source.");
-
-                            // The webcam source failed to start. Switch to a test pattern source.
-                            await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
-                        }
-                    }
+                    await Media.AudioSink.StartAudioSink().ConfigureAwait(false);
                 }
             }
+
+            if (HasVideo && Media.VideoSource != null)
+            {
+                if (!_videoCaptureDeviceFailed)
+                {
+                    await Media.VideoSource.StartVideo().ConfigureAwait(false);
+                }
+                else
+                {
+                    logger.LogWarning("Webcam video source failed before start, switching to test pattern source.");
+
+                    // The webcam source failed to start. Switch to a test pattern source.
+                    await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
+                }
+            }
+
+            if (HasText)
+            {
+                if (Media.TextSource != null)
+                {
+                    await Media.TextSource.StartText().ConfigureAwait(false);
+                }
+                if (Media.TextSink != null)
+                {
+                    await Media.TextSink.StartTextSink().ConfigureAwait(false);
+                }
+            }
+
         }
 
         public async override void Close(string reason)
@@ -282,6 +312,15 @@ namespace SIPSorcery.Media
                     Media.VideoSink.OnVideoSinkDecodedSample -= VideoSinkSampleReady;
                     base.OnVideoFrameReceived -= Media.VideoSink.GotVideoFrame;
                 }
+
+                if (Media.TextSource != null)
+                {
+                    await Media.TextSource.CloseText().ConfigureAwait(false);
+                }
+                if (Media.TextSink != null)
+                {
+                    await Media.TextSink.CloseTextSink().ConfigureAwait(false);
+                }
             }
         }
 
@@ -301,6 +340,12 @@ namespace SIPSorcery.Media
 
                 Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
             }
+            else if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
+            {
+                logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
+
+                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.Payload);
+            }
         }
 
         public async Task PutOnHold()
@@ -316,10 +361,18 @@ namespace SIPSorcery.Media
                 await Media.VideoSource.PauseVideo().ConfigureAwait(false);
 
                 //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_INVERTED_RESOURCE_PATH);
-                _videoTestPatternSource.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
+                _videoTestPatternSource?.SetFrameRate(TEST_PATTERN_ONHOLD_FPS);
 
                 Media.VideoSource.ForceKeyFrame();
-                await _videoTestPatternSource.ResumeVideo().ConfigureAwait(false);
+                if (_videoTestPatternSource != null)
+                {
+                    await _videoTestPatternSource.ResumeVideo().ConfigureAwait(false);
+                }
+            }
+
+            if (HasText)
+            {
+                // TODO can be put on / taken off hold?
             }
         }
 
@@ -333,10 +386,13 @@ namespace SIPSorcery.Media
 
             if (HasVideo)
             {
-                await _videoTestPatternSource.PauseVideo().ConfigureAwait(false);
+                if (_videoTestPatternSource != null)
+                {
+                    await _videoTestPatternSource.PauseVideo().ConfigureAwait(false);
+                }
 
                 //_videoTestPatternSource.SetEmbeddedTestPatternPath(VideoTestPatternSource.TEST_PATTERN_RESOURCE_PATH);
-                _videoTestPatternSource.SetFrameRate(TEST_PATTERN_FPS);
+                _videoTestPatternSource?.SetFrameRate(TEST_PATTERN_FPS);
 
                 Media.VideoSource.ForceKeyFrame();
 
@@ -346,8 +402,16 @@ namespace SIPSorcery.Media
                 }
                 else
                 {
-                    await _videoTestPatternSource.ResumeVideo().ConfigureAwait(false);
+                    if (_videoTestPatternSource != null)
+                    {
+                        await _videoTestPatternSource.ResumeVideo().ConfigureAwait(false);
+                    }
                 }
+            }
+
+            if (HasText)
+            {
+                // TODO can be put on / taken off hold?
             }
         }
     }
