@@ -166,7 +166,8 @@ namespace SIPSorceryMedia.FFmpeg
             var cdc = ffmpeg.av_codec_iterate((void**)&iterator);
             while (cdc != null)
             {
-                if (cdc->id == codecID && GetNameString(cdc->wrapper_name) == wrapName)
+                if (cdc->id == codecID && GetNameString(cdc->wrapper_name) == wrapName
+                    && ffmpeg.av_codec_is_encoder(cdc) != 0)
                     break;
 
                 cdc = ffmpeg.av_codec_iterate((void**)&iterator);
