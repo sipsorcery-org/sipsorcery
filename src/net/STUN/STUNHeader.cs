@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNHeader.cs
 //
 // Description: Implements STUN header as defined in RFC5389
@@ -105,9 +105,15 @@ namespace SIPSorcery.Net
 
         // New methods defined in TURN (RFC6062).
         Connect = 0x000a,
+        ConnectSuccess = 0x0100 | Connect,
+
         ConnectionBind = 0x000b,
+        ConnectionBindSuccess = 0x0100 | ConnectionBind,
+
         ConnectionAttempt = 0x000c,
+        ConnectionAttemptIndication = 0x0010 | ConnectionAttempt,
     }
+
 
     /// <summary>
     /// The class is interpreted from the message type. It does not get explicitly
