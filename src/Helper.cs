@@ -17,20 +17,16 @@ namespace SIPSorceryMedia.FFmpeg
         [Obsolete("H264 in RTP is defined as dynamic type, this may not be used for matching.")]
         public const int H264_FORMATID = 100;
 
-        const byte DYNAMIC_ID_MIN = 96;
-        const byte DYNAMIC_ID_MAX = 127;
-
-        private static readonly Random _dynamicFmtIdRand = new((int)DateTime.Now.Ticks + MIN_SLEEP_MILLISECONDS + DEFAULT_VIDEO_FRAME_RATE + VP8_FORMATID + H264_FORMATID);
+        private static int _dynFmtIdCounter = VideoFormat.DYNAMIC_ID_MIN;
 
         internal static List<VideoFormat> GetSupportedVideoFormats() => _supportedVidFormats; // Use predefined list of supported video formats
 
         private static readonly List<VideoFormat> _supportedVidFormats =
-
         [
-            new VideoFormat(VideoCodecsEnum.VP8, _dynamicFmtIdRand.Next(DYNAMIC_ID_MIN, DYNAMIC_ID_MAX), VideoFormat.DEFAULT_CLOCK_RATE),
-            new VideoFormat(VideoCodecsEnum.VP9, _dynamicFmtIdRand.Next(DYNAMIC_ID_MIN, DYNAMIC_ID_MAX), VideoFormat.DEFAULT_CLOCK_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, _dynamicFmtIdRand.Next(DYNAMIC_ID_MIN, DYNAMIC_ID_MAX), VideoFormat.DEFAULT_CLOCK_RATE),
-            new VideoFormat(VideoCodecsEnum.H265, _dynamicFmtIdRand.Next(DYNAMIC_ID_MIN, DYNAMIC_ID_MAX), VideoFormat.DEFAULT_CLOCK_RATE),
+            new VideoFormat(VideoCodecsEnum.VP8, _dynFmtIdCounter++, VideoFormat.DEFAULT_CLOCK_RATE),
+            new VideoFormat(VideoCodecsEnum.VP9, _dynFmtIdCounter++, VideoFormat.DEFAULT_CLOCK_RATE),
+            new VideoFormat(VideoCodecsEnum.H264, _dynFmtIdCounter++, VideoFormat.DEFAULT_CLOCK_RATE),
+            new VideoFormat(VideoCodecsEnum.H265, _dynFmtIdCounter++, VideoFormat.DEFAULT_CLOCK_RATE),
 
             // Currently disabled because MJPEG doesn't work with the current pipeline that forces pixel conversion to YUV420P
             // TODO: Fix pixel format conversion in Decode->Encode pipeline
