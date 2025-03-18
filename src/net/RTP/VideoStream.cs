@@ -32,7 +32,7 @@ namespace SIPSorcery.Net
         protected static ILogger logger = Log.Logger;
         protected RtpVideoFramer RtpVideoFramer;
 
-        private SDPAudioVideoMediaFormat sendingFormat;
+        private VideoFormat sendingFormat;
         private bool sendingFormatFound = false;
 
         /// <summary>
@@ -304,28 +304,28 @@ namespace SIPSorcery.Net
         {
             if (!sendingFormatFound)
             {
-                sendingFormat = GetSendingFormat();
+                sendingFormat = GetSendingFormat().ToVideoFormat();
                 sendingFormatFound = true;
             }
 
-            int payloadID = Convert.ToInt32(sendingFormat.ID);
+            int payloadID = sendingFormat.FormatID;
 
-            switch (sendingFormat.Name())
+            switch (sendingFormat.Codec)
             {
-                case "VP8":
+                case VideoCodecsEnum.VP8:
                     SendVp8Frame(durationRtpUnits, payloadID, sample);
                     break;
-                case "H264":
+                case VideoCodecsEnum.H264:
                     SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
-                case "H265":
+                case VideoCodecsEnum.H265:
                     SendH265Frame(durationRtpUnits, payloadID, sample);
                     break;
-                case "JPEG":
+                case VideoCodecsEnum.JPEG:
                     SendMJPEGFrame(durationRtpUnits, payloadID, sample);
                     break;
                 default:
-                    throw new ApplicationException($"Unsupported video format selected {sendingFormat.Name()}.");
+                    throw new ApplicationException($"Unsupported video format selected {sendingFormat.FormatName}.");
             }
         }
 
