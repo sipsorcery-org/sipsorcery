@@ -121,12 +121,12 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public bool SetEncoderForCodec(VideoCodecsEnum codec, string name)
+        public bool SetEncoderForCodec(VideoCodecsEnum codec, string name, Dictionary<string, string>? opts = null)
         {
             if (_videoEncoder != null)
             {
                 if (FFmpegConvert.GetAVCodecID(codec) is var cdc && cdc is not null)
-                    return _videoEncoder.SetSpecificEncoderForCodec((AVCodecID)cdc, name);
+                    return _videoEncoder.SetSpecificEncoderForCodec((AVCodecID)cdc, name, opts);
                 else
                 {
                     logger.LogError("Codec {codec} is not supported by this endpoint.", codec);

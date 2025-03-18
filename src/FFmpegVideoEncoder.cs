@@ -19,6 +19,8 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         private readonly Dictionary<string, string> _encoderOptions;
+        private Dictionary<string, Dictionary<string, string>>? _encoderOptionsByCodec;
+
         private Stopwatch _frameTimer;
         public event EventHandler<VideoEncoderStatistics> OnVideoEncoderStatistics;
 
@@ -146,13 +148,20 @@ namespace SIPSorceryMedia.FFmpeg
             ResetEncoder();
         }
 
-        public bool SetSpecificEncoderForCodec(AVCodecID cdc, string name)
+        public bool SetSpecificEncoderForCodec(AVCodecID cdc, string name, Dictionary<string, string>? opts = null)
         {
             var codec = ffmpeg.avcodec_find_encoder_by_name(name);
-            (_specificEncoders ??= [])[cdc] = (IntPtr)codec;
 
             if (codec == null)
-                logger.LogWarning("Codec not found for {id} with name {name}", cdc, name);
+            {
+                logger.LogError("Encoder for {id} with name '{name}' is Not Found.", cdc, name);
+                return false;
+            }
+
+            (_specificEncoders ??= [])[cdc] = (IntPtr)codec;
+
+            if (opts != null)
+                (_encoderOptionsByCodec ??= [])[name] = opts;
 
             return codec != null;
         }
@@ -188,7 +197,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (codec == null)
             {
                 codec = GetEncoderForWrapper(codecID, _wrapName);
-        }
+            }
 
             if (codec == null)
             {
@@ -198,6 +207,9 @@ namespace SIPSorceryMedia.FFmpeg
             return codec;
         }
 
+        private Dictionary<string, string>? GetOptions(string? encName)
+            => !string.IsNullOrWhiteSpace(encName) ? _encoderOptionsByCodec?[encName!] : null;
+
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
             if (!_isEncoderInitialised)
@@ -205,7 +217,8 @@ namespace SIPSorceryMedia.FFmpeg
                 _isEncoderInitialised = true;
                 _codecID = codecID;
                 
-                AVCodec* codec = GetCodec(codecID);
+                var codec = GetCodec(codecID);
+                var encOpts = GetOptions(GetNameString(codec->name)) ?? _encoderOptions;
 
                 if (codec == null)
                 {
@@ -243,17 +256,21 @@ namespace SIPSorceryMedia.FFmpeg
                 switch (GetNameString(codec->name))
                 {
                     case "libx264":
-                    ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
-                    ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                        break;
+                    case "h264_qsv":
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "66" /* baseline */, 0).ThrowExceptionIfError();
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "7" /* veryfast */, 0).ThrowExceptionIfError();
                         break;
                     case "libvpx":
-                    ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
                         break;
                     default:
                         break;
                 }
 
-                foreach (var option in _encoderOptions)
+                foreach (var option in encOpts)
                 {
                     try
                     {
