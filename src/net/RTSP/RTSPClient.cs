@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
                 string hostname = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/").Result("${hostname}");
                 //IPEndPoint rtspEndPoint = DNSResolver.R(hostname, DNS_RESOLUTION_TIMEOUT);
 
-                logger.LogDebug("RTSP Client Connecting to " + hostname + ".");
+                logger.LogRtspClientConnecting(hostname, RTSP_PORT);
                 TcpClient rtspSocket = new TcpClient(hostname, RTSP_PORT);
                 NetworkStream rtspStream = rtspSocket.GetStream();
 
@@ -110,7 +110,7 @@ namespace SIPSorcery.Net
 
                 if (bytesRead > 0)
                 {
-                    logger.LogDebug(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                    logger.LogDebug("Bytes read: {BytesRead}", Encoding.UTF8.GetString(buffer, 0, bytesRead));
                     byte[] msgBuffer = new byte[bytesRead];
                     Buffer.BlockCopy(buffer, 0, msgBuffer, 0, bytesRead);
                     rtspMessage = RTSPMessage.ParseRTSPMessage(msgBuffer, null, null);
@@ -118,7 +118,7 @@ namespace SIPSorcery.Net
                     if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                     {
                         rtspResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                        logger.LogDebug("RTSP Response received: " + rtspResponse.StatusCode + " " + rtspResponse.Status + " " + rtspResponse.ReasonPhrase + ".");
+                        logger.LogRtspResponseReceived(rtspResponse.StatusCode, rtspResponse.Status, rtspResponse.ReasonPhrase);
                     }
 
                     rtspSDP = rtspResponse.Body;
@@ -160,7 +160,7 @@ namespace SIPSorcery.Net
                     hostname = SIPSorcery.Sys.IPSocket.ParseHostFromSocket(hostname);
                 }
 
-                logger.LogDebug("RTSP client connecting to " + hostname + ", port " + port + ".");
+                logger.LogRtspClientConnecting(hostname, port);
 
                 _rtspConnection = new TcpClient(hostname, port);
                 _rtspStream = _rtspConnection.GetStream();
@@ -172,7 +172,7 @@ namespace SIPSorcery.Net
 
                 RTSPRequest rtspRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, url);
                 RTSPHeader rtspHeader = new RTSPHeader(_cseq++, null);
-                rtspHeader.Transport = new RTSPTransportHeader() { ClientRTPPortRange = _rtspSession.RTPPort + "-" + _rtspSession.ControlPort };
+                rtspHeader.Transport = new RTSPTransportHeader() { ClientRTPPortRange = _rtpSession.RTPPort + "-" + _rtpSession.ControlPort };
                 rtspRequest.Header = rtspHeader;
                 string rtspReqStr = rtspRequest.ToString();
 
@@ -188,7 +188,9 @@ namespace SIPSorcery.Net
 
                 if (bytesRead > 0)
                 {
+#if DEBUG
                     System.Diagnostics.Debug.WriteLine(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+#endif
 
                     rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
 
@@ -202,7 +204,7 @@ namespace SIPSorcery.Net
                             _rtspSession.RemoteEndPoint = new IPEndPoint((_rtspConnection.Client.RemoteEndPoint as IPEndPoint).Address, setupResponse.Header.Transport.GetServerRTPPort());
                             _rtspSession.Start();
 
-                            logger.LogDebug("RTSP Response received to SETUP: " + setupResponse.Status + ", session ID " + _rtspSession.SessionID + ", server RTP endpoint " + _rtspSession.RemoteEndPoint + ".");
+                            logger.LogRtspResponseSetup(setupResponse.Status, _rtspSession.SessionID, _rtspSession.RemoteEndPoint);
 
                             if (OnSetupSuccess != null)
                             {
@@ -274,7 +276,7 @@ namespace SIPSorcery.Net
                 if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                 {
                     var playResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                    logger.LogDebug("RTSP Response received to PLAY: " + playResponse.StatusCode + " " + playResponse.Status + " " + playResponse.ReasonPhrase + ".");
+                    logger.LogRtspResponsePlay(playResponse.StatusCode, playResponse.Status, playResponse.ReasonPhrase);
                 }
             }
             else
@@ -292,7 +294,7 @@ namespace SIPSorcery.Net
             {
                 if (_rtspStream != null && _rtspConnection.Connected)
                 {
-                    logger.LogDebug("RTSP client sending teardown request for " + _url + ".");
+                    logger.LogRtspSendingTeardown(_url);
 
                     RTSPRequest teardownRequest = new RTSPRequest(RTSPMethodsEnum.TEARDOWN, _url);
                     RTSPHeader teardownHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
@@ -305,7 +307,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogDebug("RTSP client did not send teardown request for " + _url + ", the socket was closed.");
+                    logger.LogRtspNoTeardown(_url);
                 }
             }
             catch (Exception excp)
@@ -323,7 +325,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.LogDebug("RTSP client, closing connection for " + _url + ".");
+                    logger.LogRtspClientConnectionClosing(_url);
 
                     _isClosed = true;
                     _sendKeepAlivesMRE.Set();
