@@ -70,7 +70,7 @@ namespace SIPSorceryMedia.FFmpeg
             else
             {
                 logger.LogError("Video Encoder is not yet initialized.");
-                throw new InvalidOperationException("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Decoder is not yet initialized.");
             }
         }
 
@@ -89,7 +89,7 @@ namespace SIPSorceryMedia.FFmpeg
             else
             {
                 logger.LogError("Video Encoder is not yet initialized.");
-                throw new InvalidOperationException("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Decoder is not yet initialized.");
             }
         }
 

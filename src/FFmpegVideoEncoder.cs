@@ -168,7 +168,7 @@ namespace SIPSorceryMedia.FFmpeg
             return codec != null;
         }
 
-        private AVCodec* GetCodec(AVCodecID codecID, string? wrapName)
+        private AVCodec* GetCodec(AVCodecID codecID, string? wrapName, bool isEncoder = true)
         {
             if (wrapName == null)
                 return null;
@@ -178,7 +178,11 @@ namespace SIPSorceryMedia.FFmpeg
             while (cdc != null)
             {
                 if (cdc->id == codecID && GetNameString(cdc->wrapper_name) == wrapName
-                    && ffmpeg.av_codec_is_encoder(cdc) != 0)
+                    && (
+                        (isEncoder && ffmpeg.av_codec_is_encoder(cdc) != 0)
+                        || (!isEncoder && ffmpeg.av_codec_is_decoder(cdc) != 0)
+                        )
+                    )
                     break;
 
                 cdc = ffmpeg.av_codec_iterate((void**)&iterator);
@@ -192,25 +196,32 @@ namespace SIPSorceryMedia.FFmpeg
             return cdc;
         }
 
-        private AVCodec* GetCodec(AVCodecID codecID)
+        private AVCodec* GetCodec(AVCodecID codecID, bool isEncoder = true)
         {
             AVCodec* codec = (AVCodec*)(_specificEncoders?[codecID] ?? IntPtr.Zero);
 
             if (codec == null)
             {
-                codec = GetCodec(codecID, _wrapName);
+                codec = GetCodec(codecID, _wrapName, isEncoder);
             }
 
             if (codec == null)
             {
-                codec = ffmpeg.avcodec_find_encoder(codecID);
+                if (isEncoder)
+                {
+                    codec = ffmpeg.avcodec_find_encoder(codecID);
+                }
+                else
+                {
+                    codec = ffmpeg.avcodec_find_decoder(codecID);
+                }
             }
 
             return codec;
         }
 
-        private Dictionary<string, string>? GetOptions(string? encName)
-            => !string.IsNullOrWhiteSpace(encName) ? _codecOptionsByName?[encName!] ?? _codecOptions : null;
+        private Dictionary<string, string>? GetCodecOptions(string? name)
+            => !string.IsNullOrWhiteSpace(name) ? _codecOptionsByName?[name!] ?? _codecOptions : null;
 
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
@@ -220,7 +231,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _codecID = codecID;
                 
                 var codec = GetCodec(codecID);
-                var encOpts = GetOptions(GetNameString(codec->name));
+                var encOpts = GetCodecOptions(GetNameString(codec->name));
 
                 if (codec == null)
                 {
@@ -348,8 +359,9 @@ namespace SIPSorceryMedia.FFmpeg
                 _isDecoderInitialised = true;
                 _codecID = codecID;
 
-                var codec = GetCodec(codecID);
-                var decOpts = GetOptions(GetNameString(codec->name));
+                //var codec = GetCodec(codecID, isEncoder: false); // not ready for decoder
+                var codec = ffmpeg.avcodec_find_decoder(codecID);
+                var decOpts = GetCodecOptions(GetNameString(codec->name));
 
                 if (codec == null)
                 {
