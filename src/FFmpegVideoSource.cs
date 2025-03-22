@@ -112,7 +112,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (_videoEncoder != null)
             {
-                _videoEncoder.SetEncoderWrapper(wrapperName);
+                _videoEncoder.SetCodec(wrapperName);
             }
             else
             {
@@ -126,7 +126,7 @@ namespace SIPSorceryMedia.FFmpeg
             if (_videoEncoder != null)
             {
                 if (FFmpegConvert.GetAVCodecID(codec) is var cdc && cdc is not null)
-                    return _videoEncoder.SetSpecificEncoderForCodec((AVCodecID)cdc, name, opts);
+                    return _videoEncoder.SetCodec((AVCodecID)cdc, name, opts);
                 else
                 {
                     logger.LogError("Codec {codec} is not supported by this endpoint.", codec);

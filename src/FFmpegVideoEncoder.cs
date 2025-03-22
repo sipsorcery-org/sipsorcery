@@ -18,8 +18,8 @@ namespace SIPSorceryMedia.FFmpeg
             get => _supportedFormats;
         }
 
-        private readonly Dictionary<string, string> _encoderOptions;
-        private Dictionary<string, Dictionary<string, string>>? _encoderOptionsByCodec;
+        private readonly Dictionary<string, string> _codecOptions;
+        private Dictionary<string, Dictionary<string, string>>? _codecOptionsByName;
 
         private Stopwatch _frameTimer;
         public event EventHandler<VideoEncoderStatistics> OnVideoEncoderStatistics;
@@ -59,7 +59,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
         {
-            _encoderOptions = encoderOptions ?? new Dictionary<string, string>();
+            _codecOptions = encoderOptions ?? new Dictionary<string, string>();
             _HwDeviceType = HWDeviceType;
         }
 
@@ -142,13 +142,15 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
-        public void SetEncoderWrapper(string wrapperName)
+        public void SetCodec(string wrapperName)
         {
             _wrapName = wrapperName;
+
             ResetEncoder();
+            ResetDecoder();
         }
 
-        public bool SetSpecificEncoderForCodec(AVCodecID cdc, string name, Dictionary<string, string>? opts = null)
+        public bool SetCodec(AVCodecID cdc, string name, Dictionary<string, string>? opts = null)
         {
             var codec = ffmpeg.avcodec_find_encoder_by_name(name);
 
@@ -161,12 +163,12 @@ namespace SIPSorceryMedia.FFmpeg
             (_specificEncoders ??= [])[cdc] = (IntPtr)codec;
 
             if (opts != null)
-                (_encoderOptionsByCodec ??= [])[name] = opts;
+                (_codecOptionsByName ??= [])[name] = opts;
 
             return codec != null;
         }
 
-        private AVCodec* GetEncoderForWrapper(AVCodecID codecID, string? wrapName)
+        private AVCodec* GetCodec(AVCodecID codecID, string? wrapName)
         {
             if (wrapName == null)
                 return null;
@@ -196,7 +198,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             if (codec == null)
             {
-                codec = GetEncoderForWrapper(codecID, _wrapName);
+                codec = GetCodec(codecID, _wrapName);
             }
 
             if (codec == null)
@@ -208,7 +210,7 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         private Dictionary<string, string>? GetOptions(string? encName)
-            => !string.IsNullOrWhiteSpace(encName) ? _encoderOptionsByCodec?[encName!] : null;
+            => !string.IsNullOrWhiteSpace(encName) ? _codecOptionsByName?[encName!] ?? _codecOptions : null;
 
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
@@ -218,7 +220,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _codecID = codecID;
                 
                 var codec = GetCodec(codecID);
-                var encOpts = GetOptions(GetNameString(codec->name)) ?? _encoderOptions;
+                var encOpts = GetOptions(GetNameString(codec->name));
 
                 if (codec == null)
                 {
@@ -274,8 +276,8 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     try
                     {
-                    ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
-                }
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
+                    }
                     catch (Exception excp)
                     {
                         logger.LogWarning("Failed to set encoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, excp.Message);
@@ -323,17 +325,35 @@ namespace SIPSorceryMedia.FFmpeg
             }
         }
 
+        private void ResetDecoder()
+        {
+            // Reset decoder
+            lock (_decoderLock)
+            {
+                if (!_isDisposed && _decoderContext != null && _isDecoderInitialised)
+                {
+                    _isDecoderInitialised = false;
+                    fixed (AVCodecContext** pCtx = &_decoderContext)
+                    {
+                        ffmpeg.avcodec_free_context(pCtx);
+                    }
+                }
+            }
+        }
+
         private void InitialiseDecoder(AVCodecID codecID)
         {
             if (!_isDecoderInitialised)
             {
                 _isDecoderInitialised = true;
-
                 _codecID = codecID;
-                AVCodec* codec = ffmpeg.avcodec_find_decoder(codecID);
+
+                var codec = GetCodec(codecID);
+                var decOpts = GetOptions(GetNameString(codec->name));
+
                 if (codec == null)
                 {
-                    throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
+                    throw new ApplicationException($"Decoder codec could not be found for {codecID}.");
                 }
 
                 _decoderContext = ffmpeg.avcodec_alloc_context3(codec);
@@ -347,9 +367,22 @@ namespace SIPSorceryMedia.FFmpeg
                     ffmpeg.av_hwdevice_ctx_create(&_decoderContext->hw_device_ctx, _HwDeviceType, null, null, 0).ThrowExceptionIfError();
                 }
 
+                foreach (var option in decOpts)
+                {
+                    try
+                    {
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.LogWarning("Failed to set decoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, excp.Message);
+                    }
+                };
+
                 ffmpeg.avcodec_open2(_decoderContext, codec, null).ThrowExceptionIfError();
 
-                logger.LogDebug($"[InitialiseDecoder] CodecId:[{codecID}");
+                logger.LogDebug("[InitialiseDecoder] Successfully initialised ffmpeg based image decoder: CodecId:[{id}] - Name:[{name}]",
+                    codecID, GetNameString(codec->name));
             }
         }
 

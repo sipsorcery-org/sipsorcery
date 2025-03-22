@@ -35,10 +35,10 @@ namespace SIPSorceryMedia.FFmpeg
         //public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
-        public FFmpegVideoEndPoint(Dictionary<string, string>? encoderOptions = null)
+        public FFmpegVideoEndPoint(Dictionary<string, string>? decoderOptions = null)
         {
             _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedFormats);
-            _ffmpegEncoder = new FFmpegVideoEncoder(encoderOptions);
+            _ffmpegEncoder = new FFmpegVideoEncoder(decoderOptions);
         }
 
         public MediaEndPoints ToMediaEndPoints()
@@ -60,6 +60,38 @@ namespace SIPSorceryMedia.FFmpeg
         public bool IsVideoSourcePaused() => _isPaused;
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
             throw new ApplicationException("The FFmpeg Video End Point requires full video frames rather than individual RTP packets.");
+
+        public void SetDecoderWrapper(string wrapperName)
+        {
+            if (_ffmpegEncoder != null)
+            {
+                _ffmpegEncoder.SetCodec(wrapperName);
+            }
+            else
+            {
+                logger.LogError("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Encoder is not yet initialized.");
+            }
+        }
+
+        public bool SetDecoderForCodec(VideoCodecsEnum codec, string name, Dictionary<string, string>? opts = null)
+        {
+            if (_ffmpegEncoder != null)
+            {
+                if (FFmpegConvert.GetAVCodecID(codec) is var cdc && cdc is not null)
+                    return _ffmpegEncoder.SetCodec((AVCodecID)cdc, name, opts);
+                else
+                {
+                    logger.LogError("Codec {codec} is not supported by this endpoint.", codec);
+                    throw new InvalidOperationException($"Codec {codec} is not supported by this endpoint.");
+                }
+            }
+            else
+            {
+                logger.LogError("Video Encoder is not yet initialized.");
+                throw new InvalidOperationException("Video Encoder is not yet initialized.");
+            }
+        }
 
         public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format)
         {
