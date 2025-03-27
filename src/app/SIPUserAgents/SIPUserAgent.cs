@@ -49,7 +49,7 @@ namespace SIPSorcery.SIP.App
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
         private static int WAIT_ONHOLD_TIMEOUT = SIPTimings.T1;
-        private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T2;
+        private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T6;
         private readonly SemaphoreSlim m_semaphoreSlim = new SemaphoreSlim(1, 1);
 
         private static ILogger logger = Log.Logger;
