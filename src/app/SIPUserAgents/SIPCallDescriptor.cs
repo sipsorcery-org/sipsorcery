@@ -240,6 +240,10 @@ namespace SIPSorcery.SIP.App
             MangleIPAddress = mangleIPAddress;
         }
 
+        public SIPCallDescriptor()
+        {
+        }
+
         public SIPFromHeader GetFromHeader()
         {
             SIPFromHeader fromHeader = SIPFromHeader.ParseFromHeader(From);

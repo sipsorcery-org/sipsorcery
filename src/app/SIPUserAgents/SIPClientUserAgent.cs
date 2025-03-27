@@ -553,7 +553,10 @@ namespace SIPSorcery.SIP.App
 
             SIPHeader inviteHeader = new SIPHeader(sipCallDescriptor.GetFromHeader(), SIPToHeader.ParseToHeader(sipCallDescriptor.To), 1, callId);
 
-            inviteHeader.From.FromTag = CallProperties.CreateNewTag();
+            if (inviteHeader.From.FromTag.IsNullOrBlank())
+            {
+                inviteHeader.From.FromTag = CallProperties.CreateNewTag();
+            }
 
             inviteHeader.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader(inviteRequest.URI.Scheme) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
