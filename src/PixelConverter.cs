@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions
 {
     public class PixelConverter
     {
+        private static readonly Dictionary<int, ParallelOptions> _optDOP = new Dictionary<int, ParallelOptions>();
+
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] ToI420(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
@@ -67,12 +71,13 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the RGBA sample.</param>
         /// <param name="height">The height in pixels of the RGBA sample.</param>
         /// <param name="stride">The stride of the RGBA sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
         /// <remarks>
         /// https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)
         /// http://qiita.com/gomachan7/items/54d43693f943a0986e95
         /// </remarks>
-        public static byte[] RGBAtoI420(byte[] rgba, int width, int height, int stride)
+        public static byte[] RGBAtoI420(byte[] rgba, int width, int height, int stride, int dop = 1)
         {
             if (rgba == null || rgba.Length < (stride * height))
             {
@@ -83,13 +88,18 @@ namespace SIPSorceryMedia.Abstractions
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
             int uOffset = ySize;
             int vOffset = ySize + uvSize / 2;
-            int r, g, b, y, u, v;
             //int posn = 0;
 
             byte[] buffer = new byte[ySize + uvSize];
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     r = rgba[row * stride + col * 4] & 0xff;
@@ -108,7 +118,7 @@ namespace SIPSorceryMedia.Abstractions
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            }
+            });
 
             return buffer;
         }
@@ -126,8 +136,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the RGB sample.</param>
         /// <param name="height">The height in pixels of the RGB sample.</param>
         /// <param name="stride">The stride of the RGB sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
-        public static byte[] RGBtoI420(byte[] rgb, int width, int height, int stride)
+        public static byte[] RGBtoI420(byte[] rgb, int width, int height, int stride, int dop = 1)
         {
             if (rgb == null || rgb.Length < (stride * height))
             {
@@ -138,13 +149,18 @@ namespace SIPSorceryMedia.Abstractions
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
             int uOffset = ySize;
             int vOffset = ySize + uvSize / 2;
-            int r, g, b, y, u, v;
             //int posn = 0;
 
             byte[] buffer = new byte[ySize + uvSize];
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     r = rgb[row * stride + col * 3] & 0xff;
@@ -162,7 +178,7 @@ namespace SIPSorceryMedia.Abstractions
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            }
+            });
 
             return buffer;
         }
@@ -180,8 +196,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the BGR sample.</param>
         /// <param name="height">The height in pixels of the BGR sample.</param>
         /// <param name="stride">The stride of the BGR sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
-        public static byte[] BGRtoI420(byte[] bgr, int width, int height, int stride)
+        public static byte[] BGRtoI420(byte[] bgr, int width, int height, int stride, int dop = 1)
         {
             if (bgr == null || bgr.Length < (stride * height))
             {
@@ -192,13 +209,18 @@ namespace SIPSorceryMedia.Abstractions
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
             int uOffset = ySize;
             int vOffset = ySize + uvSize / 2;
-            int r, g, b, y, u, v;
             //int posn = 0;
 
             byte[] buffer = new byte[ySize + uvSize];
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     b = bgr[row * stride + col * 3] & 0xff;
@@ -216,7 +238,7 @@ namespace SIPSorceryMedia.Abstractions
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            }
+            });
 
             return buffer;
         }
@@ -228,8 +250,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the BGRA sample.</param>
         /// <param name="height">The height in pixels of the BGRA sample.</param>
         /// <param name="stride">The stride of the BGRA sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
-        public static byte[] BGRAtoI420(byte[] bgra, int width, int height, int stride)
+        public static byte[] BGRAtoI420(byte[] bgra, int width, int height, int stride, int dop = 1)
         {
             if (bgra == null || bgra.Length < (stride * height))
             {
@@ -240,12 +263,17 @@ namespace SIPSorceryMedia.Abstractions
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
             int uOffset = ySize;
             int vOffset = ySize + uvSize / 2;
-            int r, g, b, y, u, v;
 
             byte[] buffer = new byte[ySize + uvSize];
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     // BGRA: Byte order is Blue, Green, Red, Alpha.
@@ -264,7 +292,7 @@ namespace SIPSorceryMedia.Abstractions
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            }
+            });
 
             return buffer;
         }
@@ -283,8 +311,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the I420 sample.</param>
         /// <param name="height">The height in pixels of the I420 sample.</param>
         /// <param name="stride">The stride to use for the desintation RGB sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An RGB buffer representing the source image.</returns>
-        public static byte[] I420toRGB(byte[] data, int width, int height, out int stride)
+        public static byte[] I420toRGB(byte[] data, int width, int height, out int stride, int dop = 1)
         {
             int ySize = width * height;
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
@@ -295,14 +324,18 @@ namespace SIPSorceryMedia.Abstractions
 
             int uOffset = ySize;
             int vOffset = ySize + ySize / 4;
-            stride = (width * 3 + 3) / 4 * 4;
+            int lclStride = stride = (width * 3 + 3) / 4 * 4;
             byte[] rgb = new byte[height * stride];
             //int posn = 0;
-            int u, v, y;
-            int r, g, b;
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     y = data[col + row * width];
@@ -315,11 +348,11 @@ namespace SIPSorceryMedia.Abstractions
                     g = (int)(y - 0.395 * u - 0.581 * v);
                     b = (int)(y + 2.302 * u);
 
-                    rgb[row * stride + col * 3] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
-                    rgb[row * stride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
-                    rgb[row * stride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
+                    rgb[row * lclStride + col * 3] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
+                    rgb[row * lclStride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
+                    rgb[row * lclStride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
                 }
-            }
+            });
 
             return rgb;
         }
@@ -337,8 +370,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the I420 sample.</param>
         /// <param name="height">The height in pixels of the I420 sample.</param>
         /// <param name="stride">The stride to use for the desintation BGR sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>A BGR buffer representing the source image.</returns>
-        public static byte[] I420toBGR(byte[] data, int width, int height, out int stride)
+        public static byte[] I420toBGR(byte[] data, int width, int height, out int stride, int dop = 1)
         {
             int ySize = width * height;
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
@@ -349,14 +383,18 @@ namespace SIPSorceryMedia.Abstractions
 
             int uOffset = ySize;
             int vOffset = ySize + uvSize / 2;
-            stride = (width * 3 + 3) / 4 * 4;
+            var lclStride = stride = (width * 3 + 3) / 4 * 4;
             byte[] bgr = new byte[height * stride];
             //int posn = 0;
-            int u, v, y;
-            int r, g, b;
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     y = data[col + row * width];
@@ -369,11 +407,11 @@ namespace SIPSorceryMedia.Abstractions
                     g = (int)(y - 0.395 * u - 0.581 * v);
                     r = (int)(y + 2.302 * u);
 
-                    bgr[row * stride + col * 3] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
-                    bgr[row * stride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
-                    bgr[row * stride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
+                    bgr[row * lclStride + col * 3] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
+                    bgr[row * lclStride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
+                    bgr[row * lclStride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
                 }
-            }
+            });
 
             return bgr;
         }
@@ -391,8 +429,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="width">The width in pixels of the NV12 sample.</param>
         /// <param name="height">The height in pixels of the NV12 sample.</param>
         /// <param name="stride">The stride to use for the desintation BGR sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>A BGR buffer representing the source image.</returns>
-        public static byte[] NV12toBGR(byte[] data, int width, int height, int stride)
+        public static byte[] NV12toBGR(byte[] data, int width, int height, int stride, int dop = 1)
         {
             int ySize = width * height;
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
@@ -404,11 +443,15 @@ namespace SIPSorceryMedia.Abstractions
             int uvOffset = ySize;
             byte[] bgr = new byte[height * stride];
             //int posn = 0;
-            int u, v, y;
-            int r, g, b;
 
-            for (int row = 0; row < height; row++)
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            Parallel.For(0, height, _optDOP[dop], (row) =>
             {
+                int u, v, y;
+                int r, g, b;
+
                 for (int col = 0; col < width; col++)
                 {
                     y = data[col + row * width];
@@ -425,7 +468,7 @@ namespace SIPSorceryMedia.Abstractions
                     bgr[row * stride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
                     bgr[row * stride + col * 3 + 2] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
                 }
-            }
+            });
 
             return bgr;
         }
