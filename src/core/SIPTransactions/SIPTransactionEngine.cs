@@ -252,12 +252,12 @@ namespace SIPSorcery.SIP
 
         public void PrintPendingTransactions()
         {
-            logger.LogDebug("=== Pending Transactions ===");
+            logger.LogPendingTransactionsHeader();
 
             var now = DateTime.Now;
             foreach (var (_, transaction) in m_pendingTransactions)
             {
-                logger.LogDebug("Pending transaction {TransactionRequestMethod} {TransactionState} {TransactionCreationTotalSeconds:0.##}s {TransactionRequestURI} ({TransactionId}).", transaction.TransactionRequest.Method, transaction.TransactionState, now.Subtract(transaction.Created).TotalSeconds, transaction.TransactionRequestURI, transaction.TransactionId);
+                logger.LogPendingTransaction(transaction, now);
             }
         }
 
@@ -393,7 +393,7 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("InviteServer Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogUnexpectedInviteServerState(transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
@@ -427,7 +427,7 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("InviteServer Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogUnexpectedInviteServerState(transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
@@ -469,20 +469,20 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("NonInvite Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogUnexpectedNonInviteState(transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
                                                 break;
 
                                             default:
-                                                logger.LogWarning("Unrecognised transaction type {TransactionType}.", transaction.TransactionType);
+                                                logger.LogUnrecognisedTransactionType(transaction.TransactionType);
                                                 break;
                                         }
 
                                         if (sendResult != SocketError.Success && sendResult != SocketError.InProgress)
                                         {
-                                            logger.LogWarning("SIP transaction send failed in state {TransactionState} with error {SendResult}.", transaction.TransactionState, sendResult);
+                                            logger.LogTransactionSendFailed(transaction.TransactionState, sendResult);
 
                                             // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
                                             // or attempting to send to a UDP socket that has previously returned an ICMP error.
@@ -493,7 +493,7 @@ namespace SIPSorcery.SIP
                             }
                             catch (Exception excp)
                             {
-                                logger.LogError(excp, "Exception processing pending transactions. {ErrorMessage}", excp.Message);
+                                logger.LogExceptionProcessingPendingTransactions(excp.Message, excp);
                             }
                         }
 
@@ -505,7 +505,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception processing pending transactions. {ErrorMessage}", excp.Message);
+                logger.LogExceptionProcessingPendingTransactionsMain(excp.Message, excp);
             }
         }
 
@@ -739,7 +739,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RemoveExpiredTransaction. {ErrorMessage}", excp.Message);
+                logger.LogExceptionRemoveExpiredTransaction(excp.Message, excp);
             }
         }
 

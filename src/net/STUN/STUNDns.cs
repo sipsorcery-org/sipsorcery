@@ -146,7 +146,7 @@ namespace SIPSorcery.Net
 
                         if (addressList?.Length == 0)
                         {
-                            logger.LogWarning("Operating System DNS lookup failed for {Host}.", uri.Host);
+                            logger.LogStunDnsOsLookupFailed(uri.Host);
                             useDnsClient = true;
                             //return null;
                         }
@@ -208,7 +208,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception e)
                         {
-                            logger.LogDebug(e, "STUNDns SRV lookup failure for {uri}. {ErrorMessage}", uri, e.InnerException?.Message);
+                            logger.LogStunDnsSrvLookupFailure(uri, e.InnerException?.Message, e);
                             return null;
                         }
                     }
@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogWarning(excp, "STUNDns lookup failure for {Host} and query {QueryType}. {ErrorMessage}", host, queryType, excp.Message);
+                logger.LogStunDnsLookupFailure(host, queryType, excp.Message, excp);
             }
 
             if (queryType == QueryType.AAAA)
