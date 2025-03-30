@@ -127,6 +127,8 @@ namespace SIPSorcery.Media
             {
                 var audioTrack = new MediaStreamTrack(config.MediaEndPoint.AudioSource.GetAudioSourceFormats());
                 base.addTrack(audioTrack);
+                // Prevent duplicate event wire-up of SendAudio.
+                Media.AudioSource.OnAudioSourceEncodedSample -= SendAudio;
                 Media.AudioSource.OnAudioSourceEncodedSample += SendAudio;
             }
 
