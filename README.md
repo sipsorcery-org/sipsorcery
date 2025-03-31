@@ -30,6 +30,8 @@ As of 14 Jan 2024, the command below works on Windows 11 and installs the requir
 
 `winget install "FFmpeg (Shared)" --version 7.0`
 
+Another option is to get the binaries stored on the [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen/tree/master/FFmpeg/bin/x64) Github project.
+
 ## For Linux
 
 Install the [FFmpeg](https://www.ffmpeg.org/) binaries using the package manager for the distribution.
