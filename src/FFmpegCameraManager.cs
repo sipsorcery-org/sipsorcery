@@ -66,10 +66,16 @@ namespace SIPSorceryMedia.FFmpeg
     {
         public struct CameraFormat
         {
-            public AVPixelFormat PixelFormat;
-            public int Width;
-            public int Height;
-            public double FPS;
+            private int _pixFmt_;
+
+            public AVPixelFormat PixelFormat 
+            { 
+                get => (AVPixelFormat)_pixFmt_ - 1; 
+                set => _pixFmt_ = (int)value + 1;
+            }
+            public int Width { get; set; }
+            public int Height { get; set; }
+            public double FPS { get; set; }
         }
 
         public string Name { get; set; }

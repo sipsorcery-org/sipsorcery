@@ -184,14 +184,19 @@ namespace SIPSorceryMedia.FFmpeg
 
     internal static class FFmpegCameraExtensions
     {
-        internal static Dictionary<string, string> ToOptionDictionary(this Camera.CameraFormat c)
+        internal static Dictionary<string, string>? ToOptionDictionary(this Camera.CameraFormat c)
         {
+            if (c.Equals(default(Camera.CameraFormat))
+                || c.FPS == 0 || c.Width == 0 || c.Height == 0
+                )
+                return null;
+
             return new Dictionary<string, string>()
-                                {
-                                    { "pixel_format", ffmpeg.av_get_pix_fmt_name(c.PixelFormat) },
-                                    { "video_size", $"{c.Width}x{c.Height}" },
-                                    { "framerate", $"{c.FPS}" },
-                                };
+            {
+                { "pixel_format", ffmpeg.av_get_pix_fmt_name(c.PixelFormat) },
+                { "video_size", $"{c.Width}x{c.Height}" },
+                { "framerate", $"{c.FPS}" },
+            };
         }
 
     }
