@@ -96,7 +96,21 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.RootPath = path;
             registered = true;
 
-            ffmpeg.avdevice_register_all();
+            DynamicallyLoadedBindings.ThrowErrorIfFunctionNotFound = true;
+
+            try
+            {
+                ffmpeg.avdevice_register_all();
+            }
+            catch (Exception e)
+            {
+                throw new DllNotFoundException(
+                    "Check the dependencies of FFmpeg libraries and make sure they are " +
+                    "searchable by the operating system's library loader."
+                    + "\nOn linux you can use 'ldd' & 'strace'."
+                    + "\nOn Windows you can use 'Dependencies'."
+                    , e);
+            }
         }
 
         internal static void RegisterFFmpegBinaries(String? libPath = null)
