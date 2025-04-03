@@ -37,7 +37,8 @@ namespace SIPSorceryMedia.FFmpeg
            int dstHeight, 
            AVPixelFormat destinationPixelFormat)
         {
-            logger.LogDebug($"Attempting to initialise video frame converter for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{destinationPixelFormat}.");
+            logger.LogDebug("Attempting to initialise video frame converter for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{destinationPixelFormat}.", 
+                srcWidth, srcHeight, sourcePixelFormat, dstWidth, dstHeight, destinationPixelFormat);
 
             _srcWidth = srcWidth;
             _srcHeight = srcHeight;
@@ -54,7 +55,8 @@ namespace SIPSorceryMedia.FFmpeg
                 throw new ApplicationException("Could not initialize the conversion context.");
             }
 
-            var convertedFrameBufferSize = ffmpeg.av_image_get_buffer_size(destinationPixelFormat, dstWidth, dstHeight, 1).ThrowExceptionIfError();
+            var convertedFrameBufferSize = ffmpeg.av_image_get_buffer_size(destinationPixelFormat, dstWidth, dstHeight, 1).ThrowExceptionIfError() 
+                + (int)ffmpeg.av_cpu_max_align();
 
             _convertedFrameBufferPtr = Marshal.AllocHGlobal(convertedFrameBufferSize);
             _dstData = new byte_ptrArray4();
@@ -62,7 +64,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             ffmpeg.av_image_fill_arrays(ref _dstData, ref _dstLinesize, (byte*)_convertedFrameBufferPtr, destinationPixelFormat, dstWidth, dstHeight, 1)
                 .ThrowExceptionIfError();
-
+            
             _dstFrame = ffmpeg.av_frame_alloc();
             _dstFrame->width = _dstWidth;
             _dstFrame->height = _dstHeight;
@@ -70,7 +72,8 @@ namespace SIPSorceryMedia.FFmpeg
             _dstFrame->linesize.UpdateFrom(_dstLinesize);
             _dstFrame->format = (int)_dstPixelFormat;
 
-            logger.LogDebug($"Successfully initialised ffmpeg based image converter for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.");
+            logger.LogDebug("Successfully initialised ffmpeg based image converter for {srcWidth}:{srcHeight}:{sourcePixelFormat}->{dstWidth}:{dstHeight}:{_dstPixelFormat}.",
+                srcWidth, srcHeight, sourcePixelFormat, dstWidth, dstHeight, destinationPixelFormat);
         }
 
         private bool IsDisposed => _convertedFrameBufferPtr == IntPtr.Zero;
@@ -162,51 +165,27 @@ namespace SIPSorceryMedia.FFmpeg
         }
 
         public AVFrame Convert(AVFrame frame)
+            => *Convert(&frame);
+
+        public AVFrame* Convert(AVFrame* frame)
         {
             EnsureNotDisposed();
 
             try
             {
-                int result = ffmpeg.av_frame_copy_props(&frame, _dstFrame);
+                ffmpeg.av_frame_copy_props(_dstFrame, frame).ThrowExceptionIfError();
 
-                if (result >= 0)
-                {
-                    result = ffmpeg.sws_scale(_pConvertContext,
-                                frame.data, frame.linesize, 0, frame.height,
-                                _dstData, _dstLinesize);
-                }
-
-                if (result < 0)
-                {
-                    return new AVFrame
-                    {
-                        width = 0,
-                        height = 0
-                    };
-                }
-
-                var data = new byte_ptrArray8();
-                data.UpdateFrom(_dstData);
-                var linesize = new int_array8();
-                linesize.UpdateFrom(_dstLinesize);
-
-                return new AVFrame
-                {
-                    data = data,
-                    linesize = linesize,
-                    width = _dstWidth,
-                    height = _dstHeight,
-                    format = (int)_dstPixelFormat
-                };
+                ffmpeg.sws_scale(_pConvertContext,
+                                frame->data, frame->linesize, 0, frame->height,
+                                _dstFrame->data, _dstFrame->linesize)
+                    .ThrowExceptionIfError();
             }
-            catch
+            catch (Exception e)
             {
-                return new AVFrame
-                {
-                    width = 0,
-                    height = 0
-                };
+                logger.LogError("{Log}", e.Message);
             }
+
+            return _dstFrame;
         }
 
         public byte[] ConvertFrame(ref AVFrame frame)
