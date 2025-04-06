@@ -30,7 +30,8 @@ RUN apt-get update && apt-get install -y \
     libvorbis-dev \
     libxvidcore-dev \
     libavutil-dev \
-	libssl-dev \
+    libssl-dev \
+    libavdevice-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for the build
@@ -39,7 +40,7 @@ WORKDIR /ffmpeg
 # Download FFmpeg source code for version 7.0 "Dijkstra"
 RUN git clone --branch n7.0 https://git.ffmpeg.org/ffmpeg.git .
 
-# Configure the build with required options
+# Configure the build with required options, disable all device options as none available in a docker container.
 RUN ./configure \
     --prefix=/usr/local \
     --enable-gpl \
@@ -56,15 +57,21 @@ RUN ./configure \
     --enable-libvorbis \
     --enable-libfreetype \
     --enable-libxvid \
-    --enable-static \
-    --disable-shared \
+    --enable-avdevice \
+    --enable-shared \
     --disable-debug \
-    --disable-doc
+    --disable-doc \
+    --disable-doc \
+    --disable-vaapi \
+    --disable-vdpau \
+    --disable-ffplay \
+    --disable-indevs \
+    --disable-outdevs
 	
 # Build FFmpeg
 RUN make -j$(nproc)
 
-# Install FFmpeg to /usr/local
+# Install ffmpeg programs to /usr/local and shared libraries ot /usr/local/lib
 RUN make install
 
 # Clean up build dependencies to reduce image size
