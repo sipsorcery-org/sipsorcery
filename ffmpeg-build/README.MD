@@ -4,11 +4,15 @@ The purpose of thie docker build file is to be able to build therexact version o
 
 Build instructions https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu.
 
-`docker build -t sipsorcery/ffmpegbuild:7.0 --progress=plain .`
-`docker run -it sipsorcery/ffmpegbuild:7.0`
-`docker run -it --entrypoint /bin/bash sipsorcery/ffmpegbuild:7.0`
+```
+docker build -t sipsorcery/ffmpegbuild:7.0 --progress=plain .
+docker run -it sipsorcery/ffmpegbuild:7.0
+docker run -it --entrypoint /bin/bash sipsorcery/ffmpegbuild:7.0
+```
 
 If (almost certainly when) the build fails comment out the failing and subsequent steps, create a debug image and then start the troubleshooting.
 
-`docker build -t ffmpegbuild-debug --progress=plain .`
-`docker run -it ffmpegbuild-debug`
+```
+docker build -t ffmpegbuild-debug --progress=plain .
+docker run -it ffmpegbuild-debug
+```
