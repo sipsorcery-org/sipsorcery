@@ -60,7 +60,7 @@ class Program
         // Start web socket.
         Console.WriteLine("Starting web socket server...");
         var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/ws", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
         webSocketServer.Start();
 
         Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
