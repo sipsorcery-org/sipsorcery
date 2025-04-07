@@ -157,7 +157,6 @@ namespace SIPSorceryMedia.FFmpeg
                 int frameRate = (int)_videoDecoder.VideoAverageFrameRate;
                 uint timestampDuration = (uint)_videoDecoder.VideoFrameSpace;
 
-                var paddedSrcWidth = frame->linesize[0];
                 var width = frame->width;
                 var height = frame->height;
                 var srcfmt = (AVPixelFormat)frame->format;
@@ -178,28 +177,26 @@ namespace SIPSorceryMedia.FFmpeg
                 if (OnVideoSourceRawSampleFaster != null)
                 {
                     if (_videoFrameBGR24Converter == null ||
-                    _videoFrameBGR24Converter.SourceWidth != paddedSrcWidth ||
+                    _videoFrameBGR24Converter.SourceWidth != width ||
                         _videoFrameBGR24Converter.SourceHeight != height)
                     {
                         _videoFrameBGR24Converter = new VideoFrameConverter(
-                            // Note deliberately using the PADDED source width for the RGB conversion. Not sure why RGB needs padded width and YUV doesn't??
-                            // In addition using the unpadded source width here resulted in sproadic segfaults.
-                            paddedSrcWidth, height,
+                            width, height,
                             srcfmt,
                             width, height,
                             AVPixelFormat.AV_PIX_FMT_RGB24);
                         logger.LogDebug("Frame format: [{fmt}]", srcfmt);
                     }
 
-                    var frameBGR24 = _videoFrameBGR24Converter.Convert(*frame);
-                    if (frameBGR24.width != 0 && frameBGR24.height != 0)
+                    var frameBGR24 = _videoFrameBGR24Converter.Convert(frame);
+                    if (frameBGR24->width != 0 && frameBGR24->height != 0)
                     {
                         RawImage imageRawSample = new RawImage
                         {
                             Width = width,
                             Height = height,
-                            Stride = frameBGR24.linesize[0],
-                            Sample = (IntPtr)frameBGR24.data[0],
+                            Stride = frameBGR24->linesize[0],
+                            Sample = (IntPtr)frameBGR24->data[0],
                             PixelFormat = VideoPixelFormatsEnum.Rgb
                         };
                         OnVideoSourceRawSampleFaster?.Invoke(timestampDuration, imageRawSample);
@@ -218,7 +215,6 @@ namespace SIPSorceryMedia.FFmpeg
                             _videoFrameYUV420PConverter.SourceHeight != height)
                         {
                             _videoFrameYUV420PConverter = new VideoFrameConverter(
-                                // Note deliberately using the UNPADDED source width for the I420 conversion. Not sure why RGB needs padded width and YUV doesn't??
                                 width, height,
                                 srcfmt,
                                 width, height,
@@ -226,10 +222,10 @@ namespace SIPSorceryMedia.FFmpeg
                             logger.LogDebug("Frame format: [{fmt}]", srcfmt);
                         }
 
-                        var convertedFrame = _videoFrameYUV420PConverter.Convert(*frame);
-                        if (convertedFrame.width != 0 && convertedFrame.height != 0)
+                        var convertedFrame = _videoFrameYUV420PConverter.Convert(frame);
+                        if (convertedFrame->width != 0 && convertedFrame->height != 0)
                         {
-                            readyFrame = &convertedFrame;
+                            readyFrame = convertedFrame;
                         }
                     }
 

@@ -721,15 +721,15 @@ namespace SIPSorceryMedia.FFmpeg
                     //    + $" - decode_error_flags:[{decodedFrame->decode_error_flags}]"
                     //    );
 
-                    var frameI420 = _i420ToRgb.Convert(*decodedFrame);
-                    if ((frameI420.width != 0) && (frameI420.height != 0))
+                    var frameI420 = _i420ToRgb.Convert(decodedFrame);
+                    if ((frameI420->width != 0) && (frameI420->height != 0))
                     {
                         RawImage imageRawSample = new RawImage
                         {
                             Width = width,
                             Height = height,
-                            Stride = frameI420.linesize[0],
-                            Sample = (IntPtr)frameI420.data[0],
+                            Stride = frameI420->linesize[0],
+                            Sample = (IntPtr)frameI420->data[0],
                             PixelFormat = VideoPixelFormatsEnum.Rgb
                         };
                         rgbFrames.Add(imageRawSample);
