@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP
 
             foreach (XmlNode sipSocketNode in sipChannelsNode.ChildNodes)
             {
-                logger.LogDebug("Creating SIP Channel for {SipSocketNode}.", sipSocketNode.OuterXml);
+                logger.LogCreatingSIPChannel(sipSocketNode.OuterXml);
 
                 var localSocket = sipSocketNode.InnerText;
 
@@ -63,23 +63,25 @@ namespace SIPSorcery.SIP
                         {
                             case SIPProtocolsEnum.udp:
                                 {
-                                    logger.LogDebug(" attempting to create SIP UDP channel for {SipEndPoint}.", sipEndPoint.GetIPEndPoint());
-                                    var udpChannel = new SIPUDPChannel(sipEndPoint.GetIPEndPoint());
+                                    var sipIPEndPoint = sipEndPoint.GetIPEndPoint();
+                                    logger.LogCreatingUDPChannel(sipIPEndPoint);
+                                    var udpChannel = new SIPUDPChannel(sipIPEndPoint);
                                     sipChannels.Add(udpChannel);
                                 }
                                 break;
                             case SIPProtocolsEnum.tcp:
                                 {
-                                    logger.LogDebug(" attempting to create SIP TCP channel for {SipEndPoint}.", sipEndPoint.GetIPEndPoint());
+                                    var sipIPEndPoint = sipEndPoint.GetIPEndPoint();
+                                    logger.LogCreatingTCPChannel(sipIPEndPoint);
 
-                                    var tcpChannel = new SIPTCPChannel(sipEndPoint.GetIPEndPoint());
+                                    var tcpChannel = new SIPTCPChannel(sipIPEndPoint);
                                     sipChannels.Add(tcpChannel);
                                 }
                                 break;
                             case SIPProtocolsEnum.tls:
                                 if (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) == null)
                                 {
-                                    logger.LogWarning("Could not create SIPTLSChannel from XML configuration node as no {CertificatePathParameter} attribute was present.", CERTIFICATE_PATH_PARAMETER);
+                                    logger.LogMissingCertificatePath(CERTIFICATE_PATH_PARAMETER);
                                 }
                                 else
                                 {
@@ -91,27 +93,28 @@ namespace SIPSorcery.SIP
 
                                     var certificatePath = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER).Value : null;
                                     var certificateKeyPassword = (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_KEY_PASSWORD_PARAMETER) != null) ? sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_KEY_PASSWORD_PARAMETER).Value : String.Empty;
-                                    logger.LogDebug(" attempting to create SIP TLS channel for {SipEndPoint} and certificate type of {CertificateType} at {CertificatePath}.", sipEndPoint.GetIPEndPoint(), certificateType, certificatePath);
+                                    var sipIPEndPoint = sipEndPoint.GetIPEndPoint();
+                                    logger.LogCreatingTLSChannel(sipIPEndPoint, certificateType, certificatePath);
                                     var certificate = LoadCertificate(certificateType, certificatePath, certificateKeyPassword);
                                     if (certificate != null)
                                     {
-                                        var tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.GetIPEndPoint());
+                                        var tlsChannel = new SIPTLSChannel(certificate, sipIPEndPoint);
                                         sipChannels.Add(tlsChannel);
                                     }
                                     else
                                     {
-                                        logger.LogWarning("A SIP TLS channel was not created because the certificate could not be loaded.");
+                                        logger.LogCertificateLoadFailed();
                                     }
                                 }
                                 break;
                             default:
-                                logger.LogWarning("Could not create a SIP channel for protocol {Protocol}.", protocol);
+                                logger.LogUnsupportedProtocol(protocol);
                                 break;
                         }
                     }
                     catch (Exception excp)
                     {
-                        logger.LogWarning(excp, "Exception SIPTransportConfig Adding SIP Channel for {SipEndPoint}. {ErrorMessage}", sipEndPoint, excp.Message);
+                        logger.LogSIPChannelError(sipEndPoint, excp.Message, excp);
                     }
                 }
             }
@@ -129,7 +132,7 @@ namespace SIPSorcery.SIP
                     var serverCertificate = new X509Certificate2(certifcateLocation, certKeyPassword);
                     //DisplayCertificateChain(m_serverCertificate);
                     var verifyCert = serverCertificate.Verify();
-                    logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
+                    logger.LogCertificateLoadedFromFile(serverCertificate.Subject, verifyCert);
                     return serverCertificate;
                 }
 
@@ -138,7 +141,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception LoadCertificate. {ErrorMessage}", excp.Message);
+                logger.LoadCertificateError(excp.Message, excp);
                 return null;
             }
         }
