@@ -15,7 +15,7 @@ Derivative Works:
 -----------------
 
 Portions of the DTLS/SRTP implmentation are derived from the jitsi SRTP library, see https://github.com/jitsi/jitsi-srtp.
-The license for the derivative source code is the Apcache License, Version 2.0 with specific conditions listed immediately below.
+The license for the derivative source code is the Apache License, Version 2.0 with specific conditions listed immediately below.
 
 /*
  * Copyright @ 2015 - present 8x8, Inc
@@ -33,3 +33,12 @@ The license for the derivative source code is the Apcache License, Version 2.0 w
  * limitations under the License.
  */
 
+Portions of the DTLS/SRTP implmentation may be derived from the RestComm Media-Core, see https://github.com/RestComm/media-core.
+
+The media-core project uses an AGPL-3.0 license https://github.com/RestComm/media-core?tab=AGPL-3.0-1-ov-file.
+
+It's currently under investigation as to whether the small number of files that constitute the derived work were originally from the Jitsi project or are novel to media-core.
+
+For anyone incroporating this library into their own derivative works the safest course of action is to assume there is an AGPL-3.0 claim, or alternatively remove the files in question which will render the DTLS/SRTP implmentation unusable.
+
+*Caveat: None of this is legal advice.
