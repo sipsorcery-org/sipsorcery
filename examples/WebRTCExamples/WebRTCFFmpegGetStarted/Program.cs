@@ -16,57 +16,58 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Diagnostics.Eventing.Reader;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Events;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
-using WebSocketSharp.Server;
 
 namespace demo;
 
 class Program
 {
     private const int ASPNET_PORT = 8080;
-    private const int WEBSOCKET_PORT = 8081;
     //private const string STUN_URL = "stun:stun.cloudflare.com";
     private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
 
-    private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+    private static List<RTCPeerConnection> _peerConnections = new List<RTCPeerConnection>();
 
     static void Main()
     {
         Console.WriteLine("WebRTC FFmpeg Get Started");
 
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
+
+        var factory = new SerilogLoggerFactory(Log.Logger);
+        SIPSorcery.LogFactory.Set(factory);
+        var programLogger = factory.CreateLogger<Program>();
+
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, logger);
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
         }
         else
         {
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
         }
 
-        logger = AddConsoleLogger();
-
-        // Start web socket.
-        Console.WriteLine("Starting web socket server...");
-        var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/ws", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-        webSocketServer.Start();
-
-        Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-        Console.WriteLine("Press ctrl-c to exit.");
-
         var builder = WebApplication.CreateBuilder();
+
+        builder.Host.UseSerilog();
 
         builder.WebHost.ConfigureKestrel(options =>
         {
@@ -75,16 +76,32 @@ class Program
 
         var app = builder.Build();
 
-        // Map the root URL (/) to return "Hello World"
-        ///app.MapGet("/", () => "Hello World");
-
         app.UseDefaultFiles();
         app.UseStaticFiles();
+        app.UseWebSockets();
+
+        app.Map("/ws", async context =>
+        {
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket, x => CreatePeerConnection(Log.Logger as Microsoft.Extensions.Logging.ILogger), RTCSdpType.offer);
+                await webSocketPeer.Start();
+
+                // Set the status code to 200 OK
+                context.Response.StatusCode = StatusCodes.Status200OK;
+            }
+            else
+            {
+                // Set the status code to 400 Bad Request if it's not a WebSocket request
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        });
 
         app.Run();
     }
 
-    private static Task<RTCPeerConnection> CreatePeerConnection()
+    private static Task<RTCPeerConnection> CreatePeerConnection(Microsoft.Extensions.Logging.ILogger logger)
     {
         RTCConfiguration config = new RTCConfiguration
         {
@@ -146,33 +163,6 @@ class Program
         pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
         pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-        // To test closing.
-        //_ = Task.Run(async () => 
-        //{ 
-        //    await Task.Delay(5000);
-
-        //    audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
-        //    videoEncoderEndPoint.OnVideoSourceEncodedSample -= pc.SendVideo;
-
-        //    logger.LogDebug("Closing peer connection.");
-        //    pc.Close("normal");
-        //});
-
         return Task.FromResult(pc);
-    }
-
-    /// <summary>
-    ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-    /// </summary>
-    private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
-    {
-        var seriLogger = new LoggerConfiguration()
-            .Enrich.FromLogContext()
-            .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-            .WriteTo.Console()
-            .CreateLogger();
-        var factory = new SerilogLoggerFactory(seriLogger);
-        SIPSorcery.LogFactory.Set(factory);
-        return factory.CreateLogger<Program>();
     }
 }
