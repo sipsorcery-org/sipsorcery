@@ -81,7 +81,7 @@ namespace SIPSorcery.Net
                 ThreadPool.QueueUserWorkItem(delegate
                 { PruneConnections(PRUNE_THREAD_NAME + m_localIPEndPoint.Port); });
 
-                logger.LogDebug("RTSP server listener created " + m_localIPEndPoint + ".");
+                logger.LogRtspServerListenerCreated(m_localIPEndPoint);
             }
             catch (Exception excp)
             {
@@ -96,7 +96,7 @@ namespace SIPSorcery.Net
             {
                 Thread.CurrentThread.Name = threadName;
 
-                logger.LogDebug("RTSP server socket on " + m_localIPEndPoint + " accept connections thread started.");
+                logger.LogRtspServerAcceptStarted(m_localIPEndPoint);
 
                 while (!Closed)
                 {
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net
                         tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                         IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-                        logger.LogDebug("RTSP server accepted connection from " + remoteEndPoint + ".");
+                        logger.LogRtspServerAcceptedConnection(remoteEndPoint);
 
                         RTSPConnection rtspClientConnection = new RTSPConnection(this, tcpClient.GetStream(), remoteEndPoint);
 
@@ -128,7 +128,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                logger.LogDebug("RTSP server socket on " + m_localIPEndPoint + " listening halted.");
+                logger.LogRtspServerAcceptHalted(m_localIPEndPoint);
             }
             catch (Exception excp)
             {
@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.LogDebug("RTSP client socket from " + remoteEndPoint + " disconnected.");
+                logger.LogRtspServerSocketDisconnected(remoteEndPoint);
 
                 lock (m_connectedSockets)
                 {
@@ -277,7 +277,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
-            logger.LogDebug("Closing RTSP server socket " + m_localIPEndPoint + ".");
+            logger.LogRtspServerAcceptHalted(m_localIPEndPoint);
 
             Closed = true;
 
