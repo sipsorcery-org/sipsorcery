@@ -16,7 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -39,9 +38,7 @@ class Program
     //private const string STUN_URL = "stun:stun.cloudflare.com";
     private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
 
-    private static List<RTCPeerConnection> _peerConnections = new List<RTCPeerConnection>();
-
-    static void Main()
+    static async Task Main()
     {
         Console.WriteLine("WebRTC FFmpeg Get Started");
 
@@ -58,11 +55,11 @@ class Program
 
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
         }
         else
         {
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
         }
 
         var builder = WebApplication.CreateBuilder();
@@ -82,23 +79,26 @@ class Program
 
         app.Map("/ws", async context =>
         {
+            programLogger.LogDebug("Web socket client connection established.");
+
             if (context.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket, x => CreatePeerConnection(Log.Logger as Microsoft.Extensions.Logging.ILogger), RTCSdpType.offer);
-                await webSocketPeer.Start();
 
-                // Set the status code to 200 OK
-                context.Response.StatusCode = StatusCodes.Status200OK;
+                var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
+                    CreatePeerConnection,
+                    RTCSdpType.offer);
+
+                await webSocketPeer.Start();
             }
             else
             {
-                // Set the status code to 400 Bad Request if it's not a WebSocket request
+                // Not a WebSocket request
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
             }
         });
 
-        app.Run();
+        await app.RunAsync();
     }
 
     private static Task<RTCPeerConnection> CreatePeerConnection(Microsoft.Extensions.Logging.ILogger logger)
@@ -136,7 +136,7 @@ class Program
                 logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
             }
         };
-        
+
         pc.onconnectionstatechange += async (state) =>
         {
             logger.LogDebug($"Peer connection state change to {state}.");
