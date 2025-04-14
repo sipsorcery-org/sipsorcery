@@ -21,6 +21,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SIPSorcery.Net;
 
@@ -31,7 +32,7 @@ namespace SIPSorcery.Net;
 /// </summary>
 public class WebRTCWebSocketPeerAspNet
 {
-    private ILogger logger = SIPSorcery.Sys.Log.Logger;
+    private ILogger logger = NullLogger.Instance;
 
     private RTCPeerConnection _pc;
     public RTCPeerConnection RTCPeerConnection => _pc;

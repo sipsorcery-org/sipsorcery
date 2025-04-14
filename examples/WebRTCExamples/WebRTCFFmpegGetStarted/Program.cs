@@ -16,8 +16,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -75,7 +77,12 @@ class Program
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
-        app.UseWebSockets();
+        var webSocketOptions = new WebSocketOptions
+        {
+            KeepAliveInterval = TimeSpan.FromMinutes(2)
+        };
+
+        app.UseWebSockets(webSocketOptions);
 
         app.Map("/ws", async context =>
         {
@@ -89,7 +96,9 @@ class Program
                     CreatePeerConnection,
                     RTCSdpType.offer);
 
-                await webSocketPeer.Start();
+                await webSocketPeer.Run();
+
+                await webSocketPeer.Close();
             }
             else
             {

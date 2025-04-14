@@ -35,6 +35,7 @@
 			};
 			
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
+
             ws.onmessage = async function (evt) {
                 var obj = JSON.parse(evt.data);
                 if (obj?.candidate) {
@@ -47,15 +48,20 @@
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));
                 }
             };
+
+            ws.onclose = function (evt) {
+                console.log("WebSocket closed, code: " + evt.code + ", reason: " + evt.reason);
+            };
+
+            ws.onerror = function (evt) {
+                console.error("WebSocket error:", evt);
+            };
         };
 
         async function closePeer() {
             await pc?.close();
             await ws?.close();
         };
-
-   	
-
     </script>
 </head>
 <body>
