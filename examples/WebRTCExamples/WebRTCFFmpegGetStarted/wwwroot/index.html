@@ -6,6 +6,16 @@
 
         var pc, ws;
 
+        // Auto-detect WebSocket URL based on current page
+        function getWebSocketUrl() {
+            const location = window.location;
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = location.host;
+            const path = '/ws'; // Change this to match your server's WebSocket endpoint
+
+            return `${protocol}//${host}${path}`;
+        }
+
         async function start() {
             pc = new RTCPeerConnection({
                 iceServers: [
@@ -37,6 +47,7 @@
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
 
             ws.onmessage = async function (evt) {
+                console.log("WebSocket message received:", evt.data);
                 var obj = JSON.parse(evt.data);
                 if (obj?.candidate) {
                     pc.addIceCandidate(obj);
@@ -77,5 +88,5 @@
 </body>
 
 <script>
-    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+    document.querySelector('#websockurl').value = getWebSocketUrl();
 </script>

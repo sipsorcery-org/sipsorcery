@@ -16,13 +16,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -36,13 +33,19 @@ namespace demo;
 
 class Program
 {
-    private const int ASPNET_PORT = 8080;
-    //private const string STUN_URL = "stun:stun.cloudflare.com";
     private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
+
+    private static string _stunUrl = string.Empty;
+    private static bool _waitForIceGatheringToSendOffer = false;
+    private static int _webrtcBindPort = 0;
 
     static async Task Main()
     {
         Console.WriteLine("WebRTC FFmpeg Get Started");
+
+        _stunUrl = Environment.GetEnvironmentVariable("STUN_URL");
+        bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER"), out _waitForIceGatheringToSendOffer);
+        int.TryParse(Environment.GetEnvironmentVariable("BIND_PORT"), out _webrtcBindPort);
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -64,14 +67,12 @@ class Program
             FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
         }
 
+        programLogger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
+        programLogger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
+
         var builder = WebApplication.CreateBuilder();
 
         builder.Host.UseSerilog();
-
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            options.Listen(IPAddress.Any, ASPNET_PORT);
-        });
 
         var app = builder.Build();
 
@@ -94,7 +95,13 @@ class Program
 
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
                     CreatePeerConnection,
-                    RTCSdpType.offer);
+                    RTCSdpType.offer,
+                    programLogger);
+
+                webSocketPeer.OfferOptions = new RTCOfferOptions
+                {
+                    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
+                };
 
                 await webSocketPeer.Run();
 
@@ -114,10 +121,15 @@ class Program
     {
         RTCConfiguration config = new RTCConfiguration
         {
-            //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
-            X_BindAddress = IPAddress.Any // Docker images typically don't support IPv6 so force bind to IPv4.
+            X_ICEIncludeAllInterfaceAddresses = true
         };
-        var pc = new RTCPeerConnection(config);
+
+        if (!string.IsNullOrWhiteSpace(_stunUrl))
+        {
+            config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
+        }
+
+        var pc = new RTCPeerConnection(config, _webrtcBindPort);
 
         var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
         var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
@@ -132,6 +144,9 @@ class Program
 
         pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
         pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
+        pc.onicegatheringstatechange += (state) => logger.LogDebug($"ICE gathering state changed to {state}."); ;
+        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
+
         pc.onsignalingstatechange += () =>
         {
             logger.LogDebug($"Signalling state change to {pc.signalingState}.");

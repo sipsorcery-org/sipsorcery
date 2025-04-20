@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
         private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
-        
+
         /// <summary>
         /// The period to wait for the SCTP association to complete before giving up.
         /// In theory this should be very quick as the DTLS connection should already have been established
@@ -183,7 +183,8 @@ namespace SIPSorcery.Net
         private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
         private DtlsSrtpTransport _dtlsHandle;
-        private Task _iceGatheringTask;
+        private Task _iceInitiateGatheringTask;
+        private new TaskCompletionSource<bool> _iceCompletedGatheringTask = new();
 
         private Dictionary<String, int> _rtpExtensionsUsed; // < Uri, Id>
 
@@ -387,7 +388,7 @@ namespace SIPSorcery.Net
             base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
-            
+
             if (_configuration != null &&
                _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
                _configuration.iceServers?.Count == 0)
@@ -440,11 +441,15 @@ namespace SIPSorcery.Net
             _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
+            _rtpIceChannel.OnIceGatheringStateChange += (state) =>
+            {
+                if (state == RTCIceGatheringState.complete) { _iceCompletedGatheringTask.TrySetResult(true); }
+            };
             _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
-            
+
             //Cancel Negotiation Task Event to Prevent Duplicated Calls
             onnegotiationneeded += CancelOnNegotiationNeededTask;
 
@@ -456,7 +461,7 @@ namespace SIPSorcery.Net
             // This job was moved to a background thread as it was observed that interacting with the OS network
             // calls and/or initialising DNS was taking up to 600ms, see
             // https://github.com/sipsorcery-org/sipsorcery/issues/456.
-            _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
+            _iceInitiateGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
         }
 
         private bool InitializeCertificates(RTCConfiguration configuration)
@@ -515,7 +520,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            _dtlsCertificate = new Certificate(new [] { configuration.certificates2[0].Certificate.CertificateStructure });
+            _dtlsCertificate = new Certificate(new[] { configuration.certificates2[0].Certificate.CertificateStructure });
             _dtlsPrivateKey = configuration.certificates2[0].PrivateKey;
 
             return true;
@@ -732,12 +737,12 @@ namespace SIPSorcery.Net
             _rtpExtensionsUsed ??= new Dictionary<string, int>();
             foreach (var ann in remoteSdp.Media)
             {
-                if ( (ann.Media == SDPMediaTypesEnum.audio) || (ann.Media == SDPMediaTypesEnum.video) )
+                if ((ann.Media == SDPMediaTypesEnum.audio) || (ann.Media == SDPMediaTypesEnum.video))
                 {
                     var extensions = ann.HeaderExtensions?.Values;
-                    if(extensions != null)
+                    if (extensions != null)
                     {
-                        foreach(var extension in extensions)
+                        foreach (var extension in extensions)
                         {
                             logger.LogDebug("[setRemoteDescription] - Extension:[{Id} - {Uri}]", extension.Id, extension.Uri);
                             _rtpExtensionsUsed[extension.Uri] = extension.Id;
@@ -795,7 +800,8 @@ namespace SIPSorcery.Net
 
                 SdpSessionID = remoteSdp.SessionId;
 
-                if (remoteSdp.IceImplementation == IceImplementationEnum.lite) {
+                if (remoteSdp.IceImplementation == IceImplementationEnum.lite)
+                {
                     _rtpIceChannel.IsController = true;
                 }
                 if (init.type == RTCSdpType.answer)
@@ -898,7 +904,7 @@ namespace SIPSorcery.Net
                 // Close all DataChannels
                 if (DataChannels?.Count >0)
                 {
-                    foreach(var dc in DataChannels)
+                    foreach (var dc in DataChannels)
                     {
                         dc?.close();
                     }
@@ -945,7 +951,9 @@ namespace SIPSorcery.Net
             }
 
             bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
-            var offerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+            bool waitForIceGatheringToComplete = options != null && options.X_WaitForIceGatheringToComplete;
+
+            var offerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates, waitForIceGatheringToComplete);
 
             int indexAudioStream = 0;
             int indexVideoStream = 0;
@@ -963,7 +971,7 @@ namespace SIPSorcery.Net
                         foreach (var localExtension in localHeaderExtensions)
                         {
                             // We must ensure to use same Id by extension
-                            if(_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
                             {
                                 localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
                             }
@@ -1099,7 +1107,7 @@ namespace SIPSorcery.Net
                             foreach (var remoteExtension in remoteHeaderExtensions)
                             {
                                 var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
-                                if ( (localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
                                     // We must ensure to use same Id by extension
                                     localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
@@ -1188,6 +1196,8 @@ namespace SIPSorcery.Net
         /// <param name="mediaStreamList">THe media streamss to add to the SDP description.</param>
         /// <param name="excludeIceCandidates">If true it indicates the caller does not want ICE candidates added
         /// to the SDP.</param>
+        /// <param name="waitForIceGatheringToComplete">If set to true the SDP generation will wait until the ICE gathering is complete
+        /// before generating the SDP. This is a convenient way to get ICE candidates to be included in the SDP.</param>
         /// <remarks>
         /// From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
         ///   "The transport address from the peer for the default destination
@@ -1195,7 +1205,7 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStream> mediaStreamList, bool excludeIceCandidates = false)
+        private SDP createBaseSdp(List<MediaStream> mediaStreamList, bool excludeIceCandidates = false, bool waitForIceGatheringToComplete = false)
         {
             // Make sure the ICE gathering of local IP addresses is complete.
             // This task should complete very quickly (<1s) but it is deemed very useful to wait
@@ -1207,12 +1217,26 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    _iceGatheringTask.Wait(ct.Token);
+                    _iceInitiateGatheringTask.Wait(ct.Token);
                 }
                 catch (OperationCanceledException)
                 {
-                    logger.LogWarning("ICE gathering timed out after {GatherTimeoutMs}Ms", _configuration.X_GatherTimeoutMs);
+                    logger.LogWarning("ICE gathering timed out after {GatherTimeoutMs}ms", _configuration.X_GatherTimeoutMs);
+                }
+            }
 
+            if (waitForIceGatheringToComplete)
+            {
+                using (var ct = new CancellationTokenSource(TimeSpan.FromMilliseconds(_configuration.X_GatherTimeoutMs)))
+                {
+                    try
+                    {
+                        _iceCompletedGatheringTask.Task.Wait();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        logger.LogWarning("Waiting for ICE gathering to complete timed out after {GatherTimeoutMs}ms", _configuration.X_GatherTimeoutMs);
+                    }
                 }
             }
 
@@ -1221,7 +1245,7 @@ namespace SIPSorcery.Net
 
             string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
             bool iceCandidatesAdded = false;
-            
+
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
             {
@@ -1263,7 +1287,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if(mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
+                    if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
                     {
                         (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
                         audioMediaIndex++;
@@ -1789,7 +1813,8 @@ namespace SIPSorcery.Net
         /// <param name="dataChannel">The data channel to open.</param>
         private void OpenDataChannel(RTCDataChannel dataChannel)
         {
-            if (dataChannel.negotiated) {
+            if (dataChannel.negotiated)
+            {
                 logger.LogDebug("WebRTC data channel negotiated out of band with label {Label} and stream ID {StreamID}; invoking open event", dataChannel.label, dataChannel.id);
                 dataChannel.GotAck();
             }
