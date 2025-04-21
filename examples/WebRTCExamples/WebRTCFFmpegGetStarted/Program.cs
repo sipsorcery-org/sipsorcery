@@ -16,82 +16,120 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Diagnostics.Eventing.Reader;
+using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Events;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
-using WebSocketSharp.Server;
 
 namespace demo;
 
 class Program
 {
-    private const int ASPNET_PORT = 8080;
-    private const int WEBSOCKET_PORT = 8081;
-    //private const string STUN_URL = "stun:stun.cloudflare.com";
     private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
 
-    private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+    private static string _stunUrl = string.Empty;
+    private static bool _waitForIceGatheringToSendOffer = false;
+    private static int _webrtcBindPort = 0;
 
-    static void Main()
+    static async Task Main()
     {
         Console.WriteLine("WebRTC FFmpeg Get Started");
 
+        _stunUrl = Environment.GetEnvironmentVariable("STUN_URL");
+        bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER"), out _waitForIceGatheringToSendOffer);
+        int.TryParse(Environment.GetEnvironmentVariable("BIND_PORT"), out _webrtcBindPort);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
+
+        var factory = new SerilogLoggerFactory(Log.Logger);
+        SIPSorcery.LogFactory.Set(factory);
+        var programLogger = factory.CreateLogger<Program>();
+
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, logger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
         }
         else
         {
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
         }
 
-        logger = AddConsoleLogger();
-
-        // Start web socket.
-        Console.WriteLine("Starting web socket server...");
-        var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/ws", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-        webSocketServer.Start();
-
-        Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-        Console.WriteLine("Press ctrl-c to exit.");
+        programLogger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
+        programLogger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
 
         var builder = WebApplication.CreateBuilder();
 
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            options.Listen(IPAddress.Any, ASPNET_PORT);
-        });
+        builder.Host.UseSerilog();
 
         var app = builder.Build();
 
-        // Map the root URL (/) to return "Hello World"
-        ///app.MapGet("/", () => "Hello World");
-
         app.UseDefaultFiles();
         app.UseStaticFiles();
+        var webSocketOptions = new WebSocketOptions
+        {
+            KeepAliveInterval = TimeSpan.FromMinutes(2)
+        };
 
-        app.Run();
+        app.UseWebSockets(webSocketOptions);
+
+        app.Map("/ws", async context =>
+        {
+            programLogger.LogDebug("Web socket client connection established.");
+
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+                var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
+                    CreatePeerConnection,
+                    RTCSdpType.offer,
+                    programLogger);
+
+                webSocketPeer.OfferOptions = new RTCOfferOptions
+                {
+                    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
+                };
+
+                await webSocketPeer.Run();
+
+                await webSocketPeer.Close();
+            }
+            else
+            {
+                // Not a WebSocket request
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        });
+
+        await app.RunAsync();
     }
 
-    private static Task<RTCPeerConnection> CreatePeerConnection()
+    private static Task<RTCPeerConnection> CreatePeerConnection(Microsoft.Extensions.Logging.ILogger logger)
     {
         RTCConfiguration config = new RTCConfiguration
         {
-            //iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
-            X_BindAddress = IPAddress.Any // Docker images typically don't support IPv6 so force bind to IPv4.
+            X_ICEIncludeAllInterfaceAddresses = true
         };
-        var pc = new RTCPeerConnection(config);
+
+        if (!string.IsNullOrWhiteSpace(_stunUrl))
+        {
+            config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
+        }
+
+        var pc = new RTCPeerConnection(config, _webrtcBindPort);
 
         var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
         var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
@@ -106,6 +144,9 @@ class Program
 
         pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
         pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
+        pc.onicegatheringstatechange += (state) => logger.LogDebug($"ICE gathering state changed to {state}."); ;
+        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
+
         pc.onsignalingstatechange += () =>
         {
             logger.LogDebug($"Signalling state change to {pc.signalingState}.");
@@ -119,7 +160,7 @@ class Program
                 logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
             }
         };
-        
+
         pc.onconnectionstatechange += async (state) =>
         {
             logger.LogDebug($"Peer connection state change to {state}.");
@@ -146,33 +187,6 @@ class Program
         pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
         pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
-        // To test closing.
-        //_ = Task.Run(async () => 
-        //{ 
-        //    await Task.Delay(5000);
-
-        //    audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
-        //    videoEncoderEndPoint.OnVideoSourceEncodedSample -= pc.SendVideo;
-
-        //    logger.LogDebug("Closing peer connection.");
-        //    pc.Close("normal");
-        //});
-
         return Task.FromResult(pc);
-    }
-
-    /// <summary>
-    ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-    /// </summary>
-    private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
-    {
-        var seriLogger = new LoggerConfiguration()
-            .Enrich.FromLogContext()
-            .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-            .WriteTo.Console()
-            .CreateLogger();
-        var factory = new SerilogLoggerFactory(seriLogger);
-        SIPSorcery.LogFactory.Set(factory);
-        return factory.CreateLogger<Program>();
     }
 }

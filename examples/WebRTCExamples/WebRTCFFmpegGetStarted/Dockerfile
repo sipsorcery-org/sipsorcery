@@ -38,6 +38,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
+# Add local NuGet source (replace with your actual package version)
+RUN mkdir -p /local-nuget
+COPY ./local-nuget/*.nupkg /local-nuget/
+RUN dotnet nuget add source /local-nuget --name local
+
 COPY [".", "."]
 
 # Publish the application

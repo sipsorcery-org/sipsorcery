@@ -44,6 +44,12 @@ namespace SIPSorcery.Net
         /// and will be added to the offer SDP.
         /// </summary>
         public bool X_ExcludeIceCandidates;
+
+        /// <summary>
+        /// If set to true it indicates the generation of the SDP offer should wait until the ICE gathering
+        /// is compelte so the ICE cnadidates can be included in the SDP offer.
+        /// </summary>
+        public bool X_WaitForIceGatheringToComplete;
     }
 
     /// <summary>
