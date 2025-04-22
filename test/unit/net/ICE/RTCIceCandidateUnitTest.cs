@@ -44,6 +44,43 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("Candidate: {Candidate}", candidate.ToString());
         }
 
+        /// <summary>
+        /// Tests that parsing an IPv6 host candidate works correctly.
+        /// </summary>
+        [Fact]
+        public void Parse_IPv6_Host_Candidate_UnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 [::1] 61680 typ host generation 0");
+
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.host, candidate.type);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+            Assert.Equal(IPAddress.IPv6Loopback, IPAddress.Parse(candidate.address));
+
+            logger.LogDebug("Candidate: {Candidate}", candidate.ToString());
+        }
+
+        /// <summary>
+        /// Tests that parsing an IPv6 host candidate works correctly.
+        /// </summary>
+        [Fact]
+        public void Parse_IPv6_Host_NoBrackets_Candidate_UnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 ::1 61680 typ host generation 0");
+
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.host, candidate.type);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+            Assert.Equal(IPAddress.IPv6Loopback, IPAddress.Parse(candidate.address));
+
+            logger.LogDebug("Candidate: {Candidate}", candidate.ToString());
+        }
 
         /// <summary>
         /// Tests that parsing a server reflexive candidate works correctly.
