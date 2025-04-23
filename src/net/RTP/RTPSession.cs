@@ -1865,7 +1865,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var videoStream in VideoStreamList)
                 {
-                    if (videoStream.LocalTrack != null)
+                    if (videoStream.LocalTrack == null)
                     {
                         return videoStream;
                     }
