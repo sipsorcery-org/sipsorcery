@@ -52,7 +52,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v8.0.11: Real-time text (thanks to @xBasov). Bug fixes.
+    <PackageReleaseNotes>-v8.0.12: Bug fixes.
+-v8.0.11: Real-time text (thanks to @xBasov). Bug fixes.
 -v8.0.10: H265 and MJEG packetisation (thanks to @Drescher86), RTCP feedback improvements (thanks to @ispysoftware).
 -v8.0.9: Minor improvements and bug fixes.
 -v8.0.7: Bug fixes and all sipsorcery packages release.
