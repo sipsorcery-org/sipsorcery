@@ -172,6 +172,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public DateTime LastCheckSentAt = DateTime.MinValue;
 
+        internal DateTime TcpLastCheckSentAt = DateTime.MinValue;
+
         /// <summary>
         /// The number of checks that have been sent without a response.
         /// </summary>
@@ -212,6 +214,8 @@ namespace SIPSorcery.Net
         /// sent for this entry.
         /// </summary>
         public int TurnPermissionsRequestSent { get; set; } = 0;
+
+        internal int TcpBindRequestSent { get; set; } = 0;
 
         /// <summary>
         /// This field records the time a Create Permissions response was received.
@@ -313,7 +317,7 @@ namespace SIPSorcery.Net
                     }
                     else if (errCodeAttribute.ErrorCode == IceServer.STUN_CONNECTION_TIMEOUT_OR_FAILURE)
                     {
-                        TurnConnectReportAt = DateTime.UtcNow;
+                        TurnConnectReportAt = DateTime.Now;
                         retry = true;
                     }
                 }
@@ -386,7 +390,7 @@ namespace SIPSorcery.Net
                     ? connectionIdAttribute.ConnectionId
                     : 0;
 
-                TurnConnectReportAt = DateTime.UtcNow;
+                TurnConnectReportAt = DateTime.Now;
                 TurnConnectRequestSent = 0;
 
                 //After connect request, need ConnectBind
@@ -399,10 +403,11 @@ namespace SIPSorcery.Net
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.ConnectionBindSuccess)
             {
-                logger.LogDebug("A TURN ConnectBind sucess response was received from ICE server {IceServer} (TxID: {TransactionId}).",
+                logger.LogDebug("A TURN ConnectionBind sucess response was received from ICE server {IceServer} (TxID: {TransactionId}).",
                     LocalCandidate.IceServer._uri, Encoding.ASCII.GetString(stunResponse.Header.TransactionId));
 
                 TurnConnectBindedAt = TurnConnectReportAt = DateTime.Now;
+                TurnConnectRequestSent = 0;
 
                 //After TCP ConnectBind, we need underlying STUN bind.
                 if (State == ChecklistEntryState.InProgress)
