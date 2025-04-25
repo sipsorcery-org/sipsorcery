@@ -677,10 +677,10 @@ namespace SIPSorcery.Net
             RTCIceComponent.rtp,
             _configuration?.iceServers,
             _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
-            _configuration.X_ICEForceTCP,
             _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
             rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2,
-            rtpSessionConfig.RtpPortRange);
+            rtpSessionConfig.RtpPortRange,
+            _configuration.X_ICEForceTCP);
 
             if (rtpSessionConfig.IsMediaMultiplexed)
             {

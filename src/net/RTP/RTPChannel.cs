@@ -365,7 +365,7 @@ namespace SIPSorcery.Net
         /// and fallback to the IPv4 any address.</param>
         /// <param name="useTcp">Wheter to use TCP as transport.</param>
         /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
-        public RTPChannel(bool createControlSocket, IPAddress bindAddress, bool useTcp = false, int bindPort = 0, PortRange rtpPortRange = null)
+        public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0, PortRange rtpPortRange = null, bool useTcp = false)
         {
             NetServices.CreateRtpSocket(createControlSocket, useTcp ? ProtocolType.Tcp : ProtocolType.Udp,
                 bindAddress, bindPort, rtpPortRange, true, true, out var rtpSocket, out m_controlSocket);
@@ -384,11 +384,6 @@ namespace SIPSorcery.Net
             RTPPort = RTPLocalEndPoint.Port;
             ControlLocalEndPoint = (m_controlSocket != null) ? m_controlSocket.LocalEndPoint as IPEndPoint : null;
             ControlPort = (m_controlSocket != null) ? ControlLocalEndPoint.Port : 0;
-        }
-
-        public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0, PortRange rtpPortRange = null)
-            : this(createControlSocket, bindAddress, false, bindPort, rtpPortRange)
-        {
         }
 
         /// <summary>
@@ -455,8 +450,8 @@ namespace SIPSorcery.Net
                     }
 
                     m_isClosed = true;
-                    m_rtpReceiver?.Close(null);
-                    m_controlReceiver?.Close(null);
+                    m_rtpReceiver?.Close(closeReason);
+                    m_controlReceiver?.Close(closeReason);
 
                     OnClosed?.Invoke(closeReason);
                 }

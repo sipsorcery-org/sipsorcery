@@ -98,6 +98,11 @@ namespace SIPSorcery.Net
 
         internal const int STUN_CONNECTION_TIMEOUT_OR_FAILURE = 447;
 
+        // 10 seconds is from https://datatracker.ietf.org/doc/html/rfc6062#section-4.3
+        internal static TimeSpan waittime => TimeSpan.FromSeconds(10);
+        internal static TimeSpan rttime => TimeSpan.FromSeconds(10 / (MAX_ERRORS));
+        //internal static readonly TimeSpan rttime = TimeSpan.FromSeconds(1);
+
         internal STUNUri _uri;
         internal string _username;
         internal string _password;
@@ -184,10 +189,11 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Transport protocol for connecting with the server.
         /// </summary>
-        /// <remarks>
-        /// Not to be confused of the protocol for allocated ICE relay candidate with TURN (<see cref="IceRelayProtocol"/>).
-        /// </remarks>
         public ProtocolType Protocol { get { return _uri.Protocol; } }
+        // DevNote
+        // <remarks>
+        /// Not to be confused of the protocol for allocated ICE relay candidate with TURN (<see cref="_reqIceProtocol"/>).
+        // </remarks>
 
         /// <summary>
         /// Protocol of the ICE relay candidate to be allocated.
@@ -196,7 +202,8 @@ namespace SIPSorcery.Net
         /// Only affects TURN server usage.
         /// Defaults to <see cref="ProtocolType.Udp"/>
         /// </remarks>
-        public ProtocolType IceRelayProtocol { get; set; } = ProtocolType.Udp;
+        internal ProtocolType _reqIceProtocol { get; set; } = ProtocolType.Udp;
+        //public ProtocolType IceRelayProtocol { get; set; } = ProtocolType.Udp;
 
         internal STUNUri _secondaryRelayUri;
 
@@ -242,7 +249,7 @@ namespace SIPSorcery.Net
             }
             else if (type == RTCIceCandidateType.relay && RelayEndPoint != null)
             {
-                var relayProtocol = IceRelayProtocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
+                var relayProtocol = _reqIceProtocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
 
                 candidate.SetAddressProperties(relayProtocol, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
                     type, null, 0);
