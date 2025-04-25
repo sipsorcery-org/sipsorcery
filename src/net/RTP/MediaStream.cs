@@ -65,6 +65,10 @@ namespace SIPSorcery.Net
         protected RTPChannel rtpChannel = null;
 
         protected bool _isClosed = false;
+        /// <summary>
+        /// Used for keeping track of TWCC packets
+        /// </summary>
+        private ushort _twccPacketCount = 0;
 
         public int Index = -1;
 
@@ -410,7 +414,7 @@ namespace SIPSorcery.Net
                     foreach (var ext in LocalTrack.HeaderExtensions.Values)
                     {
                         // We support up to 14 extensions .... Not clear at all how to manage more ...
-                        if ( (ext.Id < 1) && (ext.Id > 14) )
+                        if ( (ext.Id < 1) || (ext.Id > 14) )
                         {
                             continue;
                         }
@@ -501,6 +505,14 @@ namespace SIPSorcery.Net
                             if (ext is AudioLevelExtension audioLevelExtension)
                             {
                                 audioLevelExtension.Set(value);
+                            }
+                            break;
+
+                        case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                        //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
+                            if (ext is TransportWideCCExtension transportWideCCExtension)
+                            {
+                                transportWideCCExtension.Set(_twccPacketCount++);
                             }
                             break;
 
@@ -639,6 +651,16 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="feedback">The feedback report to send.</param>
         public void SendRtcpFeedback(RTCPFeedback feedback)
+        {
+            var reportBytes = feedback.GetBytes();
+            SendRtcpReport(reportBytes);
+        }
+
+        /// <summary>
+        /// Allows sending of RTCP TWCC feedback reports.
+        /// </summary>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpTWCCFeedback(RTCPTWCCFeedback feedback)
         {
             var reportBytes = feedback.GetBytes();
             SendRtcpReport(reportBytes);

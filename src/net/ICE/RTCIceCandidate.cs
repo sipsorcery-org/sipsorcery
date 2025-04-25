@@ -19,9 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {

@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<head>
+    <script type="text/javascript">
+        const WEBSOCKET_URL = "ws://127.0.0.1:8080/ws"
+        const STUN_URL = "stun:stun.cloudflare.com";
+
+        var pc, ws;
+
+        // Auto-detect WebSocket URL based on current page
+        function getWebSocketUrl() {
+            const location = window.location;
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = location.host;
+            const path = '/ws'; // Change this to match your server's WebSocket endpoint
+
+            return `${protocol}//${host}${path}`;
+        }
+
+        async function start() {
+            pc = new RTCPeerConnection({
+                iceServers: [
+                    {
+                        urls: STUN_URL
+                    }
+                ]
+            });
+
+            pc.ontrack = evt => {
+				console.log("Adding track to video control.");
+				document.querySelector('#videoCtl').srcObject = evt.streams[0];
+				
+				evt.streams[0].onunmute = () => {
+					console.log("Adding track to video control.");
+				};
+                    
+			   evt.streams[0].onended = () => {
+				  console.log("Track ended.");
+			   };
+			}
+			
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+			pc.onclose= () => {
+			   console.log("pc close");
+			};
+			
+            ws = new WebSocket(document.querySelector('#websockurl').value, []);
+
+            ws.onmessage = async function (evt) {
+                console.log("WebSocket message received:", evt.data);
+                var obj = JSON.parse(evt.data);
+                if (obj?.candidate) {
+                    pc.addIceCandidate(obj);
+                }
+                else if (obj?.sdp) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(obj));
+                    pc.createAnswer()
+                        .then((answer) => pc.setLocalDescription(answer))
+                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
+                }
+            };
+
+            ws.onclose = function (evt) {
+                console.log("WebSocket closed, code: " + evt.code + ", reason: " + evt.reason);
+            };
+
+            ws.onerror = function (evt) {
+                console.error("WebSocket error:", evt);
+            };
+        };
+
+        async function closePeer() {
+            await pc?.close();
+            await ws?.close();
+        };
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = getWebSocketUrl();
+</script>

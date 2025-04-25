@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -33,7 +32,6 @@ namespace demo
     class Program
     {
         private const int WEBSOCKET_PORT = 8081;
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 

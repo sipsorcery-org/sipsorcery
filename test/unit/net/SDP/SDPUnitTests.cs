@@ -198,15 +198,21 @@ namespace SIPSorcery.Net.UnitTests
                 "b=TIAS:2000000" + m_CRLF +
                 "a=rtpmap:96 VP8/90000" + m_CRLF +
                 "a=sendrecv" + m_CRLF +
-                "a=rtcp-fb:* nack pli";
+                "a=rtcp-fb:* nack pli" + m_CRLF +
+                "m=text 60216 RTP/AVP 98" + m_CRLF +
+                "mid:1" + m_CRLF +
+                "a=rtpmap:98 T140/1000" + m_CRLF +
+                "a=sendrecv" + m_CRLF +
+                "a=ssrc:1679134341 cname:de431dae-58f3-4191-9efe-5d86c1235b60";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
             Debug.WriteLine(sdp.ToString());
 
-            Assert.Equal(2, sdp.Media.Count);
-            Assert.Equal(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
-            Assert.Equal(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
+            Assert.Equal(3, sdp.Media.Count);
+            Assert.Equal(49290, sdp.Media.Find(x => x.Media == SDPMediaTypesEnum.audio).Port);
+            Assert.Equal(56674, sdp.Media.Find(x => x.Media == SDPMediaTypesEnum.video).Port);
+            Assert.Equal(60216, sdp.Media.Find(x => x.Media == SDPMediaTypesEnum.text).Port);
         }
 
         /// <summary>
@@ -227,7 +233,10 @@ namespace SIPSorcery.Net.UnitTests
                 "a=rtpmap:0 PCMU/8000" + m_CRLF +
                 "a=sendrecv" + m_CRLF +
                 "m=video 0 RTP/AVP 96" + m_CRLF +
-                "c=IN IP4 10.0.0.10";
+                "c=IN IP4 10.0.0.10" + m_CRLF +
+                "m=text 11000 RTP/AVP 98 100" + m_CRLF +
+                "a=rtpmap:98 t140/1000" + m_CRLF +
+                "a=fmtp:100 98/98";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -239,6 +248,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(SDPWellKnownMediaFormatsEnum.PCMU.ToString(), sdp.Media[0].MediaFormats[0].Name());
             Assert.True(sdp.Media[1].Media == SDPMediaTypesEnum.video, "The media type not parsed correctly.");
             Assert.True(sdp.Media[1].Connection.ConnectionAddress == "10.0.0.10", "The connection address was not parsed correctly.");
+            Assert.True(sdp.Media[2].Media == SDPMediaTypesEnum.text, "The media type not parsed correctly.");
         }
 
         [Fact]
@@ -1309,6 +1319,40 @@ a=ssrc-group:FID 3366495178 777490417";
             var sdpParsed = SDP.ParseSDPDescription(sdp.ToString());
 
             Assert.Equal(8, sdpParsed.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).First().MediaFormats.First().Key);
+        }
+
+        /// <summary>
+        /// Tests that parsing the number of ports parameter works correctly.
+        /// </summary>
+        /// <remarks>
+        /// https://datatracker.ietf.org/doc/html/rfc4566#section-5.14
+        /// </remarks>
+        [Fact]
+        public void Parse_Number_Of_Ports_Unit_Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 12228/2 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            Assert.True(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
+            Assert.True(sdp.Media[0].PortCount == 2, "The port count was not parsed correctly.");
         }
     }
 }
