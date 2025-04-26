@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Drawing;
+using SixLabors.ImageSharp;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -32,6 +32,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
 {
     public const string FREE_IMAGE_PATH = "media/simple_flower.jpg";
     private const string PAID_IMAGE_PATH = "media/real_flowers.jpg";
+    private const string QR_CODE_LOGO_PATH = "media/logo.png";
 
     private const int FREE_PERIOD_SECONDS = 8;
     private const int TRANSITION_PERIOD_SECONDS = 7;
@@ -65,7 +66,7 @@ public class PaymentStateMachine : IFrameConfigStateMachine
         _lightningPaymentService = lightningPaymentService;
         _paymentStateMachine = CreatePaymentStateMachine();
 
-        _paidFrameConfig = new PaidVideoFrameConfig(DateTimeOffset.Now, null, 0, Color.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH);
+        _paidFrameConfig = new PaidVideoFrameConfig(DateTimeOffset.Now, null, 0, Color.Green, INITIALISING_TITLE, false, FREE_IMAGE_PATH, QR_CODE_LOGO_PATH);
     }
 
     private StateMachine<PaymentStatus, PaymentStateTrigger> CreatePaymentStateMachine()

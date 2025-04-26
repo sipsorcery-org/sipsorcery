@@ -14,8 +14,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Lnrpc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -71,13 +73,13 @@ class Program
 
         builder.Host.UseSerilog();
 
-        builder.Services.AddHostedService<WebSocketService>();
         builder.Services.AddHostedService<LndInvoiceListener>();
         builder.Services.AddSingleton<LightningInvoiceEventService>();
         builder.Services.AddTransient<IPaidWebRtcConnectionFactory, PaidWebRtcConnectionFactory>();
         builder.Services.AddTransient<ILightningPaymentService, LightningPaymentService>();
         builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
         builder.Services.AddTransient<ILightningService, LightningService>();
+        builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapService>();
         builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapService>();
         builder.Services.AddTransient<IFrameConfigStateMachine, PaymentStateMachine>();
 
@@ -95,27 +97,37 @@ class Program
         app.UseStaticFiles();
         app.UseWebSockets();
 
-        app.Map("/ws", async context =>
+        app.Map("/ws", async
+            (HttpContext context,
+             [FromServices] IPaidWebRtcConnectionFactory paidWebRtcConnectionFactory,
+             [FromServices] ILogger<Program> wsLogger) =>
         {
-            programLogger.LogDebug("Web socket client connection established.");
+            wsLogger.LogDebug("Web socket client connection established.");
 
             if (context.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-                //var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
-                //    CreatePeerConnection,
-                //    RTCSdpType.offer,
-                //    programLogger);
+                //IPaidWebRtcConnection webRtcConnectionManager = _webRtcConnectionManagerFactory.CreatePaidWebRTCConnection(peer.ID);
+                //var pc = await webRtcConnectionManager.CreatePeerConnection(peer.ID);
+                //_logger.LogInformation($"Peer connection {peer.ID} successfully created.");
+                //return pc;
 
-                //webSocketPeer.OfferOptions = new RTCOfferOptions
-                //{
-                //    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
-                //};
+                var paidWebRtcConnection = paidWebRtcConnectionFactory.CreatePaidWebRTCConnection("dummy");
 
-                //await webSocketPeer.Run();
+                var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
+                    (wsLogger) => paidWebRtcConnection.CreatePeerConnection("dummy"),
+                    RTCSdpType.offer,
+                    wsLogger);
 
-                //await webSocketPeer.Close();
+                webSocketPeer.OfferOptions = new RTCOfferOptions
+                {
+                    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
+                };
+
+                await webSocketPeer.Run();
+
+                await webSocketPeer.Close();
             }
             else
             {

@@ -5,8 +5,6 @@ VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCLightningGetStarted", "WebRTCLightningGetStarted\WebRTCLightningGetStarted.csproj", "{913F703F-4FA5-4EF9-A319-8DD571390243}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{19E97051-F69A-4B12-8C0E-EF8D81E65B16}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,12 +15,11 @@ Global
 		{913F703F-4FA5-4EF9-A319-8DD571390243}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{913F703F-4FA5-4EF9-A319-8DD571390243}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{913F703F-4FA5-4EF9-A319-8DD571390243}.Release|Any CPU.Build.0 = Release|Any CPU
-		{19E97051-F69A-4B12-8C0E-EF8D81E65B16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{19E97051-F69A-4B12-8C0E-EF8D81E65B16}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{19E97051-F69A-4B12-8C0E-EF8D81E65B16}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{19E97051-F69A-4B12-8C0E-EF8D81E65B16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4121A054-0FFD-4E2F-8ACE-104E418F8105}
 	EndGlobalSection
 EndGlobal
