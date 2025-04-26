@@ -15,27 +15,61 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
+using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
 using System;
+using System.Threading.Tasks;
 
 namespace demo;
 
 class Program
 {
-    static void Main(string[] args)
+    private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
+
+    private static string _stunUrl = string.Empty;
+    private static bool _waitForIceGatheringToSendOffer = false;
+    private static int _webrtcBindPort = 0;
+
+    static async Task Main(string[] args)
     {
         Console.WriteLine("WebRTC Lightning Demo");
 
-        var builder = WebApplication.CreateBuilder(args);
-        builder.Host.UseSerilog((context, services, config) =>
+        _stunUrl = Environment.GetEnvironmentVariable("STUN_URL") ?? string.Empty;
+        bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER"), out _waitForIceGatheringToSendOffer);
+        int.TryParse(Environment.GetEnvironmentVariable("BIND_PORT"), out _webrtcBindPort);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
+
+        var factory = new SerilogLoggerFactory(Log.Logger);
+        SIPSorcery.LogFactory.Set(factory);
+        var programLogger = factory.CreateLogger<Program>();
+
+        if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            config.WriteTo.Console()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug);
-        });
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
+        }
+        else
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
+        }
+
+        programLogger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
+        programLogger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
+
+        var builder = WebApplication.CreateBuilder();
+
+        builder.Host.UseSerilog();
 
         builder.Services.AddHostedService<WebSocketService>();
         builder.Services.AddHostedService<LndInvoiceListener>();
@@ -59,7 +93,37 @@ class Program
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
+        app.UseWebSockets();
 
-        app.Run();
+        app.Map("/ws", async context =>
+        {
+            programLogger.LogDebug("Web socket client connection established.");
+
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+                //var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
+                //    CreatePeerConnection,
+                //    RTCSdpType.offer,
+                //    programLogger);
+
+                //webSocketPeer.OfferOptions = new RTCOfferOptions
+                //{
+                //    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
+                //};
+
+                //await webSocketPeer.Run();
+
+                //await webSocketPeer.Close();
+            }
+            else
+            {
+                // Not a WebSocket request
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        });
+
+        await app.RunAsync();
     }
 }
