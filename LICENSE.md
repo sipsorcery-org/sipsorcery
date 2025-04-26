@@ -1,44 +1,32 @@
-Copyright (c) 2006-2020, Aaron Clauson
+Copyright (c) 2006–2025 Aaron Clauson
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
-* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+3. Neither the name “SIP Sorcery,” nor “Aaron Clauson,” nor the names of any contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
-* Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-* Neither the names SIP Sorcery, Aaron Clauson nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+DTLS & SRTP Implementation Notice
+---------------------------------
 
-Derivative Works:
------------------
+Portions of the DTLS/SRTP implementation are derived from:
 
-Portions of the DTLS/SRTP implmentation are derived from the jitsi SRTP library, see https://github.com/jitsi/jitsi-srtp.
-The license for the derivative source code is the Apache License, Version 2.0 with specific conditions listed immediately below.
+- **Jitsi SRTP Library**  
+  (https://github.com/jitsi/jitsi-srtp) licensed under Apache License 2.0  
+- **Minisip Project**  
+  (https://github.com/csd/minisip) licensed under LGPL  
+- **RestComm Media-Core**  
+  (https://github.com/RestComm/media-core/tree/master) licensed under AGPL-3.0
 
-/*
- * Copyright @ 2015 - present 8x8, Inc
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+Because of these dependencies, users should assume GPL-style obligations apply (e.g. making source code available on request).  
 
-Portions of the DTLS/SRTP implmentation may be derived from the RestComm Media-Core, see https://github.com/RestComm/media-core.
+If you wish to avoid GPL obligations, you may remove the `src/net/DtlsSrtp` directory. This will disable WebRTC’s DTLS/SRTP support (but leave core SIP functionality intact unless SRTP is explicitly required).
 
-The media-core project uses an AGPL-3.0 license https://github.com/RestComm/media-core?tab=AGPL-3.0-1-ov-file.
+As an alternative, you could integrate Cisco’s non-GPL [libsrtp](https://github.com/cisco/libsrtp), which many upstream projects originally forked from.
 
-It's currently under investigation as to whether the small number of files that constitute the derived work were originally from the Jitsi project or are novel to media-core.
+*Caveat: This notice is provided for informational purposes only and does not constitute legal advice.*
 
-For anyone incroporating this library into their own derivative works the safest course of action is to assume there is an AGPL-3.0 claim, or alternatively remove the files in question which will render the DTLS/SRTP implmentation unusable.
-
-*Caveat: None of this is legal advice.
