@@ -14,7 +14,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Lnrpc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +25,7 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.FFmpeg;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace demo;
@@ -36,7 +36,6 @@ class Program
 
     private static string _stunUrl = string.Empty;
     private static bool _waitForIceGatheringToSendOffer = false;
-    private static int _webrtcBindPort = 0;
 
     static async Task Main(string[] args)
     {
@@ -44,7 +43,6 @@ class Program
 
         _stunUrl = Environment.GetEnvironmentVariable("STUN_URL") ?? string.Empty;
         bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER"), out _waitForIceGatheringToSendOffer);
-        int.TryParse(Environment.GetEnvironmentVariable("BIND_PORT"), out _webrtcBindPort);
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -75,7 +73,7 @@ class Program
 
         builder.Services.AddHostedService<LndInvoiceListener>();
         builder.Services.AddSingleton<LightningInvoiceEventService>();
-        builder.Services.AddTransient<IPaidWebRtcConnectionFactory, PaidWebRtcConnectionFactory>();
+        builder.Services.AddTransient<IPaidWebRtcConnection, PaidWebRtcConnection>();
         builder.Services.AddTransient<ILightningPaymentService, LightningPaymentService>();
         builder.Services.AddTransient<ILightningClientFactory, LightningClientFactory>();
         builder.Services.AddTransient<ILightningService, LightningService>();
@@ -99,7 +97,7 @@ class Program
 
         app.Map("/ws", async
             (HttpContext context,
-             [FromServices] IPaidWebRtcConnectionFactory paidWebRtcConnectionFactory,
+             [FromServices] IPaidWebRtcConnection paidWebRtcConnection,
              [FromServices] ILogger<Program> wsLogger) =>
         {
             wsLogger.LogDebug("Web socket client connection established.");
@@ -108,15 +106,19 @@ class Program
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-                //IPaidWebRtcConnection webRtcConnectionManager = _webRtcConnectionManagerFactory.CreatePaidWebRTCConnection(peer.ID);
-                //var pc = await webRtcConnectionManager.CreatePeerConnection(peer.ID);
-                //_logger.LogInformation($"Peer connection {peer.ID} successfully created.");
-                //return pc;
+                RTCConfiguration config = new RTCConfiguration
+                {
+                    X_ICEIncludeAllInterfaceAddresses = true
+                };
 
-                var paidWebRtcConnection = paidWebRtcConnectionFactory.CreatePaidWebRTCConnection("dummy");
+                if (!string.IsNullOrWhiteSpace(_stunUrl))
+                {
+                    config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
+                }
 
-                var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
-                    (wsLogger) => paidWebRtcConnection.CreatePeerConnection("dummy"),
+                var webSocketPeer = new WebRTCWebSocketPeerAspNet(
+                    webSocket,
+                    (wsLogger) => paidWebRtcConnection.CreatePeerConnection(config),
                     RTCSdpType.offer,
                     wsLogger);
 

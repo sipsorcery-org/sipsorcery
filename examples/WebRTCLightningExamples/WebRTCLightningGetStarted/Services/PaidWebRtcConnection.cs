@@ -29,7 +29,7 @@ namespace demo;
 
 public interface IPaidWebRtcConnection
 {
-    Task<RTCPeerConnection> CreatePeerConnection(string peerID);
+    Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration confi);
 }
 
 public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
@@ -53,9 +53,9 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
         _annotatedBitmapGenerator = annotatedBitmapGenerator;
     }
 
-    public Task<RTCPeerConnection> CreatePeerConnection(string peerID)
+    public Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration config)
     {
-        var pc = new RTCPeerConnection(null);
+        var pc = new RTCPeerConnection(config);
 
         var sourceImage = Image.Load<Rgba32>(PaymentStateMachine.FREE_IMAGE_PATH);
 
@@ -69,14 +69,14 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
         imageSharpBitmapSource.OnVideoSourceEncodedSample += pc.SendVideo;
         pc.OnVideoFormatsNegotiated += (formats) => imageSharpBitmapSource.SetVideoSourceFormat(formats.First());
 
-        HandlePeerConnectionStateChange(pc, imageSharpBitmapSource, peerID);
+        HandlePeerConnectionStateChange(pc, imageSharpBitmapSource);
 
         SetDiagnosticLogging(pc);
 
         return Task.FromResult(pc);
     }
 
-    private Timer ImageSharpCreateGenerateBitmapTimer(VideoBitmapSource bitmapSource, string peerID)
+    private Timer ImageSharpCreateGenerateBitmapTimer(VideoBitmapSource bitmapSource)
     {
         return new Timer(_ =>
         {
@@ -93,17 +93,17 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
         null, TimeSpan.Zero, TimeSpan.FromMilliseconds(CUSTOM_FRAME_GENERATE_PERIOD_MILLISECONDS));
     }
 
-    private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource videoSource, string peerID)
+    private void HandlePeerConnectionStateChange(RTCPeerConnection pc, VideoBitmapSource videoSource)
     {
         pc.onconnectionstatechange += async (state) =>
         {
-            _logger.LogDebug($"Peer {peerID} connection state change to {state}.");
+            _logger.LogDebug($"Peer connection state change to {state}.");
 
             if (state is RTCPeerConnectionState.closed or
                         RTCPeerConnectionState.failed or
                         RTCPeerConnectionState.disconnected)
             {
-                await ClosePeerConnectionResources(peerID, _setBitmapSourceTimer, videoSource);
+                await ClosePeerConnectionResources(_setBitmapSourceTimer, videoSource);
             }
 
             if (state == RTCPeerConnectionState.failed)
@@ -112,21 +112,21 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
             }
             else if (state == RTCPeerConnectionState.connected)
             {
-                _logger.LogDebug($"Starting bitmap source for peer {peerID}.");
+                _logger.LogDebug($"Starting bitmap source.");
                 await videoSource.StartVideo();
 
                 if (_setBitmapSourceTimer == null)
                 {
-                    _logger.LogDebug($"Starting bitmap create bitmap frame for peer {peerID}.");
-                    _setBitmapSourceTimer = ImageSharpCreateGenerateBitmapTimer(videoSource, peerID);
+                    _logger.LogDebug($"Starting bitmap create bitmap frame.");
+                    _setBitmapSourceTimer = ImageSharpCreateGenerateBitmapTimer(videoSource);
                 }
             }
         };
     }
 
-    private async Task ClosePeerConnectionResources(string peerID, Timer? setBitmapSourceTimer, IVideoSource videoSource)
+    private async Task ClosePeerConnectionResources(Timer? setBitmapSourceTimer, IVideoSource videoSource)
     {
-        _logger.LogDebug($"{nameof(ClosePeerConnectionResources)} for peer ID {peerID}.");
+        _logger.LogDebug($"{nameof(ClosePeerConnectionResources)}.");
 
         if (setBitmapSourceTimer != null)
         {

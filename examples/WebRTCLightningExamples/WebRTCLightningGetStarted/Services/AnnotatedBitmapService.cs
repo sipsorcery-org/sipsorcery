@@ -84,8 +84,8 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
                 ctx.DrawLine(borderPen, new PointF(0, height), new PointF(width, height));
 
                 // 2) Add transparency overlay
-                //var overlayColor = new Rgba32(128, 128, 128, (byte)(255 - frameConfig.Opacity));
-                //ctx.Fill(overlayColor, new RectangleF(0, 0, width, height));
+                var overlayColor = new Rgba32(128, 128, 128, (byte)frameConfig.Opacity);
+                ctx.Fill(overlayColor, new RectangleF(0, 0, width, height));
 
                 // 3) Add header and footer text with outline effect
                 var textOptions = new RichTextOptions(_font)
