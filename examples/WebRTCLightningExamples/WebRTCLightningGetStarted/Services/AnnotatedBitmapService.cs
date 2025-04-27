@@ -8,176 +8,206 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 25 Feb 2025	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Apr 2025	Aaron Clauson	Ported AnnotatedBitmapService to use fully managed ImageSharp library.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using QRCoder;
-using System.Drawing.Drawing2D;
-using System.Drawing;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using Net.Codecrete.QrCodeGenerator;
 using System;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace demo;
 
 public interface IAnnotatedBitmapGenerator
 {
-    Bitmap? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig);
+    Image<Rgba32>? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig);
 }
 
 public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
 {
     private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // Height of text as a percentage of the total image height.
-    private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f;  // Black text outline thickness is set as a percentage of text height in pixels.
     private const int TEXT_MARGIN_PIXELS = 5;
-    private const int POINTS_PER_INCH = 72;
     private const int BORDER_WIDTH = 5;
-    private const int QR_CODE_DIMENSION = 200;
-
-    private readonly ConcurrentDictionary<string, Lazy<Bitmap>> _qrCodeCache = new();
+    private const int QR_CODE_BORDER = 2;
+    private const int QR_CODE_SCALE = 3; // Determines QR code size.
+    private const float TEXT_FONT_SIZE = 16.0f;
+    private const string FONT_FAMILY = "Verdana";
 
     private readonly ILogger _logger;
+    private readonly Font _font;
+
+    private string? _lastPaymentRequest;
+    private Task<Image>? _qrTask;
+    private Image? _qrImage;
 
     public AnnotatedBitmapService(ILogger<AnnotatedBitmapService> logger)
     {
         _logger = logger;
+        _font =  SystemFonts.CreateFont(FONT_FAMILY, TEXT_FONT_SIZE, FontStyle.Bold);
     }
 
-    public Bitmap? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig)
+    public Image<Rgba32>? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig)
     {
+        if (frameConfig.LightningPaymentRequest != _lastPaymentRequest)
+        {
+            DisposeQrCode();
+            if (!string.IsNullOrWhiteSpace(frameConfig.LightningPaymentRequest))
+            {
+                StartQrCodeCreateTask(frameConfig.LightningPaymentRequest, frameConfig.QrCodeLogoPath);
+            }
+        }
+
         try
         {
-            unsafe
-            {
-                string imagePath = frameConfig.ImagePath;
-                using (Bitmap baseBitmap = new Bitmap(imagePath))
-                {
-                    var baseImage = baseBitmap.Clone() as Image;
-                    if (baseImage != null)
-                    {
-                        ApplyFilters(
-                            baseImage,
-                            DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"),
-                            frameConfig.Title,
-                            frameConfig.BorderColour,
-                            frameConfig.Opacity,
-                            frameConfig.LightningPaymentRequest);
+            var image = Image.Load<Rgba32>(frameConfig.ImagePath);
+            int width = image.Width;
+            int height = image.Height;
+            int pixelHeight = (int)(height * TEXT_SIZE_PERCENTAGE);
 
-                        return baseImage as Bitmap;
+            image.Mutate(ctx =>
+            {
+                // 1) Draw border - need to draw each side separately like in original
+                var borderColor = frameConfig.BorderColour;
+                var borderWidth = BORDER_WIDTH;
+                var borderPen = new SolidPen(borderColor, borderWidth);
+
+                ctx.DrawLine(borderPen, new PointF(0, 0), new PointF(0, height));
+                ctx.DrawLine(borderPen, new PointF(0, 0), new PointF(width, 0));
+                ctx.DrawLine(borderPen, new PointF(width, 0), new PointF(width, height));
+                ctx.DrawLine(borderPen, new PointF(0, height), new PointF(width, height));
+
+                // 2) Add transparency overlay
+                var overlayColor = new Rgba32(128, 128, 128, (byte)frameConfig.Opacity);
+                ctx.Fill(overlayColor, new RectangleF(0, 0, width, height));
+
+                // 3) Add header and footer text with outline effect
+                var textOptions = new RichTextOptions(_font)
+                {
+                    Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+
+                // Draw title with outline
+                if (!string.IsNullOrEmpty(frameConfig.Title))
+                {
+                    // Outline (draw multiple times with offset)
+                    for (int i = 0; i < 4; i++)
+                    {
+                        var offset = i switch
+                        {
+                            0 => new PointF(-1, 0),
+                            1 => new PointF(1, 0),
+                            2 => new PointF(0, -1),
+                            3 => new PointF(0, 1),
+                            _ => PointF.Empty
+                        };
+
+                        textOptions.Origin = new PointF(width / 2f + offset.X, TEXT_MARGIN_PIXELS + offset.Y);
+                        ctx.DrawText(textOptions, frameConfig.Title, Color.Black);
                     }
+
+                    // Main text
+                    textOptions.Origin = new PointF(width / 2f, TEXT_MARGIN_PIXELS);
+                    ctx.DrawText(textOptions, frameConfig.Title, Color.White);
                 }
-            }
+
+                // Draw timestamp with outline
+                var timestamp = DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff");
+                var footerOptions = new RichTextOptions(_font)
+                {
+                    Origin = new PointF(width / 2f, height - TEXT_FONT_SIZE - TEXT_MARGIN_PIXELS),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+
+                // Outline
+                for (int i = 0; i < 4; i++)
+                {
+                    var offset = i switch
+                    {
+                        0 => new PointF(-1, 0),
+                        1 => new PointF(1, 0),
+                        2 => new PointF(0, -1),
+                        3 => new PointF(0, 1),
+                        _ => PointF.Empty
+                    };
+
+                    footerOptions.Origin = new PointF(width / 2f + offset.X,
+                        height - pixelHeight - TEXT_MARGIN_PIXELS + offset.Y);
+                    ctx.DrawText(footerOptions, timestamp, Color.Black);
+                }
+
+                // Main text
+                footerOptions.Origin = new PointF(width / 2f, height - pixelHeight - TEXT_MARGIN_PIXELS);
+                ctx.DrawText(footerOptions, timestamp, Color.White);
+
+                // 4) Draw QR code if present
+                if (_qrTask?.IsCompletedSuccessfully == true)
+                {
+                    _qrImage ??= _qrTask.Result;
+
+                    int xCenter = (width - _qrImage.Width) / 2;
+                    int yCenter = (height - _qrImage.Height) / 2;
+                    ctx.DrawImage(_qrImage, new Point(xCenter, yCenter), 1f);
+                }
+            });
+
+            return image;
         }
         catch (Exception excp)
         {
             _logger.LogError("Exception GetAnnotatedBitmap. " + excp);
-        }
-
-        return null;
-    }
-
-    private void ApplyFilters(Image image, string timeStamp, string title, Color borderColor, int transparency, string? lightningPaymentRequest)
-    {
-        int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
-
-        using Graphics g = Graphics.FromImage(image);
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-        // Draw border.
-        using (var pen = new Pen(borderColor, BORDER_WIDTH))
-        {
-            g.DrawLine(pen, new Point(0, 0), new Point(0, image.Height));
-            g.DrawLine(pen, new Point(0, 0), new Point(image.Width, 0));
-            g.DrawLine(pen, new Point(0, image.Height), new Point(image.Width, image.Height));
-            g.DrawLine(pen, new Point(image.Width, 0), new Point(image.Width, image.Height));
-        }
-
-        // Add transparency.
-        using (Brush brush = new SolidBrush(Color.FromArgb(transparency, Color.Gray)))
-        {
-            g.FillRectangle(brush, new Rectangle(0, 0, image.Width, image.Height));
-        }
-
-        // Add header and footer text.
-        using (StringFormat format = new StringFormat())
-        {
-            format.LineAlignment = StringAlignment.Center;
-            format.Alignment = StringAlignment.Center;
-
-            using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
-            {
-                using (var gPath = new GraphicsPath())
-                {
-                    float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
-                    if (title != null)
-                    {
-                        gPath.AddString(title, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
-                    }
-
-                    gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
-                    g.FillPath(Brushes.White, gPath);
-                    g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
-                }
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(lightningPaymentRequest))
-        {
-            using var qrCode = GetCachedQRCode(lightningPaymentRequest);
-
-            int xCenter = (image.Width - QR_CODE_DIMENSION) / 2;
-            int yCenter = (image.Height - QR_CODE_DIMENSION) / 2;
-            Rectangle dstRect = new Rectangle(xCenter, yCenter, QR_CODE_DIMENSION, QR_CODE_DIMENSION);
-            g.DrawImage(qrCode, dstRect);
-        }
-        else
-        {
-            ClearQRCodeCache();
+            return null;
         }
     }
 
-    private Bitmap GetCachedQRCode(string lightningPaymentRequest)
+    private void DisposeQrCode()
     {
-        if (string.IsNullOrWhiteSpace(lightningPaymentRequest))
+        if (_qrImage is not null)
         {
-            throw new ArgumentException("Payment request must be provided", nameof(lightningPaymentRequest));
-        }
-
-        // Use Lazy to ensure only one QR code is generated per unique payment request.
-        var lazyQr = _qrCodeCache.GetOrAdd(lightningPaymentRequest, key =>
-            new Lazy<Bitmap>(() => GenerateQRCode(key))
-        );
-
-        // Clone the bitmap to ensure thread safety.
-        return (Bitmap)lazyQr.Value.Clone();
-    }
-
-    private void ClearQRCodeCache()
-    {
-        foreach (var key in _qrCodeCache.Keys)
-        {
-            if (_qrCodeCache.TryRemove(key, out var lazyBitmap))
-            {
-                if (lazyBitmap.IsValueCreated)
-                {
-                    lazyBitmap.Value.Dispose();
-                }
-            }
+            _qrImage.Dispose();
+            _qrImage = null;
+            _qrTask = null;
         }
     }
 
-    private Bitmap GenerateQRCode(string lightningPaymentRequest)
+    private void StartQrCodeCreateTask(string paymentRequest, string qrCodeLogoPath)
     {
-        using QRCodeGenerator qrGenerator = new();
-        using QRCodeData qrCodeData = qrGenerator.CreateQrCode(lightningPaymentRequest, QRCodeGenerator.ECCLevel.Q);
-        using QRCode qrCode = new(qrCodeData);
+        _qrTask = string.IsNullOrWhiteSpace(paymentRequest)
+            ? null
+            : Task.Run(() => CreateQrImageWithLogo(paymentRequest, qrCodeLogoPath));
 
-        Bitmap qrBitmap = qrCode.GetGraphic(20);
-        return qrBitmap;
+        _lastPaymentRequest = paymentRequest;
+    }
+
+    private Image CreateQrImageWithLogo(string pr, string logoPath)
+    {
+        const float logoWidth = 0.25f; // logo will have 15% the width of the QR code 
+
+        var qr = QrCode.EncodeText(pr, QrCode.Ecc.Medium);
+
+        var image = qr.ToBitmap(scale: QR_CODE_SCALE, border: QR_CODE_BORDER);
+        var logo = Image.Load(logoPath);
+
+        // resize logo
+        var w = (int)Math.Round(image.Width * logoWidth);
+        logo.Mutate(logo => logo.Resize(w, 0));
+
+        // draw logo in center
+        var topLeft = new Point((image.Width - logo.Width) / 2, (image.Height - logo.Height) / 2);
+        image.Mutate(img => img.DrawImage(logo, topLeft, 1));
+
+        //logo.Dispose();
+
+        return image;
     }
 }

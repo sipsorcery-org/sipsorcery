@@ -92,7 +92,7 @@ public class LightningClientFactory : ILightningClientFactory
 
                 if (certificate != null)
                 {
-                    //_logger.LogInformation($"LND certificate loaded from base64 config setting, thumbprint {certificate.Thumbprint}.");
+                    _logger.LogInformation($"LND certificate loaded from base64 config setting, thumbprint {certificate.Thumbprint}.");
                 }
                 else
                 {
@@ -112,7 +112,7 @@ public class LightningClientFactory : ILightningClientFactory
 
                 if (certificate != null)
                 {
-                    //_logger.LogInformation($"LND certificate loaded from file {certificateFileName}, thumbprint {certificate.Thumbprint}.");
+                    _logger.LogInformation($"LND certificate loaded from file {certificateFileName}, thumbprint {certificate.Thumbprint}.");
                 }
                 else
                 {

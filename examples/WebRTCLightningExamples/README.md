@@ -142,3 +142,29 @@ docker logs -f bitcoind
  - **Connection Issues:** Verify that the `appSettings.json`, or `appSettings.Development.json`, file has the correct LND connection details.
 
  - **Payment Not Triggering Video Updates:** Ensure the payment is confirmed and the demo application is correctly processing payment events.
+
+## Docker Image
+
+### Build
+
+`C:\dev\sipsorcery\examples\WebRTCLightningExamples> docker build -t webrtclightningdemo --progress=plain -f Dockerfile .
+
+### Run
+
+```
+set LND_URL="use real value"
+set LND_MACAROON_HEX="use real value"
+set LND_CERTIFICATE_BASE64="use real value"
+```
+
+`docker run --rm -it -p 8080:8080 -e ASPNETCORE_URLS="http://0.0.0.0:8080" -e Lnd__Url="%LND_URL%" -e Lnd__MacaroonHex="%LND_MACAROON_HEX%" -e Lnd__CertificateBase64="%LND_CERTIFICATE_BASE64%" webrtclightningdemo`
+
+### From DokcerHub
+
+`docker run --rm -it -p 8080:8080 -e ASPNETCORE_URLS="http://0.0.0.0:8080" -e Lnd__Url="%LND_URL%" -e Lnd__MacaroonHex="%LND_MACAROON_HEX%" -e Lnd__CertificateBase64="%LND_CERTIFICATE_BASE64%" -e WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER="True" -e STUN_URL="stun:stun.cloudflare.com" sipsorcery/webrtclightningdemo`
+
+### Troubleshooting
+
+`docker run --rm -it -p 8080:8080 -e ASPNETCORE_URLS="http://0.0.0.0:8080" -e Lnd__Url="%LND_URL%" -e Lnd__MacaroonHex="%LND_MACAROON_HEX%" -e Lnd__CertificateBase64="%LND_CERTIFICATE_BASE64%" --entrypoint "/bin/bash" webrtclightningdemo`
+
+If there is a missing font exception check the `/usr/share/fonts/truetype/msttcorefonts` directory.

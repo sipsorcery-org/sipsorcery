@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Drawing;
+using SixLabors.ImageSharp;
 
 namespace demo;
 
@@ -26,4 +26,5 @@ public record PaidVideoFrameConfig(
     Color BorderColour,
     string Title,
     bool IsPaid,
-    string ImagePath);
+    string ImagePath,
+    string QrCodeLogoPath);
