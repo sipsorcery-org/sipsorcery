@@ -39,6 +39,7 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
     private const int QR_CODE_BORDER = 2;
     private const int QR_CODE_SCALE = 3; // Determines QR code size.
     private const float TEXT_FONT_SIZE = 16.0f;
+    private const string FONT_FAMILY = "Verdana";
 
     private readonly ILogger _logger;
     private readonly Font _font;
@@ -50,7 +51,7 @@ public class AnnotatedBitmapService : IAnnotatedBitmapGenerator
     public AnnotatedBitmapService(ILogger<AnnotatedBitmapService> logger)
     {
         _logger = logger;
-        _font =  SystemFonts.CreateFont("Tahoma", TEXT_FONT_SIZE, FontStyle.Bold);
+        _font =  SystemFonts.CreateFont(FONT_FAMILY, TEXT_FONT_SIZE, FontStyle.Bold);
     }
 
     public Image<Rgba32>? GetAnnotatedBitmap(PaidVideoFrameConfig frameConfig)
