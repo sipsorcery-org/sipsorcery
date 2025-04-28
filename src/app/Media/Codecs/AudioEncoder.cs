@@ -136,7 +136,7 @@ namespace SIPSorcery.Media
             {
                 if (_opusEncoder == null)
                 {
-                    _opusEncoder = OpusCodecFactory.CreateEncoder(OPUS_SAMPLE_RATE, OPUS_CHANNELS, OpusApplication.OPUS_APPLICATION_VOIP);
+                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, format.ChannelCount, OpusApplication.OPUS_APPLICATION_VOIP);
                 }
 
                 // Opus expects PCM data in float format [-1.0, 1.0].
@@ -147,7 +147,7 @@ namespace SIPSorcery.Media
                 }
 
                 byte[] encodedSample = new byte[pcm.Length];
-                int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / OPUS_CHANNELS, encodedSample, encodedSample.Length);
+                int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / format.ChannelCount, encodedSample, encodedSample.Length);
                 return encodedSample.Take(encodedLength).ToArray();
             }
             else
@@ -211,7 +211,7 @@ namespace SIPSorcery.Media
             {
                 if (_opusDecoder == null)
                 {
-                    _opusDecoder = OpusCodecFactory.CreateDecoder(OPUS_SAMPLE_RATE, OPUS_CHANNELS);
+                    _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, format.ChannelCount);
                 }
 
                 float[] decodedPcmFloat = new float[OPUS_MAXIMUM_DECODE_BUFFER_LENGTH];

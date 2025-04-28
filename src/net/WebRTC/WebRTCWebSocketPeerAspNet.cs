@@ -60,6 +60,8 @@ public class WebRTCWebSocketPeerAspNet
 
     public Func<ILogger, Task<RTCPeerConnection>> CreatePeerConnection;
 
+    public event Action OnConnected;
+
     public WebRTCWebSocketPeerAspNet(WebSocket webSocket, Func<ILogger, Task<RTCPeerConnection>> createPeerConnection, RTCSdpType peerRole, ILogger logger)
     {
         _webSocket = webSocket;
@@ -85,6 +87,16 @@ public class WebRTCWebSocketPeerAspNet
                 _pc.signalingState == RTCSignalingState.stable)
             {
                 await SendMessageAsync(iceCandidate.toJSON());
+            }
+        };
+
+        _pc.onconnectionstatechange += (state) =>
+        {
+            _logger.LogDebug("{caller} peer connection state changed to {state}.", nameof(WebRTCWebSocketPeerAspNet),  state);
+
+            if(state == RTCPeerConnectionState.connected)
+            {
+                OnConnected?.Invoke();
             }
         };
 
@@ -174,7 +186,7 @@ public class WebRTCWebSocketPeerAspNet
             var result = _pc.setRemoteDescription(descriptionInit);
             if (result != SetDescriptionResultEnum.OK)
             {
-                _logger.LogWarning("Failed to set remote description, {Result}.", result);
+                _logger.LogWarning("Failed to set remote description, {Result}\n{remoteSDP}.", result, descriptionInit.sdp);
                 _pc.Close("failed to set remote description");
                 await this.Close();
             }
