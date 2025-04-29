@@ -125,7 +125,7 @@ namespace SIPSorcery.Net
                             break;
                         default:
                             offset = Int32.MaxValue;
-                            logger.LogWarning("RTCPCompoundPacket did not recognise packet type ID {PacketTypeID}. {Packet}", packetTypeID, packet.HexStr());
+                            logger.LogRtcpCompoundPacketUnrecognizedType(packetTypeID, packet);
                             break;
                     }
                 }
@@ -293,7 +293,7 @@ namespace SIPSorcery.Net
                             break;
                         default:
                             offset = Int32.MaxValue;
-                            logger.LogWarning("RTCPCompoundPacket did not recognise packet type ID {PacketTypeID}. {Packet}", packetTypeID, packet.HexStr());
+                            logger.LogRtcpCompoundPacketUnrecognizedType(packetTypeID, packet);
                             break;
                     }
                 }

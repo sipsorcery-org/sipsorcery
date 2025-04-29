@@ -166,7 +166,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUserField ToString. {Message}", excp.Message);
+                logger.LogSIPUserFieldToStringError(excp.Message, excp);
                 throw;
             }
         }
@@ -188,7 +188,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUserField ToParameterlessString. {Message}", excp.Message);
+                logger.LogSIPUserFieldToParameterlessStringError(excp.Message, excp);
                 throw;
             }
         }
