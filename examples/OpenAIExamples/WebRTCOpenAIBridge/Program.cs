@@ -35,16 +35,32 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Windows;
 using LanguageExt;
 using LanguageExt.Common;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using SIPSorceryMedia.Abstractions;
 
 namespace demo;
+
+record InitPcContext(
+   string CallLabel,
+   string EphemeralKey,
+   string OfferSdp,
+   string AnswerSdp,
+   OpenAIVoicesEnum Voice,
+   int AudioScopeNumber
+);
+
+record CreatedPcContext(
+    string CallLabel,
+    string EphemeralKey,
+    RTCPeerConnection Pc,
+    string OfferSdp,
+    string AnswerSdp,
+    SemaphoreSlim PcConnectedSemaphore
+ );
 
 record PcContext(
    RTCPeerConnection Pc,
@@ -56,6 +72,8 @@ record PcContext(
 
 class Program
 {
+    private const int AUDIO_PACKET_DURATION = 20; // 20ms of audio per RTP packet.
+
     private const string OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
     private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
     private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
@@ -133,11 +151,79 @@ class Program
                     X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
                 };
 
-                webSocketPeer.OnConnected += async () =>
+                webSocketPeer.OnRTCPeerConnectionConnected += async () =>
                 {
                     programLogger.LogDebug("Browser peer connection connected.");
 
-                    await InitiateOpenAIConnection(_openAIKey);
+                    var initialContext = new InitPcContext(
+                        "dummy",
+                        string.Empty,
+                        string.Empty,
+                        string.Empty,
+                        OpenAIVoicesEnum.shimmer,
+                        1);
+
+                    var openAiResult = await InitiatePeerConnectionWithOpenAI(_openAIKey, initialContext);
+
+                    if (openAiResult.IsLeft)
+                    {
+                        logger.LogError($"There was a problem connecting the OpenAI call. {((Error)openAiResult).Message}");
+                    }
+                    else
+                    {
+                        var openAiCtx = (CreatedPcContext)openAiResult;
+                        var waitForDataChannel = openAiCtx.PcConnectedSemaphore.WaitAsync();
+                        await waitForDataChannel;
+
+                        logger.LogInformation($"OpenAI data channel connected, connecting audio.");
+
+                        // Use to intercept audio and sent to Windows speaker for local diagnostics.
+                        //var audioEncoder = new AudioEncoder(includeOpus: true);
+                        //var opus = audioEncoder.SupportedFormats.Single(x => x.FormatName == "OPUS");
+                        //var audioSource = new AudioExtrasSource(audioEncoder, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+                        //audioSource.SetAudioSourceFormat(opus);
+                        //audioSource.OnAudioSourceEncodedSample += webSocketPeer.RTCPeerConnection.SendAudio;
+                        //await audioSource.StartAudio();
+                        //WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
+                        //windowsAudioEP.SetAudioSinkFormat(opus);
+                        //await windowsAudioEP.StartAudioSink();
+
+                        uint rtpPreviousTimestampForBrowser = 0;
+                        openAiCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                        {
+                            if(rtpPreviousTimestampForBrowser == 0)
+                            {
+                                rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
+                            }
+                            else
+                            {
+                                uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForBrowser;
+                                rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
+
+                                webSocketPeer.RTCPeerConnection.SendAudio(rtpDuration, rtpPkt.Payload);
+                            }
+                        };
+
+                        uint rtpPreviousTimestampForOpenAI = 0;
+                        webSocketPeer.RTCPeerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+                        {
+                            if (rtpPreviousTimestampForOpenAI == 0)
+                            {
+                                rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
+                            }
+                            else
+                            {
+                                uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForOpenAI;
+                                rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
+
+                                openAiCtx.Pc.SendAudio(rtpDuration, rtpPkt.Payload);
+                            }
+                        };
+
+                        webSocketPeer.RTCPeerConnection.OnClosed += () => openAiCtx.Pc.Close("Browser peer closed.");
+
+                        SendResponseCreate(openAiCtx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Hi there.");
+                    }
                 };
 
                 await webSocketPeer.Run();
@@ -154,17 +240,25 @@ class Program
         await app.RunAsync();
     }
 
-    private static async Task InitiateOpenAIConnection(string openAiKey)
+    /// <summary>
+    /// Contains a functional flow to initiate a WebRTC peer connection with the OpenAI realtime endpoint.
+    /// </summary>
+    /// <remarks>
+    /// See https://platform.openai.com/docs/guides/realtime-webrtc for the steps required to establish a connection.
+    /// </remarks>
+    private static async Task<Either<Error, CreatedPcContext>> InitiatePeerConnectionWithOpenAI(string openAIKey, InitPcContext initCtx)
     {
-        var flow = await Prelude.Right<Error, Unit>(default)
-            .BindAsync(_ =>
+        return await Prelude.Right<Error, Unit>(default)
+            .BindAsync(async _ =>
             {
-                logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
-                return OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, openAiKey, OPENAI_MODEL, OPENAI_VOICE);
+                logger.LogInformation($"STEP 1 {initCtx.CallLabel}: Get ephemeral key from OpenAI.");
+                var ephemeralKey = await OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, openAIKey, OPENAI_MODEL, initCtx.Voice);
+
+                return ephemeralKey.Map(ephemeralKey => initCtx with { EphemeralKey = ephemeralKey });
             })
-            .BindAsync(async ephemeralKey =>
+            .BindAsync(async withkeyCtx =>
             {
-                logger.LogDebug("STEP 2: Create WebRTC PeerConnection & get local SDP offer.");
+                logger.LogInformation($"STEP 2 {withkeyCtx.CallLabel}: Create WebRTC PeerConnection & get local SDP offer.");
 
                 var onConnectedSemaphore = new SemaphoreSlim(0, 1);
                 var pc = await CreatePeerConnection(onConnectedSemaphore);
@@ -174,54 +268,37 @@ class Program
                 logger.LogDebug("SDP offer:");
                 logger.LogDebug(offer.sdp);
 
-                return Prelude.Right<Error, PcContext>(
-                    new PcContext(pc, onConnectedSemaphore, ephemeralKey, offer.sdp, string.Empty)
-                );
+                return Prelude.Right<Error, CreatedPcContext>(new(
+                    withkeyCtx.CallLabel,
+                    withkeyCtx.EphemeralKey,
+                    pc,
+                    offer.sdp,
+                    string.Empty,
+                    onConnectedSemaphore));
             })
-            .BindAsync(async ctx =>
+            .BindAsync(async createdCtx =>
             {
-                logger.LogInformation("STEP 3: Send SDP offer to OpenAI REST server & get SDP answer.");
+                logger.LogInformation($"STEP 3 {createdCtx.CallLabel}: Send SDP offer to OpenAI REST server & get SDP answer.");
 
-                var answerEither = await OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(ctx.EphemeralKey, OPENAI_REALTIME_BASE_URL, OPENAI_MODEL, ctx.OfferSdp);
-                return answerEither.Map(answer => ctx with { AnswerSdp = answer });
+                var answerEither = await OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(createdCtx.EphemeralKey, OPENAI_REALTIME_BASE_URL, OPENAI_MODEL, createdCtx.OfferSdp);
+                return answerEither.Map(answer => createdCtx with { AnswerSdp = answer });
             })
-            .BindAsync(ctx =>
+            .BindAsync(withAnswerCtx =>
             {
-                logger.LogInformation("STEP 4: Set remote SDP");
+                logger.LogInformation($"STEP 4 {withAnswerCtx.CallLabel}: Set remote SDP");
 
                 logger.LogDebug("SDP answer:");
-                logger.LogDebug(ctx.AnswerSdp);
+                logger.LogDebug(withAnswerCtx.AnswerSdp);
 
-                var setAnswerResult = ctx.Pc.setRemoteDescription(
-                    new RTCSessionDescriptionInit { sdp = ctx.AnswerSdp, type = RTCSdpType.answer }
+                var setAnswerResult = withAnswerCtx.Pc.setRemoteDescription(
+                    new RTCSessionDescriptionInit { sdp = withAnswerCtx.AnswerSdp, type = RTCSdpType.answer }
                 );
-                logger.LogInformation($"Set answer result {setAnswerResult}.");
+                logger.LogDebug($"Set answer result {setAnswerResult}.");
 
                 return setAnswerResult == SetDescriptionResultEnum.OK ?
-                    Prelude.Right<Error, PcContext>(ctx) :
-                    Prelude.Left<Error, PcContext>(Error.New("Failed to set remote SDP."));
-            })
-            .MapAsync(async ctx =>
-            {
-                logger.LogInformation("STEP 5: Wait for data channel to connect and then trigger conversation.");
-
-                await ctx.PcConnectedSemaphore.WaitAsync();
-
-                // NOTE: If you want to trigger the convesation by using the audio from your microphone comment
-                // out this line.
-                SendResponseCreate(ctx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Introduce urself. Keep it short.");
-
-                return ctx;
-            })
-            .BindAsync(ctx =>
-            {
-                return Prelude.Right<Error, PcContext>(ctx);
+                    Prelude.Right<Error, CreatedPcContext>(withAnswerCtx) :
+                    Prelude.Left<Error, CreatedPcContext>(Error.New("Failed to set remote SDP."));
             });
-
-        flow.Match(
-            Left: prob => Console.WriteLine($"There was a problem setting up the connection. {prob.Message}"),
-            Right: _ => Console.WriteLine("The call was successful.")
-        );
     }
 
     /// <summary>
@@ -259,9 +336,10 @@ class Program
 
         var peerConnection = new RTCPeerConnection(pcConfig);
 
-        var audioEncoder = new AudioEncoder();
-        var opusFormat = new AudioFormat(111, "OPUS", 48000, 2, "useinbandfec=1");
-        audioEncoder.SupportedFormats.Add(opusFormat);
+        var audioEncoder = new AudioEncoder(includeOpus: true);
+        var opusFormat = audioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").ToList();
+        //var opusFormat = new AudioFormat(111, "OPUS", 48000, 2, "useinbandfec=1");
+        //audioEncoder.SupportedFormats.Add(opusFormat);
         MediaStreamTrack audioTrack = new MediaStreamTrack(opusFormat, MediaStreamStatusEnum.SendRecv);
         //MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
         //        new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(new AudioFormat(111, "OPUS", 48000, 2, "useinbandfec=1")) }, MediaStreamStatusEnum.SendRecv);
@@ -278,35 +356,15 @@ class Program
         peerConnection.onconnectionstatechange += (state) =>
         {
             logger.LogDebug($"Peer connection connected changed to {state}.");
-
-            if (state == RTCPeerConnectionState.connected)
-            {
-                //await windowsAudioEP.StartAudio();
-                //await windowsAudioEP.StartAudioSink();
-            }
-            else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
-            {
-                //await windowsAudioEP.CloseAudio();
-            }
-        };
-
-        peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-        {
-            //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
-
-            //if (media == SDPMediaTypesEnum.audio)
-            //{
-            //    windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
-            //}
         };
 
         peerConnection.onsignalingstatechange += () =>
         {
-            if(peerConnection.signalingState == RTCSignalingState.have_local_offer)
+            if (peerConnection.signalingState == RTCSignalingState.have_local_offer)
             {
                 logger.LogDebug("Local SDP:\n{sdp}", peerConnection.localDescription.sdp);
             }
-            else if(peerConnection.signalingState is RTCSignalingState.have_remote_offer or RTCSignalingState.stable)
+            else if (peerConnection.signalingState is RTCSignalingState.have_remote_offer or RTCSignalingState.stable)
             {
                 logger.LogDebug("Remote SDP:\n{sdp}", peerConnection.remoteDescription.sdp);
             }
@@ -331,47 +389,33 @@ class Program
         var dataChannel = await peerConnection.createDataChannel(OPENAI_DATACHANNEL_NAME);
 
         // Sink (speaker) only audio end point.
-        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true), -1, -1, false, false);
-        windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
-        windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
-        windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
+        //WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true), -1, -1, false, false);
+        //windowsAudioEP.RestrictFormats(x => x.FormatName == "OPUS");
+        //windowsAudioEP.OnAudioSinkError += err => logger.LogWarning($"Audio sink error. {err}.");
+        //windowsAudioEP.OnAudioSourceEncodedSample +=  peerConnection.SendAudio;
 
-        MediaStreamTrack audioTrack = new MediaStreamTrack(windowsAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+        //var opusAudioEncoder = new AudioEncoder(includeOpus: true);
+        //var opusFormat = opusAudioEncoder.SupportedFormats.FirstOrDefault(x => x.FormatName == "OPUS");
+        var audioEncoder = new AudioEncoder(includeOpus: true);
+        //var opusFormat = new AudioFormat(111, "OPUS", 48000, 2, "useinbandfec=1");
+        //audioEncoder.SupportedFormats.Add(opusFormat);
+        var opusFormat = audioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").ToList();
+        MediaStreamTrack audioTrack = new MediaStreamTrack(opusFormat, MediaStreamStatusEnum.SendRecv);
         peerConnection.addTrack(audioTrack);
 
         peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
         {
             logger.LogDebug($"Audio format negotiated {audioFormats.First().FormatName}.");
-            windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
-            windowsAudioEP.SetAudioSourceFormat(audioFormats.First());
+            //windowsAudioEP.SetAudioSinkFormat(audioFormats.First());
+            //windowsAudioEP.SetAudioSourceFormat(audioFormats.First());
         };
         //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
         //peerConnection.OnSendReport += RtpSession_OnSendReport;
         peerConnection.OnTimeout += (mediaType) => logger.LogDebug($"Timeout on media {mediaType}.");
         peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
-        peerConnection.onconnectionstatechange += async (state) =>
+        peerConnection.onconnectionstatechange += (state) =>
         {
             logger.LogDebug($"Peer connection connected changed to {state}.");
-
-            if (state == RTCPeerConnectionState.connected)
-            {
-                await windowsAudioEP.StartAudio();
-                await windowsAudioEP.StartAudioSink();
-            }
-            else if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
-            {
-                await windowsAudioEP.CloseAudio();
-            }
-        };
-
-        peerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-        {
-            //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}.");
-
-            if (media == SDPMediaTypesEnum.audio)
-            {
-                windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
-            }
         };
 
         dataChannel.onopen += () =>

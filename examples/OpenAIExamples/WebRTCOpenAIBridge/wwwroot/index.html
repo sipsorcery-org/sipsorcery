@@ -4,14 +4,14 @@
         const WEBSOCKET_URL = "ws://127.0.0.1:8080/ws"
         const STUN_URL = "stun:stun.cloudflare.com";
 
-        var pc, ws;
+        let pc, ws, localStream;
 
         // Auto-detect WebSocket URL based on current page
         function getWebSocketUrl() {
             const location = window.location;
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = location.host;
-            const path = '/ws'; // Change this to match your server's WebSocket endpoint
+            const path = '/ws';
 
             return `${protocol}//${host}${path}`;
         }
@@ -25,7 +25,7 @@
                 ]
             });
 
-            const localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
 
             localStream.getTracks().forEach(track => {
                 console.log('add local track ' + track.kind + ' to peer connection.');
@@ -75,18 +75,17 @@
             ws.onerror = function (evt) {
                 console.error("WebSocket error:", evt);
             };
-
-            //pc.createOffer()
-            //    .then(offer => {
-            //        console.log('Local SDP offer:', offer);
-            //        pc.setLocalDescription(offer);
-            //    })
-            //    .catch(console.error);
         };
 
         async function closePeer() {
             await pc?.close();
             await ws?.close();
+
+            // stop and release the mic
+            if (localStream) {
+                localStream.getAudioTracks().forEach(t => t.stop());
+                localStream = null;
+            }
         };
     </script>
 </head>

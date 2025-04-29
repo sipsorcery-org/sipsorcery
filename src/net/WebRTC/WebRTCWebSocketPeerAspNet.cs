@@ -60,7 +60,7 @@ public class WebRTCWebSocketPeerAspNet
 
     public Func<ILogger, Task<RTCPeerConnection>> CreatePeerConnection;
 
-    public event Action OnConnected;
+    public event Action OnRTCPeerConnectionConnected;
 
     public WebRTCWebSocketPeerAspNet(WebSocket webSocket, Func<ILogger, Task<RTCPeerConnection>> createPeerConnection, RTCSdpType peerRole, ILogger logger)
     {
@@ -96,7 +96,7 @@ public class WebRTCWebSocketPeerAspNet
 
             if(state == RTCPeerConnectionState.connected)
             {
-                OnConnected?.Invoke();
+                OnRTCPeerConnectionConnected?.Invoke();
             }
         };
 
