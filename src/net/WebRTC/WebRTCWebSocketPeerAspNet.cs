@@ -32,8 +32,9 @@ namespace SIPSorcery.Net;
 /// </summary>
 public class WebRTCWebSocketPeerAspNet
 {
-    private ILogger _logger = NullLogger.Instance;
+    private ILogger _logger = SIPSorcery.Sys.Log.Logger;
 
+    private RTCConfiguration _peerConnectionConfig;
     private RTCPeerConnection _pc;
     public RTCPeerConnection RTCPeerConnection => _pc;
 
@@ -58,14 +59,20 @@ public class WebRTCWebSocketPeerAspNet
     /// </summary>
     public Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
 
-    public Func<ILogger, Task<RTCPeerConnection>> CreatePeerConnection;
+    public Func<RTCConfiguration, Task<RTCPeerConnection>> CreatePeerConnection;
 
-    public WebRTCWebSocketPeerAspNet(WebSocket webSocket, Func<ILogger, Task<RTCPeerConnection>> createPeerConnection, RTCSdpType peerRole, ILogger logger)
+    public event Action OnRTCPeerConnectionConnected;
+
+    public WebRTCWebSocketPeerAspNet(
+        WebSocket webSocket,
+        Func<RTCConfiguration, Task<RTCPeerConnection>> createPeerConnection,
+        RTCConfiguration peerConnectionConfig,
+        RTCSdpType peerRole)
     {
         _webSocket = webSocket;
         CreatePeerConnection = createPeerConnection;
+        _peerConnectionConfig = peerConnectionConfig;
         _peerRole = peerRole;
-        _logger = logger ?? NullLogger.Instance;
         _cts = new CancellationTokenSource();
     }
 
@@ -73,10 +80,8 @@ public class WebRTCWebSocketPeerAspNet
     {
         _logger.LogDebug("Web socket client connection established.");
 
-        // Create PeerConnection
-        _pc = await CreatePeerConnection(_logger);
+        _pc = await CreatePeerConnection(_peerConnectionConfig);
 
-        // Set up the onicecandidate event
         _pc.onicecandidate += async (iceCandidate) =>
         {
             _logger.LogDebug("Got local ICE candidate, {Candidate}.", iceCandidate.candidate);
@@ -88,9 +93,19 @@ public class WebRTCWebSocketPeerAspNet
             }
         };
 
+        _pc.onconnectionstatechange += (state) =>
+        {
+            _logger.LogDebug("{caller} peer connection state changed to {state}.", nameof(WebRTCWebSocketPeerAspNet),  state);
+
+            if(state == RTCPeerConnectionState.connected)
+            {
+                OnRTCPeerConnectionConnected?.Invoke();
+            }
+        };
+
         await SendOffer();
 
-        // Start the receiving loop
+        // Start the web socket receiving loop.
         await StartReceivingAsync(_cts.Token);
     }
 
@@ -174,7 +189,7 @@ public class WebRTCWebSocketPeerAspNet
             var result = _pc.setRemoteDescription(descriptionInit);
             if (result != SetDescriptionResultEnum.OK)
             {
-                _logger.LogWarning("Failed to set remote description, {Result}.", result);
+                _logger.LogWarning("Failed to set remote description, {Result}\n{remoteSDP}.", result, descriptionInit.sdp);
                 _pc.Close("failed to set remote description");
                 await this.Close();
             }

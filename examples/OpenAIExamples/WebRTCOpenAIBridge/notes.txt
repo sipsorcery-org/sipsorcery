@@ -1,0 +1,8 @@
+If sipsorcery main library update needed for docker build:
+c:\Dev\sipsorcery\src> dotnet pack --configuration Debug --output ..\examples\OpenAIExamples\WebRTCOpenAIBridge\local-nuget /p:TargetFrameworks=net8.0
+
+OpenAI.Realtime library package:
+c:\dev\sipsorcery\examples\OpenAIExamples\OpenAI.Realtime> dotnet pack --configuration Debug --output ..\WebRTCOpenAIBridge\local-nuget /p:TargetFrameworks=net8.0
+
+c:\dev\sipsorcery\examples\OpenAIExamples\WebRTCOpenAIBridge> docker build -t sipsorcery/webrtcopenaibridge:latest --progress=plain -f Dockerfile .
+docker push sipsorcery/webrtcopenaibridge:latest
