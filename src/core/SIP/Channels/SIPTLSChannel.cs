@@ -120,8 +120,15 @@ namespace SIPSorcery.SIP
                     }
                     cts.Cancel();
 
+                    if (resultTask.IsFaulted)
+                    {
+                        logger.LogWarning($"SIP TLS Channel failed to connect to remote host. The authentication handshake failed. Error: {resultTask.Exception?.Message} {resultTask.Exception?.InnerException?.Message} {resultTask.Exception?.StackTrace}");
+                        sslStream.Close();
+                        return;
+                    }
+                    
                     logger.LogDebug("SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningSIPEndPoint}<-{RemoteSIPEndPoint}.", ListeningSIPEndPoint, streamConnection.RemoteSIPEndPoint);
-
+                    
 
                     //// Display the properties and settings for the authenticated stream.
                     ////DisplaySecurityLevel(sslStream);
