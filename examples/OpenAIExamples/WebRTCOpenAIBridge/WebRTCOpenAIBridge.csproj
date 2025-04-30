@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -15,13 +15,14 @@
   <ItemGroup>
     <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="OpenAI.Realtime" Version="8.0.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.7" />
+    <PackageReference Include="SIPSorcery" Version="8.0.13" />
   </ItemGroup>
 
-    <ItemGroup>
+    <!--<ItemGroup>
         <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
         <ProjectReference Include="..\OpenAI.Realtime\OpenAI.Realtime.csproj" />
-    </ItemGroup>
+    </ItemGroup>-->
 
 </Project>

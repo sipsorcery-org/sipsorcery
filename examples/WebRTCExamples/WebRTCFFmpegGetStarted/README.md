@@ -18,7 +18,7 @@ As the time of writing the correct FFmpeg version was `n7.0` and a docker build 
 
 # Docker Run
 
-Establishing a WebRTC connection to a docker container has not yet been successful. The normal docker address range of 172.x.x.x isn't directly accessible fro the host OS. Typically access to docker 
+Establishing a WebRTC connection to a docker container has not yet been successful. The normal docker address range of 172.x.x.x isn't directly accessible from the host OS. Typically access to docker 
 containers relies on port mapping but that doesn't work with the WebRTC ICE mechanism. Below are the options attempted. All of which were unsuccessful. The docker image will work without any special 
 networking options if hosted externally, for example in a kubernetes cluster. The recommended alternative is to run the app directly using `dotnet run`.
 
