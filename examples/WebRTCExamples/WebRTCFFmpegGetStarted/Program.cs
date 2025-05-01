@@ -39,6 +39,8 @@ class Program
     private static bool _waitForIceGatheringToSendOffer = false;
     private static int _webrtcBindPort = 0;
 
+    private static Microsoft.Extensions.Logging.ILogger _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+
     static async Task Main()
     {
         Console.WriteLine("WebRTC FFmpeg Get Started");
@@ -56,19 +58,19 @@ class Program
 
         var factory = new SerilogLoggerFactory(Log.Logger);
         SIPSorcery.LogFactory.Set(factory);
-        var programLogger = factory.CreateLogger<Program>();
+        _logger = factory.CreateLogger<Program>();
 
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, _logger);
         }
         else
         {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, _logger);
         }
 
-        programLogger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
-        programLogger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
+        _logger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
+        _logger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
 
         var builder = WebApplication.CreateBuilder();
 
@@ -87,16 +89,21 @@ class Program
 
         app.Map("/ws", async context =>
         {
-            programLogger.LogDebug("Web socket client connection established.");
+            _logger.LogDebug("Web socket client connection established.");
 
             if (context.WebSockets.IsWebSocketRequest)
             {
                 var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
+                RTCConfiguration config = new RTCConfiguration
+                {
+                    X_ICEIncludeAllInterfaceAddresses = true
+                };
+
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
                     CreatePeerConnection,
-                    RTCSdpType.offer,
-                    programLogger);
+                    config,
+                    RTCSdpType.offer);
 
                 webSocketPeer.OfferOptions = new RTCOfferOptions
                 {
@@ -105,7 +112,7 @@ class Program
 
                 await webSocketPeer.Run();
 
-                await webSocketPeer.Close();
+                _logger.LogDebug("Web socket closing with WebRTC peer connection in state {state}.", webSocketPeer.RTCPeerConnection?.connectionState);
             }
             else
             {
@@ -117,13 +124,8 @@ class Program
         await app.RunAsync();
     }
 
-    private static Task<RTCPeerConnection> CreatePeerConnection(Microsoft.Extensions.Logging.ILogger logger)
+    private static Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration config)
     {
-        RTCConfiguration config = new RTCConfiguration
-        {
-            X_ICEIncludeAllInterfaceAddresses = true
-        };
-
         if (!string.IsNullOrWhiteSpace(_stunUrl))
         {
             config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
@@ -144,26 +146,26 @@ class Program
 
         pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
         pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
-        pc.onicegatheringstatechange += (state) => logger.LogDebug($"ICE gathering state changed to {state}."); ;
-        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
+        pc.onicegatheringstatechange += (state) => _logger.LogDebug($"ICE gathering state changed to {state}."); ;
+        pc.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state changed to {state}.");
 
         pc.onsignalingstatechange += () =>
         {
-            logger.LogDebug($"Signalling state change to {pc.signalingState}.");
+            _logger.LogDebug($"Signalling state change to {pc.signalingState}.");
 
             if (pc.signalingState == RTCSignalingState.have_local_offer)
             {
-                logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
+                _logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
             }
             else if (pc.signalingState == RTCSignalingState.stable)
             {
-                logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
+                _logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
             }
         };
 
         pc.onconnectionstatechange += async (state) =>
         {
-            logger.LogDebug($"Peer connection state change to {state}.");
+            _logger.LogDebug($"Peer connection state change to {state}.");
 
             if (state == RTCPeerConnectionState.connected)
             {
@@ -182,10 +184,10 @@ class Program
         };
 
         // Diagnostics.
-        pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-        pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-        pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
-        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+        pc.OnReceiveReport += (re, media, rr) => _logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+        pc.OnSendReport += (media, sr) => _logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+        pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => _logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
+        pc.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state change to {state}.");
 
         return Task.FromResult(pc);
     }
