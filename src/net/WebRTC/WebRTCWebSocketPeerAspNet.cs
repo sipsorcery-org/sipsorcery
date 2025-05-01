@@ -21,7 +21,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SIPSorcery.Net;
 
@@ -100,10 +99,15 @@ public class WebRTCWebSocketPeerAspNet
             if(state == RTCPeerConnectionState.connected)
             {
                 OnRTCPeerConnectionConnected?.Invoke();
+
+                _cts.Cancel();
             }
         };
 
-        await SendOffer();
+        if (_peerRole == RTCSdpType.offer)
+        {
+            await SendOffer();
+        }
 
         // Start the web socket receiving loop.
         await StartReceivingAsync(_cts.Token);
@@ -151,6 +155,10 @@ public class WebRTCWebSocketPeerAspNet
                     await OnMessage(receiveResult, buffer);
                 }
             }
+        }
+        catch (System.OperationCanceledException)
+        {
+            _logger.LogDebug("{caller} stopped due to application cancellation request.", nameof(StartReceivingAsync));
         }
         catch (Exception ex)
         {
@@ -215,15 +223,12 @@ public class WebRTCWebSocketPeerAspNet
     {
         _logger.LogDebug("WebSocket connection closed.");
 
-        if (_pc != null)
+        // Cancel the receive loop.
+        if (!_cts.IsCancellationRequested)
         {
-            _pc.Close("Signaling WebSocket closed.");
+            _cts.Cancel();
         }
 
-        // Cancel the receive loop.
-        _cts.Cancel();
-
-        // Only close if it's still open
         if (_webSocket.State == WebSocketState.Open)
         {
             await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by the server", CancellationToken.None);
