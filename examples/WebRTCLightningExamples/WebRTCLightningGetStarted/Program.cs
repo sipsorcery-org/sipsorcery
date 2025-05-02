@@ -37,6 +37,8 @@ class Program
     private static string _stunUrl = string.Empty;
     private static bool _waitForIceGatheringToSendOffer = false;
 
+    private static Microsoft.Extensions.Logging.ILogger _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+
     static async Task Main(string[] args)
     {
         Console.WriteLine("WebRTC Lightning Demo");
@@ -53,19 +55,19 @@ class Program
 
         var factory = new SerilogLoggerFactory(Log.Logger);
         SIPSorcery.LogFactory.Set(factory);
-        var programLogger = factory.CreateLogger<Program>();
+        _logger = factory.CreateLogger<Program>();
 
         if (Environment.OSVersion.Platform == PlatformID.Unix)
         {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, programLogger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, _logger);
         }
         else
         {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, programLogger);
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, _logger);
         }
 
-        programLogger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
-        programLogger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
+        _logger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
+        _logger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
 
         var builder = WebApplication.CreateBuilder();
 
@@ -82,14 +84,6 @@ class Program
         builder.Services.AddTransient<IFrameConfigStateMachine, PaymentStateMachine>();
 
         var app = builder.Build();
-
-        // Activate SIPSorcery library logging
-        var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
-        SIPSorcery.LogFactory.Set(loggerFactory);
-
-        // Initialise FFmpeg.
-        var logger = loggerFactory.CreateLogger<Program>();
-        FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
 
         app.UseDefaultFiles();
         app.UseStaticFiles();
@@ -118,9 +112,9 @@ class Program
 
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(
                     webSocket,
-                    (wsLogger) => paidWebRtcConnection.CreatePeerConnection(config),
-                    RTCSdpType.offer,
-                    wsLogger);
+                    paidWebRtcConnection.CreatePeerConnection,
+                    config,
+                    RTCSdpType.offer);
 
                 webSocketPeer.OfferOptions = new RTCOfferOptions
                 {
@@ -129,7 +123,7 @@ class Program
 
                 await webSocketPeer.Run();
 
-                await webSocketPeer.Close();
+                _logger.LogDebug("Web socket closing with WebRTC peer connection in state {state}.", webSocketPeer.RTCPeerConnection?.connectionState);
             }
             else
             {
