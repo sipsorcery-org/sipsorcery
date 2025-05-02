@@ -16,7 +16,6 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -82,6 +81,7 @@ class Program
         builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapService>();
         builder.Services.AddTransient<IAnnotatedBitmapGenerator, AnnotatedBitmapService>();
         builder.Services.AddTransient<IFrameConfigStateMachine, PaymentStateMachine>();
+        builder.Services.AddSingleton<PaidWebRtcConnectionManager>();
 
         var app = builder.Build();
 
@@ -89,12 +89,9 @@ class Program
         app.UseStaticFiles();
         app.UseWebSockets();
 
-        app.Map("/ws", async
-            (HttpContext context,
-             [FromServices] IPaidWebRtcConnection paidWebRtcConnection,
-             [FromServices] ILogger<Program> wsLogger) =>
+        app.Map("/ws", async (HttpContext context) =>
         {
-            wsLogger.LogDebug("Web socket client connection established.");
+            _logger.LogDebug("Web socket client connection established.");
 
             if (context.WebSockets.IsWebSocketRequest)
             {
@@ -110,9 +107,11 @@ class Program
                     config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
                 }
 
+                var mgr = app.Services.GetRequiredService<PaidWebRtcConnectionManager>();
+
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(
                     webSocket,
-                    paidWebRtcConnection.CreatePeerConnection,
+                    mgr.GetCreateConnectionFunction(),
                     config,
                     RTCSdpType.offer);
 

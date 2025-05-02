@@ -29,6 +29,8 @@ namespace demo;
 
 public interface IPaidWebRtcConnection
 {
+    event Action? OnPeerConnectionClosedOrFailed;
+
     Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration confi);
 }
 
@@ -42,6 +44,8 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
     private readonly IAnnotatedBitmapGenerator _annotatedBitmapGenerator;
 
     private Timer? _setBitmapSourceTimer = null;
+
+    public event Action? OnPeerConnectionClosedOrFailed = null;
 
     public PaidWebRtcConnection(
         ILogger<PaidWebRtcConnection> logger,
@@ -104,6 +108,8 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
                         RTCPeerConnectionState.disconnected)
             {
                 await ClosePeerConnectionResources(_setBitmapSourceTimer, videoSource);
+
+                OnPeerConnectionClosedOrFailed?.Invoke();
             }
 
             if (state == RTCPeerConnectionState.failed)
