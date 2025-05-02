@@ -9,12 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="media\logo.png" />
-    <None Remove="media\real_flowers.jpg" />
-    <None Remove="media\simple_flower.jpg" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="media\logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -39,8 +33,7 @@
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="SIPSorcery" Version="8.0.12" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
+    <PackageReference Include="SIPSorcery" Version="8.0.13" />
     <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.6" />
     <PackageReference Include="Stateless" Version="5.17.0" />
