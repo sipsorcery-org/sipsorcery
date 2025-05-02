@@ -189,18 +189,17 @@ namespace SIPSorcery.Net
                     byte fuHeader = payload[2];
                     int fu_startOfNal = (fuHeader >> 7) & 0x01;  // start marker
                     int fu_endOfNal = (fuHeader >> 6) & 0x01;  // end marker
-                    int fu_type = (fuHeader >> 1) & 0x3F; // FU Type
+                    int fu_type = fuHeader & 0x3F; // fragmented NAL Type
                     if (fu_startOfNal == 1)
                     {
                         byte nalHeader1 = payload[0];
                         byte nalHeader2 = payload[1];
-                        int nal_header_f_bit = (nalHeader1 >> 7) & 0x01;
-                        int nuhLayerId = ((nalHeader1 & 0x01) << 5) | ((nalHeader2 >> 3) & 0x1F);
-                        int nuhTemporalIdPlus1 = nalHeader2 & 0x07;
-                        var fu_nalHeader1 = (byte)((nal_header_f_bit << 7) + (fu_type << 2) + (nuhLayerId >> 7));
-                        var fu_nalHeader2 = (byte)((nuhLayerId << 1) + (nuhTemporalIdPlus1));
-                        fuNal.WriteByte(fu_nalHeader1);
-                        fuNal.WriteByte(fu_nalHeader2);
+
+                        nalHeader1 &= 0x81; // clear the NAL type bits
+                        nalHeader1 |= (byte)((fu_type & 0x3F) << 1); // set the inner NAL type bits
+
+                        fuNal.WriteByte(nalHeader1);
+                        fuNal.WriteByte(nalHeader2);
                     }
 
                     if (fuNal.Length == 0 && fu_startOfNal != 1)
