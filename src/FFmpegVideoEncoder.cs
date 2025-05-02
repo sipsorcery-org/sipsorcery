@@ -198,7 +198,10 @@ namespace SIPSorceryMedia.FFmpeg
 
         private AVCodec* GetCodec(AVCodecID codecID, bool isEncoder = true)
         {
-            AVCodec* codec = (AVCodec*)(_specificEncoders?[codecID] ?? IntPtr.Zero);
+            AVCodec* codec = null;
+
+            if (_specificEncoders?.TryGetValue(codecID, out var cdc) ?? false)
+                codec = (AVCodec*)cdc;
 
             if (codec == null)
             {
@@ -220,8 +223,14 @@ namespace SIPSorceryMedia.FFmpeg
             return codec;
         }
 
-        private Dictionary<string, string>? GetCodecOptions(string? name)
-            => !string.IsNullOrWhiteSpace(name) ? _codecOptionsByName?[name!] ?? _codecOptions : null;
+        private Dictionary<string, string> GetCodecOptions(string? name)
+        {
+            if (!string.IsNullOrWhiteSpace(name) 
+                && (_codecOptionsByName?.TryGetValue(name!, out var opt) ?? false))
+                return opt;
+            else
+                return _codecOptions;
+        }
 
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
@@ -231,7 +240,8 @@ namespace SIPSorceryMedia.FFmpeg
                 _codecID = codecID;
                 
                 var codec = GetCodec(codecID);
-                var encOpts = GetCodecOptions(GetNameString(codec->name));
+                var cdcname = GetNameString(codec->name);
+                var encOpts = GetCodecOptions(cdcname);
 
                 if (codec == null)
                 {
@@ -266,7 +276,7 @@ namespace SIPSorceryMedia.FFmpeg
                     _encoderContext->gop_size = fps;
 
                 // provide tunings for known codecs
-                switch (GetNameString(codec->name))
+                switch (cdcname)
                 {
                     case "libx264":
                         ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
@@ -278,6 +288,10 @@ namespace SIPSorceryMedia.FFmpeg
                         break;
                     case "libvpx":
                         ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                        break;
+                    case "libx265":
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
+                        ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
                         break;
                     default:
                         break;
@@ -598,6 +612,8 @@ namespace SIPSorceryMedia.FFmpeg
 
                         if (error == 0)
                         {
+                            //TracePacket(pPacket, "hevc_mp4toannexb");
+
                             if (_codecID == AVCodecID.AV_CODEC_ID_H264)
                             {
                                 // TODO: Work out how to use the FFmpeg H264 bit stream parser to extract the NALs.
@@ -635,6 +651,37 @@ namespace SIPSorceryMedia.FFmpeg
                 return null;
             }
         }
+
+        /*
+        // for debugging or bitstream filter example
+        bool inits = false;
+        unsafe AVBSFContext* bsfctx;
+        private void TracePacket(AVPacket* pPacket, string name)
+        {
+            if (!inits)
+            {
+                IntPtr ptr = IntPtr.Zero;
+                //var bsf = ffmpeg.av_bsf_get_by_name("hevc_mp4toannexb");
+                var bsf = ffmpeg.av_bsf_get_by_name(name);
+                ffmpeg.av_bsf_alloc(bsf, (AVBSFContext**)&ptr);
+                bsfctx = (AVBSFContext*)ptr;
+                ffmpeg.avcodec_parameters_from_context(bsfctx->par_in, 
+                    (IntPtr)_encoderContext == IntPtr.Zero ? _decoderContext : _encoderContext);
+                ffmpeg.av_bsf_init(bsfctx);
+                inits = true;
+            }
+
+            try
+            {
+                ffmpeg.av_bsf_send_packet(bsfctx, pPacket).ThrowExceptionIfError();
+                ffmpeg.av_bsf_receive_packet(bsfctx, pPacket).ThrowExceptionIfError();
+            }
+            catch (Exception e)
+            {
+                logger.LogError("BSF excp: {Log}", e.Message);
+            }
+        }
+        */
 
         public void AdjustStream(int bitrate, int fps)
         {
@@ -714,6 +761,8 @@ namespace SIPSorceryMedia.FFmpeg
                     _frame = ffmpeg.av_frame_alloc();
                     _gpuFrame = ffmpeg.av_frame_alloc();
                 }
+
+                //TracePacket(packet, "trace_headers");
 
                 List<RawImage> rgbFrames = new List<RawImage>();
                 if (ffmpeg.avcodec_send_packet(_decoderContext, packet) < 0)
@@ -874,17 +923,20 @@ namespace SIPSorceryMedia.FFmpeg
                     fmts++;
                 }
 
+                var ret = false;
                 fmt = *fmts;
-                var ok = _encoderContext->codec->pix_fmts[0] != fmt;
+                if (fmt == AVPixelFormat.AV_PIX_FMT_NONE)
+                    fmt = _encoderContext->codec->pix_fmts[0];
+                else
+                    ret = true;
 
                 ResetEncoder();
                 
                 _negotiatedPixFmt = fmt;
 
-                if (logger.IsEnabled(LogLevel.Trace))
                     logger.LogTrace("Negotiated pixel format {fmt}", fmt);
 
-                return ok;
+                return ret;
             }
         }
 
