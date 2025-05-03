@@ -180,3 +180,4 @@ docfx/*
 **/btc-data
 **/lnd-data
 **/rtl-data
+**/local-nuget

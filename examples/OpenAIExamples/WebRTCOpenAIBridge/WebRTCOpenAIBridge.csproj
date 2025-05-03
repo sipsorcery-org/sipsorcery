@@ -15,12 +15,9 @@
   <ItemGroup>
     <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="OpenAI.Realtime" Version="8.0.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
-    <ProjectReference Include="..\OpenAI.Realtime\OpenAI.Realtime.csproj" />
+    <PackageReference Include="SIPSorcery" Version="8.0.13" />
   </ItemGroup>
 
 </Project>
