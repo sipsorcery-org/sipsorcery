@@ -218,7 +218,6 @@ namespace SIPSorcery.Net
                 //var i = 1;
                 foreach (var nal in nals)
                 {
-                    _pktCounter++;
                     //logger.LogTrace("(out) SEND {bits}({of}/{all})", nal.NAL.Length, i++, nals.Count());
                     SendH26XNal(durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
                 }
