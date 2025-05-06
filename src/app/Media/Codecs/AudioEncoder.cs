@@ -26,7 +26,7 @@ namespace SIPSorcery.Media
     {
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int OPUS_SAMPLE_RATE = 48000;           // Opus codec sampling rate, 48KHz.
-        private const int OPUS_CHANNELS = 2;                  // Opus codec number of channels.
+        private const int OPUS_CHANNELS = 1;                  // Opus codec number of channels.
         private const int OPUS_MAXIMUM_DECODE_BUFFER_LENGTH = 5760;
 
         private G722Codec _g722Codec;

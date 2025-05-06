@@ -3,7 +3,7 @@
 //
 // Description: An example WebRTC application that can be used to interact with
 // OpenAI's real-time API https://platform.openai.com/docs/guides/realtime-webrtc
-// and utilise the local function calling feature https://platform.openai.com/docs/guides/function-calling.
+// and utilise the local function calling feature https://platform.openai.com/docs/guides/realtime-conversations#function-calling.
 //
 // Usage:
 // set OPENAIKEY=your_openai_key
@@ -32,6 +32,8 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using LanguageExt;
 using LanguageExt.Common;
+using static Betalgo.Ranul.OpenAI.ObjectModels.StaticValues;
+using static Betalgo.Ranul.OpenAI.ObjectModels.RealtimeModels.RealtimeEventTypes.Server.Response;
 
 namespace demo;
 
@@ -48,7 +50,6 @@ class Program
     private const string OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
     private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
     private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
-    private const OpenAIVoicesEnum OPENAI_VOICE = OpenAIVoicesEnum.shimmer;
     private const string OPENAI_DATACHANNEL_NAME = "oai-events";
 
     private static Microsoft.Extensions.Logging.ILogger logger = LoggerFactory.Create(builder =>
@@ -73,14 +74,9 @@ class Program
         }
 
         var flow = await Prelude.Right<Error, Unit>(default)
-            .BindAsync(_ =>
+            .BindAsync(async _ =>
             {
-                logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
-                return OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, args[0], OPENAI_MODEL, OPENAI_VOICE);
-            })
-            .BindAsync(async ephemeralKey =>
-            {
-                logger.LogDebug("STEP 2: Create WebRTC PeerConnection & get local SDP offer.");
+                logger.LogDebug("STEP 1: Create WebRTC PeerConnection & get local SDP offer.");
 
                 var onConnectedSemaphore = new SemaphoreSlim(0, 1);
                 var pc = await CreatePeerConnection(onConnectedSemaphore);
@@ -91,19 +87,19 @@ class Program
                 logger.LogDebug(offer.sdp);
 
                 return Prelude.Right<Error, PcContext>(
-                    new PcContext(pc, onConnectedSemaphore, ephemeralKey, offer.sdp, string.Empty)
+                    new PcContext(pc, onConnectedSemaphore, args[0], offer.sdp, string.Empty)
                 );
             })
             .BindAsync(async ctx =>
             {
-                logger.LogInformation("STEP 3: Send SDP offer to OpenAI REST server & get SDP answer.");
+                logger.LogInformation("STEP 2: Send SDP offer to OpenAI REST server & get SDP answer.");
 
                 var answerEither = await OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(ctx.EphemeralKey, OPENAI_REALTIME_BASE_URL, OPENAI_MODEL, ctx.OfferSdp);
                 return answerEither.Map(answer => ctx with { AnswerSdp = answer });
             })
             .BindAsync(ctx =>
             {
-                logger.LogInformation("STEP 4: Set remote SDP");
+                logger.LogInformation("STEP 3: Set remote SDP");
 
                 logger.LogDebug("SDP answer:");
                 logger.LogDebug(ctx.AnswerSdp);
@@ -119,7 +115,7 @@ class Program
             })
             .MapAsync(async ctx =>
             {
-                logger.LogInformation("STEP 5: Wait for data channel to connect and then trigger conversation.");
+                logger.LogInformation("STEP 4: Wait for data channel to connect and then trigger conversation.");
 
                 await ctx.PcConnectedSemaphore.WaitAsync();
 
@@ -127,7 +123,7 @@ class Program
             })
             .BindAsync(ctx =>
             {
-                logger.LogInformation("STEP 6: Wait for ctrl-c to indicate user exit.");
+                logger.LogInformation("STEP 5: Wait for ctrl-c to indicate user exit.");
 
                 ManualResetEvent exitMre = new(false);
                 Console.CancelKeyPress += (_, e) =>
@@ -172,7 +168,7 @@ class Program
                 case OpenAISessionCreated sessionCreated:
                     logger.LogInformation($"Session created: {sessionCreated.ToJson()}");
                     OnSessionCreated(dc);
-                    SendResponseCreate(dc, OpenAIVoicesEnum.alloy, "Introduce urself. Keep it short.");
+                    SendResponseCreate(dc, OpenAIVoicesEnum.alloy, "Say \"Hi, how can I help?\".");
                     break;
 
                 case OpenAISessionUpdated sessionUpdated:
@@ -235,7 +231,7 @@ class Program
         dc.send(sessionUpdate.ToJson());
     }
 
-    private static void OnFunctionArgumentsDone(RTCDataChannel dc, OpenAIResponseFunctionCallArgumentsDone argsDone)
+    private static void OnFunctionArgumentsDone(RTCDataChannel dc, FunctionCallArguments argsDone)
     {
         var result = argsDone.Name switch
         {

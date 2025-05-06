@@ -7,7 +7,7 @@ namespace demo;
 
 public class OpenAIOuputAudioBufferAudioStarted : OpenAIServerEventBase
 {
-    public const string TypeName = "output_audio_buffer.audio_started";
+    public const string TypeName = "output_audio_buffer.started";
 
     [JsonPropertyName("type")]
     public override string Type => TypeName;

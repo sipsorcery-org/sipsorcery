@@ -7,7 +7,7 @@ namespace demo;
 
 public class OpenAIOuputAudioBufferAudioStopped : OpenAIServerEventBase
 {
-    public const string TypeName = "output_audio_buffer.audio_stopped";
+    public const string TypeName = "output_audio_buffer.stopped";
 
     [JsonPropertyName("type")]
     public override string Type => TypeName;

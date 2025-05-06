@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAI.Realtime", "OpenAI.R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenAIBridge", "WebRTCOpenAIBridge\WebRTCOpenAIBridge.csproj", "{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Betalgo.Ranul.OpenAI", "..\..\..\github\openai\OpenAI.SDK\Betalgo.Ranul.OpenAI.csproj", "{A1CFD081-9D14-22C8-BD34-EC67CD365E74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAIWebSocket", "OpenAIWebSocket\OpenAIWebSocket.csproj", "{8439F21A-FC78-4659-BC3F-FFA83E2B7151}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,14 @@ Global
 		{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1CFD081-9D14-22C8-BD34-EC67CD365E74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1CFD081-9D14-22C8-BD34-EC67CD365E74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1CFD081-9D14-22C8-BD34-EC67CD365E74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1CFD081-9D14-22C8-BD34-EC67CD365E74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8439F21A-FC78-4659-BC3F-FFA83E2B7151}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8439F21A-FC78-4659-BC3F-FFA83E2B7151}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8439F21A-FC78-4659-BC3F-FFA83E2B7151}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8439F21A-FC78-4659-BC3F-FFA83E2B7151}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
