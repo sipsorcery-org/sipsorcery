@@ -38,12 +38,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
+using SIPSorcery.net.RTP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
+using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
 namespace SIPSorcery.Net
 {
@@ -180,8 +183,9 @@ namespace SIPSorcery.Net
         readonly RTCDataChannelCollection dataChannels;
         public IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
-        private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
+        private Org.BouncyCastle.Tls.Certificate _dtlsCertificate;
         private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
+        private BcTlsCrypto _crypto;
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceInitiateGatheringTask;
         private new TaskCompletionSource<bool> _iceCompletedGatheringTask = new();
@@ -205,6 +209,8 @@ namespace SIPSorcery.Net
         /// that the certificate supplied during the DTLS handshake matches.
         /// </summary>
         public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
+
+        public string DtlsCertificateSignatureAlgorithm { get; private set; } = string.Empty;
 
         public bool IsDtlsNegotiationComplete { get; private set; } = false;
 
@@ -262,8 +268,6 @@ namespace SIPSorcery.Net
         /// remote peer.
         /// </summary>
         public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set; }
-
-        public string DtlsCertificateSignatureAlgorithm { get; private set; } = string.Empty;
 
         /// <summary>
         /// The SCTP transport over which SCTP data is sent and received.
@@ -387,6 +391,7 @@ namespace SIPSorcery.Net
         public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null, Boolean videoAsPrimary = false) :
             base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
         {
+            _crypto = new BcTlsCrypto();
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
 
             if (_configuration != null &&
@@ -400,7 +405,7 @@ namespace SIPSorcery.Net
             {
                 _configuration = configuration;
 
-                if (!InitializeCertificates(configuration) && !InitializeCertificates2(configuration))
+                if (!InitializeCertificates(configuration))
                 {
                     logger.LogDebug("No DTLS certificate is provided in the configuration");
                 }
@@ -418,16 +423,10 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(useRsa: configuration?.X_UseRsaForDtlsCertificate ?? false);
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
-            DtlsCertificateSignatureAlgorithm = DtlsUtils.GetSignatureAlgorithm(_dtlsCertificate);
-
-            logger.LogDebug("RTCPeerConnection created with DTLS certificate with fingerprint {DtlsCertificateFingerprint} and signature algorithm {DtlsCertificateSignatureAlgorithm}.", DtlsCertificateFingerprint, DtlsCertificateSignatureAlgorithm);
-
-            // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
-            logger.LogTrace("-----BEGIN CERTIFICATE-----\n{Certificate}\n-----END CERTIFICATE-----", DtlsUtils.ExportToDerBase64(_dtlsCertificate));
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
@@ -466,61 +465,12 @@ namespace SIPSorcery.Net
 
         private bool InitializeCertificates(RTCConfiguration configuration)
         {
-            if (configuration.certificates == null || configuration.certificates.Count == 0)
-            {
-                return false;
-            }
-
-            // Find the first certificate that has a usable private key.
-#pragma warning disable CS0618 // Type or member is obsolete
-            RTCCertificate usableCert = null;
-#pragma warning restore CS0618 // Type or member is obsolete
-            foreach (var cert in _configuration.certificates)
-            {
-                // Attempting to check that a certificate has an exportable private key.
-                // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
-                if (cert.Certificate.HasPrivateKey)
-                {
-                    //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
-                    //{
-                    //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
-                    //    if (!rsa.CspKeyContainerInfo.Exportable)
-                    //    {
-                    //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
-                    //    }
-                    //    else
-                    //    {
-                    //        usableCert = cert;
-                    //        break;
-                    //    }
-                    //}
-                    //else
-                    //{
-                    usableCert = cert;
-                    break;
-                    //}
-                }
-            }
-
-            if (usableCert == null)
-            {
-                throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
-            }
-
-            _dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
-            _dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
-
-            return true;
-        }
-
-        private bool InitializeCertificates2(RTCConfiguration configuration)
-        {
             if (configuration.certificates2 == null || configuration.certificates2.Count == 0)
             {
                 return false;
             }
 
-            _dtlsCertificate = new Certificate(new[] { configuration.certificates2[0].Certificate.CertificateStructure });
+            _dtlsCertificate = new Certificate(new[] { new BcTlsCertificate(_crypto, configuration.certificates2[0].Certificate.CertificateStructure) });
             _dtlsPrivateKey = configuration.certificates2[0].PrivateKey;
 
             return true;
@@ -567,11 +517,14 @@ namespace SIPSorcery.Net
                     logger.LogDebug("ICE connected to remote end point {connectedEP}.", connectedEP);
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
+
+
+
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
+                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
@@ -902,7 +855,7 @@ namespace SIPSorcery.Net
                 logger.LogDebug("Peer connection closed with reason {Reason}.", reason != null ? reason : "<none>");
 
                 // Close all DataChannels
-                if (DataChannels?.Count >0)
+                if (DataChannels?.Count > 0)
                 {
                     foreach (var dc in DataChannels)
                     {
@@ -1860,15 +1813,10 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogDebug("RTCPeerConnection DTLS handshake result {HandshakeResult}, is handshake complete {IsHandshakeComplete}.", handshakeResult, dtlsHandle.IsHandshakeComplete());
-
-                var remoteCertificate = dtlsHandle.GetRemoteCertificate().GetCertificateAt(0);
-                // Save this log message to webrtc.pem and then to decode use: openssl x509 -in webrtc.pem -text -noout
-                logger.LogTrace("Remote peer DTLS certificate, signature algorithm {RemoteCertificateSignatureAlgorithm}.\n-----BEGIN CERTIFICATE-----\n{Certificate}\n-----END CERTIFICATE-----",
-                    DtlsUtils.GetSignatureAlgorithm(remoteCertificate), Convert.ToBase64String(remoteCertificate.GetDerEncoded()));
+                logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
                 var expectedFp = RemotePeerDtlsFingerprint;
-                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, remoteCertificate);
+                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
 
                 if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
                 {
@@ -1884,6 +1832,7 @@ namespace SIPSorcery.Net
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
+
 
                     IsDtlsNegotiationComplete = true;
 
