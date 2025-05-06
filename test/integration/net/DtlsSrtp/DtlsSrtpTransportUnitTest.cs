@@ -91,7 +91,7 @@ namespace SIPSorcery.Net.IntegrationTests
             var serverTask = Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
             var clientTask = Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
 
-            bool didComplete = Task.WaitAll(new Task[] { serverTask, clientTask }, 500000);
+            bool didComplete = Task.WaitAll(new Task[] { serverTask, clientTask }, 5000);
 
             Assert.True(didComplete);
             Assert.True(serverTask.Result);

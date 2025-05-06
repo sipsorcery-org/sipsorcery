@@ -535,7 +535,7 @@ namespace SIPSorcery.Net
                 }
                 // The timeout for the handshake applies from when it started rather than
                 // for each individual receive..
-                int millisecondsRemaining = GetMillisecondsRemaining() + 50000;
+                int millisecondsRemaining = GetMillisecondsRemaining();
 
                 //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                 //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
