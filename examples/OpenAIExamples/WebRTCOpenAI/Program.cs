@@ -98,11 +98,13 @@ class Program
             return;
         }
 
+        var openAIKey = args[0];
+
         var flow = await Prelude.Right<Error, Unit>(default)
             .BindAsync(_ =>
             {
                 logger.LogInformation("STEP 1: Get ephemeral key from OpenAI.");
-                return OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, args[0], OPENAI_MODEL, OPENAI_VOICE);
+                return OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, openAIKey, OPENAI_MODEL, OPENAI_VOICE);
             })
             .BindAsync(async ephemeralKey =>
             {
