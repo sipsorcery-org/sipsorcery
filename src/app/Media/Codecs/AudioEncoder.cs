@@ -214,38 +214,22 @@ namespace SIPSorcery.Media
                     _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, format.ChannelCount);
                 }
 
-                //float[] decodedPcmFloat = new float[OPUS_MAXIMUM_DECODE_BUFFER_LENGTH];
-                //int decodedLength = _opusDecoder.Decode(encodedSample, decodedPcmFloat, decodedPcmFloat.Length, false);
-
-                //// Convert float PCM to short PCM
-                //short[] decodedPcm = new short[decodedLength];
-                //for (int i = 0; i < decodedLength; i++)
-                //{
-                //    // Clamp the value to the valid range of -32768 to 32767
-                //    decodedPcm[i] = ClampToShort(decodedPcmFloat[i] * 32767);
-                //}
-
-                //return decodedPcm;
-
-                // worst-case max frame size (in samples per channel) * channels
                 int maxSamples = OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount;
                 float[] floatBuf = new float[maxSamples];
 
-                // decode returns the number of samples *per channel*
+                // Decode returns the number of samples per channel.
                 int samplesPerChannel = _opusDecoder.Decode(
                     encodedSample,
                     floatBuf,
                     floatBuf.Length,
                     false);
 
-                // total decoded floats = samplesPerChannel * channels
                 int totalFloats = samplesPerChannel * format.ChannelCount;
 
-                // convert to 16-bit interleaved PCM
+                // Convert to 16-bit interleaved PCM.
                 short[] pcm16 = new short[totalFloats];
                 for (int i = 0; i < totalFloats; i++)
                 {
-                    // clamp to [-1,1]
                     var f = ClampToFloat(floatBuf[i], -1.0f, 1.0f);
                     pcm16[i] = (short)(f * 32767);
                 }
