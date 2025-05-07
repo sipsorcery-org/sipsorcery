@@ -1,0 +1,25 @@
+name: Run on master commits
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/SIPSorceryMedia.Windows.csproj
+
+      - name: Build
+        run: dotnet build src/SIPSorceryMedia.Windows.csproj -c Release --no-restore

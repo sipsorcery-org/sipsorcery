@@ -1,43 +1,41 @@
-name: Publish to Nuget
+name: Publish to NuGet
 
 on:
   push:
     tags:
-      - 'v*' # Triggers on tag pushes starting with 'v'
+      - 'v*' # Triggers only on tags starting with "v"
 
 jobs:
   build-and-publish:
+    runs-on: windows-latest         # ← must run on Windows for net*-windows projects
     strategy:
       matrix:
-        framework: ['net8.0']
-    runs-on: ubuntu-latest
-    steps:
-      # Checkout the repository
-      - uses: actions/checkout@v2
+        framework: ['net8.0-windows10.0.17763.0']
 
-      # Set up .NET SDK
-      - uses: actions/setup-dotnet@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
-      # Restore dependencies
       - name: Restore dependencies
         run: dotnet restore src/SIPSorceryMedia.Windows.csproj
 
-      # Build the project
       - name: Build
         run: dotnet build src/SIPSorceryMedia.Windows.csproj -c Release --no-restore
 
-      # Pack the NuGet package
       - name: Pack NuGet package
-        run: dotnet pack src/SIPSorceryMedia.Windows.csproj -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorceryMedia.Windows.csproj -c Release -o ./artifacts --no-build
 
-      # Publish to NuGet
-      - name: Publish NuGet package
-        if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
+      - name: Publish to NuGet.org
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           dotnet nuget push ./artifacts/*.nupkg \
             --source https://api.nuget.org/v3/index.json \
             --api-key $NUGET_API_KEY
+
