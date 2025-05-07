@@ -32,8 +32,6 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using LanguageExt;
 using LanguageExt.Common;
-using static Betalgo.Ranul.OpenAI.ObjectModels.StaticValues;
-using static Betalgo.Ranul.OpenAI.ObjectModels.RealtimeModels.RealtimeEventTypes.Server.Response;
 
 namespace demo;
 
@@ -231,7 +229,7 @@ class Program
         dc.send(sessionUpdate.ToJson());
     }
 
-    private static void OnFunctionArgumentsDone(RTCDataChannel dc, FunctionCallArguments argsDone)
+    private static void OnFunctionArgumentsDone(RTCDataChannel dc, OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
         var result = argsDone.Name switch
         {

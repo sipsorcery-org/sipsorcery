@@ -28,6 +28,8 @@ builder.Host.UseSerilog((ctx, services, lc) => lc
 builder.Host.UseSerilog();
 builder.Services.AddOpenAIRealtimeService();
 
+builder.Services.AddTransient(typeof(OpenAIWebRTCPeer));
+
 var app = builder.Build();
 
 app.MapGet("/", async (

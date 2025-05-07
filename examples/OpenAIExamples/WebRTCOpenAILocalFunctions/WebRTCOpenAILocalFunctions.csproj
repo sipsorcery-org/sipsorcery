@@ -18,8 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\github\openai\OpenAI.SDK\Betalgo.Ranul.OpenAI.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+    <ProjectReference Include="..\OpenAI.Realtime\OpenAI.Realtime.csproj" />
   </ItemGroup>
 
 </Project>
