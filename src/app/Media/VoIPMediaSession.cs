@@ -376,7 +376,7 @@ namespace SIPSorcery.Media
             }
         }
 
-        public async void TakeOffHold()
+        public async Task TakeOffHold()
         {
             if (HasAudio)
             {
