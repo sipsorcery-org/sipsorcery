@@ -32,7 +32,7 @@ namespace SIPSorceryMedia.Windows
     public class WindowsAudioEndPoint : IAudioSource, IAudioSink
     {
         private const int DEVICE_BITS_PER_SAMPLE = 16;
-        private const int DEVICE_CHANNELS = 1;
+        private const int DEFAULT_DEVICE_CHANNELS = 1;
         private const int INPUT_BUFFERS = 2;          // See https://github.com/sipsorcery/sipsorcery/pull/148.
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
         private const int AUDIO_INPUTDEVICE_INDEX = -1;
@@ -125,12 +125,12 @@ namespace SIPSorceryMedia.Windows
 
             if (!_disableSink)
             {
-                InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode());
+                InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode(), DEFAULT_DEVICE_CHANNELS);
             }
 
             if (!_disableSource)
             {
-                InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate);
+                InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate, DEFAULT_DEVICE_CHANNELS);
             }
         }
 
@@ -155,7 +155,7 @@ namespace SIPSorceryMedia.Windows
                     // Reinitialise the audio capture device.
                     logger.LogDebug($"Windows audio end point adjusting capture rate from {_waveSourceFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
 
-                    InitCaptureDevice(_audioInDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate);
+                    InitCaptureDevice(_audioInDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
                 }
             }
         }
@@ -171,7 +171,7 @@ namespace SIPSorceryMedia.Windows
                     // Reinitialise the audio output device.
                     logger.LogDebug($"Windows audio end point adjusting playback rate from {_waveSinkFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
 
-                    InitPlaybackDevice(_audioOutDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate);
+                    InitPlaybackDevice(_audioOutDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
                 }
             }
         }
@@ -232,7 +232,7 @@ namespace SIPSorceryMedia.Windows
             return Task.CompletedTask;
         }
 
-        private void InitPlaybackDevice(int audioOutDeviceIndex, int audioSinkSampleRate)
+        private void InitPlaybackDevice(int audioOutDeviceIndex, int audioSinkSampleRate, int channels)
         {
             try
             {
@@ -241,7 +241,7 @@ namespace SIPSorceryMedia.Windows
                 _waveSinkFormat = new WaveFormat(
                     audioSinkSampleRate,
                     DEVICE_BITS_PER_SAMPLE,
-                    DEVICE_CHANNELS);
+                    channels);
 
                 // Playback device.
                 _waveOutEvent = new WaveOutEvent();
@@ -257,7 +257,7 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
-        private void InitCaptureDevice(int audioInDeviceIndex, int audioSourceSampleRate)
+        private void InitCaptureDevice(int audioInDeviceIndex, int audioSourceSampleRate, int audioSourceChannels)
         {
             if (WaveInEvent.DeviceCount > 0)
             {
@@ -272,7 +272,7 @@ namespace SIPSorceryMedia.Windows
                     _waveSourceFormat = new WaveFormat(
                            audioSourceSampleRate,
                            DEVICE_BITS_PER_SAMPLE,
-                           DEVICE_CHANNELS);
+                           audioSourceChannels);
 
                     _waveInEvent = new WaveInEvent();
                     _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
