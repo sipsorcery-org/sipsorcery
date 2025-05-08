@@ -27,7 +27,7 @@ namespace SIPSorcery.Media
         private const int G722_BIT_RATE = 64000;              // G722 sampling rate is 16KHz with bits per sample of 16.
         private const int OPUS_SAMPLE_RATE = 48000;           // Opus codec sampling rate, 48KHz.
         private const int OPUS_CHANNELS = 2;                  // Opus codec number of channels.
-        private const int OPUS_MAXIMUM_DECODE_BUFFER_LENGTH = 5760;
+        private const int OPUS_MAXIMUM_FRAME_SIZE = 5760;
 
         private G722Codec _g722Codec;
         private G722CodecState _g722CodecState;
@@ -214,18 +214,27 @@ namespace SIPSorcery.Media
                     _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, format.ChannelCount);
                 }
 
-                float[] decodedPcmFloat = new float[OPUS_MAXIMUM_DECODE_BUFFER_LENGTH];
-                int decodedLength = _opusDecoder.Decode(encodedSample, decodedPcmFloat, decodedPcmFloat.Length, false);
+                int maxSamples = OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount;
+                float[] floatBuf = new float[maxSamples];
 
-                // Convert float PCM to short PCM
-                short[] decodedPcm = new short[decodedLength];
-                for (int i = 0; i < decodedLength; i++)
+                // Decode returns the number of samples per channel.
+                int samplesPerChannel = _opusDecoder.Decode(
+                    encodedSample,
+                    floatBuf,
+                    floatBuf.Length,
+                    false);
+
+                int totalFloats = samplesPerChannel * format.ChannelCount;
+
+                // Convert to 16-bit interleaved PCM.
+                short[] pcm16 = new short[totalFloats];
+                for (int i = 0; i < totalFloats; i++)
                 {
-                    // Clamp the value to the valid range of -32768 to 32767
-                    decodedPcm[i] = ClampToShort(decodedPcmFloat[i] * 32767);
+                    var f = ClampToFloat(floatBuf[i], -1.0f, 1.0f);
+                    pcm16[i] = (short)(f * 32767);
                 }
 
-                return decodedPcm;
+                return pcm16;
             }
             else
             {
@@ -250,6 +259,13 @@ namespace SIPSorcery.Media
                 return short.MinValue;
             }
             return (short)value;
+        }
+
+        private float ClampToFloat(float value, float min, float max)
+        {
+            if (value < min) { return min; }
+            if (value > max) { return max; }
+            return value;
         }
     }
 }
