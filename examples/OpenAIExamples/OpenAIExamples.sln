@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAI.Realtime", "OpenAI.R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenAIBridge", "WebRTCOpenAIBridge\WebRTCOpenAIBridge.csproj", "{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenAIDotNet", "WebRTCOpenAIDotNet\WebRTCOpenAIDotNet.csproj", "{8269AAEB-7A6B-7A0A-D4B3-306268CA4860}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5E7A2B5-FF61-A038-5FDB-C45A49F1BA46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8269AAEB-7A6B-7A0A-D4B3-306268CA4860}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8269AAEB-7A6B-7A0A-D4B3-306268CA4860}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8269AAEB-7A6B-7A0A-D4B3-306268CA4860}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8269AAEB-7A6B-7A0A-D4B3-306268CA4860}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
