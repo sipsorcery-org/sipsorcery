@@ -275,48 +275,44 @@ namespace SIPSorceryMedia.FFmpeg
                 else
                     _encoderContext->gop_size = fps;
 
-                // provide tunings for known codecs
-                switch (cdcname)
+                try
                 {
-                    case "libx264":
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
-                        break;
-                    case "h264_qsv":
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "66" /* baseline */, 0).ThrowExceptionIfError();
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "7" /* veryfast */, 0).ThrowExceptionIfError();
-                        break;
-                    case "libvpx":
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
-                        break;
-                    case "libx265":
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
-                        break;
-                    default:
-                        break;
+                    // provide tunings for known codecs
+                    switch (cdcname)
+                    {
+                        case "libx264":
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                            break;
+                        case "h264_qsv":
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "66" /* baseline */, 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "7" /* veryfast */, 0).ThrowExceptionIfError();
+                            break;
+                        case "libvpx":
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                            break;
+                        case "libx265":
+                            //ffmpeg.av_opt_set(_encoderContext->priv_data, "forced-idr", "1", 0).ThrowExceptionIfError();
+                            //ffmpeg.av_opt_set(_encoderContext->priv_data, "crf", "28", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                            break;
+                        default:
+                            break;
+                    }
                 }
-                    else if (_codecID == AVCodecID.AV_CODEC_ID_HEVC
-                        && Marshal.PtrToStringAnsi((IntPtr)codec->name) == "libx265")
-                    {
-                        //ffmpeg.av_opt_set(_encoderContext->priv_data, "forced-idr", "1", 0).ThrowExceptionIfError();
-
-                        //ffmpeg.av_opt_set(_encoderContext->priv_data, "crf", "28", 0);
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
-                    }
-
-                foreach (var option in _encoderOptions)
+                catch (ApplicationException ex)
                 {
-                    try
-                    {
-                        ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, 0).ThrowExceptionIfError();
-                    }
-                    catch (Exception excp)
-                    {
-                        logger.LogWarning("Failed to set encoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, excp.Message);
-                    }
-                };
+                    logger.LogCritical(ex, "Failed to set default encoder options for codec {name}. {msg}", cdcname, ex.Message);
+                    throw;
+                }
+
+                foreach (var option in _codecOptions)
+                {
+                    var ok = ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, ffmpeg.AV_OPT_SEARCH_CHILDREN);
+                    if (ok < 0)
+                        logger.LogWarning("Failed to set encoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, FFmpegInit.av_strerror(ok));
+                }
 
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
 
@@ -354,39 +350,8 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         ffmpeg.avcodec_free_context(pCtx);
                     }
-                }
-            }
-        }
 
-        private void ResetDecoder()
-        {
-            lock (_decoderLock)
-            {
-                if (!_isDisposed && _decoderContext != null && _isDecoderInitialised)
-                {
-                    _isDecoderInitialised = false;
-                    fixed (AVCodecContext** pCtx = &_decoderContext)
-                    {
-                        ffmpeg.avcodec_free_context(pCtx);
-                    }
-
-                    if (_frame != null)
-                    {
-                        fixed (AVFrame** pFrame = &_frame)
-                        {
-                            ffmpeg.av_frame_free(pFrame);
-                        }
-                    }
-
-                    if (_gpuFrame != null)
-                    {
-                        fixed (AVFrame** pFrame = &_gpuFrame)
-                        {
-                            ffmpeg.av_frame_free(pFrame);
-                    _negotiatedPixFmt = null;
-                }
-            }
-        }
+                    UnsafeReset();
                 }
             }
         }
@@ -403,8 +368,31 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         ffmpeg.avcodec_free_context(pCtx);
                     }
+                    
+                    UnsafeReset();
                 }
             }
+        }
+
+        private void UnsafeReset()
+        {
+            if (_frame != null)
+            {
+                fixed (AVFrame** pFrame = &_frame)
+                {
+                    ffmpeg.av_frame_free(pFrame);
+                }
+            }
+
+            if (_gpuFrame != null)
+            {
+                fixed (AVFrame** pFrame = &_gpuFrame)
+                {
+                    ffmpeg.av_frame_free(pFrame);
+                }
+            }
+
+            _negotiatedPixFmt = null;
         }
 
         private void InitialiseDecoder(AVCodecID codecID)
