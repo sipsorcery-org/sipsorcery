@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"><!-- mobile-friendly -->
+    <title>WebRTC SDP Codec Checker</title>
+    <style>
+        /* Base reset */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 1em;
+            padding: 0;
+            line-height: 1.4;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        p {
+            margin-bottom: 1em;
+        }
+
+        #btn {
+            display: inline-block;
+            padding: 0.75em 1.5em;
+            font-size: 1em;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 1em;
+        }
+
+            #btn:hover {
+                background-color: #0056b3;
+            }
+
+            #btn:active {
+                background-color: #004080;
+            }
+
+        #supported {
+            margin: 0.5em 0 1em;
+            font-weight: bold;
+        }
+
+        #sdp {
+            width: 100%;
+            height: 40vh; /* take 40% of viewport height */
+            min-height: 200px;
+            max-height: 70vh;
+            background: #f4f4f4;
+            padding: 1em;
+            border: 1px solid #ccc;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 0.9em;
+        }
+
+        /* On very small screens, bump up text & button sizes */
+        @media (max-width: 480px) {
+            body {
+                margin: 0.5em;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            #btn {
+                width: 100%;
+                font-size: 1.1em;
+                padding: 1em;
+            }
+
+            #sdp {
+                font-size: 1em;
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>WebRTC SDP Codec Checker</h1>
+    <p>This page will generate a WebRTC SDP offer and let you inspect which video codecs your browser advertises (e.g. H.265).</p>
+    <button id="btn">Generate SDP Offer</button>
+    <div id="supported"></div>
+    <pre id="sdp"></pre>
+
+    <script>
+        document.getElementById('btn').addEventListener('click', async () => {
+            const sdpContainer = document.getElementById('sdp');
+            const result = document.getElementById('supported');
+            sdpContainer.textContent = 'Generating offer…';
+            result.textContent = '';
+
+            try {
+                const pc = new RTCPeerConnection();
+                pc.addTransceiver('video', { direction: 'recvonly' });
+
+                const offer = await pc.createOffer();
+                sdpContainer.textContent = offer.sdp;
+
+                if (/a=rtpmap:\d+\s+H265\/90000/i.test(offer.sdp)) {
+                    result.textContent = '✅ H.265 codec is present in the SDP';
+                    result.style.color = 'green';
+                } else {
+                    result.textContent = '❌ H.265 codec NOT found in the SDP';
+                    result.style.color = 'red';
+                }
+
+                pc.close();
+            }
+            catch (err) {
+                sdpContainer.textContent = '';
+                result.textContent = 'Error: ' + err;
+                result.style.color = 'maroon';
+            }
+        });
+    </script>
+</body>
+</html>
