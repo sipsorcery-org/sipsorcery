@@ -152,6 +152,9 @@ namespace SIPSorcery.Net
 
             if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
+                //var naltype = naluHeader[0] >> 1 & 0x3F;
+                //logger.LogTrace("Sending NALtype {type}", naltype);
+
                 // Send as Single-Time Aggregation Packet (STAP-A).
                 byte[] payload = new byte[nal.Length];
                 int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
@@ -167,6 +170,7 @@ namespace SIPSorcery.Net
             else
             {
                 nal = nal.Skip(naluHeaderSize).ToArray();
+                //logger.LogTrace("Fragmenting");
 
                 // Send as Fragmentation Unit A (FU-A):
                 for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
@@ -203,9 +207,18 @@ namespace SIPSorcery.Net
             if(CheckIfCanSendRtpRaw())
             {
                 var nals = H265Packetiser.ParseNals(sample);
-                var aggregatedNals = H265Packetiser.CreateAggregated(nals, RTPSession.RTP_MAX_PAYLOAD);
-                foreach (var nal in aggregatedNals)
+
+                // aggregation is only on 2 or more small nals
+                if (nals.Where(x => x.NAL.Length < RTPSession.RTP_MAX_PAYLOAD).Count() > 1)
                 {
+                    //logger.LogTrace("(ou) Trying aggregating {nals} nals", nals.Count());
+                    nals = H265Packetiser.CreateAggregated(nals, RTPSession.RTP_MAX_PAYLOAD);
+                }
+
+                //var i = 1;
+                foreach (var nal in nals)
+                {
+                    //logger.LogTrace("(out) SEND {bits}({of}/{all})", nal.NAL.Length, i++, nals.Count());
                     SendH26XNal(durationRtpUnits, payloadID, nal.NAL, nal.IsLast, true);
                 }
             }
