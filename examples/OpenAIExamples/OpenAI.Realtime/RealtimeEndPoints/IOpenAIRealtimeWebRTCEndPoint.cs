@@ -1,0 +1,29 @@
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
+using LanguageExt;
+using LanguageExt.Common;
+using SIPSorcery.Media;
+using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
+
+namespace demo;
+
+public interface IOpenAIRealtimeWebRTCEndPoint
+{
+    AudioEncoder AudioEncoder { get; }
+
+    AudioFormat AudioFormat { get; }
+
+    event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
+
+    event Action? OnPeerConnectionConnected;
+
+    event Action? OnPeerConnectionClosedOrFailed;
+
+    Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration pcConfig, string? model = null);
+
+    void SendAudio(uint durationRtpUnits, byte[] sample);
+
+    Either<Error, Unit> SendResponseCreate(OpenAIVoicesEnum voice, string message);
+}
