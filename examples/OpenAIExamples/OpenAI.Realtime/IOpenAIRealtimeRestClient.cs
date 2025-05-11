@@ -9,8 +9,8 @@ namespace demo;
 public interface IOpenAIRealtimeRestClient
 {
     Task<Either<Error, string>> CreateEphemeralKeyAsync(
-        string model,
-        OpenAIVoicesEnum voice,
+        string model = OpenAIRealtimeRestClient.OPENAI_REALTIME_DEFAULT_MODEL,
+        OpenAIVoicesEnum voice = OpenAIVoicesEnum.shimmer,
         CancellationToken ct = default);
 
     Task<Either<Error, string>> GetSdpAnswerAsync(

@@ -30,7 +30,9 @@ namespace demo;
 public class OpenAIRealtimeRestClient : IOpenAIRealtimeRestClient
 {
     public const string OPENAI_HTTP_CLIENT_NAME = "openai";
+
     private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
+    public const string OPENAI_REALTIME_DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-12-17";
 
     private readonly IHttpClientFactory _factory;
 
@@ -40,15 +42,15 @@ public class OpenAIRealtimeRestClient : IOpenAIRealtimeRestClient
     }
 
     public async Task<Either<Error, string>> CreateEphemeralKeyAsync(
-        string model,
-        OpenAIVoicesEnum voice,
+        string model = OPENAI_REALTIME_DEFAULT_MODEL,
+        OpenAIVoicesEnum voice = OpenAIVoicesEnum.shimmer,
         CancellationToken ct = default)
     {
         var client = GetClient();
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "/sessions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, "/v1/realtime/sessions");
         req.Content = new StringContent(
-            JsonSerializer.Serialize(new { Model = model, Voice = voice }, JsonOptions.Default),
+            JsonSerializer.Serialize(new { model = model, voice = voice }, JsonOptions.Default),
             Encoding.UTF8,
             "application/json");
 
