@@ -265,7 +265,7 @@ class Program
             .BindAsync(async _ =>
             {
                 logger.LogInformation($"STEP 1 {initCtx.CallLabel}: Get ephemeral key from OpenAI.");
-                var ephemeralKey = await OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, openAIKey, OPENAI_MODEL, initCtx.Voice);
+                var ephemeralKey = await OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_MODEL, initCtx.Voice);
 
                 return ephemeralKey.Map(ephemeralKey => initCtx with { EphemeralKey = ephemeralKey });
             })

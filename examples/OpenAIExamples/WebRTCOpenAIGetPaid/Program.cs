@@ -1,9 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC application that can be used to interact with
-// OpenAI's real-time API https://platform.openai.com/docs/guides/realtime-webrtc
-// and utilise the local function calling feature https://platform.openai.com/docs/guides/function-calling.
+// Description: An example WebRTC application that uses OpenAI's real-time API
+// together with local function calling to generate payment requests.
 //
 // Usage:
 // set OPENAIKEY=your_openai_key
@@ -13,7 +12,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 19 Jan 2025	Aaron Clauson	Created, Dublin, Ireland.
+// 11 May 2025	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -28,6 +27,9 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using Serilog.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using OpenAI;
+using OpenAI.Realtime;
+using System.Collections.Generic;
 
 namespace demo;
 
@@ -161,28 +163,44 @@ class Program
     /// </summary>
     private static void OnSessionCreated(RTCDataChannel dc)
     {
+        //var sessionConfig = new SessionConfiguration(
+        //        OpenAIRealtimeRestClient.OPENAI_REALTIME_DEFAULT_MODEL,
+        //        //voice: OPENAI_VOICE,
+        //        instructions: "Keep it snappy.",
+        //        tools:
+        //        [
+        //            Tool.FromFunc("Add", (int a, int b) => Add(a, b)),
+        //        ],
+        //        toolChoice: "auto"
+        //        );
+
+        //var updateSessionReq = new UpdateSessionRequest(sessionConfig);
+
+        //logger.LogInformation($"Sending OpenAI session update to data channel {dc.label}.");
+        //logger.LogDebug(updateSessionReq.ToJsonString());
+
+        //dc.send(updateSessionReq.ToJsonString());
+
         var sessionUpdate = new OpenAISessionUpdate
         {
             EventID = Guid.NewGuid().ToString(),
             Session = new OpenAISession
             {
-                Instructions = "You are a weather bot who favours brevity and accuracy.",
-                Tools = new System.Collections.Generic.List<OpenAITool>
+                Instructions = "You are an assistant for sales agents that assists in generating payment requests and favours brevity and accuracy.",
+                Tools = new List<OpenAITool>
                 {
                     new OpenAITool
                     {
-                        Name = "get_weather",
-                        Description = "Get the current weather.",
+                        Name = "create_payment_request",
+                        Description = "Creates a payment request.",
                         Parameters = new OpenAIToolParameters
                         {
-                          Properties = new OpenAIToolProperties
-                          {
-                              Location = new OpenAIToolLocation
-                              {
-                                  Type = "string"
-                              }
-                          },
-                          Required = new System.Collections.Generic.List<string> { "location" }
+                           Properties = new Dictionary<string, OpenAIToolProperty>
+                           {
+                                { "amount", new OpenAIToolProperty { Type = "number" } },
+                                { "currency", new OpenAIToolProperty { Type = "string" } }
+                           },
+                           Required = new List<string> { "amount", "currency" }
                         }
                     }
                 }
@@ -195,18 +213,23 @@ class Program
         dc.send(sessionUpdate.ToJson());
     }
 
+    private static int Add(int a, int b)
+    {
+        return a + b;
+    }
+
     private static void OnFunctionArgumentsDone(RTCDataChannel dc, OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
         var result = argsDone.Name switch
         {
-            "get_weather" => $"The weather in {argsDone.Arguments.GetNamedArgumentValue("location")} is sunny.",
+            "create_payment_request" => $"Processing create payment request.",
             _ => "Unknown Function."
         };
         logger.LogInformation($"Call {argsDone.Name} with args {argsDone.ArgumentsToString()} result {result}.");
 
-        var getWeatherResult = GetWeather(argsDone);
-        logger.LogDebug(getWeatherResult.ToJson());
-        dc.send(getWeatherResult.ToJson());
+        var createPyamentRequestResult = CreatePaymentRequest(argsDone);
+        logger.LogDebug(createPyamentRequestResult.ToJson());
+        dc.send(createPyamentRequestResult.ToJson());
 
         // Tell the AI to continue the conversation.
         var responseCreate = new OpenAIResponseCreate
@@ -224,20 +247,22 @@ class Program
     /// <summary>
     /// The local function to call and return the result to the AI to continue the conversation.
     /// </summary>
-    private static OpenAIConversationItemCreate GetWeather(OpenAIResponseFunctionCallArgumentsDone argsDone)
+    private static OpenAIConversationItemCreate CreatePaymentRequest(OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
-        var location = argsDone.Arguments.GetNamedArgumentValue("location") ?? string.Empty;
+        //var location = argsDone.Arguments.GetNamedArgumentValue("location") ?? string.Empty;
 
-        var weather = location switch
-        {
-            string s when s.Contains("Canberra", StringComparison.OrdinalIgnoreCase) => "It's cloudy and 15 degrees.",
-            string s when s.Contains("Dublin", StringComparison.OrdinalIgnoreCase) => "It's raining and 7 degrees.",
-            string s when s.Contains("Hobart", StringComparison.OrdinalIgnoreCase) => "It's sunny and 25 degrees.",
-            string s when s.Contains("Melbourne", StringComparison.OrdinalIgnoreCase) => "It's cold and wet and 11 degrees.",
-            string s when s.Contains("Sydney", StringComparison.OrdinalIgnoreCase) => "It's humid and stormy and 30 degrees.",
-            string s when s.Contains("Perth", StringComparison.OrdinalIgnoreCase) => "It's hot and dry and 40 degrees.",
-            _ => "It's sunny and 20 degrees."
-        };
+        //var weather = location switch
+        //{
+        //    string s when s.Contains("Canberra", StringComparison.OrdinalIgnoreCase) => "It's cloudy and 15 degrees.",
+        //    string s when s.Contains("Dublin", StringComparison.OrdinalIgnoreCase) => "It's raining and 7 degrees.",
+        //    string s when s.Contains("Hobart", StringComparison.OrdinalIgnoreCase) => "It's sunny and 25 degrees.",
+        //    string s when s.Contains("Melbourne", StringComparison.OrdinalIgnoreCase) => "It's cold and wet and 11 degrees.",
+        //    string s when s.Contains("Sydney", StringComparison.OrdinalIgnoreCase) => "It's humid and stormy and 30 degrees.",
+        //    string s when s.Contains("Perth", StringComparison.OrdinalIgnoreCase) => "It's hot and dry and 40 degrees.",
+        //    _ => "It's sunny and 20 degrees."
+        //};
+
+        string orderID = "X1234";
 
         return new OpenAIConversationItemCreate
         {
@@ -252,7 +277,7 @@ class Program
                 //Name = argsDone.Name,
                 //Arguments = argsDone.ArgumentsToString(),
                 //Role = "tool",
-                Output = weather
+                Output = $"New payment request order ID is {orderID}"
             }
         };
     }

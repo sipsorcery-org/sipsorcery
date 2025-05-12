@@ -14,7 +14,7 @@ public interface IOpenAIRealtimeRestClient
         CancellationToken ct = default);
 
     Task<Either<Error, string>> GetSdpAnswerAsync(
-        string model,
         string offerSdp,
+        string model = OpenAIRealtimeRestClient.OPENAI_REALTIME_DEFAULT_MODEL,
         CancellationToken ct = default);
 }

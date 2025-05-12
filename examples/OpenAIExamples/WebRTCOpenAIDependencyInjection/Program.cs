@@ -32,8 +32,8 @@ using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog.Extensions.Logging;
-using Microsoft.Extensions.Logging;
 
 namespace demo;
 
@@ -47,8 +47,8 @@ class Program
             .WriteTo.Console()
             .CreateLogger();
 
-        var loggerFactory = new SerilogLoggerFactory(Log.Logger);
-        SIPSorcery.LogFactory.Set(loggerFactory);
+        var factory = new SerilogLoggerFactory(Log.Logger);
+        SIPSorcery.LogFactory.Set(factory);
 
         Log.Logger.Information("WebRTC OpenAI Demo Program");
 
@@ -60,10 +60,30 @@ class Program
             return;
         }
 
+        // Set up DI.
+        var services = new ServiceCollection();
+
+        services.AddLogging(builder =>
+        {
+            builder.AddSerilog(dispose: true);
+        });
+
+        services
+          .AddHttpClient()
+          .AddHttpClient(OpenAIRealtimeRestClient.OPENAI_HTTP_CLIENT_NAME, client =>
+          {
+              client.Timeout = TimeSpan.FromSeconds(5);
+              client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openAiKey);
+          });
+        services.AddTransient<IOpenAIRealtimeRestClient, OpenAIRealtimeRestClient>();
+        services.AddTransient<IOpenAIRealtimeWebRTCEndPoint, OpenAIRealtimeWebRTCEndPoint>();
+
+        using var provider = services.BuildServiceProvider();
+
         // Create the OpenAI Realtime WebRTC peer connection.
-        var openAIHttpClientFactory = new OpenAIHttpClientFactory(openAiKey);
-        var openaiClient = new OpenAIRealtimeRestClient(openAIHttpClientFactory);
-        var webrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(loggerFactory.CreateLogger<OpenAIRealtimeWebRTCEndPoint>(), openaiClient);
+        var openaiClient = provider.GetRequiredService<IOpenAIRealtimeRestClient>();
+        var webrtcEndPoint = provider.GetRequiredService<IOpenAIRealtimeWebRTCEndPoint>();
 
         // We'll send/receive audio directly from our Windows audio devices.
         InitialiseWindowsAudioEndPoint(webrtcEndPoint, Log.Logger);
@@ -112,7 +132,7 @@ class Program
         await exitTcs.Task;
     }
 
-    private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, Serilog.ILogger logger)
+    private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, ILogger logger)
     {
         WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(webrtcEndPoint.AudioEncoder, -1, -1, false, false);
         windowsAudioEP.SetAudioSinkFormat(webrtcEndPoint.AudioFormat);

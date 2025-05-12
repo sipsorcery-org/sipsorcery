@@ -41,6 +41,22 @@ public class OpenAIRealtimeRestClient : IOpenAIRealtimeRestClient
         _factory = factory;
     }
 
+    //private readonly HttpClient _client;
+
+    //public OpenAIRealtimeRestClient(HttpClient client)
+    //{
+    //    _client = client;
+    //    _client.BaseAddress = new Uri(OPENAI_REALTIME_BASE_URL);
+    //    _client.Timeout     = TimeSpan.FromSeconds(5);
+    //    // ...and you’ll set the Bearer header once, up‐front:
+    //}
+
+    //// keep your old ctor around if you still want the factory overload:
+    //public OpenAIRealtimeRestClient(IHttpClientFactory factory)
+    //  : this(factory.CreateClient(OPENAI_HTTP_CLIENT_NAME))
+    //{
+    //}
+
     public async Task<Either<Error, string>> CreateEphemeralKeyAsync(
         string model = OPENAI_REALTIME_DEFAULT_MODEL,
         OpenAIVoicesEnum voice = OpenAIVoicesEnum.shimmer,
@@ -76,8 +92,8 @@ public class OpenAIRealtimeRestClient : IOpenAIRealtimeRestClient
     }
 
     public async Task<Either<Error, string>> GetSdpAnswerAsync(
-        string model,
         string offerSdp,
+        string model = OPENAI_REALTIME_DEFAULT_MODEL,
         CancellationToken ct = default)
     {
         var client = GetClient();

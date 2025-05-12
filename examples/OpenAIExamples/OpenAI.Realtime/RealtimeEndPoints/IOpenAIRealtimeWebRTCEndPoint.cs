@@ -21,9 +21,11 @@ public interface IOpenAIRealtimeWebRTCEndPoint
 
     event Action? OnPeerConnectionClosedOrFailed;
 
-    Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration pcConfig, string? model = null);
+    Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration? pcConfig = null, string? model = null);
 
     void SendAudio(uint durationRtpUnits, byte[] sample);
 
     Either<Error, Unit> SendResponseCreate(OpenAIVoicesEnum voice, string message);
+
+    event Action<RTCDataChannel, OpenAIServerEventBase>? OnDataChannelMessageReceived;
 }

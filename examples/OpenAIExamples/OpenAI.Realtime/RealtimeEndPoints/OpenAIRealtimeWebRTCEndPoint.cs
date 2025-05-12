@@ -11,7 +11,6 @@ using LanguageExt;
 using LanguageExt.Common;
 using System.Text.Json;
 using System.Text;
-using WebSocketSharp;
 
 namespace demo;
 
@@ -34,6 +33,8 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
     public event Action? OnPeerConnectionClosedOrFailed;
 
+    public event Action<RTCDataChannel, OpenAIServerEventBase>? OnDataChannelMessageReceived;
+
     public OpenAIRealtimeWebRTCEndPoint(
         ILogger<OpenAIRealtimeWebRTCEndPoint> logger,
         IOpenAIRealtimeRestClient openAIRealtimeRestClient)
@@ -45,7 +46,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         AudioFormat = AudioEncoder.SupportedFormats.Single(x => x.FormatName == AudioCodecsEnum.OPUS.ToString());
     }
 
-    public async Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration pcConfig, string? model = null)
+    public async Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration? pcConfig = null, string? model = null)
     {
         if(_rtcPeerConnection != null)
         {
@@ -59,7 +60,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         var offer = _rtcPeerConnection.createOffer();
         await _rtcPeerConnection.setLocalDescription(offer).ConfigureAwait(false);
 
-        var sdpAnswerResult = await _openAIRealtimeRestClient.GetSdpAnswerAsync(useModel, offer.sdp).ConfigureAwait(false);
+        var sdpAnswerResult = await _openAIRealtimeRestClient.GetSdpAnswerAsync(offer.sdp, useModel).ConfigureAwait(false);
 
         return sdpAnswerResult.Map(sdpAnswer =>
         {
@@ -73,7 +74,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         });
     }
 
-    private RTCPeerConnection CreatePeerConnection(RTCConfiguration pcConfig)
+    private RTCPeerConnection CreatePeerConnection(RTCConfiguration? pcConfig)
     {
         _rtcPeerConnection = new RTCPeerConnection(pcConfig);
 
@@ -168,10 +169,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         var serverEventModel = OpenAIDataChannelManager.ParseDataChannelMessage(data);
         serverEventModel.IfSome(e =>
         {
-            if (e is OpenAIResponseAudioTranscriptDone done)
-            {
-                _logger.LogInformation($"Transcript done: {done.Transcript}");
-            }
+            OnDataChannelMessageReceived?.Invoke(dc, e);
         });
     }
 }

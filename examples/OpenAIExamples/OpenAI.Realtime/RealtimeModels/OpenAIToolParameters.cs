@@ -51,19 +51,13 @@ public class OpenAIToolParameters
     public string Type => "object";
 
     [JsonPropertyName("properties")]
-    public OpenAIToolProperties? Properties { get; set; }
+    public Dictionary<string, OpenAIToolProperty>? Properties { get; set; }
 
     [JsonPropertyName("required")]
     public List<string>? Required { get; set; }
 }
 
-public class OpenAIToolProperties
-{
-    [JsonPropertyName("location")]
-    public required OpenAIToolLocation Location { get; set; }
-}
-
-public class OpenAIToolLocation
+public class OpenAIToolProperty
 {
     [JsonPropertyName("type")]
     public required string Type { get; set; }
