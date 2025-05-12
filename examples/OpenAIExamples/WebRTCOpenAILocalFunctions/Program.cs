@@ -28,6 +28,7 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using Serilog.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Collections.Generic;
 
 namespace demo;
 
@@ -167,22 +168,19 @@ class Program
             Session = new OpenAISession
             {
                 Instructions = "You are a weather bot who favours brevity and accuracy.",
-                Tools = new System.Collections.Generic.List<OpenAITool>
+                Tools = new List<OpenAITool>
                 {
-                    new OpenAITool
+                     new OpenAITool
                     {
                         Name = "get_weather",
                         Description = "Get the current weather.",
                         Parameters = new OpenAIToolParameters
                         {
-                          Properties = new OpenAIToolProperties
-                          {
-                              Location = new OpenAIToolLocation
-                              {
-                                  Type = "string"
-                              }
-                          },
-                          Required = new System.Collections.Generic.List<string> { "location" }
+                           Properties = new Dictionary<string, OpenAIToolProperty>
+                           {
+                                { "location", new OpenAIToolProperty { Type = "string" } }
+                           },
+                           Required = new List<string> { "location" }
                         }
                     }
                 }
@@ -199,14 +197,31 @@ class Program
     {
         var result = argsDone.Name switch
         {
-            "get_weather" => $"The weather in {argsDone.Arguments.GetNamedArgumentValue("location")} is sunny.",
+            "get_weather" => GetWeather(argsDone),
             _ => "Unknown Function."
         };
+
         logger.LogInformation($"Call {argsDone.Name} with args {argsDone.ArgumentsToString()} result {result}.");
 
-        var getWeatherResult = GetWeather(argsDone);
-        logger.LogDebug(getWeatherResult.ToJson());
-        dc.send(getWeatherResult.ToJson());
+        var resultConvItem = new OpenAIConversationItemCreate
+        {
+            EventID = Guid.NewGuid().ToString(),
+            //PreviousItemID = argsDone.ItemID,
+            Item = new OpenAIConversationItem
+            {
+                //ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
+                Type = OpenAIConversationConversationTypeEnum.function_call_output,
+                //Status = "completed",
+                CallID = argsDone.CallID,
+                //Name = argsDone.Name,
+                //Arguments = argsDone.ArgumentsToString(),
+                //Role = "tool",
+                Output = result
+            }
+        };
+
+        logger.LogDebug(resultConvItem.ToJson());
+        dc.send(resultConvItem.ToJson());
 
         // Tell the AI to continue the conversation.
         var responseCreate = new OpenAIResponseCreate
@@ -224,11 +239,11 @@ class Program
     /// <summary>
     /// The local function to call and return the result to the AI to continue the conversation.
     /// </summary>
-    private static OpenAIConversationItemCreate GetWeather(OpenAIResponseFunctionCallArgumentsDone argsDone)
+    private static string GetWeather(OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
         var location = argsDone.Arguments.GetNamedArgumentValue("location") ?? string.Empty;
 
-        var weather = location switch
+        return location switch
         {
             string s when s.Contains("Canberra", StringComparison.OrdinalIgnoreCase) => "It's cloudy and 15 degrees.",
             string s when s.Contains("Dublin", StringComparison.OrdinalIgnoreCase) => "It's raining and 7 degrees.",
@@ -237,23 +252,6 @@ class Program
             string s when s.Contains("Sydney", StringComparison.OrdinalIgnoreCase) => "It's humid and stormy and 30 degrees.",
             string s when s.Contains("Perth", StringComparison.OrdinalIgnoreCase) => "It's hot and dry and 40 degrees.",
             _ => "It's sunny and 20 degrees."
-        };
-
-        return new OpenAIConversationItemCreate
-        {
-            EventID = Guid.NewGuid().ToString(),
-            //PreviousItemID = argsDone.ItemID,
-            Item = new OpenAIConversationItem
-            {
-                //ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
-                Type = OpenAIConversationConversationTypeEnum.function_call_output,
-                //Status = "completed",
-                CallID = argsDone.CallID,
-                //Name = argsDone.Name,
-                //Arguments = argsDone.ArgumentsToString(),
-                //Role = "tool",
-                Output = weather
-            }
         };
     }
 }

@@ -27,8 +27,6 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using Serilog.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using OpenAI;
-using OpenAI.Realtime;
 using System.Collections.Generic;
 
 namespace demo;
