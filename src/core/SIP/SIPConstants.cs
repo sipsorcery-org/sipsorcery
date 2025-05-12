@@ -616,43 +616,69 @@ namespace SIPSorcery.SIP
         /// <returns>A list of extensions that were understood and a boolean indicating whether any unknown extensions were present.</returns>
         public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out string unknownExtensions)
         {
-            List<SIPExtensions> knownExtensions = new List<SIPExtensions>();
-            unknownExtensions = null;
+            List<SIPExtensions> knownExtensions = new();
+            StringBuilder unknownBuilder = null;
 
-            if (String.IsNullOrEmpty(extensionList) == false)
+            if (string.IsNullOrWhiteSpace(extensionList))
             {
-                string[] extensions = extensionList.Trim().Split(',');
-
-                foreach (string extension in extensions)
-                {
-                    if (String.IsNullOrEmpty(extension) == false)
-                    {
-                        string trimmedExtension = extension.Trim().ToLower();
-                        switch (trimmedExtension)
-                        {
-                            case PRACK:
-                                knownExtensions.Add(SIPExtensions.Prack);
-                                break;
-                            case NO_REFER_SUB:
-                                knownExtensions.Add(SIPExtensions.NoReferSub);
-                                break;
-                            case REPLACES:
-                                knownExtensions.Add(SIPExtensions.Replaces);
-                                break;
-                            case SIPREC:
-                                knownExtensions.Add(SIPExtensions.SipRec);
-                                break;
-                            case MULTIPLE_REFER:
-                                knownExtensions.Add(SIPExtensions.MultipleRefer);
-                                break;
-                            default:
-                                unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
-                                break;
-                        }
-                    }
-                }
+                unknownExtensions = null;
+                return knownExtensions;
             }
 
+            ReadOnlySpan<char> remaining = extensionList.AsSpan();
+            while (true)
+            {
+                int commaIndex = remaining.IndexOf(',');
+                ReadOnlySpan<char> extension = commaIndex == -1 ? remaining.Trim() : remaining.Slice(0, commaIndex).Trim();
+
+                if (!extension.IsEmpty)
+                {
+                    SIPExtensions? parsedExtension = null;
+                    if (extension.Equals(PRACK.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        parsedExtension = SIPExtensions.Prack;
+                    }
+                    else if (extension.Equals(NO_REFER_SUB.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        parsedExtension = SIPExtensions.NoReferSub;
+                    }
+                    else if (extension.Equals(REPLACES.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        parsedExtension = SIPExtensions.Replaces;
+                    }
+                    else if (extension.Equals(SIPREC.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        parsedExtension = SIPExtensions.SipRec;
+                    }
+                    else if (extension.Equals(MULTIPLE_REFER.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        parsedExtension = SIPExtensions.MultipleRefer;
+                    }
+
+                    if (parsedExtension.HasValue)
+                    {
+                        knownExtensions.Add(parsedExtension.GetValueOrDefault());
+                    }
+                    else
+                    {
+                        unknownBuilder ??= new StringBuilder();
+                        if (unknownBuilder.Length > 0)
+                        {
+                            unknownBuilder.Append(',');
+                        }
+                        unknownBuilder.Append(extension);
+                    }
+                }
+
+                if (commaIndex == -1)
+                {
+                    break;
+                }
+
+                remaining = remaining.Slice(commaIndex + 1);
+            }
+
+            unknownExtensions = unknownBuilder?.ToString();
             return knownExtensions;
         }
     }

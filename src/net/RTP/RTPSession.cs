@@ -1234,16 +1234,16 @@ namespace SIPSorcery.Net
                         // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
                         var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
                         SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
-                        if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
+                        if (currentLocalTrackCapabilities.Any(x => x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)))
                         {
-                            localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                            localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase));
                         }
                         else
                         {
                             localRTPEventCapabilities = MediaStream.DefaultRTPEventFormat;
                         }
 
-                        currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
+                        currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => !x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)).ToList();
                         if (localRTPEventCapabilities != null)
                         {
                             currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
@@ -1256,7 +1256,7 @@ namespace SIPSorcery.Net
                             if (!commonEventFormat.IsEmpty())
                             {
                                 currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
-                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase));
                                 currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
                         }
@@ -1275,7 +1275,7 @@ namespace SIPSorcery.Net
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
-                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                        if (capabilities?.Where(x => !x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)).Count() == 0)
                         {
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }

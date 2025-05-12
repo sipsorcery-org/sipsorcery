@@ -335,19 +335,19 @@ namespace SIPSorcery.Net
                         string headerNameLower = headerName.ToLower();
 
                         #region Accept
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_ACCEPT.ToLower())
+                        if (headerNameLower.Equals(RTSPHeaders.RTSP_HEADER_ACCEPT, StringComparison.CurrentCultureIgnoreCase))
                         {
                             rtspHeader.Accept = headerValue;
                         }
                         #endregion
                         #region ContentType
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_CONTENTTYPE.ToLower())
+                        if (headerNameLower.Equals(RTSPHeaders.RTSP_HEADER_CONTENTTYPE, StringComparison.CurrentCultureIgnoreCase))
                         {
                             rtspHeader.ContentType = headerValue;
                         }
                         #endregion
                         #region ContentLength
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_CONTENTLENGTH.ToLower())
+                        if (headerNameLower.Equals(RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, StringComparison.CurrentCultureIgnoreCase))
                         {
                             rtspHeader.RawCSeq = headerValue;
 
@@ -362,7 +362,7 @@ namespace SIPSorcery.Net
                         }
                         #endregion
                         #region CSeq
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_CSEQ.ToLower())
+                        if (headerNameLower.Equals(RTSPHeaders.RTSP_HEADER_CSEQ, StringComparison.CurrentCultureIgnoreCase))
                         {
                             rtspHeader.RawCSeq = headerValue;
 
@@ -379,13 +379,13 @@ namespace SIPSorcery.Net
                         }
                         #endregion
                         #region Session
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_SESSION.ToLower())
+                        if (headerNameLower.Equals(RTSPHeaders.RTSP_HEADER_SESSION, StringComparison.CurrentCultureIgnoreCase))
                         {
                             rtspHeader.Session = headerValue;
                         }
                         #endregion
                         #region Transport
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_TRANSPORT.ToLower())
+                        if (headerNameLower.Equals(RTSPHeaders.RTSP_HEADER_TRANSPORT, StringComparison.CurrentCultureIgnoreCase))
                         {
                             rtspHeader.Transport = RTSPTransportHeader.Parse(headerValue);
                         }

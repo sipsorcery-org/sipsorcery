@@ -413,13 +413,13 @@ namespace SIPSorcery.SIP
                             else if (sipURI.Host.IndexOf(':') != sipURI.Host.LastIndexOf(':'))
                             {
                                 // If the host contains multiple ':' characters then it must be an IPv6 address which require a start '[' and an end ']'.
-                                if (sipURI.Host.ToCharArray()[0] != '[')
+                                if (sipURI.Host[0] != '[')
                                 {
                                     throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an IPv6 address that was missing the start '['.");
                                 }
                                 else if (!sipURI.Host.EndsWith("]") &&
                                     (sipURI.Host.ToCharArray().Length < sipURI.Host.LastIndexOf(':') + 1 ||
-                                    sipURI.Host.ToCharArray()[sipURI.Host.LastIndexOf(':') - 1] != ']'))
+                                    sipURI.Host[sipURI.Host.LastIndexOf(':') - 1] != ']'))
                                 {
                                     throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an IPv6 address that was missing the end ']'.");
                                 }

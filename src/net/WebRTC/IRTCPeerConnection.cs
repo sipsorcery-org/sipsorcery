@@ -169,50 +169,45 @@ namespace SIPSorcery.Net
         {
             fingerprint = null;
 
-            if (string.IsNullOrEmpty(str))
+            if (string.IsNullOrWhiteSpace(str))
             {
                 return false;
             }
-            else
-            {
-                int spaceIndex = str.IndexOf(' ');
-                if (spaceIndex == -1)
-                {
-                    return false;
-                }
-                else
-                {
-                    string algStr = str.Substring(0, spaceIndex);
-                    string val = str.Substring(spaceIndex + 1);
 
-                    if (!DtlsUtils.IsHashSupported(algStr))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        fingerprint = new RTCDtlsFingerprint
-                        {
-                            algorithm = algStr,
-                            value = val
-                        };
-                        return true;
-                    }
-                }
+            ReadOnlySpan<char> span = str.AsSpan().Trim();
+            int spaceIndex = span.IndexOf(' ');
+            if (spaceIndex == -1)
+            {
+                return false;
             }
+
+            ReadOnlySpan<char> algorithm = span.Slice(0, spaceIndex);
+            ReadOnlySpan<char> value = span.Slice(spaceIndex + 1);
+
+            if (!DtlsUtils.IsHashSupported(algorithm))
+            {
+                return false;
+            }
+
+            fingerprint = new RTCDtlsFingerprint
+            {
+                algorithm = algorithm.ToLowerString(),
+                value = value.ToLowerString()
+            };
+            return true;
         }
     }
 
-    /// <summary>
-    /// Represents a certificate used to authenticate WebRTC communications.
-    /// </summary>
-    /// <remarks>
-    /// TODO:
-    /// From https://www.w3.org/TR/webrtc/#methods-4:
-    /// "Implementations SHOULD store the sensitive keying material in a secure module safe from 
-    /// same-process memory attacks."
-    /// </remarks>
-    [Obsolete("Use RTCCertificate2 instead")]
+        /// <summary>
+        /// Represents a certificate used to authenticate WebRTC communications.
+        /// </summary>
+        /// <remarks>
+        /// TODO:
+        /// From https://www.w3.org/TR/webrtc/#methods-4:
+        /// "Implementations SHOULD store the sensitive keying material in a secure module safe from 
+        /// same-process memory attacks."
+        /// </remarks>
+        [Obsolete("Use RTCCertificate2 instead")]
     public class RTCCertificate
     {
         /// <summary>

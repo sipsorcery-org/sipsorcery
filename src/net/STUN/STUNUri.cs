@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
             {
                 if (Protocol != ProtocolType.Udp)
                 {
-                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}?transport={Protocol.ToString().ToLower()}";
+                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}?transport={Protocol.ToLowerString()}";
                 }
                 else
                 {
@@ -247,7 +247,7 @@ namespace SIPSorcery.Net
             {
                 if (Protocol != ProtocolType.Udp)
                 {
-                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}?transport={Protocol.ToString().ToLower()}";
+                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}?transport={Protocol.ToLowerString()}";
                 }
                 else
                 {
