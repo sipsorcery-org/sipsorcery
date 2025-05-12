@@ -362,7 +362,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTPChannel : IDisposable
     {
-        private static readonly bool isMono = Type.GetType("Mono.Runtime") != null;
+        internal static readonly bool isMono = Type.GetType("Mono.Runtime") != null;
         private static ILogger logger = Log.Logger;
         protected UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
