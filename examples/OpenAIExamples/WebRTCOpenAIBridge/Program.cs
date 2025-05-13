@@ -42,6 +42,7 @@ using Serilog.Extensions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace demo;
 
@@ -73,50 +74,52 @@ record PcContext(
 
 class Program
 {
-    private const string OPENAI_REALTIME_SESSIONS_URL = "https://api.openai.com/v1/realtime/sessions";
-    private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
-    private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
-    private const string OPENAI_DATACHANNEL_NAME = "oai-events";
-
-    private static string? _openAIKey = string.Empty;
-    private static string? _stunUrl = string.Empty;
-    private static bool _waitForIceGatheringToSendOffer = false;
-
-    private static Microsoft.Extensions.Logging.ILogger _logger = LoggerFactory.Create(builder =>
-        builder.AddSerilog(new LoggerConfiguration()
-            .Enrich.FromLogContext()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .CreateLogger()))
-        .CreateLogger<Program>();
-
     static async Task Main(string[] args)
     {
-        Console.WriteLine("WebRTC OpenAI Demo Program");
-        Console.WriteLine("Press ctrl-c to exit.");
-
-        _openAIKey = Environment.GetEnvironmentVariable("OPENAIKEY");
-        _stunUrl = Environment.GetEnvironmentVariable("STUN_URL");
-        bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER"), out _waitForIceGatheringToSendOffer);
-
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .CreateLogger();
+        .MinimumLevel.Debug()
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .CreateLogger();
 
         var factory = new SerilogLoggerFactory(Log.Logger);
         SIPSorcery.LogFactory.Set(factory);
 
-        if (string.IsNullOrWhiteSpace(_openAIKey))
+        Log.Information("WebRTC OpenAI Browser Bridge Demo Program");
+
+        var openAiKey = Environment.GetEnvironmentVariable("OPENAIKEY") ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(openAiKey))
         {
-            _logger.LogError("Please provide your OpenAI key as an environment variable. It's used to get the single use ephemeral secret for the WebRTC connection, e.g. set OPENAIKEY=<your openai api key>");
+            Log.Logger.Error("Please provide your OpenAI key as an environment variable. For example: set OPENAIKEY=<your openai api key>");
+            return;
         }
+
+        //using var provider = services.BuildServiceProvider();
+
+        //// Create the OpenAI Realtime WebRTC peer connection.
+        //var openaiClient = provider.GetRequiredService<IOpenAIRealtimeRestClient>();
+        //var webrtcEndPoint = provider.GetRequiredService<IOpenAIRealtimeWebRTCEndPoint>();
 
         var builder = WebApplication.CreateBuilder();
 
         builder.Host.UseSerilog();
+
+        builder.Services.AddLogging(builder =>
+        {
+            builder.AddSerilog(dispose: true);
+        });
+
+        builder.Services
+          .AddHttpClient()
+          .AddHttpClient(OpenAIRealtimeRestClient.OPENAI_HTTP_CLIENT_NAME, client =>
+          {
+              client.Timeout = TimeSpan.FromSeconds(5);
+              client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openAiKey);
+          });
+        builder.Services.AddTransient<IOpenAIRealtimeRestClient, OpenAIRealtimeRestClient>();
+        builder.Services.AddTransient<IOpenAIRealtimeWebRTCEndPoint, OpenAIRealtimeWebRTCEndPoint>();
 
         var app = builder.Build();
 
@@ -131,7 +134,7 @@ class Program
 
         app.Map("/ws", async context =>
         {
-            _logger.LogDebug("Web socket client connection established.");
+            Log.Debug("Web socket client connection established.");
 
             if (context.WebSockets.IsWebSocketRequest)
             {
@@ -142,10 +145,10 @@ class Program
                     X_ICEIncludeAllInterfaceAddresses = true
                 };
 
-                if (!string.IsNullOrWhiteSpace(_stunUrl))
-                {
-                    config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
-                }
+                //if (!string.IsNullOrWhiteSpace(_stunUrl))
+                //{
+                //    config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
+                //}
 
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(
                     webSocket,
@@ -153,14 +156,14 @@ class Program
                     config,
                     RTCSdpType.offer);
 
-                webSocketPeer.OfferOptions = new RTCOfferOptions
-                {
-                    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
-                };
+                //webSocketPeer.OfferOptions = new RTCOfferOptions
+                //{
+                //    X_WaitForIceGatheringToComplete = _waitForIceGatheringToSendOffer
+                //};
 
                 await webSocketPeer.Run();
 
-                _logger.LogDebug("Web socket closing with WebRTC peer connection in state {state}.", webSocketPeer.RTCPeerConnection?.connectionState);
+                Log.Debug("Web socket closing with WebRTC peer connection in state {state}.", webSocketPeer.RTCPeerConnection?.connectionState);
             }
             else
             {
