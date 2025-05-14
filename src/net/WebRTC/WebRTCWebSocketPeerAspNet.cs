@@ -70,7 +70,9 @@ public class WebRTCWebSocketPeerAspNet
         Func<RTCConfiguration, Task<RTCPeerConnection>> createPeerConnection,
         RTCConfiguration peerConnectionConfig,
         RTCSdpType peerRole,
-        bool keepalive = false)
+        bool keepalive = false,
+        CancellationToken cancellationToken = default
+        )
     {
         _webSocket = webSocket;
         CreatePeerConnection = createPeerConnection;
@@ -78,6 +80,11 @@ public class WebRTCWebSocketPeerAspNet
         _peerRole = peerRole;
         _cts = new CancellationTokenSource();
         _keepalive = keepalive;
+
+        if (cancellationToken != default)
+        {
+            cancellationToken.Register(async () => await Close());
+        }
     }
 
     public async Task Run()
@@ -118,10 +125,11 @@ public class WebRTCWebSocketPeerAspNet
         {
             _ = Task.Run(async () =>
             {
-                while (_cts.Token.IsCancellationRequested && _webSocket.State == WebSocketState.Open)
+                while (!_cts.Token.IsCancellationRequested && _webSocket.State == WebSocketState.Open)
                 {
-                    await SendMessageAsync("ping");
                     await Task.Delay(KeepAliveTime);
+                    _logger.LogTrace("Sending signaling channel keep alive 'ping'.");
+                    await SendMessageAsync("ping");
                 }
             });
         }
