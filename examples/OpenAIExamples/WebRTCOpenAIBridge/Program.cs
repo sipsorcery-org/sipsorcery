@@ -175,80 +175,80 @@ class Program
         await app.RunAsync();
     }
 
-    private static async Task StartOpenAIConnection(RTCPeerConnection browserPeerConnection)
-    {
-        _logger.LogDebug("Browser peer connection connected.");
+    //private static async Task StartOpenAIConnection(RTCPeerConnection browserPeerConnection)
+    //{
+    //    _logger.LogDebug("Browser peer connection connected.");
 
-        var initialContext = new InitPcContext(
-            "dummy",
-            string.Empty,
-            string.Empty,
-            string.Empty,
-            OpenAIVoicesEnum.shimmer,
-            1);
+    //    var initialContext = new InitPcContext(
+    //        "dummy",
+    //        string.Empty,
+    //        string.Empty,
+    //        string.Empty,
+    //        OpenAIVoicesEnum.shimmer,
+    //        1);
 
-        var openAiResult = await InitiatePeerConnectionWithOpenAI(_openAIKey ?? string.Empty, initialContext);
+    //    var openAiResult = await InitiatePeerConnectionWithOpenAI(_openAIKey ?? string.Empty, initialContext);
 
-        if (openAiResult.IsLeft)
-        {
-            _logger.LogError($"There was a problem connecting the OpenAI call. {((Error)openAiResult).Message}");
-        }
-        else
-        {
-            var openAiCtx = (CreatedPcContext)openAiResult;
-            var waitForDataChannel = openAiCtx.PcConnectedSemaphore.WaitAsync();
-            await waitForDataChannel;
+    //    if (openAiResult.IsLeft)
+    //    {
+    //        _logger.LogError($"There was a problem connecting the OpenAI call. {((Error)openAiResult).Message}");
+    //    }
+    //    else
+    //    {
+    //        var openAiCtx = (CreatedPcContext)openAiResult;
+    //        var waitForDataChannel = openAiCtx.PcConnectedSemaphore.WaitAsync();
+    //        await waitForDataChannel;
 
-            _logger.LogInformation($"OpenAI data channel connected, connecting audio.");
+    //        _logger.LogInformation($"OpenAI data channel connected, connecting audio.");
 
-            // Use to intercept audio and sent to Windows speaker for local diagnostics.
-            //var audioEncoder = new AudioEncoder(includeOpus: true);
-            //var opus = audioEncoder.SupportedFormats.Single(x => x.FormatName == "OPUS");
-            //var audioSource = new AudioExtrasSource(audioEncoder, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-            //audioSource.SetAudioSourceFormat(opus);
-            //audioSource.OnAudioSourceEncodedSample += webSocketPeer.RTCPeerConnection.SendAudio;
-            //await audioSource.StartAudio();
-            //WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
-            //windowsAudioEP.SetAudioSinkFormat(opus);
-            //await windowsAudioEP.StartAudioSink();
+    //        // Use to intercept audio and sent to Windows speaker for local diagnostics.
+    //        //var audioEncoder = new AudioEncoder(includeOpus: true);
+    //        //var opus = audioEncoder.SupportedFormats.Single(x => x.FormatName == "OPUS");
+    //        //var audioSource = new AudioExtrasSource(audioEncoder, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+    //        //audioSource.SetAudioSourceFormat(opus);
+    //        //audioSource.OnAudioSourceEncodedSample += webSocketPeer.RTCPeerConnection.SendAudio;
+    //        //await audioSource.StartAudio();
+    //        //WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
+    //        //windowsAudioEP.SetAudioSinkFormat(opus);
+    //        //await windowsAudioEP.StartAudioSink();
 
-            uint rtpPreviousTimestampForBrowser = 0;
-            openAiCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-            {
-                if (rtpPreviousTimestampForBrowser == 0)
-                {
-                    rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
-                }
-                else
-                {
-                    uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForBrowser;
-                    rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
+    //        uint rtpPreviousTimestampForBrowser = 0;
+    //        openAiCtx.Pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+    //        {
+    //            if (rtpPreviousTimestampForBrowser == 0)
+    //            {
+    //                rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
+    //            }
+    //            else
+    //            {
+    //                uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForBrowser;
+    //                rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
 
-                    browserPeerConnection.SendAudio(rtpDuration, rtpPkt.Payload);
-                }
-            };
+    //                browserPeerConnection.SendAudio(rtpDuration, rtpPkt.Payload);
+    //            }
+    //        };
 
-            uint rtpPreviousTimestampForOpenAI = 0;
-            browserPeerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-                {
-                    if (rtpPreviousTimestampForOpenAI == 0)
-                    {
-                        rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
-                    }
-                    else
-                    {
-                        uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForOpenAI;
-                        rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
+    //        uint rtpPreviousTimestampForOpenAI = 0;
+    //        browserPeerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+    //            {
+    //                if (rtpPreviousTimestampForOpenAI == 0)
+    //                {
+    //                    rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
+    //                }
+    //                else
+    //                {
+    //                    uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForOpenAI;
+    //                    rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
 
-                        openAiCtx.Pc.SendAudio(rtpDuration, rtpPkt.Payload);
-                    }
-                };
+    //                    openAiCtx.Pc.SendAudio(rtpDuration, rtpPkt.Payload);
+    //                }
+    //            };
 
-            browserPeerConnection.OnClosed += () => openAiCtx.Pc.Close("Browser peer closed.");
+    //        browserPeerConnection.OnClosed += () => openAiCtx.Pc.Close("Browser peer closed.");
 
-            SendResponseCreate(openAiCtx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Hi there.");
-        }
-    }
+    //        SendResponseCreate(openAiCtx.Pc.DataChannels.First(), OpenAIVoicesEnum.alloy, "Hi there.");
+    //    }
+    //}
 
     /// <summary>
     /// Contains a functional flow to initiate a WebRTC peer connection with the OpenAI realtime endpoint.
