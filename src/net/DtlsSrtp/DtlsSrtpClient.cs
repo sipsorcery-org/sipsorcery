@@ -52,7 +52,7 @@ namespace SIPSorcery.Net
 
             return DtlsUtils.LoadSignerCredentials(mContext,
                 certificateRequest.SupportedSignatureAlgorithms,
-                SignatureAlgorithm.ecdsa,
+                SignatureAlgorithm.rsa,
                 mClient.mCertificateChain,
                 mClient.mPrivateKey);
         }
@@ -91,7 +91,6 @@ namespace SIPSorcery.Net
         private byte[] srtpMasterServerKey;
         private byte[] srtpMasterClientSalt;
         private byte[] srtpMasterServerSalt;
-        private byte[] masterSecret = null;
 
         // Policies
         private SrtpPolicy srtpPolicy;
@@ -246,10 +245,6 @@ namespace SIPSorcery.Net
         public override void NotifyHandshakeComplete()
         {
             base.NotifyHandshakeComplete();
-
-            //Copy master Secret (will be inaccessible after this call)
-            masterSecret = new byte[m_context.SecurityParameters.MasterSecret != null ? m_context.SecurityParameters.MasterSecret.Length : 0];
-            Buffer.BlockCopy(m_context.SecurityParameters.MasterSecret.Extract(), 0, masterSecret, 0, masterSecret.Length);
 
             //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
             PrepareSrtpSharedSecret();
