@@ -211,43 +211,26 @@ namespace SIPSorcery.Net
                     privateKey, signatureAndHashAlgorithm);
         }
 
-        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, IList<SignatureAndHashAlgorithm> supportedSignatureAlgorithms,
-            short signatureAlgorithm, Certificate certificate, AsymmetricKeyParameter privateKey)
+        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, IList<SignatureAndHashAlgorithm> supportedSignatureAlgorithms, Certificate certificate, AsymmetricKeyParameter privateKey)
         {
-            /*
-             * TODO Note that this code fails to provide default value for the client supported
-             * algorithms if it wasn't sent.
-             */
+            var tslCertificate = certificate.GetCertificateAt(0);
 
             SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
             if (supportedSignatureAlgorithms != null)
             {
                 foreach (SignatureAndHashAlgorithm alg in supportedSignatureAlgorithms)
                 {
-                    if (alg.Signature == signatureAlgorithm)
+                    if (tslCertificate.SupportsSignatureAlgorithm(alg.Signature))
                     {
                         signatureAndHashAlgorithm = alg;
                         break;
                     }
                 }
-
-                if (signatureAndHashAlgorithm == null)
-                {
-                    return null;
-                }
             }
 
+            signatureAndHashAlgorithm ??= SignatureAndHashAlgorithm.GetInstance(Org.BouncyCastle.Tls.HashAlgorithm.sha256, SignatureAlgorithm.ecdsa);
+
             return LoadSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
-        }
-
-        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, IList<SignatureAndHashAlgorithm> supportedSignatureAlgorithms,
-            byte signatureAlgorithm, string certResource, string keyResource)
-        {
-            Certificate certificate = LoadCertificateChain(context.Crypto as BcTlsCrypto, new string[] { certResource, "x509-ca.pem" });
-            AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
-
-            return LoadSignerCredentials(context, supportedSignatureAlgorithms, signatureAlgorithm, certificate,
-                privateKey);
         }
 
         public static Certificate LoadCertificateChain(TlsCrypto crypto, X509Certificate2[] certificates)
@@ -1044,5 +1027,25 @@ namespace SIPSorcery.Net
             { CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
             { CipherSuite.TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256" },
         };
+
+        public static void GetSignatureAndHashAlgorithmFromSigAlgOid(string sigAlgOid, out short signatureAlgorithm, out short hashAlgorithm)
+        {
+            switch (sigAlgOid)
+            {
+                case "1.2.840.113549.1.1.5": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha1; break;
+                case "1.2.840.113549.1.1.11": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha256; break;
+                case "1.2.840.113549.1.1.12": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha384; break;
+                case "1.2.840.113549.1.1.13": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha512; break;
+                case "1.2.840.113549.1.1.4": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.md5; break;
+                case "1.2.840.10040.4.3": signatureAlgorithm = SignatureAlgorithm.dsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha1; break;
+                case "2.16.840.1.101.3.4.3.2": signatureAlgorithm = SignatureAlgorithm.dsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha256; break;
+                case "2.16.840.1.101.3.4.3.3": signatureAlgorithm = SignatureAlgorithm.dsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha384; break;
+                case "1.2.840.10045.4.1": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha1; break;
+                case "1.2.840.10045.4.3.2": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha256; break;
+                case "1.2.840.10045.4.3.3": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha384; break;
+                case "1.2.840.10045.4.3.4": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha512; break;
+                default: throw new NotSupportedException();
+            }
+        }
     }
 }

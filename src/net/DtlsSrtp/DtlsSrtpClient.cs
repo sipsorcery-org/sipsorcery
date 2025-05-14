@@ -44,20 +44,7 @@ namespace SIPSorcery.Net
 
         public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
         {
-            short[] certificateTypes = certificateRequest.CertificateTypes;
-            if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign) || !Arrays.Contains(certificateTypes, ClientCertificateType.ecdsa_sign))
-            {
-                return null;
-            }
-
-            //certificateTypes have at least rsa_sign or ecdsa_sign, we pick the first one in the list.
-            short clientSignatureAlgorithm = SignatureAlgorithm.GetClientCertificateType(certificateTypes[0]);
-
-            return DtlsUtils.LoadSignerCredentials(mContext,
-                certificateRequest.SupportedSignatureAlgorithms,
-                clientSignatureAlgorithm,
-                mClient.mCertificateChain,
-                mClient.mPrivateKey);
+            return DtlsUtils.LoadSignerCredentials(mContext, certificateRequest.SupportedSignatureAlgorithms, mClient.mCertificateChain, mClient.mPrivateKey);
         }
 
         public TlsCredentials GetClientCredentials(TlsContext context, CertificateRequest certificateRequest)
