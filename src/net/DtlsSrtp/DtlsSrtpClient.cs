@@ -50,9 +50,12 @@ namespace SIPSorcery.Net
                 return null;
             }
 
+            //certificateTypes have at least rsa_sign or ecdsa_sign, we pick the first one in the list.
+            short clientSignatureAlgorithm = SignatureAlgorithm.GetClientCertificateType(certificateTypes[0]);
+
             return DtlsUtils.LoadSignerCredentials(mContext,
                 certificateRequest.SupportedSignatureAlgorithms,
-                SignatureAlgorithm.rsa,
+                clientSignatureAlgorithm,
                 mClient.mCertificateChain,
                 mClient.mPrivateKey);
         }
