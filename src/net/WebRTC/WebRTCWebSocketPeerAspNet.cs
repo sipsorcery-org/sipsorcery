@@ -41,6 +41,9 @@ public class WebRTCWebSocketPeerAspNet
     private readonly RTCSdpType _peerRole;
     private readonly CancellationTokenSource _cts;
 
+    private bool _keepalive = false;
+    public TimeSpan KeepAliveTime = TimeSpan.FromSeconds(30);
+
     /// <summary>
     /// Optional property to allow the peer connection SDP offer options to be set.
     /// </summary>
@@ -66,13 +69,22 @@ public class WebRTCWebSocketPeerAspNet
         WebSocket webSocket,
         Func<RTCConfiguration, Task<RTCPeerConnection>> createPeerConnection,
         RTCConfiguration peerConnectionConfig,
-        RTCSdpType peerRole)
+        RTCSdpType peerRole,
+        bool keepalive = false,
+        CancellationToken cancellationToken = default
+        )
     {
         _webSocket = webSocket;
         CreatePeerConnection = createPeerConnection;
         _peerConnectionConfig = peerConnectionConfig;
         _peerRole = peerRole;
         _cts = new CancellationTokenSource();
+        _keepalive = keepalive;
+
+        if (cancellationToken != default)
+        {
+            cancellationToken.Register(async () => await Close());
+        }
     }
 
     public async Task Run()
@@ -107,6 +119,19 @@ public class WebRTCWebSocketPeerAspNet
         if (_peerRole == RTCSdpType.offer)
         {
             await SendOffer();
+        }
+
+        if (_keepalive)
+        {
+            _ = Task.Run(async () =>
+            {
+                while (!_cts.Token.IsCancellationRequested && _webSocket.State == WebSocketState.Open)
+                {
+                    await Task.Delay(KeepAliveTime);
+                    _logger.LogTrace("Sending signaling channel keep alive 'ping'.");
+                    await SendMessageAsync("ping");
+                }
+            });
         }
 
         // Start the web socket receiving loop.
