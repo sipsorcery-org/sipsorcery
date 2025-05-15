@@ -26,7 +26,6 @@
 
 using System;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -36,13 +35,12 @@ using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using LanguageExt;
-using LanguageExt.Common;
-using Serilog.Events;
 using Serilog.Extensions.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace demo;
 
@@ -74,6 +72,8 @@ record PcContext(
 
 class Program
 {
+    private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;   
+
     static async Task Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
@@ -84,6 +84,7 @@ class Program
 
         var factory = new SerilogLoggerFactory(Log.Logger);
         SIPSorcery.LogFactory.Set(factory);
+        _logger = factory.CreateLogger<Program>();
 
         Log.Information("WebRTC OpenAI Browser Bridge Demo Program");
 
@@ -94,12 +95,6 @@ class Program
             Log.Logger.Error("Please provide your OpenAI key as an environment variable. For example: set OPENAIKEY=<your openai api key>");
             return;
         }
-
-        //using var provider = services.BuildServiceProvider();
-
-        //// Create the OpenAI Realtime WebRTC peer connection.
-        //var openaiClient = provider.GetRequiredService<IOpenAIRealtimeRestClient>();
-        //var webrtcEndPoint = provider.GetRequiredService<IOpenAIRealtimeWebRTCEndPoint>();
 
         var builder = WebApplication.CreateBuilder();
 
@@ -132,7 +127,9 @@ class Program
 
         app.UseWebSockets(webSocketOptions);
 
-        app.Map("/ws", async context =>
+        app.Map("/ws", async (HttpContext context,
+            [FromServices] IOpenAIRealtimeRestClient openAiClient,
+            [FromServices] IOpenAIRealtimeWebRTCEndPoint openAiWebRTCEndPoint) =>
         {
             Log.Debug("Web socket client connection established.");
 
@@ -250,66 +247,6 @@ class Program
     //    }
     //}
 
-    /// <summary>
-    /// Contains a functional flow to initiate a WebRTC peer connection with the OpenAI realtime endpoint.
-    /// </summary>
-    /// <remarks>
-    /// See https://platform.openai.com/docs/guides/realtime-webrtc for the steps required to establish a connection.
-    /// </remarks>
-    private static async Task<Either<Error, CreatedPcContext>> InitiatePeerConnectionWithOpenAI(string openAIKey, InitPcContext initCtx)
-    {
-        return await Prelude.Right<Error, Unit>(default)
-            .BindAsync(async _ =>
-            {
-                _logger.LogInformation($"STEP 1 {initCtx.CallLabel}: Get ephemeral key from OpenAI.");
-                var ephemeralKey = await OpenAIRealtimeRestClient.CreateEphemeralKeyAsync(OPENAI_REALTIME_SESSIONS_URL, openAIKey, OPENAI_MODEL, initCtx.Voice);
-
-                return ephemeralKey.Map(ephemeralKey => initCtx with { EphemeralKey = ephemeralKey });
-            })
-            .BindAsync(async withkeyCtx =>
-            {
-                _logger.LogInformation($"STEP 2 {withkeyCtx.CallLabel}: Create WebRTC PeerConnection & get local SDP offer.");
-
-                var onConnectedSemaphore = new SemaphoreSlim(0, 1);
-                var pc = await CreatePeerConnection(onConnectedSemaphore);
-                var offer = pc.createOffer();
-                await pc.setLocalDescription(offer);
-
-                _logger.LogDebug("SDP offer:");
-                _logger.LogDebug(offer.sdp);
-
-                return Prelude.Right<Error, CreatedPcContext>(new(
-                    withkeyCtx.CallLabel,
-                    withkeyCtx.EphemeralKey,
-                    pc,
-                    offer.sdp,
-                    string.Empty,
-                    onConnectedSemaphore));
-            })
-            .BindAsync(async createdCtx =>
-            {
-                _logger.LogInformation($"STEP 3 {createdCtx.CallLabel}: Send SDP offer to OpenAI REST server & get SDP answer.");
-
-                var answerEither = await OpenAIRealtimeRestClient.GetOpenAIAnswerSdpAsync(createdCtx.EphemeralKey, OPENAI_REALTIME_BASE_URL, OPENAI_MODEL, createdCtx.OfferSdp);
-                return answerEither.Map(answer => createdCtx with { AnswerSdp = answer });
-            })
-            .BindAsync(withAnswerCtx =>
-            {
-                _logger.LogInformation($"STEP 4 {withAnswerCtx.CallLabel}: Set remote SDP");
-
-                _logger.LogDebug("SDP answer:");
-                _logger.LogDebug(withAnswerCtx.AnswerSdp);
-
-                var setAnswerResult = withAnswerCtx.Pc.setRemoteDescription(
-                    new RTCSessionDescriptionInit { sdp = withAnswerCtx.AnswerSdp, type = RTCSdpType.answer }
-                );
-                _logger.LogDebug($"Set answer result {setAnswerResult}.");
-
-                return setAnswerResult == SetDescriptionResultEnum.OK ?
-                    Prelude.Right<Error, CreatedPcContext>(withAnswerCtx) :
-                    Prelude.Left<Error, CreatedPcContext>(Error.New("Failed to set remote SDP."));
-            });
-    }
 
     /// <summary>
     /// Sends a response create message to the OpenAI data channel to trigger the conversation.
@@ -354,16 +291,8 @@ class Program
         //peerConnection.OnSendReport += RtpSession_OnSendReport;
         peerConnection.OnTimeout += (mediaType) => _logger.LogDebug($"Timeout on media {mediaType}.");
         peerConnection.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state changed to {state}.");
-        peerConnection.onconnectionstatechange += async (state) =>
-        {
-            _logger.LogDebug($"Peer connection connected changed to {state}.");
-
-            if (state == RTCPeerConnectionState.connected)
-            {
-                await StartOpenAIConnection(peerConnection);
-            }
-        };
-
+        peerConnection.onconnectionstatechange += (state) => _logger.LogDebug($"Peer connection connected changed to {state}.");
+        
         peerConnection.onsignalingstatechange += () =>
         {
             if (peerConnection.signalingState == RTCSignalingState.have_local_offer)
@@ -377,49 +306,6 @@ class Program
         };
 
         return Task.FromResult(peerConnection);
-    }
-
-    /// <summary>
-    /// Method to create the local peer connection instance and data channel.
-    /// </summary>
-    /// <param name="onConnectedSemaphore">A semaphore that will get set when the data channel on the peer connection is opened. Since the data channel
-    /// can only be opened once the peer connection is open this indicates both are ready for use.</param>
-    private static async Task<RTCPeerConnection> CreatePeerConnection(SemaphoreSlim onConnectedSemaphore)
-    {
-        var pcConfig = new RTCConfiguration
-        {
-            X_UseRtpFeedbackProfile = true,
-        };
-
-        var peerConnection = new RTCPeerConnection(pcConfig);
-        var dataChannel = await peerConnection.createDataChannel(OPENAI_DATACHANNEL_NAME);
-
-        var audioEncoder = new AudioEncoder(includeOpus: true);
-        var opusFormat = audioEncoder.SupportedFormats.Where(x => x.FormatName == "OPUS").ToList();
-        MediaStreamTrack audioTrack = new MediaStreamTrack(opusFormat, MediaStreamStatusEnum.SendRecv);
-        peerConnection.addTrack(audioTrack);
-
-        peerConnection.OnAudioFormatsNegotiated += (audioFormats) => _logger.LogDebug($"Audio format negotiated {audioFormats.First().FormatName}.");
-        //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
-        //peerConnection.OnSendReport += RtpSession_OnSendReport;
-        peerConnection.OnTimeout += (mediaType) => _logger.LogDebug($"Timeout on media {mediaType}.");
-        peerConnection.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state changed to {state}.");
-        peerConnection.onconnectionstatechange += (state) =>
-        {
-            _logger.LogDebug($"Peer connection connected changed to {state}.");
-        };
-
-        dataChannel.onopen += () =>
-        {
-            _logger.LogDebug("OpenAI data channel opened.");
-            onConnectedSemaphore.Release();
-        };
-
-        dataChannel.onclose += () => _logger.LogDebug($"OpenAI data channel {dataChannel.label} closed.");
-
-        dataChannel.onmessage += OnDataChannelMessage;
-
-        return peerConnection;
     }
 
     /// <summary>
