@@ -25,7 +25,9 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
     public AudioFormat AudioFormat { get; }
 
     private readonly IOpenAIRealtimeRestClient _openAIRealtimeRestClient;
+
     private RTCPeerConnection? _rtcPeerConnection = null;
+    public RTCPeerConnection? PeerConnection => _rtcPeerConnection;
 
     public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
 

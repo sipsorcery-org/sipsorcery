@@ -15,6 +15,8 @@ public interface IOpenAIRealtimeWebRTCEndPoint
 
     AudioFormat AudioFormat { get; }
 
+    RTCPeerConnection? PeerConnection { get; }
+
     event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
 
     event Action? OnPeerConnectionConnected;

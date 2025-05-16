@@ -161,24 +161,6 @@ class Program
     /// </summary>
     private static void OnSessionCreated(RTCDataChannel dc)
     {
-        //var sessionConfig = new SessionConfiguration(
-        //        OpenAIRealtimeRestClient.OPENAI_REALTIME_DEFAULT_MODEL,
-        //        //voice: OPENAI_VOICE,
-        //        instructions: "Keep it snappy.",
-        //        tools:
-        //        [
-        //            Tool.FromFunc("Add", (int a, int b) => Add(a, b)),
-        //        ],
-        //        toolChoice: "auto"
-        //        );
-
-        //var updateSessionReq = new UpdateSessionRequest(sessionConfig);
-
-        //logger.LogInformation($"Sending OpenAI session update to data channel {dc.label}.");
-        //logger.LogDebug(updateSessionReq.ToJsonString());
-
-        //dc.send(updateSessionReq.ToJsonString());
-
         var sessionUpdate = new OpenAISessionUpdate
         {
             EventID = Guid.NewGuid().ToString(),
@@ -209,11 +191,6 @@ class Program
         logger.LogDebug(sessionUpdate.ToJson());
 
         dc.send(sessionUpdate.ToJson());
-    }
-
-    private static int Add(int a, int b)
-    {
-        return a + b;
     }
 
     private static void OnFunctionArgumentsDone(RTCDataChannel dc, OpenAIResponseFunctionCallArgumentsDone argsDone)
@@ -247,19 +224,6 @@ class Program
     /// </summary>
     private static OpenAIConversationItemCreate CreatePaymentRequest(OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
-        //var location = argsDone.Arguments.GetNamedArgumentValue("location") ?? string.Empty;
-
-        //var weather = location switch
-        //{
-        //    string s when s.Contains("Canberra", StringComparison.OrdinalIgnoreCase) => "It's cloudy and 15 degrees.",
-        //    string s when s.Contains("Dublin", StringComparison.OrdinalIgnoreCase) => "It's raining and 7 degrees.",
-        //    string s when s.Contains("Hobart", StringComparison.OrdinalIgnoreCase) => "It's sunny and 25 degrees.",
-        //    string s when s.Contains("Melbourne", StringComparison.OrdinalIgnoreCase) => "It's cold and wet and 11 degrees.",
-        //    string s when s.Contains("Sydney", StringComparison.OrdinalIgnoreCase) => "It's humid and stormy and 30 degrees.",
-        //    string s when s.Contains("Perth", StringComparison.OrdinalIgnoreCase) => "It's hot and dry and 40 degrees.",
-        //    _ => "It's sunny and 20 degrees."
-        //};
-
         string orderID = "X1234";
 
         return new OpenAIConversationItemCreate
