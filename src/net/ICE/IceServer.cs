@@ -94,6 +94,15 @@ namespace SIPSorcery.Net
         /// </summary>
         internal const int STUN_STALE_NONCE_ERROR_CODE = 438;
 
+        internal const int STUN_CONNECTION_ALREADY_EXISTS = 446;
+
+        internal const int STUN_CONNECTION_TIMEOUT_OR_FAILURE = 447;
+
+        // 10 seconds is from https://datatracker.ietf.org/doc/html/rfc6062#section-4.3
+        internal static TimeSpan waittime => TimeSpan.FromSeconds(10);
+        internal static TimeSpan rttime => TimeSpan.FromSeconds(10 / (MAX_ERRORS));
+        //internal static readonly TimeSpan rttime = TimeSpan.FromSeconds(1);
+
         internal STUNUri _uri;
         internal string _username;
         internal string _password;
@@ -177,7 +186,26 @@ namespace SIPSorcery.Net
         /// </summary>
         internal int ErrorResponseCount = 0;
 
+        /// <summary>
+        /// Transport protocol for connecting with the server.
+        /// </summary>
         public ProtocolType Protocol { get { return _uri.Protocol; } }
+        // DevNote
+        // <remarks>
+        /// Not to be confused of the protocol for allocated ICE relay candidate with TURN (<see cref="_reqIceProtocol"/>).
+        // </remarks>
+
+        /// <summary>
+        /// Protocol of the ICE relay candidate to be allocated.
+        /// </summary>
+        /// <remarks>
+        /// Only affects TURN server usage.
+        /// Defaults to <see cref="ProtocolType.Udp"/>
+        /// </remarks>
+        internal ProtocolType _reqIceProtocol { get; set; } = ProtocolType.Udp;
+        //public ProtocolType IceRelayProtocol { get; set; } = ProtocolType.Udp;
+
+        internal STUNUri _secondaryRelayUri;
 
         /// <summary>
         /// Default constructor.
@@ -211,9 +239,8 @@ namespace SIPSorcery.Net
 
             if (type == RTCIceCandidateType.srflx && ServerReflexiveEndPoint != null)
             {
-                // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
-                //var srflxProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
-                var srflxProtocol = RTCIceProtocol.udp;
+                var srflxProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
+                
                 candidate.SetAddressProperties(srflxProtocol, ServerReflexiveEndPoint.Address, (ushort)ServerReflexiveEndPoint.Port,
                                 type, null, 0);
                 candidate.IceServer = this;
@@ -222,9 +249,7 @@ namespace SIPSorcery.Net
             }
             else if (type == RTCIceCandidateType.relay && RelayEndPoint != null)
             {
-                // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
-                //var relayProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
-                var relayProtocol = RTCIceProtocol.udp;
+                var relayProtocol = _reqIceProtocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
 
                 candidate.SetAddressProperties(relayProtocol, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
                     type, null, 0);
