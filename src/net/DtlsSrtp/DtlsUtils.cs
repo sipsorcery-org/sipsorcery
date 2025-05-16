@@ -39,7 +39,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -54,10 +53,12 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Prng;
-using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Utilities.IO.Pem;
 using Org.BouncyCastle.X509;
@@ -82,14 +83,14 @@ namespace SIPSorcery.Net
         /// </summary>
         public const string CERTIFICATE_COMMON_NAME = "WebRTC";
 
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static ILogger logger = Log.Logger;
 
-        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, X509Certificate2 certificate)
+        public static RTCDtlsFingerprint Fingerprint(TlsCrypto crypto, string hashAlgorithm, X509Certificate2 certificate)
         {
-            return Fingerprint(hashAlgorithm, LoadCertificateResource(certificate));
+            return Fingerprint(hashAlgorithm, LoadCertificateResource(crypto, certificate));
         }
 
-        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, Org.BouncyCastle.Asn1.X509.X509CertificateStructure c)
+        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, TlsCertificate c)
         {
             if (!IsHashSupported(hashAlgorithm))
             {
@@ -113,9 +114,9 @@ namespace SIPSorcery.Net
             return Fingerprint(certificate);
         }
 
-        public static RTCDtlsFingerprint Fingerprint(X509Certificate2 certificate)
+        public static RTCDtlsFingerprint Fingerprint(TlsCrypto crypto, X509Certificate2 certificate)
         {
-            return Fingerprint(LoadCertificateResource(certificate));
+            return Fingerprint(LoadCertificateResource(crypto, certificate));
         }
 
         public static RTCDtlsFingerprint Fingerprint(Org.BouncyCastle.X509.X509Certificate certificate)
@@ -137,19 +138,22 @@ namespace SIPSorcery.Net
             };
         }
 
-        public static string GetSignatureAlgorithm(Certificate certificateChain)
+        public static string GetSignatureAlgorithm(TlsCertificate certificate)
         {
-            var certificate = certificateChain.GetCertificateAt(0);
-            return GetSignatureAlgorithm(certificate);
+            return GetFriendlyNameFromOid(certificate.SigAlgOid);
         }
 
-        public static string GetSignatureAlgorithm(X509CertificateStructure certificate)
+        public static RTCDtlsFingerprint Fingerprint(TlsCertificate c)
         {
-            AlgorithmIdentifier sigAlg = certificate.SignatureAlgorithm;
+            IDigest sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());
+            byte[] der = c.GetEncoded();
+            byte[] sha256Hash = DigestOf(sha256, der);
 
-            string sigAlgName = sigAlg.Algorithm.ToString();
-
-            return GetFriendlyNameFromOid(sigAlgName);
+            return new RTCDtlsFingerprint
+            {
+                algorithm = sha256.AlgorithmName.ToLower(),
+                value = sha256Hash.HexStr(':')
+            };
         }
 
         public static byte[] DigestOf(IDigest dAlg, byte[] input)
@@ -160,150 +164,111 @@ namespace SIPSorcery.Net
             return result;
         }
 
-        public static TlsAgreementCredentials LoadAgreementCredentials(TlsContext context,
-                Certificate certificate, AsymmetricKeyParameter privateKey)
+        public static TlsCredentialedAgreement LoadAgreementCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
         {
-            return new DefaultTlsAgreementCredentials(certificate, privateKey);
+            return new BcDefaultTlsCredentialedAgreement(context.Crypto as BcTlsCrypto, certificate, privateKey);
         }
 
-        public static TlsAgreementCredentials LoadAgreementCredentials(TlsContext context,
-                string[] certResources, string keyResource)
+        public static TlsCredentialedAgreement LoadAgreementCredentials(TlsContext context, string[] certResources, string keyResource)
         {
-            Certificate certificate = LoadCertificateChain(certResources);
+            Certificate certificate = LoadCertificateChain(context.Crypto, certResources);
             AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
             return LoadAgreementCredentials(context, certificate, privateKey);
         }
 
-        public static TlsEncryptionCredentials LoadEncryptionCredentials(
-                TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
+        public static TlsCredentialedDecryptor LoadEncryptionCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey)
         {
-            return new DefaultTlsEncryptionCredentials(context, certificate,
-                    privateKey);
+            return new BcDefaultTlsCredentialedDecryptor(context.Crypto as BcTlsCrypto, certificate, privateKey);
         }
 
-        public static TlsEncryptionCredentials LoadEncryptionCredentials(
-                TlsContext context, string[] certResources, string keyResource)
+        public static TlsCredentialedDecryptor LoadEncryptionCredentials(TlsContext context, string[] certResources, string keyResource)
         {
-            Certificate certificate = LoadCertificateChain(certResources);
+            Certificate certificate = LoadCertificateChain(context.Crypto, certResources);
             AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
-            return LoadEncryptionCredentials(context, certificate,
-                    privateKey);
+
+            return LoadEncryptionCredentials(context, certificate, privateKey);
         }
 
-        public static TlsSignerCredentials LoadSignerCredentials(TlsContext context,
-                Certificate certificate, AsymmetricKeyParameter privateKey)
+        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, Certificate certificate, AsymmetricKeyParameter privateKey, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
         {
-            return new DefaultTlsSignerCredentials(context, certificate, privateKey);
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(context), context.Crypto as BcTlsCrypto, privateKey, certificate, signatureAndHashAlgorithm);
         }
 
-        public static TlsSignerCredentials LoadSignerCredentials(TlsContext context,
-                string[] certResources, string keyResource)
+        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, string[] certResources, string keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
         {
-            Certificate certificate = LoadCertificateChain(certResources);
+            Certificate certificate = LoadCertificateChain(context.Crypto as BcTlsCrypto, certResources);
             AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
-            return LoadSignerCredentials(context, certificate, privateKey);
+
+            return LoadSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
         }
 
-        public static TlsSignerCredentials LoadSignerCredentials(TlsContext context,
-                Certificate certificate, AsymmetricKeyParameter privateKey,
-                SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, IList<SignatureAndHashAlgorithm> supportedSignatureAlgorithms, Certificate certificate, AsymmetricKeyParameter privateKey)
         {
-            return new DefaultTlsSignerCredentials(context, certificate,
-                    privateKey, signatureAndHashAlgorithm);
-        }
+            var tslCertificate = certificate.GetCertificateAt(0);
 
-        public static TlsSignerCredentials LoadSignerCredentials(TlsContext context,
-                string[] certResources, string keyResource,
-                SignatureAndHashAlgorithm signatureAndHashAlgorithm)
-        {
-            Certificate certificate = LoadCertificateChain(certResources);
-            Org.BouncyCastle.Crypto.AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
-            return LoadSignerCredentials(context, certificate,
-                    privateKey, signatureAndHashAlgorithm);
-        }
-
-        public static TlsSignerCredentials LoadSignerCredentials(TlsContext context, IList supportedSignatureAlgorithms,
-            byte signatureAlgorithm, Certificate certificate, AsymmetricKeyParameter privateKey)
-        {
-            /*
-             * TODO Note that this code fails to provide default value for the client supported
-             * algorithms if it wasn't sent.
-             */
+            GetSignatureAndHashAlgorithmFromSigAlgOid(tslCertificate.SigAlgOid, out short signatureAlgorithm, out short hashAlgorithm);
 
             SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
             if (supportedSignatureAlgorithms != null)
             {
                 foreach (SignatureAndHashAlgorithm alg in supportedSignatureAlgorithms)
                 {
-                    if (alg.Signature == signatureAlgorithm)
+                    if (alg.Signature == signatureAlgorithm && alg.Hash == hashAlgorithm)
                     {
                         signatureAndHashAlgorithm = alg;
                         break;
                     }
                 }
-
-                if (signatureAndHashAlgorithm == null)
-                {
-                    return null;
-                }
             }
+
+            signatureAndHashAlgorithm ??= SignatureAndHashAlgorithm.GetInstance(Org.BouncyCastle.Tls.HashAlgorithm.sha256, SignatureAlgorithm.ecdsa);
 
             return LoadSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
         }
 
-        public static TlsSignerCredentials LoadSignerCredentials(TlsContext context, IList supportedSignatureAlgorithms,
-            byte signatureAlgorithm, string certResource, string keyResource)
+        public static Certificate LoadCertificateChain(TlsCrypto crypto, X509Certificate2[] certificates)
         {
-            Certificate certificate = LoadCertificateChain(new string[] { certResource, "x509-ca.pem" });
-            AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
-
-            return LoadSignerCredentials(context, supportedSignatureAlgorithms, signatureAlgorithm, certificate,
-                privateKey);
-        }
-
-        public static Certificate LoadCertificateChain(X509Certificate2[] certificates)
-        {
-            var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[certificates.Length];
+            var chain = new TlsCertificate[certificates.Length];
             for (int i = 0; i < certificates.Length; i++)
             {
-                chain[i] = LoadCertificateResource(certificates[i]);
+                chain[i] = LoadCertificateResource(crypto, certificates[i]);
             }
 
             return new Certificate(chain);
         }
 
-        public static Certificate LoadCertificateChain(X509Certificate2 certificate)
+        public static Certificate LoadCertificateChain(TlsCrypto crypto, X509Certificate2 certificate)
         {
-            return LoadCertificateChain(new X509Certificate2[] { certificate });
+            return LoadCertificateChain(crypto, new X509Certificate2[] { certificate });
         }
 
-        public static Certificate LoadCertificateChain(string[] resources)
+        public static Certificate LoadCertificateChain(TlsCrypto crypto, string[] resources)
         {
-            Org.BouncyCastle.Asn1.X509.X509CertificateStructure[]
-            chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[resources.Length];
+            TlsCertificate[]
+            chain = new TlsCertificate[resources.Length];
             for (int i = 0; i < resources.Length; ++i)
             {
-                chain[i] = LoadCertificateResource(resources[i]);
+                chain[i] = LoadCertificateResource(crypto, resources[i]);
             }
             return new Certificate(chain);
         }
 
-        public static X509CertificateStructure LoadCertificateResource(X509Certificate2 certificate)
+        public static TlsCertificate LoadCertificateResource(TlsCrypto crypto, X509Certificate2 certificate)
         {
             if (certificate != null)
             {
                 var bouncyCertificate = DotNetUtilities.FromX509Certificate(certificate);
-                return X509CertificateStructure.GetInstance(bouncyCertificate.GetEncoded());
+                return new BcTlsCertificate(crypto as BcTlsCrypto, X509CertificateStructure.GetInstance(bouncyCertificate.GetEncoded()));
             }
             throw new Exception("'resource' doesn't specify a valid certificate");
         }
 
-        public static X509CertificateStructure LoadCertificateResource(string resource)
+        public static TlsCertificate LoadCertificateResource(TlsCrypto crypto, string resource)
         {
             PemObject pem = LoadPemResource(resource);
             if (pem.Type.EndsWith("CERTIFICATE"))
             {
-                return X509CertificateStructure.GetInstance(pem.Content);
+                return new BcTlsCertificate(crypto as BcTlsCrypto, X509CertificateStructure.GetInstance(pem.Content));
             }
             throw new Exception("'resource' doesn't specify a valid certificate");
         }
@@ -336,7 +301,7 @@ namespace SIPSorcery.Net
 
         public static PemObject LoadPemResource(string path)
         {
-            using (var s = new System.IO.StreamReader(path))
+            using (var s = new StreamReader(path))
             {
                 PemReader p = new PemReader(s);
                 PemObject o = p.ReadPemObject();
@@ -376,6 +341,11 @@ namespace SIPSorcery.Net
             return CreateSelfSignedRsaCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}", null);
         }
 
+        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert()
+        {
+            return CreateSelfSignedEcdsaCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}");
+        }
+
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedRsaCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
             if (issuerPrivateKey == null)
@@ -404,11 +374,6 @@ namespace SIPSorcery.Net
             return (certificate, subjectKeyPair.Private);
         }
 
-        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert()
-        {
-            return CreateSelfSignedEcdsaCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}");
-        }
-
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedEcdsaCert(string subjectName, string issuerName)
         {
             var randomGenerator = new CryptoApiRandomGenerator();
@@ -435,10 +400,10 @@ namespace SIPSorcery.Net
             return (certificate, subjectKeyPair.Private);
         }
 
-        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(bool useRsa = false)
-            => CreateSelfSignedTlsCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}", null, useRsa);
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(TlsCrypto crypto, bool useRsa = false)
+            => CreateSelfSignedTlsCert(crypto, $"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}", null, useRsa);
 
-        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey, bool useRsa)
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(TlsCrypto crypto, string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey, bool useRsa)
         {
             var tuple = useRsa ?
             CreateSelfSignedRsaCert(subjectName, issuerName, issuerPrivateKey) :
@@ -446,8 +411,8 @@ namespace SIPSorcery.Net
 
             var certificate = tuple.certificate;
             var privateKey = tuple.privateKey;
-            var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(certificate.GetEncoded()) };
-            var tlsCertificate = new Org.BouncyCastle.Crypto.Tls.Certificate(chain);
+            var chain = new TlsCertificate[] { new BcTlsCertificate(crypto as BcTlsCrypto, X509CertificateStructure.GetInstance(certificate.GetEncoded())) };
+            var tlsCertificate = new Certificate(chain);
 
             return (tlsCertificate, privateKey);
         }
@@ -457,7 +422,7 @@ namespace SIPSorcery.Net
         /// use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X509 certificates.</remarks>
         public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate bouncyCert, AsymmetricCipherKeyPair keyPair)
         {
-            var pkcs12Store = new Pkcs12Store();
+            Pkcs12Store pkcs12Store = new Pkcs12StoreBuilder().Build();
             var certEntry = new X509CertificateEntry(bouncyCert);
 
             pkcs12Store.SetCertificateEntry(bouncyCert.SerialNumber.ToString(), certEntry);
@@ -474,46 +439,6 @@ namespace SIPSorcery.Net
             }
 
             return keyedCert;
-
-            //var info = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private);
-
-            //// merge into X509Certificate2
-            //var x509 = new X509Certificate2(bouncyCert.GetEncoded());
-
-            //var seq = (Asn1Sequence)Asn1Object.FromByteArray(info.ParsePrivateKey().GetDerEncoded());
-            //if (seq.Count != 9)
-            //{
-            //    throw new Org.BouncyCastle.OpenSsl.PemException("malformed sequence in RSA private key");
-            //}
-
-            //var rsa = RsaPrivateKeyStructure.GetInstance(seq); //new RsaPrivateKeyStructure(seq);
-            //var rsaparams = new RsaPrivateCrtKeyParameters(
-            //    rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
-
-            //return x509.CopyWithPrivateKey(ToRSA(rsaparams));
-
-            //X509Certificate2 x509 = null;
-
-            //using (MemoryStream ms = new MemoryStream())
-            //{
-            //    using (StreamWriter tw = new StreamWriter(ms))
-            //    {
-            //        PemWriter pw = new PemWriter(tw);
-            //        //PemObject po = new PemObject("CERTIFICATE", bouncyCert.GetEncoded());
-            //        PemObject po = new PemObject("CERTIFICATE", bouncyCert.GetEncoded());
-            //        pw.WriteObject(po);
-
-            //        logger.LogDebug(Encoding.UTF8.GetString(ms.GetBuffer()));
-
-            //        StreamWriter sw2 = new StreamWriter("test.cer");
-            //        sw2.Write(ms.GetBuffer());
-            //        sw2.Close();
-
-            //         x509 = new X509Certificate2(bouncyCert.GetEncoded());
-            //    }
-            //}
-
-            //return x509;
         }
 
         public static AsymmetricKeyParameter CreatePrivateKeyResource(string subjectName = "CN=root")
@@ -545,9 +470,6 @@ namespace SIPSorcery.Net
 
         private static RSA CreateRSAProvider(RSAParameters rp)
         {
-            //CspParameters csp = new CspParameters();
-            //csp.KeyContainerName = string.Format("BouncyCastle-{0}", Guid.NewGuid());
-            //RSACryptoServiceProvider rsaCsp = new RSACryptoServiceProvider(csp);
             RSACryptoServiceProvider rsaCsp = new RSACryptoServiceProvider();
             rsaCsp.ImportParameters(rp);
             return rsaCsp;
@@ -608,7 +530,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public static string ExportToDerBase64(Org.BouncyCastle.Crypto.Tls.Certificate certificate)
+        public static string ExportToDerBase64(Certificate certificate)
         {
             var certificateBytes = certificate.GetCertificateList()[0].GetEncoded();
             return Convert.ToBase64String(certificateBytes);
@@ -990,13 +912,33 @@ namespace SIPSorcery.Net
             /*
              * draft-ietf-tls-chacha20-poly1305-04
              */
-            { CipherSuite.DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
-            { CipherSuite.DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_PSK_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256" },
+            { CipherSuite.TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256 ,"DRAFT_TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256" },
         };
+
+        public static void GetSignatureAndHashAlgorithmFromSigAlgOid(string sigAlgOid, out short signatureAlgorithm, out short hashAlgorithm)
+        {
+            switch (sigAlgOid)
+            {
+                case "1.2.840.113549.1.1.5": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha1; break;
+                case "1.2.840.113549.1.1.11": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha256; break;
+                case "1.2.840.113549.1.1.12": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha384; break;
+                case "1.2.840.113549.1.1.13": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha512; break;
+                case "1.2.840.113549.1.1.4": signatureAlgorithm = SignatureAlgorithm.rsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.md5; break;
+                case "1.2.840.10040.4.3": signatureAlgorithm = SignatureAlgorithm.dsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha1; break;
+                case "2.16.840.1.101.3.4.3.2": signatureAlgorithm = SignatureAlgorithm.dsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha256; break;
+                case "2.16.840.1.101.3.4.3.3": signatureAlgorithm = SignatureAlgorithm.dsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha384; break;
+                case "1.2.840.10045.4.1": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha1; break;
+                case "1.2.840.10045.4.3.2": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha256; break;
+                case "1.2.840.10045.4.3.3": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha384; break;
+                case "1.2.840.10045.4.3.4": signatureAlgorithm = SignatureAlgorithm.ecdsa; hashAlgorithm = Org.BouncyCastle.Tls.HashAlgorithm.sha512; break;
+                default: throw new NotSupportedException();
+            }
+        }
     }
 }

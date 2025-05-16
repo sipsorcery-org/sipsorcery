@@ -20,7 +20,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -341,7 +341,7 @@ namespace SIPSorcery.Net
                     // Treat application exceptions as recoverable, things like SCTP packet parse failures.
                     logger.LogWarning("SCTP error processing RTCSctpTransport receive. {Message}", appExcp.Message);
                 }
-                catch(TlsFatalAlert alert)  when (alert.InnerException is SocketException)
+                catch (TlsFatalAlert alert) when (alert.InnerException is SocketException)
                 {
                     var sockExcp = alert.InnerException as SocketException;
                     logger.LogWarning(sockExcp, "SCTP RTCSctpTransport receive socket failure {SocketErrorCode}.", sockExcp.SocketErrorCode);
