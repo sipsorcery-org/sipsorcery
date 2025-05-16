@@ -21,7 +21,6 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto;
-using Org.BouncyCastle.Utilities;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -59,6 +58,7 @@ namespace SIPSorcery.Net
 
         internal Certificate mCertificateChain = null;
         internal AsymmetricKeyParameter mPrivateKey = null;
+        bool mIsEcdsaCertificate = false;
 
         internal TlsClientContext TlsContext
         {
@@ -94,34 +94,26 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-        public DtlsSrtpClient(TlsCrypto crypto) :
-            this(crypto, null, null, null)
-        {
-        }
+        public DtlsSrtpClient(TlsCrypto crypto)
+            : this(crypto, null, null, null) { }
 
-        public DtlsSrtpClient(TlsCrypto crypto, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) :
-            this(crypto, DtlsUtils.LoadCertificateChain(crypto, certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
-        {
-        }
+        public DtlsSrtpClient(TlsCrypto crypto, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate)
+            : this(crypto, DtlsUtils.LoadCertificateChain(crypto, certificate), DtlsUtils.LoadPrivateKeyResource(certificate)) { }
 
-        public DtlsSrtpClient(TlsCrypto crypto, string certificatePath, string keyPath) :
-            this(crypto, new string[] { certificatePath }, keyPath)
-        {
-        }
+        public DtlsSrtpClient(TlsCrypto crypto, string certificatePath, string keyPath)
+            : this(crypto, new string[] { certificatePath }, keyPath) { }
 
-        public DtlsSrtpClient(TlsCrypto crypto, string[] certificatesPath, string keyPath) :
-            this(crypto, DtlsUtils.LoadCertificateChain(crypto, certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
-        {
-        }
+        public DtlsSrtpClient(TlsCrypto crypto, string[] certificatesPath, string keyPath)
+            : this(crypto, DtlsUtils.LoadCertificateChain(crypto, certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath)) { }
 
-        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey) :
-            this(crypto, certificateChain, privateKey, null)
-        {
-        }
+        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey)
+            : this(crypto, certificateChain, privateKey, null) { }
+
+        public DtlsSrtpClient(TlsCrypto crypto, UseSrtpData clientSrtpData)
+            : this(crypto, null, null, clientSrtpData) { }
 
         public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData) : base(crypto)
         {
-
             if (certificateChain == null && privateKey == null)
             {
                 (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
@@ -146,11 +138,37 @@ namespace SIPSorcery.Net
             //Generate FingerPrint
             var certificate = mCertificateChain.GetCertificateAt(0);
             Fingerprint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
+
+            //TODO: We should be able to support both ECDSA and RSA schemes, search in the certificate chain if both are supported and not just in the first one.
+            // Check if the certificate is ECDSA or RSA based on the OID
+            this.mIsEcdsaCertificate = certificate.SigAlgOid.StartsWith("1.2.840.10045.4.3"); // OID prefix for ECDSA
         }
 
-        public DtlsSrtpClient(TlsCrypto crypto, UseSrtpData clientSrtpData) : this(crypto, null, null, clientSrtpData)
-        { }
+        public override void Init(TlsClientContext context)
+        {
+            base.Init(context);
 
+            if (this.mIsEcdsaCertificate)
+            {
+                m_cipherSuites = new int[]
+                {
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,               // 0xC00A
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,      // 0xCCA9
+                 };
+            }
+            else
+            {
+                m_cipherSuites = new int[]
+                {
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,              // 0xC02F
+                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,        // 0xCCA8
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,                 // 0xC013
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA                  // 0xC014
+                 };
+            }
+        }
 
         public override IDictionary<int, byte[]> GetClientExtensions()
         {
@@ -364,8 +382,8 @@ namespace SIPSorcery.Net
             return new ProtocolVersion[]
             {
                 ProtocolVersion.DTLSv10,
-                ProtocolVersion.DTLSv12,
-                //ProtocolVersion.DTLSv13 TODO: Investigate why this is not working.
+                ProtocolVersion.DTLSv12
+                //TODO: Add support for newer CipherSuites in order for us to support the newer ProtocolVersion.DTLSv13.
             };
         }
 

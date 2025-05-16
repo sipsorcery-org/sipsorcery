@@ -45,7 +45,6 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
-using Org.BouncyCastle.Utilities;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -137,8 +136,6 @@ namespace SIPSorcery.Net
         private SrtpPolicy srtpPolicy;
         private SrtpPolicy srtcpPolicy;
 
-        private int[] cipherSuites;
-
         /// <summary>
         /// Parameters:
         ///  - alert level,
@@ -173,38 +170,6 @@ namespace SIPSorcery.Net
 
             // Check if the certificate is ECDSA or RSA
             var certificate = certificateChain.GetCertificateAt(0);
-            var signatureAlgorithmOid = certificate.SigAlgOid;
-
-            // Check if the certificate is ECDSA or RSA based on the OID
-            mIsEcdsaCertificate = signatureAlgorithmOid.StartsWith("1.2.840.10045.4.3"); // OID prefix for ECDSA
-
-            int[] newCipherSuites;
-
-            if (mIsEcdsaCertificate)
-            {
-                // Set only ECDSA-based cipher suites
-                newCipherSuites = new int[]
-                {
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,               // 0xC00A
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,      // 0xCCA9
-                };
-            }
-            else
-            {
-                // Set only RSA-based cipher suites
-                newCipherSuites = new int[]
-                {
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,              // 0xC02F
-                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,        // 0xCCA8
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,                 // 0xC013
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA                  // 0xC014
-                };
-            }
-
-            // Update the cipher suites
-            this.cipherSuites = newCipherSuites;
 
             // Set the private key and certificate chain
             mPrivateKey = privateKey;
@@ -214,53 +179,77 @@ namespace SIPSorcery.Net
             this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
 
             mSignatureAlgorithm = certificate != null ? DtlsUtils.GetSignatureAlgorithm(certificate) : string.Empty;
+
+            //TODO: We should be able to support both ECDSA and RSA schemes, search in the certificate chain if both are supported and not just in the first one.
+            // Check if the certificate is ECDSA or RSA based on the OID
+            this.mIsEcdsaCertificate = certificate.SigAlgOid.StartsWith("1.2.840.10045.4.3"); // OID prefix for ECDSA
         }
 
-        public RTCDtlsFingerprint Fingerprint
+        public SrtpPolicy GetSrtpPolicy()
         {
-            get
-            {
-                return mFingerPrint;
-            }
+            return srtpPolicy;
         }
 
-        public AsymmetricKeyParameter PrivateKey
+        public SrtpPolicy GetSrtcpPolicy()
         {
-            get
-            {
-                return mPrivateKey;
-            }
+            return srtcpPolicy;
         }
 
-        public Certificate CertificateChain
+        public byte[] GetSrtpMasterServerKey()
         {
-            get
-            {
-                return mCertificateChain;
-            }
+            return srtpMasterServerKey;
         }
 
-        protected ProtocolVersion MaximumVersion
+        public byte[] GetSrtpMasterServerSalt()
         {
-            get
-            {
-                return ProtocolVersion.DTLSv13;
-            }
+            return srtpMasterServerSalt;
         }
 
-        protected ProtocolVersion MinimumVersion
+        public byte[] GetSrtpMasterClientKey()
         {
-            get
-            {
-                return ProtocolVersion.DTLSv10;
-            }
+            return srtpMasterClientKey;
         }
+
+        public byte[] GetSrtpMasterClientSalt()
+        {
+            return srtpMasterClientSalt;
+        }
+
+        public bool IsClient()
+        {
+            return false;
+        }
+
+        public RTCDtlsFingerprint Fingerprint => mFingerPrint;
+        public AsymmetricKeyParameter PrivateKey => mPrivateKey;
+        public Certificate CertificateChain => mCertificateChain;
+        protected ProtocolVersion MaximumVersion => ProtocolVersion.DTLSv12;
+        protected ProtocolVersion MinimumVersion => ProtocolVersion.DTLSv10;
 
         public override void Init(TlsServerContext context)
         {
             base.Init(context);
 
-            m_cipherSuites = this.cipherSuites;
+            if (this.mIsEcdsaCertificate)
+            {
+                m_cipherSuites = new int[]
+                {
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,            // 0xC02B
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,               // 0xC009
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,               // 0xC00A
+                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,      // 0xCCA9
+                 };
+            }
+            else
+            {
+                m_cipherSuites = new int[]
+                {
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,              // 0xC02F
+                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,        // 0xCCA8
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,                 // 0xC013
+                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA                  // 0xC014
+                 };
+            }
         }
 
         public override int GetSelectedCipherSuite()
@@ -311,6 +300,21 @@ namespace SIPSorcery.Net
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
+        protected override TlsCredentialedDecryptor GetRsaEncryptionCredentials()
+        {
+            return new BcDefaultTlsCredentialedDecryptor(Crypto as BcTlsCrypto, mCertificateChain, mPrivateKey);
+        }
+
+        protected override TlsCredentialedSigner GetRsaSignerCredentials()
+        {
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), this.Crypto as BcTlsCrypto, mPrivateKey, mCertificateChain, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa));
+        }
+
+        protected override TlsCredentialedSigner GetECDsaSignerCredentials()
+        {
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), this.Crypto as BcTlsCrypto, mPrivateKey, mCertificateChain, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.ecdsa));
+        }
+
         public override CertificateRequest GetCertificateRequest()
         {
             List<SignatureAndHashAlgorithm> serverSigAlgs = new List<SignatureAndHashAlgorithm>();
@@ -342,10 +346,8 @@ namespace SIPSorcery.Net
             var serverExtensions = base.GetServerExtensions();
             if (TlsSrtpUtilities.GetUseSrtpExtension(serverExtensions) == null)
             {
-                if (serverExtensions == null)
-                {
-                    serverExtensions = (IDictionary<int, byte[]>)new Hashtable();
-                }
+                serverExtensions ??= (IDictionary<int, byte[]>)new Hashtable();
+
                 TlsSrtpUtilities.AddUseSrtpExtension(serverExtensions, serverSrtpData);
             }
             return serverExtensions;
@@ -380,36 +382,6 @@ namespace SIPSorcery.Net
             serverSrtpData = new UseSrtpData(protectionProfiles, clientSrtpData.Mki);
         }
 
-        public SrtpPolicy GetSrtpPolicy()
-        {
-            return srtpPolicy;
-        }
-
-        public SrtpPolicy GetSrtcpPolicy()
-        {
-            return srtcpPolicy;
-        }
-
-        public byte[] GetSrtpMasterServerKey()
-        {
-            return srtpMasterServerKey;
-        }
-
-        public byte[] GetSrtpMasterServerSalt()
-        {
-            return srtpMasterServerSalt;
-        }
-
-        public byte[] GetSrtpMasterClientKey()
-        {
-            return srtpMasterClientKey;
-        }
-
-        public byte[] GetSrtpMasterClientSalt()
-        {
-            return srtpMasterClientSalt;
-        }
-
         public override void NotifyHandshakeComplete()
         {
             //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
@@ -418,26 +390,6 @@ namespace SIPSorcery.Net
             masterSecret = new byte[m_context.SecurityParameters.MasterSecret != null ? m_context.SecurityParameters.MasterSecret.Length : 0];
             Buffer.BlockCopy(m_context.SecurityParameters.MasterSecret.Extract(), 0, masterSecret, 0, masterSecret.Length);
 
-        }
-
-        public bool IsClient()
-        {
-            return false;
-        }
-
-        protected override TlsCredentialedSigner GetECDsaSignerCredentials()
-        {
-            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), this.Crypto as BcTlsCrypto, mPrivateKey, mCertificateChain, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.ecdsa));
-        }
-
-        protected override TlsCredentialedDecryptor GetRsaEncryptionCredentials()
-        {
-            return new BcDefaultTlsCredentialedDecryptor(Crypto as BcTlsCrypto, mCertificateChain, mPrivateKey);
-        }
-
-        protected override TlsCredentialedSigner GetRsaSignerCredentials()
-        {
-            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), this.Crypto as BcTlsCrypto, mPrivateKey, mCertificateChain, new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa));
         }
 
         protected virtual void PrepareSrtpSharedSecret()
@@ -564,8 +516,8 @@ namespace SIPSorcery.Net
             return new ProtocolVersion[]
             {
                 ProtocolVersion.DTLSv10,
-                ProtocolVersion.DTLSv12,
-                ProtocolVersion.DTLSv13
+                ProtocolVersion.DTLSv12
+                //TODO: Add support for newer CipherSuites in order for us to support the newer ProtocolVersion.DTLSv13.
             };
         }
 
