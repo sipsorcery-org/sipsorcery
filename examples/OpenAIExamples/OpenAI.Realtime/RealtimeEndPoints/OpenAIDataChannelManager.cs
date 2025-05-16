@@ -58,7 +58,6 @@ public class OpenAIDataChannelManager
                 OpenAISessionUpdated.TypeName => JsonSerializer.Deserialize<OpenAISessionUpdated>(message, JsonOptions.Default),
                 _ => Option<OpenAIServerEventBase>.None
             };
-
         }
 
         return Option<OpenAIServerEventBase>.None;

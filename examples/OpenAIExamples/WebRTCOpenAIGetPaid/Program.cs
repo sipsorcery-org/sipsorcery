@@ -1,9 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC application that can be used to interact with
-// OpenAI's real-time API https://platform.openai.com/docs/guides/realtime-webrtc
-// and utilise the local function calling feature https://platform.openai.com/docs/guides/function-calling.
+// Description: An example WebRTC application that uses OpenAI's real-time API
+// together with local function calling to generate payment requests.
 //
 // Usage:
 // set OPENAIKEY=your_openai_key
@@ -13,7 +12,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 19 Jan 2025	Aaron Clauson	Created, Dublin, Ireland.
+// 11 May 2025	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -167,20 +166,21 @@ class Program
             EventID = Guid.NewGuid().ToString(),
             Session = new OpenAISession
             {
-                Instructions = "You are a weather bot who favours brevity and accuracy.",
+                Instructions = "You are an assistant for sales agents that assists in generating payment requests and favours brevity and accuracy.",
                 Tools = new List<OpenAITool>
                 {
-                     new OpenAITool
+                    new OpenAITool
                     {
-                        Name = "get_weather",
-                        Description = "Get the current weather.",
+                        Name = "create_payment_request",
+                        Description = "Creates a payment request.",
                         Parameters = new OpenAIToolParameters
                         {
                            Properties = new Dictionary<string, OpenAIToolProperty>
                            {
-                                { "location", new OpenAIToolProperty { Type = "string" } }
+                                { "amount", new OpenAIToolProperty { Type = "number" } },
+                                { "currency", new OpenAIToolProperty { Type = "string" } }
                            },
-                           Required = new List<string> { "location" }
+                           Required = new List<string> { "amount", "currency" }
                         }
                     }
                 }
@@ -197,31 +197,14 @@ class Program
     {
         var result = argsDone.Name switch
         {
-            "get_weather" => GetWeather(argsDone),
+            "create_payment_request" => $"Processing create payment request.",
             _ => "Unknown Function."
         };
-
         logger.LogInformation($"Call {argsDone.Name} with args {argsDone.ArgumentsToString()} result {result}.");
 
-        var resultConvItem = new OpenAIConversationItemCreate
-        {
-            EventID = Guid.NewGuid().ToString(),
-            //PreviousItemID = argsDone.ItemID,
-            Item = new OpenAIConversationItem
-            {
-                //ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
-                Type = OpenAIConversationConversationTypeEnum.function_call_output,
-                //Status = "completed",
-                CallID = argsDone.CallID,
-                //Name = argsDone.Name,
-                //Arguments = argsDone.ArgumentsToString(),
-                //Role = "tool",
-                Output = result
-            }
-        };
-
-        logger.LogDebug(resultConvItem.ToJson());
-        dc.send(resultConvItem.ToJson());
+        var createPyamentRequestResult = CreatePaymentRequest(argsDone);
+        logger.LogDebug(createPyamentRequestResult.ToJson());
+        dc.send(createPyamentRequestResult.ToJson());
 
         // Tell the AI to continue the conversation.
         var responseCreate = new OpenAIResponseCreate
@@ -239,19 +222,25 @@ class Program
     /// <summary>
     /// The local function to call and return the result to the AI to continue the conversation.
     /// </summary>
-    private static string GetWeather(OpenAIResponseFunctionCallArgumentsDone argsDone)
+    private static OpenAIConversationItemCreate CreatePaymentRequest(OpenAIResponseFunctionCallArgumentsDone argsDone)
     {
-        var location = argsDone.Arguments.GetNamedArgumentValue("location") ?? string.Empty;
+        string orderID = "X1234";
 
-        return location switch
+        return new OpenAIConversationItemCreate
         {
-            string s when s.Contains("Canberra", StringComparison.OrdinalIgnoreCase) => "It's cloudy and 15 degrees.",
-            string s when s.Contains("Dublin", StringComparison.OrdinalIgnoreCase) => "It's raining and 7 degrees.",
-            string s when s.Contains("Hobart", StringComparison.OrdinalIgnoreCase) => "It's sunny and 25 degrees.",
-            string s when s.Contains("Melbourne", StringComparison.OrdinalIgnoreCase) => "It's cold and wet and 11 degrees.",
-            string s when s.Contains("Sydney", StringComparison.OrdinalIgnoreCase) => "It's humid and stormy and 30 degrees.",
-            string s when s.Contains("Perth", StringComparison.OrdinalIgnoreCase) => "It's hot and dry and 40 degrees.",
-            _ => "It's sunny and 20 degrees."
+            EventID = Guid.NewGuid().ToString(),
+            //PreviousItemID = argsDone.ItemID,
+            Item = new OpenAIConversationItem
+            {
+                //ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
+                Type = OpenAIConversationConversationTypeEnum.function_call_output,
+                //Status = "completed",
+                CallID = argsDone.CallID,
+                //Name = argsDone.Name,
+                //Arguments = argsDone.ArgumentsToString(),
+                //Role = "tool",
+                Output = $"New payment request order ID is {orderID}"
+            }
         };
     }
 }
