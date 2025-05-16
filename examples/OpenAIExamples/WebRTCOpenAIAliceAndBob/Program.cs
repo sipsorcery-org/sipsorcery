@@ -122,8 +122,8 @@ class Program
                 aliceWebrtcEndPoint.PeerConnection.SendAudio(AUDIO_PACKET_DURATION, rtpPkt.Payload);
             };
 
+            bobWebrtcEndPoint.SendSessionUpdate(OpenAIVoicesEnum.ash);
             aliceWebrtcEndPoint.SendResponseCreate(OpenAIVoicesEnum.shimmer, "Say Hi!");
-           bobWebrtcEndPoint.SendResponseCreate(OpenAIVoicesEnum.ash, "Say Hi!");
         }
 
         Console.WriteLine("Wait for ctrl-c to indicate user exit.");

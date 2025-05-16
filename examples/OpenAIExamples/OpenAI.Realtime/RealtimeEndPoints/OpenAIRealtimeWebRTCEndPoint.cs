@@ -131,7 +131,44 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         }
     }
 
-    public Either<Error, Unit> SendResponseCreate(OpenAIVoicesEnum voice, string message)
+    public Either<Error, Unit> SendSessionUpdate(OpenAIVoicesEnum voice, string? instructions = null, string? model = null)
+    {
+        if (_rtcPeerConnection == null || _rtcPeerConnection.connectionState != RTCPeerConnectionState.connected)
+        {
+            return Error.New("Peer connection not established.");
+        }
+
+        var responseCreate = new OpenAISessionUpdate
+        {
+            EventID = Guid.NewGuid().ToString(),
+            Session = new OpenAISession
+            {
+                Voice = voice,
+                Instructions = "You are a joke bot. Tell a Dad joke every chance you get.",
+            }
+        };
+
+        if(!string.IsNullOrWhiteSpace(model))
+        {
+            responseCreate.Session.Model = model;
+        }
+
+        if (!string.IsNullOrWhiteSpace(instructions))
+        {
+            responseCreate.Session.Instructions = instructions;
+        }
+
+        var dc = _rtcPeerConnection.DataChannels.First();
+
+        _logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+        _logger.LogDebug(responseCreate.ToJson());
+
+        dc.send(responseCreate.ToJson());
+
+        return Unit.Default;
+    }
+
+    public Either<Error, Unit> SendResponseCreate(OpenAIVoicesEnum voice, string instructions)
     {
         if(_rtcPeerConnection == null || _rtcPeerConnection.connectionState != RTCPeerConnectionState.connected)
         {
@@ -143,7 +180,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
             EventID = Guid.NewGuid().ToString(),
             Response = new OpenAIResponseCreateResponse
             {
-                Instructions = message,
+                Instructions = instructions,
                 Voice = voice.ToString()
             }
         };

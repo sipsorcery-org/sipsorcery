@@ -27,6 +27,8 @@ public interface IOpenAIRealtimeWebRTCEndPoint
 
     void SendAudio(uint durationRtpUnits, byte[] sample);
 
+    Either<Error, Unit> SendSessionUpdate(OpenAIVoicesEnum voice, string? instructions = null, string? model = null);
+
     Either<Error, Unit> SendResponseCreate(OpenAIVoicesEnum voice, string message);
 
     event Action<RTCDataChannel, OpenAIServerEventBase>? OnDataChannelMessageReceived;
