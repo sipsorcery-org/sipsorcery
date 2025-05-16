@@ -114,12 +114,12 @@ namespace SIPSorcery.Net
         {
         }
 
-        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, Org.BouncyCastle.Crypto.AsymmetricKeyParameter privateKey) :
+        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey) :
             this(crypto, certificateChain, privateKey, null)
         {
         }
 
-        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, Org.BouncyCastle.Crypto.AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData) : base(crypto)
+        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData) : base(crypto)
         {
 
             if (certificateChain == null && privateKey == null)
@@ -364,7 +364,8 @@ namespace SIPSorcery.Net
             return new ProtocolVersion[]
             {
                 ProtocolVersion.DTLSv10,
-                ProtocolVersion.DTLSv12
+                ProtocolVersion.DTLSv12,
+                //ProtocolVersion.DTLSv13 TODO: Investigate why this is not working.
             };
         }
 

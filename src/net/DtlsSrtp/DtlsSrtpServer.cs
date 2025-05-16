@@ -256,6 +256,13 @@ namespace SIPSorcery.Net
             }
         }
 
+        public override void Init(TlsServerContext context)
+        {
+            base.Init(context);
+
+            m_cipherSuites = this.cipherSuites;
+        }
+
         public override int GetSelectedCipherSuite()
         {
             /*
@@ -281,14 +288,10 @@ namespace SIPSorcery.Net
             // Log the offered cipher suites by both server and client
             logger.LogTrace("Server offered cipher suites:\n {ServerCipherSuites}", string.Join("\n ", serverCipherSuiteNames));
             logger.LogTrace("Client offered cipher suites:\n {ClientCipherSuites}", string.Join("\n ", clientCipherSuiteNames));
-            // Get available cipher suites
-            for (int i = 0; i < cipherSuites.Length; ++i)
-            {
-                int cipherSuite = cipherSuites[i];
 
-                if (Arrays.Contains(this.m_offeredCipherSuites, cipherSuite)
-                        && !TlsEccUtilities.IsEccCipherSuite(cipherSuite)
-                        && TlsUtilities.IsValidVersionForCipherSuite(cipherSuite, GetServerVersion()))
+            foreach (int cipherSuite in cipherSuites.Intersect(this.m_offeredCipherSuites))
+            {
+                if (TlsUtilities.IsValidVersionForCipherSuite(cipherSuite, GetServerVersion()))
                 {
                     if (mCertificateChain == null)
                     {
