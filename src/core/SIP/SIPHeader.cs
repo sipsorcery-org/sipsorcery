@@ -1648,11 +1648,9 @@ namespace SIPSorcery.SIP
 
                     try
                     {
-                        string headerNameLower = headerName.ToLower();
-
                         #region Via
-                        if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_VIA ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_VIA.ToLower())
+                        if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_VIA, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_HEADER_VIA, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawVia += headerValue;
 
@@ -1668,14 +1666,14 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region CallId
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CALLID ||
-                                headerNameLower == SIPHeaders.SIP_HEADER_CALLID.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_CALLID, StringComparison.CurrentCultureIgnoreCase) ||
+                                string.Equals(headerName, SIPHeaders.SIP_HEADER_CALLID, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.CallId = headerValue;
                         }
                         #endregion
                         #region CSeq
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CSEQ.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_CSEQ, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawCSeq += headerValue;
 
@@ -1703,7 +1701,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Expires
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EXPIRES.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_EXPIRES, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawExpires += headerValue;
 
@@ -1714,7 +1712,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Min-Expires
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MINEXPIRES.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_MINEXPIRES, StringComparison.OrdinalIgnoreCase))
                         {
                             if (!Int64.TryParse(headerValue, out sipHeader.MinExpires))
                             {
@@ -1723,8 +1721,8 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Contact
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTACT ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_CONTACT.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_CONTACT, StringComparison.CurrentCultureIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_HEADER_CONTACT, StringComparison.OrdinalIgnoreCase))
                         {
                             List<SIPContactHeader> contacts = SIPContactHeader.ParseContactHeader(headerValue);
                             if (contacts != null && contacts.Count > 0)
@@ -1734,56 +1732,56 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region From
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_FROM ||
-                             headerNameLower == SIPHeaders.SIP_HEADER_FROM.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_FROM, StringComparison.CurrentCultureIgnoreCase) ||
+                             string.Equals(headerName, SIPHeaders.SIP_HEADER_FROM, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawFrom = headerValue;
                             sipHeader.From = SIPFromHeader.ParseFromHeader(headerValue);
                         }
                         #endregion
                         #region To
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_TO ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_TO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_TO, StringComparison.CurrentCultureIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_HEADER_TO, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawTo = headerValue;
                             sipHeader.To = SIPToHeader.ParseToHeader(headerValue);
                         }
                         #endregion
                         #region WWWAuthenticate
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_WWWAUTHENTICATE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_WWWAUTHENTICATE, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawAuthentication = headerValue;
                             sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, headerValue));
                         }
                         #endregion
                         #region Authorization
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_AUTHORIZATION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_AUTHORIZATION, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawAuthentication = headerValue;
                             sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.Authorize, headerValue));
                         }
                         #endregion
                         #region ProxyAuthentication
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXYAUTHENTICATION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PROXYAUTHENTICATION, StringComparison.OrdinalIgnoreCase))
                         {
                             //sipHeader.RawAuthentication = headerValue;
                             sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthenticate, headerValue));
                         }
                         #endregion
                         #region ProxyAuthorization
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXYAUTHORIZATION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PROXYAUTHORIZATION, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.AuthenticationHeaders.Add(SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthorization, headerValue));
                         }
                         #endregion
                         #region UserAgent
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_USERAGENT.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_USERAGENT, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.UserAgent = headerValue;
                         }
                         #endregion
                         #region MaxForwards
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MAXFORWARDS.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_MAXFORWARDS, StringComparison.OrdinalIgnoreCase))
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.MaxForwards))
                             {
@@ -1792,8 +1790,8 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region ContentLength
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH, StringComparison.CurrentCultureIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_HEADER_CONTENTLENGTH, StringComparison.OrdinalIgnoreCase))
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.ContentLength))
                             {
@@ -1802,20 +1800,20 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region ContentType
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_CONTENTTYPE ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_CONTENTTYPE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_CONTENTTYPE, StringComparison.CurrentCultureIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_HEADER_CONTENTTYPE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ContentType = headerValue;
                         }
                         #endregion
                         #region Accept
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPT.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ACCEPT, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Accept = headerValue;
                         }
                         #endregion
                         #region Route
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ROUTE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ROUTE, StringComparison.OrdinalIgnoreCase))
                         {
                             SIPRouteSet routeSet = SIPRouteSet.ParseSIPRouteSet(headerValue);
                             if (routeSet != null)
@@ -1828,7 +1826,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region RecordRoute
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RECORDROUTE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_RECORDROUTE, StringComparison.OrdinalIgnoreCase))
                         {
                             SIPRouteSet recordRouteSet = SIPRouteSet.ParseSIPRouteSet(headerValue);
                             if (recordRouteSet != null)
@@ -1841,37 +1839,37 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Allow-Events
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW_EVENTS || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS)
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ALLOW_EVENTS, StringComparison.CurrentCultureIgnoreCase) || string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_ALLOWEVENTS, StringComparison.CurrentCultureIgnoreCase))
                         {
                             sipHeader.AllowEvents = headerValue;
                         }
                         #endregion
                         #region Event
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_EVENT.ToLower() || headerNameLower == SIPHeaders.SIP_COMPACTHEADER_EVENT)
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_EVENT, StringComparison.OrdinalIgnoreCase) || string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_EVENT, StringComparison.CurrentCultureIgnoreCase))
                         {
                             sipHeader.Event = headerValue;
                         }
                         #endregion
                         #region SubscriptionState.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.SubscriptionState = headerValue;
                         }
                         #endregion
                         #region Timestamp.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_TIMESTAMP.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_TIMESTAMP, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Timestamp = headerValue;
                         }
                         #endregion
                         #region Date.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_DATE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_DATE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Date = headerValue;
                         }
                         #endregion
                         #region Refer-Sub.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERSUB.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REFERSUB, StringComparison.OrdinalIgnoreCase))
                         {
                             if (sipHeader.ReferSub == null)
                             {
@@ -1884,8 +1882,8 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Refer-To.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERTO.ToLower() ||
-                            headerNameLower == SIPHeaders.SIP_COMPACTHEADER_REFERTO)
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REFERTO, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_REFERTO, StringComparison.CurrentCultureIgnoreCase))
                         {
                             if (sipHeader.ReferTo == null)
                             {
@@ -1898,19 +1896,19 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Referred-By.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REFERREDBY.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REFERREDBY, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ReferredBy = headerValue;
                         }
                         #endregion
                         #region Replaces.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLACES.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REPLACES, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Replaces = headerValue;
                         }
                         #endregion
                         #region Require.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REQUIRE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REQUIRE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Require = headerValue;
 
@@ -1921,32 +1919,32 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Reason.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REASON.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REASON, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Reason = headerValue;
                         }
                         #endregion
                         #region Proxy-ReceivedFrom.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ProxyReceivedFrom = headerValue;
                         }
                         #endregion
                         #region Proxy-ReceivedOn.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ProxyReceivedOn = headerValue;
                         }
                         #endregion
                         #region Proxy-SendFrom.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_SENDFROM.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PROXY_SENDFROM, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ProxySendFrom = headerValue;
                         }
                         #endregion
                         #region Supported
-                        else if (headerNameLower == SIPHeaders.SIP_COMPACTHEADER_SUPPORTED ||
-                            headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_COMPACTHEADER_SUPPORTED, StringComparison.CurrentCultureIgnoreCase) ||
+                            string.Equals(headerName, SIPHeaders.SIP_HEADER_SUPPORTED, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Supported = headerValue;
 
@@ -1957,133 +1955,133 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Authentication-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.AuthenticationInfo = headerValue;
                         }
                         #endregion
                         #region Accept-Encoding
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTENCODING.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ACCEPTENCODING, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.AcceptEncoding = headerValue;
                         }
                         #endregion
                         #region Accept-Language
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.AcceptLanguage = headerValue;
                         }
                         #endregion
                         #region Alert-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALERTINFO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ALERTINFO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.AlertInfo = headerValue;
                         }
                         #endregion
                         #region Allow
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ALLOW.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ALLOW, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Allow = headerValue;
                         }
                         #endregion
                         #region Call-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CALLINFO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_CALLINFO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.CallInfo = headerValue;
                         }
                         #endregion
                         #region Content-Disposition
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ContentDisposition = headerValue;
                         }
                         #endregion
                         #region Content-Encoding
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_ENCODING.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_CONTENT_ENCODING, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ContentEncoding = headerValue;
                         }
                         #endregion
                         #region Content-Language
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ContentLanguage = headerValue;
                         }
                         #endregion
                         #region Error-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ERROR_INFO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ERROR_INFO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ErrorInfo = headerValue;
                         }
                         #endregion
                         #region In-Reply-To
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_IN_REPLY_TO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_IN_REPLY_TO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.InReplyTo = headerValue;
                         }
                         #endregion
                         #region MIME-Version
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_MIME_VERSION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_MIME_VERSION, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.MIMEVersion = headerValue;
                         }
                         #endregion
                         #region Organization
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ORGANIZATION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ORGANIZATION, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Organization = headerValue;
                         }
                         #endregion
                         #region Priority
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PRIORITY.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PRIORITY, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Priority = headerValue;
                         }
                         #endregion
                         #region Proxy-Require
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PROXY_REQUIRE.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PROXY_REQUIRE, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ProxyRequire = headerValue;
                         }
                         #endregion
                         #region Reply-To
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLY_TO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_REPLY_TO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ReplyTo = headerValue;
                         }
                         #endregion
                         #region Retry-After
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RETRY_AFTER.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_RETRY_AFTER, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.RetryAfter = headerValue;
                         }
                         #endregion
                         #region Subject
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SUBJECT.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_SUBJECT, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Subject = headerValue;
                         }
                         #endregion
                         #region Unsupported
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_UNSUPPORTED.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_UNSUPPORTED, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Unsupported = headerValue;
                         }
                         #endregion
                         #region Warning
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_WARNING.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_WARNING, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Warning = headerValue;
                         }
                         #endregion
                         #region ETag
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_ETAG.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_ETAG, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.ETag = headerValue;
                         }
                         #endregion
                         #region RAck
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RELIABLE_ACK.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_RELIABLE_ACK, StringComparison.OrdinalIgnoreCase))
                         {
                             string[] rackFields = headerValue.Split(' ');
                             if (rackFields?.Length == 0)
@@ -2121,7 +2119,7 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region RSeq
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RELIABLE_SEQ.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_RELIABLE_SEQ, StringComparison.OrdinalIgnoreCase))
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.RSeq))
                             {
@@ -2130,25 +2128,25 @@ namespace SIPSorcery.SIP
                         }
                         #endregion
                         #region Server
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SERVER.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_SERVER, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Server = headerValue;
                         }
                         #endregion
                         #region P-Asserted-Indentity
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.PassertedIdentity.AddRange(SIPUriHeader.ParseHeader(headerValue));
                         }
                         #endregion
                         #region History-Info
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_HISTORY_INFO.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_HISTORY_INFO, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.HistoryInfo.AddRange(SIPUriHeader.ParseHeader(headerValue));
                         }
                         #endregion
                         #region Diversion
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_DIVERSION.ToLower())
+                        else if (string.Equals(headerName, SIPHeaders.SIP_HEADER_DIVERSION, StringComparison.OrdinalIgnoreCase))
                         {
                             sipHeader.Diversion.AddRange(SIPUriHeader.ParseHeader(headerValue));
                         }
@@ -2397,7 +2395,7 @@ namespace SIPSorcery.SIP
 
                     string headerName = trimmedHeader.Substring(0, delimiterIndex).Trim();
 
-                    if (headerName.ToLower() == unknownHeaderName.ToLower())
+                    if (string.Equals(headerName, unknownHeaderName, StringComparison.OrdinalIgnoreCase))
                     {
                         return trimmedHeader.Substring(delimiterIndex + 1).Trim();
                     }

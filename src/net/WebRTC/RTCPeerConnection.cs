@@ -776,7 +776,6 @@ namespace SIPSorcery.Net
 
                 if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
                 {
-                    dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
                     if (RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
                     {
                         RemotePeerDtlsFingerprint = remoteFingerprint;
@@ -1818,7 +1817,7 @@ namespace SIPSorcery.Net
                 var expectedFp = RemotePeerDtlsFingerprint;
                 var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
 
-                if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
+                if (!string.Equals(remoteFingerprint.value, expectedFp.value, StringComparison.OrdinalIgnoreCase))
                 {
                     logger.LogWarning("RTCPeerConnection remote certificate fingerprint mismatch, expected {ExpectedFingerprint}, actual {RemoteFingerprint}.", expectedFp, remoteFingerprint);
                     Close("dtls fingerprint mismatch");

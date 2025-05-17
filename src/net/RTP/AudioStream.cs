@@ -243,12 +243,12 @@ namespace SIPSorcery.Net
         public void CheckAudioFormatsNegotiation()
         {
             if (LocalTrack != null &&
-                        LocalTrack.Capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() > 0)
+                        LocalTrack.Capabilities.Where(x => !x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)).Count() > 0)
             {
                 OnAudioFormatsNegotiatedByIndex?.Invoke(
                             Index,
                             LocalTrack.Capabilities
-                            .Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE)
+                            .Where(x => !x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase))
                             .Select(x => x.ToAudioFormat()).ToList());
             }
         }

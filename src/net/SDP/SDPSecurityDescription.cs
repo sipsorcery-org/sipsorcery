@@ -388,7 +388,7 @@ namespace SIPSorcery.Net
 
             private static void checkValidKeyInfoCharacters(string keyParameter, string keyInfo)
             {
-                foreach (char c in keyInfo.ToCharArray())
+                foreach (char c in keyInfo)
                 {
                     if (c < 0x21 || c > 0x7e)
                     {
