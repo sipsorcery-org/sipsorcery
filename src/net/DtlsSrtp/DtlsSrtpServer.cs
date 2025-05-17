@@ -39,7 +39,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
@@ -270,13 +269,12 @@ namespace SIPSorcery.Net
                 .ToArray();
 
             // Convert client-offered cipher suites to human-readable names
-            var clientCipherSuiteNames = this.m_offeredCipherSuites
+            var clientCipherSuiteNames = this.mOfferedCipherSuites
                 .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
                 .ToArray();
 
             // Log the offered cipher suites by both server and client
-            logger.LogTrace("Server offered cipher suites:\n {ServerCipherSuites}", string.Join("\n ", serverCipherSuiteNames));
-            logger.LogTrace("Client offered cipher suites:\n {ClientCipherSuites}", string.Join("\n ", clientCipherSuiteNames));
+            logger.LogCipherSuitNames(cipherSuites, this.mOfferedCipherSuites);
 
             foreach (int cipherSuite in cipherSuites.Intersect(this.m_offeredCipherSuites))
             {
@@ -284,10 +282,15 @@ namespace SIPSorcery.Net
                 {
                     if (mCertificateChain == null)
                     {
-                        logger.LogWarning("No certificate was set for " + nameof(DtlsSrtpServer) + ".");
+                        logger.LogDtlsNoCertificate();
 
                         throw new TlsFatalAlert(AlertDescription.certificate_unobtainable);
                     }
+
+                    // Log the selected cipher suite and certificate type
+                    string cipherSuiteName = DtlsUtils.CipherSuiteNames.ContainsKey(cipherSuite) ? DtlsUtils.CipherSuiteNames[cipherSuite] : cipherSuite.ToString();
+
+                    logger.LogDtlsSelectedCipherSuite(cipherSuiteName, mSignatureAlgorithm, this.mFingerPrint);
 
                     // Cipher suite selected
                     return this.m_selectedCipherSuite = cipherSuite;
@@ -295,7 +298,7 @@ namespace SIPSorcery.Net
             }
 
             // If no matching cipher suite is found, throw a fatal alert
-            logger.LogWarning("DTLS server no matching cipher suite. Most likely issue is the client not supporting the server certificate's digital signature algorithm of {SignatureAlgorithm}.", mSignatureAlgorithm);
+            logger.LogDtlsServerNoMatchingCipherSuite(mSignatureAlgorithm);
 
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
@@ -523,23 +526,13 @@ namespace SIPSorcery.Net
 
         public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
         {
-            string description = null;
-            if (message != null)
-            {
-                description += message;
-            }
-            if (cause != null)
-            {
-                description += cause;
-            }
-
             if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
             {
-                logger.LogDebug("DTLS server raised close notify: {AlertMsg}", $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}{((!string.IsNullOrEmpty(description)) ? $", {description}." : ".")}");
+                logger.LogDtlsCloseNotification(alertLevel, alertDescription, message, cause);
             }
             else
             {
-                logger.LogWarning("DTLS server raised unexpected alert: {AlertMsg}", $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}{((!string.IsNullOrEmpty(description)) ? $", {description}." : ".")}");
+                logger.LogDtlsUnexpectedAlert(alertLevel, alertDescription, message, cause);
             }
         }
 
@@ -562,11 +555,11 @@ namespace SIPSorcery.Net
 
             if (alertType == AlertTypesEnum.close_notify)
             {
-                logger.LogDebug("DTLS server received close notification: {AlertMsg}", $"{AlertLevel.GetText(alertLevel)}{((!string.IsNullOrEmpty(description)) ? $", {description}." : ".")}");
+                logger.LogDtlsServerReceivedClose(alertLevel, description);
             }
             else
             {
-                logger.LogWarning("DTLS server received unexpected alert: {AlertMsg}", $"{AlertLevel.GetText(alertLevel)}{((!string.IsNullOrEmpty(description)) ? $", {description}." : ".")}");
+                logger.LogDtlsServerReceivedUnexpectedAlert(alertLevel, description);
             }
 
             OnAlert?.Invoke(level, alertType, description);
@@ -582,7 +575,7 @@ namespace SIPSorcery.Net
         {
             if (!secureRenegotiation)
             {
-                logger.LogWarning("DTLS server received a client handshake without renegotiation support.");
+                logger.LogDtlsNoRenegotiation();
             }
         }
     }

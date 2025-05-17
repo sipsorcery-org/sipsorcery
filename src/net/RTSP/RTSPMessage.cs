@@ -55,7 +55,7 @@ namespace SIPSorcery.Net
                 }
                 else if (buffer.Length > RTSPConstants.RTSP_MAXIMUM_LENGTH)
                 {
-                    logger.LogError("RTSP message received that exceeded the maximum allowed message length, ignoring.");
+                    logger.LogRtspMessageMaxLength();
                     return null;
                 }
                 else if (!BufferUtils.HasString(buffer, 0, buffer.Length, RTSP_MESSAGE_IDENTIFIER, m_CRLF))
@@ -74,9 +74,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                message = message.Replace("\n", "LF");
-                message = message.Replace("\r", "CR");
-                logger.LogError(excp, "Exception ParseRTSPMessage. {ErrorMessage}\nRTSP Message={RtpMessage}.", message, excp.Message);
+                logger.LogRtspMessageParseError(excp.Message, message, excp);
                 return null;
             }
         }
@@ -128,13 +126,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogError("Error ParseRTSPMessage, there were no end of line characters in the string being parsed.");
+                    logger.LogRtspMessageEolMissing();
                     return null;
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseRTSPMessage. {ErrorMessage}\nRTSP Message={RtpMessage}.", excp.Message, message);
+                logger.LogRtspMethodError("ParseRTSPMessage", excp.Message, excp);
                 return null;
             }
         }
