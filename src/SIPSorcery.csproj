@@ -14,6 +14,7 @@
     <EmbeddedResource Include="media\Macroform_-_Simplicity.raw" />
     <EmbeddedResource Include="media\testpattern.i420" />
     <None Include="icon.png" Pack="true" PackagePath="" />
+    <None Include="..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,8 +23,11 @@
     <PackageReference Include="DnsClient" Version="1.8.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.10" />
-    <PackageReference Include="System.Net.Security" Version="4.3.2" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+
+    <!-- The packages below are transitive references included to overcome vulnerabilities in a top level package. -->
+    <PackageReference Include="System.Net.Security" Version="4.3.2" /> <!-- Vuln version referenced by ystem.Net.WebSockets.Client. -->
   </ItemGroup>
 
   <PropertyGroup>
@@ -44,6 +48,7 @@
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery</Product>
     <PackageId>SIPSorcery</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
@@ -83,9 +88,5 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
-
-  <ItemGroup Label="SourceLink">
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-  </ItemGroup>
 
 </Project>
