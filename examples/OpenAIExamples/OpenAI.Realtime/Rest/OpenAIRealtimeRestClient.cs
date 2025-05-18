@@ -25,7 +25,7 @@ using LanguageExt.Common;
 using System.Threading;
 using System;
 
-namespace demo;
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public class OpenAIRealtimeRestClient : IOpenAIRealtimeRestClient
 {

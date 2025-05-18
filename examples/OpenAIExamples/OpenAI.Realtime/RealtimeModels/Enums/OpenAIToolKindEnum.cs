@@ -1,4 +1,4 @@
-﻿namespace demo;
+﻿namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public enum OpenAIToolKindEnum
 {

@@ -2,7 +2,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace demo;
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public class OpenAITurnDetection
 {

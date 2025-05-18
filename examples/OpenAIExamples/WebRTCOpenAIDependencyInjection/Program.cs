@@ -34,6 +34,9 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog.Extensions.Logging;
+using SIPSorcery.OpenAI.RealtimeWebRTC;
+using SIPSorceryMedia.Abstractions;
+using SIPSorcery.Media;
 
 namespace demo;
 
@@ -68,21 +71,9 @@ class Program
             builder.AddSerilog(dispose: true);
         });
 
-        services
-          .AddHttpClient()
-          .AddHttpClient(OpenAIRealtimeRestClient.OPENAI_HTTP_CLIENT_NAME, client =>
-          {
-              client.Timeout = TimeSpan.FromSeconds(5);
-              client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openAiKey);
-          });
-        services.AddTransient<IOpenAIRealtimeRestClient, OpenAIRealtimeRestClient>();
-        services.AddTransient<IOpenAIRealtimeWebRTCEndPoint, OpenAIRealtimeWebRTCEndPoint>();
+        services.AddOpenAIRealtimeWebRTC(openAiKey);
 
         using var provider = services.BuildServiceProvider();
-
-        // Create the OpenAI Realtime WebRTC peer connection.
-        var openaiClient = provider.GetRequiredService<IOpenAIRealtimeRestClient>();
         var webrtcEndPoint = provider.GetRequiredService<IOpenAIRealtimeWebRTCEndPoint>();
 
         // We'll send/receive audio directly from our Windows audio devices.
@@ -94,7 +85,7 @@ class Program
         };
         var negotiateConnectResult = await webrtcEndPoint.StartConnectAsync(pcConfig);
 
-        if(negotiateConnectResult.IsLeft)
+        if (negotiateConnectResult.IsLeft)
         {
             Log.Logger.Error($"Failed to negotiation connection to OpenAI Realtime WebRTC endpoint: {negotiateConnectResult.LeftAsEnumerable().First()}");
             return;
@@ -134,9 +125,9 @@ class Program
 
     private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, ILogger logger)
     {
-        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(webrtcEndPoint.AudioEncoder, -1, -1, false, false);
-        windowsAudioEP.SetAudioSinkFormat(webrtcEndPoint.AudioFormat);
-        windowsAudioEP.SetAudioSourceFormat(webrtcEndPoint.AudioFormat);
+        var audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
+        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder);
+
         windowsAudioEP.OnAudioSourceEncodedSample += webrtcEndPoint.SendAudio;
 
         webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
@@ -150,10 +141,6 @@ class Program
             await windowsAudioEP.StartAudio();
             await windowsAudioEP.StartAudioSink();
         };
-        webrtcEndPoint.OnPeerConnectionClosedOrFailed += async () =>
-        {
-            logger.Information("WebRTC peer connection closed.");
-            await windowsAudioEP.CloseAudio();
-        };
+        webrtcEndPoint.OnPeerConnectionClosedOrFailed += async () => await windowsAudioEP.CloseAudio();
     }
 }

@@ -3,8 +3,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace demo;
-
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 public class OpenAIInputAudioBufferSpeechStarted : OpenAIServerEventBase
 {
     public const string TypeName = "input_audio_buffer.speech_started";

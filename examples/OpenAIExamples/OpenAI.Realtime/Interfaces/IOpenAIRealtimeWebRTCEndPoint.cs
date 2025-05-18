@@ -1,20 +1,30 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: IOpenAIRealtimeWebRTCEndPoint.cs
+//
+// Description: Interface for the OpenAI WebRTC peer connection.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+// 
+// History:
+// 18 May 2025  Aaron Clauson   Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using LanguageExt;
 using LanguageExt.Common;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions;
 
-namespace demo;
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public interface IOpenAIRealtimeWebRTCEndPoint
 {
-    AudioEncoder AudioEncoder { get; }
-
-    AudioFormat AudioFormat { get; }
-
     RTCPeerConnection? PeerConnection { get; }
 
     event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;

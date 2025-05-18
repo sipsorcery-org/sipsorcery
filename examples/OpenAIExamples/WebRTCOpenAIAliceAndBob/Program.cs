@@ -29,6 +29,9 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Windows;
+using SIPSorcery.OpenAI.RealtimeWebRTC;
+using SIPSorceryMedia.Abstractions;
+using SIPSorcery.Media;
 
 namespace demo;
 
@@ -76,24 +79,18 @@ class Program
         uiThread.IsBackground = true;
         uiThread.Start();
 
-        // Reset event to keep the console thread alive until we're ready to exit.
-        ManualResetEvent exitMre = new ManualResetEvent(false);
-
-        // Create the OpenAI Realtime WebRTC peer connection.
-        var openAIHttpClientFactory = new OpenAIHttpClientFactory(openAiKey);
-        var openaiClient = new OpenAIRealtimeRestClient(openAIHttpClientFactory);
-
         var aliceConnectedSemaphore = new SemaphoreSlim(0, 1);
         var bobConnectedSemaphore = new SemaphoreSlim(0, 1);
 
-        var aliceWebrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(loggerFactory.CreateLogger<OpenAIRealtimeWebRTCEndPoint>(), openaiClient);
+        var logger = loggerFactory.CreateLogger<Program>();
+        var aliceWebrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(openAiKey, logger);
         aliceWebrtcEndPoint.OnPeerConnectionConnected += () => aliceConnectedSemaphore.Release();
-        var bobWebrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(loggerFactory.CreateLogger<OpenAIRealtimeWebRTCEndPoint>(), openaiClient);
+        var bobWebrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(openAiKey, logger);
         bobWebrtcEndPoint.OnPeerConnectionConnected += () => bobConnectedSemaphore.Release();
 
         // We'll listen in on the audio.
-        await InitialiseWindowsAudioEndPoint(aliceWebrtcEndPoint, Log.Logger, ALICE_CALL_LABEL, 1);
-        await InitialiseWindowsAudioEndPoint(bobWebrtcEndPoint, Log.Logger, BOB_CALL_LABEL, 2);
+        InitialiseWindowsAudioEndPoint(aliceWebrtcEndPoint, Log.Logger, ALICE_CALL_LABEL, 1);
+        InitialiseWindowsAudioEndPoint(bobWebrtcEndPoint, Log.Logger, BOB_CALL_LABEL, 2);
 
         var pcConfig = new RTCConfiguration
         {
@@ -144,18 +141,19 @@ class Program
         _audioScopeForm?.Invoke(() => _audioScopeForm.Close());
     }
 
-    private static async Task  InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, Serilog.ILogger logger, string callLabel, int audioScopeNumber)
+    private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, Serilog.ILogger logger, string callLabel, int audioScopeNumber)
     {
         // TODO: The windows audio endpoint is not suitable here due to the dual multi-channel audio feed coming from the two WebRTC endpoints.
         // Switch directly to an NAudio mixer.
-        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(webrtcEndPoint.AudioEncoder, -1, -1, true, false);
-        windowsAudioEP.SetAudioSinkFormat(webrtcEndPoint.AudioFormat);
+        var audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
+        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
+        windowsAudioEP.SetAudioSinkFormat(AudioCommonlyUsedFormats.OpusWebRTC);
 
         webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
         {
             windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
 
-            var decodedSample = webrtcEndPoint.AudioEncoder.DecodeAudio(rtpPkt.Payload, webrtcEndPoint.AudioFormat);
+            var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, AudioCommonlyUsedFormats.OpusWebRTC);
 
             var samples = decodedSample
                 .Select(s => new Complex(s / 32768f, 0f))
@@ -185,7 +183,5 @@ class Program
                 Log.Information($"{callLabel}: {done.Transcript}");
             }
         };
-
-        await windowsAudioEP.StartAudioSink();
     }
 }

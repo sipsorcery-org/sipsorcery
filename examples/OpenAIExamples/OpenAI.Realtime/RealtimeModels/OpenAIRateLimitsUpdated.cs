@@ -3,8 +3,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace demo;
-
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 public class OpenAIRateLimitsUpdated : OpenAIServerEventBase
 {
     public const string TypeName = "rate_limits.updated";

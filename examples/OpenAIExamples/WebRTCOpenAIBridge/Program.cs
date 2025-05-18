@@ -37,8 +37,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorcery.OpenAI.RealtimeWebRTC;
+using SIPSorceryMedia.Abstractions;
 
 namespace demo;
 
@@ -77,16 +78,7 @@ class Program
             builder.AddSerilog(dispose: true);
         });
 
-        builder.Services
-          .AddHttpClient()
-          .AddHttpClient(OpenAIRealtimeRestClient.OPENAI_HTTP_CLIENT_NAME, client =>
-          {
-              client.Timeout = TimeSpan.FromSeconds(5);
-              client.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openAiKey);
-          });
-        builder.Services.AddTransient<IOpenAIRealtimeRestClient, OpenAIRealtimeRestClient>();
-        builder.Services.AddTransient<IOpenAIRealtimeWebRTCEndPoint, OpenAIRealtimeWebRTCEndPoint>();
+        builder.Services.AddOpenAIRealtimeWebRTC(openAiKey);
 
         var app = builder.Build();
 
@@ -211,17 +203,14 @@ class Program
     {
         var peerConnection = new RTCPeerConnection(pcConfig);
 
-        var audioEncoder = new AudioEncoder(includeOpus: true);
-        var opusFormat = audioEncoder.SupportedFormats.Single(x => x.FormatName == "OPUS");
-        MediaStreamTrack audioTrack = new MediaStreamTrack(opusFormat, MediaStreamStatusEnum.SendRecv);
+        MediaStreamTrack audioTrack = new MediaStreamTrack(AudioCommonlyUsedFormats.OpusWebRTC, MediaStreamStatusEnum.SendRecv);
         peerConnection.addTrack(audioTrack);
 
         peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
         {
             _logger.LogDebug($"Audio format negotiated {audioFormats.First().FormatName}.");
         };
-        //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
-        //peerConnection.OnSendReport += RtpSession_OnSendReport;
+
         peerConnection.OnTimeout += (mediaType) => _logger.LogDebug($"Timeout on media {mediaType}.");
         peerConnection.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state changed to {state}.");
         peerConnection.onconnectionstatechange += (state) => _logger.LogDebug($"Peer connection connected changed to {state}.");

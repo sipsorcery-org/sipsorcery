@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using System.Text.Json;
 
-namespace demo;
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public class JsonOptions
 {

@@ -29,6 +29,9 @@ using SIPSorceryMedia.Windows;
 using Serilog.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Generic;
+using SIPSorcery.OpenAI.RealtimeWebRTC;
+using SIPSorcery.Media;
+using SIPSorceryMedia.Abstractions;
 
 namespace demo;
 
@@ -59,10 +62,7 @@ class Program
             return;
         }
 
-        // Create the OpenAI Realtime WebRTC peer connection.
-        var openAIHttpClientFactory = new OpenAIHttpClientFactory(openAiKey);
-        var openaiClient = new OpenAIRealtimeRestClient(openAIHttpClientFactory);
-        var webrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(loggerFactory.CreateLogger<OpenAIRealtimeWebRTCEndPoint>(), openaiClient);
+        var webrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(openAiKey, logger);
 
         // We'll send/receive audio directly from our Windows audio devices.
         InitialiseWindowsAudioEndPoint(webrtcEndPoint, Log.Logger);
@@ -103,9 +103,8 @@ class Program
 
     private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, Serilog.ILogger logger)
     {
-        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(webrtcEndPoint.AudioEncoder, -1, -1, false, false);
-        windowsAudioEP.SetAudioSinkFormat(webrtcEndPoint.AudioFormat);
-        windowsAudioEP.SetAudioSourceFormat(webrtcEndPoint.AudioFormat);
+        var audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
+        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder);
         windowsAudioEP.OnAudioSourceEncodedSample += webrtcEndPoint.SendAudio;
 
         webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>

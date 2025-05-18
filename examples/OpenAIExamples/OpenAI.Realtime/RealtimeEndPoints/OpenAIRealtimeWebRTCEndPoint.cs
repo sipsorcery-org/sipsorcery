@@ -1,28 +1,42 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: OpenAIRealtimeWebRTCEndPoint.cs
+//
+// Description: Helper methods to manage communications with an OpenAI WebRTC
+// peer connection.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+// 
+// History:
+// 18 May 2025  Aaron Clauson   Created, Dublin, Ireland.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Linq;
-using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions;
-using SIPSorcery.Media;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using LanguageExt;
 using LanguageExt.Common;
-using System.Text.Json;
-using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 
-namespace demo;
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 {
-    private const string OPENAI_MODEL = "gpt-4o-realtime-preview-2024-12-17";
-    private const string OPENAI_DATACHANNEL_NAME = "oai-events";
+    public const string OPENAI_DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-12-17";
+    public const string OPENAI_DATACHANNEL_NAME = "oai-events";
 
     private ILogger _logger = NullLogger.Instance;
-
-    public AudioEncoder AudioEncoder { get; }
-    public AudioFormat AudioFormat { get; }
 
     private readonly IOpenAIRealtimeRestClient _openAIRealtimeRestClient;
 
@@ -37,15 +51,32 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
     public event Action<RTCDataChannel, OpenAIServerEventBase>? OnDataChannelMessageReceived;
 
+    /// <summary>
+    /// Preferred constructor for dependency injection.
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="openAIRealtimeRestClient"></param>
     public OpenAIRealtimeWebRTCEndPoint(
         ILogger<OpenAIRealtimeWebRTCEndPoint> logger,
         IOpenAIRealtimeRestClient openAIRealtimeRestClient)
     {
         _logger = logger;
         _openAIRealtimeRestClient = openAIRealtimeRestClient;
+    }
 
-        AudioEncoder = new AudioEncoder(includeOpus: true);
-        AudioFormat = AudioEncoder.SupportedFormats.Single(x => x.FormatName == AudioCodecsEnum.OPUS.ToString());
+    /// <summary>
+    /// Constructor for use when not using dependency injection.
+    /// </summary>
+    /// <param name="openAiKey"></param>
+    public OpenAIRealtimeWebRTCEndPoint(string openAiKey, ILogger? logger = null)
+    {
+        var openAIHttpClientFactory = new OpenAIHttpClientFactory(openAiKey);
+        _openAIRealtimeRestClient = new OpenAIRealtimeRestClient(openAIHttpClientFactory);
+
+        if(logger != null)
+        {
+            _logger = logger;
+        }
     }
 
     public async Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration? pcConfig = null, string? model = null)
@@ -57,7 +88,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
         _rtcPeerConnection = CreatePeerConnection(pcConfig);
 
-        var useModel = string.IsNullOrWhiteSpace(model) ? OPENAI_MODEL : model;
+        var useModel = string.IsNullOrWhiteSpace(model) ? OPENAI_DEFAULT_MODEL : model;
 
         var offer = _rtcPeerConnection.createOffer();
         await _rtcPeerConnection.setLocalDescription(offer).ConfigureAwait(false);
@@ -80,7 +111,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
     {
         _rtcPeerConnection = new RTCPeerConnection(pcConfig);
 
-        MediaStreamTrack audioTrack = new MediaStreamTrack(AudioFormat, MediaStreamStatusEnum.SendRecv);
+        MediaStreamTrack audioTrack = new MediaStreamTrack(AudioCommonlyUsedFormats.OpusWebRTC, MediaStreamStatusEnum.SendRecv);
         _rtcPeerConnection.addTrack(audioTrack);
 
         // This call is synchronous when the WebRTC connection is not yet connected.
@@ -203,12 +234,52 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         //logger.LogInformation($"Data channel {dc.label}, protocol {protocol} message length {data.Length}.");
 
         var message = Encoding.UTF8.GetString(data);
-        var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
 
-        var serverEventModel = OpenAIDataChannelManager.ParseDataChannelMessage(data);
+        var serverEventModel = ParseDataChannelMessage(data);
         serverEventModel.IfSome(e =>
         {
             OnDataChannelMessageReceived?.Invoke(dc, e);
         });
+    }
+
+    private Option<OpenAIServerEventBase> ParseDataChannelMessage(byte[] data)
+    {
+        var message = Encoding.UTF8.GetString(data);
+
+        //logger.LogDebug($"Data channel message: {message}");
+
+        var serverEvent = JsonSerializer.Deserialize<OpenAIServerEventBase>(message, JsonOptions.Default);
+
+        if (serverEvent != null)
+        {
+            //logger.LogInformation($"Server event ID {serverEvent.EventID} and type {serverEvent.Type}.");
+
+            return serverEvent.Type switch
+            {
+                OpenAIConversationItemCreated.TypeName => JsonSerializer.Deserialize<OpenAIConversationItemCreated>(message, JsonOptions.Default),
+                OpenAIInputAudioBufferCommitted.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferCommitted>(message, JsonOptions.Default),
+                OpenAIInputAudioBufferSpeechStarted.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferSpeechStarted>(message, JsonOptions.Default),
+                OpenAIInputAudioBufferSpeechStopped.TypeName => JsonSerializer.Deserialize<OpenAIInputAudioBufferSpeechStopped>(message, JsonOptions.Default),
+                OpenAIOuputAudioBufferAudioStarted.TypeName => JsonSerializer.Deserialize<OpenAIOuputAudioBufferAudioStarted>(message, JsonOptions.Default),
+                OpenAIOuputAudioBufferAudioStopped.TypeName => JsonSerializer.Deserialize<OpenAIOuputAudioBufferAudioStopped>(message, JsonOptions.Default),
+                OpenAIRateLimitsUpdated.TypeName => JsonSerializer.Deserialize<OpenAIRateLimitsUpdated>(message, JsonOptions.Default),
+                OpenAIResponseAudioDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioDone>(message, JsonOptions.Default),
+                OpenAIResponseAudioTranscriptDelta.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDelta>(message, JsonOptions.Default),
+                OpenAIResponseAudioTranscriptDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseAudioTranscriptDone>(message, JsonOptions.Default),
+                OpenAIResponseContentPartAdded.TypeName => JsonSerializer.Deserialize<OpenAIResponseContentPartAdded>(message, JsonOptions.Default),
+                OpenAIResponseContentPartDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseContentPartDone>(message, JsonOptions.Default),
+                OpenAIResponseCreated.TypeName => JsonSerializer.Deserialize<OpenAIResponseCreated>(message, JsonOptions.Default),
+                OpenAIResponseDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseDone>(message, JsonOptions.Default),
+                OpenAIResponseFunctionCallArgumentsDelta.TypeName => JsonSerializer.Deserialize<OpenAIResponseFunctionCallArgumentsDelta>(message, JsonOptions.Default),
+                OpenAIResponseFunctionCallArgumentsDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseFunctionCallArgumentsDone>(message, JsonOptions.Default),
+                OpenAIResponseOutputItemAdded.TypeName => JsonSerializer.Deserialize<OpenAIResponseOutputItemAdded>(message, JsonOptions.Default),
+                OpenAIResponseOutputItemDone.TypeName => JsonSerializer.Deserialize<OpenAIResponseOutputItemDone>(message, JsonOptions.Default),
+                OpenAISessionCreated.TypeName => JsonSerializer.Deserialize<OpenAISessionCreated>(message, JsonOptions.Default),
+                OpenAISessionUpdated.TypeName => JsonSerializer.Deserialize<OpenAISessionUpdated>(message, JsonOptions.Default),
+                _ => Option<OpenAIServerEventBase>.None
+            };
+        }
+
+        return Option<OpenAIServerEventBase>.None;
     }
 }

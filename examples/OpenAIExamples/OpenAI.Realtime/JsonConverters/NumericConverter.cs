@@ -19,7 +19,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace demo;
+namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
 public class NumericConverter<T> : JsonConverter<T> where T : struct, IConvertible
 {
@@ -45,15 +45,25 @@ public class NumericConverter<T> : JsonConverter<T> where T : struct, IConvertib
         if (reader.TokenType == JsonTokenType.Number)
         {
             if (typeof(T) == typeof(int))
+            {
                 return (T)(object)reader.GetInt32();
+            }
             if (typeof(T) == typeof(long))
+            {
                 return (T)(object)reader.GetInt64();
+            }
             if (typeof(T) == typeof(float))
+            {
                 return (T)(object)reader.GetSingle();
+            }
             if (typeof(T) == typeof(double))
+            {
                 return (T)(object)reader.GetDouble();
+            }
             if (typeof(T) == typeof(decimal))
+            {
                 return (T)(object)reader.GetDecimal();
+            }
         }
 
         if (reader.TokenType == JsonTokenType.Null)
@@ -67,16 +77,28 @@ public class NumericConverter<T> : JsonConverter<T> where T : struct, IConvertib
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         if (typeof(T) == typeof(int))
+        {
             writer.WriteNumberValue(Convert.ToInt32(value));
+        }
         else if (typeof(T) == typeof(long))
+        {
             writer.WriteNumberValue(Convert.ToInt64(value));
+        }
         else if (typeof(T) == typeof(float))
+        {
             writer.WriteNumberValue(Convert.ToSingle(value));
+        }
         else if (typeof(T) == typeof(double))
+        {
             writer.WriteNumberValue(Convert.ToDouble(value));
+        }
         else if (typeof(T) == typeof(decimal))
+        {
             writer.WriteNumberValue(Convert.ToDecimal(value));
+        }
         else
+        {
             writer.WriteStringValue(value.ToString());
+        }
     }
 }
