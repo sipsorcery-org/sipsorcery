@@ -350,7 +350,7 @@ namespace SIPSorcery.Media
                         {
                             if (!string.IsNullOrWhiteSpace(_audioOpts.MusicFile))
                             {
-                                Log.LogWarning("Music file not set or not found, using default music resource.");
+                                Log.LogMusicFileNotSetOrFound();
                             }
 
                             var assem = typeof(VideoTestPatternSource).GetTypeInfo().Assembly;
@@ -381,7 +381,7 @@ namespace SIPSorcery.Media
         {
             if (!_isClosed && audioStream != null && audioStream.Length > 0)
             {
-                Log.LogDebug("Sending audio stream length {AudioStreamLength}.", audioStream.Length);
+                Log.LogSendingAudioSteamLength(audioStream.Length);
 
                 _streamSendInProgress = true;
                 _streamSourceRate = streamSampleRate;
@@ -418,7 +418,7 @@ namespace SIPSorcery.Media
             }
             catch (Exception e)
             {
-                Log.LogWarning(e, "Stream Closed.");
+                Log.LogStreamClosedWarning(e);
             }
         }
 
@@ -440,7 +440,7 @@ namespace SIPSorcery.Media
             }
             catch (Exception e)
             {
-                Log.LogError(e, "Exception sending silence sample");
+                Log.LogSendingSilenceSampleError(e);
             }
         }
 
@@ -466,7 +466,7 @@ namespace SIPSorcery.Media
             }
             catch (Exception e)
             {
-                Log.LogError(e, "Exception sending signal generator sample");
+                Log.LogSignalGeneratorError(e);
             }
         }
 
@@ -491,19 +491,19 @@ namespace SIPSorcery.Media
 
                                 if (_streamSourceReader.BaseStream.Position >= _streamSourceReader.BaseStream.Length)
                                 {
-                                    Log.LogDebug("Send audio from stream completed.");
+                                    Log.LogSendAudioFromStreamCompleted();
                                     StopSendFromAudioStream();
                                 }
                             }
                             else
                             {
-                                Log.LogWarning("Failed to read from audio stream source.");
+                                Log.LogAudioStreamReadError();
                                 StopSendFromAudioStream();
                             }
                         }
                         else
                         {
-                            Log.LogWarning("Failed to read from audio stream source, stream null or closed.");
+                            Log.LogAudioStreamNullError();
                             StopSendFromAudioStream();
                         }
                     }
@@ -511,7 +511,7 @@ namespace SIPSorcery.Media
                 }
                 catch (Exception e)
                 {
-                    Log.LogWarning(e, "Caught unhandled exception");
+                    Log.LogUnhandledStreamException(e);
                     StopSendFromAudioStream();
                 }
 
@@ -527,7 +527,7 @@ namespace SIPSorcery.Media
                     }
                     catch (Exception e)
                     {
-                        Log.LogWarning(e, "Error occurred whilst trying to close the stream source reader.");
+                        Log.LogStreamReaderCloseError(e);
                     }
                 }
             }

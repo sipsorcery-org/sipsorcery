@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPParameterlessURI ToString. {ErrorMessage}", excp.Message);
+                logger.LogUserParametersParseError(excp.Message, excp);
                 throw;
             }
         }
