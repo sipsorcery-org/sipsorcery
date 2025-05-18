@@ -17,6 +17,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 using System.Net.Sockets;
 using SIPSorcery.Sys;
 
@@ -79,29 +80,29 @@ namespace SIPSorcery.Net
         dtls = 4,
     }
 
-    public class STUNUri
+    public sealed class STUNUri : IEquatable<STUNUri>
     {
         public const string SCHEME_TRANSPORT_TCP = "transport=tcp";
         public const string SCHEME_TRANSPORT_TLS = "transport=tls";
 
-        public static readonly string[] SCHEME_TRANSPORT_SEPARATOR = { "?transport=" };
+        public static readonly string SCHEME_TRANSPORT_SEPARATOR = "?transport=";
         public const char SCHEME_ADDR_SEPARATOR = ':';
         public const int SCHEME_MAX_LENGTH = 5;
 
         public const STUNSchemesEnum DefaultSTUNScheme = STUNSchemesEnum.stun;
 
-        public STUNProtocolsEnum Transport = STUNProtocolsEnum.udp;
-        public STUNSchemesEnum Scheme = DefaultSTUNScheme;
+        public STUNProtocolsEnum Transport { get; } = STUNProtocolsEnum.udp;
+        public STUNSchemesEnum Scheme { get; } = DefaultSTUNScheme;
 
-        public string Host;
-        public int Port;
+        public string Host { get; }
+        public int Port { get; }
 
         /// <summary>
         /// If the port is specified in a URI it affects the way a DNS lookup occurs.
         /// An explicit port means to lookup the A or AAAA record directly without
         /// checking for SRV records.
         /// </summary>
-        public bool ExplicitPort;
+        public bool ExplicitPort { get; }
 
         /// <summary>
         /// The network protocol for this URI type.
@@ -124,107 +125,126 @@ namespace SIPSorcery.Net
         private STUNUri()
         { }
 
-        public STUNUri(STUNSchemesEnum scheme, string host, int port = STUNConstants.DEFAULT_STUN_PORT)
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public STUNUri(STUNSchemesEnum scheme, string host, int port)
         {
             Scheme = scheme;
             Host = host;
             Port = port;
         }
 
-        public static STUNUri ParseSTUNUri(string uri)
+        public STUNUri(STUNSchemesEnum scheme, string host, int port = STUNConstants.DEFAULT_STUN_PORT, STUNProtocolsEnum transport = STUNProtocolsEnum.udp, bool explicitPort = false)
         {
-            STUNUri stunUri = new STUNUri();
+            Scheme = scheme;
+            Host = host;
+            Port = port;
+            Transport = transport;
+            ExplicitPort = explicitPort;
+        }
 
-            if (String.IsNullOrEmpty(uri))
+        public static STUNUri ParseSTUNUri(string uriStr)
+        {
+            if (!TryParse(uriStr, out var uri))
             {
                 throw new ApplicationException("A STUN URI cannot be parsed from an empty string.");
             }
-            else
-            {
-                //Split uri to include support to transport detection
-                var splitUri = uri.Split(SCHEME_TRANSPORT_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
-                if(splitUri.Length > 1)
-                {
-                    uri = splitUri[0];
-                    var protocolStr = splitUri[1].Trim();
-                    if (string.IsNullOrEmpty(protocolStr) || !Enum.TryParse<STUNProtocolsEnum>(protocolStr, true, out stunUri.Transport))
-                    {
-                        stunUri.Transport = STUNProtocolsEnum.udp;
-                    }
-                }
 
-                uri = uri.Trim();
-
-                // If the scheme is included it needs to be within the first 5 characters.
-                if (uri.Length > SCHEME_MAX_LENGTH + 2)
-                {
-                    string schemeStr = uri.Substring(0, SCHEME_MAX_LENGTH + 1);
-                    int colonPosn = schemeStr.IndexOf(SCHEME_ADDR_SEPARATOR);
-
-                    if (colonPosn == -1)
-                    {
-                        // No scheme has been specified, use default.
-                        stunUri.Scheme = DefaultSTUNScheme;
-                    }
-                    else
-                    {
-                        if (!Enum.TryParse<STUNSchemesEnum>(schemeStr.Substring(0, colonPosn), true, out stunUri.Scheme))
-                        {
-                            stunUri.Scheme = DefaultSTUNScheme;
-                        }
-
-                        uri = uri.Substring(colonPosn + 1);
-                    }
-                }
-
-                if (uri.IndexOf(':') != -1)
-                {
-                    stunUri.ExplicitPort = true;
-
-                    if (IPSocket.TryParseIPEndPoint(uri, out var ipEndPoint))
-                    {
-                        if (ipEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
-                        {
-                            stunUri.Host = $"[{ipEndPoint.Address}]";
-                        }
-                        else
-                        {
-                            stunUri.Host = ipEndPoint.Address.ToString();
-                        }
-
-                        stunUri.Port = ipEndPoint.Port;
-                    }
-                    else
-                    {
-                        stunUri.Host = uri.Substring(0, uri.LastIndexOf(':'));
-                        if (!Int32.TryParse(uri.Substring(uri.LastIndexOf(':') + 1), out stunUri.Port))
-                        {
-                            stunUri.Port = STUNConstants.GetPortForScheme(stunUri.Scheme);
-                        }
-                    }
-                }
-                else
-                {
-                    stunUri.Host = uri?.Trim();
-                    stunUri.Port = STUNConstants.GetPortForScheme(stunUri.Scheme);
-                }
-            }
-
-            return stunUri;
+            return uri;
         }
 
         public static bool TryParse(string uriStr, out STUNUri uri)
         {
-            try
+            uri = null;
+
+            if (string.IsNullOrEmpty(uriStr))
             {
-                uri = ParseSTUNUri(uriStr);
-                return (uri != null);
-            }
-            catch
-            {
-                uri = null;
                 return false;
             }
+
+            ReadOnlySpan<char> uriSpan = uriStr.AsSpan();
+            STUNProtocolsEnum transport = STUNProtocolsEnum.udp;
+
+            // Handle transport protocol
+            int transportIndex = uriSpan.IndexOf('?');
+            if (transportIndex >= 0 && uriSpan.Slice(transportIndex, SCHEME_TRANSPORT_SEPARATOR.Length).SequenceEqual(SCHEME_TRANSPORT_SEPARATOR.AsSpan()))
+            {
+                var protocolSpan = uriSpan.Slice(transportIndex + SCHEME_TRANSPORT_SEPARATOR.Length).Trim();
+#if NET6_0_OR_GREATER
+                if (!protocolSpan.IsEmpty && !Enum.TryParse(protocolSpan, true, out transport))
+#else
+                if (!protocolSpan.IsEmpty && !Enum.TryParse(protocolSpan.ToString(), true, out transport))
+#endif
+                {
+                    transport = STUNProtocolsEnum.udp;
+                }
+                uriSpan = uriSpan.Slice(0, transportIndex);
+            }
+
+            uriSpan = uriSpan.Trim();
+            var scheme = DefaultSTUNScheme;
+
+            // Handle scheme parsing
+            if (uriSpan.Length > SCHEME_MAX_LENGTH + 2)
+            {
+                ReadOnlySpan<char> schemeSpan = uriSpan.Slice(0, SCHEME_MAX_LENGTH + 1);
+                int colonPosn = schemeSpan.IndexOf(SCHEME_ADDR_SEPARATOR);
+
+                if (colonPosn >= 0)
+                {
+#if NET6_0_OR_GREATER
+                    if (!Enum.TryParse(schemeSpan.Slice(0, colonPosn), true, out scheme))
+#else
+                    if (!Enum.TryParse(schemeSpan.Slice(0, colonPosn).ToString(), true, out scheme))
+#endif
+                    {
+                        scheme = DefaultSTUNScheme;
+                    }
+                    uriSpan = uriSpan.Slice(colonPosn + 1);
+                }
+            }
+
+            var explicitPort = false;
+            int port;
+            string host;
+
+            int lastColonPos = uriSpan.LastIndexOf(':');
+            if (lastColonPos != -1)
+            {
+                explicitPort = true;
+
+                if (IPSocket.TryParseIPEndPoint(uriSpan, out var ipEndPoint))
+                {
+                    if (ipEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
+                    {
+                        host = $"[{ipEndPoint.Address}]";
+                    }
+                    else
+                    {
+                        host = ipEndPoint.Address.ToString();
+                    }
+                    port = ipEndPoint.Port;
+                }
+                else
+                {
+                    host = uriSpan.Slice(0, lastColonPos).ToString();
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+                    if (!int.TryParse(uriSpan.Slice(lastColonPos + 1), out port))
+#else
+                    if (!int.TryParse(uriSpan.Slice(lastColonPos + 1).ToString(), out port))
+#endif
+                    {
+                        port = STUNConstants.GetPortForScheme(scheme);
+                    }
+                }
+            }
+            else
+            {
+                host = uriSpan.ToString();
+                port = STUNConstants.GetPortForScheme(scheme);
+            }
+
+            uri = new STUNUri(scheme, host, port: port, transport: transport, explicitPort: explicitPort);
+            return true;
         }
 
         public override string ToString()
@@ -261,9 +281,14 @@ namespace SIPSorcery.Net
             return uri1 == uri2;
         }
 
+        public bool Equals(STUNUri other)
+        {
+            return (this == other);
+        }
+
         public override bool Equals(object obj)
         {
-            return AreEqual(this, (STUNUri)obj);
+            return Equals(this, (STUNUri)obj);
         }
 
         public static bool operator ==(STUNUri uri1, STUNUri uri2)
@@ -307,11 +332,7 @@ namespace SIPSorcery.Net
 
         public override int GetHashCode()
         {
-            return Scheme.GetHashCode()
-                + Transport.GetHashCode()
-                + ((Host != null) ? Host.GetHashCode() : 0)
-                + Port
-                + ((ExplicitPort) ? 1 : 0);
+            return HashCode.Combine(Scheme, Transport, Host, Port, ExplicitPort);
         }
     }
 }
