@@ -3,6 +3,19 @@
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg)
 
+## License
+
+> ⚠️ **License Update (May 18, 2025)**  
+> This project is now dual-licensed under the BSD 3-Clause “New” or “Revised” License **and** the additional BDS BY-NC-SA restriction (see [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file#section-2) § 2).  
+>
+> **Key points of the BDS restriction:**  
+> - **No use inside Israel or the Occupied Territories** until the 1967 occupation ends, equality for Arab-Palestinians is enshrined, and the right of return for Palestinian refugees is honored.  
+> - **Everywhere else**, the BSD 3-Clause terms apply, provided that any redistribution retains this BDS restriction and complies with Attribution-NonCommercial-ShareAlike.  
+> - In case of conflict, the BDS terms in Section 2 take precedence over Section 1.  
+>
+> Read the full text in [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file#section-2).
+
+
 ## What Is It?
 
 **This fully C# library can be used to add Real-time Communications, typically audio and video calls, to .NET applications.**
