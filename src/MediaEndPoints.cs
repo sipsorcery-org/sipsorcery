@@ -110,6 +110,20 @@ namespace SIPSorceryMedia.Abstractions
            };
     }
 
+    /// <summary>
+    /// A list of audio formats that are commonly used but not standardised.
+    /// </summary>
+    public static class AudioCommonlyUsedFormats
+    {
+        public const int OPUS_SAMPLE_RATE = (int)AudioSamplingRatesEnum.Rate48kHz;  // Opus codec typical sampling rate, 48KHz.
+        public const int OPUS_CHANNELS = 2;                                         // Opus codec number of channels.
+
+        /// <summary>
+        /// The Opus audio format typical used for WebRTC scenarios.
+        /// </summary>
+        public static AudioFormat OpusWebRTC => new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1");
+    }
+
     public enum AudioCodecsEnum
     {
         PCMU,
