@@ -142,6 +142,11 @@ namespace SIPSorceryMedia.Windows
             _mediaCapture = new MediaCapture();
             _mediaCapture.Failed += VideoCaptureDevice_Failed;
             _videoFormatManager = new MediaFormatManager<VideoFormat>(videoEncoder.SupportedFormats);
+
+            if(videoEncoder.SupportedFormats?.Count == 0)
+            {
+                _videoFormatManager.SetSelectedFormat(videoEncoder.SupportedFormats[0]);
+            }
         }
 
         public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);

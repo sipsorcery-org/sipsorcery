@@ -125,12 +125,26 @@ namespace SIPSorceryMedia.Windows
 
             if (!_disableSink)
             {
-                InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode(), DEFAULT_DEVICE_CHANNELS);
+                if (audioEncoder.SupportedFormats?.Count == 1)
+                {
+                    SetAudioSinkFormat(audioEncoder.SupportedFormats[0]);
+                }
+                else
+                {
+                    InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode(), DEFAULT_DEVICE_CHANNELS);
+                }
             }
 
             if (!_disableSource)
             {
-                InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate, DEFAULT_DEVICE_CHANNELS);
+                if (audioEncoder.SupportedFormats?.Count == 1)
+                {
+                    SetAudioSourceFormat(audioEncoder.SupportedFormats[0]);
+                }
+                else
+                {
+                    InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate, DEFAULT_DEVICE_CHANNELS);
+                }
             }
         }
 
@@ -327,7 +341,7 @@ namespace SIPSorceryMedia.Windows
             if (_waveProvider != null && _audioEncoder != null)
             {
                 var pcmSample = _audioEncoder.DecodeAudio(payload, _audioFormatManager.SelectedFormat);
-                byte[] pcmBytes = pcmSample.SelectMany(x => BitConverter.GetBytes(x)).ToArray();
+                byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
                 _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
             }
         }
