@@ -25,7 +25,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using LanguageExt;
@@ -120,8 +119,6 @@ class Program
 
                 ConnectPeers(webSocketPeer.RTCPeerConnection, openAiWebRTCEndPoint.PeerConnection!);
 
-                //await Task.Delay(30000);
-
                 Log.Debug("Web socket closing with WebRTC peer connection in state {state}.", webSocketPeer.RTCPeerConnection?.connectionState);
             }
             else
@@ -197,35 +194,12 @@ class Program
      /// <summary>
     /// Method to create the peer connection with the browser.
     /// </summary>
-    /// <param name="onConnectedSemaphore">A semaphore that will get set when the data channel on the peer connection is opened. Since the data channel
-    /// can only be opened once the peer connection is open this indicates both are ready for use.</param>
     private static Task<RTCPeerConnection> CreateBrowserPeerConnection(RTCConfiguration pcConfig)
     {
         var peerConnection = new RTCPeerConnection(pcConfig);
 
         MediaStreamTrack audioTrack = new MediaStreamTrack(AudioCommonlyUsedFormats.OpusWebRTC, MediaStreamStatusEnum.SendRecv);
         peerConnection.addTrack(audioTrack);
-
-        peerConnection.OnAudioFormatsNegotiated += (audioFormats) =>
-        {
-            _logger.LogDebug($"Audio format negotiated {audioFormats.First().FormatName}.");
-        };
-
-        peerConnection.OnTimeout += (mediaType) => _logger.LogDebug($"Timeout on media {mediaType}.");
-        peerConnection.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state changed to {state}.");
-        peerConnection.onconnectionstatechange += (state) => _logger.LogDebug($"Peer connection connected changed to {state}.");
-        
-        peerConnection.onsignalingstatechange += () =>
-        {
-            if (peerConnection.signalingState == RTCSignalingState.have_local_offer)
-            {
-                _logger.LogDebug("Local SDP:\n{sdp}", peerConnection.localDescription.sdp);
-            }
-            else if (peerConnection.signalingState is RTCSignalingState.have_remote_offer or RTCSignalingState.stable)
-            {
-                _logger.LogDebug("Remote SDP:\n{sdp}", peerConnection.remoteDescription.sdp);
-            }
-        };
 
         return Task.FromResult(peerConnection);
     }
