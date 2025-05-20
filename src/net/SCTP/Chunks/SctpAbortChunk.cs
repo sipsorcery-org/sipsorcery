@@ -17,58 +17,52 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text;
+namespace SIPSorcery.Net;
 
-namespace SIPSorcery.Net
+/// <summary>
+/// The ABORT chunk is sent to the peer of an association to close the
+/// association.The ABORT chunk may contain Cause Parameters to inform
+/// the receiver about the reason of the abort.DATA chunks MUST NOT be
+/// bundled with ABORT.Control chunks (except for INIT, INIT ACK, and
+/// SHUTDOWN COMPLETE) MAY be bundled with an ABORT, but they MUST be
+/// placed before the ABORT in the SCTP packet or they will be ignored by
+/// the receiver.
+/// </summary>
+/// <remarks>
+/// https://tools.ietf.org/html/rfc4960#section-3.3.7
+/// </remarks>
+public class SctpAbortChunk : SctpErrorChunk
 {
     /// <summary>
-    /// The ABORT chunk is sent to the peer of an association to close the
-    /// association.The ABORT chunk may contain Cause Parameters to inform
-    /// the receiver about the reason of the abort.DATA chunks MUST NOT be
-    /// bundled with ABORT.Control chunks (except for INIT, INIT ACK, and
-    /// SHUTDOWN COMPLETE) MAY be bundled with an ABORT, but they MUST be
-    /// placed before the ABORT in the SCTP packet or they will be ignored by
-    /// the receiver.
+    /// Creates a new ABORT chunk.
     /// </summary>
-    /// <remarks>
-    /// https://tools.ietf.org/html/rfc4960#section-3.3.7
-    /// </remarks>
-    public class SctpAbortChunk : SctpErrorChunk
-    {
-        /// <summary>
-        /// Creates a new ABORT chunk.
-        /// </summary>
-        /// <param name="verificationTagBit">If set to true sets a bit in the chunk header to indicate
-        /// the sender filled in the Verification Tag expected by the peer.</param>
-        public SctpAbortChunk(bool verificationTagBit) :
-            base(SctpChunkType.ABORT, verificationTagBit)
-        { }
+    /// <param name="verificationTagBit">If set to true sets a bit in the chunk header to indicate
+    /// the sender filled in the Verification Tag expected by the peer.</param>
+    public SctpAbortChunk(bool verificationTagBit) :
+        base(SctpChunkType.ABORT, verificationTagBit)
+    { }
 
-        /// <summary>
-        /// Gets the user supplied abort reason if available.
-        /// </summary>
-        /// <returns>The abort reason or null if not present.</returns>
-        public string GetAbortReason()
+    /// <summary>
+    /// Gets the user supplied abort reason if available.
+    /// </summary>
+    /// <returns>The abort reason or null if not present.</returns>
+    public string? GetAbortReason()
+    {
+        foreach (var errorCause in ErrorCauses)
         {
-            if (ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort))
+            if (errorCause.CauseCode == SctpErrorCauseCode.UserInitiatedAbort)
             {
-                var userAbort = (SctpErrorUserInitiatedAbort)(ErrorCauses
-                    .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort));
+                var userAbort = (SctpErrorUserInitiatedAbort)errorCause;
                 return userAbort.AbortReason;
             }
-            else if(ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation))
+
+            if (errorCause.CauseCode == SctpErrorCauseCode.ProtocolViolation)
             {
-                var protoViolation = (SctpErrorProtocolViolation)(ErrorCauses
-                    .First(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation));
+                var protoViolation = (SctpErrorProtocolViolation)errorCause;
                 return protoViolation.AdditionalInformation;
             }
-            else
-            {
-                return null;
-            }
         }
+
+        return null;
     }
 }

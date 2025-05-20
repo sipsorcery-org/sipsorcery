@@ -48,19 +48,25 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 
         public static byte[] GenerateMessageKeyIV(byte[] k_s, uint ssrc, ulong index)
         {
-            byte[] iv = new byte[12];
+            var iv = GC.AllocateUninitializedArray<byte>(12);
             Buffer.BlockCopy(k_s, 0, iv, 0, 12);
 
-            iv[2] ^= (byte)((ssrc >> 24) & 0xFF);
-            iv[3] ^= (byte)((ssrc >> 16) & 0xFF);
-            iv[4] ^= (byte)((ssrc >> 8) & 0xFF);
-            iv[5] ^= (byte)(ssrc & 0xFF);
-            iv[6] ^= (byte)((index >> 40) & 0xFF);
-            iv[7] ^= (byte)((index >> 32) & 0xFF);
-            iv[8] ^= (byte)((index >> 24) & 0xFF);
-            iv[9] ^= (byte)((index >> 16) & 0xFF);
-            iv[10] ^= (byte)((index >> 8) & 0xFF);
-            iv[11] ^= (byte)(index & 0xFF);
+            // XOR in SSRC (big-endian)
+            var ssrcSpan = iv.AsSpan(2, 4);
+            var ssrcVal = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(ssrcSpan);
+            ssrcVal ^= ssrc;
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(ssrcSpan, ssrcVal);
+
+            // XOR in index high 48bits using big-endian 32-bit and 16-bit segments
+            var hiSpan = iv.AsSpan(6, 4);
+            var hi = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(hiSpan);
+            hi ^= (uint)(index >> 16);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(hiSpan, hi);
+
+            var loSpan = iv.AsSpan(10, 2);
+            var lo = System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(loSpan);
+            lo ^= (ushort)(index & 0xFFFF);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt16BigEndian(loSpan, lo);
 
             return iv;
         }

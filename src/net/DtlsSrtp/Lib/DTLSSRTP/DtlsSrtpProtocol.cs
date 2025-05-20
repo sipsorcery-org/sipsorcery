@@ -23,7 +23,6 @@ using Org.BouncyCastle.Tls;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
@@ -120,11 +119,16 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
                SecurityParameters.server_random
                )[length]
              */
-            byte[] sharedSecret = TlsUtilities.Prf(
+
+            var seed = GC.AllocateUninitializedArray<byte>(dtlsSecurityParameters.ClientRandom.Length + dtlsSecurityParameters.ServerRandom.Length);
+            Buffer.BlockCopy(dtlsSecurityParameters.ClientRandom, 0, seed, 0, dtlsSecurityParameters.ClientRandom.Length);
+            Buffer.BlockCopy(dtlsSecurityParameters.ServerRandom, 0, seed, dtlsSecurityParameters.ClientRandom.Length, dtlsSecurityParameters.ServerRandom.Length);
+
+            var sharedSecret = TlsUtilities.Prf(
                 dtlsSecurityParameters,
                 dtlsSecurityParameters.MasterSecret,
                 ExporterLabel.dtls_srtp, // The exporter label for this usage is "EXTRACTOR-dtls_srtp"
-                dtlsSecurityParameters.ClientRandom.Concat(dtlsSecurityParameters.ServerRandom).ToArray(),
+                seed,
                 sharedSecretLength
                 ).Extract();
 

@@ -27,7 +27,7 @@ using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
@@ -38,15 +38,38 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
         public event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
         public int MkiLength { get; private set; } = 0;
 
-        public DtlsSrtpClient(Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256, TlsSession session = null) :
-           this(new BcTlsCrypto(), certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm, session)
+        public DtlsSrtpClient(
+            Certificate certificate = null,
+            AsymmetricKeyParameter privateKey = null,
+            short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+            short certificateHashAlgorithm = HashAlgorithm.sha256,
+            TlsSession session = null) :
+           this(
+               new BcTlsCrypto(),
+               certificate,
+               privateKey,
+               certificateSignatureAlgorithm,
+               certificateHashAlgorithm,
+               session)
         { }
 
-        public DtlsSrtpClient(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256, TlsSession session = null) : 
-            base(crypto, session, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
+        public DtlsSrtpClient(
+            TlsCrypto crypto,
+            Certificate certificate = null,
+            AsymmetricKeyParameter privateKey = null,
+            short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+            short certificateHashAlgorithm = HashAlgorithm.sha256,
+            TlsSession session = null) :
+            base(
+                crypto,
+                session,
+                certificate,
+                privateKey,
+                certificateSignatureAlgorithm,
+                certificateHashAlgorithm)
         {
             int[] protectionProfiles = GetSupportedProtectionProfiles();
-            
+
             byte[] mki = DtlsSrtpProtocol.GenerateMki(MkiLength);
             this._srtpData = new UseSrtpData(protectionProfiles, mki);
 
@@ -59,10 +82,10 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
             Certificate peerCertificate = e.SecurityParameters.PeerCertificate;
             OnSessionStarted?.Invoke(this, new DtlsSessionStartedEventArgs(context, peerCertificate, base._clientDatagramTransport));
         }
-       
+
         public void SetMKI(byte[] mki)
         {
-            if(mki == null)
+            if (mki == null)
             {
                 MkiLength = 0;
                 mki = new byte[0];
@@ -82,7 +105,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
         protected virtual int[] GetSupportedProtectionProfiles()
         {
-            return new int[] 
+            return new int[]
             {
                 ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
                 ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
@@ -124,19 +147,50 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
             // verify that the server has selected a profile we support
             int selectedProfile = serverSrtpExtension.ProtectionProfiles[0];
-            if (!clientSupportedProfiles.Contains(selectedProfile))
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
+            EnsureProfileSupported(clientSupportedProfiles, selectedProfile);
 
             // verify the mki sent by the server matches our mki
-            if (_srtpData.Mki != null && serverSrtpExtension.Mki != null && !Enumerable.SequenceEqual(_srtpData.Mki, serverSrtpExtension.Mki))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
+            EnsureMatchingMkis(serverSrtpExtension);
 
             // store the server extension as it contains the selected profile
             _srtpData = serverSrtpExtension;
+
+            [StackTraceHidden]
+            static void EnsureProfileSupported(int[] clientSupportedProfiles, int selectedProfile)
+            {
+
+                for (var i = 0; i < clientSupportedProfiles.Length; i++)
+                {
+                    if (clientSupportedProfiles[i] == selectedProfile)
+                    {
+                        return;
+                    }
+                }
+
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
+            [StackTraceHidden]
+            void EnsureMatchingMkis(UseSrtpData serverSrtpExtension)
+            {
+                if (_srtpData.Mki is null || serverSrtpExtension.Mki is null)
+                {
+                    return;
+                }
+
+                if (_srtpData.Mki.Length != serverSrtpExtension.Mki.Length)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                for (int i = 0; i < _srtpData.Mki.Length; i++)
+                {
+                    if (_srtpData.Mki[i] != serverSrtpExtension.Mki[i])
+                    {
+                        throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                    }
+                }
+            }
         }
 
         public override IDictionary<int, byte[]> GetClientExtensions()
