@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -159,8 +160,18 @@ namespace SIPSorcery.Net
         /// <param name="posn">The position in the buffer to write at.</param>
         protected void WriteParameterHeader(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer(ParameterType, buffer, posn);
-            NetConvert.ToBuffer(GetParameterLength(false), buffer, posn + 2);
+            WriteParameterHeader(buffer.AsSpan(posn));
+        }
+
+        /// <summary>
+        /// Writes the parameter header to the buffer. All chunk parameters use the same two
+        /// header fields.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the chunk parameter header to.</param>
+        protected void WriteParameterHeader(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, ParameterType);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), GetParameterLength(false));
         }
 
         /// <summary>
@@ -174,15 +185,37 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public virtual int WriteTo(byte[] buffer, int posn)
         {
-            WriteParameterHeader(buffer, posn);
-
-            if (ParameterValue?.Length > 0)
-            {
-                Buffer.BlockCopy(ParameterValue, 0, buffer, posn + SCTP_PARAMETER_HEADER_LENGTH, ParameterValue.Length);
-            }
+            WriteToCore(buffer.AsSpan(posn));
 
             return GetParameterLength(true);
         }
+
+        /// <summary>
+        /// Serialises the chunk parameter to a pre-allocated buffer. This method gets overridden 
+        /// by specialised SCTP chunk parameters that have their own data and need to be serialised
+        /// differently.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk parameter bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public virtual int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetParameterLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            WriteParameterHeader(buffer);
+
+            if (ParameterValue is { Length: > 0 } parameterValue)
+            {
+                parameterValue.CopyTo(buffer.Slice(SCTP_PARAMETER_HEADER_LENGTH));
+            }
+        }
+
+        public int GetPacketSize() => GetParameterLength(true);
 
         /// <summary>
         /// Serialises an SCTP chunk parameter to a byte array.
@@ -193,6 +226,24 @@ namespace SIPSorcery.Net
             byte[] buffer = new byte[GetParameterLength(true)];
             WriteTo(buffer, 0);
             return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
         }
 
         /// <summary>

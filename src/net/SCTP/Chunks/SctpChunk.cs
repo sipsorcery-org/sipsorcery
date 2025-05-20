@@ -23,6 +23,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -211,9 +212,22 @@ namespace SIPSorcery.Net
         /// <returns>The padded length of this chunk.</returns>
         protected void WriteChunkHeader(byte[] buffer, int posn)
         {
-            buffer[posn] = ChunkType;
-            buffer[posn + 1] = ChunkFlags;
-            NetConvert.ToBuffer(GetChunkLength(false), buffer, posn + 2);
+            WriteChunkHeader(buffer.AsSpan(posn));
+        }
+
+        /// <summary>
+        /// Writes the chunk header to the buffer. All chunks use the same three
+        /// header fields.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the chunk header to.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        protected int WriteChunkHeader(Span<byte> buffer)
+        {
+            buffer[0] = ChunkType;
+            buffer[1] = ChunkFlags;
+            var chunkLength = GetChunkLength(false);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), chunkLength);
+            return chunkLength + 2;
         }
 
         /// <summary>
@@ -227,14 +241,42 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public virtual ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-
-            if (ChunkValue?.Length > 0)
-            {
-                Buffer.BlockCopy(ChunkValue, 0, buffer, posn + SCTP_CHUNK_HEADER_LENGTH, ChunkValue.Length);
-            }
+            WriteToCore(buffer.AsSpan(posn));
 
             return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises the chunk to a pre-allocated buffer. This method gets overridden 
+        /// by specialised SCTP chunks that have their own parameters and need to be serialised
+        /// differently.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public virtual int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises the chunk to a pre-allocated buffer. This method gets overridden 
+        /// by specialised SCTP chunks that have their own parameters and need to be serialised
+        /// differently.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        private void WriteToCore(Span<byte> buffer)
+        {
+            var bytesWritten = WriteChunkHeader(buffer);
+
+            if (ChunkValue is { Length: > 0 } chunkValue)
+            {
+                chunkValue.CopyTo(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
+            }
         }
 
         /// <summary>

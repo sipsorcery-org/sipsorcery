@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -156,24 +157,38 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-
-            // Write fixed parameters.
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
-
-            NetConvert.ToBuffer(TSN, buffer, startPosn);
-            NetConvert.ToBuffer(StreamID, buffer, startPosn + 4);
-            NetConvert.ToBuffer(StreamSeqNum, buffer, startPosn + 6);
-            NetConvert.ToBuffer(PPID, buffer, startPosn + 8);
-
-            int userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-
-            if (UserData != null)
-            {
-                Buffer.BlockCopy(UserData, 0, buffer, userDataPosn, UserData.Length);
-            }
+            WriteToCore(buffer.AsSpan(posn));
 
             return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises a DATA chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            WriteChunkHeader(buffer);
+
+            // Write fixed parameters.
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), TSN);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4), StreamID);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 6), StreamSeqNum);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8), PPID);
+
+            if (UserData is { Length: > 0 } userData)
+            {
+                userData.CopyTo(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH));
+            }
         }
 
         public bool IsEmpty()

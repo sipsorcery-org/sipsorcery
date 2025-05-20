@@ -109,16 +109,37 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-            if (ErrorCauses != null && ErrorCauses.Count > 0)
+            WriteToCore(buffer.AsSpan(posn));
+
+            return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises the ERROR chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            WriteChunkHeader(buffer);
+
+            if (ErrorCauses is { Count: > 0 } errorCauses)
             {
-                int causePosn = posn + 4;
-                foreach (var cause in ErrorCauses)
+                buffer = buffer.Slice(4);
+                foreach (var cause in errorCauses)
                 {
-                    causePosn += cause.WriteTo(buffer, causePosn);
+                    var bytesWritten = cause.WriteTo(buffer);
+                    buffer = buffer.Slice(bytesWritten);
                 }
             }
-            return GetChunkLength(true);
         }
 
         /// <summary>

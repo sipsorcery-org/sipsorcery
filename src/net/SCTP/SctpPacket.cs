@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,14 @@ namespace SIPSorcery.Net
 
         public static uint Calculate(byte[] buffer, int offset, int length)
         {
-            uint crc = ~0u;
+            return Calculate(buffer.AsSpan(offset, length));
+        }
+
+        public static uint Calculate(ReadOnlySpan<byte> buffer)
+        {
+            var crc = ~0u;
+            var length = buffer.Length;
+            var offset = 0;
             while (--length >= 0)
             {
                 crc = _table[(crc ^ buffer[offset++]) & 0xff] ^ crc >> 8;
@@ -118,28 +126,50 @@ namespace SIPSorcery.Net
             UnrecognisedChunks = new List<byte[]>();
         }
 
+        public int GetPacketSize() => SctpHeader.SCTP_HEADER_LENGTH + Chunks.Sum(x => x.GetChunkLength(true));
+
         /// <summary>
         /// Serialises an SCTP packet to a byte array.
         /// </summary>
         /// <returns>The byte array containing the serialised SCTP packet.</returns>
         public byte[] GetBytes()
         {
-            int chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
-            byte[] buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
+            var buffer = new byte[GetPacketSize()];
 
-            Header.WriteToBuffer(buffer, 0);
-
-            int writePosn = SctpHeader.SCTP_HEADER_LENGTH;
-            foreach (var chunk in Chunks)
-            {
-                writePosn += chunk.WriteTo(buffer, writePosn);
-            }
-
-            NetConvert.ToBuffer(0U, buffer, CHECKSUM_BUFFER_POSITION);
-            uint checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-            NetConvert.ToBuffer(NetConvert.EndianFlip(checksum), buffer, CHECKSUM_BUFFER_POSITION);
+            WriteBytesCore(buffer);
 
             return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            var bytesWritten = Header.WriteBytes(buffer);
+
+            var contentBuffer = buffer.Slice(SctpHeader.SCTP_HEADER_LENGTH);
+            foreach (var chunk in Chunks)
+            {
+                bytesWritten = chunk.WriteTo(contentBuffer);
+                contentBuffer = contentBuffer.Slice(bytesWritten);
+            }
+
+            var checksumBuffer = buffer.Slice(CHECKSUM_BUFFER_POSITION, sizeof(uint));
+            checksumBuffer.Clear();
+            var checksum = CRC32C.Calculate(buffer);
+            BinaryPrimitives.WriteUInt32LittleEndian(checksumBuffer, checksum);
         }
 
         /// <summary>

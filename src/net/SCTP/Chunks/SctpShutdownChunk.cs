@@ -17,7 +17,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
+using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
 namespace SIPSorcery.Net
 {
@@ -69,9 +72,29 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-            NetConvert.ToBuffer(CumulativeTsnAck.GetValueOrDefault(), buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
+            WriteToCore(buffer.AsSpan(posn));
+
             return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises the SHUTDOWN chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            var bytesWritten = WriteChunkHeader(buffer);
+
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), CumulativeTsnAck.GetValueOrDefault());
         }
 
         /// <summary>

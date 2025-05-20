@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -56,9 +57,22 @@ namespace SIPSorcery.Net
         /// bytes to.</param>
         public void WriteToBuffer(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer(SourcePort, buffer, posn);
-            NetConvert.ToBuffer(DestinationPort, buffer, posn + 2);
-            NetConvert.ToBuffer(VerificationTag, buffer, posn + 4);
+            _ = WriteBytes(buffer.AsSpan(posn));
+        }
+
+        /// <summary>
+        /// Serialises the header to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the SCTP header bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes written.</returns>
+        public int WriteBytes(Span<byte> buffer)
+        { 
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, SourcePort);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), DestinationPort);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), VerificationTag);
+
+            return 8;
         }
 
         /// <summary>

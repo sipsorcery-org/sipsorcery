@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -288,30 +289,47 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-
-            // Write fixed parameters.
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
-
-            NetConvert.ToBuffer(InitiateTag, buffer, startPosn);
-            NetConvert.ToBuffer(ARwnd, buffer, startPosn + 4);
-            NetConvert.ToBuffer(NumberOutboundStreams, buffer, startPosn + 8);
-            NetConvert.ToBuffer(NumberInboundStreams, buffer, startPosn + 10);
-            NetConvert.ToBuffer(InitialTSN, buffer, startPosn + 12);
-
-            var varParameters = GetVariableParameters();
-
-            // Write optional parameters.
-            if (varParameters.Count > 0)
-            {
-                int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-                foreach (var optParam in varParameters)
-                {
-                    paramPosn += optParam.WriteTo(buffer, paramPosn);
-                }
-            }
+            WriteToCore(buffer.AsSpan(posn));
 
             return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises an INIT or INIT ACK chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <param name="posn">The position in the buffer to write to.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            var bytesWritten = WriteChunkHeader(buffer);
+
+            // Write fixed parameters.
+
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), InitiateTag);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4), ARwnd);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8), NumberOutboundStreams);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 10), NumberInboundStreams);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 12), InitialTSN);
+
+            // Write optional parameters.
+            if (GetVariableParameters() is { Count: > 0 } varParameters)
+            {
+                buffer = buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH);
+                foreach (var optParam in varParameters)
+                {
+                    var bytesWriten = optParam.WriteTo(buffer);
+                    buffer = buffer.Slice(bytesWriten);
+                }
+            }
         }
 
         /// <summary>
