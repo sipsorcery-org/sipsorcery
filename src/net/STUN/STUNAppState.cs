@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // FileName: STUNLog.cs
 //
 // Description:
@@ -15,49 +15,46 @@
 // ============================================================================
 
 using System;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public class Utility
     {
-        public static UInt16 ReverseEndian(UInt16 val)
+        public static ushort ReverseEndian(ushort val)
         {
             return Convert.ToUInt16(val << 8 & 0xff00 | (val >> 8));
         }
 
-        public static UInt32 ReverseEndian(UInt32 val)
+        public static uint ReverseEndian(uint val)
         {
             return Convert.ToUInt32((val << 24 & 0xff000000) | (val << 8 & 0x00ff0000) | (val >> 8 & 0xff00) | (val >> 24));
         }
 
-        public static string PrintBuffer(byte[] buffer)
+        public static string? PrintBuffer(byte[] buffer)
         {
-            string bufferStr = null;
-
-            for (int index = 0; index < buffer.Length; index++)
+            if (buffer.Length == 0)
             {
-                string byteStr = buffer[index].ToString("X");
+                return null;
+            }
 
-                if (byteStr.Length == 1)
-                {
-                    bufferStr += "0" + byteStr;
-                }
-                else
-                {
-                    bufferStr += byteStr;
-                }
+            using var builder = new ValueStringBuilder(stackalloc char[256]);
+
+            for (var index = 0; index < buffer.Length; index++)
+            {
+                builder.Append(buffer[index], "X2");
 
                 if ((index + 1) % 4 == 0)
                 {
-                    bufferStr += "\n";
+                    builder.Append('\n');
                 }
                 else
                 {
-                    bufferStr += " | ";
+                    builder.Append(" | ");
                 }
             }
 
-            return bufferStr;
+            return builder.ToString();
         }
     }
 }

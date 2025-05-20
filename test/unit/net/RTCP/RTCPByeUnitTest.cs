@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -35,8 +36,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPByeUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 23;
 
@@ -56,8 +57,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripByeWithReasonUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 19;
             string reason = "x";
@@ -79,8 +80,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPByeOnBoundaryUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 123121231;
             string reason = "1234567";
@@ -102,8 +103,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripByeWithTimeoutReasonUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 19;
             string reason = RTCPSession.NO_ACTIVITY_TIMEOUT_REASON;

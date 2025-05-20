@@ -17,7 +17,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.Net;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SIPSorcery.Sys
 {
@@ -26,27 +31,56 @@ namespace SIPSorcery.Sys
         // The Trim method only trims 0x0009, 0x000a, 0x000b, 0x000c, 0x000d, 0x0085, 0x2028, and 0x2029.
         // This array adds in control characters.
         public static readonly char[] WhiteSpaceChars = new char[] { (char)0x00, (char)0x01, (char)0x02, (char)0x03, (char)0x04, (char)0x05,
-            (char)0x06, (char)0x07, (char)0x08, (char)0x09, (char)0x0a, (char)0x0b, (char)0x0c, (char)0x0d, (char)0x0e, (char)0x0f,
-            (char)0x10, (char)0x11, (char)0x12, (char)0x13, (char)0x14, (char)0x15, (char)0x16, (char)0x17, (char)0x18, (char)0x19, (char)0x20,
-            (char)0x1a, (char)0x1b, (char)0x1c, (char)0x1d, (char)0x1e, (char)0x1f, (char)0x7f, (char)0x85, (char)0x2028, (char)0x2029 };
+        (char)0x06, (char)0x07, (char)0x08, (char)0x09, (char)0x0a, (char)0x0b, (char)0x0c, (char)0x0d, (char)0x0e, (char)0x0f,
+        (char)0x10, (char)0x11, (char)0x12, (char)0x13, (char)0x14, (char)0x15, (char)0x16, (char)0x17, (char)0x18, (char)0x19, (char)0x20,
+        (char)0x1a, (char)0x1b, (char)0x1c, (char)0x1d, (char)0x1e, (char)0x1f, (char)0x7f, (char)0x85, (char)0x2028, (char)0x2029 };
 
         private static readonly sbyte[] _hexDigits =
             { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              0,1,2,3,4,5,6,7,8,9,-1,-1,-1,-1,-1,-1,
-              -1,0xa,0xb,0xc,0xd,0xe,0xf,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,0xa,0xb,0xc,0xd,0xe,0xf,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, };
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          0,1,2,3,4,5,6,7,8,9,-1,-1,-1,-1,-1,-1,
+          -1,0xa,0xb,0xc,0xd,0xe,0xf,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,0xa,0xb,0xc,0xd,0xe,0xf,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+          -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, };
 
         private static readonly char[] hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
@@ -55,7 +89,7 @@ namespace SIPSorcery.Sys
         /// </summary>    
         public static bool IsNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            if (s == null || s.AsSpan().Trim(WhiteSpaceChars).Length == 0)
             {
                 return true;
             }
@@ -65,7 +99,7 @@ namespace SIPSorcery.Sys
 
         public static bool NotNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            if (s == null || s.AsSpan().Trim(WhiteSpaceChars).Length == 0)
             {
                 return false;
             }
@@ -123,59 +157,29 @@ namespace SIPSorcery.Sys
 
         public static string HexStr(this byte[] buffer, char? separator = null)
         {
-            return buffer.HexStr(buffer.Length, separator);
+            return HexStr(buffer.AsSpan(), separator: separator, lowercase: false);
         }
 
         public static string HexStr(this byte[] buffer, int length, char? separator = null)
         {
-            if (separator is { } s)
-            {
-                int numberOfChars = length * 3 - 1;
-#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-                return string.Create(numberOfChars, (buffer, length, s), PopulateNewStringWithSeparator);
-#else
-                var rv = new char[numberOfChars];
-                PopulateNewStringWithSeparator(rv, (buffer, length, s));
-                return new string(rv);
-#endif
-            }
-            else
-            {
-                int numberOfChars = length * 2;
-#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-                return string.Create(numberOfChars, (buffer, length), PopulateNewStringWithoutSeparator);
-#else
-                var rv = new char[numberOfChars];
-                PopulateNewStringWithoutSeparator(rv, (buffer, length));
-                return new string(rv);
-#endif
-            }
+            return HexStr(buffer.AsSpan(0, buffer.Length), separator: separator, lowercase: false);
+        }
 
-            static void PopulateNewStringWithSeparator(Span<char> chars, (byte[] buffer, int length, char separator) state)
-            {
-                var (buffer, length, s) = state;
-                for (int i = 0, j = 0; i < length; i++)
-                {
-                    var val = buffer[i];
-                    chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
-                    chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
-                    if (j < chars.Length)
-                    {
-                        chars[j++] = s;
-                    }
-                }
-            }
+        public static string HexStr(this byte[] buffer, int length, char? separator = null, bool lowercase = false)
+        {
+            return HexStr(buffer.AsSpan(0, length), separator: separator, lowercase: lowercase);
+        }
 
-            static void PopulateNewStringWithoutSeparator(Span<char> chars, (byte[] buffer, int length) state)
-            {
-                var (buffer, length) = state;
-                for (int i = 0, j = 0; i < length; i++)
-                {
-                    var val = buffer[i];
-                    chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
-                    chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
-                }
-            }
+        public static string HexStr(this Span<byte> buffer, char? separator = null, bool lowercase = false)
+        {
+            return HexStr((ReadOnlySpan<byte>)buffer, separator: separator, lowercase: lowercase);
+        }
+
+        public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null, bool lowercase = false)
+        {
+            using var sb = new ValueStringBuilder(stackalloc char[256]);
+            sb.Append(buffer, separator, lowercase);
+            return sb.ToString();
         }
 
         public static byte[] ParseHexStr(string hexStr)
@@ -258,5 +262,261 @@ namespace SIPSorcery.Sys
             third = list.Count > 2 ? list[2] : default(T);
             fourth = list.Count > 3 ? list[3] : default(T);
         }
+
+#if !NET8_0_OR_GREATER
+        public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source) where TKey : notnull
+            => global::System.Linq.Enumerable.ToDictionary(source, kvp => kvp.Key, kvp => kvp.Value);
+#endif
+
+#if !NETsTANDARD2_1_OR_GREATER && !NETCOREAPP2_0_OR_GREATER
+        public static bool TryAdd<TKey, TValue>(this Dictionary<TKey, TValue> source, TKey key, TValue value)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (source.ContainsKey(key))
+            {
+                return false;
+            }
+
+            source.Add(key, value);
+
+            return true;
+        }
+#endif
+
+#if !NET8_0_OR_GREATER
+        public static void AddRange<T>(this List<T> list, ReadOnlySpan<T> source)
+        {
+            if (list is null)
+            {
+                throw new ArgumentNullException(nameof(list));
+            }
+
+            if (!source.IsEmpty)
+            {
+                if (list.Capacity < list.Count + source.Length)
+                {
+                    list.Capacity = list.Count + source.Length;
+
+                    foreach (var item in source)
+                    {
+                        list.Add(item);
+                    }
+                }
+            }
+        }
+#endif
     }
+
+#if !(NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER)
+    internal static class UInt32
+    {
+        public static bool TryParse(ReadOnlySpan<char> s, out uint result)
+            => uint.TryParse(s.ToString(), out result);
+        public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, out uint result)
+            => uint.TryParse(s.ToString(), style, provider, out result);
+    }
+    internal static class Int32
+    {
+        public static bool TryParse(ReadOnlySpan<char> s, out int result)
+            => int.TryParse(s.ToString(), out result);
+        public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, out int result)
+            => int.TryParse(s.ToString(), style, provider, out result);
+    }
+    internal static class Int64
+    {
+        public static bool TryParse(ReadOnlySpan<char> s, out long result)
+            => long.TryParse(s.ToString(), out result);
+        public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, out long result)
+            => long.TryParse(s.ToString(), style, provider, out result);
+    }
+    internal static class UInt64
+    {
+        public static bool TryParse(ReadOnlySpan<char> s, out ulong result)
+            => ulong.TryParse(s.ToString(), out result);
+        public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, out ulong result)
+            => ulong.TryParse(s.ToString(), style, provider, out result);
+    }
+    internal static class UInt16
+    {
+        public static bool TryParse(ReadOnlySpan<char> s, out ushort result)
+            => ushort.TryParse(s.ToString(), out result);
+        public static ushort Parse(ReadOnlySpan<char> s)
+            => ushort.Parse(s.ToString());
+    }
+    internal static class Decimal
+    {
+        public static bool TryParse(ReadOnlySpan<char> s, out decimal result)
+            => decimal.TryParse(s.ToString(), out result);
+        public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, out decimal result)
+            => decimal.TryParse(s.ToString(), style, provider, out result);
+    }
+#endif
+
+#if !NET8_0_OR_GREATER
+    internal static class ArgumentExceptionExtensions
+    {
+        public static void ThrowIfNullOrEmpty(string? argument, string? paramName = default)
+        {
+            if (string.IsNullOrEmpty(argument))
+            {
+                ThrowArgumentException(paramName);
+                return;
+
+                static void ThrowArgumentException(string paramName)
+                {
+                    throw new System.ArgumentException("Argument cannot be null or empty.", paramName);
+                }
+            }
+        }
+
+        public static void ThrowIfNullOrWhiteSpace(string? argument, string? paramName = default)
+        {
+            if (string.IsNullOrWhiteSpace(argument))
+            {
+                ThrowArgumentException(paramName);
+
+                static void ThrowArgumentException(string paramName)
+                {
+                    throw new System.ArgumentException("Argument cannot be null or whitespace.", paramName);
+                }
+            }
+        }
+    }
+
+    internal static class ArgumentNullExceptionExtensions
+    {
+        public static void ThrowIfNull([System.Diagnostics.CodeAnalysis.NotNull] object? argument, [CallerArgumentExpression(nameof(argument))] string? paramName = null)
+        {
+            if (argument is null)
+            {
+                ThrowArgumentNullException(paramName);
+
+                static void ThrowArgumentNullException(string paramName)
+                {
+                    throw new System.ArgumentNullException("Argument cannot be null or whitespace.", paramName);
+                }
+            }
+        }
+    }
+
+    internal static class ArgumentOutOfRangeExceptionExtensions
+    {
+        public static void ThrowIfNegative(int value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+        {
+            if (value < 0)
+            {
+                throw new ArgumentOutOfRangeException(paramName, value, $"{paramName} ('{value}') must be a non-negative value.");
+            }
+        }
+
+        public static void ThrowIfGreaterThan<T>(T value, T other, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+            where T : IComparable<T>
+        {
+            if (value.CompareTo(other) > 0)
+            {
+                throw new ArgumentOutOfRangeException(paramName, value, $"{paramName} ('{value}') cannot be greater than {other}.");
+            }
+        }
+    }
+
+    internal static class ObjectDisposedExceptionExtensions
+    {
+        public static void ThrowIf(bool condition, object instance)
+        {
+            if (condition)
+            {
+                throw new ObjectDisposedException(instance?.GetType().FullName);
+            }
+        }
+    }
+#endif
+}
+
+#if !NET8_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    /// <summary>Specifies that a type has required members or that a member is required.</summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    internal sealed class RequiredMemberAttribute : Attribute
+    {
+    }
+
+    /// <summary>
+    /// Indicates that compiler support for a particular feature is required for the location where this attribute is applied.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
+    internal sealed class CompilerFeatureRequiredAttribute : Attribute
+    {
+        public CompilerFeatureRequiredAttribute(string featureName)
+        {
+            FeatureName = featureName;
+        }
+
+        /// <summary>
+        /// The name of the compiler feature.
+        /// </summary>
+        public string FeatureName { get; }
+
+        /// <summary>
+        /// If true, the compiler can choose to allow access to the location where this attribute is applied if it does not understand <see cref="FeatureName"/>.
+        /// </summary>
+        public bool IsOptional { get; set; }
+
+        /// <summary>
+        /// The <see cref="FeatureName"/> used for the ref structs C# feature.
+        /// </summary>
+        public const string RefStructs = nameof(RefStructs);
+
+        /// <summary>
+        /// The <see cref="FeatureName"/> used for the required members C# feature.
+        /// </summary>
+        public const string RequiredMembers = nameof(RequiredMembers);
+    }
+
+#if !NETCOREAPP3_0_OR_GREATER
+    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    internal sealed class CallerArgumentExpressionAttribute : Attribute
+    {
+        public CallerArgumentExpressionAttribute(string parameterName)
+        {
+            ParameterName = parameterName;
+        }
+
+        public string ParameterName { get; }
+    }
+#endif
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal static class IsExternalInit
+    {
+    }
+}
+#endif
+
+namespace System.Diagnostics.CodeAnalysis
+{
+#if !NETCOREAPP3_0_OR_GREATER && !NETSTANDARD2_1_OR_GREATER
+    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    internal sealed class NotNullWhenAttribute : Attribute
+    {
+        public NotNullWhenAttribute(bool returnValue) => ReturnValue = returnValue;
+        public bool ReturnValue { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    internal sealed class MaybeNullWhenAttribute : Attribute
+    {
+        public MaybeNullWhenAttribute(bool returnValue) => ReturnValue = returnValue;
+        public bool ReturnValue { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    internal sealed class NotNullAttribute : Attribute
+    {
+    }
+#endif
 }

@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -44,8 +45,9 @@ namespace SIPSorcery.Sys
         /// </summary>
         public static string GetSocketString(IPEndPoint endPoint)
         {
-            string format = (endPoint.Address.AddressFamily == AddressFamily.InterNetworkV6) ? "[{0}]:{1}" : "{0}:{1}";
-            return string.Format(format, endPoint.Address.ToString(), endPoint.Port.ToString(NumberFormatInfo.InvariantInfo));
+            return endPoint.Address.AddressFamily == AddressFamily.InterNetworkV6
+                ? FormattableString.Invariant($"[{endPoint.Address}]:{endPoint.Port}")
+                : FormattableString.Invariant($"{endPoint.Address}:{endPoint.Port}");
         }
 
         /// <summary>
@@ -56,22 +58,11 @@ namespace SIPSorcery.Sys
         /// <param name="s">The end point string to parse.</param>
         /// <param name="result">If the parse is successful this output parameter will contain the IPv4 or IPv6 end point.</param>
         /// <returns>Returns true if the string could be successfully parsed as an IPv4 or IPv6 end point. False if not.</returns>
-        public static bool TryParseIPEndPoint(string s, out IPEndPoint result)
-            => TryParseIPEndPoint(s.AsSpan(), out result);
-
-        /// <summary>
-        /// This code is based on the IPEndPoint.TryParse method in the dotnet source code at
-        /// https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs.
-        /// If/when that feature makes it into .NET Standard this method can be replaced.
-        /// </summary>
-        /// <param name="s">The end point string to parse.</param>
-        /// <param name="result">If the parse is successful this output parameter will contain the IPv4 or IPv6 end point.</param>
-        /// <returns>Returns true if the string could be successfully parsed as an IPv4 or IPv6 end point. False if not.</returns>
-        public static bool TryParseIPEndPoint(ReadOnlySpan<char> s, out IPEndPoint result)
+        public static bool TryParseIPEndPoint(ReadOnlySpan<char> s, [NotNullWhen(true)] out IPEndPoint? result)
         {
             result = null;
-            int addressLength = s.Length;
-            int lastColonPos = s.LastIndexOf(':');
+            var addressLength = s.Length;
+            var lastColonPos = s.LastIndexOf(':');
 
             if (lastColonPos > 0)
             {
@@ -85,19 +76,16 @@ namespace SIPSorcery.Sys
                 }
             }
 
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-            if (IPAddress.TryParse(s.Slice(0, addressLength), out IPAddress address))
-#else
-            if (IPAddress.TryParse(s.Slice(0, addressLength).ToString(), out IPAddress address))
+            var ipAddressText = s.Slice(0, addressLength)
+#if !NETSTANDARD2_1_OR_GREATER && !NETCOREAPP2_1_OR_GREATER
+                .ToString()
 #endif
+                ;
+            if (IPAddress.TryParse(ipAddressText, out var address))
             {
                 uint port = 0;
                 if (addressLength == s.Length ||
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-                    (uint.TryParse(s.Slice(addressLength + 1), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
-#else
-                    (uint.TryParse(s.Slice(addressLength + 1).ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
-#endif
+                    (UInt32.TryParse(s.Slice(addressLength + 1), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
                 {
                     result = new IPEndPoint(address, (int)port);
                     return true;
@@ -107,28 +95,26 @@ namespace SIPSorcery.Sys
             return false;
         }
 
-        public static IPEndPoint ParseSocketString(string s)
+        public static string ParseHostFromSocket(ReadOnlySpan<char> socket)
         {
-            if (TryParseIPEndPoint(s, out var ipEndPoint))
+            if (socket.IsEmpty)
             {
-                return ipEndPoint;
-            }
-            else
-            {
-                throw new ApplicationException($"Could not parse IP end point from {s}.");
-            }
-        }
-
-        public static string ParseHostFromSocket(string socket)
-        {
-            string host = socket;
-
-            if (socket != null && socket.Trim().Length > 0 && socket.IndexOf(':') != -1)
-            {
-                host = socket.Substring(0, socket.LastIndexOf(':')).Trim();
+                return string.Empty;
             }
 
-            return host;
+            var trimmedSocket = socket.Trim();
+            if (trimmedSocket.IsEmpty)
+            {
+                return string.Empty;
+            }
+
+            var colonIndex = trimmedSocket.LastIndexOf(':');
+            if (colonIndex == -1)
+            {
+                return trimmedSocket.ToString();
+            }
+
+            return trimmedSocket[..colonIndex].Trim().ToString();
         }
 
         /// <summary>
@@ -139,52 +125,47 @@ namespace SIPSorcery.Sys
         /// </summary>
         /// <param name="socket">The socket string to check </param>
         /// <returns>The socket string's explicit port number or 0 if it does not have one.</returns>
-        public static int ParsePortFromSocket(string socket)
+        public static int ParsePortFromSocket(ReadOnlySpan<char> socket)
         {
-            int port = 0;
+            if (socket.IsEmpty)
+            {
+                return 0;
+            }
 
-            int lastColonPos = socket.LastIndexOf(':');
+            var trimmedSocket = socket.Trim();
+            if (trimmedSocket.IsEmpty)
+            {
+                return 0;
+            }
+
+            var lastColonPos = trimmedSocket.LastIndexOf(':');
 
             // Look to see if this is an IPv6 address with a port.
             if (lastColonPos > 0)
             {
-                if (socket[lastColonPos - 1] == ']')
+                if (trimmedSocket[lastColonPos - 1] == ']')
                 {
                     // This is an IPv6 address WITH a port.
                 }
                 // Look to see if this is IPv4 with a port (IPv6 will have another colon)
                 // If it's a host name there will also not be another ':'.
-                else if (socket.Substring(0, lastColonPos).LastIndexOf(':') != -1)
+                else if (trimmedSocket[..lastColonPos].LastIndexOf(':') != -1)
                 {
                     // This is an IPv6 address WITHOUT a port.
                     lastColonPos = -1;
                 }
             }
 
-            if (socket != null && socket.Trim().Length > 0 && lastColonPos != -1)
+            if (lastColonPos != -1)
             {
-                port = Convert.ToInt32(socket.Substring(lastColonPos + 1).Trim());
+                var portSpan = trimmedSocket[(lastColonPos + 1)..].Trim();
+                if (Int32.TryParse(portSpan, out var port))
+                {
+                    return port;
+                }
             }
 
-            return port;
-        }
-
-        /// <summary>
-        /// (convenience method) check if string can be parsed as IPAddress
-        /// </summary>
-        /// <param name="socket">string to check</param>
-        /// <returns>true/false</returns>
-        public static bool IsIPAddress(string socket)
-        {
-            if (socket == null || socket.Trim().Length == 0)
-            {
-                return false;
-            }
-            else
-            {
-                IPAddress ipaddr;
-                return IPAddress.TryParse(socket, out ipaddr);
-            }
+            return 0;
         }
 
         /// <summary>
@@ -207,7 +188,7 @@ namespace SIPSorcery.Sys
                 }
                 else if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    byte[] addrBytes = ipAddress.GetAddressBytes();
+                    var addrBytes = ipAddress.GetAddressBytes();
                     if ((addrBytes[0] == 10) ||
                         (addrBytes[0] == 172 && (addrBytes[1] >= 16 && addrBytes[1] <= 31)) ||
                         (addrBytes[0] == 192 && addrBytes[1] == 168))
@@ -218,6 +199,95 @@ namespace SIPSorcery.Sys
             }
 
             return false;
+        }
+
+        public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
+        {
+            if (endpointstring.IsNullOrBlank())
+            {
+                throw new ArgumentException("Endpoint descriptor must not be empty.");
+            }
+
+            if (defaultport is not (-1) and
+                (< IPEndPoint.MinPort
+                or > IPEndPoint.MaxPort))
+            {
+                throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
+            }
+
+            var values = endpointstring.Split(new char[] { ':' });
+            IPAddress? ipaddr;
+            var port = -1;
+
+            //check if we have an IPv6 or ports
+            if (values.Length <= 2) // ipv4 or hostname
+            {
+                if (values.Length == 1)
+                {
+                    //no port is specified, default
+                    port = defaultport;
+                }
+                else
+                {
+                    port = getPort(values[1]);
+                }
+
+                //try to use the address as IPv4, otherwise get hostname
+                if (!IPAddress.TryParse(values[0], out ipaddr))
+                {
+                    try
+                    {
+                        ipaddr = getIPfromHost(values[0]);
+                    }
+                    catch
+                    {
+                        throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+                    }
+                }
+            }
+            else if (values.Length > 2) //ipv6
+            {
+                //could [a:b:c]:d
+                if (values[0] is { Length: > 0 } start && start[0] == '[' && values[^2] is { Length: > 0 } end && end[^1] == ']')
+                {
+                    var ipaddressstring = string.Join(":", values.Take(values.Length - 1));
+                    ipaddr = IPAddress.Parse(ipaddressstring);
+                    port = getPort(values[values.Length - 1]);
+                }
+                else //[a:b:c] or a:b:c
+                {
+                    ipaddr = IPAddress.Parse(endpointstring);
+                    port = defaultport;
+                }
+            }
+            else
+            {
+                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+            }
+
+            if (port == -1)
+            {
+                port = 0;
+            }
+
+            return new IPEndPoint(ipaddr, port);
+        }
+
+        /// <summary>
+        /// (convenience method) check if string can be parsed as IPAddress
+        /// </summary>
+        /// <param name="socket">string to check</param>
+        /// <returns>true/false</returns>
+        public static bool IsIPAddress(string socket)
+        {
+            if (socket == null || socket.Trim().Length == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return IPAddress.TryParse(socket, out _);
+            }
         }
 
         /// <summary>
@@ -285,7 +355,7 @@ namespace SIPSorcery.Sys
             else if (values.Length > 2) //ipv6
             {
                 //could [a:b:c]:d
-                if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
+                if (values[0] is { Length: > 0 } start && start[0] == '[' && values[^2] is { Length: > 0 } end && end[^1] == ']')
                 {
                     string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
                     ipaddr = IPAddress.Parse(ipaddressstring);
@@ -316,78 +386,6 @@ namespace SIPSorcery.Sys
             return rc;
         }
 
-        public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
-        {
-            if (endpointstring.IsNullOrBlank())
-            {
-                throw new ArgumentException("Endpoint descriptor must not be empty.");
-            }
-
-            if (defaultport != -1 &&
-                (defaultport < IPEndPoint.MinPort
-                || defaultport > IPEndPoint.MaxPort))
-            {
-                throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
-            }
-
-            string[] values = endpointstring.Split(new char[] { ':' });
-            IPAddress ipaddr;
-            int port = -1;
-
-            //check if we have an IPv6 or ports
-            if (values.Length <= 2) // ipv4 or hostname
-            {
-                if (values.Length == 1)
-                {
-                    //no port is specified, default
-                    port = defaultport;
-                }
-                else
-                {
-                    port = getPort(values[1]);
-                }
-
-                //try to use the address as IPv4, otherwise get hostname
-                if (!IPAddress.TryParse(values[0], out ipaddr))
-                {
-                    try
-                    {
-                        ipaddr = getIPfromHost(values[0]);
-                    }
-                    catch
-                    {
-                        throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
-                    }
-                }
-            }
-            else if (values.Length > 2) //ipv6
-            {
-                //could [a:b:c]:d
-                if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
-                {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
-                    ipaddr = IPAddress.Parse(ipaddressstring);
-                    port = getPort(values[values.Length - 1]);
-                }
-                else //[a:b:c] or a:b:c
-                {
-                    ipaddr = IPAddress.Parse(endpointstring);
-                    port = defaultport;
-                }
-            }
-            else
-            {
-                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
-            }
-
-            if (port == -1)
-            {
-                port = 0;
-            }
-
-            return new IPEndPoint(ipaddr, port);
-        }
-
         private static int getPort(string p)
         {
             int port;
@@ -408,7 +406,7 @@ namespace SIPSorcery.Sys
             {
                 var hosts = Dns.GetHostAddresses(p);
 
-                if (hosts == null || hosts.Length == 0)
+                if (hosts is null || hosts.Length == 0)
                 {
                     throw new ArgumentException(string.Format("Host not found: {0}", p));
                 }
@@ -418,14 +416,6 @@ namespace SIPSorcery.Sys
             {
                 throw new ArgumentException(string.Format("Host not found: {0}", p));
             }
-        }
-
-        /// <summary>
-        /// Returns an IPv4 end point from a socket address in 10.0.0.1:5060 format.
-        /// </summary>>
-        public static IPEndPoint GetIPEndPoint(string IPSocket)
-        {
-            return Parse(IPSocket);
         }
     }
 }

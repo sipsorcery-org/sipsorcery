@@ -115,7 +115,10 @@ namespace SIPSorcery.Media.G729Codec
                 b = -2.0f * lsp[lsp_offset + 2 * i - 2];
                 f[i] = b * f[i - 1] + 2.0f * f[i - 2];
                 for (j = i - 1; j > 1; j--)
+                {
                     f[j] += b * f[j - 1] + f[j - 2];
+                }
+
                 f[1] += b;
             }
         }
@@ -135,7 +138,9 @@ namespace SIPSorcery.Media.G729Codec
         {
             int i;
             for (i = 0; i < m; i++)
+            {
                 lsp[i] = (float)Math.Cos(lsf[i]);
+            }
         }
 
         /**
@@ -154,7 +159,9 @@ namespace SIPSorcery.Media.G729Codec
             int i;
 
             for (i = 0; i < m; i++)
+            {
                 lsf[i] = (float)Math.Acos(lsp[i]);
+            }
         }
 
         /**
@@ -209,7 +216,9 @@ namespace SIPSorcery.Media.G729Codec
             var lsp = new float[M];
 
             for (i = 0; i < M; i++)
+            {
                 lsp[i] = lsp_old[i] * 0.5f + lsp_new[i] * 0.5f;
+            }
 
             lsp_az(lsp, az, 0);
             lsp_az(lsp_new, az, M + 1);
@@ -238,7 +247,9 @@ namespace SIPSorcery.Media.G729Codec
             var lsp = new float[M];
 
             for (i = 0; i < M; i++)
+            {
                 lsp[i] = lsp_old[i] * 0.5f + lsp_new[i] * 0.5f;
+            }
 
             lsp_az(lsp, az, 0);
 

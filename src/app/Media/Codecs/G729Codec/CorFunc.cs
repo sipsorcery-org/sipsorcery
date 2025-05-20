@@ -75,15 +75,27 @@ namespace SIPSorcery.Media.G729Codec
             int i;
 
             y2y2 = 0.01f;
-            for (i = 0; i < L_SUBFR; i++) y2y2 += y2[i] * y2[i];
+            for (i = 0; i < L_SUBFR; i++)
+            {
+                y2y2 += y2[i] * y2[i];
+            }
+
             g_coeff[2] = y2y2;
 
             xny2 = 0.01f;
-            for (i = 0; i < L_SUBFR; i++) xny2 += xn[i] * y2[i];
+            for (i = 0; i < L_SUBFR; i++)
+            {
+                xny2 += xn[i] * y2[i];
+            }
+
             g_coeff[3] = -2.0f * xny2;
 
             y1y2 = 0.01f;
-            for (i = 0; i < L_SUBFR; i++) y1y2 += y1[i] * y2[i];
+            for (i = 0; i < L_SUBFR; i++)
+            {
+                y1y2 += y1[i] * y2[i];
+            }
+
             g_coeff[4] = 2.0f * y1y2;
         }
 
@@ -110,7 +122,10 @@ namespace SIPSorcery.Media.G729Codec
             {
                 s = 0.0f;
                 for (j = i; j < L_SUBFR; j++)
+                {
                     s += x[j] * h[j - i];
+                }
+
                 d[i] = s;
             }
         }

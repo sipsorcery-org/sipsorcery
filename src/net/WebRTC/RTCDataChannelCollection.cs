@@ -1,19 +1,20 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace SIPSorcery.Net
 {
-    class RTCDataChannelCollection : IReadOnlyCollection<RTCDataChannel>
+    internal class RTCDataChannelCollection : IReadOnlyCollection<RTCDataChannel>
     {
-        readonly ConcurrentBag<RTCDataChannel> pendingChannels = new ConcurrentBag<RTCDataChannel>();
-        readonly ConcurrentDictionary<ushort, RTCDataChannel> activeChannels = new ConcurrentDictionary<ushort, RTCDataChannel>();
-        readonly Func<bool> useEvenIds;
-        
-        readonly object idSyncObj = new object();
-        ushort lastChannelId = ushort.MaxValue - 1;
+        private readonly ConcurrentBag<RTCDataChannel> pendingChannels = new ConcurrentBag<RTCDataChannel>();
+        private readonly ConcurrentDictionary<ushort, RTCDataChannel> activeChannels = new ConcurrentDictionary<ushort, RTCDataChannel>();
+        private readonly Func<bool> useEvenIds;
+
+        private readonly object idSyncObj = new object();
+        private ushort lastChannelId = ushort.MaxValue - 1;
 
         public int Count => pendingChannels.Count + activeChannels.Count;
 
@@ -31,16 +32,18 @@ namespace SIPSorcery.Net
                 yield return channel;
             }
         }
-        
-        public bool TryGetChannel(ushort dataChannelID, out RTCDataChannel result)
+
+        public bool TryGetChannel(ushort dataChannelID, [MaybeNullWhen(false)] out RTCDataChannel? result)
             => activeChannels.TryGetValue(dataChannelID, out result);
-        
+
         public bool AddActiveChannel(RTCDataChannel channel)
         {
             if (channel.id.HasValue)
             {
                 if (!activeChannels.TryAdd(channel.id.Value, channel))
+                {
                     return false;
+                }
             }
             else
             {
@@ -58,7 +61,7 @@ namespace SIPSorcery.Net
             channel.onclose += OnClose;
             channel.onerror += OnError;
             return true;
-            
+
             void OnClose()
             {
                 channel.onclose -= OnClose;
@@ -67,8 +70,8 @@ namespace SIPSorcery.Net
             }
             void OnError(string error) => OnClose();
         }
-        
-        ushort GetNextChannelID()
+
+        private ushort GetNextChannelID()
         {
             lock (idSyncObj)
             {
@@ -78,11 +81,15 @@ namespace SIPSorcery.Net
                     // INIT - ACK chunks only allowing a maximum of 65535 streams to be
                     // negotiated(0 - 65534) - https://tools.ietf.org/html/rfc8832
                     if (lastChannelId == ushort.MaxValue - 3)
+                    {
                         lastChannelId += 4;
+                    }
                     else
+                    {
                         lastChannelId += 2;
+                    }
                 }
-                return useEvenIds() ? lastChannelId : (ushort) (lastChannelId + 1);
+                return useEvenIds() ? lastChannelId : (ushort)(lastChannelId + 1);
             }
         }
 

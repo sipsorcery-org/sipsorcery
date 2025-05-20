@@ -100,7 +100,9 @@ namespace SIPSorcery.Media.G729Codec
 
                 s = 0.0f;
                 for (i = 0, k = 0; i < L_INTER10; i++, k += UP_SAMP)
+                {
                     s += exc[x1 - i] * inter_3l[c1 + k] + exc[x2 + i] * inter_3l[c2 + k];
+                }
 
                 exc[exc_offset + j] = s;
             }

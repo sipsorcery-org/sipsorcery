@@ -17,11 +17,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text;
-
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -51,24 +46,24 @@ namespace SIPSorcery.Net
         /// Gets the user supplied abort reason if available.
         /// </summary>
         /// <returns>The abort reason or null if not present.</returns>
-        public string GetAbortReason()
+        public string? GetAbortReason()
         {
-            if (ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort))
+            foreach (var errorCause in ErrorCauses)
             {
-                var userAbort = (SctpErrorUserInitiatedAbort)(ErrorCauses
-                    .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort));
-                return userAbort.AbortReason;
+                if (errorCause.CauseCode == SctpErrorCauseCode.UserInitiatedAbort)
+                {
+                    var userAbort = (SctpErrorUserInitiatedAbort)errorCause;
+                    return userAbort.AbortReason;
+                }
+
+                if (errorCause.CauseCode == SctpErrorCauseCode.ProtocolViolation)
+                {
+                    var protoViolation = (SctpErrorProtocolViolation)errorCause;
+                    return protoViolation.AdditionalInformation;
+                }
             }
-            else if(ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation))
-            {
-                var protoViolation = (SctpErrorProtocolViolation)(ErrorCauses
-                    .First(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation));
-                return protoViolation.AdditionalInformation;
-            }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }

@@ -86,7 +86,9 @@ namespace SIPSorcery.Media.G729Codec
         public static void set_zero(float[] x, int offset, int length)
         {
             for (int i = offset, toIndex = offset + length; i < toIndex; i++)
+            {
                 x[i] = 0.0f;
+            }
         }
 
         /**
@@ -148,7 +150,9 @@ namespace SIPSorcery.Media.G729Codec
             int i;
 
             for (i = 0; i < L; i++)
+            {
                 y[y_offset + i] = x[x_offset + i];
+            }
         }
 
         /**
@@ -161,54 +165,6 @@ namespace SIPSorcery.Media.G729Codec
             seed = (short)(seed * 31821L + 13849L);
 
             return seed;
-        }
-
-        /**
- * Write <code>data</code> in <code>fp</code>
- *
- * @param data
- * @param length
- * @param fp
- * @throws java.io.IOException
- */
-        public static void fwrite(short[] data, int length, Stream fp)
-
-        {
-            var bytes = new byte[2];
-
-            for (var i = 0; i < length; i++)
-            {
-                int value = data[i];
-                bytes[0] = (byte)(value & 0xFF);
-                bytes[1] = (byte)(value >> 8);
-                fp.Write(bytes, 0, bytes.Length);
-            }
-        }
-
-        /**
- * Read <code>data</code> from <code>fp</code>.
- *
- * @param data
- * @param length
- * @param fp
- * @return length of resulting data array
- * @throws java.io.IOException
- */
-        public static int fread(short[] data, int length, Stream fp)
-
-        {
-            var bytes = new byte[2];
-            var readLength = 0;
-
-            for (var i = 0; i < length; i++)
-            {
-                if (fp.Read(bytes, 0, bytes.Length) != 2)
-                    break;
-                data[i] = (short)((bytes[1] << 8) | (bytes[0] & 0x00FF));
-                readLength++;
-            }
-
-            return readLength;
         }
     }
 }

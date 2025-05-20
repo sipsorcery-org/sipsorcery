@@ -90,7 +90,11 @@ namespace SIPSorcery.Media.G729Codec
             if (bfi != 0)
             {
                 gain_pit.value *= 0.9f;
-                if (gain_pit.value > 0.9f) gain_pit.value = 0.9f;
+                if (gain_pit.value > 0.9f)
+                {
+                    gain_pit.value = 0.9f;
+                }
+
                 gain_code.value *= 0.98f;
 
                 /*----------------------------------------------*

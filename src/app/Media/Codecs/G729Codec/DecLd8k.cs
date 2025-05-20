@@ -19,6 +19,9 @@
  * <a href="http://www.sipro.com">SIPRO Lab Telecom</a>.
  */
 
+
+using System.Diagnostics;
+
 /**
  * Functions init_decod_ld8k  and decod_ld8k.
  * <pre>
@@ -45,7 +48,7 @@ namespace SIPSorcery.Media.G729Codec
         /**
  * Excitation vector
  */
-        private float[] exc;
+        private float[]? exc;
 
         /**
  * Excitation vector offset
@@ -241,7 +244,9 @@ namespace SIPSorcery.Media.G729Codec
                         t0_frac.value = 0;
                         old_t0++;
                         if (old_t0 > PIT_MAX)
+                        {
                             old_t0 = PIT_MAX;
+                        }
                     }
 
                     t0_first = t0.value; /* If first frame */
@@ -259,13 +264,17 @@ namespace SIPSorcery.Media.G729Codec
                         t0_frac.value = 0;
                         old_t0++;
                         if (old_t0 > PIT_MAX)
+                        {
                             old_t0 = PIT_MAX;
+                        }
                     }
                 }
 
                 /*-------------------------------------------------*
     *  - Find the adaptive codebook vector.            *
     *--------------------------------------------------*/
+
+                Debug.Assert(exc is { });
 
                 PredLt3.pred_lt_3(exc, exc_offset + i_subfr, t0.value, t0_frac.value, L_SUBFR);
 
@@ -283,7 +292,10 @@ namespace SIPSorcery.Media.G729Codec
 
                 DeAcelp.decod_ACELP(parm[parm_offset + 1], parm[parm_offset + 0], code);
                 parm_offset += 2;
-                for (i = t0.value; i < L_SUBFR; i++) code[i] += sharp * code[i - t0.value];
+                for (i = t0.value; i < L_SUBFR; i++)
+                {
+                    code[i] += sharp * code[i - t0.value];
+                }
 
                 /*-------------------------------------------------*
     * - Decode pitch and codebook gains.              *
@@ -298,8 +310,15 @@ namespace SIPSorcery.Media.G729Codec
     *-------------------------------------------------------------*/
 
                 sharp = gain_pitch.value;
-                if (sharp > SHARPMAX) sharp = SHARPMAX;
-                if (sharp < SHARPMIN) sharp = SHARPMIN;
+                if (sharp > SHARPMAX)
+                {
+                    sharp = SHARPMAX;
+                }
+
+                if (sharp < SHARPMIN)
+                {
+                    sharp = SHARPMIN;
+                }
 
                 /*-------------------------------------------------------*
     * - Find the total excitation.                          *
@@ -308,18 +327,28 @@ namespace SIPSorcery.Media.G729Codec
                 if (bfi != 0)
                 {
                     if (voicing == 0)
+                    {
                         for (i = 0; i < L_SUBFR; i++)
+                        {
                             exc[exc_offset + i + i_subfr] = gain_code.value * code[i];
+                        }
+                    }
                     else
+                    {
                         for (i = 0; i < L_SUBFR; i++)
+                        {
                             exc[exc_offset + i + i_subfr] = gain_pitch.value * exc[exc_offset + i + i_subfr];
+                        }
+                    }
                 }
                 else
                 {
                     /* No frame errors */
                     for (i = 0; i < L_SUBFR; i++)
+                    {
                         exc[exc_offset + i + i_subfr] =
                             gain_pitch.value * exc[exc_offset + i + i_subfr] + gain_code.value * code[i];
+                    }
                 }
 
                 /*-------------------------------------------------------*
