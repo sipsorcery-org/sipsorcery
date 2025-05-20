@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -287,13 +288,13 @@ namespace SIPSorcery.Net
                     }
                     else if (bytesRead > 0)
                     {
-                        if (!SctpPacket.VerifyChecksum(recvBuffer, 0, bytesRead))
+                        if (!SctpPacket.VerifyChecksum(recvBuffer.AsSpan(0, bytesRead)))
                         {
                             logger.LogWarning("SCTP packet received on DTLS transport dropped due to invalid checksum.");
                         }
                         else
                         {
-                            var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
+                            var pkt = SctpPacket.Parse(recvBuffer.AsSpan(0, bytesRead));
 
                             if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                             {
@@ -370,11 +371,22 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer containing the data to send.</param>
         /// <param name="offset">The position in the buffer to send from.</param>
         /// <param name="length">The number of bytes to send.</param>
+        [Obsolete("Use Send(string, Memory<byte>, IDisposable?) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override void Send(string associationID, byte[] buffer, int offset, int length)
+            => Send(associationID, buffer.AsMemory(offset, length), null);
+
+        /// <summary>
+        /// This method is called by the SCTP association when it wants to send an SCTP packet
+        /// to the remote party.
+        /// </summary>
+        /// <param name="associationID">Not used for the DTLS transport.</param>
+        /// <param name="buffer">The buffer containing the data to send.</param>
+        public override void Send(string associationID, Memory<byte> buffer, IDisposable? memoryOwner = null)
         {
-            if (length > maxMessageSize)
+            if (buffer.Length > maxMessageSize)
             {
-                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
+                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {buffer.Length} " +
                     $" that exceeded the maximum allowed message size of {maxMessageSize}.");
             }
 
@@ -384,7 +396,7 @@ namespace SIPSorcery.Net
                 {
                     if (!_isClosed)
                     {
-                        transport.Send(buffer, offset, length);
+                        transport.Send(buffer);
                     }
                 }
             }

@@ -17,6 +17,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using SIPSorcery.Sys;
 
@@ -63,29 +64,27 @@ namespace SIPSorcery.Net
         /// Extract and load the RTP header from an RTP packet.
         /// </summary>
         /// <param name="packet"></param>
-        public RTPHeader(byte[] packet)
+        [Obsolete("Use RTPHeader(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public RTPHeader(byte[] packet) : this(packet.AsSpan())
+        {
+        }
+
+        /// <summary>
+        /// Extract and load the RTP header from an RTP packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        public RTPHeader(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < MIN_HEADER_LEN)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-                SequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-                Timestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-                SyncSource = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
-            }
-            else
-            {
-                SequenceNumber = BitConverter.ToUInt16(packet, 2);
-                Timestamp = BitConverter.ToUInt32(packet, 4);
-                SyncSource = BitConverter.ToUInt32(packet, 8);
-            }
-
+            var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+            SequenceNumber = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
+            Timestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
+            SyncSource = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(8));
 
             Version = firstWord >> 14;
             PaddingFlag = (firstWord >> 13) & 0x1;
@@ -95,30 +94,19 @@ namespace SIPSorcery.Net
             MarkerBit = (firstWord >> 7) & 0x1;
             PayloadType = firstWord & 0x7f;
 
-            int headerExtensionLength = 0;
-            int headerAndCSRCLength = 12 + 4 * CSRCCount;
+            var headerExtensionLength = 0;
+            var headerAndCSRCLength = 12 + 4 * CSRCCount;
 
             if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
             {
-                if (BitConverter.IsLittleEndian)
-                {
-                    ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount));
-                    headerExtensionLength += 2;
-                    ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount));
-                    headerExtensionLength += 2 + ExtensionLength * 4;
-                }
-                else
-                {
-                    ExtensionProfile = BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount);
-                    headerExtensionLength += 2;
-                    ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
-                    headerExtensionLength += 2 + ExtensionLength * 4;
-                }
+                ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(12 + 4 * CSRCCount));
+                headerExtensionLength += 2;
+                ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(14 + 4 * CSRCCount));
+                headerExtensionLength += 2 + ExtensionLength * 4;
 
                 if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
                 {
-                    ExtensionPayload = new byte[ExtensionLength * 4];
-                    Buffer.BlockCopy(packet, headerAndCSRCLength + 4, ExtensionPayload, 0, ExtensionLength * 4);
+                    ExtensionPayload = packet.Slice(headerAndCSRCLength + 4, ExtensionLength * 4).ToArray();
                 }
             }
 
@@ -154,21 +142,21 @@ namespace SIPSorcery.Net
         }
 
         public int WriteBytes(Span<byte> buffer)
-            {
+        {
             var size = GetPacketSize();
 
             if (buffer.Length < size)
-                {
+            {
                 throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
-                }
+            }
 
             WriteBytesCore(buffer.Slice(0, size));
 
             return size;
-            }
+        }
 
         private void WriteBytesCore(Span<byte> buffer)
-            {
+        {
             var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
 
             BinaryPrimitives.WriteUInt16BigEndian(buffer, firstWord);
@@ -176,8 +164,8 @@ namespace SIPSorcery.Net
             BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), Timestamp);
             BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(8), SyncSource);
 
-                if (HeaderExtensionFlag == 1)
-                {
+            if (HeaderExtensionFlag == 1)
+            {
                 BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(12 + 4 * CSRCCount), ExtensionProfile);
                 BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(14 + 4 * CSRCCount), ExtensionLength);
             }
@@ -290,7 +278,7 @@ namespace SIPSorcery.Net
             var firstWord = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
             offset += 2;
 
-            header.SequenceNumber =BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+            header.SequenceNumber = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
             offset += 2;
             header.Timestamp = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(offset));
             offset += 4;
@@ -309,7 +297,7 @@ namespace SIPSorcery.Net
 
             if (header.HeaderExtensionFlag == 1 && (buffer.Length >= (headerAndCSRCLength + 4)))
             {
-                header.ExtensionProfile =BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+                header.ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
                 offset += 2;
                 header.ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
                 offset += 2 + header.ExtensionLength * 4;
@@ -317,8 +305,7 @@ namespace SIPSorcery.Net
                 var extensionPayloadLength = header.ExtensionLength * 4;
                 if (header.ExtensionLength > 0 && buffer.Length >= extensionPayloadLength)
                 {
-                    header.ExtensionPayload = new byte[extensionPayloadLength];
-                    Buffer.BlockCopy(buffer.ToArray(), headerAndCSRCLength + 4, header.ExtensionPayload, 0, extensionPayloadLength);
+                    header.ExtensionPayload = buffer.Slice(headerAndCSRCLength + 4, extensionPayloadLength).ToArray();
                 }
             }
 
@@ -334,7 +321,7 @@ namespace SIPSorcery.Net
             }
 
             consumed = offset;
-            return header.PayloadSize>=0;
+            return header.PayloadSize >= 0;
         }
 
     }

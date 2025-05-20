@@ -586,10 +586,7 @@ namespace SIPSorcery.SIP.App
                 }
             }
 
-            if (MediaSession != null)
-            {
-                MediaSession.Close("call cancelled");
-            }
+            MediaSession?.Close("call cancelled");
         }
 
         /// <summary>

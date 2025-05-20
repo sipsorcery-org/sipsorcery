@@ -1,13 +1,34 @@
 ﻿using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace SIPSorcery.Sys;
 
 internal static class MemoryOperations
 {
+
+    public static string ToLowerString(this ReadOnlySpan<char> span)
+    {
+        var buffer = ArrayPool<char>.Shared.Rent(span.Length);
+
+        try
+        {
+            for (var i = 0; i < span.Length; i++)
+            {
+                buffer[i] = char.ToLower(span[i]);
+            }
+
+            return new string(buffer, 0, span.Length);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
+    }
+
+
     public static byte[] ToLittleEndianBytes(this ReadOnlySpan<short> shorts)
     {
         var bytes = new byte[shorts.Length * 2];

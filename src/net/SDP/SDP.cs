@@ -438,22 +438,27 @@ namespace SIPSorcery.Net
                                 // TODO: Set a flag.
                                 break;
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null) {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video) {
-                                         var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX + @"(?<id>\d+) (?<url>\S+)$");
-                                         if (formatAttributeMatch.Success) {
-                                             var extensionId = formatAttributeMatch.Result("${id}");
-                                             var uri = formatAttributeMatch.Result("${url}");
-                                             if (Int32.TryParse(extensionId, out var id)) {
+                                if (activeAnnouncement != null)
+                                {
+                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
+                                    {
+                                        var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX + @"(?<id>\d+) (?<url>\S+)$");
+                                        if (formatAttributeMatch.Success)
+                                        {
+                                            var extensionId = formatAttributeMatch.Result("${id}");
+                                            var uri = formatAttributeMatch.Result("${url}");
+                                            if (Int32.TryParse(extensionId, out var id))
+                                            {
                                                 var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(id, uri, activeAnnouncement.Media);
-                                                if ( (rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(id))
+                                                if ((rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(id))
                                                 {
                                                     activeAnnouncement.HeaderExtensions.Add(id, rtpExtension);
                                                 }
-                                             }
-                                             else {
+                                            }
+                                            else
+                                            {
                                                  logger.LogWarning("Invalid id of header extension in " + SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
-                                             }
+                                            }
                                          }
                                     }
                                 }

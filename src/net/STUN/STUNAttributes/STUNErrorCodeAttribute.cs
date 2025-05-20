@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 using System.Text;
 
 namespace SIPSorcery.Net
@@ -48,15 +49,22 @@ namespace SIPSorcery.Net
             ReasonPhrase = reasonPhrase;
         }
 
+        [Obsolete("Use ToByteBuffer(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            buffer[startIndex] = 0x00;
-            buffer[startIndex + 1] = 0x00;
-            buffer[startIndex + 2] = ErrorClass;
-            buffer[startIndex + 3] = ErrorNumber;
+            return ToByteBuffer(buffer.AsSpan(startIndex));
+        }
 
-            byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
-            Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
+        public override int ToByteBuffer(Span<byte> buffer)
+        {
+            buffer[0] = 0x00;
+            buffer[1] = 0x00;
+            buffer[2] = ErrorClass;
+            buffer[3] = ErrorNumber;
+
+            var reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
+            reasonPhraseBytes.CopyTo(buffer.Slice(4, reasonPhraseBytes.Length));
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
         }

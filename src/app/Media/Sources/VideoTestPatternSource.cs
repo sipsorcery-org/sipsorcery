@@ -234,7 +234,7 @@ namespace SIPSorcery.Media
                         GenerateRawSample(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer);
                     }
 
-                    if (_videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty())
+                    if (_videoEncoder != null && OnVideoSourceEncodedSample is { } onVideoSourceEncodedSample && !_formatManager.SelectedFormat.IsEmpty())
                     {
                         var encodedBuffer = _videoEncoder.EncodeVideo(TEST_PATTERN_WIDTH, TEST_PATTERN_HEIGHT, _testI420Buffer, VideoPixelFormatsEnum.I420, _formatManager.SelectedFormat.Codec);
 
@@ -242,7 +242,7 @@ namespace SIPSorcery.Media
                         {
                             uint fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
                             uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                            OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                            onVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
                         }
                     }
 

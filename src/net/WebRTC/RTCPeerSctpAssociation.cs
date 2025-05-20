@@ -99,7 +99,7 @@ namespace SIPSorcery.Net
                             OnDataChannelOpened?.Invoke(frame.StreamID);
                             break;
                         case (byte)DataChannelMessageTypes.OPEN:
-                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
+                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData);
 
                             logger.LogDebug("DCEP OPEN channel type {ChannelType}, priority {Priority}, reliability {Reliability}, label {Label}, protocol {Protocol}.",
                                 dcepOpen.ChannelType, dcepOpen.Priority, dcepOpen.Reliability, dcepOpen.Label, dcepOpen.Protocol);

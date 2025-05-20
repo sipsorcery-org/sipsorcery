@@ -243,38 +243,26 @@ namespace SIPSorcery.Net
 
         public virtual int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
+            return ToByteBuffer(buffer.AsSpan(startIndex));
+        }
 
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Value.Length))), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+        public virtual int ToByteBuffer(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), (ushort)AttributeType);
+
+            if (Value != null && Value.Length > 0)
+            {
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2, 2), (ushort)Value.Length);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
-
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Value.Length)), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+                buffer[2] = 0x00;
+                buffer[3] = 0x00;
             }
 
             if (Value != null && Value.Length > 0)
             {
-                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
+                Value.CopyTo(buffer.Slice(4, Value.Length));
             }
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;

@@ -171,9 +171,7 @@ namespace SIPSorcery.Net
             {
                 var stopProcessing = false;
 
-                var paramsBuffer = buffer.Slice(paramPosn, paramsBufferLength);
-                foreach (var varParam in GetParameters(paramsBuffer))
-                //while (GetNexParameterParameter(ref paramsBuffer, out var varParam))
+                foreach (var varParam in GetParameters(buffer.Slice(paramPosn, paramsBufferLength)))
                 {
                     Debug.Assert(varParam is not null);
 
