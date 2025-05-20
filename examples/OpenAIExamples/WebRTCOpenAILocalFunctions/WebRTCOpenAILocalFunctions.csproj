@@ -17,7 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
-    <ProjectReference Include="..\OpenAI.Realtime\OpenAI.Realtime.csproj" />
     <ProjectReference Include="..\OpenAI.Realtime\SIPSorcery.OpenAI.RealtimeWebRTC.csproj" />
   </ItemGroup>
 
