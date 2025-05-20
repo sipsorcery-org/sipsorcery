@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using LanguageExt;
 using LanguageExt.Common;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.OpenAI.RealtimeWebRTC;
 
@@ -29,9 +30,18 @@ public interface IOpenAIRealtimeWebRTCEndPoint
 
     event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
 
+    /// <summary>
+    /// (IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
+    /// </summary>
+    event Action<IPEndPoint, uint, uint, uint, int, bool, byte[]>? OnRtpPacketReceivedRaw;
+
     event Action? OnPeerConnectionConnected;
 
-    event Action? OnPeerConnectionClosedOrFailed;
+    event Action? OnPeerConnectionFailed;
+
+    event Action? OnPeerConnectionClosed;
+
+    void ConnectAudioEndPoint(IAudioEndPoint audioEndPoint);
 
     Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration? pcConfig = null, string? model = null);
 

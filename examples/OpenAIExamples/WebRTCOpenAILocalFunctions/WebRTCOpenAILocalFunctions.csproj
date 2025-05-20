@@ -12,11 +12,10 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.11" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\SIPSorceryMedia.Windows\src\SIPSorceryMedia.Windows.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
     <ProjectReference Include="..\OpenAI.Realtime\OpenAI.Realtime.csproj" />
     <ProjectReference Include="..\OpenAI.Realtime\SIPSorcery.OpenAI.RealtimeWebRTC.csproj" />

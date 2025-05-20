@@ -12,7 +12,8 @@
 // 12 Jan 2025	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
@@ -147,12 +148,10 @@ class Program
         // Switch directly to an NAudio mixer.
         var audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
         WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
-        windowsAudioEP.SetAudioSinkFormat(AudioCommonlyUsedFormats.OpusWebRTC);
+        webrtcEndPoint.ConnectAudioEndPoint(windowsAudioEP);
 
         webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
         {
-            windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
-
             var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, AudioCommonlyUsedFormats.OpusWebRTC);
 
             var samples = decodedSample
@@ -162,26 +161,6 @@ class Program
             var frame = _audioScopeForm?.Invoke(() => _audioScopeForm.ProcessAudioSample(samples, audioScopeNumber));
         };
 
-        webrtcEndPoint.OnPeerConnectionConnected += async () =>
-        {
-            logger.Information("WebRTC peer connection established.");
-
-            await windowsAudioEP.StartAudio();
-            await windowsAudioEP.StartAudioSink();
-        };
-
-        webrtcEndPoint.OnPeerConnectionClosedOrFailed += async () =>
-        {
-            logger.Information("WebRTC peer connection closed.");
-            await windowsAudioEP.CloseAudio();
-        };
-
-        webrtcEndPoint.OnDataChannelMessageReceived  += (dc, message) =>
-        {
-            if (message is OpenAIResponseAudioTranscriptDone done)
-            {
-                Log.Information($"{callLabel}: {done.Transcript}");
-            }
-        };
+      
     }
 }

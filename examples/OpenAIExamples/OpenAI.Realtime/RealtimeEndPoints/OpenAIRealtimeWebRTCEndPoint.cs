@@ -18,7 +18,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -45,9 +44,13 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
     public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
 
+    public event Action<IPEndPoint, uint, uint, uint, int, bool, byte[]>? OnRtpPacketReceivedRaw;
+
     public event Action? OnPeerConnectionConnected;
 
-    public event Action? OnPeerConnectionClosedOrFailed;
+    public event Action? OnPeerConnectionFailed;
+
+    public event Action? OnPeerConnectionClosed;
 
     public event Action<RTCDataChannel, OpenAIServerEventBase>? OnDataChannelMessageReceived;
 
@@ -77,6 +80,15 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         {
             _logger = logger;
         }
+    }
+
+    public void ConnectAudioEndPoint(IAudioEndPoint audioEndPoint)
+    {
+        audioEndPoint.OnAudioSourceEncodedSample += SendAudio;
+        OnRtpPacketReceivedRaw += audioEndPoint.GotAudioRtp;
+        OnPeerConnectionConnected += async () => await audioEndPoint.Start();
+        OnPeerConnectionFailed += async () => await audioEndPoint.Close();
+        OnPeerConnectionClosed += async () => await audioEndPoint.Close();
     }
 
     public async Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration? pcConfig = null, string? model = null)
@@ -135,13 +147,21 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
         _rtcPeerConnection.OnRtpPacketReceived += (ep, mt, rtp) => OnRtpPacketReceived?.Invoke(ep, mt, rtp);
 
+        _rtcPeerConnection.OnRtpPacketReceived += (ep, mt, rtp) =>
+        {
+            OnRtpPacketReceivedRaw?.Invoke(ep, rtp.Header.SyncSource, rtp.Header.SequenceNumber, rtp.Header.Timestamp, rtp.Header.PayloadType, rtp.Header.MarkerBit == 1, rtp.Payload);
+        };
+
         _rtcPeerConnection.onconnectionstatechange += (state) =>
         {
-            if (state is RTCPeerConnectionState.closed or
-                RTCPeerConnectionState.failed or
+            if(state is RTCPeerConnectionState.failed)
+            {
+                OnPeerConnectionFailed?.Invoke();
+            }
+            else if (state is RTCPeerConnectionState.closed or
                 RTCPeerConnectionState.disconnected)
             {
-                OnPeerConnectionClosedOrFailed?.Invoke();
+                OnPeerConnectionClosed?.Invoke();
             }
         };
 
@@ -149,7 +169,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
         dataChannel.onmessage += OnDataChannelMessage;
 
-        dataChannel.onclose += () => OnPeerConnectionClosedOrFailed?.Invoke();
+        dataChannel.onclose += () => OnPeerConnectionClosed?.Invoke();
 
         return _rtcPeerConnection;
     }
@@ -175,7 +195,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
             Session = new OpenAISession
             {
                 Voice = voice,
-                Instructions = "You are a joke bot. Tell a Dad joke every chance you get.",
+                Instructions = instructions,
             }
         };
 
@@ -191,7 +211,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
         var dc = _rtcPeerConnection.DataChannels.First();
 
-        _logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+        _logger.LogDebug($"Sending initial response create to first call data channel {dc.label}.");
         _logger.LogDebug(responseCreate.ToJson());
 
         dc.send(responseCreate.ToJson());
@@ -218,7 +238,7 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
 
         var dc = _rtcPeerConnection.DataChannels.First();
 
-        _logger.LogInformation($"Sending initial response create to first call data channel {dc.label}.");
+        _logger.LogDebug($"Sending initial response create to first call data channel {dc.label}.");
         _logger.LogDebug(responseCreate.ToJson());
 
         dc.send(responseCreate.ToJson());

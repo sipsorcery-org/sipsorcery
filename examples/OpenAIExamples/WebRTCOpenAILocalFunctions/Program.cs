@@ -16,11 +16,11 @@
 // 19 Jan 2025	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -65,7 +65,7 @@ class Program
         var webrtcEndPoint = new OpenAIRealtimeWebRTCEndPoint(openAiKey, logger);
 
         // We'll send/receive audio directly from our Windows audio devices.
-        InitialiseWindowsAudioEndPoint(webrtcEndPoint, Log.Logger);
+        InitialiseWindowsAudioEndPoint(webrtcEndPoint);
 
         var negotiateConnectResult = await webrtcEndPoint.StartConnectAsync();
 
@@ -101,28 +101,11 @@ class Program
         await exitTcs.Task;
     }
 
-    private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, Serilog.ILogger logger)
+    private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint)
     {
         var audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
         WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder);
-        windowsAudioEP.OnAudioSourceEncodedSample += webrtcEndPoint.SendAudio;
-
-        webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-        {
-            windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
-        };
-        webrtcEndPoint.OnPeerConnectionConnected += async () =>
-        {
-            logger.Information("WebRTC peer connection established.");
-
-            await windowsAudioEP.StartAudio();
-            await windowsAudioEP.StartAudioSink();
-        };
-        webrtcEndPoint.OnPeerConnectionClosedOrFailed += async () =>
-        {
-            logger.Information("WebRTC peer connection closed.");
-            await windowsAudioEP.CloseAudio();
-        };
+        webrtcEndPoint.ConnectAudioEndPoint(windowsAudioEP);
     }
 
     /// <summary>
@@ -205,16 +188,10 @@ class Program
         var resultConvItem = new OpenAIConversationItemCreate
         {
             EventID = Guid.NewGuid().ToString(),
-            //PreviousItemID = argsDone.ItemID,
             Item = new OpenAIConversationItem
             {
-                //ID = Guid.NewGuid().ToString().Replace("-", string.Empty),
                 Type = OpenAIConversationConversationTypeEnum.function_call_output,
-                //Status = "completed",
                 CallID = argsDone.CallID,
-                //Name = argsDone.Name,
-                //Arguments = argsDone.ArgumentsToString(),
-                //Role = "tool",
                 Output = result
             }
         };

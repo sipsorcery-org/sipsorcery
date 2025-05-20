@@ -23,11 +23,11 @@
 // 10 MAy 2025  Aaron Clauson   Big refactor of the OpenAI.Realtime library to use HttpClientFactory.
 //
 // License: 
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Net;
@@ -69,11 +69,7 @@ class Program
         // We'll send/receive audio directly from our Windows audio devices.
         InitialiseWindowsAudioEndPoint(webrtcEndPoint, Log.Logger);
 
-        var pcConfig = new RTCConfiguration
-        {
-            X_UseRtpFeedbackProfile = true,
-        };
-        var negotiateConnectResult = await webrtcEndPoint.StartConnectAsync(pcConfig);
+        var negotiateConnectResult = await webrtcEndPoint.StartConnectAsync();
 
         if(negotiateConnectResult.IsLeft)
         {
@@ -116,24 +112,7 @@ class Program
     private static void InitialiseWindowsAudioEndPoint(IOpenAIRealtimeWebRTCEndPoint webrtcEndPoint, Serilog.ILogger logger)
     {
         var audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
-        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, false, false);
-        windowsAudioEP.OnAudioSourceEncodedSample += webrtcEndPoint.SendAudio;
-
-        webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-        {
-            windowsAudioEP.GotAudioRtp(rep, rtpPkt.Header.SyncSource, rtpPkt.Header.SequenceNumber, rtpPkt.Header.Timestamp, rtpPkt.Header.PayloadType, rtpPkt.Header.MarkerBit == 1, rtpPkt.Payload);
-        };
-        webrtcEndPoint.OnPeerConnectionConnected += async () =>
-        {
-            logger.Information("WebRTC peer connection established.");
-
-            await windowsAudioEP.StartAudio();
-            await windowsAudioEP.StartAudioSink();
-        };
-        webrtcEndPoint.OnPeerConnectionClosedOrFailed += async () =>
-        {
-            logger.Information("WebRTC peer connection closed.");
-            await windowsAudioEP.CloseAudio();
-        };
+        WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder);
+        webrtcEndPoint.ConnectAudioEndPoint(windowsAudioEP);
     }
 }
