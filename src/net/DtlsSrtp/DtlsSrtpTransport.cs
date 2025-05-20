@@ -163,7 +163,7 @@ namespace SIPSorcery.Net
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as client.");
+            logger.LogDtlsHandshakeStartUnchecked("client");
 
             if (!_handshaking && !_handshakeComplete)
             {
@@ -200,7 +200,7 @@ namespace SIPSorcery.Net
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, $"DTLS handshake as client timed out waiting for handshake to complete.");
+                        logger.LogDtlsHandshakeTimeout("client", excp);
                         handshakeError = "timeout";
                     }
                     else
@@ -211,7 +211,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, "DTLS handshake as client failed. {ErrorMessage}", excp.Message);
+                        logger.LogDtlsHandshakeFailed("client", excp.Message, excp);
                     }
 
                     // Declare handshake as failed
@@ -229,7 +229,7 @@ namespace SIPSorcery.Net
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as server.");
+            logger.LogDtlsHandshakeStartUnchecked("server");
 
             if (!_handshaking && !_handshakeComplete)
             {
@@ -265,7 +265,7 @@ namespace SIPSorcery.Net
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, $"DTLS handshake as server timed out waiting for handshake to complete.");
+                        logger.LogDtlsHandshakeTimeout("server", excp);
                         handshakeError = "timeout";
                     }
                     else
@@ -276,7 +276,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, "DTLS handshake as server failed. {ErrorMessage}", excp.Message);
+                        logger.LogDtlsHandshakeFailed("server", excp.Message, excp);
                     }
 
                     // Declare handshake as failed
@@ -350,7 +350,7 @@ namespace SIPSorcery.Net
 
         protected IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
         {
-            SrtpTransformEngine engine = null;
+            SrtpTransformEngine engine;
             if (!isClient)
             {
                 engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
@@ -370,7 +370,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        public byte[]? UnprotectRTP(byte[] packet, int offset, int length)
         {
             lock (this.srtpDecoder)
             {
@@ -394,7 +394,7 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        public byte[]? ProtectRTP(byte[] packet, int offset, int length)
         {
             lock (this.srtpEncoder)
             {
@@ -418,7 +418,7 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[]? UnprotectRTCP(byte[] packet, int offset, int length)
         {
             lock (this.srtcpDecoder)
             {
@@ -441,7 +441,7 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[]? ProtectRTCP(byte[] packet, int offset, int length)
         {
             lock (this.srtcpEncoder)
             {
@@ -482,11 +482,11 @@ namespace SIPSorcery.Net
             return this._sendLimit;
         }
 
-        public void WriteToRecvStream(byte[] buf)
+        public void WriteToRecvStream(ReadOnlySpan<byte> buf)
         {
             if (!_isClosed)
             {
-                _chunks.Add(buf);
+                _chunks.Add(buf.ToArray());
             }
         }
 
@@ -545,7 +545,7 @@ namespace SIPSorcery.Net
 
                 if (millisecondsRemaining <= 0)
                 {
-                    logger.LogWarning("DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {ClientOrServer}.", TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
+                    logger.LogDtlsHandshakeTimedOut(TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
                     throw new TimeoutException();
                 }
                 else
@@ -566,7 +566,7 @@ namespace SIPSorcery.Net
 
                     return receiveLen;
                 }
-                
+
             }
             else if (!_isClosed)
             {

@@ -16,6 +16,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
@@ -56,7 +57,7 @@ namespace SIPSorcery.Net
     {
         private static readonly ILogger logger = Log.Logger;
 
-        internal Certificate mCertificateChain = null;
+        internal Certificate? mCertificateChain = null;
         internal AsymmetricKeyParameter mPrivateKey = null;
         bool mIsEcdsaCertificate = false;
 
@@ -72,7 +73,7 @@ namespace SIPSorcery.Net
         //Received from server
         public TlsServerCertificate ServerCertificate { get; internal set; }
 
-        public RTCDtlsFingerprint Fingerprint { get; private set; }
+        public RTCDtlsFingerprint? Fingerprint { get; private set; }
 
         private UseSrtpData clientSrtpData;
 
@@ -119,11 +120,14 @@ namespace SIPSorcery.Net
                 (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
             }
 
+            Debug.Assert(certificateChain is not null);
+            Debug.Assert(privateKey is not null);
+
             if (clientSrtpData == null)
             {
-                SecureRandom random = new SecureRandom();
+                var random = new SecureRandom();
                 int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
-                byte[] mki = new byte[(SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherKeyLength() + SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherSaltLength()) / 8];
+                var mki = new byte[(SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherKeyLength() + SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherSaltLength()) / 8];
                 random.NextBytes(mki); // Reusing our secure random for generating the key.
                 this.clientSrtpData = new UseSrtpData(protectionProfiles, mki);
             }
@@ -170,7 +174,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public override IDictionary<int, byte[]> GetClientExtensions()
+        public override IDictionary<int, byte[]>? GetClientExtensions()
         {
             var clientExtensions = base.GetClientExtensions();
             if (TlsSrpUtilities.GetSrpExtension(clientExtensions) == null)
@@ -191,10 +195,10 @@ namespace SIPSorcery.Net
             base.ProcessServerExtensions(serverExtensions);
 
             // set to some reasonable default value
-            int chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
+            var chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
             clientSrtpData = TlsSrtpUtilities.GetUseSrtpExtension(serverExtensions);
 
-            foreach (int profile in clientSrtpData.ProtectionProfiles)
+            foreach (var profile in clientSrtpData.ProtectionProfiles)
             {
                 switch (profile)
                 {
@@ -275,7 +279,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentException("must have length less than 2^16 (or be null)", "context_value");
             }
 
-            SecurityParameters sp = m_context.SecurityParameters;
+            var sp = m_context.SecurityParameters;
             if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
             {
                 /*
@@ -289,14 +293,14 @@ namespace SIPSorcery.Net
 
             byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
 
-            int seedLength = cr.Length + sr.Length;
+            var seedLength = cr.Length + sr.Length;
             if (context_value != null)
             {
                 seedLength += (2 + context_value.Length);
             }
 
-            byte[] seed = new byte[seedLength];
-            int seedPos = 0;
+            var seed = new byte[seedLength];
+            var seedPos = 0;
 
             Array.Copy(cr, 0, seed, seedPos, cr.Length);
             seedPos += cr.Length;
@@ -328,9 +332,9 @@ namespace SIPSorcery.Net
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.MasterSecret = masterSecret;
 
-            SrtpParameters srtpParams = SrtpParameters.GetSrtpParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
-            int keyLen = srtpParams.GetCipherKeyLength();
-            int saltLen = srtpParams.GetCipherSaltLength();
+            var srtpParams = SrtpParameters.GetSrtpParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
+            var keyLen = srtpParams.GetCipherKeyLength();
+            var saltLen = srtpParams.GetCipherSaltLength();
 
             srtpPolicy = srtpParams.GetSrtpPolicy();
             srtcpPolicy = srtpParams.GetSrtcpPolicy();
@@ -342,7 +346,7 @@ namespace SIPSorcery.Net
 
             // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
             // No need to divide by 8 here since lengths are already in bits
-            byte[] sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
+            var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
 
             /*
              * 
@@ -380,7 +384,7 @@ namespace SIPSorcery.Net
         protected override ProtocolVersion[] GetSupportedVersions()
         {
             return new ProtocolVersion[]
-            {
+        {
                 ProtocolVersion.DTLSv10,
                 ProtocolVersion.DTLSv12
                 //TODO: Add support for newer CipherSuites in order for us to support the newer ProtocolVersion.DTLSv13.
@@ -394,23 +398,14 @@ namespace SIPSorcery.Net
 
         public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
         {
-            string description = null;
-            if (message != null)
-            {
-                description += message;
-            }
-            if (cause != null)
-            {
-                description += cause;
-            }
-
+            // TODO: GetHashCode() may be runtime dependent
             if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
             {
-                logger.LogDebug("DTLS client raised close notification: {AlertMessage}", $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}{(!string.IsNullOrEmpty(description) ? $", {description}." : ".")}");
+                logger.LogDtlsCloseNotification(alertLevel, alertDescription, message, cause);
             }
             else
             {
-                logger.LogWarning("DTLS client raised unexpected alert: {AlertMessage}", $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}{(!string.IsNullOrEmpty(description) ? $", {description}." : ".")}");
+                logger.LogDtlsUnexpectedAlert(alertLevel, alertDescription, message, cause);
             }
         }
 
@@ -426,28 +421,28 @@ namespace SIPSorcery.Net
 
         public override void NotifyAlertReceived(short alertLevel, short alertDescription)
         {
-            string description = AlertDescription.GetText(alertDescription);
+            var description = AlertDescription.GetText(alertDescription);
 
-            AlertLevelsEnum level = AlertLevelsEnum.Warning;
-            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+            var level = AlertLevelsEnum.Warning;
+            var alertType = AlertTypesEnum.unknown;
 
-            if (Enum.IsDefined(typeof(AlertLevelsEnum), checked((byte)alertLevel)))
+            if (AlertLevelsEnumExtensions.IsDefined((AlertLevelsEnum)checked((byte)alertLevel)))
             {
                 level = (AlertLevelsEnum)alertLevel;
             }
 
-            if (Enum.IsDefined(typeof(AlertTypesEnum), checked((byte)alertDescription)))
+            if (AlertTypesEnumExtensions.IsDefined((AlertTypesEnum)checked((byte)alertDescription)))
             {
                 alertType = (AlertTypesEnum)alertDescription;
             }
 
             if (alertType == AlertTypesEnum.close_notify)
             {
-                logger.LogDebug("DTLS client received close notification: {AlertLevel}, {Description}.", AlertLevel.GetText(alertLevel), description);
+                logger.LogDtlsReceivedClose(alertLevel, description);
             }
             else
             {
-                logger.LogWarning("DTLS client received unexpected alert: {AlertLevel}, {Description}.", AlertLevel.GetText(alertLevel), description);
+                logger.LogDtlsReceivedUnexpectedAlert(alertLevel, description);
             }
 
             OnAlert?.Invoke(level, alertType, description);

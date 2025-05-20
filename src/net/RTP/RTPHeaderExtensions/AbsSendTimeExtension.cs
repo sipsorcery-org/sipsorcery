@@ -1,21 +1,21 @@
 ﻿using System;
-using SIPSorcery.Net;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
     // AbsSendTimeExtension is a extension payload format in
     // http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
     // Code reference: https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#19
-    public class AbsSendTimeExtension: RTPHeaderExtension
+    public class AbsSendTimeExtension : RTPHeaderExtension
     {
         public const string RTP_HEADER_EXTENSION_URI = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
         internal const int RTP_HEADER_EXTENSION_SIZE = 3;
 
-        public AbsSendTimeExtension(int id): base(id, RTP_HEADER_EXTENSION_URI, RTP_HEADER_EXTENSION_SIZE, RTPHeaderExtensionType.OneByte)
+        public AbsSendTimeExtension(int id) : base(id, RTP_HEADER_EXTENSION_URI, RTP_HEADER_EXTENSION_SIZE, RTPHeaderExtensionType.OneByte)
         {
         }
 
-        public override void Set(Object value)
+        public override void Set(object value)
         {
             // Nothing to do here 
         }
@@ -41,7 +41,7 @@ namespace SIPSorcery.Net
                 (byte)(abs & 0xffUL)
             };
         }
-        
+
         public override byte[] Marshal()
         {
             return AbsSendTime(Id, ExtensionSize, DateTimeOffset.Now);
@@ -56,16 +56,14 @@ namespace SIPSorcery.Net
         // DateTimeOffset.UnixEpoch only available in newer target frameworks
         private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-        private ulong? GetUlong(byte[] data)
+        private ulong? GetUlong(ReadOnlySpan<byte> data)
         {
-            if ( (data.Length != ExtensionSize) || ((sizeof(ulong) - 1) > data.Length) )
+            if ((data.Length != ExtensionSize) || ((sizeof(ulong) - 1) > data.Length))
             {
                 return null;
             }
 
-            return BitConverter.IsLittleEndian ?
-                SIPSorcery.Sys.NetConvert.DoReverseEndian(BitConverter.ToUInt64(data, 0)) :
-                BitConverter.ToUInt64(data, 0);
+            return BinaryPrimitives.ReadUInt16BigEndian(data);
         }
     }
 }

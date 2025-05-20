@@ -161,8 +161,8 @@ namespace TinyJson
                         }
                         if (json[i + 1] == 'u' && i + 5 < json.Length - 1)
                         {
-                            UInt32 c = 0;
-                            if (UInt32.TryParse(json.Substring(i + 2, 4), System.Globalization.NumberStyles.AllowHexSpecifier, null, out c))
+                            uint c = 0;
+                            if (UInt32.TryParse(json.AsSpan(i + 2, 4), System.Globalization.NumberStyles.AllowHexSpecifier, null, out c))
                             {
                                 parseStringBuilder.Append((char)c);
                                 i += 5;

@@ -15,6 +15,7 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -35,8 +36,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWebRTCSTUNRequestTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] stunReq = new byte[]{ 0x00, 0x01, 0x00, 0x60, 0x21, 0x12, 0xa4, 0x42, 0x66, 0x55, 0x55, 0x43, 0x4b, 0x48, 0x74, 0x73, 0x68, 0x4e, 0x71, 0x56,
                                          // Att1: 
@@ -68,8 +69,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void BindingRequestWithUsernameToBytesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             initMessage.AddUsernameAttribute("someusernamex");
@@ -86,8 +87,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseWebRTCSTUNResponseTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] stunResp = new byte[]{ 0x01, 0x01, 0x00, 0x2c, 0x21, 0x12, 0xa4, 0x42, 0x6a, 0x45, 0x38, 0x2b, 0x4e, 0x5a, 0x4b, 0x50,
                     0x64, 0x31, 0x70, 0x38, 0x00, 0x20, 0x00, 0x08, 0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f,
@@ -106,7 +107,7 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (attribute.AttributeType == STUNAttributeTypesEnum.Username)
                 {
-                    logger.LogDebug(" {AttributeType} {AttributeValue}.", attribute.AttributeType, Encoding.UTF8.GetString(attribute.Value));
+                    logger.LogDebug(" {AttributeType} {AttributeValue}.", attribute.AttributeType, Encoding.UTF8.GetString(attribute.Value.ToArray()));
                 }
                 else
                 {
@@ -125,8 +126,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseXORMappedAddressAttributeTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] stunAttribute = new byte[] { 0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f };
 
@@ -139,29 +140,20 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that putting an XOR-MAPPED-ADDRESS attribute to a byte buffer works correctly.
         /// </summary>
-        [Fact]
-        public void PutXORMappedAddressAttributeToBufferTestMethod()
+        [Theory]
+        [InlineData("192.168.33.125", new byte[] { 0x00, 0x20, 0x00, 0x08, 0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f, })]
+        [InlineData("fe80::464c:5d73:4576:a13c%9", new byte[] { 0x00, 0x20, 0x00, 0x14, 0x00, 0x02, 0xE0, 0xDA, 0xDF, 0x92, 0xA4, 0x42, })]
+        public void PutXORMappedAddressAttributeToBufferTestMethod(string ipAddress, byte[] expectedResult)
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"), null);
+            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse(ipAddress), null);
 
             byte[] buffer = new byte[12];
             xorAddressAttribute.ToByteBuffer(buffer, 0);
 
-            Assert.Equal(0x00, buffer[0]);
-            Assert.Equal(0x20, buffer[1]);
-            Assert.Equal(0x00, buffer[2]);
-            Assert.Equal(0x08, buffer[3]);
-            Assert.Equal(0x00, buffer[4]);
-            Assert.Equal(0x01, buffer[5]);
-            Assert.Equal(0xe0, buffer[6]);
-            Assert.Equal(0xda, buffer[7]);
-            Assert.Equal(0xe1, buffer[8]);
-            Assert.Equal(0xba, buffer[9]);
-            Assert.Equal(0x85, buffer[10]);
-            Assert.Equal(0x3f, buffer[11]);
+            Assert.Equal(expectedResult, buffer);
         }
 
         /// <summary>
@@ -170,8 +162,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void PutResponseToBufferTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
             stunResponse.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
@@ -188,8 +180,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void TestMessageIntegrityAttributeForBindingRequest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] stunReq = new byte[]{
             0x00, 0x01, 0x00, 0x60, 0x21, 0x12, 0xa4, 0x42, 0x69, 0x64, 0x38, 0x2b, 0x4c, 0x45, 0x44, 0x57,
@@ -227,8 +219,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseCoturnSTUNResponseTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] stunResp = new byte[]{ 0x01, 0x01, 0x00, 0x44, 0x21, 0x12, 0xa4, 0x42, 0x6b, 0x4c, 0xf3, 0x18, 0xd0, 0xa7, 0xf5, 0x40,
                     0x97, 0x30, 0x3a, 0x27, 0x00, 0x20, 0x00, 0x08, 0x00, 0x01, 0x9e, 0x90, 0x1a, 0xb5, 0x08, 0xf3,
@@ -279,8 +271,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GenerateHmacAndFingerprintTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string icePassword = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
 
@@ -331,8 +323,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void IntegrityCheckUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string icePassword = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
 
@@ -358,8 +350,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void KnownSTUNBindingRequestIntegrityCheckUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string icePassword = "DVJSBHBUIBFSZFKVECMPRISQ";
 
@@ -412,10 +404,10 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(stunReq);
             Assert.Equal(1853882367U, 
-                NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value, 0));
+                NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value.ToArray(), 0));
             Assert.Equal(8, stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).PaddedLength);
             Assert.Equal(0x27ff2a171b888ffeU, 
-                NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value, 0));
+                NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value.ToArray(), 0));
         }
 
         /// <summary>
@@ -424,8 +416,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseStunMessageUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = TypeExtensions.ParseHexStr(
                 "000100542112a4424f585055434d4e54425a4f4a00060015435242617a4d64534248616a494774433a45544d5300000000240004ff200000802a000852c0aba195cf65190025000000080014b05baf6be589d5ab202e9153547457eb1a20244c8028000464f37f6c");

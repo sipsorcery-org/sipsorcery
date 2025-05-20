@@ -30,7 +30,7 @@ namespace SIPSorcery.Net
          *            the packet to be transformed
          * @return The transformed packet. Returns null if the packet cannot be transformed.
          */
-        byte[] Transform(byte[] pkt);
+        byte[]? Transform(byte[] pkt);
 
         /**
          * Transforms a specific non-secure packet.
@@ -44,7 +44,7 @@ namespace SIPSorcery.Net
          * @return The transformed packet. Returns null if the packet cannot be
          *         transformed.
          */
-        byte[] Transform(byte[] pkt, int offset, int length);
+        byte[]? Transform(byte[] pkt, int offset, int length);
 
         /**
          * Reverse-transforms a specific packet (i.e. transforms a transformed
@@ -54,7 +54,7 @@ namespace SIPSorcery.Net
          *            the transformed packet to be restored
          * @return Whether the packet was successfully restored
          */
-        byte[] ReverseTransform(byte[] pkt);
+        byte[]? ReverseTransform(byte[] pkt);
 
         /**
          * Reverse-transforms a specific packet (i.e. transforms a transformed
@@ -68,7 +68,7 @@ namespace SIPSorcery.Net
          *            the length of data in the packet
          * @return The restored packet. Returns null if packet cannot be restored.
          */
-        byte[] ReverseTransform(byte[] pkt, int offset, int length);
+        byte[]? ReverseTransform(byte[] pkt, int offset, int length);
 
         /**
          * Close the transformer and underlying transform engine.
