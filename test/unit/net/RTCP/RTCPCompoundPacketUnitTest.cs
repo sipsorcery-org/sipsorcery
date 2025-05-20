@@ -13,10 +13,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -38,8 +40,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPCompoundPacketUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 23;
             ulong ntpTs = 1;
@@ -63,7 +65,8 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPCompoundPacket compoundPacket = new RTCPCompoundPacket(sr, sdesReport);
 
-            byte[] buffer = compoundPacket.GetBytes();
+            byte[] buffer = new byte[compoundPacket.GetByteCount()];
+            compoundPacket.WriteBytes(buffer.AsSpan());
 
             RTCPCompoundPacket parsedCP = new RTCPCompoundPacket(buffer);
             RTCPSenderReport parsedSR = parsedCP.SenderReport;
@@ -89,8 +92,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseChromeRtcpPacketUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var buffer = TypeExtensions.ParseHexStr("81C9000700000001384B9567000000000000D214000004C900000000000000008FCE0005000000010000000052454D42010A884A384B95678000000BF9CDAEFFBEF60160B98F");
 
@@ -102,8 +105,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseChromeRtcpPacket2UnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var buffer = TypeExtensions.ParseHexStr("81C90007FA17FA17761E74C8000000000000F19700000045000000000000000080000001FF6EBFCCFAFB3C6D6291");
 
@@ -115,8 +118,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseChromeRtcpPacketWith6SSRCsUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var buffer = TypeExtensions.ParseHexStr("81C9000700000001497EB0250000000000009CA200000A0500000000000000008FCE000A000000010000000052454D42060B29711CAB48A626A3FADE2EE30A21497EB0255C6A292A604EEAC8");
 

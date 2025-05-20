@@ -9,9 +9,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -30,11 +32,13 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPHeader rtpHeader = new RTPHeader();
-            byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
+            rtpHeader.SetHeader(1, 0, 1);
+            byte[] headerBuffer = new byte[rtpHeader.GetByteCount()];
+            rtpHeader.WriteBytes(headerBuffer.AsSpan());
 
             int byteNum = 1;
             foreach (byte headerByte in headerBuffer)
@@ -47,11 +51,13 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void HeaderRoundTripTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPHeader src = new RTPHeader();
-            byte[] headerBuffer = src.GetHeader(1, 0, 1);
+            src.SetHeader(1, 0, 1);
+            byte[] headerBuffer = new byte[src.GetByteCount()];
+            src.WriteBytes(headerBuffer.AsSpan());
             RTPHeader dst = new RTPHeader(headerBuffer);
 
             logger.LogDebug("Versions: {SrcVersion}, {DstVersion}", src.Version, dst.Version);
@@ -80,8 +86,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CustomisedHeaderRoundTripTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPHeader src = new RTPHeader();
             src.Version = 3;
@@ -91,7 +97,9 @@ namespace SIPSorcery.Net.UnitTests
             src.CSRCCount = 3;
             src.PayloadType = (int)SDPWellKnownMediaFormatsEnum.PCMA;
 
-            byte[] headerBuffer = src.GetHeader(1, 0, 1);
+            src.SetHeader(1, 0, 1);
+            byte[] headerBuffer = new byte[src.GetByteCount()];
+            src.WriteBytes(headerBuffer.AsSpan());
 
             RTPHeader dst = new RTPHeader(headerBuffer);
 
@@ -127,8 +135,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] rtpBytes = new byte[] {
                 0x80, 0x88, 0xe6, 0xfd, 0x00, 0x00, 0x00, 0xf0, 0xde, 0xe0, 0xee, 0x8f,
@@ -150,8 +158,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpWithExtensionTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] rtpBytes = new byte[] {
                 0x90, 0x88, 0xe6, 0xfd,
@@ -188,8 +196,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseChromeRtpPacketUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var buffer = TypeExtensions.ParseHexStr("800000099D5904B4838FCECF7F1E");
 
@@ -204,8 +212,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseHeaderExtensions()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpHeaderBytes = new byte[] {
                 0x90, 0x60, 0x0c, 0xd5, 0x83, 0x0a, 0xcd, 0x97, 0x2e, 0xba, 0x23, 0x57, 0xbe, 0xde, 0x00, 0x05,

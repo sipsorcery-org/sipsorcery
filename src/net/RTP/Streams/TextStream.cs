@@ -1,117 +1,120 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public class TextStream : MediaStream
 {
-    public class TextStream : MediaStream
+    protected static ILogger logger = Log.Logger;
+
+    private DateTime _lastSendTime = DateTime.MinValue;
+
+    protected bool rtpEventInProgress;
+
+    private bool sendingFormatFound;
+
+    /// <summary>
+    /// The text format negotiated fir the text stream by the SDP offer/answer exchange.
+    /// </summary>
+    public SDPAudioVideoMediaFormat NegotiatedFormat { get; private set; }
+
+    public Action<int, List<TextFormat>>? OnTextFormatsNegotiatedByIndex { get; internal set; }
+
+    /// <summary>
+    /// Indicates whether this session is using text.
+    /// </summary>
+    public bool HasText
     {
-        protected static ILogger logger = Log.Logger;
-
-        private DateTime _lastSendTime = DateTime.MinValue;
-
-        protected bool rtpEventInProgress = false;
-
-        private bool sendingFormatFound = false;
-
-        /// <summary>
-        /// The text format negotiated fir the text stream by the SDP offer/answer exchange.
-        /// </summary>
-        public SDPAudioVideoMediaFormat NegotiatedFormat { get; private set; }
-
-        public Action<int, List<TextFormat>> OnTextFormatsNegotiatedByIndex { get; internal set; }
-
-        /// <summary>
-        /// Indicates whether this session is using text.
-        /// </summary>
-        public bool HasText
+        get
         {
-            get
-            {
-                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
-                  || RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
-            }
+            return LocalTrack is { } && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
+              || RemoteTrack is { } && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
         }
+    }
 
-        public void SendText(byte[] sample)
+    public void SendText(ReadOnlySpan<byte> sample)
+    {
+        if (!sendingFormatFound)
         {
-            if (!sendingFormatFound)
-            {
-                NegotiatedFormat = GetSendingFormat();
-                sendingFormatFound = true;
-            }
-            SendTextFrame(NegotiatedFormat.ID, sample);
+            NegotiatedFormat = GetSendingFormat();
+            sendingFormatFound = true;
         }
+        SendTextFrame(NegotiatedFormat.ID, sample);
+    }
 
-        private void SendTextFrame(int payloadTypeID, byte[] buffer)
+    private void SendTextFrame(int payloadTypeID, ReadOnlySpan<byte> buffer)
+    {
+        if (CheckIfCanSendRtpRaw())
         {
-            if (CheckIfCanSendRtpRaw())
+            if (rtpEventInProgress)
             {
-                if (rtpEventInProgress)
+                logger.LogRtpEventInProgress();
+                return;
+            }
+
+            try
+            {
+                // Get the current time
+                var currentTime = DateTime.UtcNow;
+
+                // Calculate time elapsed since the last frame in milliseconds
+                uint elapsedMilliseconds = 0;
+
+                if (_lastSendTime != DateTime.MinValue)
                 {
-                    logger.LogWarning("An RTPEvent is in progress.");
-                    return;
+                    elapsedMilliseconds = (uint)(currentTime - _lastSendTime).TotalMilliseconds;
                 }
 
-                try
+                // Update the timestamp with elapsed time
+                Debug.Assert(LocalTrack is { });
+                LocalTrack.Timestamp += elapsedMilliseconds;
+
+                for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
                 {
-                    // Get the current time
-                    DateTime currentTime = DateTime.UtcNow;
+                    var offset = (index == 0) ? 0 : (index * RTPSession.RTP_MAX_PAYLOAD);
+                    var payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
 
-                    // Calculate time elapsed since the last frame in milliseconds
-                    uint elapsedMilliseconds = 0;
+                    // Set the marker bit for the first packet after idle or session start
+                    var markerBit = _lastSendTime == DateTime.MinValue ? 1 : 0;
 
-                    if (_lastSendTime != DateTime.MinValue)
-                    {
-                        elapsedMilliseconds = (uint)(currentTime - _lastSendTime).TotalMilliseconds;
-                    }
-
-                    // Update the timestamp with elapsed time
-                    LocalTrack.Timestamp += elapsedMilliseconds;
-
-                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
-                    {
-                        int offset = (index == 0) ? 0 : (index * RTPSession.RTP_MAX_PAYLOAD);
-                        int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
-
-                        // Set the marker bit for the first packet after idle or session start
-                        int markerBit = _lastSendTime == DateTime.MinValue ? 1 : 0;
-
-                        byte[] payload = new byte[payloadLength];
-                        Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
-
-                        // Send the RTP packet with the updated timestamp
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                    }
-
-                    // Update the last send time
-                    _lastSendTime = currentTime;
+                    // Send the RTP packet with the updated timestamp
+                    SendRtpRaw(buffer.Slice(offset, payloadLength), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                 }
-                catch (SocketException sockExcp)
-                {
-                    logger.LogError(sockExcp, "SocketException SendT140Frame. {ErrorMessage}", sockExcp.Message);
-                }
+
+                // Update the last send time
+                _lastSendTime = currentTime;
             }
-        }
-
-        public void CheckTextFormatsNegotiation()
-        {
-            if (LocalTrack != null && LocalTrack.Capabilities?.Count > 0)
+            catch (SocketException sockExcp)
             {
-                OnTextFormatsNegotiatedByIndex?.Invoke(
-                            Index,
-                            LocalTrack.Capabilities
-                            .Select(x => x.ToTextFormat()).ToList());
+                logger.LogSendT140FrameSocketError(sockExcp.Message, sockExcp);
             }
         }
+    }
 
-        public TextStream(RtpSessionConfig config, int index) : base(config, index)
+    public void CheckTextFormatsNegotiation()
+    {
+        if (OnTextFormatsNegotiatedByIndex is not { } onTextFormatsNegotiatedByIndex
+            || LocalTrack?.Capabilities is not { Count: > 0 } capabilities)
         {
-            MediaType = SDPMediaTypesEnum.text;
+            return;
         }
+
+        var textFormats = new List<TextFormat>(capabilities.Count);
+        foreach (var capability in capabilities)
+        {
+            textFormats.Add(capability.ToTextFormat());
+        }
+
+        onTextFormatsNegotiatedByIndex(Index, textFormats);
+    }
+
+    public TextStream(RtpSessionConfig config, int index) : base(config, index)
+    {
+        MediaType = SDPMediaTypesEnum.text;
     }
 }
