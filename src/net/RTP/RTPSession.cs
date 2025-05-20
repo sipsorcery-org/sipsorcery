@@ -2098,8 +2098,9 @@ namespace SIPSorcery.Net
                 {
                     if (rtpSessionConfig.IsMediaMultiplexed)
                     {
-                        rtpPort = m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                            m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : m_primaryStream.GetRTPChannel().RTPPort;
+                        var rtpChannel = m_primaryStream.GetRTPChannel();
+                        rtpPort = rtpChannel.RTPDynamicNATEndPoint != null ?
+                            rtpChannel.RTPDynamicNATEndPoint.Port : rtpChannel.RTPPort;
                     }
                     else
                     {
@@ -2511,7 +2512,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    buffer = buffer.Take(outBufLen).ToArray();
+                    buffer = buffer.AsSpan(0, outBufLen).ToArray();
                 }
             }           
 

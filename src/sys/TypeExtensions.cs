@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 
@@ -55,7 +56,7 @@ namespace SIPSorcery.Sys
         /// </summary>    
         public static bool IsNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            if (s == null || s.AsSpan().Trim(WhiteSpaceChars).Length == 0)
             {
                 return true;
             }
@@ -65,7 +66,7 @@ namespace SIPSorcery.Sys
 
         public static bool NotNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            if (s == null || s.AsSpan().Trim(WhiteSpaceChars).Length == 0)
             {
                 return false;
             }
@@ -174,6 +175,52 @@ namespace SIPSorcery.Sys
                     var val = buffer[i];
                     chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
                     chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                }
+            }
+        }
+
+        public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null)
+        {
+            if (separator is { } s)
+            {
+                var numberOfChars = buffer.Length * 3 - 1;
+                var rv = ArrayPool<char>.Shared.Rent(numberOfChars);
+                try
+                {
+                    for (int i = 0, j = 0; i < buffer.Length; i++)
+                    {
+                        var val = buffer[i];
+                        rv[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                        rv[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                        if (j < rv.Length)
+                        {
+                            rv[j++] = s;
+                        }
+                    }
+                    return new string(rv, 0, numberOfChars);
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(rv);
+                }
+            }
+            else
+            {
+                var numberOfChars = buffer.Length * 2;
+                var rv = ArrayPool<char>.Shared.Rent(numberOfChars);
+                try
+                {
+                    for (int i = 0, j = 0; i < buffer.Length; i++)
+                    {
+                        var val = buffer[i];
+                        rv[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
+                        rv[j++] = char.ToUpperInvariant(hexmap[val & 15]);
+                    }
+                    return new string(rv, 0, numberOfChars);
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(rv);
                 }
             }
         }

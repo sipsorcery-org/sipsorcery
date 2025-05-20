@@ -1,5 +1,5 @@
 ﻿using System;
-using SIPSorcery.Net;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -56,16 +56,14 @@ namespace SIPSorcery.Net
         // DateTimeOffset.UnixEpoch only available in newer target frameworks
         private static readonly DateTimeOffset UnixEpoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-        private ulong? GetUlong(byte[] data)
+        private ulong? GetUlong(ReadOnlySpan<byte> data)
         {
             if ( (data.Length != ExtensionSize) || ((sizeof(ulong) - 1) > data.Length) )
             {
                 return null;
             }
 
-            return BitConverter.IsLittleEndian ?
-                SIPSorcery.Sys.NetConvert.DoReverseEndian(BitConverter.ToUInt64(data, 0)) :
-                BitConverter.ToUInt64(data, 0);
+            return BinaryPrimitives.ReadUInt16BigEndian(data);
         }
     }
 }

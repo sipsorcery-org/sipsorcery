@@ -18,7 +18,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -47,7 +50,7 @@ namespace SIPSorcery.Net
         protected SctpErrorChunk(SctpChunkType chunkType, bool verificationTagBit)
             : base(chunkType)
         {
-            if(verificationTagBit)
+            if (verificationTagBit)
             {
                 ChunkFlags = ABORT_CHUNK_TBIT_FLAG;
             }
@@ -90,9 +93,9 @@ namespace SIPSorcery.Net
         public override ushort GetChunkLength(bool padded)
         {
             ushort len = SCTP_CHUNK_HEADER_LENGTH;
-            if(ErrorCauses != null && ErrorCauses.Count > 0)
+            if (ErrorCauses != null && ErrorCauses.Count > 0)
             {
-                foreach(var cause in ErrorCauses)
+                foreach (var cause in ErrorCauses)
                 {
                     len += cause.GetErrorCauseLength(padded);
                 }
@@ -109,16 +112,37 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-            if (ErrorCauses != null && ErrorCauses.Count > 0)
+            WriteToCore(buffer.AsSpan(posn));
+
+            return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises the ERROR chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            WriteChunkHeader(buffer);
+
+            if (ErrorCauses is { Count: > 0 } errorCauses)
             {
-                int causePosn = posn + 4;
-                foreach (var cause in ErrorCauses)
+                buffer = buffer.Slice(4);
+                foreach (var cause in errorCauses)
                 {
-                    causePosn += cause.WriteTo(buffer, causePosn);
+                    var bytesWritten = cause.WriteTo(buffer);
+                    buffer = buffer.Slice(bytesWritten);
                 }
             }
-            return GetChunkLength(true);
         }
 
         /// <summary>
@@ -126,43 +150,56 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
+        [Obsolete("Use Parse(ParseChunk<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static SctpErrorChunk ParseChunk(byte[] buffer, int posn, bool isAbort)
+            => ParseChunk(buffer.AsSpan(posn), isAbort);
+
+        /// <summary>
+        /// Parses the ERROR chunk fields.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk.</param>
+        public static SctpErrorChunk ParseChunk(ReadOnlySpan<byte> buffer, bool isAbort)
         {
             var errorChunk = (isAbort) ? new SctpAbortChunk(false) : new SctpErrorChunk();
-            ushort chunkLen = errorChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = errorChunk.ParseFirstWord(buffer);
 
-            int paramPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
-            int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH;
+            var paramPosn = SCTP_CHUNK_HEADER_LENGTH;
+            var paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH;
 
             if (paramPosn < paramsBufferLength)
             {
-                bool stopProcessing = false;
+                var stopProcessing = false;
 
-                foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
+                var paramsBuffer = buffer.Slice(paramPosn, paramsBufferLength);
+                foreach (var varParam in GetParameters(paramsBuffer))
+                //while (GetNexParameterParameter(ref paramsBuffer, out var varParam))
                 {
+                    Debug.Assert(varParam is not null);
+
                     switch (varParam.ParameterType)
                     {
                         case (ushort)SctpErrorCauseCode.InvalidStreamIdentifier:
-                            ushort streamID = (ushort)((varParam.ParameterValue != null) ?
-                                NetConvert.ParseUInt16(varParam.ParameterValue, 0) : 0);
+                            var streamID = (ushort)((varParam.ParameterValue != null) ?
+                                BinaryPrimitives.ReadUInt16BigEndian(varParam.ParameterValue) : 0);
                             var invalidStreamID = new SctpErrorInvalidStreamIdentifier { StreamID = streamID };
                             errorChunk.AddErrorCause(invalidStreamID);
                             break;
                         case (ushort)SctpErrorCauseCode.MissingMandatoryParameter:
-                            List<ushort> missingIDs = new List<ushort>();
+                            var missingIDs = new List<ushort>();
                             if (varParam.ParameterValue != null)
                             {
-                                for (int i = 0; i < varParam.ParameterValue.Length; i += 2)
+                                for (var i = 0; i < varParam.ParameterValue.Length; i += 2)
                                 {
-                                    missingIDs.Add(NetConvert.ParseUInt16(varParam.ParameterValue, i));
+                                    missingIDs.Add(BinaryPrimitives.ReadUInt16BigEndian(varParam.ParameterValue.AsSpan(i)));
                                 }
                             }
                             var missingMandatory = new SctpErrorMissingMandatoryParameter { MissingParameters = missingIDs };
                             errorChunk.AddErrorCause(missingMandatory);
                             break;
                         case (ushort)SctpErrorCauseCode.StaleCookieError:
-                            uint staleness = (uint)((varParam.ParameterValue != null) ?
-                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0);
+                            var staleness = (uint)((varParam.ParameterValue != null) ?
+                                BinaryPrimitives.ReadUInt32BigEndian(varParam.ParameterValue) : 0);
                             var staleCookie = new SctpErrorStaleCookieError { MeasureOfStaleness = staleness };
                             errorChunk.AddErrorCause(staleCookie);
                             break;
@@ -186,7 +223,7 @@ namespace SIPSorcery.Net
                             break;
                         case (ushort)SctpErrorCauseCode.NoUserData:
                             uint tsn = (uint)((varParam.ParameterValue != null) ?
-                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0);
+                                BinaryPrimitives.ReadUInt32BigEndian(varParam.ParameterValue) : 0);
                             var noData = new SctpErrorNoUserData { TSN = tsn };
                             errorChunk.AddErrorCause(noData);
                             break;
@@ -199,13 +236,13 @@ namespace SIPSorcery.Net
                             errorChunk.AddErrorCause(restartAddress);
                             break;
                         case (ushort)SctpErrorCauseCode.UserInitiatedAbort:
-                            string reason = (varParam.ParameterValue != null) ?
+                            var reason = (varParam.ParameterValue != null) ?
                                 Encoding.UTF8.GetString(varParam.ParameterValue) : null;
                             var userAbort = new SctpErrorUserInitiatedAbort { AbortReason = reason };
                             errorChunk.AddErrorCause(userAbort);
                             break;
                         case (ushort)SctpErrorCauseCode.ProtocolViolation:
-                            string info = (varParam.ParameterValue != null) ?
+                            var info = (varParam.ParameterValue != null) ?
                                 Encoding.UTF8.GetString(varParam.ParameterValue) : null;
                             var protocolViolation = new SctpErrorProtocolViolation { AdditionalInformation = info };
                             errorChunk.AddErrorCause(protocolViolation);

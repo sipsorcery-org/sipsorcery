@@ -122,7 +122,7 @@ namespace SIPSorcery.SIP
 
             public void Send(byte[] buffer, int offset, int length)
             {
-                base.Send(buffer.Skip(offset).Take(length).ToArray());
+                base.Send(buffer.AsSpan(offset, length).ToArray());
             }
         }
 

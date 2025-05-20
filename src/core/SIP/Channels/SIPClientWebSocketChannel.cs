@@ -376,7 +376,7 @@ namespace SIPSorcery.SIP
                         if (receiveTask.IsCompleted)
                         {
                             logger.LogDebug("Client web socket connection to {ServerUri} received {BytesReceived} bytes.", conn.ServerUri, receiveTask.Result.Count);
-                            //SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray()).Wait();
+                            //SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.AsSpan(0, receiveTask.Result.Count).ToArray()).Wait();
                             ExtractSIPMessages(this, conn, conn.ReceiveBuffer, receiveTask.Result.Count);
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }

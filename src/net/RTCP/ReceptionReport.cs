@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: ReceptionReport.cs
 //
 // Description: One or more reception report blocks are included in each
@@ -34,6 +34,8 @@
 
 using System;
 using SIPSorcery.Sys;
+using System.Buffers.Binary;
+using System.ComponentModel;
 
 namespace SIPSorcery.Net
 {
@@ -111,29 +113,31 @@ namespace SIPSorcery.Net
             DelaySinceLastSenderReport = delaySinceLastSR;
         }
 
-        public ReceptionReportSample(byte[] packet)
+        [Obsolete("Use ReceptionReportSample(ReadOnlySpan<byte> packet) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public ReceptionReportSample(byte[] packet) : this(new ReadOnlySpan<byte>(packet))
         {
-            if (BitConverter.IsLittleEndian)
+        }
+
+        public ReceptionReportSample(ReadOnlySpan<byte> packet)
+        {
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(0, 4));
+            FractionLost = packet[4];
+            PacketsLost = ReadInt24BigEndian(packet.Slice(5, 3));
+            ExtendedHighestSequenceNumber = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(8, 4));
+            Jitter = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(12, 4));
+            LastSenderReportTimestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(16, 4));
+            DelaySinceLastSenderReport = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(20, 4));
+
+            static int ReadInt24BigEndian(ReadOnlySpan<byte> packet)
             {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 0));
-                FractionLost = packet[4];
-                PacketsLost = NetConvert.DoReverseEndian(BitConverter.ToInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0));
-                ExtendedHighestSequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
-                Jitter = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 12));
-                LastSenderReportTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 16));
-                DelaySinceLastSenderReport = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 20));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-                FractionLost = packet[4];
-                PacketsLost = BitConverter.ToInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0);
-                ExtendedHighestSequenceNumber = BitConverter.ToUInt32(packet, 8);
-                Jitter = BitConverter.ToUInt32(packet, 12);
-                LastSenderReportTimestamp = BitConverter.ToUInt32(packet, 16);
-                DelaySinceLastSenderReport = BitConverter.ToUInt32(packet, 20);
+                Span<byte> buffer = stackalloc byte[4];
+                packet.CopyTo(buffer.Slice(BitConverter.IsLittleEndian ? 1 : 0, 3));
+                return BinaryPrimitives.ReadInt32BigEndian(buffer);
             }
         }
+
+        public int GetPacketSize() => 24;
 
         /// <summary>
         /// Serialises the reception report block to a byte array.
@@ -141,30 +145,36 @@ namespace SIPSorcery.Net
         /// <returns>A byte array.</returns>
         public byte[] GetBytes()
         {
-            byte[] payload = new byte[24];
+            var buffer = new byte[GetPacketSize()];
 
-            if (BitConverter.IsLittleEndian)
+            WriteBytesCore(buffer);
+
+            return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, payload, 0, 4);
-                payload[4] = FractionLost;
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PacketsLost)), 1, payload, 5, 3);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtendedHighestSequenceNumber)), 0, payload, 8, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Jitter)), 0, payload, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(LastSenderReportTimestamp)), 0, payload, 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(DelaySinceLastSenderReport)), 0, payload, 20, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, payload, 0, 4);
-                payload[4] = FractionLost;
-                Buffer.BlockCopy(BitConverter.GetBytes(PacketsLost), 1, payload, 5, 3);
-                Buffer.BlockCopy(BitConverter.GetBytes(ExtendedHighestSequenceNumber), 0, payload, 8, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(Jitter), 0, payload, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(LastSenderReportTimestamp), 0, payload, 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(DelaySinceLastSenderReport), 0, payload, 20, 4);
+                throw new ArgumentOutOfRangeException(nameof(buffer), $"The buffer should have at least {size} bytes and had only {buffer.Length}.");
             }
 
-            return payload;
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+            }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, SSRC);
+            BinaryPrimitives.WriteInt32BigEndian(buffer.Slice(4), PacketsLost); // only 24 bits
+            buffer[4] = FractionLost; // overwrite first 8 bits of PacketsLost
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(8), ExtendedHighestSequenceNumber);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(12), Jitter);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(16), LastSenderReportTimestamp);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(20), DelaySinceLastSenderReport);
         }
     }
 

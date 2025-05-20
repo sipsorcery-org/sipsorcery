@@ -904,7 +904,7 @@ namespace SIPSorcery.Net
             {
                 OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had an invalid port {candidate.port}.");
             }
-            else if(IPAddress.TryParse(candidate.address, out var addrIPv6) &&
+            else if (IPAddress.TryParse(candidate.address, out var addrIPv6) &&
                     addrIPv6.AddressFamily == AddressFamily.InterNetworkV6 &&
                     !Socket.OSSupportsIPv6 &&
                     NetServices.HasActiveIPv6Address())
@@ -1123,7 +1123,7 @@ namespace SIPSorcery.Net
                 {
                     if (_activeIceServer == null || _activeIceServer.Error != SocketError.Success)
                     {
-                        if (_iceServerResolver.IceServers.Count(x => x.Value.Error == SocketError.Success) == 0)
+                        if (!_iceServerResolver.IceServers.Any(x => x.Value.Error == SocketError.Success))
                         {
                             logger.LogDebug("RTP ICE Channel all ICE server connection checks failed, stopping ICE servers timer.");
                             _processIceServersTimer.Dispose();
@@ -1136,7 +1136,7 @@ namespace SIPSorcery.Net
                                 .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
                                 .FirstOrDefault();
 
-                            if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
+                            if (entry.Key is not null && entry.Value is not null)
                             {
                                 _activeIceServer = entry.Value;
                             }
@@ -2168,7 +2168,7 @@ namespace SIPSorcery.Net
         /// <returns>If found a matching state object or null if not.</returns>
         private IceServer GetIceServerForTransactionID(byte[] transactionID)
         {
-            if (_iceServerResolver.IceServers.Count() == 0)
+            if (_iceServerResolver.IceServers.Count == 0)
             {
                 return null;
             }
@@ -2180,7 +2180,7 @@ namespace SIPSorcery.Net
                            .Where(x => x.Value.IsTransactionIDMatch(txID))
                            .SingleOrDefault();
 
-                if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
+                if (entry.Key is not null && entry.Value is not null)
                 {
                     return entry.Value;
                 }
@@ -2576,7 +2576,7 @@ namespace SIPSorcery.Net
             {
                 if (MdnsResolve != null)
                 {
-                    logger.LogWarning("RTP ICE channel has both "+ nameof(MdnsGetAddresses) + " and " + nameof(MdnsGetAddresses) + " set. Only " + nameof(MdnsGetAddresses) + " will be used.");
+                    logger.LogWarning("RTP ICE channel has both " + nameof(MdnsGetAddresses) + " and " + nameof(MdnsGetAddresses) + " set. Only " + nameof(MdnsGetAddresses) + " will be used.");
                 }
                 return await MdnsGetAddresses(candidate.address).ConfigureAwait(false);
             }

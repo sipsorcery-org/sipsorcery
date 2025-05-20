@@ -30,6 +30,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -74,7 +75,7 @@ namespace SIPSorcery.Net
                         int nalSize = endPosn - currPosn;
                         bool isLast = currPosn + nalSize == accessUnit.Length;
 
-                        yield return new H264Nal(accessUnit.Skip(currPosn).Take(nalSize).ToArray(), isLast);
+                        yield return new H264Nal(accessUnit.AsSpan(currPosn, nalSize).ToArray(), isLast);
                     }
 
                     currPosn = nalStart;
@@ -87,7 +88,7 @@ namespace SIPSorcery.Net
 
             if (currPosn < accessUnit.Length)
             {
-                yield return new H264Nal(accessUnit.Skip(currPosn).ToArray(), true);
+                yield return new H264Nal(accessUnit.AsSpan(currPosn).ToArray(), true);
             }
         }
 

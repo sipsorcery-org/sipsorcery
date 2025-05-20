@@ -220,7 +220,7 @@ namespace SIPSorcery.net.RTP.Packetisation
                 qTableHeader.SetValue(customData.MjpegHeaderQTable.lengthHigh, 2);
                 qTableHeader.SetValue(customData.MjpegHeaderQTable.lengthLow, 3);
 
-                var qtables = new byte[0];
+                var qtables = Array.Empty<byte>();
                 foreach (var qTable in customData.QTables)
                 {
                     qtables = qtables.Concat(qTable).ToArray();
@@ -259,7 +259,7 @@ namespace SIPSorcery.net.RTP.Packetisation
                     {
                         if (currentMarker.StartPosition > 0)
                         {
-                            currentMarker.MarkerBytes = jpegFrame.Skip(currentMarker.StartPosition).Take(index + 1).ToArray();
+                            currentMarker.MarkerBytes = jpegFrame.AsSpan(currentMarker.StartPosition, index + 1).ToArray();
                             markers.Add(currentMarker);
                             currentMarker = new Marker();
                         }
@@ -276,7 +276,7 @@ namespace SIPSorcery.net.RTP.Packetisation
             }
             if (currentMarker.StartPosition > 0)
             {
-                currentMarker.MarkerBytes = jpegFrame.Skip(currentMarker.StartPosition).Take(index).ToArray();
+                currentMarker.MarkerBytes = jpegFrame.AsSpan(currentMarker.StartPosition, index).ToArray();
                 markers.Add(currentMarker);
             }
 
@@ -317,7 +317,7 @@ namespace SIPSorcery.net.RTP.Packetisation
         private static MJPEGData ProcessJpegSos(Marker marker, MJPEG mjpeg)
         {
             var hdrLength = (marker.MarkerBytes[0] << 8) | marker.MarkerBytes[1];
-            var bytes = marker.MarkerBytes.Skip(hdrLength).ToArray();
+            var bytes = marker.MarkerBytes.AsSpan(hdrLength).ToArray();
             return new MJPEGData() { Data = bytes };
         }
 
@@ -335,7 +335,7 @@ namespace SIPSorcery.net.RTP.Packetisation
             var qCount = (hdrLength - QTableHeaderLength) / QTableBlockLength8Bit;
             for (var i = 0; i < qCount; i++)
             {
-                var bytes = marker.MarkerBytes.Skip(QTableHeaderLength + i * QTableBlockLength8Bit + QTableParamsLength).Take(QTableLength8Bit).ToArray();
+                var bytes = marker.MarkerBytes.AsSpan(QTableHeaderLength + i * QTableBlockLength8Bit + QTableParamsLength, QTableLength8Bit).ToArray();
                 mjpeg.QTables.Add(bytes);
                 mjpeg.MjpegHeaderQTable.SetLength(mjpeg.MjpegHeaderQTable.GetLength() + bytes.Length);
             }

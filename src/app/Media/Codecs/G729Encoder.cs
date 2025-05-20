@@ -55,7 +55,7 @@ namespace SIPSorcery.Media
          * Initialization of the coder.
          */
 
-        private byte[] _leftover = new byte[0];
+        private byte[] _leftover = Array.Empty<byte>();
 
         /**
          * Init the Ld8k Coder
