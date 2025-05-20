@@ -10,7 +10,8 @@
 // 20 Aug 2020  Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;

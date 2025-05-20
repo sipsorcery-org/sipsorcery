@@ -15,7 +15,8 @@
 // 21 Jan 2021  Aaron Clauson   Adjust playback rate dependent on selected audio format.
 //
 // License: 
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// BSD 3-Clause "New" or "Revised" License and the additional
+// BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
