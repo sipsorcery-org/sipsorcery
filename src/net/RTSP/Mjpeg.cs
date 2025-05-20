@@ -414,8 +414,8 @@ namespace SIPSorcery.Net
 
                     //Decode RtpJpeg Header
 
-                    TypeSpecific = (uint)(packet.Payload[offset++]);
-                    FragmentOffset = (uint)(packet.Payload[offset++] << 16 | packet.Payload[offset++] << 8 | packet.Payload[offset++]);
+                    TypeSpecific = packet.GetPayloadByteAt(offset++);
+                    FragmentOffset = (uint)(packet.GetPayloadByteAt(offset++) << 16 | packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++));
 
                     #region RFC2435 -  The Type Field
 
@@ -498,16 +498,16 @@ namespace SIPSorcery.Net
 
                     #endregion
 
-                    Type = (uint)(packet.Payload[offset++]);
+                    Type = packet.GetPayloadByteAt(offset++);
                     type = Type & 1;
                     if (type > 3 || type > 6)
                     {
                         throw new ArgumentException("Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications on RFC 2035 should be updated to indicate the presence of restart markers with type 64 or 65 and the Restart Marker header.");
                     }
 
-                    Quality = (uint)packet.Payload[offset++];
-                    Width = (uint)(packet.Payload[offset++] * 8); // This should have been 128 or > and the standard would have worked for all resolutions
-                    Height = (uint)(packet.Payload[offset++] * 8);// Now in certain highres profiles you will need an OnVif extension before the RtpJpeg Header
+                    Quality = packet.GetPayloadByteAt(offset++);
+                    Width = (uint)(packet.GetPayloadByteAt(offset++) * 8);  // This should have been 128 or > and the standard would have worked for all resolutions
+                    Height = (uint)(packet.GetPayloadByteAt(offset++) * 8); // Now in certain highres profiles you will need an OnVif extension before the RtpJpeg Header
                                                                   //It is worth noting Rtp does not care what you send and more tags such as comments and or higher resolution pictures may be sent and these values will simply be ignored.
 
                     if (Width == 0 || Height == 0)
@@ -529,8 +529,8 @@ namespace SIPSorcery.Net
                            |       Restart Interval        |F|L|       Restart Count       |
                            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                          */
-                        RestartInterval = (ushort)(packet.Payload[offset++] << 8 | packet.Payload[offset++]);
-                        RestartCount = (ushort)((packet.Payload[offset++] << 8 | packet.Payload[offset++]) & 0x3fff);
+                        RestartInterval = (ushort)(packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++));
+                        RestartCount = (ushort)((packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++)) & 0x3fff);
                     }
 
                     //QTables Only occur in the first packet
@@ -539,7 +539,7 @@ namespace SIPSorcery.Net
                         //If the quality > 127 there are usually Quantization Tables
                         if (Quality > 127)
                         {
-                            if ((packet.Payload[offset++]) != 0)
+                            if ((packet.GetPayloadByteAt(offset++)) != 0)
                             {
                                 //Must Be Zero is Not Zero
                                 if (System.Diagnostics.Debugger.IsAttached)
@@ -549,7 +549,7 @@ namespace SIPSorcery.Net
                             }
 
                             //Precision
-                            PrecisionTable = (packet.Payload[offset++]);
+                            PrecisionTable = (packet.GetPayloadByteAt(offset++));
 
                             #region RFC2435 Length Field
 
@@ -584,15 +584,15 @@ namespace SIPSorcery.Net
                             #endregion
 
                             //Length of all tables
-                            ushort Length = (ushort)(packet.Payload[offset++] << 8 | packet.Payload[offset++]);
+                            ushort Length = (ushort)(packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++));
 
                             //If there is Table Data Read it
                             if (Length > 0)
                             {
-                                tables = new ArraySegment<byte>(packet.Payload, offset, (int)Length);
+                                tables = packet.GetPayloadSegment(offset, Length);
                                 offset += (int)Length;
                             }
-                            else if (Length > packet.Payload.Length - offset)
+                            else if (Length > packet.GetPayloadLength() - offset)
                             {
                                 continue; // The packet must be discarded
                             }
@@ -611,7 +611,7 @@ namespace SIPSorcery.Net
                     }
 
                     //Write the Payload data from the offset
-                    Buffer.Write(packet.Payload, offset, packet.Payload.Length - offset);
+                    Buffer.Write(packet.GetPayloadBytes(), offset, (int)packet.GetPayloadLength() - offset);
                 }
 
                 //Check for EOI Marker

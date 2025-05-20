@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
         /// value is added to the previous RTP timestamp when building the RTP header.</param>
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
-        public void SendAudio(uint durationRtpUnits, byte[] sample)
+        public void SendAudio(uint durationRtpUnits, ArraySegment<byte> sample)
         {
             if (!sendingFormatFound)
             {
@@ -72,13 +72,24 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends an audio sample to the remote peer.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the audio sample. This
+        /// value is added to the previous RTP timestamp when building the RTP header.</param>
+        /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
+        public void SendAudio(uint durationRtpUnits, byte[] sample)
+        {
+            SendAudio(durationRtpUnits, new ArraySegment<byte>(sample));
+        }
+
+        /// <summary>
         /// Sends an audio packet to the remote party.
         /// </summary>
         /// <param name="duration">The duration of the audio payload in timestamp units. This value
         /// gets added onto the timestamp being set in the RTP header.</param>
         /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
-        /// <param name="buffer">The audio payload to send.</param>
-        public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
+        /// <param name="bufferSegment">The audio payload to send.</param>
+        public void SendAudioFrame(uint duration, int payloadTypeID, ArraySegment<byte> bufferSegment)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -99,7 +110,7 @@ namespace SIPSorcery.Net
                     // See https://github.com/sipsorcery/sipsorcery/issues/394.
 
                     int maxPayload = RTPSession.RTP_MAX_PAYLOAD;
-                    int totalPackets = (buffer.Length + maxPayload - 1) / maxPayload;
+                    int totalPackets = (bufferSegment.Count + maxPayload - 1) / maxPayload;
 
                     uint totalIncrement = 0;
                     uint startTimestamp = LocalTrack.Timestamp; // Keep track of where we started.
@@ -107,21 +118,22 @@ namespace SIPSorcery.Net
                     for (int index = 0; index < totalPackets; index++)
                     {
                         int offset = index * maxPayload;
-                        int payloadLength = Math.Min(maxPayload, buffer.Length - offset);
+                        int payloadLength = Math.Min(maxPayload, bufferSegment.Count - offset);
 
-                        double fraction = (double)payloadLength / buffer.Length;
+                        double fraction = (double)payloadLength / bufferSegment.Count;
                         uint packetDuration = (uint)Math.Round(fraction * duration);
-
-                        byte[] payload = new byte[payloadLength];
-                        Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
 
                         // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
                         // from silence suppression. For video the marker bit DOES get set to 1 for the last packet
                         // in a frame.
                         int markerBit = 0;
-
+#if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
+                        var memorySegment = bufferSegment.Slice(offset, payloadLength);
+#else
+                        var memorySegment = new ArraySegment<byte>(bufferSegment.Array!, offset, payloadLength);
+#endif
                         // Send this packet at the current LocalTrack.Timestamp
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(memorySegment, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
 
                         // After sending, increment the timestamp by this packet's portion.
                         // This ensures the timestamp increments for the next packet, including the first one.
@@ -141,6 +153,18 @@ namespace SIPSorcery.Net
                     logger.LogError(sockExcp, "SocketException SendAudioFrame. {ErrorMessage}", sockExcp.Message);
                 }
             }
+        }
+
+        /// <summary>
+        /// Sends an audio packet to the remote party.
+        /// </summary>
+        /// <param name="duration">The duration of the audio payload in timestamp units. This value
+        /// gets added onto the timestamp being set in the RTP header.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        /// <param name="buffer">The audio payload to send.</param>
+        public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
+        {
+            SendAudioFrame(duration, payloadTypeID, new ArraySegment<byte>(buffer));
         }
 
         /// <summary>
