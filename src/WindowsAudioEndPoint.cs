@@ -29,7 +29,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorceryMedia.Windows
 {
-    public class WindowsAudioEndPoint : IAudioSource, IAudioSink
+    public class WindowsAudioEndPoint : IAudioEndPoint
     {
         private const int DEVICE_BITS_PER_SAMPLE = 16;
         private const int DEFAULT_DEVICE_CHANNELS = 1;
@@ -125,25 +125,21 @@ namespace SIPSorceryMedia.Windows
 
             if (!_disableSink)
             {
+                InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode(), DEFAULT_DEVICE_CHANNELS);
+
                 if (audioEncoder.SupportedFormats?.Count == 1)
                 {
                     SetAudioSinkFormat(audioEncoder.SupportedFormats[0]);
-                }
-                else
-                {
-                    InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode(), DEFAULT_DEVICE_CHANNELS);
                 }
             }
 
             if (!_disableSource)
             {
+                InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate, DEFAULT_DEVICE_CHANNELS);
+
                 if (audioEncoder.SupportedFormats?.Count == 1)
                 {
                     SetAudioSourceFormat(audioEncoder.SupportedFormats[0]);
-                }
-                else
-                {
-                    InitCaptureDevice(_audioInDeviceIndex, (int)DefaultAudioSourceSamplingRate, DEFAULT_DEVICE_CHANNELS);
                 }
             }
         }
@@ -200,49 +196,68 @@ namespace SIPSorceryMedia.Windows
         }
 
         /// <summary>
-        /// Starts the media capturing/source devices.
+        /// Starts the audio capturing/source device and the audio sink device.
         /// </summary>
-        public Task StartAudio()
+        public Task Start()
         {
-            if (!_isAudioSourceStarted)
+            if (!_isAudioSourceStarted && _waveInEvent != null)
             {
-                _isAudioSourceStarted = true;
-                _waveInEvent?.StartRecording();
+                StartAudio();
+            }
+
+            if (!_isAudioSinkStarted && _waveOutEvent != null)
+            {
+                StartAudioSink();
             }
 
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Closes the session.
+        /// Closes the audio devices.
         /// </summary>
-        public Task CloseAudio()
+        public Task Close()
         {
-            if (!_isAudioSourceClosed)
+            if (!_isAudioSourceClosed && _waveInEvent != null)
             {
-                _isAudioSourceClosed = true;
+                CloseAudio();
+            }
 
-                if (_waveInEvent != null)
-                {
-                    _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
-                    _waveInEvent.StopRecording();
-                }
+            if (!_isAudioSinkClosed && _waveOutEvent != null)
+            {
+                CloseAudioSink();
             }
 
             return Task.CompletedTask;
         }
 
-        public Task PauseAudio()
+        public Task Pause()
         {
-            _isAudioSourcePaused = true;
-            _waveInEvent?.StopRecording();
+            if (!_isAudioSourcePaused && _waveInEvent != null)
+            {
+                PauseAudio();
+            }
+
+            if (!_isAudioSinkPaused && _waveOutEvent != null)
+            {
+                PauseAudioSink();
+            }
+
             return Task.CompletedTask;
         }
 
-        public Task ResumeAudio()
+        public Task Resume()
         {
-            _isAudioSourcePaused = false;
-            _waveInEvent?.StartRecording();
+            if (_isAudioSourcePaused && _waveInEvent != null)
+            {
+                ResumeAudio();
+            }
+
+            if (_isAudioSinkPaused && _waveOutEvent != null)
+            {
+                ResumeAudioSink();
+            }
+
             return Task.CompletedTask;
         }
 
@@ -377,6 +392,61 @@ namespace SIPSorceryMedia.Windows
                 _isAudioSinkClosed = true;
 
                 _waveOutEvent?.Stop();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Pauses the audio source. Use the <cref="Pause"/> method to pause both the audio source and sink.
+        /// </summary>
+        public Task PauseAudio()
+        {
+            _isAudioSourcePaused = true;
+            _waveInEvent?.StopRecording();
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Resumes the audio source. Use the <cref="Resume"/> method to resume both the audio source and sink.
+        /// </summary>
+        public Task ResumeAudio()
+        {
+            _isAudioSourcePaused = false;
+            _waveInEvent?.StartRecording();
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Starts the audio source. Use the <cref="Start"/> method to start both the audio source and sink.
+        /// </summary>
+        public Task StartAudio()
+        {
+            if (!_isAudioSourceStarted)
+            {
+                _isAudioSourceStarted = true;
+                _waveInEvent?.StartRecording();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Closes (stops) the audio source. Use the <cref="Stop"/> method to stop both the audio source and sink.
+        /// </summary>
+        public Task CloseAudio()
+        {
+            if (!_isAudioSourceClosed)
+            {
+                _isAudioSourceClosed = true;
+
+                if (_waveInEvent != null)
+                {
+                    _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
+                    _waveInEvent.StopRecording();
+                }
             }
 
             return Task.CompletedTask;

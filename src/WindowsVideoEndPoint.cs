@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,13 +22,11 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
-using SIPSorceryMedia.Abstractions;
-using Windows.Devices.Enumeration;
 using Windows.Media.MediaProperties;
 using WinRT;
 
@@ -46,7 +46,7 @@ namespace SIPSorceryMedia.Windows
         public string Name;
     }
 
-    public class WindowsVideoEndPoint : IVideoSource, IVideoSink, IDisposable
+    public class WindowsVideoEndPoint : IVideoEndPoint, IDisposable
     {
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
@@ -717,5 +717,13 @@ namespace SIPSorceryMedia.Windows
         {
             return Task.CompletedTask;
         }
+
+        public Task Start() => StartVideo();
+
+        public Task Close() => CloseVideo();
+
+        public Task Pause() => PauseVideo();
+
+        public Task Resume() => ResumeVideo();
     }
 }
