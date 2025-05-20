@@ -13,7 +13,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -33,8 +35,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripSctpHeader()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             ushort srcPort = 7;
             ushort dstPort = 8888;
@@ -51,7 +53,7 @@ namespace SIPSorcery.Net.UnitTests
 
             header.WriteToBuffer(buffer, 0);
 
-            var rndTripHeader = SctpHeader.Parse(buffer, 0);
+            var rndTripHeader = SctpHeader.Parse(buffer.AsSpan());
 
             Assert.Equal(srcPort, rndTripHeader.SourcePort);
             Assert.Equal(dstPort, rndTripHeader.DestinationPort);
@@ -68,7 +70,7 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = { 0xdf, 0x90, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 
                               0x6a, 0xb8, 0x0e, 0x99 };
 
-            var sctpHdr = SctpHeader.Parse(buffer, 0);
+            var sctpHdr = SctpHeader.Parse(buffer.AsSpan());
 
             Assert.Equal(57232, sctpHdr.SourcePort);
             Assert.Equal(7, sctpHdr.DestinationPort);

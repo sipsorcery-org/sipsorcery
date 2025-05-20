@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -20,8 +21,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void KeySaltBase64Test()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SDPSecurityDescription.KeyParameter keyParameter = KeyParameterFactory.Create("ĀĀ\0\0\0\0\0\0\0\0\0\0\0\0\0\0", "ĀĀĀ\0\0\0\0\0\0\0\0\0\0\0");
             Assert.NotNull((object)keyParameter);
@@ -38,8 +39,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LifeTimeTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SDPSecurityDescription.KeyParameter keyParameter = KeyParameterFactory.Create("ĀĀ\0\0\0\0\0\0\0\0\0\0\0\0\0\0", "ĀĀĀ\0\0\0\0\0\0\0\0\0\0\0");
             Assert.Throws<ArgumentOutOfRangeException>(() => keyParameter.LifeTime = 0);
@@ -60,8 +61,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LifeTimeStringTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SDPSecurityDescription.KeyParameter keyParameter = KeyParameterFactory.Create("ĀĀ\0\0\0\0\0\0\0\0\0\0\0\0\0\0", "ĀĀĀ\0\0\0\0\0\0\0\0\0\0\0");
             Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = null);
@@ -92,8 +93,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SDPSecurityDescription.KeyParameter kp1 = SDPSecurityDescription.KeyParameter.Parse("inline:MTIzNDU2Nzg5QUJDREUwMTIzNDU2Nzg5QUJjZGVm|2^20|1:4");
             Assert.Equal("inline:MTIzNDU2Nzg5QUJDREUwMTIzNDU2Nzg5QUJjZGVm|2^20|1:4", kp1.ToString());

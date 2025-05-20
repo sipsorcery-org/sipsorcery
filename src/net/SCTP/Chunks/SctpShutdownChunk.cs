@@ -17,73 +17,78 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
+using System;
+using System.Buffers.Binary;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+/// <summary>
+/// An endpoint in an association MUST use this chunk to initiate a
+/// graceful close of the association with its peer.
+/// </summary>
+/// <remarks>
+/// https://tools.ietf.org/html/rfc4960#section-3.3.8
+/// </remarks>
+public partial class SctpShutdownChunk : SctpChunk
 {
+    public const int FIXED_PARAMETERS_LENGTH = 4;
+
     /// <summary>
-    /// An endpoint in an association MUST use this chunk to initiate a
-    /// graceful close of the association with its peer.
+    /// This parameter contains the TSN of the last chunk received in
+    /// sequence before any gaps.
     /// </summary>
-    /// <remarks>
-    /// https://tools.ietf.org/html/rfc4960#section-3.3.8
-    /// </remarks>
-    public class SctpShutdownChunk : SctpChunk
+    public uint? CumulativeTsnAck;
+
+    private SctpShutdownChunk() : base(SctpChunkType.SHUTDOWN)
+    { }
+
+    /// <summary>
+    /// Creates a new SHUTDOWN chunk.
+    /// </summary>
+    /// <param name="cumulativeTsnAck">The last TSN that was received from the remote party.</param>
+    public SctpShutdownChunk(uint? cumulativeTsnAck) : base(SctpChunkType.SHUTDOWN)
     {
-        public const int FIXED_PARAMETERS_LENGTH = 4;
+        CumulativeTsnAck = cumulativeTsnAck;
+    }
 
-        /// <summary>
-        /// This parameter contains the TSN of the last chunk received in
-        /// sequence before any gaps.
-        /// </summary>
-        public uint? CumulativeTsnAck;
+    /// <summary>
+    /// Calculates the padded length for the chunk.
+    /// </summary>
+    /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
+    /// <returns>The padded length of the chunk.</returns>
+    public override ushort GetByteCount(bool padded)
+    {
+        return SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
+    }
 
-        private SctpShutdownChunk() : base(SctpChunkType.SHUTDOWN)
-        { }
+    /// <summary>
+    /// Serialises the SHUTDOWN chunk to a pre-allocated buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+    /// must have the required space already allocated.</param>
+    /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+    public override ushort WriteBytes(Span<byte> buffer)
+    {
+        WriteBytesCore(buffer);
 
-        /// <summary>
-        /// Creates a new SHUTDOWN chunk.
-        /// </summary>
-        /// <param name="cumulativeTsnAck">The last TSN that was received from the remote party.</param>
-        public SctpShutdownChunk(uint? cumulativeTsnAck) : base(SctpChunkType.SHUTDOWN)
-        {
-            CumulativeTsnAck = cumulativeTsnAck;
-        }
+        return GetByteCount(true);
+    }
 
-        /// <summary>
-        /// Calculates the padded length for the chunk.
-        /// </summary>
-        /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
-        /// <returns>The padded length of the chunk.</returns>
-        public override ushort GetChunkLength(bool padded)
-        {
-            return SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
-        }
+    private void WriteBytesCore(Span<byte> buffer)
+    {
+        var bytesWritten = WriteChunkHeader(buffer);
 
-        /// <summary>
-        /// Serialises the SHUTDOWN chunk to a pre-allocated buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
-        /// must have the required space already allocated.</param>
-        /// <param name="posn">The position in the buffer to write to.</param>
-        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public override ushort WriteTo(byte[] buffer, int posn)
-        {
-            WriteChunkHeader(buffer, posn);
-            NetConvert.ToBuffer(CumulativeTsnAck.GetValueOrDefault(), buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
-            return GetChunkLength(true);
-        }
+        BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), CumulativeTsnAck.GetValueOrDefault());
+    }
 
-        /// <summary>
-        /// Parses the SHUTDOWN chunk fields.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised chunk.</param>
-        /// <param name="posn">The position to start parsing at.</param>
-        public static SctpShutdownChunk ParseChunk(byte[] buffer, int posn)
-        {
-            var shutdownChunk = new SctpShutdownChunk();
-            shutdownChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
-            return shutdownChunk;
-        }
+    /// <summary>
+    /// Parses the SHUTDOWN chunk fields.
+    /// </summary>
+    /// <param name="buffer">The buffer holding the serialised chunk.</param>
+    public static SctpShutdownChunk ParseChunk(ReadOnlySpan<byte> buffer)
+    {
+        var shutdownChunk = new SctpShutdownChunk();
+        shutdownChunk.CumulativeTsnAck = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
+        return shutdownChunk;
     }
 }

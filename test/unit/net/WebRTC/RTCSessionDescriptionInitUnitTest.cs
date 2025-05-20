@@ -61,7 +61,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseJavascriptJsonTest()
         {
-            string json = "{\"type\":\"answer\",\"sdp\":\"v=0\r\no=- 3619871509827895381 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=msid-semantic: WMS\r\nm=video 9 UDP/TLS/RTP/SAVP 100\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:XqpN\r\na=ice-pwd:VOXKGB0AIf10Kqtv+zcQKgLF\r\na=ice-options:trickle\r\na=fingerprint:sha-256 D4:6E:F7:FD:B3:4F:4D:3D:3A:B3:92:2C:CC:F6:4E:46:88:B7:01:E9:B7:E1:77:03:8E:BB:AA:DC:26:1B:9D:2E\r\na=setup:active\r\na=mid:0\r\na=recvonly\r\na=rtcp-mux\r\na=rtpmap:100 VP8/90000\r\n\"}";
+            string json = "{\"type\":\"answer\",\"sdp\":\"v=0\\r\\no=- 3619871509827895381 2 IN IP4 127.0.0.1\\r\\ns=-\\r\\nt=0 0\\r\\na=group:BUNDLE 0\\r\\na=msid-semantic: WMS\\r\\nm=video 9 UDP/TLS/RTP/SAVP 100\\r\\nc=IN IP4 0.0.0.0\\r\\na=rtcp:9 IN IP4 0.0.0.0\\r\\na=ice-ufrag:XqpN\\r\\na=ice-pwd:VOXKGB0AIf10Kqtv+zcQKgLF\\r\\na=ice-options:trickle\\r\\na=fingerprint:sha-256 D4:6E:F7:FD:B3:4F:4D:3D:3A:B3:92:2C:CC:F6:4E:46:88:B7:01:E9:B7:E1:77:03:8E:BB:AA:DC:26:1B:9D:2E\\r\\na=setup:active\\r\\na=mid:0\\r\\na=recvonly\\r\\na=rtcp-mux\\r\\na=rtpmap:100 VP8/90000\\r\\n\"}";
 
             var parseResult = RTCSessionDescriptionInit.TryParse(json, out var init);
 

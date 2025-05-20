@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "webrtccmdline": {
-      "commandName": "Project",
-      "commandLineArgs": "--ws --port 60042"
-    }
-  }
-}

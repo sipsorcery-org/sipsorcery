@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNErrorCodeAttributeUnitTest.cs
 //
 // Description: Unit tests for the STUNErrorCodeAttribute class.
@@ -48,7 +48,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             var attr = new STUNErrorCodeAttribute(401, "Unauthorized");
 
-            Assert.NotNull(attr.Value);
+            Assert.False(attr.Value.IsEmpty);
 
             // Value should be: 2 reserved bytes + 1 class + 1 number + reason phrase
             var expectedLength = 4 + Encoding.UTF8.GetByteCount("Unauthorized");
@@ -70,7 +70,8 @@ namespace SIPSorcery.Net.UnitTests
             msg.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
 
             // This previously threw ArgumentException due to null Value / zero PaddedLength
-            byte[] buffer = msg.ToByteBuffer(null, false);
+            byte[] buffer = new byte[msg.GetByteBufferSize(null, false)];
+            msg.WriteToBuffer(buffer, null, false);
 
             Assert.NotNull(buffer);
             Assert.True(buffer.Length > 20); // At least STUN header + error attribute
@@ -87,14 +88,15 @@ namespace SIPSorcery.Net.UnitTests
             msg.Header.TransactionId = new byte[12];
             msg.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
 
-            byte[] buffer = msg.ToByteBuffer(null, false);
-            var parsed = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+            byte[] buffer = new byte[msg.GetByteBufferSize(null, false)];
+            msg.WriteToBuffer(buffer, null, false);
+            var parsed = STUNMessage.ParseSTUNMessage(buffer);
 
             Assert.NotNull(parsed);
             Assert.Single(parsed.Attributes);
             Assert.Equal(STUNAttributeTypesEnum.ErrorCode, parsed.Attributes[0].AttributeType);
 
-            var errorAttr = new STUNErrorCodeAttribute(parsed.Attributes[0].Value);
+            var errorAttr = new STUNErrorCodeAttribute(parsed.Attributes[0].Value.ToArray());
             Assert.Equal(437, errorAttr.ErrorCode);
             Assert.Equal(4, errorAttr.ErrorClass);
             Assert.Equal(37, errorAttr.ErrorNumber);

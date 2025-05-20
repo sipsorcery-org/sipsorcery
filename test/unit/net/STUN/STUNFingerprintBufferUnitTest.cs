@@ -32,8 +32,9 @@ namespace SIPSorcery.Net.UnitTests
             msg.AddUsernameAttribute("xxxx:yyyy");
             msg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(1U)));
 
-            var exact = msg.ToByteBufferStringKey(key, true);
-            var parsed = STUNMessage.ParseSTUNMessage(exact, exact.Length);
+            var exact = new byte[msg.GetByteBufferSizeStringKey(key, true)];
+            msg.WriteToBufferStringKey(exact, key, true);
+            var parsed = STUNMessage.ParseSTUNMessage(exact);
 
             Assert.True(parsed.isFingerprintValid);
             Assert.True(parsed.CheckIntegrity(Encoding.UTF8.GetBytes(key)));
@@ -55,7 +56,8 @@ namespace SIPSorcery.Net.UnitTests
             msg.AddUsernameAttribute("xxxx:yyyy");
             msg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(1U)));
 
-            var exact = msg.ToByteBufferStringKey(key, true);
+            var exact = new byte[msg.GetByteBufferSizeStringKey(key, true)];
+            msg.WriteToBufferStringKey(exact, key, true);
 
             // Simulate a pooled receive buffer: copy message into a larger array
             // with trailing garbage bytes.
@@ -64,7 +66,7 @@ namespace SIPSorcery.Net.UnitTests
             //new Random(42).NextBytes(oversized.AsSpan(exact.Length).ToArray()
             //    .CopyTo(oversized.AsSpan(exact.Length)));
 
-            var parsed = STUNMessage.ParseSTUNMessage(oversized, exact.Length);
+            var parsed = STUNMessage.ParseSTUNMessage(oversized);
 
             Assert.True(parsed.isFingerprintValid,
                 "Fingerprint should be valid even with oversized buffer");

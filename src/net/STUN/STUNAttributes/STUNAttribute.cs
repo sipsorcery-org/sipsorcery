@@ -37,246 +37,269 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public enum STUNAttributeTypesEnum : ushort
 {
-    public enum STUNAttributeTypesEnum : ushort
+    Unknown = 0,
+    MappedAddress = 0x0001,
+    ResponseAddress = 0x0002,       // Not used in RFC5389.
+    ChangeRequest = 0x0003,         // Not used in RFC5389.
+    SourceAddress = 0x0004,         // Not used in RFC5389.
+    ChangedAddress = 0x0005,        // Not used in RFC5389.
+    Username = 0x0006,
+    Password = 0x0007,              // Not used in RFC5389.
+    MessageIntegrity = 0x0008,
+    ErrorCode = 0x0009,
+    UnknownAttributes = 0x000A,
+    ReflectedFrom = 0x000B,         // Not used in RFC5389.
+    Realm = 0x0014,
+    Nonce = 0x0015,
+    RequestedAddressFamily = 0x0017,// Added in RFC6156.
+    XORMappedAddress = 0x0020,
+
+    Software = 0x8022,              // Added in RFC5389.
+    AlternateServer = 0x8023,       // Added in RFC5389.
+    FingerPrint = 0x8028,           // Added in RFC5389.
+
+    IceControlled = 0x8029,         // Added in RFC8445.
+    IceControlling = 0x802a,        // Added in RFC8445.
+    Priority = 0x0024,              // Added in RFC8445.
+
+    UseCandidate = 0x0025,          // Added in RFC5245.
+
+    // New attributes defined in TURN (RFC5766).
+    ChannelNumber = 0x000C,
+    Lifetime = 0x000D,
+    XORPeerAddress = 0x0012,
+    Data = 0x0013,
+    XORRelayedAddress = 0x0016,
+    EvenPort = 0x0018,
+    RequestedTransport = 0x0019,
+    DontFragment = 0x001A,
+    ReservationToken = 0x0022,
+
+    ConnectionId = 0x002a,          // Added in RFC6062.
+}
+
+public static class STUNAttributeTypes
+{
+    public static STUNAttributeTypesEnum GetSTUNAttributeTypeForId(int stunAttributeTypeId)
     {
-        Unknown = 0,
-        MappedAddress = 0x0001,
-        ResponseAddress = 0x0002,       // Not used in RFC5389.
-        ChangeRequest = 0x0003,         // Not used in RFC5389.
-        SourceAddress = 0x0004,         // Not used in RFC5389.
-        ChangedAddress = 0x0005,        // Not used in RFC5389.
-        Username = 0x0006,
-        Password = 0x0007,              // Not used in RFC5389.
-        MessageIntegrity = 0x0008,
-        ErrorCode = 0x0009,
-        UnknownAttributes = 0x000A,
-        ReflectedFrom = 0x000B,         // Not used in RFC5389.
-        Realm = 0x0014,
-        Nonce = 0x0015,
-        RequestedAddressFamily = 0x0017,// Added in RFC6156.
-        XORMappedAddress = 0x0020,
-
-        Software = 0x8022,              // Added in RFC5389.
-        AlternateServer = 0x8023,       // Added in RFC5389.
-        FingerPrint = 0x8028,           // Added in RFC5389.
-
-        IceControlled = 0x8029,         // Added in RFC8445.
-        IceControlling = 0x802a,        // Added in RFC8445.
-        Priority = 0x0024,              // Added in RFC8445.
-
-        UseCandidate = 0x0025,          // Added in RFC5245.
-
-        // New attributes defined in TURN (RFC5766).
-        ChannelNumber = 0x000C,
-        Lifetime = 0x000D,
-        XORPeerAddress = 0x0012,
-        Data = 0x0013,
-        XORRelayedAddress = 0x0016,
-        EvenPort = 0x0018,
-        RequestedTransport = 0x0019,
-        DontFragment = 0x001A,
-        ReservationToken = 0x0022,
-
-        ConnectionId = 0x002a,          // Added in RFC6062.
+        return (STUNAttributeTypesEnum)Enum.Parse(typeof(STUNAttributeTypesEnum), stunAttributeTypeId.ToString(), true);
     }
+}
 
-    public class STUNAttributeTypes
+public static class STUNAttributeConstants
+{
+    public static readonly byte[] UdpTransportType = new byte[] { 0x11, 0x00, 0x00, 0x00 };     // The payload type for UDP in a RequestedTransport type attribute.
+    public static readonly byte[] TcpTransportType = new byte[] { 0x06, 0x00, 0x00, 0x00 };     // The payload type for TCP in a RequestedTransport type attribute.
+
+    /// <summary>
+    /// The requested TURN relay ip address is IPv4 (RFC5389, Section 15.1)
+    /// </summary>
+    public static readonly byte[] IPv4AddressFamily = new byte[] { 0x01, 0x00, 0x00, 0x00 };
+    /// <summary>
+    /// The requested TURN relay ip address is IPv6 (RFC5389, Section 15.1)
+    /// </summary>
+    public static readonly byte[] IPv6AddressFamily = new byte[] { 0x02, 0x00, 0x00, 0x00 };
+}
+
+public partial class STUNAttribute : IByteSerializable
+{
+    public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
+
+    private static ILogger logger = Log.Logger;
+
+    public STUNAttributeTypesEnum AttributeType { get; private set; } = STUNAttributeTypesEnum.Unknown;
+    public ReadOnlyMemory<byte> Value { get; private set; }
+
+    public virtual ushort PaddedLength
     {
-        public static STUNAttributeTypesEnum GetSTUNAttributeTypeForId(int stunAttributeTypeId)
+        get
         {
-            return (STUNAttributeTypesEnum)Enum.Parse(typeof(STUNAttributeTypesEnum), stunAttributeTypeId.ToString(), true);
-        }
-    }
-
-    public class STUNAttributeConstants
-    {
-        public static readonly byte[] UdpTransportType = new byte[] { 0x11, 0x00, 0x00, 0x00 };     // The payload type for UDP in a RequestedTransport type attribute.
-        public static readonly byte[] TcpTransportType = new byte[] { 0x06, 0x00, 0x00, 0x00 };     // The payload type for TCP in a RequestedTransport type attribute.
-
-        /// <summary>
-        /// The requested TURN relay ip address is IPv4 (RFC5389, Section 15.1)
-        /// </summary>
-        public static readonly byte[] IPv4AddressFamily = new byte[] { 0x01, 0x00, 0x00, 0x00 };
-        /// <summary>
-        /// The requested TURN relay ip address is IPv6 (RFC5389, Section 15.1)
-        /// </summary>
-        public static readonly byte[] IPv6AddressFamily = new byte[] { 0x02, 0x00, 0x00, 0x00 };
-    }
-
-    public class STUNAttribute
-    {
-        public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
-
-        private static ILogger logger = Log.Logger;
-
-        public STUNAttributeTypesEnum AttributeType = STUNAttributeTypesEnum.Unknown;
-        public byte[] Value;
-
-        public virtual UInt16 PaddedLength
-        {
-            get
+            if (!Value.IsEmpty)
             {
-                if (Value != null)
-                {
-                    return Convert.ToUInt16((Value.Length % 4 == 0) ? Value.Length : Value.Length + (4 - (Value.Length % 4)));
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
-
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, byte[] value)
-        {
-            AttributeType = attributeType;
-            Value = value;
-        }
-
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, ushort value)
-        {
-            AttributeType = attributeType;
-            Value = NetConvert.GetBytes(value);
-        }
-
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, uint value)
-        {
-            AttributeType = attributeType;
-            Value = NetConvert.GetBytes(value);
-        }
-
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, ulong value)
-        {
-            AttributeType = attributeType;
-            Value = NetConvert.GetBytes(value);
-        }
-
-        public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex) => ParseMessageAttributes(buffer, startIndex, endIndex, null);
-
-        public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex, STUNHeader header)
-        {
-            if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
-            {
-                List<STUNAttribute> attributes = new List<STUNAttribute>();
-                int startAttIndex = startIndex;
-
-                while (startAttIndex < endIndex - 4)
-                {
-                    UInt16 stunAttributeType = NetConvert.ParseUInt16(buffer, startAttIndex);
-                    UInt16 stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
-                    byte[] stunAttributeValue = null;
-
-                    STUNAttributeTypesEnum attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
-
-                    if (stunAttributeLength > 0)
-                    {
-                        if (stunAttributeLength + startAttIndex + 4 > endIndex)
-                        {
-                            logger.LogWarning("The attribute length on a STUN parameter was greater than the available number of bytes. Type: {AttributeType}", attributeType);
-                        }
-                        else
-                        {
-                            stunAttributeValue = new byte[stunAttributeLength];
-                            Buffer.BlockCopy(buffer, startAttIndex + 4, stunAttributeValue, 0, stunAttributeLength);
-                        }
-                    }
-
-                    if(stunAttributeValue == null && stunAttributeLength > 0)
-                    {
-                        break;
-                    }
-                    STUNAttribute attribute = null;
-                    if (attributeType == STUNAttributeTypesEnum.ChangeRequest)
-                    {
-                        attribute = new STUNChangeRequestAttribute(stunAttributeValue);
-                    }
-                    else if (attributeType == STUNAttributeTypesEnum.MappedAddress || attributeType == STUNAttributeTypesEnum.AlternateServer)
-                    {
-                        attribute = new STUNAddressAttribute(attributeType, stunAttributeValue);
-                    }
-                    else if (attributeType == STUNAttributeTypesEnum.ErrorCode)
-                    {
-                        attribute = new STUNErrorCodeAttribute(stunAttributeValue);
-                    }
-                    else if (attributeType == STUNAttributeTypesEnum.XORMappedAddress || attributeType == STUNAttributeTypesEnum.XORPeerAddress || attributeType == STUNAttributeTypesEnum.XORRelayedAddress)
-                    {
-                        attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header.TransactionId);
-                    }
-                    else if(attributeType == STUNAttributeTypesEnum.ConnectionId)
-                    {
-                        attribute = new STUNConnectionIdAttribute(stunAttributeValue);
-                    }
-                    else
-                    {
-                        attribute = new STUNAttribute(attributeType, stunAttributeValue);
-                    }
-
-                    attributes.Add(attribute);
-
-                    // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
-                    int padding = (stunAttributeLength % 4 != 0) ? 4 - (stunAttributeLength % 4) : 0;
-
-                    startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;
-                }
-
-                return attributes;
+                return Convert.ToUInt16((Value.Length % 4 == 0) ? Value.Length : Value.Length + (4 - (Value.Length % 4)));
             }
             else
             {
-                return null;
+                return 0;
             }
         }
+    }
 
-        public virtual int ToByteBuffer(byte[] buffer, int startIndex)
+    public STUNAttribute(STUNAttributeTypesEnum attributeType, ReadOnlyMemory<byte> value)
+    {
+        AttributeType = attributeType;
+        Value = value;
+    }
+
+    public STUNAttribute(STUNAttributeTypesEnum attributeType, ushort value)
+    {
+        AttributeType = attributeType;
+        var bytes = new byte[sizeof(ushort)];
+        BinaryPrimitives.WriteUInt16BigEndian(bytes, value);
+        Value = bytes;
+    }
+
+    public STUNAttribute(STUNAttributeTypesEnum attributeType, uint value)
+    {
+        AttributeType = attributeType;
+        var bytes = new byte[sizeof(uint)];
+        BinaryPrimitives.WriteUInt32BigEndian(bytes, value);
+        Value = bytes;
+    }
+
+    public STUNAttribute(STUNAttributeTypesEnum attributeType, ulong value)
+    {
+        AttributeType = attributeType;
+        var bytes = new byte[sizeof(ulong)];
+        BinaryPrimitives.WriteUInt64BigEndian(bytes, value);
+        Value = bytes;
+    }
+
+    public static List<STUNAttribute>? ParseMessageAttributes(ReadOnlySpan<byte> buffer)
+        => ParseMessageAttributes(buffer, null);
+
+    public static List<STUNAttribute>? ParseMessageAttributes(ReadOnlySpan<byte> buffer, STUNHeader? header)
+    {
+        if (buffer.IsEmpty)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
+            return null;
+        }
 
-                if (Value != null && Value.Length > 0)
+        var attributes = new List<STUNAttribute>();
+
+        buffer = ParseMessageAttributes(buffer, header, attributes);
+
+        return attributes;
+    }
+
+    public static ReadOnlySpan<byte> ParseMessageAttributes(ReadOnlySpan<byte> buffer, STUNHeader? header, List<STUNAttribute> attributes)
+    {
+        while (buffer.Length >= 4)
+        {
+            var stunAttributeType = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(0, 2));
+            var stunAttributeLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(2, 2));
+            byte[]? stunAttributeValue = null;
+
+            var attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
+
+            if (stunAttributeLength > 0)
+            {
+                if (stunAttributeLength > buffer.Length - 4)
                 {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Value.Length))), 0, buffer, startIndex + 2, 2);
+                    logger.LogStunAttributeLengthOverflow(attributeType);
+                    break;
                 }
                 else
                 {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
+                    stunAttributeValue = buffer.Slice(4, stunAttributeLength).ToArray();
                 }
+            }
+
+            STUNAttribute attribute;
+            if (attributeType == STUNAttributeTypesEnum.ChangeRequest)
+            {
+                Debug.Assert(stunAttributeValue is { });
+                attribute = new STUNChangeRequestAttribute(stunAttributeValue);
+            }
+            else if (attributeType is STUNAttributeTypesEnum.MappedAddress or STUNAttributeTypesEnum.AlternateServer)
+            {
+                attribute = new STUNAddressAttribute(attributeType, stunAttributeValue);
+            }
+            else if (attributeType == STUNAttributeTypesEnum.ErrorCode)
+            {
+                Debug.Assert(stunAttributeValue is { });
+                attribute = new STUNErrorCodeAttribute(stunAttributeValue);
+            }
+            else if (attributeType is STUNAttributeTypesEnum.XORMappedAddress or STUNAttributeTypesEnum.XORPeerAddress or STUNAttributeTypesEnum.XORRelayedAddress)
+            {
+                Debug.Assert(header is { });
+                attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header.TransactionId);
+            }
+            else if (attributeType == STUNAttributeTypesEnum.ConnectionId)
+            {
+                attribute = new STUNConnectionIdAttribute(stunAttributeValue);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
-
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Value.Length)), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+                attribute = new STUNAttribute(attributeType, stunAttributeValue);
             }
 
-            if (Value != null && Value.Length > 0)
-            {
-                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
-            }
+            attributes.Add(attribute);
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
+            // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
+            var padding = (4 - (stunAttributeLength & 0b11)) & 0b11;
+
+            buffer = buffer.Slice(4 + stunAttributeLength + padding);
         }
 
-        public new virtual string ToString()
+        return buffer;
+    }
+
+    /// <inheritdoc/>
+    public virtual int GetByteCount() => STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
+
+    /// <inheritdoc/>
+    public virtual int WriteBytes(Span<byte> buffer)
+    {
+        BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), (ushort)AttributeType);
+
+        if (!Value.IsEmpty)
         {
-            string attrDescrString = "STUN Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
-
-            return attrDescrString;
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2, 2), (ushort)Value.Length);
         }
+        else
+        {
+            buffer[2] = 0x00;
+            buffer[3] = 0x00;
+        }
+
+        if (!Value.IsEmpty)
+        {
+            Value.Span.CopyTo(buffer.Slice(4, Value.Length));
+        }
+
+        return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
+    }
+
+    public override string ToString()
+    {
+        var sb = new ValueStringBuilder(stackalloc char[256]);
+
+        try
+        {
+            ToString(ref sb);
+
+            return sb.ToString();
+        }
+        finally
+        {
+            sb.Dispose();
+        }
+    }
+
+    internal void ToString(ref ValueStringBuilder sb)
+    {
+        sb.Append("STUN Attribute: ");
+        sb.Append(AttributeType.ToStringFast());
+        sb.Append(", ");
+        ValueToString(ref sb);
+        sb.Append('.');
+    }
+
+    private protected virtual void ValueToString(ref ValueStringBuilder sb)
+    {
+        sb.Append(Value.Span);
+        sb.Append(", length=");
+        sb.Append(PaddedLength);
     }
 }

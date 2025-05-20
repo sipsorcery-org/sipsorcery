@@ -1,0 +1,6 @@
+﻿[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorceryMedia.Abstractions.AudioSamplingRatesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorceryMedia.Abstractions.SDPWellKnownMediaFormatsEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorceryMedia.Abstractions.AudioCodecsEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorceryMedia.Abstractions.VideoCodecsEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorceryMedia.Abstractions.TextCodecsEnum>()]

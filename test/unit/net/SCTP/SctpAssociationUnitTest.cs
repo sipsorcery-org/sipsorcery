@@ -20,6 +20,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.Sys.UnitTests;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -40,8 +42,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ConnectAssociations()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
             BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
@@ -98,8 +100,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
             
@@ -126,8 +128,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendFragmentedDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             ushort dummyMTU = 4;
@@ -157,17 +159,17 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendLargeFragmentedDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
 
             byte[] dummyData = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
             Crypto.GetRandomBytes(dummyData);
-            string sha256Hash = Crypto.GetSHA256Hash(dummyData);
+            string sha256Hash = SIPSorcery.UnitTests.CryptoHelper.GetSHA256Hash(dummyData);
             var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-            bAssoc.OnData += (frame) => tcs.TrySetResult(Crypto.GetSHA256Hash(frame.UserData));
+            bAssoc.OnData += (frame) => tcs.TrySetResult(SIPSorcery.UnitTests.CryptoHelper.GetSHA256Hash(frame.UserData));
             aAssoc.SendData(0, 0, dummyData);
 
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3));
@@ -236,7 +238,7 @@ namespace SIPSorcery.Net.UnitTests
             }
             else
             {
-                throw new ApplicationException("GetConnectedAssociations failed to connect associations.");
+                throw new SipSorceryException("GetConnectedAssociations failed to connect associations.");
             }
         }
     }
@@ -268,14 +270,15 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (_input.TryTake(out var buffer, 1000))
                 {
-                    SctpPacket pkt = SctpPacket.Parse(buffer, 0, buffer.Length);
+                    SctpPacket pkt = SctpPacket.Parse(buffer.AsSpan());
 
                     // Process packet.
                     if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                     {
                         var initAckPacket = base.GetInitAck(pkt, null);
-                        var initAckBuffer = initAckPacket.GetBytes();
-                        Send(null, initAckBuffer, 0, initAckBuffer.Length);
+                        var initAckBuffer = new byte[initAckPacket.GetByteCount()];
+                        initAckPacket.WriteBytes(initAckBuffer.AsSpan());
+                        Send(null, initAckBuffer.AsMemory());
                     }
                     else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
@@ -283,7 +286,7 @@ namespace SIPSorcery.Net.UnitTests
                         var cookie = base.GetCookie(pkt);
                         if (cookie.IsEmpty())
                         {
-                            throw new ApplicationException($"MockB2BSctpTransport gave itself an invalid INIT cookie.");
+                            throw new SipSorceryException($"MockB2BSctpTransport gave itself an invalid INIT cookie.");
                         }
                         else
                         {
@@ -298,14 +301,14 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
-        {
-            _output.Add(buffer.Skip(offset).Take(length).ToArray());
-        }
-
         public void Close()
         {
             _exit = true;
+        }
+
+        public override void Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable memoryOwner = null)
+        {
+            _output.Add(buffer.ToArray());
         }
     }
 }

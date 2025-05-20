@@ -1,121 +1,129 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public class RTPReorderBuffer
 {
-    public class RTPReorderBuffer
+    private readonly TimeSpan _maxDropOutTime;
+    private readonly IDateTime _datetimeProvider;
+    private readonly System.Collections.Generic.LinkedList<RTPPacket> _data = new System.Collections.Generic.LinkedList<RTPPacket>();
+    private ushort? _currentSeqNumber;
+
+    private static ILogger logger = Log.Logger;
+
+    public RTPReorderBuffer(TimeSpan maxDropOutTime, IDateTime? datetimeProvider = null)
     {
-        private readonly TimeSpan _maxDropOutTime;
-        private readonly IDateTime _datetimeProvider;
-        private readonly System.Collections.Generic.LinkedList<RTPPacket> _data = new System.Collections.Generic.LinkedList<RTPPacket>();
-        private ushort? _currentSeqNumber;
+        _maxDropOutTime = maxDropOutTime;
+        _datetimeProvider = datetimeProvider ?? new DefaultTimeProvider();
+    }
 
-        private static ILogger logger = Log.Logger;
+    private RTPPacket? First => _data.First?.Value;
+    private RTPPacket? Last => _data.Last?.Value;
 
-        public RTPReorderBuffer(TimeSpan maxDropOutTime, IDateTime datetimeProvider = null)
+    private bool IsBeforeWrapAround(RTPPacket packet)
+    {
+        return IsBeforeWrapAround(packet.Header.SequenceNumber);
+    }
+    private bool IsBeforeWrapAround(ushort seq)
+    {
+        return seq > ushort.MaxValue / 2 + ushort.MaxValue / 4;
+    }
+    private bool IsAfterWrapAround(RTPPacket packet)
+    {
+        return packet.Header.SequenceNumber < ushort.MaxValue / 4;
+    }
+
+    public bool Get([NotNullWhen(true)] out RTPPacket? packet)
+    {
+        packet = null;
+        if (Last is null)
         {
-            _maxDropOutTime = maxDropOutTime;
-            _datetimeProvider = datetimeProvider ?? new DefaultTimeProvider();
+            return false;
         }
 
-        private RTPPacket First => _data.First?.Value;
-        private RTPPacket Last => _data.Last?.Value;
+        if (_currentSeqNumber.HasValue && _currentSeqNumber != Last.Header.SequenceNumber)
+        {
 
-        private bool IsBeforeWrapAround(RTPPacket packet) {
-            return IsBeforeWrapAround(packet.Header.SequenceNumber);
-        }
-        private bool IsBeforeWrapAround(ushort seq)
-        {
-            return seq > ushort.MaxValue / 2 + ushort.MaxValue / 4;
-        }
-        private bool IsAfterWrapAround(RTPPacket packet)
-        {
-            return packet.Header.SequenceNumber < ushort.MaxValue / 4;
-        }
-
-        public bool Get(out RTPPacket packet)
-        {
-            packet = null;
-            if (Last == null)
+            if (_datetimeProvider.Time - Last.Header.ReceivedTime < _maxDropOutTime)
             {
                 return false;
             }
-
-            if (_currentSeqNumber.HasValue && _currentSeqNumber != Last.Header.SequenceNumber)
-            {
-
-                if (_datetimeProvider.Time - Last.Header.ReceivedTime < _maxDropOutTime)
-                {
-                    return false;
-                }
-            }
-            packet = Last;
-            _data.RemoveLast();
-            _currentSeqNumber = (ushort)checked(packet.Header.SequenceNumber + 1);
-            return true;
         }
+        packet = Last;
+        _data.RemoveLast();
+        _currentSeqNumber = (ushort)checked(packet.Header.SequenceNumber + 1);
+        return true;
+    }
 
-        public void Add(RTPPacket current)
+    public void Add(RTPPacket current)
+    {
+        if (_data.Count == 0)
         {
-            if (_data.Count == 0)
-            {
-                _data.AddFirst(current);
-                return;
-            }
-
-            // if seq number is greater or equal than we are waiting for then append to last position
-            if (_currentSeqNumber.HasValue && _currentSeqNumber >= current.Header.SequenceNumber) {
-                if (Last.Header.SequenceNumber > _currentSeqNumber || IsAfterWrapAround(Last) && IsBeforeWrapAround(_currentSeqNumber.Value)) {
-                    _data.AddLast(current);
-                    return;
-                }
-            }
-            
-            if (IsBeforeWrapAround(Last) && !IsAfterWrapAround(First) && IsAfterWrapAround(current)) // first incoming packet after wraparound
-            {
-                _data.AddFirst(current);
-                return;
-            }
-
-            var node = _data.First;
-            do
-            {
-                // if it is packet before wrap around skip all packets after wrap around and then insert the packet
-                if (IsBeforeWrapAround(current) && IsBeforeWrapAround(Last) && IsAfterWrapAround(node.Value))
-                {
-                    node = node.Next;
-                    continue;
-                }
-                if (IsBeforeWrapAround(node.Value) && IsAfterWrapAround(current))
-                {
-                    _data.AddBefore(node, current);
-                    break;
-                }
-                if (current.Header.SequenceNumber > node.Value.Header.SequenceNumber)
-                {
-                    _data.AddBefore(node, current);
-                    break;
-                }
-                if (current.Header.SequenceNumber == node.Value.Header.SequenceNumber)
-                {
-                    logger.LogInformation("Duplicate seq number: {SequenceNumber}", current.Header.SequenceNumber);
-                    break;
-                }
-
-                node = node.Next;
-            }
-            while (node != null);
+            _data.AddFirst(current);
+            return;
         }
-    }
 
-    public interface IDateTime
-    {
-        DateTime Time { get; }
-    }
+        // if seq number is greater or equal than we are waiting for then append to last position
+        if (_currentSeqNumber.HasValue && _currentSeqNumber >= current.Header.SequenceNumber)
+        {
+            Debug.Assert(Last is { });
+            if (Last.Header.SequenceNumber > _currentSeqNumber || IsAfterWrapAround(Last) && IsBeforeWrapAround(_currentSeqNumber.Value))
+            {
+                _data.AddLast(current);
+                return;
+            }
+        }
 
-    public class DefaultTimeProvider : IDateTime
-    {
-        public DateTime Time => DateTime.Now;
+        Debug.Assert(Last is { });
+        Debug.Assert(First is { });
+        if (IsBeforeWrapAround(Last) && !IsAfterWrapAround(First) && IsAfterWrapAround(current)) // first incoming packet after wraparound
+        {
+            _data.AddFirst(current);
+            return;
+        }
+
+        var node = _data.First;
+        Debug.Assert(node is { });
+        do
+        {
+            // if it is packet before wrap around skip all packets after wrap around and then insert the packet
+            if (IsBeforeWrapAround(current) && IsBeforeWrapAround(Last) && IsAfterWrapAround(node.Value))
+            {
+                node = node.Next;
+                continue;
+            }
+            if (IsBeforeWrapAround(node.Value) && IsAfterWrapAround(current))
+            {
+                _data.AddBefore(node, current);
+                break;
+            }
+            if (current.Header.SequenceNumber > node.Value.Header.SequenceNumber)
+            {
+                _data.AddBefore(node, current);
+                break;
+            }
+            if (current.Header.SequenceNumber == node.Value.Header.SequenceNumber)
+            {
+                logger.LogRtpDuplicateSeqNum(current.Header.SequenceNumber);
+                break;
+            }
+
+            node = node.Next;
+        }
+        while (node is { });
     }
+}
+
+public interface IDateTime
+{
+    DateTime Time { get; }
+}
+
+public class DefaultTimeProvider : IDateTime
+{
+    public DateTime Time => DateTime.Now;
 }

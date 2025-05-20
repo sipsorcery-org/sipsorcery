@@ -13,10 +13,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -38,8 +40,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripRTCPSenderResportUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 23;
             ulong ntpTs = 1;
@@ -58,7 +60,8 @@ namespace SIPSorcery.Net.UnitTests
             ReceptionReportSample rr = new ReceptionReportSample(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
 
             var sr = new RTCPSenderReport(ssrc, ntpTs, rtpTs, packetCount, octetCount, new List<ReceptionReportSample> { rr });
-            byte[] buffer = sr.GetBytes();
+            byte[] buffer = new byte[sr.GetByteCount()];
+            sr.WriteBytes(buffer.AsSpan());
 
             RTCPSenderReport parsedSR = new RTCPSenderReport(buffer);
 
@@ -84,8 +87,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseSenderReportUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var buffer = TypeExtensions.ParseHexStr("80C8000641446122E1D2B0EA004B650C0000D556000001310003BA5A");
 
