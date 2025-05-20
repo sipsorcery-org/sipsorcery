@@ -20,6 +20,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -722,36 +724,47 @@ namespace SIPSorcery.Net
 
         protected void LogRemoteSDPSsrcAttributes()
         {
-            string str = "Audio:[ ";
+            if (!logger.IsEnabled(LogLevel.Debug))
+            {
+                return;
+            }
+
+            using var builder = new ValueStringBuilder();
+
+            builder.Append("Audio:[ ");
             foreach (var audioRemoteSDPSsrcAttribute in audioRemoteSDPSsrcAttributes)
             {
                 foreach (var attr in audioRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    builder.Append(attr.SSRC);
+                    builder.Append(" - ");
                 }
             }
-            str += "] \r\n Video: [ ";
+            builder.Append("] \r\n Video: [ ");
             foreach (var videoRemoteSDPSsrcAttribute in videoRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                builder.Append(" [");
                 foreach (var attr in videoRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    builder.Append(attr.SSRC);
+                    builder.Append(" - ");
                 }
-                str += "] ";
+                builder.Append("] ");
             }
-            str += "] \r\n Text: [ ";
+            builder.Append("] \r\n Text: [ ");
             foreach (var textRemoteSDPSsrcAttribute in textRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                builder.Append(" [");
                 foreach (var attr in textRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    builder.Append(attr.SSRC);
+                    builder.Append(" - ");
                 }
-                str += "] ";
+                builder.Append("] ");
             }
-            str += " ]";
-            logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", str);
+            builder.Append(" ]");
+
+            logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", builder.ToString());
         }
 
         private void CreateRtcpSession(MediaStream mediaStream)
@@ -1193,11 +1206,11 @@ namespace SIPSorcery.Net
                             var srtpHandler = currentMediaStream.GetOrCreateSrtpHandler();
                             if (!(srtpHandler.IsNegotiationComplete && srtpHandler.RemoteSecurityDescriptionUnchanged(announcement.SecurityDescriptions)))
                             {
-                               if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
-                               {
+                                if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
+                                {
                                     logger.LogError("Error negotiating secure media for type {MediaType}. Incompatible crypto parameter.", mediaType);
-                                   return SetDescriptionResultEnum.CryptoNegotiationFailed;
-                               }
+                                    return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                                }
 
                                 if (srtpHandler.IsNegotiationComplete)
                                 {
@@ -1234,16 +1247,16 @@ namespace SIPSorcery.Net
                         // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
                         var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
                         SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
-                        if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
+                        if (currentLocalTrackCapabilities.Any(x => x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)))
                         {
-                            localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                            localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase));
                         }
                         else
                         {
                             localRTPEventCapabilities = MediaStream.DefaultRTPEventFormat;
                         }
 
-                        currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
+                        currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => !x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)).ToList();
                         if (localRTPEventCapabilities != null)
                         {
                             currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
@@ -1256,7 +1269,7 @@ namespace SIPSorcery.Net
                             if (!commonEventFormat.IsEmpty())
                             {
                                 currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
-                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase));
                                 currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
                         }
@@ -1277,7 +1290,7 @@ namespace SIPSorcery.Net
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
-                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                        if (capabilities?.Any(x => !x.Name().Equals(SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.CurrentCultureIgnoreCase)) == false)
                         {
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }
@@ -2107,8 +2120,9 @@ namespace SIPSorcery.Net
                         // If media stream does not have a Rtp channel it means this media type is not supported and rtpPort will remain zero.
                         if (mediaStream.HasRtpChannel())
                         {
-                            rtpPort = mediaStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                                 mediaStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : mediaStream.GetRTPChannel().RTPPort;
+                            var rtpChannel = mediaStream.GetRTPChannel();
+                            rtpPort = rtpChannel.RTPDynamicNATEndPoint != null ?
+                                 rtpChannel.RTPDynamicNATEndPoint.Port : rtpChannel.RTPPort;
                         }
                     }
                 }
@@ -2230,8 +2244,8 @@ namespace SIPSorcery.Net
                 MultiplexRtpChannel = rtpChannel;
             }
 
-            rtpChannel.OnRTPDataReceived += OnReceive;
-            rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
+            rtpChannel.OnRTPDataReceivedEx += OnReceive;
+            rtpChannel.OnControlDataReceivedEx += OnReceive; // RTCP packets could come on RTP or control socket.
             rtpChannel.OnClosed += OnRTPChannelClosed;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
@@ -2441,8 +2455,8 @@ namespace SIPSorcery.Net
             if (mediaStream.HasRtpChannel())
             {
                 var rtpChannel = mediaStream.GetRTPChannel();
-                rtpChannel.OnRTPDataReceived -= OnReceive;
-                rtpChannel.OnControlDataReceived -= OnReceive;
+                rtpChannel.OnRTPDataReceivedEx -= OnReceive;
+                rtpChannel.OnControlDataReceivedEx -= OnReceive;
                 rtpChannel.OnClosed -= OnRTPChannelClosed;
                 rtpChannel.Close(reason);
             }
@@ -2450,15 +2464,21 @@ namespace SIPSorcery.Net
 
         protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
+            OnReceive(localPort, remoteEndPoint, buffer.AsMemory());
+        }
+
+        protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> buffer)
+        {
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
                 // Required for matching existing RTP end points (typically set from SDP) and
                 // whether or not the destination end point should be switched.
                 remoteEndPoint.Address = remoteEndPoint.Address.MapToIPv4();
             }
-            
+
             // Quick sanity check on whether this is not an RTP or RTCP packet.
-            if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+            var bufferSpan = buffer.Span;
+            if (buffer.Length > RTPHeader.MIN_HEADER_LEN && bufferSpan[0] >= 128 && bufferSpan[0] <= 191)
             {
                 if ((rtpSessionConfig.IsSecure || rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {
@@ -2466,20 +2486,19 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
+                    var retcReportType = (RTCPReportTypesEnum)bufferSpan[1];
+                    if (retcReportType is
+                        RTCPReportTypesEnum.SR or
+                        RTCPReportTypesEnum.RR or
+                        RTCPReportTypesEnum.SDES or
+                        RTCPReportTypesEnum.BYE or
+                        RTCPReportTypesEnum.PSFB or
+                        RTCPReportTypesEnum.RTPFB)
                     {
                         // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
-                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.SDES ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.BYE ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
-                        {
-                            OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
-                        }
+                        OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
                     }
-                    else
+                    else if (!Enum.IsDefined(typeof(RTCPReportTypesEnum), retcReportType))
                     {
                         OnReceiveRTPPacket(localPort, remoteEndPoint, buffer);
                     }
@@ -2487,7 +2506,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> buffer)
         {
             //logger.LogDebug("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
             #region RTCP packet.
@@ -2495,101 +2514,118 @@ namespace SIPSorcery.Net
             // Get the SSRC in order to be able to figure out which media type 
             // This will let us choose the apropriate unprotect methods
 
-            uint rawSsrc = BitConverter.ToUInt32(buffer, 4);
-            uint ssrc = BitConverter.IsLittleEndian ? NetConvert.DoReverseEndian(rawSsrc) : rawSsrc;
+            var ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.Span.Slice(4));
 
-
-            MediaStream mediaStream = GetMediaStream(ssrc);
+            var mediaStream = GetMediaStream(ssrc);
             var secureContext = mediaStream?.GetSecurityContext() ?? PrimaryStream?.GetSecurityContext();
 
             if (secureContext != null)
             {
-                int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
-                if (res != 0)
+                var tempBuffer = ArrayPool<byte>.Shared.Rent(buffer.Length);
+                try
                 {
-                    logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", PrimaryStream.MediaType, res);
-                    return;
-                }
-                else
-                {
-                    buffer = buffer.AsSpan(0, outBufLen).ToArray();
-                }
-            }           
-
-            var rtcpPkt = new RTCPCompoundPacket(buffer);
-            if (rtcpPkt != null)
-            {
-                mediaStream = GetMediaStream(rtcpPkt);
-                if (rtcpPkt.Bye != null)
-                {
-                    logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
-
-                    // In some cases, such as a SIP re-INVITE, it's possible the RTP session
-                    // will keep going with a new remote SSRC. 
-                    if (mediaStream?.RemoteTrack != null && rtcpPkt.Bye.SSRC == mediaStream.RemoteTrack.Ssrc)
+                    buffer.CopyTo(tempBuffer);
+                    var res = secureContext.UnprotectRtcpPacket(tempBuffer, buffer.Length, out int outBufLen);
+                    if (res != 0)
                     {
-                        mediaStream.RtcpSession?.RemoveReceptionReport(rtcpPkt.Bye.SSRC);
-                        //AudioDestinationEndPoint = null;
-                        //AudioControlDestinationEndPoint = null;
-                        mediaStream.RemoteTrack.Ssrc = 0;
+                        logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", PrimaryStream.MediaType, res);
+                        return;
                     }
                     else
                     {
-                        // We close peer connection only if there is no more local/remote tracks on the primary stream
-                        if ((m_primaryStream?.RemoteTrack == null) && (m_primaryStream?.LocalTrack == null))
+                        if (outBufLen < buffer.Length)
                         {
-                            OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
+                            OnReceiveRTCPPacketCore(tempBuffer.AsSpan(0, outBufLen), remoteEndPoint, mediaStream);
+
+                            return;
                         }
                     }
                 }
-                else if (!IsClosed)
+                finally
                 {
-                    if (mediaStream?.RtcpSession != null)
-                    {
-                        if (mediaStream.RtcpSession.LastActivityAt == DateTime.MinValue)
-                        {
-                            // On the first received RTCP report for a session check whether the remote end point matches the
-                            // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
-                            // Take the risk and switch the remote control end point to the one we are receiving from.
-                            if ((mediaStream.ControlDestinationEndPoint == null ||
-                                !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
-                                mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port))
-                            {
-                                logger.LogDebug("{MediaType} control end point switched from {ControlDestinationEndPoint} to {RemoteEndPoint}.", mediaStream.MediaType, mediaStream.ControlDestinationEndPoint, remoteEndPoint);
-                                mediaStream.ControlDestinationEndPoint = remoteEndPoint;
-                            }
-                        }
-
-                        mediaStream.RtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
-                        mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
-                    }
-                    else if (rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)
-                    {
-                        // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
-                    }
-                    else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 || VideoStream?.RtcpSession?.PacketsReceivedCount > 0 || TextStream?.RtcpSession?.PacketsReceivedCount > 0)
-                    {
-                        // Only give this warning if we've received at least one RTP packet.
-                        //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
-                        //logger.LogTrace(rtcpPkt.GetDebugSummary());
-                    }
+                    ArrayPool<byte>.Shared.Return(tempBuffer);
                 }
             }
-            else
+
+            OnReceiveRTCPPacketCore(buffer.Span, remoteEndPoint, mediaStream);
+
+            void OnReceiveRTCPPacketCore(ReadOnlySpan<byte> buffer, IPEndPoint remoteEndPoint, MediaStream? mediaStream)
             {
-                logger.LogWarning("Failed to parse RTCP compound report.");
+                var rtcpPkt = new RTCPCompoundPacket(buffer);
+                if (rtcpPkt != null)
+                {
+                    mediaStream = GetMediaStream(rtcpPkt);
+                    if (rtcpPkt.Bye != null)
+                    {
+                        logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
+
+                        // In some cases, such as a SIP re-INVITE, it's possible the RTP session
+                        // will keep going with a new remote SSRC. 
+                        if (mediaStream?.RemoteTrack != null && rtcpPkt.Bye.SSRC == mediaStream.RemoteTrack.Ssrc)
+                        {
+                            mediaStream.RtcpSession?.RemoveReceptionReport(rtcpPkt.Bye.SSRC);
+                            //AudioDestinationEndPoint = null;
+                            //AudioControlDestinationEndPoint = null;
+                            mediaStream.RemoteTrack.Ssrc = 0;
+                        }
+                        else
+                        {
+                            // We close peer connection only if there is no more local/remote tracks on the primary stream
+                            if ((m_primaryStream?.RemoteTrack == null) && (m_primaryStream?.LocalTrack == null))
+                            {
+                                OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
+                            }
+                        }
+                    }
+                    else if (!IsClosed)
+                    {
+                        if (mediaStream?.RtcpSession != null)
+                        {
+                            if (mediaStream.RtcpSession.LastActivityAt == DateTime.MinValue)
+                            {
+                                // On the first received RTCP report for a session check whether the remote end point matches the
+                                // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
+                                // Take the risk and switch the remote control end point to the one we are receiving from.
+                                if ((mediaStream.ControlDestinationEndPoint == null ||
+                                    !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
+                                    mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port))
+                                {
+                                    logger.LogDebug("{MediaType} control end point switched from {ControlDestinationEndPoint} to {RemoteEndPoint}.", mediaStream.MediaType, mediaStream.ControlDestinationEndPoint, remoteEndPoint);
+                                    mediaStream.ControlDestinationEndPoint = remoteEndPoint;
+                                }
+                            }
+
+                            mediaStream.RtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
+                            mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
+                        }
+                        else if (rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)
+                        {
+                            // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
+                        }
+                        else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 || VideoStream?.RtcpSession?.PacketsReceivedCount > 0 || TextStream?.RtcpSession?.PacketsReceivedCount > 0)
+                        {
+                            // Only give this warning if we've received at least one RTP packet.
+                            //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
+                            //logger.LogTrace(rtcpPkt.GetDebugSummary());
+                        }
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("Failed to parse RTCP compound report.");
+                }
             }
 
             #endregion
         }
 
-        private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> buffer)
         {
             if (!IsClosed)
             {
-                var hdr = new RTPHeader(buffer);
+                var hdr = new RTPHeader(buffer.Span);
 
-                MediaStream mediaStream = GetMediaStream(hdr.SyncSource);
+                var mediaStream = GetMediaStream(hdr.SyncSource);
 
                 if ((mediaStream == null) && (AudioStreamList.Count < 2) && (VideoStreamList.Count < 2) && (TextStreamList.Count < 2))
                 {

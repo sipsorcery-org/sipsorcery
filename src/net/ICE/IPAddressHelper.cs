@@ -22,12 +22,12 @@ namespace SIPSorcery.Net
     public static class IPAddressHelper
     {
         // Prefixes used for categorizing IPv6 addresses.
-        static byte[] kV4MappedPrefix = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0 };
-        static byte[] k6To4Prefix = new byte[] { 0x20, 0x02, 0 };
-        static byte[] kTeredoPrefix = new byte[] { 0x20, 0x01, 0x00, 0x00 };
-        static byte[] kV4CompatibilityPrefix = new byte[] { 0 };
-        static byte[] k6BonePrefix = new byte[] { 0x3f, 0xfe, 0 };
-        static byte[] kPrivateNetworkPrefix = new byte[] { 0xFD };
+        static readonly byte[] kV4MappedPrefix = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0 };
+        static readonly byte[] k6To4Prefix = new byte[] { 0x20, 0x02, 0 };
+        static readonly byte[] kTeredoPrefix = new byte[] { 0x20, 0x01, 0x00, 0x00 };
+        static readonly byte[] kV4CompatibilityPrefix = new byte[] { 0 };
+        static readonly byte[] k6BonePrefix = new byte[] { 0x3f, 0xfe, 0 };
+        static readonly byte[] kPrivateNetworkPrefix = new byte[] { 0xFD };
 
         public static uint IPAddressPrecedence(IPAddress ip)
         {

@@ -134,8 +134,8 @@ namespace SIPSorcery.Net
         {
             if (message != null && Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
             {
-                throw new ApplicationException($"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} " +
-                    $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
+                throw new ApplicationException(
+                    $"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
@@ -169,8 +169,8 @@ namespace SIPSorcery.Net
         {
             if (data.Length > _transport.maxMessageSize)
             {
-                throw new ApplicationException($"Data channel {label} was requested to send data of length {data.Length} " +
-                    $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
+                throw new ApplicationException(
+                    $"Data channel {label} was requested to send data of length {data.Length} that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {

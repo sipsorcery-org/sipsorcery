@@ -307,5 +307,10 @@ namespace SIPSorcery.Net.UnitTests
         {
             _exit = true;
         }
+
+        public override void Send(string associationID, Memory<byte> buffer, IDisposable memoryOwner = null)
+        {
+            _output.Add(buffer.ToArray());
+        }
     }
 }

@@ -135,10 +135,17 @@ namespace SIPSorcery.Net
             }
         }
 
+        [Obsolete("Use STUNAttribute(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAttribute(STUNAttributeTypesEnum attributeType, byte[] value)
+            : this(attributeType, (ReadOnlySpan<byte>)value)
+        {
+        }
+
+        public STUNAttribute(STUNAttributeTypesEnum attributeType, ReadOnlySpan<byte> value)
         {
             AttributeType = attributeType;
-            Value = value;
+            Value = value.ToArray();
         }
 
         public STUNAttribute(STUNAttributeTypesEnum attributeType, ushort value)
@@ -241,50 +248,65 @@ namespace SIPSorcery.Net
             return attributes;
         }
 
+        [Obsolete("Use WriteBytes(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public virtual int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
+            return WriteBytes(buffer.AsSpan(startIndex));
+        }
 
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Value.Length))), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+        public virtual int WriteBytes(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), (ushort)AttributeType);
+
+            if (Value != null && Value.Length > 0)
+            {
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2, 2), (ushort)Value.Length);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
-
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Value.Length)), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+                buffer[2] = 0x00;
+                buffer[3] = 0x00;
             }
 
             if (Value != null && Value.Length > 0)
             {
-                Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
+                Value.CopyTo(buffer.Slice(4, Value.Length));
             }
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
 
-        public new virtual string ToString()
+        public override string ToString()
         {
-            string attrDescrString = "STUN Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
+            var sb = new ValueStringBuilder(stackalloc char[256]);
 
-            return attrDescrString;
+            try
+            {
+                ToString(ref sb);
+
+                return sb.ToString();
+            }
+            finally
+            {
+                sb.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("STUN Attribute: ");
+            sb.Append(AttributeType.ToString());
+            sb.Append(", ");
+            ValueToString(ref sb);
+            sb.Append('.');
+        }
+
+        private protected virtual void ValueToString(ref ValueStringBuilder sb)
+        {
+            sb.Append(Value);
+            sb.Append(", length=");
+            sb.Append(PaddedLength);
         }
     }
 }

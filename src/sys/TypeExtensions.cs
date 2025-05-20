@@ -19,6 +19,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace SIPSorcery.Sys
 {
@@ -124,105 +125,29 @@ namespace SIPSorcery.Sys
 
         public static string HexStr(this byte[] buffer, char? separator = null)
         {
-            return buffer.HexStr(buffer.Length, separator);
+            return HexStr(buffer.AsSpan(), separator: separator, lowercase: false);
         }
 
         public static string HexStr(this byte[] buffer, int length, char? separator = null)
         {
-            if (separator is { } s)
-            {
-                int numberOfChars = length * 3 - 1;
-#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-                return string.Create(numberOfChars, (buffer, length, s), PopulateNewStringWithSeparator);
-#else
-                var rv = new char[numberOfChars];
-                PopulateNewStringWithSeparator(rv, (buffer, length, s));
-                return new string(rv);
-#endif
-            }
-            else
-            {
-                int numberOfChars = length * 2;
-#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-                return string.Create(numberOfChars, (buffer, length), PopulateNewStringWithoutSeparator);
-#else
-                var rv = new char[numberOfChars];
-                PopulateNewStringWithoutSeparator(rv, (buffer, length));
-                return new string(rv);
-#endif
-            }
-
-            static void PopulateNewStringWithSeparator(Span<char> chars, (byte[] buffer, int length, char separator) state)
-            {
-                var (buffer, length, s) = state;
-                for (int i = 0, j = 0; i < length; i++)
-                {
-                    var val = buffer[i];
-                    chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
-                    chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
-                    if (j < chars.Length)
-                    {
-                        chars[j++] = s;
-                    }
-                }
-            }
-
-            static void PopulateNewStringWithoutSeparator(Span<char> chars, (byte[] buffer, int length) state)
-            {
-                var (buffer, length) = state;
-                for (int i = 0, j = 0; i < length; i++)
-                {
-                    var val = buffer[i];
-                    chars[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
-                    chars[j++] = char.ToUpperInvariant(hexmap[val & 15]);
-                }
-            }
+            return HexStr(buffer.AsSpan(0, buffer.Length), separator: separator, lowercase: false);
         }
 
-        public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null)
+        public static string HexStr(this byte[] buffer, int length, char? separator = null, bool lowercase = false)
         {
-            if (separator is { } s)
-            {
-                var numberOfChars = buffer.Length * 3 - 1;
-                var rv = ArrayPool<char>.Shared.Rent(numberOfChars);
-                try
-                {
-                    for (int i = 0, j = 0; i < buffer.Length; i++)
-                    {
-                        var val = buffer[i];
-                        rv[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
-                        rv[j++] = char.ToUpperInvariant(hexmap[val & 15]);
-                        if (j < rv.Length)
-                        {
-                            rv[j++] = s;
-                        }
-                    }
-                    return new string(rv, 0, numberOfChars);
-                }
-                finally
-                {
-                    ArrayPool<char>.Shared.Return(rv);
-                }
-            }
-            else
-            {
-                var numberOfChars = buffer.Length * 2;
-                var rv = ArrayPool<char>.Shared.Rent(numberOfChars);
-                try
-                {
-                    for (int i = 0, j = 0; i < buffer.Length; i++)
-                    {
-                        var val = buffer[i];
-                        rv[j++] = char.ToUpperInvariant(hexmap[val >> 4]);
-                        rv[j++] = char.ToUpperInvariant(hexmap[val & 15]);
-                    }
-                    return new string(rv, 0, numberOfChars);
-                }
-                finally
-                {
-                    ArrayPool<char>.Shared.Return(rv);
-                }
-            }
+            return HexStr(buffer.AsSpan(0, length), separator: separator, lowercase: lowercase);
+        }
+
+        public static string HexStr(this Span<byte> buffer, char? separator = null, bool lowercase = false)
+        {
+            return HexStr((ReadOnlySpan<byte>)buffer, separator: separator, lowercase: lowercase);
+        }
+
+        public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null, bool lowercase = false)
+        {
+            using var sb = new ValueStringBuilder(stackalloc char[256]);
+            sb.Append(buffer, separator, lowercase);
+            return sb.ToString();
         }
 
         public static byte[] ParseHexStr(string hexStr)
@@ -304,6 +229,66 @@ namespace SIPSorcery.Sys
             second = list.Count > 1 ? list[1] : default(T);
             third = list.Count > 2 ? list[2] : default(T);
             fourth = list.Count > 3 ? list[3] : default(T);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseUInt64(ReadOnlySpan<char> s, out ulong result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return ulong.TryParse(s, out result);
+#else
+            return ulong.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseInt64(ReadOnlySpan<char> s, out long result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return long.TryParse(s, out result);
+#else
+            return long.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseUInt32(ReadOnlySpan<char> s, out uint result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return uint.TryParse(s, out result);
+#else
+            return uint.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseInt32(ReadOnlySpan<char> s, out int result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return int.TryParse(s, out result);
+#else
+            return int.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseUInt16(ReadOnlySpan<char> s, out ushort result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return ushort.TryParse(s, out result);
+#else
+            return ushort.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseDecimal(ReadOnlySpan<char> s, out decimal result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return decimal.TryParse(s, out result);
+#else
+            return decimal.TryParse(s.ToString(), out result);
+#endif
         }
     }
 }

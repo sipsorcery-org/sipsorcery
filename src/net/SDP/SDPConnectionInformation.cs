@@ -13,8 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Net;
 using System.Net.Sockets;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -51,17 +53,44 @@ namespace SIPSorcery.Net
 
         public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
         {
-            SDPConnectionInformation connectionInfo = new SDPConnectionInformation();
-            string[] connectionFields = connectionLine.Substring(2).Trim().Split(' ');
-            connectionInfo.ConnectionNetworkType = connectionFields[0].Trim();
-            connectionInfo.ConnectionAddressType = connectionFields[1].Trim();
-            connectionInfo.ConnectionAddress = connectionFields[2].Trim();
+            return ParseConnectionInformation(connectionLine.AsSpan());
+        }
+
+        public static SDPConnectionInformation ParseConnectionInformation(ReadOnlySpan<char> connectionLine)
+        {
+            var connectionInfo = new SDPConnectionInformation();
+
+            connectionLine = connectionLine.Slice(2).Trim();
+
+            var firstSpace = connectionLine.IndexOf(' ');
+            var secondSpace = connectionLine.Slice(firstSpace + 1).IndexOf(' ') + firstSpace + 1;
+
+            var networkType = connectionLine.Slice(0, firstSpace).Trim();
+            var addressType = connectionLine.Slice(firstSpace + 1, secondSpace - firstSpace - 1).Trim();
+            var address = connectionLine.Slice(secondSpace + 1).Trim();
+
+            connectionInfo.ConnectionNetworkType = networkType.ToString();
+            connectionInfo.ConnectionAddressType = addressType.ToString();
+            connectionInfo.ConnectionAddress = address.ToString();
+
             return connectionInfo;
         }
 
         public override string ToString()
         {
             return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append("c=");
+            builder.Append(ConnectionNetworkType);
+            builder.Append(' ');
+            builder.Append(ConnectionAddressType);
+            builder.Append(' ');
+            builder.Append(ConnectionAddress);
+            builder.Append(m_CRLF);
+
         }
     }
 }

@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP.Packetisation;
@@ -154,39 +155,68 @@ namespace SIPSorcery.Net
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <returns></returns>
+        [Obsolete("Use WriteLowQualityRtpJpegHeader(Span<byte>, uint, int, int, int) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static byte[] CreateLowQualityRtpJpegHeader(uint fragmentOffset, int quality, int width, int height)
         {
-            byte[] rtpJpegHeader = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
-
-            // Byte 0: Type specific
-            //http://tools.ietf.org/search/rfc2435#section-3.1.1
-
-            // Bytes 1 to 3: Three byte fragment offset
-            //http://tools.ietf.org/search/rfc2435#section-3.1.2
-
-            if (BitConverter.IsLittleEndian)
-            {
-                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
-            }
-
-            byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
-            rtpJpegHeader[1] = offsetBytes[2];
-            rtpJpegHeader[2] = offsetBytes[1];
-            rtpJpegHeader[3] = offsetBytes[0];
-
-            // Byte 4: JPEG Type.
-            //http://tools.ietf.org/search/rfc2435#section-3.1.3
-
-            //Byte 5: http://tools.ietf.org/search/rfc2435#section-3.1.4 (Q)
-            rtpJpegHeader[5] = (byte)quality;
-
-            // Byte 6: http://tools.ietf.org/search/rfc2435#section-3.1.5 (Width)
-            rtpJpegHeader[6] = (byte)(width / 8);
-
-            // Byte 7: http://tools.ietf.org/search/rfc2435#section-3.1.6 (Height)
-            rtpJpegHeader[7] = (byte)(height / 8);
-
+            var rtpJpegHeader = new byte[8];
+            WriteLowQualityRtpJpegHeader(rtpJpegHeader, fragmentOffset, quality, width, height);
             return rtpJpegHeader;
         }
+
+        /// <summary>
+        /// Utility function to create RtpJpegHeader either for initial packet or template for further packets
+        /// 
+        /// <code>
+        /// 0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// | Type-specific |              Fragment Offset                  |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |      Type     |       Q       |     Width     |     Height    |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// </code>
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="fragmentOffset"></param>
+        /// <param name="quality"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <seealso href="https://www.rfc-editor.org/rfc/rfc2435"/>
+        public static void WriteLowQualityRtpJpegHeader(Span<byte> destination, uint fragmentOffset, int quality, int width, int height)
+        {
+            if (destination.Length < 8)
+            {
+                throw new ArgumentException("Destination span must be at least 8 bytes long.", nameof(destination));
+            }
+
+            // Byte 0: Type-specific (always 0)
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.1
+            destination[0] = 0x00;
+
+            // Bytes 1-3: 24-bit fragment offset in big-endian order
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.2
+            var offset = fragmentOffset;
+            destination[1] = (byte)((offset >> 16) & 0xFF);
+            destination[2] = (byte)((offset >> 8) & 0xFF);
+            destination[3] = (byte)(offset & 0xFF);
+
+            // Byte 4: JPEG Type (always 1 for low quality)
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.3
+            destination[4] = 0x01;
+
+            // Byte 5: Quality factor (Q)
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.4
+            destination[5] = (byte)quality;
+
+            // Byte 6: Width in 8-pixel blocks
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.5
+            destination[6] = (byte)(width / 8);
+
+            // Byte 7: Height in 8-pixel blocks
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.6
+            destination[7] = (byte)(height / 8);
+        }
+
     }
 }

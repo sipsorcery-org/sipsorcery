@@ -2,13 +2,9 @@
 
 namespace SIPSorcery.Net
 {
-    public class TimestampPair
-    {
-        public uint RtpTimestamp { get; set; }
-        public ulong NtpTimestamp { get; set; }
-    }
+    public record struct TimestampPair(uint RtpTimestamp, ulong NtpTimestamp);
 
-    public class Ntp64Timestamp
+    public static class Ntp64Timestamp
     {
         public static ulong AddFraction(ulong timestamp, double fraction) {
             var fractionalPart = GetFraction(timestamp);

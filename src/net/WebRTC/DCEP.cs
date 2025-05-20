@@ -27,6 +27,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using SIPSorcery.Sys;
 
@@ -138,7 +139,19 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer to parse the message from.</param>
         /// <param name="posn">The position in the buffer to start parsing from.</param>
         /// <returns>A new DCEP open message instance.</returns>
+        [Obsolete("Use Parse(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static DataChannelOpenMessage Parse(byte[] buffer, int posn)
+        {
+            return Parse(buffer.AsSpan(posn));
+        }
+
+        /// <summary>
+        /// Parses the an DCEP open message from a buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse the message from.</param>
+        /// <returns>A new DCEP open message instance.</returns>
+        public static DataChannelOpenMessage Parse(ReadOnlySpan<byte> buffer)
         {
             if (buffer.Length < DCEP_OPEN_FIXED_PARAMETERS_LENGTH)
             {
@@ -147,22 +160,22 @@ namespace SIPSorcery.Net
 
             var dcepOpen = new DataChannelOpenMessage();
 
-            dcepOpen.MessageType = buffer[posn];
-            dcepOpen.ChannelType = buffer[posn + 1];
-            dcepOpen.Priority = NetConvert.ParseUInt16(buffer, posn + 2);
-            dcepOpen.Reliability = NetConvert.ParseUInt32(buffer, posn + 4);
+            dcepOpen.MessageType = buffer[0];
+            dcepOpen.ChannelType = buffer[1];
+            dcepOpen.Priority = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(2));
+            dcepOpen.Reliability = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(4));
 
-            ushort labelLength = NetConvert.ParseUInt16(buffer, posn + 8);
-            ushort protocolLength = NetConvert.ParseUInt16(buffer, posn + 10);
+            var labelLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(8));
+            var protocolLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(10));
 
             if (labelLength > 0)
             {
-                dcepOpen.Label = Encoding.UTF8.GetString(buffer, 12, labelLength);
+                dcepOpen.Label = Encoding.UTF8.GetString(buffer.Slice(12, labelLength));
             }
 
             if (protocolLength > 0)
             {
-                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer, 12 + labelLength, protocolLength);
+                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer.Slice(12 + labelLength, protocolLength));
             }
 
             return dcepOpen;
@@ -174,8 +187,8 @@ namespace SIPSorcery.Net
         /// <returns>The serialised length of this DECEP OPEN message.</returns>
         public int GetLength()
         {
-            ushort labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
-            ushort protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
+            var labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
+            var protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
 
             return DCEP_OPEN_FIXED_PARAMETERS_LENGTH + labelLength + protocolLength;
         }

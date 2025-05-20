@@ -191,7 +191,7 @@ public class STUNClient
 
             var initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             var bytes = initMessage.ToByteBuffer(null, false);
-            rtpChannel.Send(RTPChannelSocketsEnum.RTP, stunServer, bytes);
+            rtpChannel.Send(RTPChannelSocketsEnum.RTP, stunServer, bytes.AsMemory(), null);
 
             // Race the response against a timeout.
             var delayTask = Task.Delay(TimeSpan.FromSeconds(STUN_SERVER_RESPONSE_TIMEOUT));

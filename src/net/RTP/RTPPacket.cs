@@ -41,6 +41,11 @@ namespace SIPSorcery.Net
             Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
         }
 
+        public RTPPacket(ReadOnlySpan<byte> packet)
+            : this(packet.ToArray())
+        {
+        }
+
         public int GetPacketSize() => Header.GetPacketSize() + Payload.Length;
 
         public byte[] GetBytes()

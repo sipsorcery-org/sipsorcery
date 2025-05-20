@@ -65,12 +65,15 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -121,6 +124,18 @@ namespace SIPSorcery.Net
         private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
+        private readonly EventHandler<SocketAsyncEventArgs>? m_sendOverTcpHandler = (s, e) =>
+        {
+            if (e.SocketError != SocketError.Success)
+            {
+                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
+                // normal RTP operation. For example:
+                // - the RTP connection may start sending before the remote socket starts listening,
+                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
+                //   or new socket during the transition.
+                logger.LogWarning("SocketException RTPIceChannel EndSendToTCP ({SocketErrorCode})", e.SocketError);
+            }
+        };
 
         private static DnsClient.LookupClient _dnsLookupClient;
 
@@ -227,7 +242,8 @@ namespace SIPSorcery.Net
                                 m_recvOffset = 0;
                                 recvLength = m_recvBuffer.Length;
                             }
-                            int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref remoteEP);
+
+                            var bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref remoteEP);
 
                             if (bytesReadSync > 0)
                             {
@@ -281,7 +297,7 @@ namespace SIPSorcery.Net
             // and initial byte in buffer is not a STUNHeader (starts with 0x00 0x00)
             // and our receive buffer is full, we need a way to discard whole buffer
             // or check for 0x00 0x00 start again.
-            protected virtual int ProcessRawBuffer(int bytesRead, IPEndPoint remoteEP)
+            protected virtual int ProcessRawBuffer(int bytesRead, IPEndPoint? remoteEP)
             {
                 var extractCount = 0;
                 if (bytesRead > 0)
@@ -576,6 +592,8 @@ namespace SIPSorcery.Net
 
         public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
 
+        public new event Action<int, IPEndPoint, ReadOnlyMemory<byte>> OnRTPDataReceivedEx;
+
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
         /// </summary>
@@ -775,12 +793,8 @@ namespace SIPSorcery.Net
                     {
                         var rtpTcpReceiver = new IceTcpReceiver(tcpSocket);
 
-                        Action<string> onClose = (reason) =>
-                        {
-                            CloseTcp(rtpTcpReceiver, reason);
-                        };
-                        rtpTcpReceiver.OnPacketReceived += OnRTPPacketReceived;
-                        rtpTcpReceiver.OnClosed += onClose;
+                        rtpTcpReceiver.OnPacketReceivedEx += OnRTPPacketReceived;
+                        rtpTcpReceiver.OnClosed += reason => CloseTcp(rtpTcpReceiver, reason);
                         rtpTcpReceiver.BeginReceiveFrom();
 
                         m_rtpTcpReceiverByUri.Add(stunUri, rtpTcpReceiver);
@@ -1104,7 +1118,7 @@ namespace SIPSorcery.Net
         /// is provided it will take precedence as it can potentially supply both Server Reflexive 
         /// and Relay candidates.
         /// </summary>
-        private void CheckIceServers(Object state)
+        private void CheckIceServers(object state)
         {
             if (_closed || IceGatheringState == RTCIceGatheringState.complete ||
                 !(IceConnectionState == RTCIceConnectionState.@new || IceConnectionState == RTCIceConnectionState.checking))
@@ -1730,10 +1744,19 @@ namespace SIPSorcery.Net
         /// <param name="setUseCandidate">Set to true to add a "UseCandidate" attribute to the STUN request.</param>
         private void SendSTUNBindingRequest(ChecklistEntry candidatePair, bool setUseCandidate)
         {
-            STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-            stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID);
-            stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
-            stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority)));
+            var stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest)
+            {
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID)
+                },
+                Attributes =
+                {
+                    new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority))
+                },
+            };
+
+            stunRequest.AddUsernameAttribute($"{RemoteIceUser}:{LocalIceUser}");
 
             if (IsController)
             {
@@ -1749,27 +1772,44 @@ namespace SIPSorcery.Net
                 stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.UseCandidate, null));
             }
 
-            byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
+            var bufferSize = stunRequest.GetByteBufferSizeStringKey(RemoteIcePassword, addFingerprint: true);
+            var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
 
-            if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
+            try
             {
-                IPEndPoint relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
-                var protocol = candidatePair.LocalCandidate.IceServer.Protocol;
-                SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP, candidatePair.LocalCandidate.IceServer);
-            }
-            else
-            {
-                IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-                var sendResult = base.Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
+                stunRequest.WriteToBufferStringKey(rentedBuffer.AsSpan(0, bufferSize), RemoteIcePassword, addFingerprint: true);
 
-                if (sendResult != SocketError.Success)
+                if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
                 {
-                    logger.LogWarning("Error sending STUN server binding request to {RemoteEndPoint}. {SendResult}.", remoteEndPoint, sendResult);
+                    var relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
+                    var protocol = candidatePair.LocalCandidate.IceServer.Protocol;
+
+                    SendRelay(
+                        protocol,
+                        candidatePair.RemoteCandidate.DestinationEndPoint,
+                        rentedBuffer.AsMemory(0, bufferSize),
+                        null,
+                        relayServerEP,
+                        candidatePair.LocalCandidate.IceServer);
                 }
                 else
                 {
-                    OnStunMessageSent?.Invoke(stunRequest, remoteEndPoint, false);
+                    var remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
+                    var sendResult = base.Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, rentedBuffer.AsMemory(0, bufferSize));
+
+                    if (sendResult != SocketError.Success)
+                    {
+                        logger.LogWarning("Error sending STUN server binding request to {RemoteEndPoint}. {SendResult}.", remoteEndPoint, sendResult);
+                    }
+                    else
+                    {
+                        OnStunMessageSent?.Invoke(stunRequest, remoteEndPoint, false);
+                    }
                 }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rentedBuffer);
             }
         }
 
@@ -1875,8 +1915,7 @@ namespace SIPSorcery.Net
                 {
                     GotStunBindingRequest(stunMessage, remoteEndPoint, wasRelayed);
                 }
-                else if (stunMessage.Header.MessageClass == STUNClassTypesEnum.ErrorResponse ||
-                         stunMessage.Header.MessageClass == STUNClassTypesEnum.SuccessResponse)
+                else if (stunMessage.Header.MessageClass is STUNClassTypesEnum.ErrorResponse or STUNClassTypesEnum.SuccessResponse)
                 {
                     // Correlate with request using transaction ID as per https://tools.ietf.org/html/rfc8445#section-7.2.5.
                     var matchingChecklistEntry = GetChecklistEntryForStunResponse(stunMessage.Header.TransactionId);
@@ -2024,9 +2063,23 @@ namespace SIPSorcery.Net
                 // If the policy is "relay only" then direct binding requests are not accepted.
                 logger.LogWarning("ICE RTP channel rejecting non-relayed STUN binding request from {RemoteEndPoint}.", remoteEndPoint);
 
-                STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
-                stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse)
+                {
+                    Header = { TransactionId = bindingRequest.Header.TransactionId }
+                };
+
+                var bufferSize = stunErrResponse.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                try
+                {
+                    stunErrResponse.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                    Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, rentedBuffer.AsMemory(0, bufferSize), null);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(rentedBuffer);
+                }
 
                 OnStunMessageSent?.Invoke(stunErrResponse, remoteEndPoint, false);
             }
@@ -2037,10 +2090,23 @@ namespace SIPSorcery.Net
                 if (!result)
                 {
                     // Send STUN error response.
-                    logger.LogWarning("ICE RTP channel STUN binding request from {RemoteEndPoint} failed an integrity check, rejecting.", remoteEndPoint);
-                    STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
-                    stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                    Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                    var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse)
+                    {
+                        Header = { TransactionId = bindingRequest.Header.TransactionId }
+                    };
+
+                    var bufferSize = stunErrResponse.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                    var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                    try
+                    {
+                        stunErrResponse.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                        Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, rentedBuffer.AsMemory(0, bufferSize), null);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(rentedBuffer);
+                    }
 
                     OnStunMessageSent?.Invoke(stunErrResponse, remoteEndPoint, false);
                 }
@@ -2091,9 +2157,24 @@ namespace SIPSorcery.Net
                     if (matchingChecklistEntry == null)
                     {
                         logger.LogWarning("ICE RTP channel STUN request matched a remote candidate but NOT a checklist entry.");
-                        STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
-                        stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                        Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+
+                        var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse)
+                        {
+                            Header = { TransactionId = bindingRequest.Header.TransactionId }
+                        };
+
+                        var bufferSize = stunErrResponse.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                        var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                        try
+                        {
+                            stunErrResponse.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                            Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, rentedBuffer.AsMemory(0, bufferSize), null);
+                        }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(rentedBuffer);
+                        }
 
                         OnStunMessageSent?.Invoke(stunErrResponse, remoteEndPoint, false);
                     }
@@ -2121,21 +2202,43 @@ namespace SIPSorcery.Net
 
                         matchingChecklistEntry.LastBindingRequestReceivedAt = DateTime.Now;
 
-                        STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
-                        stunResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                        stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
-                        byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(LocalIcePassword, true);
+                        var stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse)
+                        {
+                            Header = { TransactionId = bindingRequest.Header.TransactionId }
+                        };
 
-                        if (wasRelayed)
+                        stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
+
+                        var bufferSize = stunResponse.GetByteBufferSizeStringKey(LocalIcePassword, addFingerprint: true);
+                        var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                        try
                         {
-                            var protocol = matchingChecklistEntry.LocalCandidate.IceServer.Protocol;
-                            SendRelay(protocol, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint, matchingChecklistEntry.LocalCandidate.IceServer);
-                            OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, true);
+                            stunResponse.WriteToBufferStringKey(rentedBuffer.AsSpan(0, bufferSize), LocalIcePassword, addFingerprint: true);
+                            var stunRespMemory = rentedBuffer.AsMemory(0, bufferSize);
+
+                            if (wasRelayed)
+                            {
+                                var protocol = matchingChecklistEntry.LocalCandidate.IceServer.Protocol;
+                                SendRelay(
+                                    protocol,
+                                    remoteEndPoint,
+                                    stunRespMemory,
+                                    null,
+                                    matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint,
+                                    matchingChecklistEntry.LocalCandidate.IceServer);
+
+                                OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, true);
+                            }
+                            else
+                            {
+                                Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespMemory, null);
+                                OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, false);
+                            }
                         }
-                        else
+                        finally
                         {
-                            Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
-                            OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, false);
+                            ArrayPool<byte>.Shared.Return(rentedBuffer);
                         }
                     }
                 }
@@ -2203,23 +2306,42 @@ namespace SIPSorcery.Net
             iceServer.LastRequestSentAt = DateTime.Now;
 
             // Send a STUN binding request.
-            STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-            stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
+            var stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest)
+            {
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID),
+                },
+            };
 
-            byte[] stunReqBytes = null;
+            SocketError sendResult;
 
             if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
             {
-                stunReqBytes = GetAuthenticatedStunRequest(stunRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+                var (stunReqBytes, memoryOwner) = GetAuthenticatedStunRequest(stunRequest, iceServer._username, iceServer._password, iceServer.Realm, iceServer.Nonce);
+
+                using (memoryOwner)
+                {
+                    sendResult = Send(iceServer, stunReqBytes, null);
+                }
             }
             else
             {
-                stunReqBytes = stunRequest.ToByteBuffer(null, false);
-            }
+                var keySpan = ReadOnlySpan<byte>.Empty;
+                var addFingerprint = false;
+                var bufferSize = stunRequest.GetByteBufferSize(keySpan, addFingerprint);
+                var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
 
-            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer, stunReqBytes) :
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
+                try
+                {
+                    stunRequest.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), keySpan, addFingerprint);
+                    sendResult = Send(iceServer, rentedBuffer.AsMemory(0, bufferSize), null);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(rentedBuffer);
+                }
+            }
 
             if (sendResult != SocketError.Success)
             {
@@ -2244,40 +2366,73 @@ namespace SIPSorcery.Net
             iceServer.OutstandingRequestsSent += 1;
             iceServer.LastRequestSentAt = DateTime.Now;
 
-            STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate);
-            allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
-            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
-            allocateRequest.Attributes.Add(
-                new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
-                iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
-                STUNAttributeConstants.IPv4AddressFamily : STUNAttributeConstants.IPv6AddressFamily));
-
-            byte[] allocateReqBytes = null;
-
-            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+            var allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate)
             {
-                allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID),
+                },
+                Attributes =
+                {
+                    new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType),
+                    new STUNAttribute(
+                        STUNAttributeTypesEnum.RequestedAddressFamily,
+                        iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork
+                            ? STUNAttributeConstants.IPv4AddressFamily
+                            : STUNAttributeConstants.IPv6AddressFamily),
+                },
+            };
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+
+            if (iceServer.Nonce != null && iceServer.Realm != null &&
+                iceServer._username != null && iceServer._password != null)
+            {
+                var (allocateReqBytes, memoryOwner) = GetAuthenticatedStunRequest(
+                    allocateRequest,
+                    iceServer._username,
+                    iceServer._password,
+                    iceServer.Realm,
+                    iceServer.Nonce);
+
+                using (memoryOwner)
+                {
+                    return SendTurnAllocateRequestCore(iceServer, allocateRequest, allocateReqBytes);
+                }
             }
             else
             {
-                allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
+                var bufferSize = allocateRequest.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                try
+                {
+                    allocateRequest.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+
+                    return SendTurnAllocateRequestCore(iceServer, allocateRequest, rentedBuffer.AsMemory(0, bufferSize));
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(rentedBuffer);
+                }
             }
 
-            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer, allocateReqBytes) :
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
-
-            if (sendResult != SocketError.Success)
+            SocketError SendTurnAllocateRequestCore(IceServer iceServer, STUNMessage allocateRequest, Memory<byte> allocateReqBytes)
             {
-                logger.LogWarning("Error sending TURN Allocate request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
-                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
-            }
-            else
-            {
-                OnStunMessageSent?.Invoke(allocateRequest, iceServer.ServerEndPoint, false);
-            }
+                var sendResult = Send(iceServer, allocateReqBytes, null);
 
-            return sendResult;
+                if (sendResult != SocketError.Success)
+                {
+                    logger.LogWarning("Error sending TURN Allocate request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                        iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
+                }
+                else
+                {
+                    OnStunMessageSent?.Invoke(allocateRequest, iceServer.ServerEndPoint, false);
+                }
+
+                return sendResult;
+            }
         }
 
         /// <summary>
@@ -2290,42 +2445,76 @@ namespace SIPSorcery.Net
             iceServer.OutstandingRequestsSent += 1;
             iceServer.LastRequestSentAt = DateTime.Now;
 
-            STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Refresh);
-            allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
-            //allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
-            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_VALUE));
-
-            allocateRequest.Attributes.Add(
-                new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
-                iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
-                STUNAttributeConstants.IPv4AddressFamily : STUNAttributeConstants.IPv6AddressFamily));
-
-            byte[] allocateReqBytes = null;
-
-            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+            var refreshRequest = new STUNMessage(STUNMessageTypesEnum.Refresh)
             {
-                allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID),
+                },
+                Attributes =
+                {
+                    // new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600),
+                    new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_VALUE),
+                    new STUNAttribute(
+                        STUNAttributeTypesEnum.RequestedAddressFamily,
+                        iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork
+                            ? STUNAttributeConstants.IPv4AddressFamily
+                            : STUNAttributeConstants.IPv6AddressFamily),
+                }
+            };
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+
+            if (iceServer.Nonce != null && iceServer.Realm != null &&
+                iceServer._username != null && iceServer._password != null)
+            {
+                var (refreshReqBytes, memoryOwner) = GetAuthenticatedStunRequest(
+                    refreshRequest,
+                    iceServer._username,
+                    iceServer._password,
+                    iceServer.Realm,
+                    iceServer.Nonce);
+
+                using (memoryOwner)
+                {
+                    return SendTurnRefreshRequestCore(iceServer, refreshRequest, refreshReqBytes);
+                }
             }
             else
             {
-                allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
+                var bufferSize = refreshRequest.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                try
+                {
+                    refreshRequest.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+
+                    var sendResult = SendTurnRefreshRequestCore(iceServer, refreshRequest, rentedBuffer.AsMemory(0, bufferSize));
+
+                    return sendResult;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(rentedBuffer);
+                }
             }
 
-            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer, allocateReqBytes) :
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
-
-            if (sendResult != SocketError.Success)
+            SocketError SendTurnRefreshRequestCore(IceServer iceServer, STUNMessage refreshRequest, Memory<byte> refreshReqBytes)
             {
-                logger.LogWarning("Error sending TURN Refresh request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
-                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
-            }
-            else
-            {
-                OnStunMessageSent?.Invoke(allocateRequest, iceServer.ServerEndPoint, false);
-            }
+                var sendResult = Send(iceServer, refreshReqBytes, null);
 
-            return sendResult;
+                if (sendResult != SocketError.Success)
+                {
+                    logger.LogWarning("Error sending TURN Refresh request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                        iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
+                }
+                else
+                {
+                    OnStunMessageSent?.Invoke(refreshRequest, iceServer.ServerEndPoint, false);
+                }
+
+                return sendResult;
+            }
         }
 
         /// <summary>
@@ -2338,39 +2527,76 @@ namespace SIPSorcery.Net
         /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
         private SocketError SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
         {
-            STUNMessage permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
-            permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
-            permissionsRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address, permissionsRequest.Header.TransactionId));
-
-            byte[] createPermissionReqBytes = null;
-
-            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+            var transactionId = Encoding.ASCII.GetBytes(transactionID);
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+            var permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission)
             {
-                createPermissionReqBytes = GetAuthenticatedStunRequest(permissionsRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+                Header =
+                {
+                    TransactionId = transactionId,
+                },
+                Attributes =
+                {
+                    new STUNXORAddressAttribute(
+                        STUNAttributeTypesEnum.XORPeerAddress,
+                        peerEndPoint.Port,
+                        peerEndPoint.Address,
+                        transactionId)
+                }
+            };
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+
+            if (iceServer.Nonce != null && iceServer.Realm != null &&
+                iceServer._username != null && iceServer._password != null)
+            {
+                var (createPermissionReqBytes, memoryOwner) = GetAuthenticatedStunRequest(
+                    permissionsRequest,
+                    iceServer._username,
+                    iceServer._password,
+                    iceServer.Realm,
+                    iceServer.Nonce);
+
+                using (memoryOwner)
+                {
+                    return SendTurnCreatePermissionsRequestCore(iceServer, permissionsRequest, createPermissionReqBytes);
+                }
             }
             else
             {
-                createPermissionReqBytes = permissionsRequest.ToByteBuffer(null, false);
+                var bufferSize = permissionsRequest.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+                var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+
+                try
+                {
+                    permissionsRequest.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+
+                    return SendTurnCreatePermissionsRequestCore(iceServer, permissionsRequest, rentedBuffer.AsMemory(0, bufferSize));
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(rentedBuffer);
+                }
             }
 
-            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer, createPermissionReqBytes) :
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
-
-            if (sendResult != SocketError.Success)
+            SocketError SendTurnCreatePermissionsRequestCore(IceServer iceServer, STUNMessage permissionsRequest, Memory<byte> createPermissionReqBytes)
             {
-                logger.LogWarning("Error sending TURN Create Permissions request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
-                    iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
-            }
-            else
-            {
-                OnStunMessageSent?.Invoke(permissionsRequest, iceServer.ServerEndPoint, false);
-            }
+                var sendResult = Send(iceServer, createPermissionReqBytes, null);
 
-            return sendResult;
+                if (sendResult != SocketError.Success)
+                {
+                    logger.LogWarning("Error sending TURN Create Permissions request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+                        iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
+                }
+                else
+                {
+                    OnStunMessageSent?.Invoke(permissionsRequest, iceServer.ServerEndPoint, false);
+                }
+
+                return sendResult;
+            }
         }
 
-        protected virtual SocketError SendOverTCP(IceServer iceServer, byte[] buffer)
+        protected virtual SocketError SendOverTCP(IceServer iceServer, Memory<byte> buffer, IDisposable? memoryOwner = null)
         {
             IPEndPoint dstEndPoint = iceServer?.ServerEndPoint;
             if (IsClosed)
@@ -2381,7 +2607,7 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
             }
-            else if (buffer == null || buffer.Length == 0)
+            else if (buffer.IsEmpty)
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
             }
@@ -2409,12 +2635,9 @@ namespace SIPSorcery.Net
                         dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
                     }
 
-                    Func<IPEndPoint, IPEndPoint, bool> equals = (IPEndPoint e1, IPEndPoint e2) =>
-                    {
-                        return e1.Port == e2.Port && e1.Address.Equals(e2.Address);
-                    };
+                    static bool equals(IPEndPoint e1, IPEndPoint e2) => e1.Port == e2.Port && e1.Address.Equals(e2.Address);
 
-                    if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint) || !equals(sendSocket.RemoteEndPoint as IPEndPoint, dstEndPoint))
+                    if (!sendSocket.Connected || sendSocket.RemoteEndPoint is not IPEndPoint remoteEndPoint || !equals(remoteEndPoint, dstEndPoint))
                     {
                         if (sendSocket.Connected)
                         {
@@ -2433,7 +2656,8 @@ namespace SIPSorcery.Net
                         rtpTcpReceiver.BeginReceiveFrom();
                     }
 
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendToTCP, sendSocket);
+                    sendSocket.SendToAsync(buffer, memoryOwner, SocketFlags.None, dstEndPoint, m_sendOverTcpHandler);
+
                     return SocketError.Success;
                 }
                 catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
@@ -2452,50 +2676,52 @@ namespace SIPSorcery.Net
             }
         }
 
-        protected virtual void EndSendToTCP(IAsyncResult ar)
-        {
-            try
-            {
-                Socket sendSocket = (Socket)ar.AsyncState;
-                int bytesSent = sendSocket.EndSendTo(ar);
-            }
-            catch (SocketException sockExcp)
-            {
-                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-                // normal RTP operation. For example:
-                // - the RTP connection may start sending before the remote socket starts listening,
-                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-                //   or new socket during the transition.
-                logger.LogWarning(sockExcp, "SocketException RTPIceChannel EndSendToTCP ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
-            catch (Exception excp)
-            {
-                logger.LogError(excp, "Exception RTPIceChannel EndSendToTCP. {ErrorMessage}", excp.Message);
-            }
-        }
-
         /// <summary>
         /// Adds the authentication fields to a STUN request.
         /// </summary>
         /// <returns>The serialised STUN request.</returns>
-        private byte[] GetAuthenticatedStunRequest(STUNMessage stunRequest, string username, byte[] realm, string password, byte[] nonce)
+        private (Memory<byte> requestBytes, IDisposable memoryOwner) GetAuthenticatedStunRequest(STUNMessage stunRequest, string username, string password, byte[] realm, byte[] nonce)
         {
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, nonce));
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, realm));
             stunRequest.AddUsernameAttribute(username);
 
             // See https://tools.ietf.org/html/rfc5389#section-15.4
-            string key = $"{username}:{Encoding.UTF8.GetString(realm)}:{password}";
-            var buffer = Encoding.UTF8.GetBytes(key);
-            var md5Digest = new MD5Digest();
-            var hash = new byte[md5Digest.GetDigestSize()];
+            var usernameByteCount = Encoding.UTF8.GetByteCount(username);
+            var passwordByteCount = Encoding.UTF8.GetByteCount(password);
+            var totalByteCount = usernameByteCount + 1 + realm.Length + 1 + passwordByteCount;
 
-            md5Digest.BlockUpdate(buffer, 0, buffer.Length);
-            md5Digest.DoFinal(hash, 0);
+            var rentedKeyBuffer = ArrayPool<byte>.Shared.Rent(totalByteCount);
 
-            return stunRequest.ToByteBuffer(hash, true);
+            try
+            {
+                var span = rentedKeyBuffer.AsSpan(0, totalByteCount);
+                var offset = 0;
+
+                offset += Encoding.UTF8.GetBytes(username.AsSpan(), span.Slice(offset));
+                span[offset++] = (byte)':';
+
+                realm.CopyTo(span.Slice(offset));
+                offset += realm.Length;
+
+                span[offset++] = (byte)':';
+                Encoding.UTF8.GetBytes(password.AsSpan(), span.Slice(offset));
+
+                var md5Digest = new MD5Digest();
+                var hash = new byte[md5Digest.GetDigestSize()];
+                md5Digest.BlockUpdate(rentedKeyBuffer, 0, totalByteCount);
+                md5Digest.DoFinal(hash, 0);
+
+                var bufferSize = stunRequest.GetByteBufferSize(hash, addFingerprint: true);
+                var memoryOwner = MemoryPool<byte>.Shared.Rent(bufferSize);
+
+                stunRequest.WriteToBuffer(memoryOwner.Memory.Span.Slice(0, bufferSize), hash, addFingerprint: true);
+                return (memoryOwner.Memory.Slice(0, bufferSize), memoryOwner);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rentedKeyBuffer);
+            }
         }
 
         /// <summary>
@@ -2506,18 +2732,20 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> packet)
         {
-            if (packet?.Length > 0)
+            if (!packet.IsEmpty)
             {
-                bool wasRelayed = false;
+                var wasRelayed = false;
 
-                if (packet[0] == 0x00 && packet[1] == 0x17)
+                var packetSpan = packet.Span;
+
+                if (packetSpan[0] == 0x00 && packetSpan[1] == 0x17)
                 {
                     wasRelayed = true;
 
                     // TURN data indication. Extract the data payload and adjust the end point.
-                    var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+                    var dataIndication = STUNMessage.ParseSTUNMessage(packetSpan);
                     var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
                     packet = dataAttribute?.Value;
 
@@ -2527,15 +2755,28 @@ namespace SIPSorcery.Net
 
                 base.LastRtpDestination = remoteEndPoint;
 
-                if (packet[0] == 0x00 || packet[0] == 0x01)
+                if (packetSpan[0] is 0x00 or 0x01)
                 {
                     // STUN packet.
-                    var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+                    var stunMessage = STUNMessage.ParseSTUNMessage(packetSpan);
                     _ = ProcessStunMessage(stunMessage, remoteEndPoint, wasRelayed);
                 }
                 else
                 {
-                    OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                    OnRTPDataReceivedEx?.Invoke(localPort, remoteEndPoint, packet);
+
+                    if (OnRTPDataReceived is { } onRtpDataReceived)
+                    {
+                        if (MemoryMarshal.TryGetArray(packet, out var segment)
+                            && segment is { Array: not null, Offset: 0 } && segment.Count == packet.Length)
+                        {
+                            onRtpDataReceived(localPort, remoteEndPoint, segment.Array);
+                        }
+                        else
+                        {
+                            onRtpDataReceived(localPort, remoteEndPoint, packet.ToArray());
+                        }
+                    }
                 }
             }
         }
@@ -2547,16 +2788,24 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send to the peer.</param>
         /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
         /// <returns></returns>
-        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer)
+        private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, Memory<byte> buffer, IDisposable? memoryOwner, IPEndPoint relayEndPoint, IceServer iceServer)
         {
-            STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
+            var sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
             sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
-            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer));
 
-            var request = sendReq.ToByteBuffer(null, false);
-            var sendResult = protocol == ProtocolType.Tcp ?
-                SendOverTCP(iceServer, request) :
-                base.Send(RTPChannelSocketsEnum.RTP, relayEndPoint, request);
+            using (memoryOwner)
+            {
+                sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer.ToArray()));
+            }
+
+            var bufferSize = sendReq.GetByteBufferSize(ReadOnlySpan<byte>.Empty, addFingerprint: false);
+            var rentedStunBufferOwner = MemoryPool<byte>.Shared.Rent(bufferSize);
+
+            sendReq.WriteToBuffer(rentedStunBufferOwner.Memory.Span.Slice(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
+
+            var sendResult = protocol == ProtocolType.Tcp
+                ? SendOverTCP(iceServer, rentedStunBufferOwner.Memory.Slice(0, bufferSize), rentedStunBufferOwner)
+                : base.Send(RTPChannelSocketsEnum.RTP, relayEndPoint, rentedStunBufferOwner.Memory.Slice(0, bufferSize), rentedStunBufferOwner);
 
             if (sendResult != SocketError.Success)
             {
@@ -2621,24 +2870,40 @@ namespace SIPSorcery.Net
         /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
         /// <param name="dstEndPoint">The destination end point to send to.</param>
         /// <param name="buffer">The data to send.</param>
+        /// <param name="memoryOwner">The onwer of the <paramref name="buffer"/> memory.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public override SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, Memory<byte> buffer, IDisposable? memoryOwner = null)
         {
-            if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
-                NominatedEntry.LocalCandidate.IceServer != null &&
-                NominatedEntry.RemoteCandidate.DestinationEndPoint.Address.Equals(dstEndPoint.Address) &&
-                NominatedEntry.RemoteCandidate.DestinationEndPoint.Port == dstEndPoint.Port)
+            if (NominatedEntry is
+                {
+                    LocalCandidate:
+                    {
+                        type: RTCIceCandidateType.relay,
+                        IceServer: { } iceServer
+                    },
+                    RemoteCandidate:
+                    {
+                        DestinationEndPoint: { } remoteEndPoint
+                    }
+                } &&
+                remoteEndPoint.Port == dstEndPoint.Port &&
+                remoteEndPoint.Address.Equals(dstEndPoint.Address))
             {
                 // A TURN relay channel is being used to communicate with the remote peer.
-                var protocol = NominatedEntry.LocalCandidate.IceServer.Protocol;
-                var serverEndPoint = NominatedEntry.LocalCandidate.IceServer.ServerEndPoint;
-                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint, NominatedEntry.LocalCandidate.IceServer);
+                var protocol = iceServer.Protocol;
+                var serverEndPoint = iceServer.ServerEndPoint;
+                return SendRelay(protocol, dstEndPoint, buffer, memoryOwner, serverEndPoint, iceServer);
             }
             else
             {
-                return base.Send(sendOn, dstEndPoint, buffer);
+                return base.Send(sendOn, dstEndPoint, buffer, memoryOwner);
             }
         }
+
+        private SocketError Send(IceServer iceServer, Memory<byte> buffer, IDisposable? memoryOwner)
+            => iceServer.Protocol == ProtocolType.Tcp ?
+                SendOverTCP(iceServer, buffer, memoryOwner) :
+                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, buffer, memoryOwner);
     }
 }

@@ -114,6 +114,8 @@ namespace SIPSorcery.Net
         /// Gets the raw bytes for the Goodbye packet.
         /// </summary>
         /// <returns>A byte array.</returns>
+        [Obsolete("Use WriteBytes(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public byte[] GetBytes()
         {
             var buffer = new byte[GetPacketSize()];

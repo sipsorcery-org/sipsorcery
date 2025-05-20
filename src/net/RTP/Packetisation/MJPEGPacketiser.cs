@@ -16,7 +16,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 
@@ -185,50 +187,156 @@ namespace SIPSorcery.net.RTP.Packetisation
         /// <param name="customData">The MJPEG header to be written into bytes</param>
         /// <param name="offset">The offset of current RTP package</param>
         /// <returns></returns>
+        [Obsolete("Use WriteMJPEGRTPHeader(MJPEG, int, Span<byte>); in conjunction with CalculateMJPEGRTPHeaderLength(MJPEG, int), instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static byte[] GetMJPEGRTPHeader(MJPEG customData, int offset)
         {
-            customData.MjpegHeader.SetOffset(offset);
-            var jpegHeader = new byte[8];
-            jpegHeader.SetValue(customData.MjpegHeader.tspec, 0);
-            jpegHeader.SetValue(customData.MjpegHeader.offsetHigh, 1);
-            jpegHeader.SetValue(customData.MjpegHeader.offsetMid, 2);
-            jpegHeader.SetValue(customData.MjpegHeader.offsetLow, 3);
-            jpegHeader.SetValue(customData.MjpegHeader.type, 4);
-            jpegHeader.SetValue(customData.MjpegHeader.q, 5);
-            jpegHeader.SetValue(customData.MjpegHeader.width, 6);
-            jpegHeader.SetValue(customData.MjpegHeader.height, 7);
+            var result = new byte[CalculateMJPEGRTPHeaderLength(customData, offset)];
 
-            var customHeader = jpegHeader;
+            WriteMJPEGRTPHeader(customData, offset, result.AsSpan());
+
+            return result;
+        }
+
+        /// <summary>
+        /// Calculates the total number of bytes required to encode the MJPEG RTP header,
+        /// including the base JPEG header, an optional restart marker header, and optional quantization tables.
+        /// </summary>
+        /// <remarks>
+        /// This method is useful for preallocating the exact buffer size needed to serialize
+        /// the MJPEG RTP header without relying on dynamic memory growth or pooling.
+        /// 
+        /// Each packet contains a special JPEG header which immediately follows
+        /// the rtp header.the first 8 bytes of this header, called the "main
+        /// jpeg header", are as follows:
+        /// <code>
+        /// 0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// | type-specific |              fragment offset                  |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |      type     |       q       |     width     |     height    |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// </code>
+        /// All fields in this header except for the fragment offset field must
+        /// remain the same in all packets that correspond to the same jpeg
+        /// frame.
+        /// A restart marker header and/or quantization table header may follow
+        /// this header, depending on the values of the type and q fields.
+        /// </remarks>
+        /// <param name="customData">The MJPEG metadata containing header fields, restart markers, and quantization tables.</param>
+        /// <param name="offset">
+        /// The fragment offset of the current RTP packet. Quantization tables are only included if this is 0,
+        /// as they are typically sent only in the first packet of a fragmented MJPEG frame.
+        /// </param>
+        /// <returns>The total number of bytes required to encode the MJPEG RTP header.</returns>
+        public static int CalculateMJPEGRTPHeaderLength(MJPEG customData, int offset)
+        {
+            var totalLength = 8; // Base JPEG header
 
             if (customData.HasRestartMarker)
             {
-                var restartHeader = new byte[4];
-                var restartInterval = BitConverter.GetBytes(customData.MjpegHeaderRestartMarker.RestartInterval);
-                var isFirst = customData.MjpegHeaderRestartMarker.IsFirst;
-                var isLast = customData.MjpegHeaderRestartMarker.IsLast;
-                var restartCount = customData.MjpegHeaderRestartMarker.RestartCount;
-                var isLastAndFirstAndRestartCount = BitConverter.GetBytes((char)(((isFirst & 0xF) << 8) | ((isLast & 0xF) << 7) | (restartCount & 0xF)));
-                restartHeader = restartInterval.Concat(isLastAndFirstAndRestartCount).ToArray();
-
-                customHeader = jpegHeader.Concat(restartHeader).ToArray();
+                totalLength += 4; // 2 bytes for RestartInterval + 2 bytes for marker info
             }
-            if (customData.MjpegHeaderQTable.GetLength() > 0 && customData.QTables.Count > 0 && offset == 0)
-            {
-                var qTableHeader = new byte[4];
-                qTableHeader.SetValue(customData.MjpegHeaderQTable.mbz, 0);
-                qTableHeader.SetValue(customData.MjpegHeaderQTable.precision, 1);
-                qTableHeader.SetValue(customData.MjpegHeaderQTable.lengthHigh, 2);
-                qTableHeader.SetValue(customData.MjpegHeaderQTable.lengthLow, 3);
 
-                var qtables = Array.Empty<byte>();
+            var includeQTables =
+                customData.MjpegHeaderQTable.GetLength() > 0 &&
+                customData.QTables.Count > 0 &&
+                offset == 0;
+
+            if (includeQTables)
+            {
+                totalLength += 4; // QTable header
                 foreach (var qTable in customData.QTables)
                 {
-                    qtables = qtables.Concat(qTable).ToArray();
+                    totalLength += qTable.Length;
                 }
-                customHeader = customHeader.Concat(qTableHeader).Concat(qtables).ToArray();
             }
-            return customHeader;
 
+            return totalLength;
+        }
+
+        /// <summary>
+        /// Writes an MJPEG RTP header into the provided <see cref="Span{Byte}"/> buffer.
+        /// This includes the base JPEG header, and optionally a restart marker and quantization tables.
+        /// </summary>
+        /// <remarks>
+        /// Each packet contains a special JPEG header which immediately follows
+        /// the rtp header.the first 8 bytes of this header, called the "main
+        /// jpeg header", are as follows:
+        /// <code>
+        /// 0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// | type-specific |              fragment offset                  |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |      type     |       q       |     width     |     height    |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// </code>
+        /// All fields in this header except for the fragment offset field must
+        /// remain the same in all packets that correspond to the same jpeg
+        /// frame.
+        /// A restart marker header and/or quantization table header may follow
+        /// this header, depending on the values of the type and q fields.
+        /// </remarks>
+        /// <param name="customData">The MJPEG metadata to serialize into the buffer.</param>
+        /// <param name="offset">The fragment offset of the current RTP packet.</param>
+        /// <param name="destination">
+        /// The buffer to write the MJPEG RTP header into. Must be at least <see cref="CalculateMJPEGRTPHeaderLength"/> bytes long.
+        /// </param>
+        /// <returns>The number of bytes written to the buffer.</returns>
+        public static int WriteMJPEGRTPHeader(MJPEG customData, int offset, Span<byte> destination)
+        {
+            customData.MjpegHeader.SetOffset(offset);
+
+            var position = 0;
+
+            // Base JPEG header (8 bytes)
+            destination[position++] = customData.MjpegHeader.tspec;
+            destination[position++] = customData.MjpegHeader.offsetHigh;
+            destination[position++] = customData.MjpegHeader.offsetMid;
+            destination[position++] = customData.MjpegHeader.offsetLow;
+            destination[position++] = customData.MjpegHeader.type;
+            destination[position++] = customData.MjpegHeader.q;
+            destination[position++] = customData.MjpegHeader.width;
+            destination[position++] = customData.MjpegHeader.height;
+
+            // Restart Marker (optional)
+            if (customData.HasRestartMarker)
+            {
+                BinaryPrimitives.WriteUInt16BigEndian(destination.Slice(position), (ushort)customData.MjpegHeaderRestartMarker.RestartInterval);
+                position += 2;
+
+                var markerInfo = (ushort)(
+                    ((customData.MjpegHeaderRestartMarker.IsFirst & 0xF) << 8) |
+                    ((customData.MjpegHeaderRestartMarker.IsLast & 0xF) << 7) |
+                    (customData.MjpegHeaderRestartMarker.RestartCount & 0xF)
+                );
+                BinaryPrimitives.WriteUInt16BigEndian(destination.Slice(position), markerInfo);
+                position += 2;
+            }
+
+            // Quantization Tables (optional)
+            var includeQTables =
+                customData.MjpegHeaderQTable.GetLength() > 0 &&
+                customData.QTables.Count > 0 &&
+                offset == 0;
+
+            if (includeQTables)
+            {
+                destination[position++] = customData.MjpegHeaderQTable.mbz;
+                destination[position++] = customData.MjpegHeaderQTable.precision;
+                destination[position++] = customData.MjpegHeaderQTable.lengthHigh;
+                destination[position++] = customData.MjpegHeaderQTable.lengthLow;
+
+                foreach (var qTable in customData.QTables)
+                {
+                    qTable.CopyTo(destination.Slice(position));
+                    position += qTable.Length;
+                }
+            }
+
+            return position;
         }
 
         /// <summary>
@@ -238,17 +346,35 @@ namespace SIPSorcery.net.RTP.Packetisation
         /// <param name="jpegFrame">The entire frame data</param>
         /// <param name="customData">RTPHeader data in a readable structure</param>
         /// <returns></returns>
+        [Obsolete("Use GetFrameData(ReadOnlySpan<byte>), instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static MJPEGData GetFrameData(byte[] jpegFrame, out MJPEG customData)
         {
-            customData = new MJPEG();
+            (var frameData, customData) = GetFrameData(jpegFrame.AsSpan());
 
+            return frameData;
+        }
+
+        /// <summary>
+        /// Scans the frame for markers and builds the RTPHeader data.
+        /// Returns the raw frame data.
+        /// </summary>
+        /// <param name="jpegFrame">The entire frame data</param>
+        /// <returns></returns>
+        public static (MJPEGData? frameData, MJPEG customData) GetFrameData(ReadOnlySpan<byte> jpegFrame)
+        {
+            var customData = new MJPEG();
             var index = 0;
             var length = jpegFrame.Length;
-            List<Marker> markers = new List<Marker>();
+            var markers = new List<Marker>();
             var currentMarker = new Marker();
+
             while (index < length)
             {
-                if (index + 1 < length && ContainsMarker(jpegFrame[index], JpegMarkerTypes.jmt_BeginMarker) && !ContainsMarker(jpegFrame[index + 1], JpegMarkerTypes.jmt_NotAmarker) && jpegFrame[index + 1] != 0xFF)
+                if (index + 1 < length &&
+                    ContainsMarker(jpegFrame[index], JpegMarkerTypes.jmt_BeginMarker) &&
+                    !ContainsMarker(jpegFrame[index + 1], JpegMarkerTypes.jmt_NotAmarker) &&
+                    jpegFrame[index + 1] != 0xFF)
                 {
                     if (((jpegFrame[index + 1] & 0xF0) == 0xD0) && ((jpegFrame[index + 1] & 0x0F) <= 0x07))
                     {
@@ -259,14 +385,14 @@ namespace SIPSorcery.net.RTP.Packetisation
                     {
                         if (currentMarker.StartPosition > 0)
                         {
-                            currentMarker.MarkerBytes = jpegFrame.AsSpan(currentMarker.StartPosition, index + 1).ToArray();
+                            currentMarker.MarkerBytes = jpegFrame.Slice(currentMarker.StartPosition, index + 1 - currentMarker.StartPosition).ToArray();
                             markers.Add(currentMarker);
                             currentMarker = new Marker();
                         }
+
                         currentMarker.Type = jpegFrame[index + 1];
                         currentMarker.StartPosition = index + 2;
                         index += 2;
-
                     }
                 }
                 else
@@ -274,13 +400,14 @@ namespace SIPSorcery.net.RTP.Packetisation
                     index++;
                 }
             }
+
             if (currentMarker.StartPosition > 0)
             {
-                currentMarker.MarkerBytes = jpegFrame.AsSpan(currentMarker.StartPosition, index).ToArray();
+                currentMarker.MarkerBytes = jpegFrame.Slice(currentMarker.StartPosition, length - currentMarker.StartPosition).ToArray();
                 markers.Add(currentMarker);
             }
 
-            MJPEGData mjpeg = null;
+            var mjpeg = default(MJPEGData);
             foreach (var marker in markers)
             {
                 switch (marker.Type)
@@ -300,7 +427,8 @@ namespace SIPSorcery.net.RTP.Packetisation
                         break;
                 }
             }
-            return mjpeg;
+
+            return (mjpeg, customData);
         }
 
         private static bool ContainsMarker(byte testValue, JpegMarkerTypes marker)

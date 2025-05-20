@@ -143,6 +143,8 @@ namespace SIPSorcery.Net
         /// Serialises the reception report block to a byte array.
         /// </summary>
         /// <returns>A byte array.</returns>
+        [Obsolete("Use WriteBytes(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public byte[] GetBytes()
         {
             var buffer = new byte[GetPacketSize()];
@@ -152,6 +154,10 @@ namespace SIPSorcery.Net
             return buffer;
         }
 
+        /// <summary>
+        /// Serialises the reception report block to a byte array.
+        /// </summary>
+        /// <param name="buffer">The destination buffer.</param>
         public int WriteBytes(Span<byte> buffer)
         {
             var size = GetPacketSize();

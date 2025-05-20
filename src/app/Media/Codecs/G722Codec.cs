@@ -363,7 +363,20 @@ namespace SIPSorcery.Media
         /// <param name="inputBuffer">PCM 16 bit samples to encode</param>
         /// <param name="inputBufferCount">Number of samples in the input buffer to encode</param>
         /// <returns>Number of encoded bytes written into output buffer</returns>
+        [Obsolete("Use Encode(G722CodecState, Span<byte>, ReadOnlySpan<byte>) instead.", false)]
         public int Encode(G722CodecState state, byte[] outputBuffer, short[] inputBuffer, int inputBufferCount)
+        {
+            return Encode(state, outputBuffer.AsSpan(), inputBuffer.AsSpan(0 , inputBufferCount));
+        }
+
+        /// <summary>
+        /// Encodes a buffer of G722
+        /// </summary>
+        /// <param name="state">Codec state</param>
+        /// <param name="outputBuffer">Output buffer (to contain encoded G722)</param>
+        /// <param name="inputBuffer">PCM 16 bit samples to encode</param>
+        /// <returns>Number of encoded bytes written into output buffer</returns>
+        public int Encode(G722CodecState state, Span<byte> outputBuffer, ReadOnlySpan<short> inputBuffer)
         {
             int dlow;
             int dhigh;
@@ -392,7 +405,7 @@ namespace SIPSorcery.Media
 
             g722_bytes = 0;
             xhigh = 0;
-            for (j = 0; j < inputBufferCount;)
+            for (j = 0; j < inputBuffer.Length;)
             {
                 if (state.ItuTestMode)
                 {
@@ -413,8 +426,10 @@ namespace SIPSorcery.Media
                         {
                             state.QmfSignalHistory[i] = state.QmfSignalHistory[i + 2];
                         }
+
                         state.QmfSignalHistory[22] = inputBuffer[j++];
-                        if (j < inputBufferCount)
+
+                        if (j < inputBuffer.Length)
                         {
                             state.QmfSignalHistory[23] = inputBuffer[j++];
                         }
@@ -432,10 +447,12 @@ namespace SIPSorcery.Media
                             sumodd += state.QmfSignalHistory[2 * i] * qmf_coeffs[i];
                             sumeven += state.QmfSignalHistory[2 * i + 1] * qmf_coeffs[11 - i];
                         }
+
                         xlow = (sumeven + sumodd) >> 14;
                         xhigh = (sumeven - sumodd) >> 14;
                     }
                 }
+
                 // Block 1L, SUBTRA
                 el = Saturate(xlow - state.Band[0].s);
 
@@ -450,6 +467,7 @@ namespace SIPSorcery.Media
                         break;
                     }
                 }
+
                 ilow = (el < 0) ? iln[i] : ilp[i];
 
                 // Block 2L, INVQAL
@@ -457,10 +475,10 @@ namespace SIPSorcery.Media
                 wd2 = qm4[ril];
                 dlow = (state.Band[0].det * wd2) >> 15;
 
-                // Block 3L, LOGSCL
                 il4 = rl42[ril];
                 wd = (state.Band[0].nb * 127) >> 7;
                 state.Band[0].nb = wd + wl[il4];
+
                 if (state.Band[0].nb < 0)
                 {
                     state.Band[0].nb = 0;
@@ -470,7 +488,7 @@ namespace SIPSorcery.Media
                     state.Band[0].nb = 18432;
                 }
 
-                // Block 3L, SCALEL
+
                 wd1 = (state.Band[0].nb >> 6) & 31;
                 wd2 = 8 - (state.Band[0].nb >> 11);
                 wd3 = (wd2 < 0) ? (ilb[wd1] << -wd2) : (ilb[wd1] >> wd2);
@@ -502,6 +520,7 @@ namespace SIPSorcery.Media
                     ih2 = rh2[ihigh];
                     wd = (state.Band[1].nb * 127) >> 7;
                     state.Band[1].nb = wd + wh[ih2];
+
                     if (state.Band[1].nb < 0)
                     {
                         state.Band[1].nb = 0;
@@ -518,6 +537,7 @@ namespace SIPSorcery.Media
                     state.Band[1].det = wd3 << 2;
 
                     Block4(state, 1, dhigh);
+
                     code = ((ihigh << 6) | ilow) >> (8 - state.BitsPerSample);
                 }
 
@@ -526,6 +546,7 @@ namespace SIPSorcery.Media
                     // Pack the code bits
                     state.OutBuffer |= (uint)(code << state.OutBits);
                     state.OutBits += state.BitsPerSample;
+
                     if (state.OutBits >= 8)
                     {
                         outputBuffer[g722_bytes++] = (byte)(state.OutBuffer & 0xFF);
@@ -536,8 +557,9 @@ namespace SIPSorcery.Media
                 else
                 {
                     outputBuffer[g722_bytes++] = (byte)code;
-                }
             }
+            }
+
             return g722_bytes;
         }
     }

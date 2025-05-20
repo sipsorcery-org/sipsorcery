@@ -289,24 +289,51 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
-            string paramStr = null;
+            var builder = new ValueStringBuilder();
 
+            try
+            {
+                ToString(ref builder, TagDelimiter);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder, char firstDelimiter)
+        {
             if (m_dictionary != null)
             {
-                foreach (KeyValuePair<string, string> param in m_dictionary)
+                bool isFirst = true;
+
+                foreach (var (key, value) in m_dictionary)
                 {
-                    if (param.Value != null && param.Value.Trim().Length > 0)
+                    if (isFirst)
                     {
-                        paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPURIParameterEscape(param.Value);
+                        builder.Append(firstDelimiter);
+                        isFirst = false;
                     }
                     else
                     {
-                        paramStr += TagDelimiter + param.Key;
+                        builder.Append(TagDelimiter);
+                    }
+
+                    builder.Append(key);
+
+                    if (value is not null)
+                    {
+                        var valueSpan = value.AsSpan();
+                        if (!valueSpan.Trim().IsEmpty)
+                        {
+                            builder.Append(TAG_NAME_VALUE_SEPERATOR);
+                            SIPEscape.SIPURIParameterEscape(ref builder, valueSpan);
+                        }
                     }
                 }
             }
-
-            return paramStr;
         }
 
         public override int GetHashCode()

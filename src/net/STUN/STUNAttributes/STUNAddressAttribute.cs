@@ -14,7 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
+using System.ComponentModel;
 using System.Net;
+using System.Runtime.InteropServices;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -36,19 +39,11 @@ namespace SIPSorcery.Net
         /// Reverted this obsoletion on 13 Nov 2024 AC. 
         /// </remarks>
         //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        [Obsolete("Use STUNAddressAttribute(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAddressAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.MappedAddress, attributeValue)
+            : this(STUNAttributeTypesEnum.MappedAddress, (ReadOnlySpan<byte>)attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2);
-            }
-
-            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
         /// <summary>
@@ -60,19 +55,42 @@ namespace SIPSorcery.Net
         /// Reverted this obsoletion on 13 Nov 2024 AC. 
         /// </remarks>
         //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        public STUNAddressAttribute(ReadOnlySpan<byte> attributeValue)
+            : this(STUNAttributeTypesEnum.MappedAddress, attributeValue)
+        {
+        }
+
+        /// <summary>
+        /// Parses an IPv4 Address attribute.
+        /// </summary>
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        [Obsolete("Use STUNAddressAttribute(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
+            : this(attributeType, (ReadOnlySpan<byte>)attributeValue)
+        {
+        }
+
+        /// <summary>
+        /// Parses an IPv4 Address attribute.
+        /// </summary>
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, ReadOnlySpan<byte> attributeValue)
             : base(attributeType, attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2);
-            }
+            Port = BinaryPrimitives.ReadUInt16BigEndian(attributeValue.Slice(2, 2));
 
-            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
+            Address = attributeValue.Slice(4, 4).ToIPAddress();
         }
 
         /// <summary>
@@ -94,39 +112,57 @@ namespace SIPSorcery.Net
             //base.Length = ADDRESS_ATTRIBUTE_LENGTH;
         }
 
+        [Obsolete("Use ToByteBuffer(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
+        {
+            return base.WriteBytes(buffer.AsSpan(startIndex));
+        }
+
+        public override int WriteBytes(Span<byte> buffer)
         {
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_IPV4_LENGTH)), 0, buffer, startIndex + 2, 2);
+                var typeBytes = BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)base.AttributeType));
+                typeBytes.CopyTo(buffer.Slice(0, 2));
+
+                var lengthBytes = BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_IPV4_LENGTH));
+                lengthBytes.CopyTo(buffer.Slice(2, 2));
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_IPV4_LENGTH), 0, buffer, startIndex + 2, 2);
+                var typeBytes = BitConverter.GetBytes((ushort)base.AttributeType);
+                typeBytes.CopyTo(buffer.Slice(0, 2));
+
+                var lengthBytes = BitConverter.GetBytes(ADDRESS_ATTRIBUTE_IPV4_LENGTH);
+                lengthBytes.CopyTo(buffer.Slice(2, 2));
             }
 
-            buffer[startIndex + 5] = (byte)Family;
+            buffer[5] = (byte)Family;
 
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Port))), 0, buffer, startIndex + 6, 2);
+                var portBytes = BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Port)));
+                portBytes.CopyTo(buffer.Slice(6, 2));
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Port)), 0, buffer, startIndex + 6, 2);
+                var portBytes = BitConverter.GetBytes(Convert.ToUInt16(Port));
+                portBytes.CopyTo(buffer.Slice(6, 2));
             }
-            Buffer.BlockCopy(Address.GetAddressBytes(), 0, buffer, startIndex + 8, 4);
+
+            var addressBytes = Address.GetAddressBytes();
+            addressBytes.CopyTo(buffer.Slice(8, 4));
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_IPV4_LENGTH;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
-
-            return attrDescrStr;
+            sb.Append("Address=");
+            sb.Append(Address.ToString());
+            sb.Append(", Port=");
+            sb.Append(Port);
         }
     }
 }

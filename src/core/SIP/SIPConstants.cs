@@ -541,17 +541,68 @@ namespace SIPSorcery.SIP
 
         public static string SIPURIParameterEscape(string unescapedString)
         {
-            string result = unescapedString;
-            if (!result.IsNullOrBlank())
+            // Characters that need escaping
+            ReadOnlySpan<char> specialChars = stackalloc char[] { ';', '?', '@', '=', ',', ' ' };
+
+            // Early exit if no special characters are found
+            var unescapedSpan = unescapedString.AsSpan();
+            int nextIndex = unescapedSpan.IndexOfAny(specialChars);
+            if (nextIndex == -1)
             {
-                result = result.Replace(";", "%3B");
-                result = result.Replace("?", "%3F");
-                result = result.Replace("@", "%40");
-                result = result.Replace("=", "%3D");
-                result = result.Replace(",", "%2C");
-                result = result.Replace(" ", "%20");
+                // No escaping needed
+                return unescapedString;
             }
-            return result;
+
+            var builder = new ValueStringBuilder();
+
+            try
+            {
+                SIPURIParameterEscape(ref builder, unescapedSpan);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal static void SIPURIParameterEscape(ref ValueStringBuilder builder, ReadOnlySpan<char> unescapedSpan)
+        {
+            // Characters that need escaping
+            ReadOnlySpan<char> specialChars = stackalloc char[] { ';', '?', '@', '=', ',', ' ' };
+
+            var currentIndex = 0;
+            var nextIndex = unescapedSpan.IndexOfAny(specialChars);
+            while (nextIndex != -1)
+            {
+                // Append everything before the special character
+                builder.Append(unescapedSpan.Slice(currentIndex, nextIndex - currentIndex));
+
+                // Escape the special character
+                switch (unescapedSpan[nextIndex])
+                {
+                    case ';': builder.Append("%3B"); break;
+                    case '?': builder.Append("%3F"); break;
+                    case '@': builder.Append("%40"); break;
+                    case '=': builder.Append("%3D"); break;
+                    case ',': builder.Append("%2C"); break;
+                    case ' ': builder.Append("%20"); break;
+                }
+
+                currentIndex = nextIndex + 1;
+                nextIndex = unescapedSpan.Slice(currentIndex).IndexOfAny(specialChars);
+                if (nextIndex != -1)
+                {
+                    nextIndex += currentIndex; // Adjust relative index to absolute
+                }
+            }
+
+            // Append the remaining part
+            if (currentIndex < unescapedSpan.Length)
+            {
+                builder.Append(unescapedSpan.Slice(currentIndex));
+            }
         }
 
         public static string SIPURIParameterUnescape(string escapedString)

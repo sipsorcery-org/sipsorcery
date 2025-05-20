@@ -15,11 +15,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace TinyJson
 {
@@ -29,205 +32,257 @@ namespace TinyJson
     //- Will only output public fields and property getters on objects
     public static class JSONWriter
     {
+        private static readonly FrozenDictionary<char, char> EscapeMap = new Dictionary<char, char>
+        {
+            ['"'] = '"',
+            ['\\'] = '\\',
+            ['\n'] = 'n',
+            ['\r'] = 'r',
+            ['\t'] = 't',
+            ['\b'] = 'b',
+            ['\f'] = 'f'
+        }.ToFrozenDictionary();
+
         public static string ToJson(this object item)
         {
-            StringBuilder stringBuilder = new StringBuilder();
-            AppendValue(stringBuilder, item);
-            return stringBuilder.ToString();
+            var builder = new ValueStringBuilder();
+
+            try
+            {
+                AppendValue(ref builder, item);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
         }
 
-        static void AppendValue(StringBuilder stringBuilder, object item)
+        static void AppendValue(ref ValueStringBuilder builder, object item)
         {
             if (item == null)
             {
-                stringBuilder.Append("null");
+                builder.Append("null");
                 return;
             }
 
-            Type type = item.GetType();
-            if (type == typeof(string) || type == typeof(char))
+            var type = item.GetType();
+
+            if (type.IsEnum)
             {
-                stringBuilder.Append('"');
-                string str = item.ToString();
-                for (int i = 0; i < str.Length; ++i)
-                {
-                    if (str[i] < ' ' || str[i] == '"' || str[i] == '\\')
+                builder.Append('"');
+                builder.Append(item.ToString());
+                builder.Append('"');
+                return;
+            }
+
+            var typeCode = Type.GetTypeCode(type);
+
+            switch (typeCode)
+            {
+
+                case TypeCode.String:
                     {
-                        stringBuilder.Append('\\');
-                        int j = "\"\\\n\r\t\b\f".IndexOf(str[i]);
-                        if (j >= 0)
+                        builder.Append('"');
+                        var str = ((string)item).AsSpan();
+                        for (var i = 0; i < str.Length; i++)
                         {
-                            stringBuilder.Append("\"\\nrtbf"[j]);
+                            AppendEscapedChar(ref builder, str[i]);
                         }
-                        else
-                        {
-                            stringBuilder.AppendFormat("u{0:X4}", (UInt32)str[i]);
-                        }
+                        builder.Append('"');
+                        return;
+                    }
+
+                case TypeCode.Char:
+                    {
+                        builder.Append('"');
+                        AppendEscapedChar(ref builder, (char)item);
+                        builder.Append('"');
+                        return;
+
+                    }
+
+                case TypeCode.Boolean:
+                    {
+                        builder.Append((bool)item ? "true" : "false");
+                        return;
+                    }
+
+                case TypeCode.Single:
+                    {
+                        builder.Append((float)item, provider: System.Globalization.CultureInfo.InvariantCulture);
+                        return;
+                    }
+
+                case TypeCode.Double:
+                    {
+                        builder.Append((double)item, provider: System.Globalization.CultureInfo.InvariantCulture);
+                        return;
+                    }
+
+                case TypeCode.Decimal:
+                    {
+                        builder.Append((decimal)item, provider: System.Globalization.CultureInfo.InvariantCulture);
+                        return;
+                    }
+
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.Int16:
+                case TypeCode.UInt16:
+                case TypeCode.Int32:
+                case TypeCode.UInt32:
+                case TypeCode.Int64:
+                case TypeCode.UInt64:
+                    {
+                        builder.Append(item.ToString());
+                        return;
+                    }
+
+                case TypeCode.DBNull:
+                case TypeCode.Empty:
+                    {
+                        builder.Append("null");
+                        return;
+                    }
+            }
+
+            static void AppendEscapedChar(ref ValueStringBuilder builder, char ch)
+            {
+                if (ch is >= ' ' and not '"' and not '\\')
+                {
+                    builder.Append(ch);
+                }
+                else
+                {
+                    builder.Append('\\');
+                    if (EscapeMap.TryGetValue(ch, out var escapeChar))
+                    {
+                        builder.Append(escapeChar);
                     }
                     else
                     {
-                        stringBuilder.Append(str[i]);
+                        builder.Append('u');
+                        builder.Append(((uint)ch).ToString("X4"));
                     }
                 }
-                stringBuilder.Append('"');
             }
-            else if (type == typeof(byte) || type == typeof(sbyte))
+
+            if (item is IList list)
             {
-                stringBuilder.Append(item.ToString());
-            }
-            else if (type == typeof(short) || type == typeof(ushort))
-            {
-                stringBuilder.Append(item.ToString());
-            }
-            else if (type == typeof(int) || type == typeof(uint))
-            {
-                stringBuilder.Append(item.ToString());
-            }
-            else if (type == typeof(long) || type == typeof(ulong))
-            {
-                stringBuilder.Append(item.ToString());
-            }
-            else if (type == typeof(float))
-            {
-                stringBuilder.Append(((float)item).ToString(System.Globalization.CultureInfo.InvariantCulture));
-            }
-            else if (type == typeof(double))
-            {
-                stringBuilder.Append(((double)item).ToString(System.Globalization.CultureInfo.InvariantCulture));
-            }
-            else if (type == typeof(decimal))
-            {
-                stringBuilder.Append(((decimal)item).ToString(System.Globalization.CultureInfo.InvariantCulture));
-            }
-            else if (type == typeof(bool))
-            {
-                stringBuilder.Append(((bool)item) ? "true" : "false");
-            }
-            else if (type.IsEnum)
-            {
-                stringBuilder.Append('"');
-                stringBuilder.Append(item.ToString());
-                stringBuilder.Append('"');
-            }
-            else if (item is IList)
-            {
-                stringBuilder.Append('[');
-                bool isFirst = true;
-                IList list = item as IList;
-                for (int i = 0; i < list.Count; i++)
+                builder.Append('[');
+                var isFirst = true;
+                for (var i = 0; i < list.Count; i++)
                 {
-                    if (isFirst)
+                    if (!isFirst)
+                    {
+                        builder.Append(',');
+                    }
+                    else
                     {
                         isFirst = false;
                     }
-                    else
-                    {
-                        stringBuilder.Append(',');
-                    }
-                    AppendValue(stringBuilder, list[i]);
+                    AppendValue(ref builder, list[i]);
                 }
-                stringBuilder.Append(']');
+                builder.Append(']');
             }
             else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
-                Type keyType = type.GetGenericArguments()[0];
-
-                //Refuse to output dictionary keys that aren't of type string
+                var keyType = type.GetGenericArguments()[0];
                 if (keyType != typeof(string))
                 {
-                    stringBuilder.Append("{}");
+                    builder.Append("{}");
                     return;
                 }
 
-                stringBuilder.Append('{');
-                IDictionary dict = item as IDictionary;
-                bool isFirst = true;
-                foreach (object key in dict.Keys)
+                var dict = item as IDictionary;
+                builder.Append('{');
+                var isFirst = true;
+                foreach (var key in dict.Keys)
                 {
-                    if (isFirst)
+                    if (!isFirst)
                     {
-                        isFirst = false;
+                        builder.Append(',');
                     }
                     else
                     {
-                        stringBuilder.Append(',');
+                        isFirst = false;
                     }
-                    stringBuilder.Append('\"');
-                    stringBuilder.Append((string)key);
-                    stringBuilder.Append("\":");
-                    AppendValue(stringBuilder, dict[key]);
+                    builder.Append('\"');
+                    builder.Append((string)key);
+                    builder.Append("\":");
+                    AppendValue(ref builder, dict[key]);
                 }
-                stringBuilder.Append('}');
+                builder.Append('}');
             }
             else
             {
-                stringBuilder.Append('{');
+                builder.Append('{');
+                var isFirst = true;
 
-                bool isFirst = true;
-                FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                for (int i = 0; i < fieldInfos.Length; i++)
+                var fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+                foreach (var field in fieldInfos)
                 {
-                    if (fieldInfos[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
+                    if (field.IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     {
                         continue;
                     }
 
-                    object value = fieldInfos[i].GetValue(item);
+                    var value = field.GetValue(item);
                     if (value != null)
                     {
-                        if (isFirst)
+                        if (!isFirst)
                         {
-                            isFirst = false;
+                            builder.Append(',');
                         }
                         else
                         {
-                            stringBuilder.Append(',');
+                            isFirst = false;
                         }
-                        stringBuilder.Append('\"');
-                        stringBuilder.Append(GetMemberName(fieldInfos[i]));
-                        stringBuilder.Append("\":");
-                        AppendValue(stringBuilder, value);
+                        builder.Append('\"');
+                        builder.Append(GetMemberName(field));
+                        builder.Append("\":");
+                        AppendValue(ref builder, value);
                     }
                 }
-                PropertyInfo[] propertyInfo = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                for (int i = 0; i < propertyInfo.Length; i++)
+
+                var propertyInfos = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+                foreach (var prop in propertyInfos)
                 {
-                    if (!propertyInfo[i].CanRead || propertyInfo[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
+                    if (!prop.CanRead || prop.IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     {
                         continue;
                     }
 
-                    object value = propertyInfo[i].GetValue(item, null);
+                    var value = prop.GetValue(item, null);
                     if (value != null)
                     {
-                        if (isFirst)
+                        if (!isFirst)
                         {
-                            isFirst = false;
+                            builder.Append(',');
                         }
                         else
                         {
-                            stringBuilder.Append(',');
+                            isFirst = false;
                         }
-                        stringBuilder.Append('\"');
-                        stringBuilder.Append(GetMemberName(propertyInfo[i]));
-                        stringBuilder.Append("\":");
-                        AppendValue(stringBuilder, value);
+                        builder.Append('\"');
+                        builder.Append(GetMemberName(prop));
+                        builder.Append("\":");
+                        AppendValue(ref builder, value);
                     }
                 }
 
-                stringBuilder.Append('}');
+                builder.Append('}');
             }
         }
 
         static string GetMemberName(MemberInfo member)
         {
-            if (member.IsDefined(typeof(DataMemberAttribute), true))
+            if (Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true) is DataMemberAttribute attr &&
+                !string.IsNullOrEmpty(attr.Name))
             {
-                DataMemberAttribute dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true);
-                if (!string.IsNullOrEmpty(dataMemberAttribute.Name))
-                {
-                    return dataMemberAttribute.Name;
-                }
+                return attr.Name;
             }
 
             return member.Name;

@@ -15,7 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -80,25 +83,54 @@ namespace SIPSorcery.Net
         /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
         /// <param name="jpegWidth">The width of the JPEG image.</param>
         /// <param name="jpegHeight">The height of the JPEG image.</param>
+        [Obsolete("Use SendJpegFrame(uint, int, ReadOnlySpan<byte>, int, int, int) instead", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public void SendJpegFrame(uint duration, int payloadTypeID, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
+        {
+            SendJpegFrame(duration, payloadTypeID, new ReadOnlySpan<byte>(jpegBytes), jpegQuality, jpegWidth, jpegHeight);
+        }
+
+        /// <summary>
+        /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
+        /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
+        /// quality image is required since the header used in this method does not support quantization tables.
+        /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
+        /// <param name="jpegBytes">The raw encoded bytes of the JPEG image to transmit.</param>
+        /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
+        /// <param name="jpegWidth">The width of the JPEG image.</param>
+        /// <param name="jpegHeight">The height of the JPEG image.</param>
+        public void SendJpegFrame(uint duration, int payloadTypeID, ReadOnlySpan<byte> jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
         {
             if (CheckIfCanSendRtpRaw())
             {
                 try
                 {
-                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
+                    var maxPayload = RTPSession.RTP_MAX_PAYLOAD;
+                    var headerLength = 8;
+
+                    using var memoryOwner = MemoryPool<byte>.Shared.Rent(headerLength + maxPayload);
+                    var payloadSpan = memoryOwner.Memory.Span;
+
+                    var offset = 0u;
+
+                    while (!jpegBytes.IsEmpty)
                     {
-                        uint offset = Convert.ToUInt32(index * RTPSession.RTP_MAX_PAYLOAD);
-                        int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTPSession.RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTPSession.RTP_MAX_PAYLOAD;
-                        byte[] jpegHeader = RtpVideoFramer.CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
+                        var payloadLength = Math.Min(maxPayload, jpegBytes.Length);
 
-                        List<byte> packetPayload = new List<byte>();
-                        packetPayload.AddRange(jpegHeader);
-                        packetPayload.AddRange(jpegBytes.Skip(index * RTPSession.RTP_MAX_PAYLOAD).Take(payloadLength));
+                        // Write JPEG RTP header directly into the buffer
+                        RtpVideoFramer.WriteLowQualityRtpJpegHeader(payloadSpan.Slice(0, headerLength), offset, jpegQuality, jpegWidth, jpegHeight);
 
-                        int markerBit = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
+                        // Copy JPEG payload
+                        jpegBytes.Slice(0, payloadLength).CopyTo(payloadSpan.Slice(headerLength));
 
-                        SendRtpRaw(packetPayload.ToArray(), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        var isLastPacket = payloadLength >= jpegBytes.Length;
+                        var markerBit = isLastPacket ? 1 : 0;
+
+                        SendRtpRaw(payloadSpan.Slice(0, headerLength + payloadLength), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+
+                        jpegBytes = jpegBytes.Slice(payloadLength);
+                        offset += (uint)payloadLength;
                     }
 
                     LocalTrack.Timestamp += duration;
@@ -143,56 +175,61 @@ namespace SIPSorcery.Net
         /// <param name="nal">The buffer containing the NAL to send.</param>
         /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set 
         /// and the timestamp incremented.</param>
-        private void SendH26XNal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal, bool is265 = false)
+        private void SendH26XNal(uint duration, int payloadTypeID, ReadOnlySpan<byte> nal, bool isLastNal, bool is265 = false)
         {
-            //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
-            //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
-            var naluHeaderSize = is265 ? 2 : 1;
-            byte[] naluHeader = is265 ? nal.AsSpan(0, 2).ToArray() : nal.AsSpan(0, 1).ToArray();
+                var naluHeaderSize = is265 ? 2 : 1;
+            var naluHeader = nal.Slice(0, naluHeaderSize);
 
             if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
-                //var naltype = naluHeader[0] >> 1 & 0x3F;
-                //logger.LogTrace("Sending NALtype {type}", naltype);
+                    // Send as Single-Time Aggregation Packet (STAP-A).
+                var markerBit = isLastNal ? 1 : 0;
+                var payload = ArrayPool<byte>.Shared.Rent(nal.Length);
 
-                // Send as Single-Time Aggregation Packet (STAP-A).
-                byte[] payload = new byte[nal.Length];
-                int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
-                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
+                try
+                {
+                    nal.CopyTo(payload);
 
-                //For TWCC
-                SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-
-                SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+                    SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+                    SendRtpRaw(payload.AsSpan(0, nal.Length), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(payload);
+                }
             }
             else
             {
-                nal = nal.AsSpan(naluHeaderSize).ToArray();
-                //logger.LogTrace("Fragmenting");
+                var nalPayload = nal.Slice(naluHeaderSize);
 
                 // Send as Fragmentation Unit A (FU-A):
-                for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
+                for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nalPayload.Length; index++)
                 {
-                    int offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                    int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
+                    var offset = index * RTPSession.RTP_MAX_PAYLOAD;
+                    var payloadLength = Math.Min(RTPSession.RTP_MAX_PAYLOAD, nalPayload.Length - offset);
 
-                    bool isFirstPacket = index == 0;
-                    bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
-                    int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
+                    var isFirstPacket = index == 0;
+                    var isFinalPacket = offset + payloadLength >= nalPayload.Length;
+                    var markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
-                    byte[] rtpHdr = is265 ? H265Packetiser.GetH265RtpHeader(naluHeader, isFirstPacket, isFinalPacket) : H264Packetiser.GetH264RtpHeader(naluHeader[0], isFirstPacket, isFinalPacket);
-                    
-                    byte[] payload = new byte[payloadLength + rtpHdr.Length];
-                    Buffer.BlockCopy(rtpHdr, 0, payload, 0, rtpHdr.Length);
-                    Buffer.BlockCopy(nal, offset, payload, rtpHdr.Length, payloadLength);
+                    var rtpHdr = is265
+                        ? H265Packetiser.GetH265RtpHeader(naluHeader.ToArray(), isFirstPacket, isFinalPacket) 
+                        : H264Packetiser.GetH264RtpHeader(naluHeader[0], isFirstPacket, isFinalPacket);
 
-                    //For TWCC
+                    var payload = ArrayPool<byte>.Shared.Rent(payloadLength + rtpHdr.Length);
+
+                    try
+                    {
+                        rtpHdr.CopyTo(payload.AsSpan(0, rtpHdr.Length));
+                        nalPayload.Slice(offset, payloadLength).CopyTo(payload.AsSpan(rtpHdr.Length, payloadLength));
+
                     SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-
-                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                    //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
+                        SendRtpRaw(payload.AsSpan(0, payloadLength + rtpHdr.Length), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(payload);
+                    }
                 }
             }
 
@@ -204,7 +241,7 @@ namespace SIPSorcery.Net
 
         public void SendH265Frame(uint durationRtpUnits, int payloadID, byte[] sample)
         {
-            if(CheckIfCanSendRtpRaw())
+            if (CheckIfCanSendRtpRaw())
             {
                 var nals = H265Packetiser.ParseNals(sample);
 
@@ -231,27 +268,43 @@ namespace SIPSorcery.Net
         /// to be based on a 90Khz clock.</param>
         /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
         /// <param name="buffer">The VP8 encoded payload.</param>
+        [Obsolete("Use SendVp8Frame(uint, int, ReadOnlySpan<byte>) instead", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)
+            => SendVp8Frame(duration, payloadTypeID, new ReadOnlySpan<byte>(buffer));
+
+        /// <summary>
+        /// Sends a VP8 frame as one or more RTP packets.
+        /// </summary>
+        /// <param name="duration"> The duration in timestamp units of the payload. Needs
+        /// to be based on a 90Khz clock.</param>
+        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
+        /// <param name="buffer">The VP8 encoded payload.</param>
+        public void SendVp8Frame(uint duration, int payloadTypeID, ReadOnlySpan<byte> buffer)
         {
             if (CheckIfCanSendRtpRaw())
             {
                 try
                 {
-                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
+                    using var memoryOwner = MemoryPool<byte>.Shared.Rent(RTPSession.RTP_MAX_PAYLOAD + 1);
+                    var payloadSpan = memoryOwner.Memory.Span;
+                    payloadSpan[0] = (byte)0x10;
+
+                    while (!buffer.IsEmpty)
                     {
-                        int offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                        int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
+                        var payloadLength = Math.Min(RTPSession.RTP_MAX_PAYLOAD, buffer.Length);
 
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-                        byte[] payload = new byte[payloadLength + vp8HeaderBytes.Length];
-                        Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
-                        Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
+                        buffer.Slice(0, payloadLength).CopyTo(payloadSpan.Slice(1));
 
-                        int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                        var markerBit = (payloadLength >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(payloadSpan.Slice(0, payloadLength + 1), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+
+                        payloadSpan[0] = (byte)0x00;
+                        buffer = buffer.Slice(payloadLength);
                     }
+
                     LocalTrack.Timestamp += duration;
                 }
                 catch (SocketException sockExcp)
@@ -260,48 +313,83 @@ namespace SIPSorcery.Net
                 }
             }
         }
+
         /// <summary>
-        /// 
+        /// Sends an MJPEG frame as one or more RTP packets according to RFC 2435.
         /// </summary>
-        /// <param name="durationRtpUnits"></param>
-        /// <param name="payloadID"></param>
-        /// <param name="sample"></param>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the payload.</param>
+        /// <param name="payloadID">The payload ID to place in the RTP header.</param>
+        /// <param name="sample">The MJPEG encoded payload.</param>
+        [Obsolete("Use SendMJPEGFrame(uint, int, ReadOnlySpan<byte>) instead", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, byte[] sample)
+            => SendMJPEGFrame(durationRtpUnits, payloadID, new ReadOnlySpan<byte>(sample));
+
+        /// <summary>
+        /// Sends an MJPEG frame as one or more RTP packets according to RFC 2435.
+        /// </summary>
+        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the payload.</param>
+        /// <param name="payloadID">The payload ID to place in the RTP header.</param>
+        /// <param name="sample">The MJPEG encoded payload.</param>
+        public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, ReadOnlySpan<byte> sample)
         {
             if (CheckIfCanSendRtpRaw())
             {
                 try
                 {
-                    var frameData = MJPEGPacketiser.GetFrameData(sample, out var customData);
+                    var (frameData, customData) = MJPEGPacketiser.GetFrameData(sample);
+                    Debug.Assert(frameData is not null);
+                    var rtpHeaderLength = MJPEGPacketiser.CalculateMJPEGRTPHeaderLength(customData, 0);
 
-                    var rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, 0);
-                    if (rtpHeader.Length + frameData.Data.Length <= RTPSession.RTP_MAX_PAYLOAD)
+                    var totalLength = rtpHeaderLength + frameData.Data.Length;
+
+                    if (totalLength <= RTPSession.RTP_MAX_PAYLOAD)
                     {
-                        var payload = rtpHeader.Concat(frameData.Data).ToArray();
-                        SendRtpRaw(payload, LocalTrack.Timestamp, 1, payloadID, true);
+                        using var memoryOwner = MemoryPool<byte>.Shared.Rent(totalLength);
+                        var payloadMemory = memoryOwner.Memory.Slice(0, totalLength);
+                        var payloadSpan = payloadMemory.Span;
+                        
+                        MJPEGPacketiser.WriteMJPEGRTPHeader(customData, 0, payloadSpan);
+                        frameData.Data.CopyTo(payloadSpan.Slice(rtpHeaderLength));
+                        
+                        SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+                        SendRtpRaw(payloadSpan, LocalTrack.Timestamp, 1, payloadID, true);
                     }
                     else
                     {
-                        var restBytes = frameData.Data;
+                        var restBytes = frameData.Data.AsSpan();
                         var offset = 0;
+                        
                         while (restBytes.Length > 0)
                         {
-                            var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeader.Length;
+                            var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeaderLength;
                             var isLast = dataSize >= restBytes.Length;
-                            var data = isLast ? restBytes : restBytes.AsSpan(0, dataSize).ToArray();
-                            var markerBit = isLast ? 0 : 1;
-                            var payload = rtpHeader.Concat(data).ToArray();
-                            SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadID, true);
+                            var dataLength = isLast ? restBytes.Length : dataSize;
 
-                            offset += RTPSession.RTP_MAX_PAYLOAD;
-                            rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
-                            restBytes = restBytes.AsSpan(data.Length).ToArray();
+                            totalLength = rtpHeaderLength + dataLength;
+
+                            using var memoryOwner = MemoryPool<byte>.Shared.Rent(totalLength);
+                            var payloadMemory = memoryOwner.Memory.Slice(0, totalLength);
+                            var payloadSpan = payloadMemory.Span;
+
+                            MJPEGPacketiser.WriteMJPEGRTPHeader(customData, offset, payloadSpan);
+                            restBytes.Slice(0, dataLength).CopyTo(payloadSpan.Slice(rtpHeaderLength));
+
+                            var markerBit = isLast ? 1 : 0;  // Marker bit should be 1 for the last packet
+
+                            SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+                            SendRtpRaw(payloadSpan, LocalTrack.Timestamp, markerBit, payloadID, true);
+
+                            offset += dataLength;
+                            restBytes = restBytes.Slice(dataLength);
                         }
                     }
+                    
+                    LocalTrack.Timestamp += durationRtpUnits;
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError("SocketException SendMJEPGFrame. " + sockExcp.Message);
+                    logger.LogError(sockExcp, "SocketException SendMJPEGFrame. {ErrorMessage}", sockExcp.Message);
                 }
             }
         }

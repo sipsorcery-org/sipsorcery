@@ -264,19 +264,22 @@ namespace SIPSorcery.Net
             // Get available cipher suites
             int[] cipherSuites = GetCipherSuites();
 
-            // Convert server cipher suites to human-readable names
-            var serverCipherSuiteNames = cipherSuites
-                .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
-                .ToArray();
-
-            // Convert client-offered cipher suites to human-readable names
-            var clientCipherSuiteNames = this.m_offeredCipherSuites
-                .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
-                .ToArray();
-
-            // Log the offered cipher suites by both server and client
-            logger.LogTrace("Server offered cipher suites:\n {ServerCipherSuites}", string.Join("\n ", serverCipherSuiteNames));
-            logger.LogTrace("Client offered cipher suites:\n {ClientCipherSuites}", string.Join("\n ", clientCipherSuiteNames));
+            if (logger.IsEnabled(LogLevel.Trace))
+            {
+                // Convert server cipher suites to human-readable names
+                var serverCipherSuiteNames = cipherSuites
+                    .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
+                    .ToArray();
+    
+                // Convert client-offered cipher suites to human-readable names
+                var clientCipherSuiteNames = this.m_offeredCipherSuites
+                    .Select(cs => DtlsUtils.CipherSuiteNames.ContainsKey(cs) ? DtlsUtils.CipherSuiteNames[cs] : cs.ToString())
+                    .ToArray();
+    
+                // Log the offered cipher suites by both server and client
+                logger.LogTrace("Server offered cipher suites:\n {ServerCipherSuites}", string.Join("\n ", serverCipherSuiteNames));
+                logger.LogTrace("Client offered cipher suites:\n {ClientCipherSuites}", string.Join("\n ", clientCipherSuiteNames));
+            }
 
             foreach (int cipherSuite in cipherSuites.Intersect(this.m_offeredCipherSuites))
             {

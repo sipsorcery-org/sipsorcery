@@ -211,15 +211,16 @@ namespace SIPSorcery.Net
         /// <param name="init">The initialisation parameters for the ICE candidate (mainly local username).</param>
         /// <param name="type">The type of ICE candidate to get, must be srflx or relay.</param>
         /// <returns>An ICE candidate that can be sent to the remote peer.</returns>
-        internal RTCIceCandidate GetCandidate(RTCIceCandidateInit init, RTCIceCandidateType type)
+        internal RTCIceCandidate? GetCandidate(RTCIceCandidateInit init, RTCIceCandidateType type)
         {
-            RTCIceCandidate candidate = new RTCIceCandidate(init);
-
             if (type == RTCIceCandidateType.srflx && ServerReflexiveEndPoint != null)
             {
                 // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
                 //var srflxProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
                 var srflxProtocol = RTCIceProtocol.udp;
+
+                var candidate = new RTCIceCandidate(init);
+
                 candidate.SetAddressProperties(srflxProtocol, ServerReflexiveEndPoint.Address, (ushort)ServerReflexiveEndPoint.Port,
                                 type, null, 0);
                 candidate.IceServer = this;
@@ -231,6 +232,8 @@ namespace SIPSorcery.Net
                 // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
                 //var relayProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
                 var relayProtocol = RTCIceProtocol.udp;
+
+                var candidate = new RTCIceCandidate(init);
 
                 candidate.SetAddressProperties(relayProtocol, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
                     type, null, 0);

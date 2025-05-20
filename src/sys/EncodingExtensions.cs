@@ -22,6 +22,14 @@ namespace SIPSorcery.Sys
                 return encoding.GetBytes(pChars, chars.Length, pBytes, bytes.Length);
             }
         }
+
+        public unsafe static int GetByteCount(this Encoding encoding, ReadOnlySpan<char> chars)
+        {
+            fixed (char* pChars = chars)
+            {
+                return encoding.GetByteCount(pChars, chars.Length);
+            }
+        }
 #endif
     }
 }

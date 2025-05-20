@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -33,9 +35,26 @@ namespace SIPSorcery.Net
             get => AddressAttributeLength;
         }
 
+        [Obsolete("Use STUNAddressAttributeBase(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAddressAttributeBase(STUNAttributeTypesEnum attributeType, byte[] value)
+            : this(attributeType, (ReadOnlySpan<byte>)value)
+        {
+        }
+
+        public STUNAddressAttributeBase(STUNAttributeTypesEnum attributeType, ReadOnlySpan<byte> value)
             : base(attributeType, value)
         {
+        }
+
+        private protected override void ValueToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("Address=");
+            sb.Append(Address.ToString());
+            sb.Append(", Port=");
+            sb.Append(Port);
+            sb.Append(", Family=");
+            sb.Append(Family switch { 1 => "IPV4", 2 => "IPV6", _ => "Invalid", });
         }
     }
 }

@@ -199,7 +199,7 @@ namespace SIPSorcery.Net
 
             // Build final packet status list
             BuildPacketStatusList(statusSymbols, deltaValues);
-            
+
         }
 
         private void ParseRunLengthChunk(ushort chunk, List<TWCCPacketStatusType> statusSymbols, ref int remainingStatuses)
@@ -227,7 +227,7 @@ namespace SIPSorcery.Net
             }
 
             ushort runLength = (ushort)(chunk & 0x0FFF);
-            
+
             runLength = (ushort)Math.Min(runLength, remainingStatuses);
             for (int i = 0; i < runLength; i++)
             {
@@ -302,7 +302,6 @@ namespace SIPSorcery.Net
 
             return statusSymbols;
         }
-
 
         private void ParseTwoBitStatusVector(ushort chunk, List<TWCCPacketStatusType> statusSymbols, ref int remainingStatuses)
         {
@@ -520,7 +519,7 @@ namespace SIPSorcery.Net
                 {
                     return 1;
                 }
-                
+
                 if (ps.Status == TWCCPacketStatusType.ReceivedLargeDelta)
                 {
                     return 2;
@@ -538,13 +537,13 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <returns>The serialized RTCP TWCC feedback packet.</returns>
         public byte[] GetBytes()
-                    {
+        {
             var buffer = new byte[GetPacketSize()];
 
             WriteBytesCore(buffer);
 
             return buffer;
-                    }
+        }
 
         public int WriteBytes(Span<byte> buffer)
         {
@@ -553,12 +552,12 @@ namespace SIPSorcery.Net
             if (buffer.Length < size)
             {
                 throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
-                }
+            }
 
             WriteBytesCore(buffer.Slice(0, size));
 
             return size;
-            }
+        }
 
         private void WriteBytesCore(Span<byte> buffer)
         {
@@ -584,7 +583,7 @@ namespace SIPSorcery.Net
                 var runLength = 1;
                 var current = PacketStatuses[i].Status;
                 while (i + runLength < PacketStatuses.Count && PacketStatuses[i + runLength].Status == current && runLength < 0x0FFF)
-            {
+                {
                     runLength++;
                 }
                 if (runLength >= 2)
@@ -616,7 +615,7 @@ namespace SIPSorcery.Net
                     chunk |= (ushort)(runLength & 0x0FFF);
                     BinaryOperations.WriteUInt16BigEndian(ref buffer, chunk);
                     i += runLength;
-            }
+                }
                 else
                 {
                     // Otherwise, pack into a two-bit status vector chunk.
@@ -628,7 +627,7 @@ namespace SIPSorcery.Net
                         // Convert status to correct bit pattern
                         ushort statusBits;
                         switch (PacketStatuses[i + j].Status)
-            {
+                        {
                             case TWCCPacketStatusType.NotReceived:
                                 statusBits = 0;
                                 break;
@@ -641,7 +640,7 @@ namespace SIPSorcery.Net
                             default:
                                 statusBits = 0;
                                 break;
-            }
+                        }
 
                         chunk |= (ushort)(statusBits << (12 - 2 * j));
                     }

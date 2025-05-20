@@ -67,7 +67,7 @@ namespace SIPSorcery.Net
         /// To set video rotation
         /// </summary>
         /// <param name="value">A <see cref="CVO"/> object is expected here</param>
-        public override void Set(Object value)
+        public override void Set(object? value)
         {
             if (value is CVO cvo)
             {

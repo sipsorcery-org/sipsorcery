@@ -14,6 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
+using System.ComponentModel;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -75,31 +77,46 @@ namespace SIPSorcery.Net
         /// Gets the raw buffer for the event.
         /// </summary>
         /// <returns>A raw byte buffer for the event.</returns>
+        [Obsolete("Use WriteEventPayload(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public byte[] GetEventPayload()
         {
             byte[] payload = new byte[DTMF_PACKET_LENGTH];
 
-            payload[0] = EventID;
-            payload[1] = (byte)(EndOfEvent ? 0x80 : 0x00);
-            payload[1] += (byte)(Volume & 0xcf); // The Volume field uses 6 bits.
-
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Duration)), 0, payload, 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(Duration), 0, payload, 2, 2);
-            }
+            WriteEventPayload(payload);
 
             return payload;
+        }
+
+        /// <summary>
+        /// Gets the raw buffer for the event.
+        /// </summary>
+        /// <returns>A raw byte buffer for the event.</returns>
+        public void WriteEventPayload(Span<byte> destination)
+        {
+            destination[0] = EventID;
+            destination[1] = (byte)(EndOfEvent ? 0x80 : 0x00);
+            destination[1] += (byte)(Volume & 0x3F); // Volume uses 6 bits (0-63)
+
+            BinaryPrimitives.WriteUInt16BigEndian(destination.Slice(2, 2), Duration);
         }
 
         /// <summary>
         /// Extract and load an RTP Event from a packet buffer.
         /// </summary>
         /// <param name="packet">The packet buffer containing the RTP Event.</param>
+        [Obsolete("Use RTPEvent(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public RTPEvent(byte[] packet)
+            : this((ReadOnlySpan<byte>)packet)
+        {
+        }
+
+        /// <summary>
+        /// Extract and load an RTP Event from a packet buffer.
+        /// </summary>
+        /// <param name="packet">The packet buffer containing the RTP Event.</param>
+        public RTPEvent(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < DTMF_PACKET_LENGTH)
             {
@@ -110,14 +127,7 @@ namespace SIPSorcery.Net
             EndOfEvent = (packet[1] & 0x80) > 1;
             Volume = (ushort)(packet[1] & 0xcf);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Duration = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Duration = BitConverter.ToUInt16(packet, 2);
-            }
+            Duration = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
         }
     }
 }

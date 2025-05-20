@@ -18,10 +18,13 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -53,7 +56,7 @@ namespace SIPSorcery.Net
         {
             NetServices.CreateRtpSocket(false, IPAddress.IPv6Any, udpEncapPort, portRange, out _udpEncapSocket, out _);
             UdpReceiver udpReceiver = new UdpReceiver(_udpEncapSocket);
-            udpReceiver.OnPacketReceived += OnEncapsulationSocketPacketReceived;
+            udpReceiver.OnPacketReceivedEx += OnEncapsulationSocketPacketReceived;
             udpReceiver.OnClosed += OnEncapsulationSocketClosed;
             udpReceiver.BeginReceiveFrom();
         }
@@ -65,17 +68,17 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port the packet was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the packet was received from.</param>
         /// <param name="packet">A buffer containing the packet.</param>
-        private void OnEncapsulationSocketPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnEncapsulationSocketPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> packet)
         {
             try
             {
-                if (!SctpPacket.VerifyChecksum(packet, 0, packet.Length))
+                if (!SctpPacket.VerifyChecksum(packet.Span))
                 {
                     logger.LogWarning("SCTP packet from UDP {RemoteEndPoint} dropped due to invalid checksum.", remoteEndPoint);
                 }
                 else
                 {
-                    var sctpPacket = SctpPacket.Parse(packet, 0, packet.Length);
+                    var sctpPacket = SctpPacket.Parse(packet.Span);
 
                     // Process packet.
                     if (sctpPacket.Header.VerificationTag == 0)
@@ -134,11 +137,19 @@ namespace SIPSorcery.Net
             logger.LogInformation("SCTP transport encapsulation receiver closed with reason: {Reason}.", reason);
         }
 
+        [Obsolete("Use Send(string, Memory<byte>, IDisposable?) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override void Send(string associationID, byte[] buffer, int offset, int length)
+            => Send(associationID, buffer.AsMemory(offset, length), null);
+
+        public override void Send(string associationID, Memory<byte> buffer, IDisposable? memoryOwner = null)
         {
-            if (_associations.TryGetValue(associationID, out var assoc))
+            using (memoryOwner)
             {
-                _udpEncapSocket.SendTo(buffer, offset, length, SocketFlags.None, assoc.Destination);
+                if (_associations.TryGetValue(associationID, out var assoc))
+                {
+                    _udpEncapSocket.SendTo(buffer, SocketFlags.None, assoc.Destination);
+                }
             }
         }
 
@@ -150,17 +161,17 @@ namespace SIPSorcery.Net
         /// <param name="destinationPort">The SCTP destination port.</param>
         /// <returns>An SCTP association.</returns>
         public SctpAssociation Associate(
-            IPEndPoint destination, 
-            ushort sourcePort, 
-            ushort destinationPort, 
+            IPEndPoint destination,
+            ushort sourcePort,
+            ushort destinationPort,
             ushort numberOutboundStreams = SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
             ushort numberInboundStreams = SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS)
         {
             var association = new SctpAssociation(
-                this, 
-                destination, 
-                sourcePort, 
-                destinationPort, 
+                this,
+                destination,
+                sourcePort,
+                destinationPort,
                 DEFAULT_UDP_MTU,
                 numberOutboundStreams,
                 numberInboundStreams);

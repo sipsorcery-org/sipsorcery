@@ -613,7 +613,7 @@ namespace SIPSorcery.Net
                 MultiplexRtpChannel = rtpIceChannel;
             }
 
-            rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
+            rtpIceChannel.OnRtpIceDataReceivedEx += OnRTPDataReceived;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpIceChannel.Start();
@@ -852,7 +852,7 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                logger.LogDebug("Peer connection closed with reason {Reason}.", reason != null ? reason : "<none>");
+                logger.LogDebug("Peer connection closed with reason {Reason}.", reason ?? "<none>");
 
                 // Close all DataChannels
                 if (DataChannels?.Count > 0)
@@ -1365,6 +1365,24 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data received.</param>
         private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
         {
+        }
+
+        /// <summary>
+        /// From RFC5764: <![CDATA[
+        ///             +----------------+
+        ///             | 127 < B< 192  -+--> forward to RTP
+        ///             |                |
+        /// packet -->  |  19 < B< 64   -+--> forward to DTLS
+        ///             |                |
+        ///             |       B< 2    -+--> forward to STUN
+        ///             +----------------+
+        /// ]]>
+        /// </summary>
+        /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
+        /// <param name="remoteEP">The remote end point the packet was received from.</param>
+        /// <param name="buffer">The data received.</param>
+        private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, ReadOnlyMemory<byte> buffer)
+        {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
             // By this point the RTP ICE channel has already processed any STUN packets which means 
@@ -1372,11 +1390,11 @@ namespace SIPSorcery.Net
             // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP 
             // prefix to distinguish.
 
-            if (buffer?.Length > 0)
+            if (!buffer.IsEmpty)
             {
                 try
                 {
-                    if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+                    if (buffer.Length > RTPHeader.MIN_HEADER_LEN && buffer.Span[0] >= 128 && buffer.Span[0] <= 191)
                     {
                         // RTP/RTCP packet.
                         base.OnReceive(localPort, remoteEP, buffer);
@@ -1386,7 +1404,7 @@ namespace SIPSorcery.Net
                         if (_dtlsHandle != null)
                         {
                             //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                            _dtlsHandle.WriteToRecvStream(buffer.AsSpan());
+                            _dtlsHandle.WriteToRecvStream(buffer.Span);
                         }
                         else
                         {
@@ -1799,7 +1817,7 @@ namespace SIPSorcery.Net
             dtlsHandle.OnDataReady += (buf) =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, PrimaryStream.DestinationEndPoint, buf);
+                rtpChannel.Send(RTPChannelSocketsEnum.RTP, PrimaryStream.DestinationEndPoint, buf.AsMemory());
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
@@ -1832,7 +1850,6 @@ namespace SIPSorcery.Net
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,
                         dtlsHandle.UnprotectRTCP);
-
 
                     IsDtlsNegotiationComplete = true;
 

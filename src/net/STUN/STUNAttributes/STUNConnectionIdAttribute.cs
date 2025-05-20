@@ -13,9 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
 using System;
+using System.Buffers.Binary;
+using System.ComponentModel;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -23,33 +25,33 @@ namespace SIPSorcery.Net
     {
         public readonly uint ConnectionId;
 
+        [Obsolete("Use STUNConnectionIdAttribute(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNConnectionIdAttribute(byte[] attributeValue)
+            : this((ReadOnlySpan<byte>)attributeValue)
+        {
+        }
+
+        public STUNConnectionIdAttribute(ReadOnlySpan<byte> attributeValue)
             : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                ConnectionId = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 0));
-            }
-            else
-            {
-                ConnectionId = BitConverter.ToUInt32(attributeValue, 0);
-            }
+            ConnectionId = BinaryPrimitives.ReadUInt32BigEndian(attributeValue);
         }
 
         public STUNConnectionIdAttribute(uint connectionId)
-            : base(STUNAttributeTypesEnum.ConnectionId, 
-                  BitConverter.IsLittleEndian?
-                  BitConverter.GetBytes(NetConvert.DoReverseEndian(connectionId)) : 
-                  BitConverter.GetBytes(connectionId))
+            : base(STUNAttributeTypesEnum.ConnectionId, ReadOnlySpan<byte>.Empty)
         {
             ConnectionId = connectionId;
+
+            var bytes = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(bytes, connectionId);
+            Value = bytes;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
-
-            return attrDescrStr;
+            sb.Append("connection ID=");
+            sb.Append(ConnectionId);
         }
     }
 }
