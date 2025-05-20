@@ -81,5 +81,10 @@ namespace SIPSorcery.Net
         public bool IsSecure { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp; }
 
         public bool UseSdpCryptoNegotiation { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation; }
+
+        /// <summary>
+        /// Optional. If specified, will use TCP as transport.
+        /// </summary>
+        public bool UseTCP { get; set; } = false;
     }
 }

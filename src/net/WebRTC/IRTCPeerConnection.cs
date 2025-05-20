@@ -97,6 +97,14 @@ namespace SIPSorcery.Net
         public string username;
         public RTCIceCredentialType credentialType;
         public string credential;
+
+        /// <summary>
+        /// Controls what ICE candidate to be allocated if using TURN server.
+        /// </summary>
+        /// <remarks>
+        /// Only affect TURN usage.
+        /// </remarks>
+        public RTCIceProtocol X_ICERelayProtocol { get; set; }
     }
 
     /// <summary>
@@ -353,6 +361,18 @@ namespace SIPSorcery.Net
         /// Timeout for gathering local IP addresses
         /// </summary>
         public int X_GatherTimeoutMs = 30000;
+
+        /// <summary>
+        /// Forces the ICE candidates to be TCP candidate. Including TURN allocation.
+        /// </summary>
+        /// <remarks>
+        /// <b><i>WARNING, Experimental</i></b>.
+        /// <br/>Currently only works when used with <see cref="iceTransportPolicy"/> = <see cref="RTCIceTransportPolicy.relay"/>.
+        /// <br/>This disables any support for browser-based peer-to-peer (non-relay) WebRTC connections.
+        /// <br/><br/>
+        /// Also see <see cref="iceServers"/>.
+        /// </remarks>
+        public bool X_ICEForceTCP = false;
     }
 
     /// <summary>

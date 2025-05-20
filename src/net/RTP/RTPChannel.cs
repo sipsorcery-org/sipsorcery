@@ -352,18 +352,23 @@ namespace SIPSorcery.Net
         public event Action<string> OnClosed;
 
         /// <summary>
-        /// Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
-        /// They do not start receiving until the Start method is called.
+        /// Creates a new RTP channel.
         /// </summary>
+        /// <remarks>
+        /// <br/>The RTP and optionally RTCP sockets will be bound in the constructor.
+        /// <br/>They do not start receiving until the Start method is called.
+        /// </remarks>
         /// <param name="createControlSocket">Set to true if a separate RTCP control socket should be created. If RTP and
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
         /// <param name="bindAddress">Optional. An IP address belonging to a local interface that will be used to bind
         /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
         /// and fallback to the IPv4 any address.</param>
+        /// <param name="useTcp">Wheter to use TCP as transport.</param>
         /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
-        public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0, PortRange rtpPortRange = null)
+        public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0, PortRange rtpPortRange = null, bool useTcp = false)
         {
-            NetServices.CreateRtpSocket(createControlSocket, bindAddress, bindPort, rtpPortRange, out var rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(createControlSocket, useTcp ? ProtocolType.Tcp : ProtocolType.Udp,
+                bindAddress, bindPort, rtpPortRange, true, true, out var rtpSocket, out m_controlSocket);
 
             if (rtpSocket == null)
             {
@@ -445,8 +450,8 @@ namespace SIPSorcery.Net
                     }
 
                     m_isClosed = true;
-                    m_rtpReceiver?.Close(null);
-                    m_controlReceiver?.Close(null);
+                    m_rtpReceiver?.Close(closeReason);
+                    m_controlReceiver?.Close(closeReason);
 
                     OnClosed?.Invoke(closeReason);
                 }
