@@ -109,7 +109,10 @@ namespace SIPSorcery.Media.G729Codec
                 p_max1 = p_max2;
             }
 
-            if (max1 * THRESHPIT < max3) p_max1 = p_max3;
+            if (max1 * THRESHPIT < max3)
+            {
+                p_max1 = p_max3;
+            }
 
             return p_max1;
         }
@@ -151,7 +154,9 @@ namespace SIPSorcery.Media.G729Codec
                 t0 = 0.0f;
 
                 for (j = 0; j < l_frame; j++, p++, p1++)
+                {
                     t0 += signal[p] * signal[p1];
+                }
 
                 if (t0 >= max)
                 {
@@ -165,7 +170,10 @@ namespace SIPSorcery.Media.G729Codec
             t0 = 0.01f; /* to avoid division by zero */
             p = signal_offset - p_max;
             for (i = 0; i < l_frame; i++, p++)
+            {
                 t0 += signal[p] * signal[p];
+            }
+
             t0 = inv_sqrt(t0); /* 1/sqrt(energy)    */
 
             cor_max.value = max * t0; /* max/sqrt(energy)  */
@@ -228,11 +236,13 @@ namespace SIPSorcery.Media.G729Codec
             lag = t0_min;
 
             for (i = t0_min + 1; i <= t0_max; i++)
+            {
                 if (corr[corr_offset + i] >= max)
                 {
                     max = corr[corr_offset + i];
                     lag = i;
                 }
+            }
 
             /* If first subframe and lag > 84 do not search fractionnal pitch */
 
@@ -326,14 +336,19 @@ namespace SIPSorcery.Media.G729Codec
 
                 alp = 0.01f;
                 for (j = 0; j < l_subfr; j++)
+                {
                     alp += excf[j] * excf[j];
+                }
 
                 norm = inv_sqrt(alp);
 
                 /* Compute correlation between xn[] and excf[] */
 
                 s = 0.0f;
-                for (j = 0; j < l_subfr; j++) s += xn[j] * excf[j];
+                for (j = 0; j < l_subfr; j++)
+                {
+                    s += xn[j] * excf[j];
+                }
 
                 /* Normalize correlation = correlation * (1/sqrt(energie)) */
 
@@ -345,7 +360,10 @@ namespace SIPSorcery.Media.G729Codec
                 {
                     k--;
                     for (j = l_subfr - 1; j > 0; j--)
+                    {
                         excf[j] = excf[j - 1] + exc[k] * h[j];
+                    }
+
                     excf[0] = exc[k];
                 }
             }
@@ -376,10 +394,16 @@ namespace SIPSorcery.Media.G729Codec
 
             xy = 0.0f;
             for (i = 0; i < l_subfr; i++)
+            {
                 xy += xn[i] * y1[i];
+            }
+
             yy = 0.01f;
             for (i = 0; i < l_subfr; i++)
+            {
                 yy += y1[i] * y1[i]; /* energy of filtered excitation */
+            }
+
             g_coeff[0] = yy;
             g_coeff[1] = -2.0f * xy + 0.01f;
 
@@ -387,8 +411,15 @@ namespace SIPSorcery.Media.G729Codec
 
             gain = xy / yy;
 
-            if (gain < 0.0f) gain = 0.0f;
-            if (gain > GAIN_PIT_MAX) gain = GAIN_PIT_MAX;
+            if (gain < 0.0f)
+            {
+                gain = 0.0f;
+            }
+
+            if (gain > GAIN_PIT_MAX)
+            {
+                gain = GAIN_PIT_MAX;
+            }
 
             return gain;
         }
@@ -445,14 +476,22 @@ namespace SIPSorcery.Media.G729Codec
                 /* encode pitch delay (with fraction) */
 
                 if (T0 <= 85)
+                {
                     index = T0 * 3 - 58 + T0_frac;
+                }
                 else
+                {
                     index = T0 + 112;
+                }
 
                 /* find T0_min and T0_max for second subframe */
 
                 _T0_min = T0 - 5;
-                if (_T0_min < pit_min) _T0_min = pit_min;
+                if (_T0_min < pit_min)
+                {
+                    _T0_min = pit_min;
+                }
+
                 _T0_max = _T0_min + 9;
                 if (_T0_max > pit_max)
                 {

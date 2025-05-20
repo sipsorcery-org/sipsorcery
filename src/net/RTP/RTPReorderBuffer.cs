@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -13,16 +15,17 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        public RTPReorderBuffer(TimeSpan maxDropOutTime, IDateTime datetimeProvider = null)
+        public RTPReorderBuffer(TimeSpan maxDropOutTime, IDateTime? datetimeProvider = null)
         {
             _maxDropOutTime = maxDropOutTime;
             _datetimeProvider = datetimeProvider ?? new DefaultTimeProvider();
         }
 
-        private RTPPacket First => _data.First?.Value;
-        private RTPPacket Last => _data.Last?.Value;
+        private RTPPacket? First => _data.First?.Value;
+        private RTPPacket? Last => _data.Last?.Value;
 
-        private bool IsBeforeWrapAround(RTPPacket packet) {
+        private bool IsBeforeWrapAround(RTPPacket packet)
+        {
             return IsBeforeWrapAround(packet.Header.SequenceNumber);
         }
         private bool IsBeforeWrapAround(ushort seq)
@@ -34,10 +37,10 @@ namespace SIPSorcery.Net
             return packet.Header.SequenceNumber < ushort.MaxValue / 4;
         }
 
-        public bool Get(out RTPPacket packet)
+        public bool Get([NotNullWhen(true)] out RTPPacket? packet)
         {
             packet = null;
-            if (Last == null)
+            if (Last is null)
             {
                 return false;
             }
@@ -65,13 +68,18 @@ namespace SIPSorcery.Net
             }
 
             // if seq number is greater or equal than we are waiting for then append to last position
-            if (_currentSeqNumber.HasValue && _currentSeqNumber >= current.Header.SequenceNumber) {
-                if (Last.Header.SequenceNumber > _currentSeqNumber || IsAfterWrapAround(Last) && IsBeforeWrapAround(_currentSeqNumber.Value)) {
+            if (_currentSeqNumber.HasValue && _currentSeqNumber >= current.Header.SequenceNumber)
+            {
+                Debug.Assert(Last is { });
+                if (Last.Header.SequenceNumber > _currentSeqNumber || IsAfterWrapAround(Last) && IsBeforeWrapAround(_currentSeqNumber.Value))
+                {
                     _data.AddLast(current);
                     return;
                 }
             }
-            
+
+            Debug.Assert(Last is { });
+            Debug.Assert(First is { });
             if (IsBeforeWrapAround(Last) && !IsAfterWrapAround(First) && IsAfterWrapAround(current)) // first incoming packet after wraparound
             {
                 _data.AddFirst(current);
@@ -79,6 +87,7 @@ namespace SIPSorcery.Net
             }
 
             var node = _data.First;
+            Debug.Assert(node is { });
             do
             {
                 // if it is packet before wrap around skip all packets after wrap around and then insert the packet
@@ -99,13 +108,13 @@ namespace SIPSorcery.Net
                 }
                 if (current.Header.SequenceNumber == node.Value.Header.SequenceNumber)
                 {
-                    logger.LogInformation("Duplicate seq number: {SequenceNumber}", current.Header.SequenceNumber);
+                    logger.LogRtpDuplicateSeqNum(current.Header.SequenceNumber);
                     break;
                 }
 
                 node = node.Next;
             }
-            while (node != null);
+            while (node is { });
         }
     }
 

@@ -15,29 +15,25 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public sealed class SrtpHandler
     {
-        private static readonly ILogger logger = Log.Logger;
+        public List<SDPSecurityDescription>? m_localSecurityDescriptions;
+        public List<SDPSecurityDescription>? m_remoteSecurityDescriptions;
 
-        public List<SDPSecurityDescription> m_localSecurityDescriptions;
-        public List<SDPSecurityDescription> m_remoteSecurityDescriptions;
+        public SDPSecurityDescription? LocalSecurityDescription { get; private set; }
+        public SDPSecurityDescription? RemoteSecurityDescription { get; private set; }
 
-        public SDPSecurityDescription LocalSecurityDescription { get; private set; }
-        public SDPSecurityDescription RemoteSecurityDescription { get; private set; }
+        public IPacketTransformer? SrtpDecoder { get; private set; }
+        public IPacketTransformer? SrtpEncoder { get; private set; }
+        public IPacketTransformer? SrtcpDecoder { get; private set; }
+        public IPacketTransformer? SrtcpEncoder { get; private set; }
 
-        public IPacketTransformer SrtpDecoder { get; private set; }
-        public IPacketTransformer SrtpEncoder { get; private set; }
-        public IPacketTransformer SrtcpDecoder { get; private set; }
-        public IPacketTransformer SrtcpEncoder { get; private set; }
-
-        public bool IsNegotiationComplete { get; private set; } = false;
+        public bool IsNegotiationComplete { get; private set; }
 
 
         public SrtpHandler()
@@ -46,13 +42,32 @@ namespace SIPSorcery.Net
 
         public bool RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription> securityDescriptions)
         {
-            if (RemoteSecurityDescription == null || LocalSecurityDescription == null)
+            if (RemoteSecurityDescription is null || LocalSecurityDescription is null)
             {
                 return false;
             }
 
-            var rsec = securityDescriptions.FirstOrDefault(x => x.CryptoSuite == LocalSecurityDescription.CryptoSuite);
-            return rsec.ToString() == RemoteSecurityDescription.ToString();
+            var rsec = FindSecurityDescriptionByCryptoSuite(securityDescriptions, LocalSecurityDescription.CryptoSuite);
+            
+            if (rsec is null)
+            {
+                return false;
+            }
+
+            return rsec.Equals(RemoteSecurityDescription);
+
+            // Local method for finding security description by crypto suite
+            static SDPSecurityDescription? FindSecurityDescriptionByCryptoSuite(List<SDPSecurityDescription> descriptions, SDPSecurityDescription.CryptoSuites cryptoSuite)
+            {
+                foreach (var description in descriptions)
+                {
+                    if (description.CryptoSuite == cryptoSuite)
+                    {
+                        return description;
+                    }
+                }
+                return null;
+            }
         }
 
         public bool SetupLocal(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
@@ -61,31 +76,33 @@ namespace SIPSorcery.Net
 
             if (sdpType == SdpType.offer)
             {
-               IsNegotiationComplete = false;
-               return true;
+                IsNegotiationComplete = false;
+                return true;
             }
 
-            if (m_remoteSecurityDescriptions.Count==0)
+            Debug.Assert(m_remoteSecurityDescriptions is { });
+
+            if (m_remoteSecurityDescriptions.Count == 0)
             {
-               throw new ApplicationException("Setup local crypto failed. No cryto attribute in offer.");
+                throw new ApplicationException("Setup local crypto failed. No crypto attribute in offer.");
             }
 
-            if (m_localSecurityDescriptions.Count==0)
+            if (m_localSecurityDescriptions.Count == 0)
             {
                 throw new ApplicationException("Setup local crypto failed. No crypto attribute in answer.");
             }
 
             var lsec = LocalSecurityDescription = m_localSecurityDescriptions[0];
-            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
+            var rsec = RemoteSecurityDescription = GetFirstMatchingSecurityDescription(lsec);
 
-            if (rsec != null && rsec.Tag == lsec.Tag)
+            if (rsec is { } && rsec.Tag == lsec.Tag)
             {
-               IsNegotiationComplete = true;
-               SrtpEncoder = GenerateRtpEncoder(lsec);
-               SrtpDecoder = GenerateRtpDecoder(rsec);
-               SrtcpEncoder = GenerateRtcpEncoder(lsec);
-               SrtcpDecoder = GenerateRtcpDecoder(rsec);
-               return true;
+                IsNegotiationComplete = true;
+                SrtpEncoder = GenerateRtpEncoder(lsec);
+                SrtpDecoder = GenerateRtpDecoder(rsec);
+                SrtcpEncoder = GenerateRtcpEncoder(lsec);
+                SrtcpDecoder = GenerateRtcpDecoder(rsec);
+                return true;
             }
 
             return false;
@@ -101,20 +118,22 @@ namespace SIPSorcery.Net
                 return true;
             }
 
-            if (m_localSecurityDescriptions.Count==0)
+            Debug.Assert(m_localSecurityDescriptions is { });
+
+            if (m_localSecurityDescriptions.Count == 0)
             {
-                throw new ApplicationException("Setup remote crypto failed. No cryto attribute in offer.");
+                throw new ApplicationException("Setup remote crypto failed. No crypto attribute in offer.");
             }
 
-            if (m_remoteSecurityDescriptions.Count==0)
+            if (m_remoteSecurityDescriptions.Count == 0)
             {
-                throw new ApplicationException("Setup remote crypto failed. No cryto attribute in answer.");
+                throw new ApplicationException("Setup remote crypto failed. No crypto attribute in answer.");
             }
 
             var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions[0];
-            var lsec = LocalSecurityDescription = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
+            var lsec = LocalSecurityDescription = GetFirstMatchingSecurityDescription(rsec);
 
-            if (lsec != null && lsec.Tag == rsec.Tag)
+            if (lsec is { } && lsec.Tag == rsec.Tag)
             {
                 IsNegotiationComplete = true;
                 SrtpEncoder = GenerateRtpEncoder(lsec);
@@ -123,7 +142,7 @@ namespace SIPSorcery.Net
                 SrtcpDecoder = GenerateRtcpDecoder(rsec);
                 return true;
             }
-            
+
             return false;
         }
 
@@ -153,8 +172,8 @@ namespace SIPSorcery.Net
 
             var engine = new SrtpTransformEngine(securityDescription.KeyParams[0].Key,
                                                  securityDescription.KeyParams[0].Salt,
-                                                 srtpParams.GetSrtpPolicy(), 
-                                                 srtpParams.GetSrtcpPolicy() );
+                                                 srtpParams.GetSrtpPolicy(),
+                                                 srtpParams.GetSrtcpPolicy());
 
             if (isRtp)
             {
@@ -166,8 +185,9 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        public byte[]? UnprotectRTP(byte[] packet, int offset, int length)
         {
+            Debug.Assert(SrtpDecoder is { });
             lock (SrtpDecoder)
             {
                 return SrtpDecoder.ReverseTransform(packet, offset, length);
@@ -178,7 +198,7 @@ namespace SIPSorcery.Net
         {
             var result = UnprotectRTP(payload, 0, length);
 
-            if (result == null)
+            if (result is null)
             {
                 outLength = 0;
                 return -1;
@@ -190,8 +210,9 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        public byte[]? ProtectRTP(byte[] packet, int offset, int length)
         {
+            Debug.Assert(SrtpEncoder is { });
             lock (SrtpEncoder)
             {
                 return SrtpEncoder.Transform(packet, offset, length);
@@ -202,7 +223,7 @@ namespace SIPSorcery.Net
         {
             var result = ProtectRTP(payload, 0, length);
 
-            if (result == null)
+            if (result is null)
             {
                 outLength = 0;
                 return -1;
@@ -214,8 +235,9 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[]? UnprotectRTCP(byte[] packet, int offset, int length)
         {
+            Debug.Assert(SrtcpDecoder is { });
             lock (SrtcpDecoder)
             {
                 return SrtcpDecoder.ReverseTransform(packet, offset, length);
@@ -225,7 +247,7 @@ namespace SIPSorcery.Net
         public int UnprotectRTCP(byte[] payload, int length, out int outLength)
         {
             var result = UnprotectRTCP(payload, 0, length);
-            if (result == null)
+            if (result is null)
             {
                 outLength = 0;
                 return -1;
@@ -237,8 +259,9 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[]? ProtectRTCP(byte[] packet, int offset, int length)
         {
+            Debug.Assert(SrtcpEncoder is { });
             lock (SrtcpEncoder)
             {
                 return SrtcpEncoder.Transform(packet, offset, length);
@@ -248,7 +271,7 @@ namespace SIPSorcery.Net
         public int ProtectRTCP(byte[] payload, int length, out int outLength)
         {
             var result = ProtectRTCP(payload, 0, length);
-            if (result == null)
+            if (result is null)
             {
                 outLength = 0;
                 return -1;
@@ -258,6 +281,20 @@ namespace SIPSorcery.Net
             outLength = result.Length;
 
             return 0; //No Errors
+        }
+
+        private SDPSecurityDescription? GetFirstMatchingSecurityDescription(SDPSecurityDescription other)
+        {
+            Debug.Assert(m_remoteSecurityDescriptions is { });
+            foreach (var desc in m_remoteSecurityDescriptions)
+            {
+                if (desc.CryptoSuite == other.CryptoSuite)
+                {
+                    return desc;
+                }
+            }
+
+            return null;
         }
     }
 }

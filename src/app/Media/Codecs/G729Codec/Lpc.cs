@@ -79,17 +79,25 @@ namespace SIPSorcery.Media.G729Codec
             int i, j;
 
             for (i = 0; i < L_WINDOW; i++)
+            {
                 y[i] = x[x_offset + i] * hamwindow[i];
+            }
 
             for (i = 0; i <= m; i++)
             {
                 sum = 0.0f;
                 for (j = 0; j < L_WINDOW - i; j++)
+                {
                     sum += y[j] * y[j + i];
+                }
+
                 r[i] = sum;
             }
 
-            if (r[0] < 1.0f) r[0] = 1.0f;
+            if (r[0] < 1.0f)
+            {
+                r[0] = 1.0f;
+            }
         }
 
         /**
@@ -109,7 +117,9 @@ namespace SIPSorcery.Media.G729Codec
             int i;
 
             for (i = 1; i <= m; i++)
+            {
                 r[i] *= lwindow[i - 1];
+            }
         }
 
         /**
@@ -142,7 +152,10 @@ namespace SIPSorcery.Media.G729Codec
             {
                 s = 0.0f;
                 for (j = 0; j < i; j++)
+                {
                     s += r[i - j] * a[a_offset + j];
+                }
+
                 rc[i - 1] = -s / err;
                 for (j = 1; j <= i / 2; j++)
                 {
@@ -155,7 +168,9 @@ namespace SIPSorcery.Media.G729Codec
                 a[a_offset + i] = rc[i - 1];
                 err += rc[i - 1] * s;
                 if (err <= 0.0f)
+                {
                     err = 0.001f;
+                }
             }
 
             return err;
@@ -279,8 +294,12 @@ namespace SIPSorcery.Media.G729Codec
             /* if not use the LSPs from previous frame */
 
             if (nf < M)
+            {
                 for (i = 0; i < M; i++)
+                {
                     lsp[i] = old_lsp[i];
+                }
+            }
         }
 
         /**

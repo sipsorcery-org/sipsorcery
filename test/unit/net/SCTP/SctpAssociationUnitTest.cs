@@ -20,6 +20,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -40,8 +41,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ConnectAssociations()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
             BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
@@ -98,8 +99,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
             
@@ -126,8 +127,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendFragmentedDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             ushort dummyMTU = 4;
@@ -157,8 +158,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendLargeFragmentedDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
@@ -306,6 +307,11 @@ namespace SIPSorcery.Net.UnitTests
         public void Close()
         {
             _exit = true;
+        }
+
+        public override void Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable memoryOwner = null)
+        {
+            _output.Add(buffer.ToArray());
         }
     }
 }

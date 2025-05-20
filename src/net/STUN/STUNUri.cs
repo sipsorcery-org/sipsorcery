@@ -18,6 +18,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using SIPSorcery.Sys;
 
@@ -35,15 +36,28 @@ namespace SIPSorcery.Net
             switch (scheme)
             {
                 case STUNSchemesEnum.stun:
-                    return DEFAULT_STUN_PORT;
-                case STUNSchemesEnum.stuns:
-                    return DEFAULT_STUN_TLS_PORT;
                 case STUNSchemesEnum.turn:
                     return DEFAULT_TURN_PORT;
+                case STUNSchemesEnum.stuns:
                 case STUNSchemesEnum.turns:
                     return DEFAULT_TURN_TLS_PORT;
                 default:
                     throw new ApplicationException("STUN or TURN scheme not recognised in STUNConstants.GetPortForScheme.");
+            }
+        }
+
+        public static STUNProtocolsEnum GetTransportForScheme(STUNSchemesEnum scheme)
+        {
+            switch (scheme)
+            {
+                case STUNSchemesEnum.stun:
+                case STUNSchemesEnum.turn:
+                    return STUNProtocolsEnum.udp;
+                case STUNSchemesEnum.stuns:
+                case STUNSchemesEnum.turns:
+                    return STUNProtocolsEnum.tls;
+                default:
+                    throw new ApplicationException("STUN or TURN scheme not recognised in STUNConstants.GetTransportForScheme.");
             }
         }
     }
@@ -85,7 +99,7 @@ namespace SIPSorcery.Net
         public const string SCHEME_TRANSPORT_TCP = "transport=tcp";
         public const string SCHEME_TRANSPORT_TLS = "transport=tls";
 
-        public static readonly string SCHEME_TRANSPORT_SEPARATOR = "?transport=";
+        public static readonly string SCHEME_TRANSPORT_SEPARATOR = "transport=";
         public const char SCHEME_ADDR_SEPARATOR = ':';
         public const int SCHEME_MAX_LENGTH = 5;
 
@@ -111,7 +125,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (Transport == STUNProtocolsEnum.tcp || Transport == STUNProtocolsEnum.tls)
+                if (Transport is STUNProtocolsEnum.tcp or STUNProtocolsEnum.tls)
                 {
                     return ProtocolType.Tcp;
                 }
@@ -121,9 +135,6 @@ namespace SIPSorcery.Net
                 }
             }
         }
-
-        private STUNUri()
-        { }
 
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNUri(STUNSchemesEnum scheme, string host, int port)
@@ -146,68 +157,74 @@ namespace SIPSorcery.Net
         {
             if (!TryParse(uriStr, out var uri))
             {
-                throw new ApplicationException("A STUN URI cannot be parsed from an empty string.");
+                throw new FormatException($"A STUN URI cannot be parsed from an empty 'uriStr'.");
             }
 
             return uri;
         }
 
-        public static bool TryParse(string uriStr, out STUNUri uri)
+        public static bool TryParse(string uriStr, [NotNullWhen(true)] out STUNUri? uri)
         {
-            uri = null;
-
             if (string.IsNullOrEmpty(uriStr))
             {
+                uri = null;
                 return false;
             }
 
-            ReadOnlySpan<char> uriSpan = uriStr.AsSpan();
-            STUNProtocolsEnum transport = STUNProtocolsEnum.udp;
+            return TryParse(uriStr.AsSpan(), out uri);
+        }
 
-            // Handle transport protocol
-            int transportIndex = uriSpan.IndexOf('?');
-            if (transportIndex >= 0 && uriSpan.Slice(transportIndex, SCHEME_TRANSPORT_SEPARATOR.Length).SequenceEqual(SCHEME_TRANSPORT_SEPARATOR.AsSpan()))
-            {
-                var protocolSpan = uriSpan.Slice(transportIndex + SCHEME_TRANSPORT_SEPARATOR.Length).Trim();
-#if NET6_0_OR_GREATER
-                if (!protocolSpan.IsEmpty && !Enum.TryParse(protocolSpan, true, out transport))
-#else
-                if (!protocolSpan.IsEmpty && !Enum.TryParse(protocolSpan.ToString(), true, out transport))
-#endif
-                {
-                    transport = STUNProtocolsEnum.udp;
-                }
-                uriSpan = uriSpan.Slice(0, transportIndex);
-            }
+        public static bool TryParse(ReadOnlySpan<char> uriSpan, [NotNullWhen(true)] out STUNUri? uri)
+        {
+            uri = null;
 
             uriSpan = uriSpan.Trim();
+            ReadOnlySpan<char> querySpan;
+            if ((uriSpan.IndexOf('?') is { } queryStart) && queryStart >= 0)
+                {
+                querySpan = uriSpan.Slice(queryStart + 1);
+                uriSpan = uriSpan.Slice(0, queryStart);
+                }
+            else
+            {
+                querySpan = ReadOnlySpan<char>.Empty;
+            }
+
             var scheme = DefaultSTUNScheme;
 
             // Handle scheme parsing
-            if (uriSpan.Length > SCHEME_MAX_LENGTH + 2)
-            {
-                ReadOnlySpan<char> schemeSpan = uriSpan.Slice(0, SCHEME_MAX_LENGTH + 1);
-                int colonPosn = schemeSpan.IndexOf(SCHEME_ADDR_SEPARATOR);
 
-                if (colonPosn >= 0)
+            if (uriSpan.StartsWith("stun:".AsSpan(), StringComparison.OrdinalIgnoreCase))
                 {
-#if NET6_0_OR_GREATER
-                    if (!Enum.TryParse(schemeSpan.Slice(0, colonPosn), true, out scheme))
-#else
-                    if (!Enum.TryParse(schemeSpan.Slice(0, colonPosn).ToString(), true, out scheme))
-#endif
+                scheme = STUNSchemesEnum.stun;
+                uriSpan = uriSpan.Slice(5);
+            }
+            else if (uriSpan.StartsWith("stuns:".AsSpan(), StringComparison.OrdinalIgnoreCase))
                     {
-                        scheme = DefaultSTUNScheme;
+                scheme = STUNSchemesEnum.stuns;
+                uriSpan = uriSpan.Slice(6);
                     }
-                    uriSpan = uriSpan.Slice(colonPosn + 1);
+            else if (uriSpan.StartsWith("turn:".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                scheme = STUNSchemesEnum.turn;
+                uriSpan = uriSpan.Slice(5);
+            }
+            else if (uriSpan.StartsWith("turns:".AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                scheme = STUNSchemesEnum.turns;
+                uriSpan = uriSpan.Slice(6);
                 }
+
+            if (uriSpan.IsEmpty)
+            {
+                return false;
             }
 
             var explicitPort = false;
             int port;
             string host;
 
-            int lastColonPos = uriSpan.LastIndexOf(':');
+            var lastColonPos = uriSpan.LastIndexOf(':');
             if (lastColonPos != -1)
             {
                 explicitPort = true;
@@ -222,25 +239,57 @@ namespace SIPSorcery.Net
                     {
                         host = ipEndPoint.Address.ToString();
                     }
+
                     port = ipEndPoint.Port;
                 }
                 else
                 {
-                    host = uriSpan.Slice(0, lastColonPos).ToString();
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-                    if (!int.TryParse(uriSpan.Slice(lastColonPos + 1), out port))
-#else
-                    if (!int.TryParse(uriSpan.Slice(lastColonPos + 1).ToString(), out port))
-#endif
+                    if (
+                         !Int32.TryParse(uriSpan.Slice(lastColonPos + 1), out port)
+                         || port <= 0 || port > 65535)
                     {
-                        port = STUNConstants.GetPortForScheme(scheme);
+                        return false;
                     }
+
+                    var hostSpan = uriSpan.Slice(0, lastColonPos);
+
+                    if (hostSpan.IsEmpty || hostSpan.IndexOfAny(SearchValuesExtensions.InvalidHostNameChars) >= 0)
+                    {
+                        return false;
+                    }
+
+                    host = hostSpan.ToLowerString();
                 }
             }
             else
             {
-                host = uriSpan.ToString();
+                if (uriSpan.IsEmpty || uriSpan.IndexOfAny(SearchValuesExtensions.InvalidHostNameChars) >= 0)
+                {
+                    return false;
+            }
+
+                host = uriSpan.ToLowerString();
+
                 port = STUNConstants.GetPortForScheme(scheme);
+        }
+
+            var transport = STUNConstants.GetTransportForScheme(scheme);
+
+            // Handle transport protocol
+            if (!querySpan.IsEmpty)
+        {
+                if (querySpan.StartsWith(SCHEME_TRANSPORT_SEPARATOR.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                    var protocolSpan = querySpan.Slice(SCHEME_TRANSPORT_SEPARATOR.Length).Trim();
+                    if (protocolSpan.IsEmpty || !STUNProtocolsEnumExtensions.TryParse(protocolSpan, out transport, true))
+                {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             uri = new STUNUri(scheme, host, port: port, transport: transport, explicitPort: explicitPort);
@@ -248,32 +297,31 @@ namespace SIPSorcery.Net
         }
 
         public override string ToString()
-        {
-            if ((Scheme == STUNSchemesEnum.stun && Port == STUNConstants.DEFAULT_STUN_PORT) ||
-                (Scheme == STUNSchemesEnum.turn && Port == STUNConstants.DEFAULT_TURN_PORT) ||
-                (Scheme == STUNSchemesEnum.stuns && Port == STUNConstants.DEFAULT_STUN_TLS_PORT) ||
-                (Scheme == STUNSchemesEnum.turns && Port == STUNConstants.DEFAULT_TURN_TLS_PORT))
             {
-                if (Protocol != ProtocolType.Udp)
+            using var sb = new ValueStringBuilder(stackalloc char[256]);
+
+            sb.Append(Scheme.ToStringFast());
+            sb.Append(SCHEME_ADDR_SEPARATOR);
+            sb.Append(Host);
+
+            if ((Scheme == STUNSchemesEnum.stun && Port != STUNConstants.DEFAULT_STUN_PORT) ||
+                (Scheme == STUNSchemesEnum.turn && Port != STUNConstants.DEFAULT_TURN_PORT) ||
+                (Scheme == STUNSchemesEnum.stuns && Port != STUNConstants.DEFAULT_STUN_TLS_PORT) ||
+                (Scheme == STUNSchemesEnum.turns && Port != STUNConstants.DEFAULT_TURN_TLS_PORT))
                 {
-                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}?transport={Protocol.ToString().ToLower()}";
+                sb.Append(SCHEME_ADDR_SEPARATOR);
+                sb.Append(Port);
                 }
-                else
+
+            if (((Scheme is STUNSchemesEnum.stun or STUNSchemesEnum.turn) && Transport != STUNProtocolsEnum.udp) ||
+                ((Scheme is STUNSchemesEnum.stuns or STUNSchemesEnum.turns) && Transport != STUNProtocolsEnum.tls))
                 {
-                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}";
-                }
+                sb.Append('?');
+                sb.Append(SCHEME_TRANSPORT_SEPARATOR);
+                sb.Append(Transport.ToStringFast());
             }
-            else
-            {
-                if (Protocol != ProtocolType.Udp)
-                {
-                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}?transport={Protocol.ToString().ToLower()}";
-                }
-                else
-                {
-                    return $"{Scheme}{SCHEME_ADDR_SEPARATOR}{Host}:{Port}";
-                }
-            }
+
+            return sb.ToString();
         }
 
         public static bool AreEqual(STUNUri uri1, STUNUri uri2)
@@ -281,17 +329,17 @@ namespace SIPSorcery.Net
             return uri1 == uri2;
         }
 
-        public bool Equals(STUNUri other)
+        public bool Equals(STUNUri? other)
         {
             return (this == other);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            return Equals(this, (STUNUri)obj);
+            return Equals(this, (STUNUri?)obj);
         }
 
-        public static bool operator ==(STUNUri uri1, STUNUri uri2)
+        public static bool operator ==(STUNUri? uri1, STUNUri? uri2)
         {
             if (object.ReferenceEquals(uri1, uri2))
             {
@@ -301,7 +349,7 @@ namespace SIPSorcery.Net
             {
                 return false;
             }
-            else if (uri1.Host == null || uri2.Host == null)
+            else if (uri1.Host is null || uri2.Host is null)
             {
                 return false;
             }
@@ -325,7 +373,7 @@ namespace SIPSorcery.Net
             return true;
         }
 
-        public static bool operator !=(STUNUri x, STUNUri y)
+        public static bool operator !=(STUNUri? x, STUNUri? y)
         {
             return !(x == y);
         }

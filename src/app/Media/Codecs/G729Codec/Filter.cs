@@ -78,7 +78,10 @@ namespace SIPSorcery.Media.G729Codec
             {
                 temp = 0.0f;
                 for (i = 0; i <= n; i++)
+                {
                     temp += x[x_offset + i] * h[n - i];
+                }
+
                 y[n] = temp;
             }
         }
@@ -122,7 +125,10 @@ namespace SIPSorcery.Media.G729Codec
             int yy, py, pa;
             /* Copy mem[] to yy[] */
             yy = 0; //index instead of pointer
-            for (i = 0; i < M; i++) yy_b[yy++] = mem[mem_offset++];
+            for (i = 0; i < M; i++)
+            {
+                yy_b[yy++] = mem[mem_offset++];
+            }
 
             /* Filtering */
 
@@ -131,7 +137,11 @@ namespace SIPSorcery.Media.G729Codec
                 py = yy;
                 pa = 0; //index instead of pointer
                 s = x[x_offset++];
-                for (j = 0; j < M; j++) s -= a[a_offset + ++pa] * yy_b[--py];
+                for (j = 0; j < M; j++)
+                {
+                    s -= a[a_offset + ++pa] * yy_b[--py];
+                }
+
                 yy_b[yy++] = s;
                 y[y_offset++] = s;
             }
@@ -139,8 +149,12 @@ namespace SIPSorcery.Media.G729Codec
             /* Update memory if required */
 
             if (update != 0)
+            {
                 for (i = 0; i < M; i++)
+                {
                     mem[--mem_offset] = yy_b[--yy];
+                }
+            }
         }
 
         /**
@@ -174,7 +188,11 @@ namespace SIPSorcery.Media.G729Codec
             for (i = 0; i < l; i++)
             {
                 s = x[x_offset + i];
-                for (j = 1; j <= M; j++) s += a[a_offset + j] * x[x_offset + i - j];
+                for (j = 1; j <= M; j++)
+                {
+                    s += a[a_offset + j] * x[x_offset + i - j];
+                }
+
                 y[y_offset + i] = s;
             }
         }

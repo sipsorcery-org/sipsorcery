@@ -106,7 +106,7 @@ namespace SIPSorcery.Net
             // if data fits in inner buffer - use it. Otherwise allocate bigger
             // buffer store it to use it for later processing - up to a defined
             // maximum size.
-            byte[] cipherStream = null;
+            byte[] cipherStream;
             if (len > streamBuf.Length)
             {
                 cipherStream = new byte[len];

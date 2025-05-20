@@ -16,6 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -42,7 +44,7 @@ namespace SIPSorcery.Net
     /// WebRTC API RTCSctpTransport Interface definition:
     /// https://www.w3.org/TR/webrtc/#webidl-1410933428
     /// </remarks>
-    public class RTCSctpTransport : SctpTransport
+    public partial class RTCSctpTransport : SctpTransport
     {
         private const string THREAD_NAME_PREFIX = "rtcsctprecv-";
 
@@ -72,7 +74,7 @@ namespace SIPSorcery.Net
         /// The transport over which all SCTP packets for data channels 
         /// will be sent and received.
         /// </summary>
-        public DatagramTransport transport { get; private set; }
+        public DatagramTransport? transport { get; private set; }
 
         /// <summary>
         /// Indicates the role of this peer in the DTLS connection. This influences
@@ -104,11 +106,11 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event for notifications about changes to the SCTP transport state.
         /// </summary>
-        public event Action<RTCSctpTransportState> OnStateChanged;
+        public event Action<RTCSctpTransportState>? OnStateChanged;
 
         private bool _isStarted;
         private volatile bool _isClosed;
-        private Thread _receiveThread;
+        private Thread? _receiveThread;
         private readonly object _lock = new object();
 
         /// <summary>
@@ -134,7 +136,7 @@ namespace SIPSorcery.Net
         {
             if (state != RTCSctpTransportState.Closed)
             {
-                logger.LogWarning("SCTP source port cannot be updated when the transport is in state {State}.", state);
+                logger.LogWebRtcIcePortStateError(state);
             }
             else
             {
@@ -150,7 +152,7 @@ namespace SIPSorcery.Net
         {
             if (state != RTCSctpTransportState.Closed)
             {
-                logger.LogWarning("SCTP destination port cannot be updated when the transport is in state {State}.", state);
+                logger.LogWebRtcIcePortStateError(state);
             }
             else
             {
@@ -269,94 +271,102 @@ namespace SIPSorcery.Net
         /// This method runs on a dedicated thread to listen for incoming SCTP
         /// packets on the DTLS transport.
         /// </summary>
-        private void DoReceive(object state)
+        private void DoReceive()
         {
-            byte[] recvBuffer = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
+            var recvBuffer = ArrayPool<byte>.Shared.Rent((int)SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW);
 
-            while (!_isClosed)
+            try
             {
-                try
+                while (!_isClosed)
                 {
-                    int bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
+                    try
+                    {
+                        Debug.Assert(transport is { });
 
-                    if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
-                    {
-                        // Timed out waiting for a packet, this is by design and the receive attempt should
-                        // be retired.
-                        continue;
-                    }
-                    else if (bytesRead > 0)
-                    {
-                        if (!SctpPacket.VerifyChecksum(recvBuffer, 0, bytesRead))
+                        var bytesRead = transport.Receive(recvBuffer, 0, (int)SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW, RECEIVE_TIMEOUT_MILLISECONDS);
+
+                        if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
                         {
-                            logger.LogWarning("SCTP packet received on DTLS transport dropped due to invalid checksum.");
+                            // Timed out waiting for a packet, this is by design and the receive attempt should
+                            // be retired.
+                            continue;
                         }
-                        else
+                        else if (bytesRead > 0)
                         {
-                            var pkt = SctpPacket.Parse(recvBuffer, 0, bytesRead);
-
-                            if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                            if (!SctpPacket.VerifyChecksum(recvBuffer.AsSpan(0, bytesRead)))
                             {
-                                var initChunk = pkt.Chunks.First(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
-                                logger.LogDebug("SCTP INIT packet received, initial tag {InitiateTag}, initial TSN {InitialTSN}.", initChunk.InitiateTag, initChunk.InitialTSN);
-
-                                GotInit(pkt, null);
-                            }
-                            else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
-                            {
-                                // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
-                                // requested a new association be created.
-                                var cookie = base.GetCookie(pkt);
-
-                                if (cookie.IsEmpty())
-                                {
-                                    logger.LogWarning("SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
-                                }
-                                else
-                                {
-                                    RTCSctpAssociation.GotCookie(cookie);
-
-                                    if (pkt.Chunks.Count() > 1)
-                                    {
-                                        // There could be DATA chunks after the COOKIE ECHO chunk.
-                                        RTCSctpAssociation.OnPacketReceived(pkt);
-                                    }
-                                }
+                                logger.LogRtcSctpDiscardedPacket();
                             }
                             else
                             {
-                                RTCSctpAssociation.OnPacketReceived(pkt);
+                                var pkt = SctpPacket.Parse(recvBuffer.AsSpan(0, bytesRead));
+
+                                if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
+                                {
+                                    var initChunk = (SctpInitChunk)pkt.Chunks.First(x => x.KnownType == SctpChunkType.INIT);
+                                    logger.LogRtcSctpInit(initChunk.InitiateTag, initChunk.InitialTSN);
+
+                                    GotInit(pkt, null);
+                                }
+                                else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                                {
+                                    // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
+                                    // requested a new association be created.
+                                    var cookie = base.GetCookie(pkt);
+
+                                    if (cookie.IsEmpty())
+                                    {
+                                        logger.LogRtcSctpWarning();
+                                    }
+                                    else
+                                    {
+                                        RTCSctpAssociation.GotCookie(cookie);
+
+                                        if (pkt.Chunks.Count > 1)
+                                        {
+                                            // There could be DATA chunks after the COOKIE ECHO chunk.
+                                            RTCSctpAssociation.OnPacketReceived(pkt);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    RTCSctpAssociation.OnPacketReceived(pkt);
+                                }
                             }
                         }
+                        else if (_isClosed)
+                        {
+                            // The DTLS transport has been closed or is no longer available.
+                            logger.LogRtcSctpReceive();
+                            break;
+                        }
                     }
-                    else if (_isClosed)
+                    catch (ApplicationException appExcp)
                     {
-                        // The DTLS transport has been closed or is no longer available.
-                        logger.LogWarning("SCTP the RTCSctpTransport DTLS transport returned an error.");
+                        // Treat application exceptions as recoverable, things like SCTP packet parse failures.
+                        logger.LogWebRtcSctpProcessError(appExcp.Message);
+                    }
+                    catch (TlsFatalAlert alert) when (alert.InnerException is SocketException sockExcp)
+                    {
+                        logger.LogWebRtcIceSocketError(sockExcp.SocketErrorCode, sockExcp);
+                        break;
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.LogWebRtcScpError(excp.Message, excp);
                         break;
                     }
                 }
-                catch (ApplicationException appExcp)
-                {
-                    // Treat application exceptions as recoverable, things like SCTP packet parse failures.
-                    logger.LogWarning("SCTP error processing RTCSctpTransport receive. {Message}", appExcp.Message);
-                }
-                catch (TlsFatalAlert alert) when (alert.InnerException is SocketException)
-                {
-                    var sockExcp = alert.InnerException as SocketException;
-                    logger.LogWarning(sockExcp, "SCTP RTCSctpTransport receive socket failure {SocketErrorCode}.", sockExcp.SocketErrorCode);
-                    break;
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError(excp, "SCTP fatal error processing RTCSctpTransport receive. {ErrorMessage}", excp.Message);
-                    break;
-                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(recvBuffer);
             }
 
             if (!_isClosed)
             {
-                logger.LogWarning("SCTP association {ID} receive thread stopped.", RTCSctpAssociation.ID);
+                logger.LogRtcSctpAssociation(RTCSctpAssociation.ID);
             }
 
             SetState(RTCSctpTransportState.Closed);
@@ -368,13 +378,11 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="associationID">Not used for the DTLS transport.</param>
         /// <param name="buffer">The buffer containing the data to send.</param>
-        /// <param name="offset">The position in the buffer to send from.</param>
-        /// <param name="length">The number of bytes to send.</param>
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string? associationID, ReadOnlyMemory<byte> buffer, IDisposable? memoryOwner = null)
         {
-            if (length > maxMessageSize)
+            if (buffer.Length > maxMessageSize)
             {
-                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
+                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {buffer.Length} " +
                     $" that exceeded the maximum allowed message size of {maxMessageSize}.");
             }
 
@@ -384,7 +392,9 @@ namespace SIPSorcery.Net
                 {
                     if (!_isClosed)
                     {
-                        transport.Send(buffer, offset, length);
+                        Debug.Assert(transport is { });
+
+                        transport.Send(buffer);
                     }
                 }
             }
