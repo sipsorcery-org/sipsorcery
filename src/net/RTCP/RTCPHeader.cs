@@ -33,6 +33,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -68,17 +69,17 @@ namespace SIPSorcery.Net
     /// <summary>
     /// RTCP Header as defined in RFC3550.
     /// </summary>
-    public class RTCPHeader
+    public partial class RTCPHeader : IByteSerializable
     {
         public const int HEADER_BYTES_LENGTH = 4;
         public const int MAX_RECEPTIONREPORT_COUNT = 32;
         public const int RTCP_VERSION = 2;
 
         public int Version { get; private set; } = RTCP_VERSION;         // 2 bits.
-        public int PaddingFlag { get; private set; } = 0;                 // 1 bit.
-        public int ReceptionReportCount { get; private set; } = 0;        // 5 bits.
+        public int PaddingFlag { get; private set; }                  // 1 bit.
+        public int ReceptionReportCount { get; private set; }         // 5 bits.
         public RTCPReportTypesEnum PacketType { get; private set; }       // 8 bits.
-        public UInt16 Length { get; private set; }                        // 16 bits.
+        public ushort Length { get; private set; }                        // 16 bits.
 
         /// <summary>
         /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.
@@ -117,8 +118,8 @@ namespace SIPSorcery.Net
         /// <returns>True if the header is for an RTCP feedback report or false if not.</returns>
         public bool IsFeedbackReport()
         {
-            if (PacketType == RTCPReportTypesEnum.RTPFB ||
-                PacketType == RTCPReportTypesEnum.PSFB)
+            if (PacketType is RTCPReportTypesEnum.RTPFB or
+                RTCPReportTypesEnum.PSFB)
             {
                 return true;
             }
@@ -128,43 +129,27 @@ namespace SIPSorcery.Net
             }
         }
 
-        public static RTCPFeedbackTypesEnum ParseFeedbackType(byte[] packet)
+        public static RTCPFeedbackTypesEnum ParseFeedbackType(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < HEADER_BYTES_LENGTH)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-            }
+            var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+
             return (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
         }
 
-        /// <summary>
-        /// Extract and load the RTCP header from an RTCP packet.
-        /// </summary>
-        /// <param name="packet"></param>
-        public RTCPHeader(byte[] packet)
+        public RTCPHeader(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < HEADER_BYTES_LENGTH)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-                Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Length = BitConverter.ToUInt16(packet, 2);
-            }
+            var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+            Length = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
 
             Version = Convert.ToInt32(firstWord >> 14);
             PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
@@ -187,19 +172,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] GetHeader(int receptionReportCount, UInt16 length)
-        {
-            if (receptionReportCount > MAX_RECEPTIONREPORT_COUNT)
-            {
-                throw new ApplicationException("The Reception Report Count value cannot be larger than " + MAX_RECEPTIONREPORT_COUNT + ".");
-            }
-
-            ReceptionReportCount = receptionReportCount;
-            Length = length;
-
-            return GetBytes();
-        }
-
         /// <summary>
         /// The length of this RTCP packet in 32-bit words minus one,
         /// including the header and any padding.
@@ -209,11 +181,37 @@ namespace SIPSorcery.Net
             Length = length;
         }
 
-        public byte[] GetBytes()
+        public void SetReceptionReportCount(int receptionReportCount)
         {
-            byte[] header = new byte[4];
+            if (receptionReportCount > MAX_RECEPTIONREPORT_COUNT)
+            {
+                throw new ApplicationException("The Reception Report Count value cannot be larger than " + MAX_RECEPTIONREPORT_COUNT + ".");
+            }
 
-            UInt32 firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
+            ReceptionReportCount = receptionReportCount;
+        }
+
+        /// <inheritdoc/>
+        public int GetByteCount() => 4;
+
+        /// <inheritdoc/>
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetByteCount();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            var firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
 
             if (IsFeedbackReport())
             {
@@ -231,16 +229,7 @@ namespace SIPSorcery.Net
                 firstWord += (uint)ReceptionReportCount << 24;
             }
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
-            }
-
-            return header;
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, firstWord);
         }
     }
 }

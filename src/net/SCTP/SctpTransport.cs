@@ -18,14 +18,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Buffers;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-using TinyJson;
 
 namespace SIPSorcery.Net
 {
@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
     /// As well as being able to be carried directly in IP packets, SCTP packets can
     /// also be wrapped in higher level protocols.
     /// </summary>
-    public abstract class SctpTransport
+    public abstract partial class SctpTransport
     {
         private const int HMAC_KEY_SIZE = 64;
 
@@ -93,19 +93,19 @@ namespace SIPSorcery.Net
         /// </returns>
         public virtual bool IsPortAgnostic => false;
 
-        public abstract void Send(string associationID, byte[] buffer, int offset, int length);
+        public abstract void Send(string? associationID, ReadOnlyMemory<byte> buffer, IDisposable? memoryOwner = null);
 
         static SctpTransport()
         {
             Crypto.GetRandomBytes(_hmacKey);
         }
 
-        protected void GotInit(SctpPacket initPacket, IPEndPoint remoteEndPoint)
+        protected void GotInit(SctpPacket initPacket, IPEndPoint? remoteEndPoint)
         {
             // INIT packets have specific processing rules in order to prevent resource exhaustion.
             // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
 
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            var initChunk = (SctpInitChunk)initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT);
 
             if (initChunk.InitiateTag == 0 ||
                 initChunk.NumberInboundStreams == 0 ||
@@ -131,8 +131,10 @@ namespace SIPSorcery.Net
             else
             {
                 var initAckPacket = GetInitAck(initPacket, remoteEndPoint);
-                var buffer = initAckPacket.GetBytes();
-                Send(null, buffer, 0, buffer.Length);
+                var size = initAckPacket.GetByteCount();
+                var memoryOwner = MemoryPool<byte>.Shared.Rent(size);
+                _ = initAckPacket.WriteBytes(memoryOwner.Memory.Span);
+                Send(null, memoryOwner.Memory.Slice(0, size), memoryOwner);
             }
         }
 
@@ -180,11 +182,11 @@ namespace SIPSorcery.Net
         /// received on. For transports that don't use an IP transport directly this parameter
         /// can be set to null and it will not form part of the COOKIE ECHO checks.</param>
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
-        protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
+        protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint? remoteEP)
         {
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            var initChunk = (SctpInitChunk)initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT);
 
-            SctpPacket initAckPacket = new SctpPacket(
+            var initAckPacket = new SctpPacket(
                 initPacket.Header.DestinationPort,
                 initPacket.Header.SourcePort,
                 initChunk.InitiateTag);
@@ -195,29 +197,35 @@ namespace SIPSorcery.Net
                 initChunk.InitiateTag,
                 initChunk.InitialTSN,
                 initChunk.ARwnd,
-                remoteEP != null ? remoteEP.ToString() : string.Empty,
+                remoteEP is { } ? remoteEP.ToString() : string.Empty,
                 (int)(initChunk.CookiePreservative / 1000));
 
-            var json = cookie.ToJson();
-            var jsonBuffer = Encoding.UTF8.GetBytes(json);
-
-            using (HMACSHA256 hmac = new HMACSHA256(_hmacKey))
+            var buffer = new PooledSegmentedBuffer<byte>();
+            using (var writer = new Utf8JsonWriter(buffer))
             {
-                var result = hmac.ComputeHash(jsonBuffer);
+                JsonSerializer.Serialize(writer, cookie, SipSorceryJsonSerializerContext.Default.SctpTransportCookie);
+            }
+
+            using (var hmac = new HMACSHA256(_hmacKey))
+            {
+                var result = hmac.ComputeHash(buffer.AsStream());
                 cookie.HMAC = result.HexStr();
             }
 
-            var jsonWithHMAC = cookie.ToJson();
-            var jsonBufferWithHMAC = Encoding.UTF8.GetBytes(jsonWithHMAC);
+            buffer.Clear();
+            using (var writer = new Utf8JsonWriter(buffer))
+            {
+                JsonSerializer.Serialize(writer, cookie, SipSorceryJsonSerializerContext.Default.SctpTransportCookie);
+            }
 
-            SctpInitChunk initAckChunk = new SctpInitChunk(
+            var initAckChunk = new SctpInitChunk(
                 SctpChunkType.INIT_ACK,
                 cookie.Tag,
                 cookie.TSN,
                 cookie.ARwnd,
                 SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
                 SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS);
-            initAckChunk.StateCookie = jsonBufferWithHMAC;
+            initAckChunk.StateCookie = buffer.ToArray();
             initAckChunk.UnrecognizedPeerParameters = initChunk.UnrecognizedPeerParameters;
 
             initAckPacket.AddChunk(initAckChunk);
@@ -237,14 +245,15 @@ namespace SIPSorcery.Net
         {
             var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
             var cookieBuffer = cookieEcho.ChunkValue;
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
+            Debug.Assert(cookieBuffer is { });
+            var cookie = JsonSerializer.Deserialize<SctpTransportCookie>(cookieBuffer, SipSorceryJsonSerializerContext.Default.SctpTransportCookie);
 
-            logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
+            logger.LogSctpCookie(cookie);
 
-            string calculatedHMAC = GetCookieHMAC(cookieBuffer);
+            var calculatedHMAC = GetCookieHMAC(cookieBuffer);
             if (calculatedHMAC != cookie.HMAC)
             {
-                logger.LogWarning("SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookieHMAC}.", calculatedHMAC, cookie.HMAC);
+                logger.LogSctpCookieEchoInvalidHMAC(calculatedHMAC, cookie.HMAC);
                 SendError(
                   true,
                   sctpPacket.Header.DestinationPort,
@@ -255,7 +264,7 @@ namespace SIPSorcery.Net
             }
             else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
             {
-                logger.LogWarning("SCTP COOKIE ECHO chunk was stale, created at {CreatedAt}, now {Now}, lifetime {Lifetime}s.", cookie.CreatedAt, DateTime.Now.ToString("o"), cookie.Lifetime);
+                logger.LogSctpCookieEchoStale(cookie.CreatedAt, DateTime.Now.ToString("o"), cookie.Lifetime);
                 var diff = DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt).AddSeconds(cookie.Lifetime));
                 SendError(
                   true,
@@ -279,19 +288,22 @@ namespace SIPSorcery.Net
         /// <returns>True if the cookie is determined as valid, false if not.</returns>
         protected string GetCookieHMAC(byte[] buffer)
         {
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(buffer));
-            string hmacCalculated = null;
+            var cookie = JsonSerializer.Deserialize<SctpTransportCookie>(buffer, SipSorceryJsonSerializerContext.Default.SctpTransportCookie);
             cookie.HMAC = string.Empty;
 
-            byte[] cookiePreImage = Encoding.UTF8.GetBytes(cookie.ToJson());
-
-            using (HMACSHA256 hmac = new HMACSHA256(_hmacKey))
+            var tempBuffer = new PooledSegmentedBuffer<byte>();
+            using (var writer = new Utf8JsonWriter(tempBuffer))
             {
-                var result = hmac.ComputeHash(cookiePreImage);
-                hmacCalculated = result.HexStr();
+                JsonSerializer.Serialize(writer, cookie, SipSorceryJsonSerializerContext.Default.SctpTransportCookie);
             }
 
-            return hmacCalculated;
+            using (var hmac = new HMACSHA256(_hmacKey))
+            {
+                var result = hmac.ComputeHash(tempBuffer.AsStream());
+                var hmacCalculated = result.HexStr();
+
+                return hmacCalculated;
+            }
         }
 
         /// <summary>
@@ -309,17 +321,19 @@ namespace SIPSorcery.Net
             uint initiateTag,
             ISctpErrorCause error)
         {
-            SctpPacket errorPacket = new SctpPacket(
+            var errorPacket = new SctpPacket(
                 destinationPort,
                 sourcePort,
                 initiateTag);
 
-            SctpErrorChunk errorChunk = isAbort ? new SctpAbortChunk(true) : new SctpErrorChunk();
+            var errorChunk = isAbort ? new SctpAbortChunk(true) : new SctpErrorChunk();
             errorChunk.AddErrorCause(error);
             errorPacket.AddChunk(errorChunk);
 
-            var buffer = errorPacket.GetBytes();
-            Send(null, buffer, 0, buffer.Length);
+            var size = errorPacket.GetByteCount();
+            var memoryOwner = MemoryPool<byte>.Shared.Rent(size);
+            _ = errorPacket.WriteBytes(memoryOwner.Memory.Span);
+            Send(null, memoryOwner.Memory.Slice(0, size), memoryOwner);
         }
 
         /// <summary>
@@ -371,7 +385,6 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="associationID">Local handle to the SCTP association.</param>
         /// <param name="buffer">The buffer holding the data to send.</param>
-        /// <param name="length">The number of bytes from the buffer to send.</param>
         /// <param name="contextID">Optional. A 32-bit integer that will be carried in the
         /// sending failure notification to the application if the transportation of
         /// this user message fails.</param>
@@ -382,8 +395,9 @@ namespace SIPSorcery.Net
         /// parameter can be used to avoid efforts to transmit stale user
         /// messages.</param>
         /// <returns></returns>
-        public string Send(string associationID, byte[] buffer, int length, int contextID, int streamID, int lifeTime)
+        public string Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable? memoryOwner, int contextID, int streamID, int lifeTime)
         {
+            memoryOwner?.Dispose();
             return "ok";
         }
 

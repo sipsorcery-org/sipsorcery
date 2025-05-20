@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPBye.cs
 //
 // Description: RTCP Goodbye packet as defined in RFC3550.
@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
 using SIPSorcery.Sys;
 
@@ -36,7 +37,7 @@ namespace SIPSorcery.Net
     /// RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates 
     /// that one or more sources are no longer active.
     /// </summary>
-    public class RTCPBye
+    public partial class RTCPBye : IByteSerializable
     {
         public const int MAX_REASON_BYTES = 255;
         public const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
@@ -44,7 +45,7 @@ namespace SIPSorcery.Net
 
         public RTCPHeader Header;
         public uint SSRC { get; private set; }
-        public string Reason { get; private set; }
+        public string? Reason { get; private set; }
 
         /// <summary>
         /// Creates a new RTCP Bye payload.
@@ -52,12 +53,12 @@ namespace SIPSorcery.Net
         /// <param name="ssrc">The synchronisation source of the RTP stream being closed.</param>
         /// <param name="reason">Optional reason for closing. Maximum length is 255 bytes 
         /// (note bytes not characters).</param>
-        public RTCPBye(uint ssrc, string reason)
+        public RTCPBye(uint ssrc, string? reason)
         {
             Header = new RTCPHeader(RTCPReportTypesEnum.BYE, 1);
             SSRC = ssrc;
 
-            if (reason != null)
+            if (reason is { })
             {
                 Reason = (reason.Length > MAX_REASON_BYTES) ? reason.Substring(0, MAX_REASON_BYTES) : reason;
 
@@ -73,7 +74,7 @@ namespace SIPSorcery.Net
         /// Create a new RTCP Goodbye packet from a serialised byte array.
         /// </summary>
         /// <param name="packet">The byte array holding the Goodbye packet.</param>
-        public RTCPBye(byte[] packet)
+        public RTCPBye(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < MIN_PACKET_SIZE)
             {
@@ -82,14 +83,7 @@ namespace SIPSorcery.Net
 
             Header = new RTCPHeader(packet);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-            }
+            SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
 
             if (packet.Length > MIN_PACKET_SIZE)
             {
@@ -97,41 +91,41 @@ namespace SIPSorcery.Net
 
                 if (packet.Length - MIN_PACKET_SIZE - 1 >= reasonLength)
                 {
-                    Reason = Encoding.UTF8.GetString(packet, 9, reasonLength);
+                    Reason = Encoding.UTF8.GetString(packet.Slice(9, reasonLength));
                 }
             }
         }
 
-        /// <summary>
-        /// Gets the raw bytes for the Goodbye packet.
-        /// </summary>
-        /// <returns>A byte array.</returns>
-        public byte[] GetBytes()
+        /// <inheritdoc/>
+        public int GetByteCount() => RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(((Reason is { }) ? Encoding.UTF8.GetByteCount(Reason) : 0));
+
+        /// <inheritdoc/>
+        public int WriteBytes(Span<byte> buffer)
         {
-            byte[] reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
-            int reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
+            var size = GetByteCount();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
             Header.SetLength((ushort)(buffer.Length / 4 - 1));
+            _ = Header.WriteBytes(buffer);
 
-            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH), SSRC);
 
-            if (BitConverter.IsLittleEndian)
+            if (Reason is { })
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
+                buffer[RTCPHeader.HEADER_BYTES_LENGTH + 4] =
+                    (byte)Encoding.UTF8.GetBytes(Reason.AsSpan(), buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 5));
             }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
-            }
-
-            if (reasonLength > 0)
-            {
-                buffer[payloadIndex + 4] = (byte)reasonLength;
-                Buffer.BlockCopy(reasonBytes, 0, buffer, payloadIndex + 5, reasonBytes.Length);
-            }
-
-            return buffer;
         }
 
         /// <summary>

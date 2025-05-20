@@ -17,7 +17,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
+using System;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -28,7 +29,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.8
     /// </remarks>
-    public class SctpShutdownChunk : SctpChunk
+    public partial class SctpShutdownChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 4;
 
@@ -55,7 +56,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The padded length of the chunk.</returns>
-        public override ushort GetChunkLength(bool padded)
+        public override ushort GetByteCount(bool padded)
         {
             return SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
         }
@@ -65,24 +66,29 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
         /// must have the required space already allocated.</param>
-        /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public override ushort WriteTo(byte[] buffer, int posn)
+        public override ushort WriteBytes(Span<byte> buffer)
         {
-            WriteChunkHeader(buffer, posn);
-            NetConvert.ToBuffer(CumulativeTsnAck.GetValueOrDefault(), buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
-            return GetChunkLength(true);
+            WriteBytesCore(buffer);
+
+            return GetByteCount(true);
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            var bytesWritten = WriteChunkHeader(buffer);
+
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), CumulativeTsnAck.GetValueOrDefault());
         }
 
         /// <summary>
         /// Parses the SHUTDOWN chunk fields.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
-        /// <param name="posn">The position to start parsing at.</param>
-        public static SctpShutdownChunk ParseChunk(byte[] buffer, int posn)
+        public static SctpShutdownChunk ParseChunk(ReadOnlySpan<byte> buffer)
         {
             var shutdownChunk = new SctpShutdownChunk();
-            shutdownChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
+            shutdownChunk.CumulativeTsnAck = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
             return shutdownChunk;
         }
     }

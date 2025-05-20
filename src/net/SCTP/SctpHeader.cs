@@ -18,11 +18,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public struct SctpHeader
+    public partial struct SctpHeader : IByteSerializable
     {
         public const int SCTP_HEADER_LENGTH = 12;
 
@@ -56,30 +57,40 @@ namespace SIPSorcery.Net
         /// bytes to.</param>
         public void WriteToBuffer(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer(SourcePort, buffer, posn);
-            NetConvert.ToBuffer(DestinationPort, buffer, posn + 2);
-            NetConvert.ToBuffer(VerificationTag, buffer, posn + 4);
+            _ = WriteBytes(buffer.AsSpan(posn));
+        }
+
+        /// <inheritdoc/>
+        public int GetByteCount() => 8;
+
+        /// <inheritdoc/>
+        public int WriteBytes(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, SourcePort);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), DestinationPort);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), VerificationTag);
+
+            return 8;
         }
 
         /// <summary>
         /// Parses the an SCTP header from a buffer.
         /// </summary>
         /// <param name="buffer">The buffer to parse the SCTP header from.</param>
-        /// <param name="posn">The position in the buffer to start parsing the header from.</param>
         /// <returns>A new SCTPHeaer instance.</returns>
-        public static SctpHeader Parse(byte[] buffer, int posn)
+        public static SctpHeader Parse(ReadOnlySpan<byte> buffer)
         {
             if (buffer.Length < SCTP_HEADER_LENGTH)
             {
                 throw new ApplicationException("The buffer did not contain the minimum number of bytes for an SCTP header.");
             }
 
-            SctpHeader header = new SctpHeader();
+            var header = new SctpHeader();
 
-            header.SourcePort = NetConvert.ParseUInt16(buffer, posn);
-            header.DestinationPort = NetConvert.ParseUInt16(buffer, posn + 2);
-            header.VerificationTag = NetConvert.ParseUInt32(buffer, posn + 4);
-            header.Checksum = NetConvert.ParseUInt32(buffer, posn + 8);
+            header.SourcePort = BinaryPrimitives.ReadUInt16BigEndian(buffer);
+            header.DestinationPort = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(2));
+            header.VerificationTag = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(4));
+            header.Checksum = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(8));
 
             return header;
         }

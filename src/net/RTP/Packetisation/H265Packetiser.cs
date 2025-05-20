@@ -16,8 +16,8 @@
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.net.RTP.Packetisation
 {
@@ -60,7 +60,7 @@ namespace SIPSorcery.net.RTP.Packetisation
                         int nalSize = endPosn - currPosn;
                         bool isLast = currPosn + nalSize == accessUnit.Length;
 
-                        yield return new H265Nal(accessUnit.Skip(currPosn).Take(nalSize).ToArray(), isLast);
+                        yield return new H265Nal(accessUnit.AsSpan(currPosn, nalSize).ToArray(), isLast);
                     }
 
                     currPosn = nalStart;
@@ -74,7 +74,7 @@ namespace SIPSorcery.net.RTP.Packetisation
 
             if (currPosn < accessUnit.Length)
             {
-                yield return new H265Nal(accessUnit.Skip(currPosn).ToArray(), true);
+                yield return new H265Nal(accessUnit.AsSpan(currPosn).ToArray(), true);
             }
         }
 
@@ -171,25 +171,25 @@ namespace SIPSorcery.net.RTP.Packetisation
         /// 4.4.2.  Aggregation Packets (APs)
         ///
         /// 0                   1                   2                   3
-       /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       ///|                          RTP Header                           |
-       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       ///|   PayloadHdr(Type= 48)        |         NALU 1 Size           |
-       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       ///|          NALU 1 HDR           |                               |
-       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+         NALU 1 Data           |
-       ///|                   . . .                                       |
-       ///|                                                               |
-       ///+               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       ///|  . . .        | NALU 2 Size                   | NALU 2 HDR    |
-       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       ///| NALU 2 HDR    |                                               |
-       ///+-+-+-+-+-+-+-+-+              NALU 2 Data                      |
-       ///|                   . . .                                       |
-       ///|                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       ///|                               :...OPTIONAL RTP padding        |
-       ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        ///|                          RTP Header                           |
+        ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        ///|   PayloadHdr(Type= 48)        |         NALU 1 Size           |
+        ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        ///|          NALU 1 HDR           |                               |
+        ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+         NALU 1 Data           |
+        ///|                   . . .                                       |
+        ///|                                                               |
+        ///+               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        ///|  . . .        | NALU 2 Size                   | NALU 2 HDR    |
+        ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        ///| NALU 2 HDR    |                                               |
+        ///+-+-+-+-+-+-+-+-+              NALU 2 Data                      |
+        ///|                   . . .                                       |
+        ///|                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        ///|                               :...OPTIONAL RTP padding        |
+        ///+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         ///
         ///
         ///

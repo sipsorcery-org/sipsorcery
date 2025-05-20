@@ -15,9 +15,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using System.Buffers;
 
 namespace SIPSorcery.Net
 {
@@ -48,7 +50,7 @@ namespace SIPSorcery.Net
     {
         private static ILogger logger = Log.Logger;
 
-        public string label { get; set; }
+        public string? label { get; set; }
 
         public bool ordered { get; set; }
 
@@ -56,7 +58,7 @@ namespace SIPSorcery.Net
 
         public ushort? maxRetransmits { get; set; }
 
-        public string protocol { get; set; }
+        public string? protocol { get; set; }
 
         public bool negotiated { get; set; }
 
@@ -67,28 +69,28 @@ namespace SIPSorcery.Net
         public ulong bufferedAmount => _transport?.RTCSctpAssociation?.SendBufferedAmount ?? 0;
 
         public ulong bufferedAmountLowThreshold { get; set; }
-        public string binaryType { get; set; }
+        public string? binaryType { get; set; }
 
         //public long MaxMessageSize { get; set; }
 
-        public string Error { get; private set; }
+        public string? Error { get; private set; }
 
-        public bool IsOpened { get; internal set; } = false;
+        public bool IsOpened { get; internal set; }
 
         private RTCSctpTransport _transport;
 
-        public event Action onopen;
+        public event Action? onopen;
         //public event Action onbufferedamountlow;
-        public event Action<string> onerror;
+        public event Action<string>? onerror;
         //public event Action onclosing;
-        public event Action onclose;
-        public event OnDataChannelMessageDelegate onmessage;
+        public event Action? onclose;
+        public event OnDataChannelMessageDelegate? onmessage;
 
-        public RTCDataChannel(RTCSctpTransport transport, RTCDataChannelInit init = null)
+        public RTCDataChannel(RTCSctpTransport transport, RTCDataChannelInit? init = null)
         {
             _transport = transport;
 
-            if (init == null) {
+            if (init is null) {
                 ordered = true;
                 return;
             }
@@ -103,7 +105,7 @@ namespace SIPSorcery.Net
 
         internal void GotAck()
         {
-            logger.LogDebug("Data channel for label {label} now open.", label);
+            logger.LogWebRtcDataChannelOpen(label);
             IsOpened = true;
             readyState = RTCDataChannelState.open;
             onopen?.Invoke();
@@ -122,7 +124,7 @@ namespace SIPSorcery.Net
         {
             IsOpened = false;
             readyState = RTCDataChannelState.closed;
-            logger.LogDebug("Data channel with id {id} has been closed", id);
+            logger.LogWebRtcDataChannelClose(id);
             onclose?.Invoke();
         }
 
@@ -132,14 +134,14 @@ namespace SIPSorcery.Net
         /// <param name="message">The string message to send.</param>
         public void send(string message)
         {
-            if (message != null && Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
+            if (message is { } && Encoding.UTF8.GetByteCount(message) > _transport.maxMessageSize)
             {
-                throw new ApplicationException($"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} " +
-                    $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
+                throw new ApplicationException(
+                    $"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning("WebRTC data channel send failed due to SCTP transport in state {TransportState}.", _transport.state);
+                logger.LogWebRtcDataChannelSendFailed(_transport.state);
             }
             else
             {
@@ -169,12 +171,12 @@ namespace SIPSorcery.Net
         {
             if (data.Length > _transport.maxMessageSize)
             {
-                throw new ApplicationException($"Data channel {label} was requested to send data of length {data.Length} " +
-                    $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
+                throw new ApplicationException(
+                    $"Data channel {label} was requested to send data of length {data.Length} that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
             {
-                logger.LogWarning("WebRTC data channel send failed due to SCTP transport in state {TransportState}.", _transport.state);
+                logger.LogWebRtcDataChannelSendFailed(_transport.state);
             }
             else
             {
@@ -188,6 +190,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
+                        Debug.Assert(data is { });
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary,
                            data);
@@ -202,7 +205,7 @@ namespace SIPSorcery.Net
         /// </summary>
         internal void SendDcepOpen()
         {
-            byte type = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE;
+            var type = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE;
             if (!ordered)
             {
                 type += (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED;
@@ -211,11 +214,12 @@ namespace SIPSorcery.Net
             {
                 type += (byte)DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_TIMED;
             }
-            else if(maxRetransmits > 0)
+            else if (maxRetransmits > 0)
             {
                 type += (byte)DataChannelTypes.DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT;
             }
 
+            Debug.Assert(label is { });
             var dcepOpen = new DataChannelOpenMessage()
             {
                 MessageType = (byte)DataChannelMessageTypes.OPEN,
@@ -226,9 +230,13 @@ namespace SIPSorcery.Net
 
             lock (this)
             {
-                _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                       (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
-                       dcepOpen.GetBytes());
+                var payload = new byte[dcepOpen.GetByteCount()];
+                _ = dcepOpen.WriteBytes(payload.AsSpan());
+
+                _transport.RTCSctpAssociation.SendData(
+                    id.GetValueOrDefault(),
+                    (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
+                    payload);
             }
         }
 
@@ -251,12 +259,12 @@ namespace SIPSorcery.Net
         /// </summary>
         internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
         {
-            //logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
+            //logger.LogWebRtcDcepDataChunk(streamID, streamSeqNum, ppID, label);
 
             // If the ppID is not recognised default to binary.
             DataChannelPayloadProtocols payloadType = DataChannelPayloadProtocols.WebRTC_Binary;
 
-            if (Enum.IsDefined(typeof(DataChannelPayloadProtocols), ppID))
+            if (DataChannelPayloadProtocolsExtensions.IsDefined((DataChannelPayloadProtocols)ppID))
             {
                 payloadType = (DataChannelPayloadProtocols)ppID;
             }

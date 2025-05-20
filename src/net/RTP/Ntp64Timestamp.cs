@@ -2,22 +2,18 @@
 
 namespace SIPSorcery.Net
 {
-    public class TimestampPair
-    {
-        public uint RtpTimestamp { get; set; }
-        public ulong NtpTimestamp { get; set; }
-    }
+    public record struct TimestampPair(uint RtpTimestamp, ulong NtpTimestamp);
 
-    public class Ntp64Timestamp
+    public static class Ntp64Timestamp
     {
         public static ulong AddFraction(ulong timestamp, double fraction) {
             var fractionalPart = GetFraction(timestamp);
-            fractionalPart += ((uint) (fraction * uint.MaxValue)) & 0x00000000FFFFFFFF; 
+            fractionalPart += ((uint)(fraction * uint.MaxValue)) & 0x00000000FFFFFFFF;
             return (timestamp & 0xFFFFFFFF00000000) | fractionalPart;
         }
 
         public static ulong AddSeconds(ulong timestamp, uint seconds) {
-            var sec = (ulong) GetSeconds(timestamp) + seconds;
+            var sec = (ulong)GetSeconds(timestamp) + seconds;
             return (sec << 32) | (timestamp & 0x00000000FFFFFFFF);
         }
 
@@ -43,9 +39,7 @@ namespace SIPSorcery.Net
             var diffTime = diff / (double)clockrate;
             var seconds = Math.Truncate(diffTime);
             var fractionalPart = (diffTime - seconds);
-           
-           
-            
+
             var withSeconds = AddSeconds(lastTimestampPair.NtpTimestamp, (uint)seconds);
             return AddFraction(withSeconds, fractionalPart);
         }

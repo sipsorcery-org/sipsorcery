@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Buffers.Binary;
 using System.Text;
 using SIPSorcery.Sys;
 
@@ -90,7 +90,7 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// See https://tools.ietf.org/html/rfc8832#section-5.1
     /// </remarks>
-    public struct DataChannelOpenMessage
+    public partial struct DataChannelOpenMessage : IByteSerializable
     {
         public const int DCEP_OPEN_FIXED_PARAMETERS_LENGTH = 12;
 
@@ -98,7 +98,7 @@ namespace SIPSorcery.Net
         ///  This field holds the IANA-defined message type for the
         /// DATA_CHANNEL_OPEN message.The value of this field is 0x03.
         /// </summary>
-        public byte MessageType; 
+        public byte MessageType;
 
         /// <summary>
         /// This field specifies the type of data channel to be opened.
@@ -129,15 +129,14 @@ namespace SIPSorcery.Net
         /// The websocket subprotocol names and specification are available at
         /// https://tools.ietf.org/html/rfc7118
         /// </remarks>
-        public string Protocol;
+        public string? Protocol;
 
         /// <summary>
         /// Parses the an DCEP open message from a buffer.
         /// </summary>
         /// <param name="buffer">The buffer to parse the message from.</param>
-        /// <param name="posn">The position in the buffer to start parsing from.</param>
         /// <returns>A new DCEP open message instance.</returns>
-        public static DataChannelOpenMessage Parse(byte[] buffer, int posn)
+        public static DataChannelOpenMessage Parse(ReadOnlySpan<byte> buffer)
         {
             if (buffer.Length < DCEP_OPEN_FIXED_PARAMETERS_LENGTH)
             {
@@ -146,85 +145,65 @@ namespace SIPSorcery.Net
 
             var dcepOpen = new DataChannelOpenMessage();
 
-            dcepOpen.MessageType = buffer[posn];
-            dcepOpen.ChannelType = buffer[posn + 1];
-            dcepOpen.Priority = NetConvert.ParseUInt16(buffer, posn + 2);
-            dcepOpen.Reliability = NetConvert.ParseUInt32(buffer, posn + 4);
+            dcepOpen.MessageType = buffer[0];
+            dcepOpen.ChannelType = buffer[1];
+            dcepOpen.Priority = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(2));
+            dcepOpen.Reliability = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(4));
 
-            ushort labelLength = NetConvert.ParseUInt16(buffer, posn + 8);
-            ushort protocolLength = NetConvert.ParseUInt16(buffer, posn + 10);
+            var labelLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(8));
+            var protocolLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(10));
 
             if (labelLength > 0)
             {
-                dcepOpen.Label = Encoding.UTF8.GetString(buffer, 12, labelLength);
+                dcepOpen.Label = Encoding.UTF8.GetString(buffer.Slice(12, labelLength));
             }
 
             if (protocolLength > 0)
             {
-                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer, 12 + labelLength, protocolLength);
+                dcepOpen.Protocol = Encoding.UTF8.GetString(buffer.Slice(12 + labelLength, protocolLength));
             }
 
             return dcepOpen;
         }
 
-        /// <summary>
-        /// Gets the length of the serialised DCEP OPEN message.
-        /// </summary>
-        /// <returns>The serialised length of this DECEP OPEN message.</returns>
-        public int GetLength()
+        /// <inheritdoc/>
+        public int GetByteCount()
         {
-            ushort labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
-            ushort protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
+            var labelLength = (ushort)(Label is { } ? Encoding.UTF8.GetByteCount(Label) : 0);
+            var protocolLength = (ushort)(Protocol is { } ? Encoding.UTF8.GetByteCount(Protocol) : 0);
 
             return DCEP_OPEN_FIXED_PARAMETERS_LENGTH + labelLength + protocolLength;
         }
 
-        /// <summary>
-        /// Serialises a Data Channel Establishment Protocol (DECP) OPEN message to a 
-        /// pre-allocated buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
-        /// must have the required space already allocated.</param>
-        /// <param name="posn">The position in the buffer to write to.</param>
-        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public ushort WriteTo(byte[] buffer, int posn)
+        /// <inheritdoc/>
+        public int WriteBytes(Span<byte> buffer)
         {
-            buffer[posn] = MessageType;
-            buffer[posn + 1] = ChannelType;
-            NetConvert.ToBuffer(Priority, buffer, posn + 2);
-            NetConvert.ToBuffer(Reliability, buffer, posn + 4);
+            buffer[0] = MessageType;
+            buffer[1] = ChannelType;
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), Priority);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), Reliability);
 
-            ushort labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
-            ushort protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
+            var labelLength = (ushort)(Label is { } ? Encoding.UTF8.GetByteCount(Label) : 0);
+            var protocolLength = (ushort)(Protocol is { } ? Encoding.UTF8.GetByteCount(Protocol) : 0);
 
-            NetConvert.ToBuffer(labelLength, buffer, posn + 8);
-            NetConvert.ToBuffer(protocolLength, buffer, posn + 10);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(8), labelLength);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(10), protocolLength);
 
-            posn += DCEP_OPEN_FIXED_PARAMETERS_LENGTH;
+            var len = (ushort)DCEP_OPEN_FIXED_PARAMETERS_LENGTH;
 
             if (labelLength > 0)
             {
-                Buffer.BlockCopy(Encoding.UTF8.GetBytes(Label), 0, buffer, posn, labelLength);
-                posn += labelLength;
+                Encoding.UTF8.GetBytes(Label.AsSpan(), buffer.Slice(len));
+                len += labelLength;
             }
 
             if (protocolLength > 0)
             {
-                Buffer.BlockCopy(Encoding.UTF8.GetBytes(Protocol), 0, buffer, posn, protocolLength);
-                posn += protocolLength;
+                Encoding.UTF8.GetBytes(Protocol.AsSpan(), buffer.Slice(len));
+                len += protocolLength;
             }
 
-            return (ushort)posn;
-        }
-
-        /// <summary>
-        /// Serialises the DCEP OPEN message to a buffer.
-        /// </summary>
-        public byte[] GetBytes()
-        {
-            var buffer = new byte[GetLength()];
-            WriteTo(buffer, 0);
-            return buffer;
+            return len;
         }
     }
 }

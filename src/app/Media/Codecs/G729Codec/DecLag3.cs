@@ -96,7 +96,9 @@ namespace SIPSorcery.Media.G729Codec
 
                 T0_min = _T0 - 5;
                 if (T0_min < pit_min)
+                {
                     T0_min = pit_min;
+                }
 
                 T0_max = T0_min + 9;
                 if (T0_max > pit_max)

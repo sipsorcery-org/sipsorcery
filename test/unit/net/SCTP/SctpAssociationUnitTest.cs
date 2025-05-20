@@ -20,6 +20,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -40,8 +41,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ConnectAssociations()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             BlockingCollection<byte[]> _aOut = new BlockingCollection<byte[]>();
             BlockingCollection<byte[]> _bOut = new BlockingCollection<byte[]>();
@@ -98,8 +99,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
             
@@ -126,8 +127,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendFragmentedDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             ushort dummyMTU = 4;
@@ -157,8 +158,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendLargeFragmentedDataChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Setting a very small MTU to force the sending association to use fragmented data chunks.
             (var aAssoc, var bAssoc) = AssociationTestHelper.GetConnectedAssociations(logger, 1400);
@@ -268,14 +269,15 @@ namespace SIPSorcery.Net.UnitTests
             {
                 if (_input.TryTake(out var buffer, 1000))
                 {
-                    SctpPacket pkt = SctpPacket.Parse(buffer, 0, buffer.Length);
+                    SctpPacket pkt = SctpPacket.Parse(buffer.AsSpan());
 
                     // Process packet.
                     if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                     {
                         var initAckPacket = base.GetInitAck(pkt, null);
-                        var initAckBuffer = initAckPacket.GetBytes();
-                        Send(null, initAckBuffer, 0, initAckBuffer.Length);
+                        var initAckBuffer = new byte[initAckPacket.GetByteCount()];
+                        initAckPacket.WriteBytes(initAckBuffer.AsSpan());
+                        Send(null, initAckBuffer.AsMemory());
                     }
                     else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
@@ -298,14 +300,14 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
-        {
-            _output.Add(buffer.Skip(offset).Take(length).ToArray());
-        }
-
         public void Close()
         {
             _exit = true;
+        }
+
+        public override void Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable memoryOwner = null)
+        {
+            _output.Add(buffer.ToArray());
         }
     }
 }

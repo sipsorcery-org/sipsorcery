@@ -102,7 +102,9 @@ namespace SIPSorcery.Media.G729Codec
 
             /* reflection coefficients --> lar */
             for (i = 0; i < 2; i++)
+            {
                 lar_new[lar_new_offset + i] = (float)Math.Log10((1.0f + r_c[i]) / (1.0f - r_c[i]));
+            }
 
             /* Interpolation of lar for the 1st subframe */
             for (i = 0; i < 2; i++)
@@ -130,11 +132,17 @@ namespace SIPSorcery.Media.G729Codec
 
                 if (smooth != 0)
                 {
-                    if (critlar0 < THRESH_L1 && critlar1 > THRESH_H1) smooth = 0;
+                    if (critlar0 < THRESH_L1 && critlar1 > THRESH_H1)
+                    {
+                        smooth = 0;
+                    }
                 }
                 else
                 {
-                    if (critlar0 > THRESH_L2 || critlar1 < THRESH_H2) smooth = 1;
+                    if (critlar0 > THRESH_L2 || critlar1 < THRESH_H2)
+                    {
+                        smooth = 1;
+                    }
                 }
 
                 if (smooth == 0)
@@ -144,19 +152,36 @@ namespace SIPSorcery.Media.G729Codec
                     /* two successives lsfs                                   */
                     /* ------------------------------------------------------ */
                     gamma1[k] = GAMMA1_0;
-                    if (k == 0) lsf = lsfint;
-                    else lsf = lsfnew;
+                    if (k == 0)
+                    {
+                        lsf = lsfint;
+                    }
+                    else
+                    {
+                        lsf = lsfnew;
+                    }
+
                     d_min = lsf[1] - lsf[0];
                     for (i = 1; i < M - 1; i++)
                     {
                         temp = lsf[i + 1] - lsf[i];
-                        if (temp < d_min) d_min = temp;
+                        if (temp < d_min)
+                        {
+                            d_min = temp;
+                        }
                     }
 
                     gamma2[k] = ALPHA * d_min + BETA;
 
-                    if (gamma2[k] > GAMMA2_0_H) gamma2[k] = GAMMA2_0_H;
-                    if (gamma2[k] < GAMMA2_0_L) gamma2[k] = GAMMA2_0_L;
+                    if (gamma2[k] > GAMMA2_0_H)
+                    {
+                        gamma2[k] = GAMMA2_0_H;
+                    }
+
+                    if (gamma2[k] < GAMMA2_0_L)
+                    {
+                        gamma2[k] = GAMMA2_0_L;
+                    }
                 }
                 else
                 {

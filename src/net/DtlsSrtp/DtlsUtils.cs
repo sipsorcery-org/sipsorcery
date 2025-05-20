@@ -40,6 +40,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -92,14 +93,14 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, TlsCertificate c)
         {
-            if (!IsHashSupported(hashAlgorithm))
+            if (!IsHashSupported(hashAlgorithm.AsSpan()))
             {
                 throw new ApplicationException($"Hash algorithm {hashAlgorithm} is not supported for DTLS fingerprints.");
             }
 
-            IDigest digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm.ToString());
-            byte[] der = c.GetEncoded();
-            byte[] hash = DigestOf(digestAlgorithm, der);
+            var digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm);
+            var der = c.GetEncoded();
+            var hash = DigestOf(digestAlgorithm, der);
 
             return new RTCDtlsFingerprint
             {
@@ -127,9 +128,9 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(X509CertificateStructure c)
         {
-            IDigest sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());
-            byte[] der = c.GetEncoded();
-            byte[] sha256Hash = DigestOf(sha256, der);
+            var sha256 = DigestUtilities.GetDigest(nameof(HashAlgorithmTag.Sha256));
+            var der = c.GetEncoded();
+            var sha256Hash = DigestOf(sha256, der);
 
             return new RTCDtlsFingerprint
             {
@@ -145,9 +146,9 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(TlsCertificate c)
         {
-            IDigest sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());
-            byte[] der = c.GetEncoded();
-            byte[] sha256Hash = DigestOf(sha256, der);
+            var sha256 = DigestUtilities.GetDigest(nameof(HashAlgorithmTag.Sha256));
+            var der = c.GetEncoded();
+            var sha256Hash = DigestOf(sha256, der);
 
             return new RTCDtlsFingerprint
             {
@@ -159,7 +160,7 @@ namespace SIPSorcery.Net
         public static byte[] DigestOf(IDigest dAlg, byte[] input)
         {
             dAlg.BlockUpdate(input, 0, input.Length);
-            byte[] result = new byte[dAlg.GetDigestSize()];
+            var result = new byte[dAlg.GetDigestSize()];
             dAlg.DoFinal(result, 0);
             return result;
         }
@@ -171,8 +172,8 @@ namespace SIPSorcery.Net
 
         public static TlsCredentialedAgreement LoadAgreementCredentials(TlsContext context, string[] certResources, string keyResource)
         {
-            Certificate certificate = LoadCertificateChain(context.Crypto, certResources);
-            AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
+            var certificate = LoadCertificateChain(context.Crypto, certResources);
+            var privateKey = LoadPrivateKeyResource(keyResource);
             return LoadAgreementCredentials(context, certificate, privateKey);
         }
 
@@ -183,8 +184,8 @@ namespace SIPSorcery.Net
 
         public static TlsCredentialedDecryptor LoadEncryptionCredentials(TlsContext context, string[] certResources, string keyResource)
         {
-            Certificate certificate = LoadCertificateChain(context.Crypto, certResources);
-            AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
+            var certificate = LoadCertificateChain(context.Crypto, certResources);
+            var privateKey = LoadPrivateKeyResource(keyResource);
 
             return LoadEncryptionCredentials(context, certificate, privateKey);
         }
@@ -196,22 +197,24 @@ namespace SIPSorcery.Net
 
         public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, string[] certResources, string keyResource, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
         {
-            Certificate certificate = LoadCertificateChain(context.Crypto as BcTlsCrypto, certResources);
-            AsymmetricKeyParameter privateKey = LoadPrivateKeyResource(keyResource);
+            var certificate = LoadCertificateChain((BcTlsCrypto)context.Crypto, certResources);
+            var privateKey = LoadPrivateKeyResource(keyResource);
 
             return LoadSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
         }
 
-        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, IList<SignatureAndHashAlgorithm> supportedSignatureAlgorithms, Certificate certificate, AsymmetricKeyParameter privateKey)
+        public static TlsCredentialedSigner LoadSignerCredentials(TlsContext context, IList<SignatureAndHashAlgorithm> supportedSignatureAlgorithms, Certificate? certificate, AsymmetricKeyParameter privateKey)
         {
+            Debug.Assert(certificate is { });
+
             var tslCertificate = certificate.GetCertificateAt(0);
 
-            GetSignatureAndHashAlgorithmFromSigAlgOid(tslCertificate.SigAlgOid, out short signatureAlgorithm, out short hashAlgorithm);
+            GetSignatureAndHashAlgorithmFromSigAlgOid(tslCertificate.SigAlgOid, out var signatureAlgorithm, out var hashAlgorithm);
 
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-            if (supportedSignatureAlgorithms != null)
+            SignatureAndHashAlgorithm? signatureAndHashAlgorithm = null;
+            if (supportedSignatureAlgorithms is { })
             {
-                foreach (SignatureAndHashAlgorithm alg in supportedSignatureAlgorithms)
+                foreach (var alg in supportedSignatureAlgorithms)
                 {
                     if (alg.Signature == signatureAlgorithm && alg.Hash == hashAlgorithm)
                     {
@@ -229,7 +232,7 @@ namespace SIPSorcery.Net
         public static Certificate LoadCertificateChain(TlsCrypto crypto, X509Certificate2[] certificates)
         {
             var chain = new TlsCertificate[certificates.Length];
-            for (int i = 0; i < certificates.Length; i++)
+            for (var i = 0; i < certificates.Length; i++)
             {
                 chain[i] = LoadCertificateResource(crypto, certificates[i]);
             }
@@ -244,9 +247,9 @@ namespace SIPSorcery.Net
 
         public static Certificate LoadCertificateChain(TlsCrypto crypto, string[] resources)
         {
-            TlsCertificate[]
+            var
             chain = new TlsCertificate[resources.Length];
-            for (int i = 0; i < resources.Length; ++i)
+            for (var i = 0; i < resources.Length; ++i)
             {
                 chain[i] = LoadCertificateResource(crypto, resources[i]);
             }
@@ -255,7 +258,7 @@ namespace SIPSorcery.Net
 
         public static TlsCertificate LoadCertificateResource(TlsCrypto crypto, X509Certificate2 certificate)
         {
-            if (certificate != null)
+            if (certificate is { })
             {
                 var bouncyCertificate = DotNetUtilities.FromX509Certificate(certificate);
                 return new BcTlsCertificate(crypto as BcTlsCrypto, X509CertificateStructure.GetInstance(bouncyCertificate.GetEncoded()));
@@ -265,7 +268,7 @@ namespace SIPSorcery.Net
 
         public static TlsCertificate LoadCertificateResource(TlsCrypto crypto, string resource)
         {
-            PemObject pem = LoadPemResource(resource);
+            var pem = LoadPemResource(resource);
             if (pem.Type.EndsWith("CERTIFICATE"))
             {
                 return new BcTlsCertificate(crypto as BcTlsCrypto, X509CertificateStructure.GetInstance(pem.Content));
@@ -283,10 +286,10 @@ namespace SIPSorcery.Net
 
         public static AsymmetricKeyParameter LoadPrivateKeyResource(string resource)
         {
-            PemObject pem = LoadPemResource(resource);
+            var pem = LoadPemResource(resource);
             if (pem.Type.EndsWith("RSA PRIVATE KEY"))
             {
-                RsaPrivateKeyStructure rsa = RsaPrivateKeyStructure.GetInstance(pem.Content);
+                var rsa = RsaPrivateKeyStructure.GetInstance(pem.Content);
                 return new RsaPrivateCrtKeyParameters(rsa.Modulus,
                         rsa.PublicExponent, rsa.PrivateExponent,
                         rsa.Prime1, rsa.Prime2, rsa.Exponent1,
@@ -303,8 +306,8 @@ namespace SIPSorcery.Net
         {
             using (var s = new StreamReader(path))
             {
-                PemReader p = new PemReader(s);
-                PemObject o = p.ReadPemObject();
+                var p = new PemReader(s);
+                var o = p.ReadPemObject();
                 return o;
             }
             throw new Exception("'resource' doesn't specify a valid private key");
@@ -317,7 +320,7 @@ namespace SIPSorcery.Net
             var certificateGenerator = new X509V3CertificateGenerator();
 
             // Serial Number
-            var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+            var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(long.MaxValue), random);
             certificateGenerator.SetSerialNumber(serialNumber);
 
             // Issuer and Subject Name
@@ -346,9 +349,9 @@ namespace SIPSorcery.Net
             return CreateSelfSignedEcdsaCert($"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}");
         }
 
-        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedRsaCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedRsaCert(string subjectName, string issuerName, AsymmetricKeyParameter? issuerPrivateKey)
         {
-            if (issuerPrivateKey == null)
+            if (issuerPrivateKey is null)
             {
                 issuerPrivateKey = CreatePrivateKeyResource(issuerName);
             }
@@ -381,7 +384,7 @@ namespace SIPSorcery.Net
             var ecSpec = ECNamedCurveTable.GetByName("secp256r1");
 
             var keyPairGenerator = new ECKeyPairGenerator("EC");
-            ECKeyGenerationParameters keyGenerationParameters = new ECKeyGenerationParameters(X9ObjectIdentifiers.Prime256v1, random);
+            var keyGenerationParameters = new ECKeyGenerationParameters(X9ObjectIdentifiers.Prime256v1, random);
 
             keyPairGenerator.Init(keyGenerationParameters);
 
@@ -403,7 +406,7 @@ namespace SIPSorcery.Net
         public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(TlsCrypto crypto, bool useRsa = false)
             => CreateSelfSignedTlsCert(crypto, $"CN={CERTIFICATE_COMMON_NAME}", $"CN={CERTIFICATE_COMMON_NAME}", null, useRsa);
 
-        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(TlsCrypto crypto, string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey, bool useRsa)
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(TlsCrypto crypto, string subjectName, string issuerName, AsymmetricKeyParameter? issuerPrivateKey, bool useRsa)
         {
             var tuple = useRsa ?
             CreateSelfSignedRsaCert(subjectName, issuerName, issuerPrivateKey) :
@@ -422,7 +425,7 @@ namespace SIPSorcery.Net
         /// use the serialize/deserialize from pfx to get from bouncy castle to .NET Core X509 certificates.</remarks>
         public static X509Certificate2 ConvertBouncyCert(Org.BouncyCastle.X509.X509Certificate bouncyCert, AsymmetricCipherKeyPair keyPair)
         {
-            Pkcs12Store pkcs12Store = new Pkcs12StoreBuilder().Build();
+            var pkcs12Store = new Pkcs12StoreBuilder().Build();
             var certEntry = new X509CertificateEntry(bouncyCert);
 
             pkcs12Store.SetCertificateEntry(bouncyCert.SerialNumber.ToString(), certEntry);
@@ -431,7 +434,7 @@ namespace SIPSorcery.Net
 
             X509Certificate2 keyedCert;
 
-            using (MemoryStream pfxStream = new MemoryStream())
+            using (var pfxStream = new MemoryStream())
             {
                 pkcs12Store.Save(pfxStream, new char[] { }, new SecureRandom());
                 pfxStream.Seek(0, SeekOrigin.Begin);
@@ -470,14 +473,14 @@ namespace SIPSorcery.Net
 
         private static RSA CreateRSAProvider(RSAParameters rp)
         {
-            RSACryptoServiceProvider rsaCsp = new RSACryptoServiceProvider();
+            var rsaCsp = new RSACryptoServiceProvider();
             rsaCsp.ImportParameters(rp);
             return rsaCsp;
         }
 
         public static RSAParameters ToRSAParameters(RsaPrivateCrtKeyParameters privKey)
         {
-            RSAParameters rp = new RSAParameters();
+            var rp = new RSAParameters();
             rp.Modulus = privKey.Modulus.ToByteArrayUnsigned();
             rp.Exponent = privKey.PublicExponent.ToByteArrayUnsigned();
             rp.P = privKey.P.ToByteArrayUnsigned();
@@ -491,7 +494,7 @@ namespace SIPSorcery.Net
 
         private static byte[] ConvertRSAParametersField(BigInteger n, int size)
         {
-            byte[] bs = n.ToByteArrayUnsigned();
+            var bs = n.ToByteArrayUnsigned();
 
             if (bs.Length == size)
             {
@@ -503,7 +506,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentException("Specified size too small", "size");
             }
 
-            byte[] padded = new byte[size];
+            var padded = new byte[size];
             Array.Copy(bs, 0, padded, size - bs.Length, bs.Length);
             return padded;
         }
@@ -512,22 +515,17 @@ namespace SIPSorcery.Net
         /// Verifies the hash algorithm is supported by the utility functions in this class.
         /// </summary>
         /// <param name="hashAlgorithm">The hash algorithm to check.</param>
-        public static bool IsHashSupported(string hashAlgorithm)
+        public static bool IsHashSupported(ReadOnlySpan<char> hashAlgorithm)
         {
-            switch (hashAlgorithm.ToLower())
-            {
-                case "sha1":
-                case "sha-1":
-                case "sha256":
-                case "sha-256":
-                case "sha384":
-                case "sha-384":
-                case "sha512":
-                case "sha-512":
-                    return true;
-                default:
-                    return false;
-            }
+            return !hashAlgorithm.IsEmpty && (
+                hashAlgorithm.Equals("sha1".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-1".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha256".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-256".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha384".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-384".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha512".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-512".AsSpan(), StringComparison.OrdinalIgnoreCase));
         }
 
         public static string ExportToDerBase64(Certificate certificate)

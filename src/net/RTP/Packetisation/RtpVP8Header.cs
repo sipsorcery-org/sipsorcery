@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RtpVP8Header.cs
 //
 // Description: Represents the RTP header to use for a VP8 encoded payload as per
@@ -16,6 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SIPSorcery.Net
 {
@@ -42,11 +44,7 @@ namespace SIPSorcery.Net
         public int VersionNumber;
         public bool IsKeyFrame;
 
-        private int _length = 0;
-        public int Length
-        {
-            get { return _length; }
-        }
+        public int Length { get; private set; }
 
         private int _payloadDescriptorLength;
         public int PayloadDescriptorLength
@@ -57,15 +55,15 @@ namespace SIPSorcery.Net
         public RtpVP8Header()
         { }
 
-        public static RtpVP8Header GetVP8Header(byte[] rtpPayload)
+        public static RtpVP8Header GetVP8Header(ReadOnlySpan<byte> rtpPayload)
         {
-            RtpVP8Header vp8Header = new RtpVP8Header();
-            int payloadHeaderStartIndex = 1;
+            var vp8Header = new RtpVP8Header();
+            var payloadHeaderStartIndex = 1;
 
             // First byte of payload descriptor.
             vp8Header.ExtendedControlBitsPresent = ((rtpPayload[0] >> 7) & 0x01) == 1;
             vp8Header.StartOfVP8Partition = ((rtpPayload[0] >> 4) & 0x01) == 1;
-            vp8Header._length = 1;
+            vp8Header.Length = 1;
 
             // Is second byte being used.
             if (vp8Header.ExtendedControlBitsPresent)
@@ -74,7 +72,7 @@ namespace SIPSorcery.Net
                 vp8Header.IsTL0PICIDXPresent = ((rtpPayload[1] >> 6) & 0x01) == 1;
                 vp8Header.IsTIDPresent = ((rtpPayload[1] >> 5) & 0x01) == 1;
                 vp8Header.IsKEYIDXPresent = ((rtpPayload[1] >> 4) & 0x01) == 1;
-                vp8Header._length = 2;
+                vp8Header.Length = 2;
                 payloadHeaderStartIndex = 2;
             }
 
@@ -84,36 +82,36 @@ namespace SIPSorcery.Net
                 if (((rtpPayload[2] >> 7) & 0x01) == 1)
                 {
                     // The Picture ID is using two bytes.
-                    vp8Header._length = 4;
+                    vp8Header.Length = 4;
                     payloadHeaderStartIndex = 4;
-                    vp8Header.PictureID = BitConverter.ToUInt16(rtpPayload, 2);
+                    vp8Header.PictureID = Unsafe.ReadUnaligned<ushort>(ref MemoryMarshal.GetReference((rtpPayload.Slice(2)))); // BitConverter.ToUInt16(rtpPayload, 2);
                 }
                 else
                 {
                     // The picture ID is using one byte.
                     vp8Header.PictureID = rtpPayload[2];
-                    vp8Header._length = 3;
+                    vp8Header.Length = 3;
                     payloadHeaderStartIndex = 3;
                 }
             }
 
             if (vp8Header.IsTL0PICIDXPresent)
             {
-                vp8Header._length++;
+                vp8Header.Length++;
                 payloadHeaderStartIndex++;
             }
             if (vp8Header.IsTIDPresent || vp8Header.IsKEYIDXPresent)
             {
-                vp8Header._length++;
+                vp8Header.Length++;
                 payloadHeaderStartIndex++;
             }
 
             vp8Header._payloadDescriptorLength = payloadHeaderStartIndex;
-            
-            bool isPID0 = ((rtpPayload[0] & (1 << 2))==0) && ((rtpPayload[0] & (1 << 1))==0) && ((rtpPayload[0] & (1 << 0))==0);
+
+            var isPID0 = ((rtpPayload[0] & (1 << 2)) == 0) && ((rtpPayload[0] & (1 << 1)) == 0) && ((rtpPayload[0] & (1 << 0)) == 0);
             if (vp8Header.StartOfVP8Partition && isPID0)
             {
-                vp8Header.IsKeyFrame=(rtpPayload[payloadHeaderStartIndex] & (1 << 0)) == 0;
+                vp8Header.IsKeyFrame = (rtpPayload[payloadHeaderStartIndex] & (1 << 0)) == 0;
             }
 
             return vp8Header;

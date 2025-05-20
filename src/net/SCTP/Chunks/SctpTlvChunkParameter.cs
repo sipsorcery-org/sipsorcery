@@ -19,8 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
-using System.Net.Sockets;
+using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -102,7 +101,7 @@ namespace SIPSorcery.Net
     /// is reserved across all chunks to represent an IPv4 address and MUST
     /// NOT be reused with a different meaning in any other chunk.
     /// </remarks>
-    public class SctpTlvChunkParameter
+    public partial class SctpTlvChunkParameter
     {
         public const int SCTP_PARAMETER_HEADER_LENGTH = 4;
 
@@ -116,14 +115,14 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The information contained in the parameter.
         /// </summary>
-        public byte[] ParameterValue;
+        public byte[]? ParameterValue;
 
         /// <summary>
         /// If this parameter is unrecognised by the parent chunk then this field dictates
         /// how it should handle it.
         /// </summary>
         public SctpUnrecognisedParameterActions UnrecognisedAction =>
-            (SctpUnrecognisedParameterActions) (ParameterType >> 14 & 0x03);
+            (SctpUnrecognisedParameterActions)(ParameterType >> 14 & 0x03);
 
         protected SctpTlvChunkParameter()
         { }
@@ -145,8 +144,8 @@ namespace SIPSorcery.Net
         /// that each have their own fields that determine the length.</returns>
         public virtual ushort GetParameterLength(bool padded)
         {
-            ushort len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
-                + (ParameterValue == null ? 0 : ParameterValue.Length));
+            var len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
+                + (ParameterValue is null ? 0 : ParameterValue.Length));
 
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
@@ -156,11 +155,10 @@ namespace SIPSorcery.Net
         /// header fields.
         /// </summary>
         /// <param name="buffer">The buffer to write the chunk parameter header to.</param>
-        /// <param name="posn">The position in the buffer to write at.</param>
-        protected void WriteParameterHeader(byte[] buffer, int posn)
+        protected void WriteParameterHeader(Span<byte> buffer)
         {
-            NetConvert.ToBuffer(ParameterType, buffer, posn);
-            NetConvert.ToBuffer(GetParameterLength(false), buffer, posn + 2);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, ParameterType);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), GetParameterLength(false));
         }
 
         /// <summary>
@@ -170,29 +168,22 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer to write the serialised chunk parameter bytes to. It
         /// must have the required space already allocated.</param>
-        /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public virtual int WriteTo(byte[] buffer, int posn)
+        public virtual int WriteBytes(Span<byte> buffer)
         {
-            WriteParameterHeader(buffer, posn);
-
-            if (ParameterValue?.Length > 0)
-            {
-                Buffer.BlockCopy(ParameterValue, 0, buffer, posn + SCTP_PARAMETER_HEADER_LENGTH, ParameterValue.Length);
-            }
+            WriteBytesCore(buffer);
 
             return GetParameterLength(true);
         }
 
-        /// <summary>
-        /// Serialises an SCTP chunk parameter to a byte array.
-        /// </summary>
-        /// <returns>The byte array containing the serialised chunk parameter.</returns>
-        public byte[] GetBytes()
+        private void WriteBytesCore(Span<byte> buffer)
         {
-            byte[] buffer = new byte[GetParameterLength(true)];
-            WriteTo(buffer, 0);
-            return buffer;
+            WriteParameterHeader(buffer);
+
+            if (ParameterValue is { Length: > 0 } parameterValue)
+            {
+                parameterValue.CopyTo(buffer.Slice(SCTP_PARAMETER_HEADER_LENGTH));
+            }
         }
 
         /// <summary>
@@ -200,19 +191,15 @@ namespace SIPSorcery.Net
         /// parses those fields and sets them on the current instance.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk parameter.</param>
-        /// <param name="posn">The position in the buffer that indicates the start of the chunk parameter.</param>
-        public ushort ParseFirstWord(byte[] buffer, int posn)
+        public ushort ParseFirstWord(ReadOnlySpan<byte> buffer)
         {
-            ParameterType = NetConvert.ParseUInt16(buffer, posn);
-            ushort paramLen = NetConvert.ParseUInt16(buffer, posn + 2);
+            ParameterType = BinaryPrimitives.ReadUInt16BigEndian(buffer);
+            var paramLen = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(2));
 
-            if (paramLen > 0 && buffer.Length < posn + paramLen)
+            if (paramLen > 0 && buffer.Length < paramLen)
             {
                 // The buffer was not big enough to supply the specified chunk parameter.
-                int bytesRequired = paramLen;
-                int bytesAvailable = buffer.Length - posn;
-                throw new ApplicationException($"The SCTP chunk parameter buffer was too short. " +
-                    $"Required {bytesRequired} bytes but only {bytesAvailable} available.");
+                throw new ApplicationException($"The SCTP chunk parameter buffer was too short. Required {paramLen} bytes but only {buffer.Length} available.");
             }
 
             return paramLen;
@@ -222,22 +209,19 @@ namespace SIPSorcery.Net
         /// Parses an SCTP Type-Length-Value (TLV) chunk parameter from a buffer.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised TLV chunk parameter.</param>
-        /// <param name="posn">The position to start parsing at.</param>
         /// <returns>An SCTP TLV chunk parameter instance.</returns>
-        public static SctpTlvChunkParameter ParseTlvParameter(byte[] buffer, int posn)
+        public static SctpTlvChunkParameter ParseTlvParameter(ReadOnlySpan<byte> buffer)
         {
-            if (buffer.Length < posn + SCTP_PARAMETER_HEADER_LENGTH)
+            if (buffer.Length < SCTP_PARAMETER_HEADER_LENGTH)
             {
                 throw new ApplicationException("Buffer did not contain the minimum of bytes for an SCTP TLV chunk parameter.");
             }
 
             var tlvParam = new SctpTlvChunkParameter();
-            ushort paramLen = tlvParam.ParseFirstWord(buffer, posn);
+            var paramLen = tlvParam.ParseFirstWord(buffer);
             if (paramLen > SCTP_PARAMETER_HEADER_LENGTH)
             {
-                tlvParam.ParameterValue = new byte[paramLen - SCTP_PARAMETER_HEADER_LENGTH];
-                Buffer.BlockCopy(buffer, posn + SCTP_PARAMETER_HEADER_LENGTH, tlvParam.ParameterValue,
-                    0, tlvParam.ParameterValue.Length);
+                tlvParam.ParameterValue = buffer.Slice(SCTP_PARAMETER_HEADER_LENGTH, paramLen - SCTP_PARAMETER_HEADER_LENGTH).ToArray();
             }
             return tlvParam;
         }

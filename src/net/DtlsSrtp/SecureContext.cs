@@ -25,7 +25,7 @@ namespace SIPSorcery.Net
         public ProtectRtpPacket ProtectRtcpPacket { get; private set; }
 
         public ProtectRtpPacket UnprotectRtpPacket { get; private set; }
-        public ProtectRtpPacket UnprotectRtcpPacket { get; private set;}
+        public ProtectRtpPacket UnprotectRtcpPacket { get; private set; }
 
         public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
         {

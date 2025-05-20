@@ -1,4 +1,5 @@
-﻿/*
+﻿using System;
+/*
  * Copyright @ 2015 Atlassian Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,18 +87,16 @@ namespace SIPSorcery.Media.G729Codec
             y2 = y1 = 0.0f;
         }
 
-        /**
- * Pre Process
- *
- * @param signal            (i/o)  : signal
- * @param signal_offset     (input)  : signal offset
- * @param lg                (i)    : length of signal
- */
-
+        /// <summary>
+        /// Pre Process
+        /// </summary>
+        /// <param name="signal">Signal buffer to process (in-place).</param>
+        /// <param name="signalOffset">Offset in the signal buffer.</param>
+        /// <param name="length">Number of samples to process.</param>
         public void pre_process(
-            float[] signal,
-            int signal_offset,
-            int lg
+            Span<float> signal,
+            int signalOffset,
+            int length
         )
         {
             var a140 = TabLd8k.a140;
@@ -106,7 +105,7 @@ namespace SIPSorcery.Media.G729Codec
             float x2;
             float y0;
 
-            for (int i = signal_offset, toIndex = lg + signal_offset; i < toIndex; i++)
+            for (int i = signalOffset, toIndex = length + signalOffset; i < toIndex; i++)
             {
                 x2 = x1;
                 x1 = x0;

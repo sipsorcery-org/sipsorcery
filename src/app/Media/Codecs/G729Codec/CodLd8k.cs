@@ -19,6 +19,9 @@
  * <a href="http://www.sipro.com">SIPRO Lab Telecom</a>.
  */
 
+
+using System.Diagnostics;
+
 /**
  * Functions coder_ld8k and init_coder_ld8k
  *    Coder constant parameters (defined in "ld8k.h")
@@ -41,18 +44,17 @@ namespace SIPSorcery.Media.G729Codec
 {
     internal class CodLd8k : Ld8k
     {
-
         private readonly AcelpCo acelpCo = new AcelpCo();
 
         /* Zero vector */
 
         private readonly float[] ai_zero = new float[L_SUBFR + MP1];
 
-        private float[] error;
+        private float[]? error;
 
         private int error_offset;
 
-        private float[] exc;
+        private float[]? exc;
 
         private int exc_offset;
 
@@ -83,7 +85,7 @@ namespace SIPSorcery.Media.G729Codec
 
         private readonly float[] mem_w0 = new float[M];
 
-        public float[] new_speech;
+        public float[]? new_speech;
 
         public int new_speech_offset;
 
@@ -126,7 +128,7 @@ namespace SIPSorcery.Media.G729Codec
 
         private readonly float[] old_wsp = new float[L_FRAME + PIT_MAX];
 
-        private float[] p_window;
+        private float[]? p_window;
 
         private int p_window_offset;
 
@@ -138,17 +140,17 @@ namespace SIPSorcery.Media.G729Codec
 
         private float sharp;
 
-        private float[] speech;
+        private float[]? speech;
 
         private int speech_offset;
 
         private readonly Taming taming = new Taming();
 
-        private float[] wsp;
+        private float[]? wsp;
 
         private int wsp_offset;
 
-        private float[] zero;
+        private float[]? zero;
 
         private int zero_offset;
 
@@ -273,6 +275,8 @@ namespace SIPSorcery.Media.G729Codec
 
             /* LP analysis */
 
+            Debug.Assert(p_window is { });
+
             Lpc.autocorr(p_window, p_window_offset, M, r); /* Autocorrelations */
             Lpc.lag_window(M, r); /* Lag windowing    */
             Lpc.levinson(r, A_t, MP1, rc); /* Levinson Durbin  */
@@ -313,6 +317,9 @@ namespace SIPSorcery.Media.G729Codec
   * - Set the range for searching closed-loop pitch in 1st subframe      *
   *----------------------------------------------------------------------*/
 
+            Debug.Assert(speech is { });
+            Debug.Assert(wsp is { });
+
             Lpcfunc.weight_az(A_t, 0, gamma1[0], M, Ap1);
             Lpcfunc.weight_az(A_t, 0, gamma2[0], M, Ap2);
             Filter.residu(Ap1, 0, speech, speech_offset, wsp, wsp_offset, L_SUBFR);
@@ -330,7 +337,11 @@ namespace SIPSorcery.Media.G729Codec
             /* range for closed loop pitch search in 1st subframe */
 
             t0_min.value = T_op - 3;
-            if (t0_min.value < PIT_MIN) t0_min.value = PIT_MIN;
+            if (t0_min.value < PIT_MIN)
+            {
+                t0_min.value = PIT_MIN;
+            }
+
             t0_max.value = t0_min.value + 6;
             if (t0_max.value > PIT_MAX)
             {
@@ -379,7 +390,13 @@ namespace SIPSorcery.Media.G729Codec
     * Compute impulse response, h1[], of weighted synthesis filter  *
     *---------------------------------------------------------------*/
 
-                for (i = 0; i <= M; i++) ai_zero[i] = Ap1[i];
+                for (i = 0; i <= M; i++)
+                {
+                    ai_zero[i] = Ap1[i];
+                }
+
+                Debug.Assert(zero is { });
+
                 Filter.syn_filt(Aq, Aq_offset, ai_zero, 0, h1, 0, L_SUBFR, zero, zero_offset, 0);
                 Filter.syn_filt(Ap2, 0, h1, 0, h1, 0, L_SUBFR, zero, zero_offset, 0);
 
@@ -408,6 +425,9 @@ namespace SIPSorcery.Media.G729Codec
     * as these signals are already available.                                *
     *                                                                        *
     *------------------------------------------------------------------------*/
+
+                Debug.Assert(exc is { });
+                Debug.Assert(error is { });
 
                 Filter.residu(
                     Aq,
@@ -468,11 +488,17 @@ namespace SIPSorcery.Media.G729Codec
                 taming = this.taming.test_err(t0, t0_frac.value);
 
                 if (taming == 1)
+                {
                     if (gain_pit > GPCLIP)
+                    {
                         gain_pit = GPCLIP;
+                    }
+                }
 
                 for (i = 0; i < L_SUBFR; i++)
+                {
                     xn2[i] = xn[i] - y1[i] * gain_pit;
+                }
 
                 /*-----------------------------------------------------*
     * - Innovative codebook search.                       *
@@ -503,19 +529,28 @@ namespace SIPSorcery.Media.G729Codec
     *------------------------------------------------------------*/
 
                 sharp = gain_pit;
-                if (sharp > SHARPMAX) sharp = SHARPMAX;
-                if (sharp < SHARPMIN) sharp = SHARPMIN;
+                if (sharp > SHARPMAX)
+                {
+                    sharp = SHARPMAX;
+                }
+
+                if (sharp < SHARPMIN)
+                {
+                    sharp = SHARPMIN;
+                }
                 /*------------------------------------------------------*
-     * - Find the total excitation                          *
-     * - find synthesis speech corresponding to exc[]       *
-     * - update filters' memories for finding the target    *
-     *   vector in the next subframe                        *
-     *   (update error[-m..-1] and mem_w0[])                *
-     *   update error function for taming process           *
-     *------------------------------------------------------*/
+* - Find the total excitation                          *
+* - find synthesis speech corresponding to exc[]       *
+* - update filters' memories for finding the target    *
+*   vector in the next subframe                        *
+*   (update error[-m..-1] and mem_w0[])                *
+*   update error function for taming process           *
+*------------------------------------------------------*/
 
                 for (i = 0; i < L_SUBFR; i++)
+                {
                     exc[exc_offset + i + i_subfr] = gain_pit * exc[exc_offset + i + i_subfr] + gain_code * code[i];
+                }
 
                 this.taming.update_exc_err(gain_pit, t0);
 

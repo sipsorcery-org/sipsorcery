@@ -99,7 +99,7 @@ namespace SIPSorcery.Net
         public byte[] GetData()
         {
             this.buffer.Position = 0;
-            byte[] data = new byte[this.buffer.Length];
+            var data = new byte[this.buffer.Length];
             this.buffer.Read(data, 0, data.Length);
             return data;
         }
@@ -113,12 +113,12 @@ namespace SIPSorcery.Net
          */
         public void Append(byte[] data, int len)
         {
-            if (data == null || len <= 0 || len > data.Length)
+            if (data is null || len <= 0 || len > data.Length)
             {
                 throw new System.Exception("Invalid combination of parameters data and length to append()");
             }
 
-            long oldLimit = buffer.Length;
+            var oldLimit = buffer.Length;
             // grow buffer if necessary
             Grow(len);
             // set positing to begin writing immediately after the last byte of the current buffer
@@ -159,15 +159,15 @@ namespace SIPSorcery.Net
          */
         public int GetExtensionLength()
         {
-            int length = 0;
+            var length = 0;
             if (GetExtensionBit())
             {
                 // the extension length comes after the RTP header, the CSRC list,
                 // and after two bytes in the extension header called "defined by profile"
-                int extLenIndex = FIXED_HEADER_SIZE + GetCsrcCount() * 4 + 2;
+                var extLenIndex = FIXED_HEADER_SIZE + GetCsrcCount() * 4 + 2;
                 buffer.Position = extLenIndex;
-                int byteLength = (buffer.ReadByte() << 8);
-                int byteLength2 = buffer.ReadByte();
+                var byteLength = (buffer.ReadByte() << 8);
+                var byteLength2 = buffer.ReadByte();
 
                 length = (byteLength | byteLength2 * 4);
             }
@@ -192,7 +192,7 @@ namespace SIPSorcery.Net
          */
         public int GetHeaderLength()
         {
-            int length = FIXED_HEADER_SIZE + 4 * GetCsrcCount();
+            var length = FIXED_HEADER_SIZE + 4 * GetCsrcCount();
             if (GetExtensionBit())
             {
                 length += EXT_HEADER_SIZE + GetExtensionLength();
@@ -232,7 +232,7 @@ namespace SIPSorcery.Net
          * @return an array of <tt>byte</tt>s which represents the RTP payload of
          * this RTP packet
          */
-        public byte[] GetPayload()
+        public byte[]? GetPayload()
         {
             return ReadRegion(GetHeaderLength(), GetPayloadLength());
         }
@@ -286,7 +286,7 @@ namespace SIPSorcery.Net
          */
         public int GetSRTCPIndex(int authTagLen)
         {
-            int offset = GetLength() - (4 + authTagLen);
+            var offset = GetLength() - (4 + authTagLen);
             return ReadInt(offset);
         }
 
@@ -326,7 +326,7 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            long newLen = buffer.Length + delta;
+            var newLen = buffer.Length + delta;
             if (newLen <= buffer.Capacity)
             {
                 // there is more room in the underlying reserved buffer memory
@@ -336,7 +336,7 @@ namespace SIPSorcery.Net
             else
             {
                 // create a new bigger buffer
-                MemoryStream newBuffer = new MemoryStream();
+                var newBuffer = new MemoryStream();
                 buffer.Position = 0;
                 newBuffer.Write(buffer.GetBuffer(), 0, (int)buffer.Length);
                 newBuffer.SetLength(newLen);
@@ -367,7 +367,7 @@ namespace SIPSorcery.Net
          * @param len length of the region to be read
          * @return byte array of [offset, offset + length)
          */
-        public byte[] ReadRegion(int off, int len)
+        public byte[]? ReadRegion(int off, int len)
         {
             this.buffer.Position = 0;
             if (off < 0 || len <= 0 || off + len > this.buffer.Length)
@@ -375,7 +375,7 @@ namespace SIPSorcery.Net
                 return null;
             }
 
-            byte[] region = new byte[len];
+            var region = new byte[len];
             this.buffer.Read(region, off, len);
             return region;
         }
@@ -406,9 +406,9 @@ namespace SIPSorcery.Net
         public int ReadUnsignedShortAsInt(int off)
         {
             this.buffer.Position = off;
-            int b1 = (0x000000FF & (this.buffer.ReadByte()));
-            int b2 = (0x000000FF & (this.buffer.ReadByte()));
-            int val = b1 << 8 | b2;
+            var b1 = (0x000000FF & (this.buffer.ReadByte()));
+            var b2 = (0x000000FF & (this.buffer.ReadByte()));
+            var val = b1 << 8 | b2;
             return val;
         }
 
@@ -439,7 +439,7 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            long newLimit = buffer.Length - delta;
+            var newLimit = buffer.Length - delta;
             if (newLimit <= 0)
             {
                 newLimit = 0;

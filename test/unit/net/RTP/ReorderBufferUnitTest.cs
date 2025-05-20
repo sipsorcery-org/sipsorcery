@@ -23,8 +23,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldReorder()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300));
             var packets = new[] { CreatePacket(1), CreatePacket(3), CreatePacket(4), CreatePacket(2) };
 
@@ -42,8 +42,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldReorder2()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300));
             var packets = new[] { CreatePacket(1), CreatePacket(3), CreatePacket(2), CreatePacket(0) };
 
@@ -61,8 +61,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldReorderWithWrapAround()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300));
             var packets = new[] { CreatePacket(65534), CreatePacket(3), CreatePacket(2), CreatePacket(0), CreatePacket(65535) };
 
@@ -80,8 +80,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldReturnPacketsInOrder()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300), provider);
@@ -103,8 +103,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldRemoveDuplicate()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300), provider);
@@ -123,8 +123,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldWaitForMissingPacket()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300), provider);
@@ -145,8 +145,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldSkipPacketAfterSpecifiedTimeout()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300), provider);
@@ -166,8 +166,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void ShouldSkipPacketAfterSpecifiedTimeoutWithWrapAround()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var provider = new DatetimeProvider();
             var baseTime = DateTime.Now;
             var buffer = new RTPReorderBuffer(TimeSpan.FromMilliseconds(300), provider);
@@ -191,7 +191,7 @@ namespace SIPSorcery.UnitTests.Net
         }
 
         private RTPPacket CreatePacket(ushort seq, DateTime datetime = default) {
-            return new RTPPacket() { Header = new RTPHeader() { SequenceNumber = seq, ReceivedTime = datetime } };
+            return new RTPPacket(new RTPHeader() { SequenceNumber = seq, ReceivedTime = datetime }, ReadOnlyMemory<byte>.Empty);
         }
     }
 }

@@ -21,11 +21,11 @@ namespace SIPSorcery.Net
 {
     public class SDPMessageMediaFormat
     {
-        public List<string> AcceptTypes;
+        public List<string>? AcceptTypes;
 
-        public string Endpoint;
-        public string IP;
+        public string? Endpoint;
+        public string? IP;
 
-        public string Port;
+        public string? Port;
     }
 }

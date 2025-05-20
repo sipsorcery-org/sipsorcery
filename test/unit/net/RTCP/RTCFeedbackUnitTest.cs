@@ -13,8 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -36,14 +38,15 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripPictureLossIndicationReportUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint senderSsrc = 33;
             uint mediaSsrc = 44;
 
             RTCPFeedback rtcpPli = new RTCPFeedback(senderSsrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
-            byte[] buffer = rtcpPli.GetBytes();
+            byte[] buffer = new byte[rtcpPli.GetByteCount()];
+            rtcpPli.WriteBytes(buffer.AsSpan());
 
             logger.LogDebug("Serialised PLI feedback report: {Buffer}", BufferUtils.HexStr(buffer));
 
@@ -63,8 +66,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripREMBUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint senderSsrc = 33;
             uint mediaSsrc = 44;
@@ -78,7 +81,8 @@ namespace SIPSorcery.Net.UnitTests
                 BitrateMantissa = 222242u,
                 FeedbackSSRC = 0x4a8eec30
             };
-            byte[] buffer = rtcpREMB.GetBytes();
+            byte[] buffer = new byte[rtcpREMB.GetByteCount()];
+            rtcpREMB.WriteBytes(buffer.AsSpan());
 
             logger.LogDebug("Serialised REMB: {Buffer}", BufferUtils.HexStr(buffer));
 

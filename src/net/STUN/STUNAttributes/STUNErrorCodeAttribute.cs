@@ -15,10 +15,11 @@
 
 using System;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class STUNErrorCodeAttribute : STUNAttribute
+    public partial class STUNErrorCodeAttribute : STUNAttribute
     {
         public byte ErrorClass;             // The hundreds value of the error code must be between 3 and 6.
         public byte ErrorNumber;            // The units value of the error code must be between 0 and 99.
@@ -48,24 +49,35 @@ namespace SIPSorcery.Net
             ReasonPhrase = reasonPhrase;
         }
 
-        public override int ToByteBuffer(byte[] buffer, int startIndex)
+        /// <inheritdoc/>
+        public override int GetByteCount()
         {
-            buffer[startIndex] = 0x00;
-            buffer[startIndex + 1] = 0x00;
-            buffer[startIndex + 2] = ErrorClass;
-            buffer[startIndex + 3] = ErrorNumber;
+            var reasonBytesLen = string.IsNullOrEmpty(ReasonPhrase) ? 0 : Encoding.UTF8.GetByteCount(ReasonPhrase);
+            var valueLen = 4 + reasonBytesLen; // 2 reserved + class + number + reason
+            var paddedValueLen = (valueLen % 4 == 0) ? valueLen : valueLen + (4 - (valueLen % 4));
+            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + paddedValueLen;
+        }
 
-            byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
-            Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
+        /// <inheritdoc/>
+        public override int WriteBytes(Span<byte> buffer)
+        {
+            buffer[0] = 0x00;
+            buffer[1] = 0x00;
+            buffer[2] = ErrorClass;
+            buffer[3] = ErrorNumber;
+
+            var reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
+            reasonPhraseBytes.CopyTo(buffer.Slice(4, reasonPhraseBytes.Length));
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
-
-            return attrDescrStr;
+            sb.Append("error code=");
+            sb.Append(ErrorCode);
+            sb.Append(", reason phrase=");
+            sb.Append(ReasonPhrase);
         }
     }
 }
