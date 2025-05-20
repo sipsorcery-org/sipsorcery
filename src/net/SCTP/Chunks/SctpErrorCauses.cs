@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
 using SIPSorcery.Sys;
@@ -50,6 +51,7 @@ namespace SIPSorcery.Net
         SctpErrorCauseCode CauseCode { get; }
         ushort GetErrorCauseLength(bool padded);
         int WriteTo(byte[] buffer, int posn);
+        int WriteTo(Span<byte> buffer);
     }
 
     /// <summary>
@@ -89,8 +91,13 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), ERROR_CAUSE_LENGTH);
             return ERROR_CAUSE_LENGTH;
         }
     }
@@ -117,9 +124,14 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
-            NetConvert.ToBuffer(StreamID, buffer, posn + 4);
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), ERROR_CAUSE_LENGTH);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(4), StreamID);
             return ERROR_CAUSE_LENGTH;
         }
     }
@@ -145,18 +157,26 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (MissingParameters != null)
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), len);
+
+            if (MissingParameters is { Count: > 0 } missingParameters)
             {
-                int valPosn = posn + 4;
-                foreach (var missing in MissingParameters)
+                buffer = buffer.Slice(4);
+                foreach (var missing in missingParameters)
                 {
-                    NetConvert.ToBuffer(missing, buffer, valPosn);
-                    valPosn += 2;
+                    BinaryPrimitives.WriteUInt16BigEndian(buffer, missing);
+                    buffer = buffer.Slice(2);
                 }
             }
+
             return len;
         }
     }
@@ -182,9 +202,14 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
-            NetConvert.ToBuffer(MeasureOfStaleness, buffer, posn + 4);
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), ERROR_CAUSE_LENGTH);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), MeasureOfStaleness);
             return ERROR_CAUSE_LENGTH;
         }
     }
@@ -216,13 +241,21 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (UnresolvableAddress != null)
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), len);
+
+            if (UnresolvableAddress is { Length: > 0 } uresolvableAddress)
             {
-                Buffer.BlockCopy(UnresolvableAddress, 0, buffer, posn + 4, UnresolvableAddress.Length);
+                uresolvableAddress.CopyTo(buffer.Slice(4));
             }
+
             return len;
         }
     }
@@ -253,13 +286,21 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (UnrecognizedChunk != null)
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), len);
+
+            if (UnrecognizedChunk is { Length: > 0 } unrecognizedChunk)
             {
-                Buffer.BlockCopy(UnrecognizedChunk, 0, buffer, posn + 4, UnrecognizedChunk.Length);
+                unrecognizedChunk.CopyTo(buffer.Slice(4));
             }
+
             return len;
         }
     }
@@ -294,13 +335,21 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer_)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (UnrecognizedParameters != null)
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer_, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer_.Slice(2), len);
+
+            if (UnrecognizedParameters is { Length: > 0 } unrecognizedParameters)
             {
-                Buffer.BlockCopy(UnrecognizedParameters, 0, buffer, posn + 4, UnrecognizedParameters.Length);
+                unrecognizedParameters.CopyTo(buffer_.Slice(4));
             }
+
             return len;
         }
     }
@@ -328,9 +377,14 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
-            NetConvert.ToBuffer(TSN, buffer, posn + 4);
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), ERROR_CAUSE_LENGTH);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), TSN);
             return ERROR_CAUSE_LENGTH;
         }
     }
@@ -362,13 +416,21 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
-            if (NewAddressTLVs != null)
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), len);
+
+            if (NewAddressTLVs is { Length: > 0 } newAddressTLVs)
             {
-                Buffer.BlockCopy(NewAddressTLVs, 0, buffer, posn + 4, NewAddressTLVs.Length);
+                newAddressTLVs.CopyTo(buffer.Slice(4));
             }
+
             return len;
         }
     }
@@ -397,14 +459,21 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer_)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer_, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer_.Slice(2), len);
+
             if (!string.IsNullOrEmpty(AbortReason))
             {
-                var reasonBuffer = Encoding.UTF8.GetBytes(AbortReason);
-                Buffer.BlockCopy(reasonBuffer, 0, buffer, posn + 4, reasonBuffer.Length);
+                Encoding.UTF8.GetBytes(AbortReason.AsSpan(), buffer_.Slice(4));
             }
+
             return len;
         }
     }
@@ -434,14 +503,21 @@ namespace SIPSorcery.Net
 
         public int WriteTo(byte[] buffer, int posn)
         {
+            return WriteTo(buffer.AsSpan(posn));
+        }
+
+        public int WriteTo(Span<byte> buffer)
+        {
             var len = GetErrorCauseLength(true);
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(len, buffer, posn + 2);
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, (ushort)CauseCode);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), len);
+
             if (!string.IsNullOrEmpty(AdditionalInformation))
             {
-                var reasonBuffer = Encoding.UTF8.GetBytes(AdditionalInformation);
-                Buffer.BlockCopy(reasonBuffer, 0, buffer, posn + 4, reasonBuffer.Length);
+                Encoding.UTF8.GetBytes(AdditionalInformation.AsSpan(), buffer.Slice(4));
             }
+
             return len;
         }
     }

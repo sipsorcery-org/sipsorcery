@@ -19,6 +19,8 @@
  * <a href="http://www.sipro.com">SIPRO Lab Telecom</a>.
  */
 
+using System;
+
 /**
  * Bit stream manipulation routines.
  * <p>prm2bits_ld8k -converts encoder parameter vector into vector of serial bits</p>
@@ -86,55 +88,44 @@ namespace SIPSorcery.Media.G729Codec
             short[] bits
         )
         {
-            var PRM_SIZE = Ld8k.PRM_SIZE;
-            var SIZE_WORD = Ld8k.SIZE_WORD;
-            var SYNC_WORD = Ld8k.SYNC_WORD;
-            var bitsno = TabLd8k.bitsno;
-
             int j = 0, i;
-            bits[j] = SYNC_WORD; /* At receiver this bit indicates BFI */
+            bits[j] = Ld8k.SYNC_WORD; /* At receiver this bit indicates BFI */
             j++;
-            bits[j] = SIZE_WORD; /* Number of bits in this frame       */
+            bits[j] = Ld8k.SIZE_WORD; /* Number of bits in this frame       */
             j++;
 
-            for (i = 0; i < PRM_SIZE; i++)
+            for (i = 0; i < Ld8k.PRM_SIZE; i++)
             {
-                int2bin(prm[i], bitsno[i], bits, j);
-                j += bitsno[i];
+                int2bin(prm[i], TabLd8k.bitsno[i], bits, j);
+                j += TabLd8k.bitsno[i];
             }
-        }
 
-        /**
- * Convert integer to binary and write the bits bitstream array.
- *
- * @param value             input : decimal value
- * @param no_of_bits        input : number of bits to use
- * @param bitstream         output: bitstream
- * @param bitstream_offset  input: bitstream offset
- */
-        private static void int2bin(
-            int value,
-            int no_of_bits,
-            short[] bitstream,
-            int bitstream_offset
-        )
-        {
-            var BIT_0 = Ld8k.BIT_0;
-            var BIT_1 = Ld8k.BIT_1;
-
-            int pt_bitstream;
-            int i, bit;
-
-            pt_bitstream = bitstream_offset + no_of_bits;
-
-            for (i = 0; i < no_of_bits; i++)
+            static void int2bin(
+               int value,
+               int no_of_bits,
+               short[] bitstream,
+               int bitstream_offset
+            )
             {
-                bit = value & 0x0001; /* get lsb */
-                if (bit == 0)
-                    bitstream[--pt_bitstream] = BIT_0;
-                else
-                    bitstream[--pt_bitstream] = BIT_1;
-                value >>= 1;
+                int pt_bitstream;
+                int i, bit;
+
+                pt_bitstream = bitstream_offset + no_of_bits;
+
+                for (i = 0; i < no_of_bits; i++)
+                {
+                    bit = value & 0x0001; /* get lsb */
+                    if (bit == 0)
+                    {
+                        bitstream[--pt_bitstream] = Ld8k.BIT_0;
+                    }
+                    else
+                    {
+                        bitstream[--pt_bitstream] = Ld8k.BIT_1;
+                    }
+
+                    value >>= 1;
+                }
             }
         }
 
@@ -149,60 +140,40 @@ namespace SIPSorcery.Media.G729Codec
             bits2prm_ld8k(bits, 0, prm, 0);
         }
 
-        /**
- * Converts serial received bits to  encoder parameter vector.
- *
- * @param bits           input : serial bits
- * @param bits_offset    input : serial bits offset
- * @param prm            output: decoded parameters
- * @param prm_offset     input: decoded parameters offset
- */
+        /// <summary>
+        /// Span-based version: Converts serial received bits to encoder parameter vector.
+        /// </summary>
+        /// <param name="bits">Input: serial bits as ReadOnlySpan</param>
+        /// <param name="bits_offset">Input: serial bits offset</param>
+        /// <param name="prm">Output: decoded parameters</param>
+        /// <param name="prm_offset">Input: decoded parameters offset</param>
         public static void bits2prm_ld8k(
-            short[] bits,
+            ReadOnlySpan<short> bits,
             int bits_offset,
-            int[] prm,
+            Span<int> prm,
             int prm_offset
         )
         {
-            var PRM_SIZE = Ld8k.PRM_SIZE;
-            var bitsno = TabLd8k.bitsno;
-
-            int i;
-            for (i = 0; i < PRM_SIZE; i++)
+            for (var i = 0; i < Ld8k.PRM_SIZE; i++)
             {
-                prm[i + prm_offset] = bin2int(bitsno[i], bits, bits_offset);
-                bits_offset += bitsno[i];
-            }
-        }
-
-        /**
- * Read specified bits from bit array  and convert to integer value.
- *
- * @param no_of_bits        input : number of bits to read
- * @param bitstream         input : array containing bits
- * @param bitstream_offset  input : array offset
- * @return                   decimal value of bit pattern
- */
-        private static int bin2int(
-            int no_of_bits,
-            short[] bitstream,
-            int bitstream_offset
-        )
-        {
-            var BIT_1 = Ld8k.BIT_1;
-
-            int value, i;
-            int bit;
-
-            value = 0;
-            for (i = 0; i < no_of_bits; i++)
-            {
-                value <<= 1;
-                bit = bitstream[bitstream_offset++];
-                if (bit == BIT_1) value += 1;
+                var bitCount = TabLd8k.bitsno[i];
+                prm[i + prm_offset] = bin2int(bits.Slice(bits_offset, bitCount));
+                bits_offset += bitCount;
             }
 
-            return value;
+            static int bin2int(ReadOnlySpan<short> bitstream)
+            {
+                var value = 0;
+                for (var i = 0; i < bitstream.Length; i++)
+                {
+                    value <<= 1;
+                    if (bitstream[i] == Ld8k.BIT_1)
+                    {
+                        value |= 1;
+                    }
+                }
+                return value;
+            }
         }
     }
 }

@@ -682,10 +682,8 @@ namespace SIPSorcery.Net
          */
         public SrtcpCryptoContext DeriveContext(long ssrc)
         {
-            SrtcpCryptoContext pcc = null;
-            pcc = new SrtcpCryptoContext(ssrc, masterKey,
+            return new SrtcpCryptoContext(ssrc, masterKey,
                     masterSalt, policy);
-            return pcc;
         }
     }
 }

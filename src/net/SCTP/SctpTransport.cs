@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -63,7 +62,7 @@ namespace SIPSorcery.Net
     /// As well as being able to be carried directly in IP packets, SCTP packets can
     /// also be wrapped in higher level protocols.
     /// </summary>
-    public abstract class SctpTransport
+    public abstract partial class SctpTransport
     {
         private const int HMAC_KEY_SIZE = 64;
 
@@ -93,7 +92,7 @@ namespace SIPSorcery.Net
         /// </returns>
         public virtual bool IsPortAgnostic => false;
 
-        public abstract void Send(string associationID, byte[] buffer, int offset, int length);
+        public abstract void Send(string? associationID, ReadOnlyMemory<byte> buffer, IDisposable? memoryOwner = null);
 
         static SctpTransport()
         {
@@ -132,7 +131,7 @@ namespace SIPSorcery.Net
             {
                 var initAckPacket = GetInitAck(initPacket, remoteEndPoint);
                 var buffer = initAckPacket.GetBytes();
-                Send(null, buffer, 0, buffer.Length);
+                Send(null, buffer.AsMemory(0, buffer.Length));
             }
         }
 
@@ -239,12 +238,12 @@ namespace SIPSorcery.Net
             var cookieBuffer = cookieEcho.ChunkValue;
             var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
 
-            logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
+            logger.LogSctpCookie(cookie);
 
             string calculatedHMAC = GetCookieHMAC(cookieBuffer);
             if (calculatedHMAC != cookie.HMAC)
             {
-                logger.LogWarning("SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookieHMAC}.", calculatedHMAC, cookie.HMAC);
+                logger.LogSctpCookieEchoInvalidHMAC(calculatedHMAC, cookie.HMAC);
                 SendError(
                   true,
                   sctpPacket.Header.DestinationPort,
@@ -255,7 +254,7 @@ namespace SIPSorcery.Net
             }
             else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
             {
-                logger.LogWarning("SCTP COOKIE ECHO chunk was stale, created at {CreatedAt}, now {Now}, lifetime {Lifetime}s.", cookie.CreatedAt, DateTime.Now.ToString("o"), cookie.Lifetime);
+                logger.LogSctpCookieEchoStale(cookie.CreatedAt, DateTime.Now.ToString("o"), cookie.Lifetime);
                 var diff = DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt).AddSeconds(cookie.Lifetime));
                 SendError(
                   true,
@@ -319,7 +318,7 @@ namespace SIPSorcery.Net
             errorPacket.AddChunk(errorChunk);
 
             var buffer = errorPacket.GetBytes();
-            Send(null, buffer, 0, buffer.Length);
+            Send(null, buffer.AsMemory(0, buffer.Length), null);
         }
 
         /// <summary>
@@ -371,7 +370,6 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="associationID">Local handle to the SCTP association.</param>
         /// <param name="buffer">The buffer holding the data to send.</param>
-        /// <param name="length">The number of bytes from the buffer to send.</param>
         /// <param name="contextID">Optional. A 32-bit integer that will be carried in the
         /// sending failure notification to the application if the transportation of
         /// this user message fails.</param>
@@ -382,8 +380,9 @@ namespace SIPSorcery.Net
         /// parameter can be used to avoid efforts to transmit stale user
         /// messages.</param>
         /// <returns></returns>
-        public string Send(string associationID, byte[] buffer, int length, int contextID, int streamID, int lifeTime)
+        public string Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable? memoryOwner, int contextID, int streamID, int lifeTime)
         {
+            memoryOwner?.Dispose();
             return "ok";
         }
 

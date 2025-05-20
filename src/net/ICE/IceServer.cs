@@ -14,16 +14,17 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Crypto.Digests;
 using SIPSorcery.Sys;
-
-[assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
 
 namespace SIPSorcery.Net
 {
@@ -95,14 +96,16 @@ namespace SIPSorcery.Net
         /// </summary>
         internal const int STUN_STALE_NONCE_ERROR_CODE = 438;
 
-        internal STUNUri _uri;
-        internal string _username;
-        internal string _password;
+        internal STUNUri Uri { get; }
+
+        internal ReadOnlyMemory<byte> Username { get; }
+
+        internal ReadOnlyMemory<byte> Password { get; }
 
         /// <summary>
         /// An incrementing number that needs to be unique for each server in the session.
         /// </summary>
-        internal int _id;
+        internal int Id { get; }
 
         /// <summary>
         /// The end point for this STUN or TURN server. Will be set asynchronously once
@@ -164,26 +167,30 @@ namespace SIPSorcery.Net
         /// If requests to the server need to be authenticated this is the nonce to set. 
         /// Normally the nonce will come from the server in a 401 Unauthorized response.
         /// </summary>
-        internal byte[] Nonce { get; set; }
+        internal ReadOnlyMemory<byte> Nonce { get; private set; }
 
         /// <summary>
         /// If requests to the server need to be authenticated this is the realm to set. 
         /// The realm may be known in advance or can come from the server in a 401 
         /// Unauthorized response.
         /// </summary>
-        internal byte[] Realm { get; set; }
+        internal ReadOnlyMemory<byte> Realm { get; private set; }
 
         /// <summary>
         /// Count of the number of error responses received without a success response.
         /// </summary>
         internal int ErrorResponseCount = 0;
 
-        public ProtocolType Protocol { get { return _uri.Protocol; } }
+        public ProtocolType Protocol => Uri.Protocol;
 
         /// <summary>
         /// Task that completes when this server is done (resolved or timed out).
         /// </summary>
         internal Task DnsResolutionTask { get; set; }
+
+        internal SslClientAuthenticationOptions? SslClientAuthenticationOptions { get; }
+
+        internal ReadOnlyMemory<byte> MessageIntegrityKey { get; private set; }
 
         /// <summary>
         /// Default constructor.
@@ -194,12 +201,14 @@ namespace SIPSorcery.Net
         /// 0 and 9.</param>
         /// <param name="username">Optional. If authentication is required the username to use.</param>
         /// <param name="password">Optional. If authentication is required the password to use.</param>
-        internal IceServer(STUNUri uri, int id, string username, string password)
+        internal IceServer(STUNUri uri, int id, string username, string password, SslClientAuthenticationOptions? sslClientAuthenticationOptions)
         {
-            _uri = uri;
-            _id = id;
-            _username = username;
-            _password = password;
+            Uri = uri;
+            Id = id;
+            Username = string.IsNullOrEmpty(username) ? default : Encoding.UTF8.GetBytes(username);
+            Password = string.IsNullOrEmpty(password) ? default : Encoding.UTF8.GetBytes(password);
+
+            SslClientAuthenticationOptions = sslClientAuthenticationOptions;
             GenerateNewTransactionID();
         }
 
@@ -211,15 +220,16 @@ namespace SIPSorcery.Net
         /// <param name="init">The initialisation parameters for the ICE candidate (mainly local username).</param>
         /// <param name="type">The type of ICE candidate to get, must be srflx or relay.</param>
         /// <returns>An ICE candidate that can be sent to the remote peer.</returns>
-        internal RTCIceCandidate GetCandidate(RTCIceCandidateInit init, RTCIceCandidateType type)
+        internal RTCIceCandidate? GetCandidate(RTCIceCandidateInit init, RTCIceCandidateType type)
         {
-            RTCIceCandidate candidate = new RTCIceCandidate(init);
-
             if (type == RTCIceCandidateType.srflx && ServerReflexiveEndPoint != null)
             {
                 // TODO: Currently implementation always use UDP candidates as we will only support TURN TCP Transport.
                 //var srflxProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
                 var srflxProtocol = RTCIceProtocol.udp;
+
+                var candidate = new RTCIceCandidate(init);
+
                 candidate.SetAddressProperties(srflxProtocol, ServerReflexiveEndPoint.Address, (ushort)ServerReflexiveEndPoint.Port,
                                 type, null, 0);
                 candidate.IceServer = this;
@@ -232,6 +242,8 @@ namespace SIPSorcery.Net
                 //var relayProtocol = _uri.Protocol == ProtocolType.Tcp ? RTCIceProtocol.tcp : RTCIceProtocol.udp;
                 var relayProtocol = RTCIceProtocol.udp;
 
+                var candidate = new RTCIceCandidate(init);
+
                 candidate.SetAddressProperties(relayProtocol, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
                     type, null, 0);
                 candidate.IceServer = this;
@@ -240,7 +252,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("Could not get ICE server candidate for {Uri} and type {Type}.", _uri, type);
+                logger.LogIceServerCandidateUnavailable(Uri, type);
                 return null;
             }
         }
@@ -250,7 +262,7 @@ namespace SIPSorcery.Net
         /// </summary>
         internal void GenerateNewTransactionID()
         {
-            TransactionID = ICE_SERVER_TXID_PREFIX + _id.ToString()
+            TransactionID = ICE_SERVER_TXID_PREFIX + Id.ToString()
                 + Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH - ICE_SERVER_TXID_PREFIX_LENGTH);
         }
 
@@ -262,7 +274,14 @@ namespace SIPSorcery.Net
         /// <returns>True if it dos match. False if not.</returns>
         internal bool IsTransactionIDMatch(string responseTxID)
         {
-            return responseTxID.StartsWith(ICE_SERVER_TXID_PREFIX + _id.ToString());
+            if (responseTxID.Length < ICE_SERVER_TXID_PREFIX.Length
+                || !responseTxID.StartsWith(ICE_SERVER_TXID_PREFIX, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var idPart = responseTxID.AsSpan(ICE_SERVER_TXID_PREFIX.Length);
+            return idPart.StartsWith(Id.ToString().AsSpan(), StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -279,44 +298,65 @@ namespace SIPSorcery.Net
         {
             bool candidatesAvailable = false;
 
-            string txID = Encoding.ASCII.GetString(stunResponse.Header.TransactionId);
-
             // Ignore responses to old requests on the assumption they are retransmits.
-            if (TransactionID == txID)
+            if (!Encoding.ASCII.Equals(TransactionID, stunResponse.Header.TransactionId))
             {
-                // The STUN response is for a check sent to an ICE server.
-                LastResponseReceivedAt = DateTime.Now;
-                OutstandingRequestsSent = 0;
+                return candidatesAvailable;
+            }
 
-                if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
-                {
+            // The STUN response is for a check sent to an ICE server.
+            LastResponseReceivedAt = DateTime.Now;
+            OutstandingRequestsSent = 0;
+
+            switch (stunResponse.Header.MessageType)
+            {
+                case STUNMessageTypesEnum.AllocateSuccessResponse:
                     ErrorResponseCount = 0;
 
                     // If the relay end point is set then this connection check has already been completed.
                     if (RelayEndPoint == null)
                     {
-                        logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _uri);
+                        logger.LogIceAllocationSucceeded(Uri);
 
-                        var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
+                        STUNXORAddressAttribute? mappedAddressAttribute = null;
+                        STUNXORAddressAttribute? relayedAddressAttribute = null;
+                        STUNAttribute? lifetimeAttribute = null;
 
-                        if (mappedAddrAttr != null)
+                        foreach (var attr in stunResponse.Attributes)
                         {
-                            ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                            if (mappedAddressAttribute == null && attr.AttributeType == STUNAttributeTypesEnum.XORMappedAddress)
+                            {
+                                mappedAddressAttribute = attr as STUNXORAddressAttribute;
+                            }
+                            else if (relayedAddressAttribute == null && attr.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress)
+                            {
+                                relayedAddressAttribute = attr as STUNXORAddressAttribute;
+                            }
+                            else if (lifetimeAttribute == null && attr.AttributeType == STUNAttributeTypesEnum.Lifetime)
+                            {
+                                lifetimeAttribute = attr;
+                            }
+
+                            if (mappedAddressAttribute is not null && relayedAddressAttribute is not null && lifetimeAttribute is not null)
+                            {
+                                break;
+                            }
                         }
 
-                        var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
-
-                        if (mappedRelayAddrAttr != null)
+                        if (mappedAddressAttribute is not null)
                         {
-                            RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                            ServerReflexiveEndPoint = mappedAddressAttribute.GetIPEndPoint();
                         }
 
-                        var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
-
-                        if (lifetime != null)
+                        if (relayedAddressAttribute != null)
                         {
-                            TurnTimeToExpiry = DateTime.Now +
-                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                            RelayEndPoint = relayedAddressAttribute.GetIPEndPoint();
+                        }
+
+                        if (lifetimeAttribute != null)
+                        {
+                            TurnTimeToExpiry =
+                                DateTime.Now + TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetimeAttribute.Value.Span));
                         }
                         else
                         {
@@ -326,18 +366,43 @@ namespace SIPSorcery.Net
 
                         candidatesAvailable = true;
                     }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
-                {
+                    break;
+                case STUNMessageTypesEnum.AllocateErrorResponse:
                     ErrorResponseCount++;
 
-                    if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                    STUNErrorCodeAttribute? allocateErrorCodeAttribute = null;
+                    STUNAddressAttribute? allocateAlternateServerAttribute = null;
+                    foreach (var attr in stunResponse.Attributes)
                     {
-                        STUNErrorCodeAttribute errCodeAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
-                        STUNAddressAttribute alternateServerAttribute = alternateServerAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.AlternateServer) as STUNAddressAttribute;
-
-                        if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
+                        if (allocateErrorCodeAttribute is null && attr.AttributeType == STUNAttributeTypesEnum.ErrorCode)
                         {
+                            allocateErrorCodeAttribute = attr as STUNErrorCodeAttribute;
+                            break; // Stop as soon as the first ErrorCode is found
+                        }
+                        else if (allocateAlternateServerAttribute is null && attr.AttributeType == STUNAttributeTypesEnum.AlternateServer)
+                        {
+                            allocateAlternateServerAttribute = attr as STUNAddressAttribute;
+                        }
+
+                        if (allocateErrorCodeAttribute is not null && allocateAlternateServerAttribute is not null)
+                        {
+                            break; // Stop as soon as both attributes are found
+                        }
+                    }
+
+                    if (allocateErrorCodeAttribute is not null)
+                    {
+                        if (allocateErrorCodeAttribute.ErrorCode is STUN_UNAUTHORISED_ERROR_CODE or STUN_STALE_NONCE_ERROR_CODE)
+                        {
+                            if (allocateErrorCodeAttribute.ErrorCode is STUN_UNAUTHORISED_ERROR_CODE)
+                            {
+                                logger.LogStunUnauthorisedError(remoteEndPoint);
+                            }
+                            else
+                            {
+                                logger.LogStunStaleNonceError(remoteEndPoint);
+                            }
+
                             // Set the authentication properties authenticate.
                             SetAuthenticationFields(stunResponse);
 
@@ -346,11 +411,11 @@ namespace SIPSorcery.Net
 
                             ErrorResponseCount = 1;
                         }
-                        else if (alternateServerAttribute != null)
+                        else if (allocateAlternateServerAttribute is not null)
                         {
-                            ServerEndPoint = new IPEndPoint(alternateServerAttribute.Address, alternateServerAttribute.Port);
+                            ServerEndPoint = new IPEndPoint(allocateAlternateServerAttribute.Address, allocateAlternateServerAttribute.Port);
 
-                            logger.LogWarning("ICE session received an alternate respose for an Allocate request to {Uri}, changed server url to {ServerEndPoint}.", _uri, ServerEndPoint);
+                            logger.LogIceStunAlternateServer(Uri, ServerEndPoint);
 
                             // Set a new transaction ID.
                             GenerateNewTransactionID();
@@ -359,40 +424,48 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning("ICE session received an error response for an Allocate request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                            logger.LogIceAllocateRequestErrorResponseWithCode(Uri, allocateErrorCodeAttribute.ErrorCode, allocateErrorCodeAttribute.ReasonPhrase);
                         }
                     }
                     else
                     {
-                        logger.LogWarning("ICE session received an error response for an Allocate request to {Uri}.", _uri);
+                        logger.LogIceStunAllocateError(Uri);
                     }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
-                {
+                    break;
+                case STUNMessageTypesEnum.BindingSuccessResponse:
                     ErrorResponseCount = 0;
 
                     // If the server reflexive end point is set then this connection check has already been completed.
                     if (ServerReflexiveEndPoint == null)
                     {
-                        logger.LogDebug("STUN binding success response received for ICE server check to {Uri}.", _uri);
-                        var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
-
-                        if (mappedAddrAttr != null)
+                        logger.LogIceStunBindingSuccess(Uri);
+                        foreach (var attr in stunResponse.Attributes)
                         {
-                            ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                            candidatesAvailable = true;
+                            if (attr.AttributeType == STUNAttributeTypesEnum.XORMappedAddress)
+                            {
+                                ServerReflexiveEndPoint = ((STUNXORAddressAttribute)attr).GetIPEndPoint();
+                                candidatesAvailable = true;
+                                break;
+                            }
                         }
                     }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
-                {
+                    break;
+                case STUNMessageTypesEnum.BindingErrorResponse:
                     ErrorResponseCount++;
 
-                    if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                    STUNErrorCodeAttribute? bindErrorCodeAttribute = null;
+                    foreach (var attr in stunResponse.Attributes)
                     {
-                        var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                        if (attr.AttributeType == STUNAttributeTypesEnum.ErrorCode)
+                        {
+                            bindErrorCodeAttribute = attr as STUNErrorCodeAttribute;
+                            break;
+                        }
+                    }
 
-                        if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
+                    if (bindErrorCodeAttribute != null)
+                    {
+                        if (bindErrorCodeAttribute.ErrorCode is STUN_UNAUTHORISED_ERROR_CODE or STUN_STALE_NONCE_ERROR_CODE)
                         {
                             SetAuthenticationFields(stunResponse);
 
@@ -401,40 +474,54 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning("ICE session received an error response for a Binding request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                            logger.LogIceBindingRequestErrorResponseWithCode(Uri, bindErrorCodeAttribute.ErrorCode, bindErrorCodeAttribute.ReasonPhrase);
                         }
                     }
                     else
                     {
-                        logger.LogWarning("STUN binding error response received for ICE server check to {Uri}.", _uri);
+                        logger.LogIceStunBindingError(Uri);
                         // The STUN response is for a check sent to an ICE server.
                         Error = SocketError.ConnectionRefused;
                     }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
-                {
+                    break;
+                case STUNMessageTypesEnum.RefreshSuccessResponse:
                     ErrorResponseCount = 0;
 
-                    logger.LogDebug("STUN binding success response received for ICE server check to {Uri}.", _uri);
+                    logger.LogIceStunBindingSuccess(Uri);
 
-                    var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+                    STUNAttribute? refreshLifetimeAttr = null;
+                    foreach (var attr in stunResponse.Attributes)
+                    {
+                        if (attr.AttributeType == STUNAttributeTypesEnum.Lifetime)
+                        {
+                            refreshLifetimeAttr = attr;
+                            break;
+                        }
 
-                    if (lifetime != null)
+                    }
+                    if (refreshLifetimeAttr != null)
                     {
                         TurnTimeToExpiry = DateTime.Now +
-                                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                                           TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(refreshLifetimeAttr.Value.Span));
                     }
 
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
-                {
+                    break;
+                case STUNMessageTypesEnum.RefreshErrorResponse:
                     ErrorResponseCount++;
 
-                    if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                    STUNErrorCodeAttribute? refreshErrorCodeAttribute = null;
+                    foreach (var attr in stunResponse.Attributes)
                     {
-                        var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                        if (attr.AttributeType == STUNAttributeTypesEnum.ErrorCode)
+                        {
+                            refreshErrorCodeAttribute = attr as STUNErrorCodeAttribute;
+                            break;
+                        }
+                    }
 
-                        if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
+                    if (refreshErrorCodeAttribute != null)
+                    {
+                        if (refreshErrorCodeAttribute.ErrorCode is STUN_UNAUTHORISED_ERROR_CODE or STUN_STALE_NONCE_ERROR_CODE)
                         {
                             SetAuthenticationFields(stunResponse);
 
@@ -443,21 +530,20 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning("ICE session received an error response for a Refresh request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                            logger.LogIceRefreshRequestErrorResponseWithCode(Uri, refreshErrorCodeAttribute.ErrorCode, refreshErrorCodeAttribute.ReasonPhrase);
                         }
                     }
                     else
                     {
-                        logger.LogWarning("STUN binding error response received for ICE server check to {Uri}.", _uri);
+                        logger.LogIceStunBindingError(Uri);
                         // The STUN response is for a check sent to an ICE server.
                         Error = SocketError.ConnectionRefused;
                     }
-                }
-                else
-                {
-                    logger.LogWarning("An unrecognised STUN {MessageType} response for an ICE server check was received from {RemoteEndPoint}.", stunResponse.Header.MessageType, remoteEndPoint);
+                    break;
+                default:
+                    logger.LogIceUnrecognisedStunResponse(stunResponse.Header.MessageType, remoteEndPoint);
                     ErrorResponseCount++;
-                }
+                    break;
             }
 
             return candidatesAvailable;
@@ -470,11 +556,54 @@ namespace SIPSorcery.Net
         internal void SetAuthenticationFields(STUNMessage stunResponse)
         {
             // Set the authentication properties authenticate.
-            var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
-            Nonce = nonceAttribute?.Value;
 
-            var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
-            Realm = realmAttribute?.Value;
+            var computeMessageIntegrityKey = false;
+
+            foreach (var attr in stunResponse.Attributes)
+            {
+                if (attr.AttributeType == STUNAttributeTypesEnum.Nonce)
+                {
+                    Nonce = attr.Value.ToArray();
+                    computeMessageIntegrityKey = true;
+                }
+                else if (attr.AttributeType == STUNAttributeTypesEnum.Realm)
+                {
+                    Realm = attr.Value.ToArray();
+                    computeMessageIntegrityKey = true;
+                }
+
+                if (!Nonce.IsEmpty && !Realm.IsEmpty)
+                {
+                    break;
+                }
+            }
+
+            if (computeMessageIntegrityKey && !Realm.IsEmpty && !Nonce.IsEmpty && !Username.IsEmpty && !Password.IsEmpty)
+            {
+                var messageIntegrityKeySource = new byte[Username.Length + Realm.Length + Password.Length + 2];
+                var messageIntegrityKeySourceSpan = messageIntegrityKeySource.AsSpan();
+
+                var offset = Username.Length;
+                Username.Span.CopyTo(messageIntegrityKeySourceSpan);
+                messageIntegrityKeySourceSpan[offset++] = (byte)':';
+
+                Realm.Span.CopyTo(messageIntegrityKeySourceSpan.Slice(offset));
+                offset += Realm.Length;
+                messageIntegrityKeySourceSpan[offset++] = (byte)':';
+
+                Password.Span.CopyTo(messageIntegrityKeySourceSpan.Slice(offset));
+
+
+                var md5Digest = new MD5Digest();
+                var md5DigestLength = md5Digest.GetDigestSize();
+
+                var messageIntegrityKey = new byte[md5DigestLength];
+
+                md5Digest.BlockUpdate(messageIntegrityKeySource);
+                md5Digest.DoFinal(messageIntegrityKey, 0);
+
+                MessageIntegrityKey = messageIntegrityKey;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNChangeRequestAttribute.cs
 //
 // Description: Implements STUN change request attribute as defined in RFC5389.
@@ -14,17 +14,18 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class STUNChangeRequestAttribute : STUNAttribute
+    public partial class STUNChangeRequestAttribute : STUNAttribute
     {
-        public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
+        public const ushort CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
 
         public bool ChangeAddress = false;
         public bool ChangePort = false;
 
-        public override UInt16 PaddedLength
+        public override ushort PaddedLength
         {
             get { return CHANGEREQUEST_ATTRIBUTE_LENGTH; }
         }
@@ -51,11 +52,14 @@ namespace SIPSorcery.Net
             }
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
-
-            return attrDescrStr;
+            sb.Append("key byte=");
+            sb.Append(m_changeRequestByte, "X");
+            sb.Append(", change address=");
+            sb.Append(ChangeAddress);
+            sb.Append(", change port=");
+            sb.Append(ChangePort);
         }
     }
 }

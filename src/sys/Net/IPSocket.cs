@@ -85,19 +85,11 @@ namespace SIPSorcery.Sys
                 }
             }
 
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-            if (IPAddress.TryParse(s.Slice(0, addressLength), out IPAddress address))
-#else
-            if (IPAddress.TryParse(s.Slice(0, addressLength).ToString(), out IPAddress address))
-#endif
+            if (IPAddressExtensions.TryParse(s.Slice(0, addressLength), out IPAddress address))
             {
                 uint port = 0;
                 if (addressLength == s.Length ||
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-                    (uint.TryParse(s.Slice(addressLength + 1), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
-#else
-                    (uint.TryParse(s.Slice(addressLength + 1).ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
-#endif
+                    (UInt32.TryParse(s.Slice(addressLength + 1), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
                 {
                     result = new IPEndPoint(address, (int)port);
                     return true;
@@ -115,7 +107,7 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                throw new ApplicationException($"Could not parse IP end point from {s}.");
+                throw new FormatException($"Could not parse IP end point from {s}.");
             }
         }
 
@@ -182,8 +174,7 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                IPAddress ipaddr;
-                return IPAddress.TryParse(socket, out ipaddr);
+                return IPAddressExtensions.TryParse(socket, out _);
             }
         }
 
@@ -199,7 +190,7 @@ namespace SIPSorcery.Sys
         /// </summary>
         public static bool IsPrivateAddress(string host)
         {
-            if (IPAddress.TryParse(host, out var ipAddress))
+            if (IPAddressExtensions.TryParse(host, out var ipAddress))
             {
                 if (IPAddress.IsLoopback(ipAddress) || ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal)
                 {
@@ -272,7 +263,7 @@ namespace SIPSorcery.Sys
 
                 host = values[0];
                 //try to use the address as IPv4, otherwise get hostname
-                if (!IPAddress.TryParse(values[0], out ipaddr))
+                if (!IPAddressExtensions.TryParse(values[0], out ipaddr))
                 {
                     host = values[0];
                 }
@@ -348,7 +339,7 @@ namespace SIPSorcery.Sys
                 }
 
                 //try to use the address as IPv4, otherwise get hostname
-                if (!IPAddress.TryParse(values[0], out ipaddr))
+                if (!IPAddressExtensions.TryParse(values[0], out ipaddr))
                 {
                     try
                     {

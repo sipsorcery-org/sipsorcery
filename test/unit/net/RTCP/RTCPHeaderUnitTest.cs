@@ -13,8 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -32,8 +34,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetRTCPHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPHeader rtcpHeader = new RTCPHeader(RTCPReportTypesEnum.SR, 1);
             byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
@@ -49,8 +51,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RTCPHeaderRoundTripTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPHeader src = new RTCPHeader(RTCPReportTypesEnum.SR, 1);
             byte[] headerBuffer = src.GetHeader(17, 54443);
@@ -62,7 +64,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("PacketType: {SrcPacketType}, {DstPacketType}", src.PacketType, dst.PacketType);
             logger.LogDebug("Length: {SrcLength}, {DstLength}", src.Length, dst.Length);
 
-            logger.LogDebug("Raw Header: {RawHeader}", headerBuffer.HexStr(headerBuffer.Length));
+            logger.LogDebug("Raw Header: {RawHeader}", headerBuffer.AsSpan(0, headerBuffer.Length).HexStr());
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");

@@ -15,9 +15,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -40,6 +42,11 @@ namespace SIPSorcery.Net
                 this.localPort = localPort;
                 this.remoteEndPoint = remoteEndPoint;
                 this.buffer = buffer;
+            }
+
+            public PendingPackages(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> buffer)
+                : this(hdr, localPort, remoteEndPoint, buffer.ToArray())
+            {
             }
         }
 
@@ -258,7 +265,7 @@ namespace SIPSorcery.Net
         {
             if (SecureContext != null)
             {
-                logger.LogTrace("Tried adding new SecureContext for media type {MediaType}, but one already existed", MediaType);
+                logger.LogRtpSessionSecureContextAlreadyExists(MediaType);
             }
 
             SecureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
@@ -274,44 +281,6 @@ namespace SIPSorcery.Net
         public bool IsSecurityContextReady()
         {
             return SecureContext != null;
-        }
-
-        private (bool, byte[]) UnprotectBuffer(byte[] buffer)
-        {
-            if (SecureContext != null)
-            {
-                int res = SecureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
-
-                if (res == 0)
-                {
-                    return (true, buffer.Take(outBufLen).ToArray());
-                }
-                else
-                {
-                    logger.LogWarning("SRTP unprotect failed for {MediaType}, result {Result}.", MediaType, res);
-                }
-            }
-            return (false, buffer);
-        }
-
-        public bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
-        {
-            if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
-            {
-                var (succeeded, newBuffer) = UnprotectBuffer(buf);
-                if (!succeeded)
-                {
-                    packet = null;
-                    return false;
-                }
-                packet = new RTPPacket(newBuffer);
-            }
-            else
-            {
-                packet = new RTPPacket(buf);
-            }
-            packet.Header.ReceivedTime = header.ReceivedTime;
-            return true;
         }
 
         public SrtpHandler GetOrCreateSrtpHandler()
@@ -342,25 +311,25 @@ namespace SIPSorcery.Net
         {
             if (IsClosed)
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on a closed RTP session.", MediaType);
+                logger.LogRtpSessionSendRtpRawOnClosedSession(MediaType);
                 return false;
             }
 
             if (LocalTrack == null)
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session without a local track.", MediaType);
+                logger.LogRtpSessionSendRtpRawNoLocalTrack(MediaType);
                 return false;
             }
 
             if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
             {
-                logger.LogWarning("SendRtpRaw was called for a {MediaType} packet on an RTP session with a Stream Status set to {StreamStatus}", MediaType, LocalTrack.StreamStatus);
+                logger.LogRtpSessionSendRtpRawInactiveStream(MediaType, LocalTrack.StreamStatus);
                 return false;
             }
 
             if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && SecureContext?.ProtectRtpPacket == null)
             {
-                logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
+                logger.LogRtpSessionSendRtpPacketSecureContextNotReady();
                 return false;
             }
 
@@ -369,9 +338,9 @@ namespace SIPSorcery.Net
 
         private static byte[] Combine(params byte[][] arrays)
         {
-            byte[] rv = new byte[arrays.Sum(a => a.Length)];
-            int offset = 0;
-            foreach (byte[] array in arrays)
+            var rv = new byte[arrays.Sum(a => a.Length)];
+            var offset = 0;
+            foreach (var array in arrays)
             {
                 System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
                 offset += array.Length;
@@ -379,15 +348,16 @@ namespace SIPSorcery.Net
             return rv;
         }
 
-        protected void SendRtpRaw(ArraySegment<byte> data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
+        protected void SendRtpRaw(ReadOnlySpan<byte> data, uint timestamp, int markerBit, int payloadType, bool checkDone, ushort? seqNum = null)
         {
             if (checkDone || CheckIfCanSendRtpRaw())
             {
-                ProtectRtpPacket protectRtpPacket = SecureContext?.ProtectRtpPacket;
-                int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
+                var protectRtpPacket = SecureContext?.ProtectRtpPacket;
+                var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
 
-                RTPPacket rtpPacket = new RTPPacket(data, srtpProtectionLength);
-
+                var packetPayloadLength = data.Length + srtpProtectionLength;
+                var packetPayload = new Memory<byte>(new byte[packetPayloadLength]);
+                var rtpPacket = new RTPPacket(new RTPHeader(), packetPayload);
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
                 rtpPacket.Header.SequenceNumber = seqNum ?? LocalTrack.GetNextSeqNum();
                 rtpPacket.Header.Timestamp = timestamp;
@@ -434,14 +404,14 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    if (payload?.Length > 0)
+                    var payloadLength = payload?.Length ?? 0;
+                    if (payloadLength > 0)
                     {
                         // Need to round to 4 bytes boundaries
-                        var roundedExtSize = payload.Length % 4;
+                        var roundedExtSize = payloadLength % 4;
                         if (roundedExtSize > 0)
                         {
-                            var padding = Enumerable.Repeat((byte)0, 4 - roundedExtSize).ToArray();
-                            payload = Combine(payload, padding);
+                            Array.Resize(ref payload, payloadLength + 4 - roundedExtSize); // Resize to 4 bytes boundaries
                         }
 
                         rtpPacket.Header.HeaderExtensionFlag = 1; // We have at least one extension
@@ -455,23 +425,42 @@ namespace SIPSorcery.Net
                     rtpPacket.Header.HeaderExtensionFlag = 0;
                 }
 
-                var rtpBuffer = rtpPacket.GetBytes();
+                data.CopyTo(packetPayload.Span);
 
-                if (protectRtpPacket == null)
+
+                var rtpPacketSize = rtpPacket.GetPacketSize();
+                var buffer = ArrayPool<byte>.Shared.Rent(rtpPacketSize);
+
+                try
                 {
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                }
-                else
-                {
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
-                    if (rtperr != 0)
+                    var rtpPacketBytesWritten = rtpPacket.WriteBytes(buffer);
+
+                    if (protectRtpPacket == null)
                     {
-                        logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
+                        rtpChannel.Send(
+                            RTPChannelSocketsEnum.RTP,
+                            DestinationEndPoint,
+                            new ReadOnlyMemory<byte>(buffer, 0, rtpPacketBytesWritten));
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        var rtperr = protectRtpPacket(buffer, rtpPacketBytesWritten - srtpProtectionLength, out var outBufLen);
+                        if (rtperr != 0)
+                        {
+                            logger.LogRtpChannelSendRtpPacketProtectionFailed(rtperr);
+                        }
+                        else
+                        {
+                            rtpChannel.Send(
+                                RTPChannelSocketsEnum.RTP,
+                                DestinationEndPoint,
+                                new ReadOnlyMemory<byte>(buffer, 0, outBufLen));
+                        }
                     }
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
@@ -490,50 +479,50 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="uri">The URI of the extension to use</param>
         /// <param name="value">Object to set on the extension (check extension to know object type) </param>
-        public void SetRtpHeaderExtensionValue(String uri, Object value)
+        public void SetRtpHeaderExtensionValue(string uri, object? value)
         {
             try
             {
-                var ext = LocalTrack?.HeaderExtensions?.Values?.FirstOrDefault(ext => ext.Uri == uri);
-                if (ext != null)
+                if (LocalTrack?.HeaderExtensions?.Values == null)
                 {
-                    switch (uri)
+                    return;
+                }
+
+                foreach (var ext in LocalTrack.HeaderExtensions.Values)
+                {
+                    if (ext.Uri != uri)
                     {
-                        case CVOExtension.RTP_HEADER_EXTENSION_URI:
-                            if (ext is CVOExtension cvoExtension)
-                            {
-                                cvoExtension.Set(value);
-                            }
-                            break;
+                        continue;
+                    }
 
-                        case AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
-                            if (ext is AudioLevelExtension audioLevelExtension)
-                            {
-                                audioLevelExtension.Set(value);
-                            }
-                            break;
+                    switch (ext)
+                    {
+                        case CVOExtension cvoExtension when uri == CVOExtension.RTP_HEADER_EXTENSION_URI:
+                            cvoExtension.Set(value);
+                            return;
 
-                        case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
-                            //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
-                            if (ext is TransportWideCCExtension transportWideCCExtension)
-                            {
-                                transportWideCCExtension.Set(_twccPacketCount++);
-                            }
-                            break;
+                        case AudioLevelExtension audioLevelExtension when uri == AudioLevelExtension.RTP_HEADER_EXTENSION_URI:
+                            audioLevelExtension.Set(value);
+                            return;
+
+                        //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
+                        case TransportWideCCExtension transportWideCCExtension when uri == TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
+                            transportWideCCExtension.Set(_twccPacketCount++);
+                            return;
 
                         // Not necessary to set something in AbsSendTimeExtension - just to be coherent here
-                        case AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
-                            if (ext is AbsSendTimeExtension absSendTimeExtension)
-                            {
-                                absSendTimeExtension.Set(value);
-                            }
-                            break;
+                        case AbsSendTimeExtension absSendTimeExtension when uri == AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
+                            absSendTimeExtension.Set(value);
+                            return;
+
+                        default:
+                            return;
                     }
                 }
             }
             catch
             {
-
+                // Consider logging the exception or handling it appropriately
             }
         }
 
@@ -545,7 +534,7 @@ namespace SIPSorcery.Net
         /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
         /// <param name="payloadType">The payload ID to set in the RTP header.</param>
         /// <param name="seqNum"> The RTP sequence number </param>
-        public void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, ushort seqNum)
+        public void SendRtpRaw(ReadOnlySpan<byte> data, uint timestamp, int markerBit, int payloadType, ushort seqNum)
         {
             SendRtpRaw(data, timestamp, markerBit, payloadType, false, seqNum);
         }
@@ -557,7 +546,7 @@ namespace SIPSorcery.Net
         /// <param name="timestamp">The timestamp to set on the RTP header.</param>
         /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
         /// <param name="payloadType">The payload ID to set in the RTP header.</param>
-        public void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType)
+        public void SendRtpRaw(ReadOnlySpan<byte> data, uint timestamp, int markerBit, int payloadType)
         {
             SendRtpRaw(data, timestamp, markerBit, payloadType, false);
         }
@@ -573,11 +562,11 @@ namespace SIPSorcery.Net
                 RTCPCompoundPacket rtcpCompoundPacket = null;
                 try
                 {
-                    rtcpCompoundPacket = new RTCPCompoundPacket(rtcpBytes);
+                    rtcpCompoundPacket = new RTCPCompoundPacket(rtcpBytes.AsSpan());
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning("Can't create RTCPCompoundPacket from the provided RTCP bytes. {Message}", excp.Message);
+                    logger.LogRtpCannotCreateRtcpCompoundPacket(excp);
                 }
 
                 if (rtcpCompoundPacket != null)
@@ -596,7 +585,7 @@ namespace SIPSorcery.Net
         {
             if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady())
             {
-                logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
+                logger.LogRtpSrtpReportNotReady();
                 return false;
             }
             else if (ControlDestinationEndPoint != null)
@@ -609,21 +598,24 @@ namespace SIPSorcery.Net
 
                 if (protectRtcpPacket == null)
                 {
-                    rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, reportBuffer);
+                    rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, reportBuffer.AsMemory(), null);
                 }
                 else
                 {
-                    byte[] sendBuffer = new byte[reportBuffer.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH];
-                    Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
+                    var bufferLength = reportBuffer.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
+                    var memoryOwner = MemoryPool<byte>.Shared.Rent(bufferLength);
+                    _ = MemoryMarshal.TryGetArray<byte>(memoryOwner.Memory, out var segment);
+                    Buffer.BlockCopy(reportBuffer, 0, segment.Array, 0, reportBuffer.Length);
 
-                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out int outBufLen);
+                    var rtperr = protectRtcpPacket(segment.Array, bufferLength - RTPSession.SRTP_MAX_PREFIX_LENGTH, out var outBufLen);
                     if (rtperr != 0)
                     {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result {RtpError}.", rtperr);
+                        memoryOwner.Dispose();
+                        logger.LogRtpSrtpRtcpProtectFailed(rtperr);
                     }
                     else
                     {
-                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, memoryOwner.Memory.Slice(0, outBufLen), memoryOwner);
                     }
                 }
             }
@@ -671,31 +663,30 @@ namespace SIPSorcery.Net
             SendRtcpReport(reportBytes);
         }
 
-        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> buffer, VideoStream videoStream = null)
         {
-            RTPPacket rtpPacket;
             if (NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
             {
-                if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
+                if (!EnsureBufferUnprotected(buffer, hdr, out var rtpPacket))
                 {
                     // Cache pending packages to use it later to prevent missing frames
                     // when DTLS was not completed yet as a Server bt already completed as a client
-                    AddPendingPackage(hdr, localPort, remoteEndPoint, buffer);
+                    AddPendingPackage(hdr, localPort, remoteEndPoint, buffer.Span, videoStream);
                     return;
                 }
 
-                RaiseOnRtpEventByIndex(remoteEndPoint, new RTPEvent(rtpPacket.GetPayloadBytes()), rtpPacket.Header);
+                RaiseOnRtpEventByIndex(remoteEndPoint, new RTPEvent(rtpPacket.Payload.Span), rtpPacket.Header);
                 return;
             }
 
             // Set the remote track SSRC so that RTCP reports can match the media type.
             if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
             {
-                bool isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
+                var isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
 
                 if (isValidSource)
                 {
-                    logger.LogDebug("Set remote track ({MediaType} - index={Index}) SSRC to {SyncSource} remote RTP endpoint {rtpep}.", MediaType, Index, hdr.SyncSource, remoteEndPoint);
+                    logger.LogRtpSessionSetRemoteTrackSsrc(MediaType, Index, hdr.SyncSource);
                     RemoteTrack.Ssrc = hdr.SyncSource;
                 }
             }
@@ -706,35 +697,98 @@ namespace SIPSorcery.Net
                 ProcessHeaderExtensions(hdr, remoteEndPoint);
             }
 
-            if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
             {
-                return;
+                if (!EnsureBufferUnprotected(buffer, hdr, out var rtpPacket))
+                {
+                    return;
+                }
+
+                // When receiving an Payload from other peer, it will be related to our LocalDescription,
+                // not to RemoteDescription (as proved by Azure WebRTC Implementation)
+                var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
+                if ((rtpPacket is not null) && (format is not null))
+                {
+                    if (UseBuffer())
+                    {
+                        var reorderBuffer = GetBuffer();
+                        reorderBuffer.Add(rtpPacket);
+                        while (reorderBuffer.Get(out var bufferedPacket))
+                        {
+                            if (RemoteTrack != null)
+                            {
+                                LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
+                                RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                            }
+
+                            ProcessRtpPacket(remoteEndPoint, bufferedPacket, format.Value);
+                        }
+                    }
+                    else
+                    {
+                        ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
+                    }
+
+                    RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                }
             }
 
-            var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
-
-            if (rtpPacket != null && format != null)
+            bool EnsureBufferUnprotected(ReadOnlyMemory<byte> buf, RTPHeader header, out RTPPacket? packet)
             {
-                if (UseBuffer())
+                if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
                 {
-                    var reorderBuffer = GetBuffer();
-                    reorderBuffer.Add(rtpPacket);
-                    while (reorderBuffer.Get(out var bufferedPacket))
+                    if (SecureContext != null)
                     {
-                        if (RemoteTrack != null)
+                        if (MemoryMarshal.TryGetArray(buf, out var segment) && segment.Offset == 0)
                         {
-                            LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
-                            RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
+                            packet = CreateRtpPacket(segment.Array, segment.Count);
+                            if (packet == null)
+                            {
+                                return false;
+                            }
                         }
-                        ProcessRtpPacket(remoteEndPoint, bufferedPacket, format.Value);
+                        else
+                        {
+                            var tempBuf = ArrayPool<byte>.Shared.Rent(buf.Length);
+                            try
+                            {
+                                buf.CopyTo(tempBuf);
+                                packet = CreateRtpPacket(tempBuf, buf.Length);
+                                if (packet == null)
+                                {
+                                    return false;
+                                }
+                            }
+                            finally
+                            {
+                                ArrayPool<byte>.Shared.Return(tempBuf);
+                            }
+                        }
+
+                        RTPPacket? CreateRtpPacket(byte[] array, int length)
+                        {
+                            var res = SecureContext.UnprotectRtpPacket(array, length, out var outBufLen);
+                            if (res != 0)
+                            {
+                                logger.LogRtpSrtpRtcpUnprotectFailed(MediaType, res);
+                                return null;
+                            }
+
+                            return new RTPPacket(array.AsSpan(0, outBufLen).ToArray());
+                        }
+                    }
+                    else
+                    {
+                        packet = null;
+                        return false;
                     }
                 }
                 else
                 {
-                    ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
+                    packet = new RTPPacket(buf);
                 }
 
-                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
+                packet.Header.ReceivedTime = header.ReceivedTime;
+                return true;
             }
         }
 
@@ -810,7 +864,7 @@ namespace SIPSorcery.Net
 
         // Cache pending packages to use it later to prevent missing frames
         // when DTLS was not completed yet as a Server but already completed as a client
-        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, ReadOnlySpan<byte> buffer, VideoStream videoStream = null)
         {
             const int MAX_PENDING_PACKAGES_BUFFER_SIZE = 32;
 
@@ -836,7 +890,7 @@ namespace SIPSorcery.Net
                 header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
                 !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
             {
-                logger.LogWarning("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
+                logger.LogRtpSequenceNumberJumped(trackType, track.LastRemoteSeqNum, header.SequenceNumber);
             }
         }
 
@@ -849,8 +903,8 @@ namespace SIPSorcery.Net
         /// the remote end point was deemed to be invalid for this media type.</returns>
         protected bool AdjustRemoteEndPoint(uint ssrc, IPEndPoint receivedOnEndPoint)
         {
-            bool isValidSource = false;
-            IPEndPoint expectedEndPoint = DestinationEndPoint;
+            var isValidSource = false;
+            var expectedEndPoint = DestinationEndPoint;
 
             if (expectedEndPoint.Address.Equals(receivedOnEndPoint.Address) && expectedEndPoint.Port == receivedOnEndPoint.Port)
             {
@@ -872,7 +926,7 @@ namespace SIPSorcery.Net
                 // AC 18 Aug 2020: Despite the carefully crafted rules below and https://github.com/sipsorcery/sipsorcery/issues/197
                 // there are still cases that were a problem in one scenario but acceptable in another. To accommodate a new property
                 // was added to allow the application to decide whether the RTP end point switches should be liberal or not.
-                logger.LogDebug("{MediaType} end point switched for RTP ssrc {Ssrc} from {ExpectedEndPoint} to {ReceivedOnEndPoint}.", MediaType, ssrc, expectedEndPoint, receivedOnEndPoint);
+                logger.LogRtpSessionEndPointSwitched(MediaType, ssrc, expectedEndPoint, receivedOnEndPoint);
 
                 DestinationEndPoint = receivedOnEndPoint;
                 if (RtpSessionConfig.IsRtcpMultiplexed)
@@ -888,7 +942,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("RTP packet with SSRC {Ssrc} received from unrecognised end point {ReceivedOnEndPoint}.", ssrc, receivedOnEndPoint);
+                logger.LogRtpSessionUnrecognisedEndPoint(ssrc, receivedOnEndPoint);
             }
 
             return isValidSource;
@@ -943,7 +997,7 @@ namespace SIPSorcery.Net
                 if (MediaType == SDPMediaTypesEnum.audio)
                 {
                     format = SDPAudioVideoMediaFormat.GetCompatibleFormats(RemoteTrack.Capabilities, LocalTrack.Capabilities)
-                        .Where(x => x.ID != NegotiatedRtpEventPayloadID).FirstOrDefault();
+                        .Where(x => x.ID != NegotiatedRtpEventPayloadID).First();
                 }
                 else
                 {
@@ -971,7 +1025,7 @@ namespace SIPSorcery.Net
         {
             header.GetHeaderExtensions().ToList().ForEach(rtpHeaderExtensionData =>
             {
-                if (RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
+                if (RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out var rtpHeaderExtension) == true)
                 {
                     var value = rtpHeaderExtension.Unmarshal(header, rtpHeaderExtensionData.Data);
                     OnRtpHeaderReceivedByIndex?.Invoke(Index, remoteEndPoint, MediaType, rtpHeaderExtension.Uri, value);
