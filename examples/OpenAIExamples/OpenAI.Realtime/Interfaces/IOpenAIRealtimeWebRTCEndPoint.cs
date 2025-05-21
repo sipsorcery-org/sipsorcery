@@ -28,7 +28,10 @@ public interface IOpenAIRealtimeWebRTCEndPoint
 {
     RTCPeerConnection? PeerConnection { get; }
 
-    event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
+    /// <summary>
+    /// (IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType (audio|video|text), RTPPacket rtpPacket, uint durationRtpUnits)
+    /// </summary>
+    event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket, uint>? OnRtpPacketReceived;
 
     /// <summary>
     /// (IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
@@ -46,6 +49,8 @@ public interface IOpenAIRealtimeWebRTCEndPoint
     Task<Either<Error, Unit>> StartConnectAsync(RTCConfiguration? pcConfig = null, string? model = null);
 
     void SendAudio(uint durationRtpUnits, byte[] sample);
+
+    void SendAudioFromRtpPacket(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket);
 
     Either<Error, Unit> SendSessionUpdate(OpenAIVoicesEnum voice, string? instructions = null, string? model = null);
 

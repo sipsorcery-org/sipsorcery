@@ -35,6 +35,8 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
     public const string OPENAI_DEFAULT_MODEL = "gpt-4o-realtime-preview-2024-12-17";
     public const string OPENAI_DATACHANNEL_NAME = "oai-events";
 
+    private const uint DEFAULT_OPUS_DURATION_RTP_TIMESTAMP_UNITS = 960; // 48 kHz × 20 ms
+
     private ILogger _logger = NullLogger.Instance;
 
     private readonly IOpenAIRealtimeRestClient _openAIRealtimeRestClient;
@@ -42,7 +44,19 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
     private RTCPeerConnection? _rtcPeerConnection = null;
     public RTCPeerConnection? PeerConnection => _rtcPeerConnection;
 
-    public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket>? OnRtpPacketReceived;
+    /// <summary>
+    /// The RTP timestamp for the previously received RTP packet. Used to calculate the
+    /// duration of the RTP packet in RTP timestamp units.
+    /// </summary>
+    private uint _rtpPreviousTimestamp = 0;
+
+    /// <summary>
+    /// The RTP timestamp of the previous RTP packet that was provided for forwarding. Used to
+    /// calculate the delta.
+    /// </summary>
+    private uint _rtpPreviousSendTimestamp = 0;
+
+    public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket, uint>? OnRtpPacketReceived;
 
     public event Action<IPEndPoint, uint, uint, uint, int, bool, byte[]>? OnRtpPacketReceivedRaw;
 
@@ -145,7 +159,30 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
             }
         };
 
-        _rtcPeerConnection.OnRtpPacketReceived += (ep, mt, rtp) => OnRtpPacketReceived?.Invoke(ep, mt, rtp);
+        _rtcPeerConnection.OnRtpPacketReceived += (ep, mt, rtp) =>
+        {
+            uint rtpDuration = DEFAULT_OPUS_DURATION_RTP_TIMESTAMP_UNITS;
+
+            if (_rtpPreviousTimestamp != 0)
+            {
+                uint currentTs = rtp.Header.Timestamp;
+
+                if (currentTs >= _rtpPreviousTimestamp)
+                {
+                    rtpDuration = currentTs - _rtpPreviousTimestamp;
+                }
+                else
+                {
+                    // RTP timestampt wraparound: add (2^32) to current before subtracting
+                    // cast to ulong to avoid overflow, then back to uint
+                    uint diff = (uint)((currentTs + ((ulong)uint.MaxValue + 1) - _rtpPreviousTimestamp) & 0xFFFFFFFF);
+                }
+            }
+
+            _rtpPreviousTimestamp = rtp.Header.Timestamp;
+
+            OnRtpPacketReceived?.Invoke(ep, mt, rtp, rtpDuration);
+        };
 
         _rtcPeerConnection.OnRtpPacketReceived += (ep, mt, rtp) =>
         {
@@ -180,6 +217,36 @@ public class OpenAIRealtimeWebRTCEndPoint : IOpenAIRealtimeWebRTCEndPoint
         {
             _rtcPeerConnection.SendAudio(durationRtpUnits, sample);
         }
+    }
+
+    public void SendAudioFromRtpPacket(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+    {
+        if (_rtcPeerConnection != null && _rtcPeerConnection.connectionState == RTCPeerConnectionState.connected)
+        {
+            uint delta;
+            if (_rtpPreviousSendTimestamp == 0)
+            {
+                delta = DEFAULT_OPUS_DURATION_RTP_TIMESTAMP_UNITS;
+            }
+            else
+            {
+                uint ts = rtpPacket.Header.Timestamp;
+                if (ts >= _rtpPreviousSendTimestamp)
+                {
+                    delta = ts - _rtpPreviousSendTimestamp;
+                }
+                else
+                {
+                    // handle wraparound (32-bit)
+                    delta = (uint)((ts + ((ulong)uint.MaxValue + 1) - _rtpPreviousSendTimestamp) & 0xFFFFFFFF);
+                }
+            }
+
+            _rtcPeerConnection.SendAudio(delta, rtpPacket.Payload);
+        }
+
+
+        _rtpPreviousSendTimestamp = rtpPacket.Header.Timestamp;
     }
 
     public Either<Error, Unit> SendSessionUpdate(OpenAIVoicesEnum voice, string? instructions = null, string? model = null)

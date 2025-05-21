@@ -150,7 +150,7 @@ class Program
         WindowsAudioEndPoint windowsAudioEP = new WindowsAudioEndPoint(audioEncoder, -1, -1, true, false);
         webrtcEndPoint.ConnectAudioEndPoint(windowsAudioEP);
 
-        webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+        webrtcEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt, uint delta) =>
         {
             var decodedSample = audioEncoder.DecodeAudio(rtpPkt.Payload, AudioCommonlyUsedFormats.OpusWebRTC);
 
@@ -160,7 +160,5 @@ class Program
 
             var frame = _audioScopeForm?.Invoke(() => _audioScopeForm.ProcessAudioSample(samples, audioScopeNumber));
         };
-
-      
     }
 }

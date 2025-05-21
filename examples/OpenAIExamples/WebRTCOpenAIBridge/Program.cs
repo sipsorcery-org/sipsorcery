@@ -118,7 +118,7 @@ class Program
 
                 await Task.WhenAll(browserPeerTask, openAiPeerTask);
 
-                ConnectPeers(webSocketPeer.RTCPeerConnection, openAiWebRTCEndPoint.PeerConnection!);
+                ConnectPeers(webSocketPeer.RTCPeerConnection, openAiWebRTCEndPoint);
 
                 Log.Debug("Web socket closing with WebRTC peer connection in state {state}.", webSocketPeer.RTCPeerConnection?.connectionState);
             }
@@ -155,44 +155,26 @@ class Program
         };
     }
 
-    private static void ConnectPeers(RTCPeerConnection browserPeerConnection, RTCPeerConnection openAiPeerConnection)
+    private static void ConnectPeers(RTCPeerConnection browserPc, IOpenAIRealtimeWebRTCEndPoint openAiEndPoint)
     {
-        uint rtpPreviousTimestampForOpenAI = 0;
-        browserPeerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
+        if (browserPc != null && openAiEndPoint?.PeerConnection != null)
         {
-            if (rtpPreviousTimestampForOpenAI == 0)
-            {
-                rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
-            }
-            else
-            {
-                uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForOpenAI;
-                rtpPreviousTimestampForOpenAI = rtpPkt.Header.Timestamp;
+            // Send RTP audio payloads recied from the brower WebRTC peer connection to OpenAI.
+            browserPc.OnRtpPacketReceived += openAiEndPoint.SendAudioFromRtpPacket;
 
-                openAiPeerConnection.SendAudio(rtpDuration, rtpPkt.Payload);
-            }
-        };
+            // Send RTP audio payloads received from OpenAI to the browser WebRTC peer connection.
+            openAiEndPoint.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt, uint rtpDuration) =>
+                browserPc.SendAudio(rtpDuration, rtpPkt.Payload);
 
-        uint rtpPreviousTimestampForBrowser = 0;
-        openAiPeerConnection.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
-        {
-            if (rtpPreviousTimestampForBrowser == 0)
-            {
-                rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
-            }
-            else
-            {
-                uint rtpDuration = rtpPkt.Header.Timestamp - rtpPreviousTimestampForBrowser;
-                rtpPreviousTimestampForBrowser = rtpPkt.Header.Timestamp;
+            // If the browser peer connection closes we need to close the OpenAI peer connection too.
+            browserPc.OnClosed += () => openAiEndPoint.PeerConnection?.Close("Browser peer closed.");
 
-                browserPeerConnection.SendAudio(rtpDuration, rtpPkt.Payload);
-            }
-        };
-
-        browserPeerConnection.OnClosed += () => openAiPeerConnection.Close("Browser peer closed.");
+            // If the OpenAI peer connection closes we need to close the browser peer connection too.
+            openAiEndPoint.PeerConnection.OnClosed += () => browserPc.Close("OpenAI peer closed.");
+        }
     }
 
-     /// <summary>
+    /// <summary>
     /// Method to create the peer connection with the browser.
     /// </summary>
     private static Task<RTCPeerConnection> CreateBrowserPeerConnection(RTCConfiguration pcConfig)
