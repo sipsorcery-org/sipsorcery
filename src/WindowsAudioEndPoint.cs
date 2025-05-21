@@ -35,7 +35,7 @@ namespace SIPSorceryMedia.Windows
         private const int DEVICE_BITS_PER_SAMPLE = 16;
         private const int DEFAULT_DEVICE_CHANNELS = 1;
         private const int INPUT_BUFFERS = 2;          // See https://github.com/sipsorcery/sipsorcery/pull/148.
-        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
+        private const int DEFAULT_PLAYBACK_BUFFER_MILLISECONDS = 100;
         private const int AUDIO_INPUTDEVICE_INDEX = -1;
         private const int AUDIO_OUTPUTDEVICE_INDEX = -1;
 
@@ -305,7 +305,7 @@ namespace SIPSorceryMedia.Windows
                            audioSourceChannels);
 
                     _waveInEvent = new WaveInEvent();
-                    _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                    _waveInEvent.BufferMilliseconds = DEFAULT_PLAYBACK_BUFFER_MILLISECONDS;
                     _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
                     _waveInEvent.DeviceNumber = audioInDeviceIndex;
                     _waveInEvent.WaveFormat = _waveSourceFormat;
