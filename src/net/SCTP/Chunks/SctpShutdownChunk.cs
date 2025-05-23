@@ -19,6 +19,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.ComponentModel;
 using SIPSorcery.Sys;
 using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 
@@ -102,10 +103,19 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
+        [Obsolete("Use ParseChunk(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static SctpShutdownChunk ParseChunk(byte[] buffer, int posn)
+            => ParseChunk(buffer.AsSpan(posn));
+
+        /// <summary>
+        /// Parses the SHUTDOWN chunk fields.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk.</param>
+        public static SctpShutdownChunk ParseChunk(ReadOnlySpan<byte> buffer)
         {
             var shutdownChunk = new SctpShutdownChunk();
-            shutdownChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, posn + SCTP_CHUNK_HEADER_LENGTH);
+            shutdownChunk.CumulativeTsnAck = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
             return shutdownChunk;
         }
     }

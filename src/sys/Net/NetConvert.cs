@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 
 namespace SIPSorcery.Sys
@@ -141,8 +142,8 @@ namespace SIPSorcery.Sys
         /// <returns>A buffer representing the value in network order </returns>
         public static byte[] GetBytes(uint val)
         {
-            var buffer = new byte[4];
-            ToBuffer(val, buffer, 0);
+            var buffer = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, val);
             return buffer;
         }
 
@@ -177,8 +178,8 @@ namespace SIPSorcery.Sys
         /// <returns>A buffer representing the value in network order </returns>
         public static byte[] GetBytes(ulong val)
         {
-            var buffer = new byte[8];
-            ToBuffer(val, buffer, 0);
+            var buffer = new byte[sizeof(ulong)];
+            BinaryPrimitives.WriteUInt64BigEndian(buffer, val);
             return buffer;
         }
 

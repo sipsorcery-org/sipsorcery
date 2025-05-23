@@ -298,7 +298,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    var buffer = packet.Skip(offset).ToArray();
+                    var buffer = packet.AsSpan(offset).ToArray();
 
                     // The payload type field is the second byte in the RTCP header.
                     byte packetTypeID = buffer[1];

@@ -19,6 +19,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.ComponentModel;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -201,10 +202,20 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
+        [Obsolete("Use Parse(ParseChunk<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static SctpDataChunk ParseChunk(byte[] buffer, int posn)
+            => ParseChunk(buffer.AsSpan(posn));
+
+        /// <summary>
+        /// Parses the DATA chunk fields
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk.</param>
+        /// <param name="posn">The position to start parsing at.</param>
+        public static SctpDataChunk ParseChunk(ReadOnlySpan<byte> buffer)
         {
             var dataChunk = new SctpDataChunk();
-            ushort chunkLen = dataChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = dataChunk.ParseFirstWord(buffer);
 
             if (chunkLen < FIXED_PARAMETERS_LENGTH)
             {
@@ -215,20 +226,16 @@ namespace SIPSorcery.Net
             dataChunk.Begining = (dataChunk.ChunkFlags & 0x02) > 0;
             dataChunk.Ending = (dataChunk.ChunkFlags & 0x01) > 0;
 
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            dataChunk.TSN = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
+            dataChunk.StreamID = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4));
+            dataChunk.StreamSeqNum = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 6));
+            dataChunk.PPID = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8));
 
-            dataChunk.TSN = NetConvert.ParseUInt32(buffer, startPosn);
-            dataChunk.StreamID = NetConvert.ParseUInt16(buffer, startPosn + 4);
-            dataChunk.StreamSeqNum = NetConvert.ParseUInt16(buffer, startPosn + 6);
-            dataChunk.PPID = NetConvert.ParseUInt32(buffer, startPosn + 8);
-
-            int userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-            int userDataLen = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
+            var userDataLen = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
 
             if (userDataLen > 0)
             {
-                dataChunk.UserData = new byte[userDataLen];
-                Buffer.BlockCopy(buffer, userDataPosn, dataChunk.UserData, 0, dataChunk.UserData.Length);
+                dataChunk.UserData = buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH, userDataLen).ToArray();
             }
 
             return dataChunk;

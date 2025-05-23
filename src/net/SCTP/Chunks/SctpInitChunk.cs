@@ -20,6 +20,8 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -240,11 +242,11 @@ namespace SIPSorcery.Net
 
             if (SupportedAddressTypes.Count > 0)
             {
-                byte[] paramVal = new byte[SupportedAddressTypes.Count * 2];
-                int paramValPosn = 0;
+                var paramVal = new byte[SupportedAddressTypes.Count * 2];
+                var paramValPosn = 0;
                 foreach (var supAddr in SupportedAddressTypes)
                 {
-                    NetConvert.ToBuffer((ushort)supAddr, paramVal, paramValPosn);
+                    BinaryPrimitives.WriteUInt16BigEndian(paramVal.AsSpan(paramValPosn), (ushort)supAddr);
                     paramValPosn += 2;
                 }
                 varParams.Add(
@@ -337,28 +339,39 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
+        [Obsolete("Use ParseChunk(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static SctpInitChunk ParseChunk(byte[] buffer, int posn)
+            => ParseChunk(buffer.AsSpan(posn));
+
+        /// <summary>
+        /// Parses the INIT or INIT ACK chunk fields
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk.</param>
+        public static SctpInitChunk ParseChunk(ReadOnlySpan<byte> buffer)
         {
             var initChunk = new SctpInitChunk();
-            ushort chunkLen = initChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = initChunk.ParseFirstWord(buffer);
 
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            initChunk.InitiateTag = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
+            initChunk.ARwnd = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4));
+            initChunk.NumberOutboundStreams = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8));
+            initChunk.NumberInboundStreams = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 10));
+            initChunk.InitialTSN = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 12));
 
-            initChunk.InitiateTag = NetConvert.ParseUInt32(buffer, startPosn);
-            initChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
-            initChunk.NumberOutboundStreams = NetConvert.ParseUInt16(buffer, startPosn + 8);
-            initChunk.NumberInboundStreams = NetConvert.ParseUInt16(buffer, startPosn + 10);
-            initChunk.InitialTSN = NetConvert.ParseUInt32(buffer, startPosn + 12);
-
-            int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-            int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
+            var paramPosn = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
+            var paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
 
             if (paramPosn < paramsBufferLength)
             {
-                bool stopProcessing = false;
+                var stopProcessing = false;
 
-                foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
+                var paramsBuffer = buffer.Slice(paramPosn, paramsBufferLength);
+                foreach (var varParam in GetParameters(paramsBuffer))
+                //while (GetNexParameterParameter(ref paramsBuffer, out var varParam))
                 {
+                    Debug.Assert(varParam is not null);
+
                     switch (varParam.ParameterType)
                     {
                         case (ushort)SctpInitChunkParameterType.IPv4Address:
@@ -368,7 +381,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case (ushort)SctpInitChunkParameterType.CookiePreservative:
-                            initChunk.CookiePreservative = NetConvert.ParseUInt32(varParam.ParameterValue, 0);
+                            initChunk.CookiePreservative = BinaryPrimitives.ReadUInt32BigEndian(varParam.ParameterValue.AsSpan());
                             break;
 
                         case (ushort)SctpInitChunkParameterType.HostNameAddress:
@@ -378,7 +391,7 @@ namespace SIPSorcery.Net
                         case (ushort)SctpInitChunkParameterType.SupportedAddressTypes:
                             for (int valPosn = 0; valPosn < varParam.ParameterValue.Length; valPosn += 2)
                             {
-                                switch (NetConvert.ParseUInt16(varParam.ParameterValue, valPosn))
+                                switch (BinaryPrimitives.ReadUInt16BigEndian(varParam.ParameterValue.AsSpan(valPosn)))
                                 {
                                     case (ushort)SctpInitChunkParameterType.IPv4Address:
                                         initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.IPv4Address);

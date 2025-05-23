@@ -180,12 +180,12 @@ namespace SIPSorcery.Net
             packet = packet.Slice(RTCPHeader.HEADER_BYTES_LENGTH);
 
             // Parse sender and media SSRCs
-            SenderSSRC = ReadUInt32(ref packet);
-            MediaSSRC = ReadUInt32(ref packet);
+            SenderSSRC = BinaryOperations.ReadUInt32BigEndian(ref packet);
+            MediaSSRC = BinaryOperations.ReadUInt32BigEndian(ref packet);
 
             // Parse Base Sequence Number and Packet Status Count
-            BaseSequenceNumber = ReadUInt16(ref packet);
-            PacketStatusCount = ReadUInt16(ref packet);
+            BaseSequenceNumber = BinaryOperations.ReadUInt16BigEndian(ref packet);
+            PacketStatusCount = BinaryOperations.ReadUInt16BigEndian(ref packet);
 
             // Parse Reference Time and Feedback Packet Count
             ReferenceTime = ParseReferenceTime(ref packet, out byte fbCount);
@@ -271,38 +271,6 @@ namespace SIPSorcery.Net
             return (uint)((b1 << 16) | (b2 << 8) | b3);
         }
 
-        private List<TWCCPacketStatusType> ParseStatusChunks(byte[] packet, ref int offset)
-        {
-            var statusSymbols = new List<TWCCPacketStatusType>();
-            int remainingStatuses = PacketStatusCount;
-
-            while (remainingStatuses > 0)
-            {
-                if (offset + 2 > packet.Length)
-                {
-                    throw new ArgumentException($"Packet truncated during status chunk parsing. Expected {remainingStatuses} more statuses.");
-                }
-
-                var chunk = ReadUInt16(packet, ref offset);
-                var chunkType = chunk >> 14;
-
-                switch (chunkType)
-                {
-                    case 0: // Run Length Chunk
-                        ParseRunLengthChunk(chunk, statusSymbols, ref remainingStatuses);
-                        break;
-                    case 2: // Two-bit Status Vector
-                        ParseTwoBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
-                        break;
-                    case 3: // One-bit Status Vector
-                        ParseOneBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
-                        break;
-                }
-            }
-
-            return statusSymbols;
-        }
-
         private List<TWCCPacketStatusType> ParseStatusChunks(ref ReadOnlySpan<byte> packet)
         {
             var statusSymbols = new List<TWCCPacketStatusType>();
@@ -315,7 +283,7 @@ namespace SIPSorcery.Net
                     throw new ArgumentException($"Packet truncated during status chunk parsing. Expected {remainingStatuses} more statuses.");
                 }
 
-                var chunk = ReadUInt16(ref packet);
+                var chunk = BinaryOperations.ReadUInt16BigEndian(ref packet);
                 var chunkType = chunk >> 14;
 
                 switch (chunkType)
@@ -600,15 +568,15 @@ namespace SIPSorcery.Net
             buffer = buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH);
 
             // Write Sender and Media SSRC.
-            WriteUInt32(ref buffer, SenderSSRC);
-            WriteUInt32(ref buffer, MediaSSRC);
+            BinaryOperations.WriteUInt32BigEndian(ref buffer, SenderSSRC);
+            BinaryOperations.WriteUInt32BigEndian(ref buffer, MediaSSRC);
 
             // Write Base Sequence Number and Packet Status Count.
-            WriteUInt16(ref buffer, BaseSequenceNumber);
-            WriteUInt16(ref buffer, PacketStatusCount);
+            BinaryOperations.WriteUInt16BigEndian(ref buffer, BaseSequenceNumber);
+            BinaryOperations.WriteUInt16BigEndian(ref buffer, PacketStatusCount);
 
             // Build the 32-bit word for ReferenceTime and FeedbackPacketCount.
-            WriteUInt32(ref buffer, (ReferenceTime << 8) | FeedbackPacketCount);
+            BinaryOperations.WriteUInt32BigEndian(ref buffer, (ReferenceTime << 8) | FeedbackPacketCount);
 
             for (var i = 0; i < PacketStatuses.Count;)
             {
@@ -646,7 +614,7 @@ namespace SIPSorcery.Net
 
                     var chunk = (ushort)(statusBits << 12);
                     chunk |= (ushort)(runLength & 0x0FFF);
-                    WriteUInt16(ref buffer, chunk);
+                    BinaryOperations.WriteUInt16BigEndian(ref buffer, chunk);
                     i += runLength;
             }
                 else
@@ -677,7 +645,7 @@ namespace SIPSorcery.Net
 
                         chunk |= (ushort)(statusBits << (12 - 2 * j));
                     }
-                    WriteUInt16(ref buffer, chunk);
+                    BinaryOperations.WriteUInt16BigEndian(ref buffer, chunk);
                     i += count;
                 }
             }
@@ -713,77 +681,5 @@ namespace SIPSorcery.Net
                    $"StatusCount={PacketStatusCount}, RefTime={ReferenceTime} (1/64 sec), " +
                    $"FbkPktCount={FeedbackPacketCount}, PacketStatuses=[{packetStatusInfo}]";
         }
-
-        #region Helper Methods
-
-        private uint ReadUInt32(byte[] buffer, ref int offset)
-        {
-            uint value = BitConverter.ToUInt32(buffer, offset);
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            offset += 4;
-            return value;
-        }
-
-        private uint ReadUInt32(ref ReadOnlySpan<byte> buffer)
-        {
-            var value = BinaryPrimitives.ReadUInt32BigEndian(buffer);
-            buffer = buffer.Slice(sizeof(uint));
-            return value;
-        }
-
-        private ushort ReadUInt16(byte[] buffer, ref int offset)
-        {
-            ushort value = BitConverter.ToUInt16(buffer, offset);
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            offset += 2;
-            return value;
-        }
-
-        private ushort ReadUInt16(ref ReadOnlySpan<byte> buffer)
-        {
-            var value = BinaryPrimitives.ReadUInt16BigEndian(buffer);
-            buffer = buffer.Slice(sizeof(ushort));
-            return value;
-        }
-
-        private void WriteUInt32(byte[] buffer, ref int offset, uint value)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, buffer, offset, 4);
-            offset += 4;
-        }
-
-        private void WriteUInt16(byte[] buffer, ref int offset, ushort value)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, buffer, offset, 2);
-            offset += 2;
-        }
-
-        private static void WriteUInt32(ref Span<byte> buffer, uint value)
-        {
-            BinaryPrimitives.WriteUInt32BigEndian(buffer, value);
-            buffer = buffer.Slice(sizeof(uint));
-        }
-
-        private static void WriteUInt16(ref Span<byte> buffer, ushort value)
-        {
-            BinaryPrimitives.WriteUInt16BigEndian(buffer, value);
-            buffer = buffer.Slice(sizeof(ushort));
-        }
-
-        #endregion
     }
 }

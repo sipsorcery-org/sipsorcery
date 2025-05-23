@@ -19,6 +19,7 @@
 
 using System;
 using System.Buffers.Binary;
+using System.ComponentModel;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -81,19 +82,29 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer to parse the SCTP header from.</param>
         /// <param name="posn">The position in the buffer to start parsing the header from.</param>
         /// <returns>A new SCTPHeaer instance.</returns>
+        [Obsolete("Use Parse(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public static SctpHeader Parse(byte[] buffer, int posn)
+            => Parse(buffer.AsSpan(posn));
+
+        /// <summary>
+        /// Parses the an SCTP header from a buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to parse the SCTP header from.</param>
+        /// <returns>A new SCTPHeaer instance.</returns>
+        public static SctpHeader Parse(ReadOnlySpan<byte> buffer)
         {
             if (buffer.Length < SCTP_HEADER_LENGTH)
             {
                 throw new ApplicationException("The buffer did not contain the minimum number of bytes for an SCTP header.");
             }
 
-            SctpHeader header = new SctpHeader();
+            var header = new SctpHeader();
 
-            header.SourcePort = NetConvert.ParseUInt16(buffer, posn);
-            header.DestinationPort = NetConvert.ParseUInt16(buffer, posn + 2);
-            header.VerificationTag = NetConvert.ParseUInt32(buffer, posn + 4);
-            header.Checksum = NetConvert.ParseUInt32(buffer, posn + 8);
+            header.SourcePort = BinaryPrimitives.ReadUInt16BigEndian(buffer);
+            header.DestinationPort = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(2));
+            header.VerificationTag = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(4));
+            header.Checksum = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(8));
 
             return header;
         }

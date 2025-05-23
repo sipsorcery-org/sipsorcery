@@ -2507,7 +2507,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    buffer = buffer.Take(outBufLen).ToArray();
+                    buffer = buffer.AsSpan(0, outBufLen).ToArray();
                 }
             }           
 

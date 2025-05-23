@@ -201,7 +201,7 @@ namespace SIPSorcery.Net
                         invalid = true;
                         return null;
                     }
-                    ext = new RTPHeaderExtensionData(id, ExtensionPayload.Skip(position).Take(len).ToArray(), type);
+                    ext = new RTPHeaderExtensionData(id, ExtensionPayload.AsSpan(position, len).ToArray(), type);
                     position += len;
                 }
                 else
