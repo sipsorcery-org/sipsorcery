@@ -144,25 +144,9 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                string userFieldStr = null;
-
-                if (Name != null)
-                {
-                    /*if(Regex.Match(Name, @"\s").Success)
-                    {
-                    userFieldStr = "\"" + Name + "\" ";
-                }
-                    else
-                    {
-                        userFieldStr = Name + " ";
-                    }*/
-
-                    userFieldStr = "\"" + Name + "\" ";
-                }
-
-                userFieldStr += "<" + URI.ToString() + ">" + Parameters.ToString();
-
-                return userFieldStr;
+                return Name != null
+                    ? $"\"{Name}\" <{URI}>{Parameters}"
+                    : $"<{URI}>{Parameters}";
             }
             catch (Exception excp)
             {

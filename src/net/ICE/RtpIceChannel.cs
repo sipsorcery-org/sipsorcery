@@ -1388,7 +1388,7 @@ namespace SIPSorcery.Net
                 // Attempt to resolve the remote candidate address.
                 if (!IPAddress.TryParse(remoteCandidate.address, out var remoteCandidateIPAddr))
                 {
-                    if (remoteCandidate.address.ToLower().EndsWith(MDNS_TLD))
+                    if (remoteCandidate.address.EndsWith(MDNS_TLD, StringComparison.OrdinalIgnoreCase))
                     {
                         var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
                         if (addresses.Length == 0)

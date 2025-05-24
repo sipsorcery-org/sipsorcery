@@ -321,7 +321,7 @@ namespace SIPSorcery.Net
        
         private string GetFoundation()
         {
-            var serverProtocol = IceServer != null ? IceServer.Protocol.ToString().ToLower() : "udp";
+            var serverProtocol = IceServer != null ? IceServer.Protocol.ToLowerString() : "udp";
             var builder = new System.Text.StringBuilder();
             builder = builder.Append(type).Append(address).Append(protocol).Append(serverProtocol);
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(builder.ToString());
