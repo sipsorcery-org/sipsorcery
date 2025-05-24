@@ -901,6 +901,10 @@ namespace SIPSorcery.Net
             {
                 return new IPEndPoint(IPAddress.Parse(sessionConnection.ConnectionAddress), firstMediaOffer.Port);
             }
+            else if(firstMediaOffer != null && firstMediaOffer.Connection != null)
+            {
+                return new IPEndPoint(IPAddress.Parse(firstMediaOffer.Connection.ConnectionAddress), firstMediaOffer.Port);
+            }
             else
             {
                 return null;
