@@ -282,7 +282,7 @@ namespace SIPSorcery.Net
 
                 if (res == 0)
                 {
-                    return (true, buffer.Take(outBufLen).ToArray());
+                    return (true, buffer.AsSpan(0, outBufLen).ToArray());
                 }
                 else
                 {
@@ -469,7 +469,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.AsSpan(0, outBufLen).ToArray());
                     }
                 }
                 m_lastRtpTimestamp = timestamp;
@@ -618,7 +618,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.AsSpan(0, outBufLen).ToArray());
                     }
                 }
             }

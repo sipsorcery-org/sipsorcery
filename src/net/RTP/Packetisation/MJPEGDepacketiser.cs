@@ -151,10 +151,10 @@ namespace SIPSorcery.net.RTP.Packetisation
 
         private bool _hasExternalQuantizationTable;
 
-        private byte[] _jpegHeaderBytes = new byte[0];
+        private byte[] _jpegHeaderBytes = Array.Empty<byte>();
         private ArraySegment<byte> _jpegHeaderBytesSegment;
 
-        private byte[] _quantizationTables = new byte[0];
+        private byte[] _quantizationTables = Array.Empty<byte>();
         private int _quantizationTablesLength;
 
         

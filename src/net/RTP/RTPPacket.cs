@@ -41,15 +41,37 @@ namespace SIPSorcery.Net
             Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
         }
 
+        public int GetPacketSize() => Header.GetPacketSize() + Payload.Length;
+
         public byte[] GetBytes()
         {
-            byte[] header = Header.GetBytes();
-            byte[] packet = new byte[header.Length + Payload.Length];
+            var packet = new byte[GetPacketSize()];
 
-            Array.Copy(header, packet, header.Length);
-            Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
+            var buffer = packet.AsSpan();
+
+            WriteBytesCore(buffer);
 
             return packet;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            var bytesWritten = Header.WriteBytes(buffer);
+            Payload.CopyTo(buffer.Slice(bytesWritten));
         }
 
         private byte[] GetNullPayload(int numBytes)
