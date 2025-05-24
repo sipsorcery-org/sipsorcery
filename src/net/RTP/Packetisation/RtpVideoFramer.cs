@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
 
         public byte[] GotRtpPacket(RTPPacket rtpPacket)
         {
-            var payload = rtpPacket.Payload;
+            var payload = rtpPacket.GetPayloadBytes();
 
             var hdr = rtpPacket.Header;
 
