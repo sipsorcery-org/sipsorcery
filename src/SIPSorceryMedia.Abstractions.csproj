@@ -8,6 +8,7 @@
 	<LangVersion>12.0</LangVersion>
     <!-- Disable warning for missing XML doc comments. -->
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020-2025 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
@@ -21,6 +22,7 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery/SIPSorceryMedia.Abstractions</RepositoryUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>8.0.10</Version>
     <AssemblyVersion>8.0.10</AssemblyVersion>
     <FileVersion>8.0.10</FileVersion>
@@ -40,6 +42,7 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
+	<None Include="..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
