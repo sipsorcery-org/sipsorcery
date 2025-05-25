@@ -65,7 +65,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that two RTP channels can communicate.
         /// </summary>
         [Fact]
-        public async void RtpChannelLoopbackUnitTest()
+        public async Task RtpChannelLoopbackUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -113,22 +113,19 @@ namespace SIPSorcery.Net.UnitTests
         /// specific IPv4 bind address.
         /// </summary>
         [Fact]
-        public async void RtpChannelWithIPv4BindAddressLoopbackUnitTest()
+        public async Task RtpChannelWithIPv4BindAddressLoopbackUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPChannel channel1 = new RTPChannel(false, IPAddress.Loopback);
-
-            bool testResult = false;
-            ManualResetEventSlim testCompleteEvent = new ManualResetEventSlim(false);
-
             RTPChannel channel2 = new RTPChannel(false, IPAddress.Loopback);
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
             channel2.OnRTPDataReceived += (lep, rep, pkt) =>
             {
                 logger.LogDebug("RTP data receive packet length {Length}.", pkt.Length);
-                testResult = true;
-                testCompleteEvent.Set();
+                tcs.TrySetResult(true);
             };
 
             channel1.Start();
@@ -145,14 +142,22 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Send result {SendResult}.", sendResult);
 
-            testCompleteEvent.Wait(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
-
-            Assert.True(testResult);
+            // Wait for receive or timeout
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
+            var completed = await Task.WhenAny(tcs.Task, timeoutTask);
 
             channel1.Close("normal");
             channel2.Close("normal");
 
             logger.LogDebug("Test complete.");
+
+            // Assert.
+            if (completed == timeoutTask)
+            {
+                Assert.Fail($"RTP packet not received within {TEST_TIMEOUT_SECONDS} seconds.");
+            }
+
+            Assert.True(await tcs.Task);
         }
 
         /// <summary>
@@ -160,7 +165,7 @@ namespace SIPSorcery.Net.UnitTests
         /// specific IPv6 bind address.
         /// </summary>
         [Fact]
-        public async void RtpChannelWithIPv6BindAddressLoopbackUnitTest()
+        public async Task RtpChannelWithIPv6BindAddressLoopbackUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

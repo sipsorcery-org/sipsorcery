@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -94,7 +95,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [Fact]
         [Trait("Category", "txintegration")]
-        public void AckRecognitionUnitTest()
+        public async Task AckRecognitionUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -155,7 +156,10 @@ namespace SIPSorcery.SIP.UnitTests
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest();
 
-                if (!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
+                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TRANSACTION_EXCHANGE_TIMEOUT_MS));
+                var completed = await Task.WhenAny(uasConfirmedTask.Task, timeoutTask);
+
+                if (completed == timeoutTask)
                 {
                     logger.LogWarning("Tasks timed out");
                 }

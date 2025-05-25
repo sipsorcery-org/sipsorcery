@@ -38,7 +38,7 @@ namespace SIPSorcery.Net.UnitTests
         /// a connection.
         /// </summary>
         [Fact]
-        public void ConnectAssociations()
+        public async Task ConnectAssociations()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -75,7 +75,14 @@ namespace SIPSorcery.Net.UnitTests
 
             aAssoc.Init();
 
-            Task.WaitAll(new Task[] { aAssocTcs.Task, bAssocTcs.Task }, 5000);
+            var combined = Task.WhenAll(aAssocTcs.Task, bAssocTcs.Task);
+            var timeout = Task.Delay(TimeSpan.FromSeconds(5));
+            var winner = await Task.WhenAny(combined, timeout);
+
+            if (winner == timeout)
+            {
+                Assert.Fail("Associations did not establish within 5 seconds.");
+            }
 
             Assert.Equal(SctpAssociationState.Established, aAssoc.State);
             Assert.Equal(SctpAssociationState.Established, bAssoc.State);
@@ -89,7 +96,7 @@ namespace SIPSorcery.Net.UnitTests
         /// between them.
         /// </summary>
         [Fact]
-        public void SendDataChunk()
+        public async Task SendDataChunk()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -101,17 +108,23 @@ namespace SIPSorcery.Net.UnitTests
             bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
             aAssoc.SendData(0, 0, Encoding.UTF8.GetBytes(message));
 
-            tcs.Task.Wait(3000);
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3));
+            var completed = await Task.WhenAny(tcs.Task, timeoutTask);
+
+            if (completed == timeoutTask)
+            {
+                Assert.Fail($"Timed out after 3 seconds.");
+            }
 
             Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal(message, tcs.Task.Result);
+            Assert.Equal(message, await tcs.Task);
         }
 
         /// <summary>
         /// Tests sending a small fragmented data chunk between SCTP associations.
         /// </summary>
         [Fact]
-        public void SendFragmentedDataChunk()
+        public async Task SendFragmentedDataChunk()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -126,17 +139,23 @@ namespace SIPSorcery.Net.UnitTests
             bAssoc.OnData += (frame) => tcs.TrySetResult(Encoding.UTF8.GetString(frame.UserData));
             aAssoc.SendData(0, 0, Encoding.UTF8.GetBytes(message));
 
-            tcs.Task.Wait(3000);
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3));
+            var completed = await Task.WhenAny(tcs.Task, timeoutTask);
+
+            if (completed == timeoutTask)
+            {
+                Assert.Fail($"Timed out after 3 seconds.");
+            }
 
             Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal(message, tcs.Task.Result);
+            Assert.Equal(message, await tcs.Task);
         }
 
         /// <summary>
         /// Tests sending a large fragmented data chunk between SCTP associations.
         /// </summary>
         [Fact]
-        public void SendLargeFragmentedDataChunk()
+        public async Task SendLargeFragmentedDataChunk()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -151,10 +170,16 @@ namespace SIPSorcery.Net.UnitTests
             bAssoc.OnData += (frame) => tcs.TrySetResult(Crypto.GetSHA256Hash(frame.UserData));
             aAssoc.SendData(0, 0, dummyData);
 
-            tcs.Task.Wait(3000);
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(3));
+            var completed = await Task.WhenAny(tcs.Task, timeoutTask);
+
+            if (completed == timeoutTask)
+            {
+                Assert.Fail($"Timed out after 3 seconds.");
+            }
 
             Assert.True(tcs.Task.IsCompleted);
-            Assert.Equal(sha256Hash, tcs.Task.Result);
+            Assert.Equal(sha256Hash, await tcs.Task);
         }
     }
 

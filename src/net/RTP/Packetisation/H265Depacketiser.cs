@@ -36,7 +36,6 @@ namespace SIPSorcery.Net
         uint previous_timestamp = 0;
         List<KeyValuePair<int, byte[]>> temporary_rtp_payloads = new List<KeyValuePair<int, byte[]>>(); // used to assemble the RTP packets that form one RTP Frame
 
-        int writeNumber = 0;
         public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
         {
             List<byte[]> nal_units = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
@@ -124,7 +123,6 @@ namespace SIPSorcery.Net
         // Returns a list of NAL Units (with no 00 00 00 01 header and with no Size header)
         protected virtual List<byte[]> ProcessH265PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads, out bool isKeyFrame)
         {
-            bool? isKeyFrameNullable = null;
             List<byte[]> nal_units = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
 
             //check payload for Payload headers 48 and 49

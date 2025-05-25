@@ -114,7 +114,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that attempting a client handshake times out correctly.
         /// </summary>
         [Fact]
-        public async void DoHandshakeClientTimeoutUnitTest()
+        public async Task DoHandshakeClientTimeoutUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -131,7 +131,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that attempting a server handshake times out correctly.
         /// </summary>
         [Fact]
-        public async void DoHandshakeServerTimeoutUnitTest()
+        public async Task DoHandshakeServerTimeoutUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

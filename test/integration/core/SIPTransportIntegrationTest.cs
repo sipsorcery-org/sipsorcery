@@ -556,7 +556,7 @@ serverReadyEvent);
         /// received on server web socket SIP channel.
         /// </summary>
         [Fact]
-        public async void WebSocketLoopbackSendReceiveTest()
+        public async Task WebSocketLoopbackSendReceiveTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -601,7 +601,7 @@ serverReadyEvent);
         /// SIP channels. Web sockets have special rules about detecting the end of sends.
         /// </summary>
         [Fact]
-        public async void WebSocketLoopbackLargeSendReceiveTest()
+        public async Task WebSocketLoopbackLargeSendReceiveTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
