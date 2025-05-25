@@ -8,6 +8,7 @@
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <PackageId>SIPSorceryMedia.Windows</PackageId>
     <TargetFrameworks>net8.0-windows10.0.17763.0</TargetFrameworks>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
@@ -23,6 +24,7 @@
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>8.0.11</Version>
     <AssemblyVersion>8.0.11.0</AssemblyVersion>
     <FileVersion>8.0.11.0</FileVersion>
@@ -55,7 +57,7 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
-	<None Include="readme.md" Pack="true" PackagePath="\" />
+	<None Include="..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
