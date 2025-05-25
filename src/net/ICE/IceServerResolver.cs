@@ -29,33 +29,42 @@ namespace SIPSorcery.Net;
 
 public class IceServerResolver
 {
-    private const int MAXIMUM_ICE_SERVER_URLS = 10;
-
     private static readonly ILogger logger = Log.Logger;
 
     private ConcurrentDictionary<STUNUri, IceServer> _iceServers = new();
 
     public IReadOnlyDictionary<STUNUri, IceServer> IceServers => new ReadOnlyDictionary<STUNUri, IceServer>(_iceServers);
 
+    public IceServerResolver()
+    {  }
+
     /// <summary>
-    /// Builds the set of ICE servers (STUN/TURN), and for any whose host
-    /// isn’t already an IP, starts an async DNS lookup in the background.
-    /// Returns immediately with endpoints possibly still null.
+    /// Initialises the ICE servers if any were provided in the initial configuration.
+    /// ICE servers are STUN and TURN servers and are used to gather "server reflexive"
+    /// and "relay" candidates. If the transport policy is "relay only" then only TURN 
+    /// servers will be added to the list of ICE servers being checked.
     /// </summary>
+    /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.2</remarks>
     public void InitialiseIceServers(
         List<RTCIceServer> iceServers,
         RTCIceTransportPolicy policy)
     {
+        if(iceServers == null || iceServers.Count == 0)
+        {
+            logger.LogDebug("{caller} no ICE servers provided.", nameof(IceServerResolver));
+            return;
+        }
+
         int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
         _iceServers.Clear();
 
         foreach (var cfg in iceServers)
         {
-            foreach (var rawUrl in cfg.urls.Split(new [] { ',' }, MAXIMUM_ICE_SERVER_URLS, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var rawUrl in cfg.urls.Split(new[] { ',' }, IceServer.MAXIMUM_ICE_SERVER_ID + 1, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (!STUNUri.TryParse(rawUrl.Trim(), out var stunUri))
                 {
-                    logger.LogWarning("Could not parse ICE server URL {url}", rawUrl);
+                    logger.LogWarning("{caller} could not parse ICE server URL {url}", nameof(IceServerResolver), rawUrl);
                     continue;
                 }
 
@@ -63,7 +72,7 @@ public class IceServerResolver
                 if (stunUri.Scheme is STUNSchemesEnum.stuns or STUNSchemesEnum.turns ||
                     (policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun))
                 {
-                    logger.LogWarning("Ignoring ICE server {stunUri} (scheme {scheme})", stunUri, stunUri.Scheme);
+                    logger.LogWarning("{caller} ignoring ICE server {stunUri} (scheme {scheme})", nameof(IceServerResolver), stunUri, stunUri.Scheme);
                     continue;
                 }
 
@@ -79,19 +88,20 @@ public class IceServerResolver
                 if (IPAddress.TryParse(stunUri.Host, out var ip))
                 {
                     server.ServerEndPoint = new IPEndPoint(ip, stunUri.Port);
-                    logger.LogDebug("Bound {Uri} -> {EndPoint}", stunUri, server.ServerEndPoint);
+                    logger.LogDebug("{caller} bound {Uri} -> {EndPoint}", nameof(IceServerResolver), stunUri, server.ServerEndPoint);
                 }
-                else
+
+                _iceServers[stunUri] = server;
+
+                if (server.ServerEndPoint == null)
                 {
                     // Kick off DNS in background, passing the key so we can update the map.
                     ScheduleDnsLookup(stunUri, server);
                 }
 
-                _iceServers[stunUri] = server;
-
                 if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
                 {
-                    logger.LogWarning("Reached max ICE server count");
+                    logger.LogWarning("{caller} reached max ICE server count", nameof(IceServerResolver));
                     break;
                 }
             }
@@ -105,8 +115,12 @@ public class IceServerResolver
             return;
         }
 
-        server.DnsLookupSentAt = DateTime.UtcNow;
-        logger.LogDebug("Starting DNS lookup for {Uri}", key);
+        if (_iceServers.ContainsKey(key))
+        {
+            _iceServers[key].DnsLookupSentAt = DateTime.UtcNow;
+        }
+
+        logger.LogDebug("{caller} starting DNS lookup for ICE server {Uri}", nameof(IceServerResolver), key);
 
         server.DnsResolutionTask = Task.Run(async () =>
         {
@@ -120,18 +134,18 @@ public class IceServerResolver
                 {
                     var ep = await resolveTask.ConfigureAwait(false);
                     server.ServerEndPoint = ep;
-                    logger.LogDebug("Resolved {Uri} -> {EndPoint}", key, ep);
+                    logger.LogDebug("{caller} resolved {Uri} -> {EndPoint}", nameof(IceServerResolver), key, ep);
                 }
                 else
                 {
                     server.Error = SocketError.TimedOut;
-                    logger.LogWarning("DNS lookup timed out for {Uri}", key);
+                    logger.LogWarning("{caller} DNS lookup timed out for {Uri}", nameof(IceServerResolver), key);
                 }
             }
             catch (Exception ex)
             {
                 server.Error = SocketError.HostNotFound;
-                logger.LogWarning(ex, "DNS resolution failed for {Uri}", key);
+                logger.LogWarning(ex, "{caller} DNS resolution failed for {Uri}", nameof(IceServerResolver), key);
             }
 
             _iceServers[key] = server;
@@ -149,7 +163,6 @@ public class IceServerResolver
 
         var all = Task.WhenAll(tasks);
         if (timeout.HasValue)
-
         {
             if (await Task.WhenAny(all, Task.Delay(timeout.Value)).ConfigureAwait(false) != all)
             {

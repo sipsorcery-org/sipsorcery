@@ -612,11 +612,11 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
             rtpIceChannel.StartGathering();
 
-            foreach(var pair in rtpIceChannel._iceServerConnections)
+            foreach(var pair in rtpIceChannel._iceServerResolver.IceServers)
             {
                 logger.LogDebug("ICE server {ServerKey}, tx ID {TransactionID}", pair.Key, pair.Value._id);
 
-                Assert.Equal(1, rtpIceChannel._iceServerConnections.Values.Count(x => x._id == pair.Value._id));
+                Assert.Equal(1, rtpIceChannel._iceServerResolver.IceServers.Values.Count(x => x._id == pair.Value._id));
             }
         }
     }
