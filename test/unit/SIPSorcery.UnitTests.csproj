@@ -3,14 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>net462;net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>  
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="TestResults\**" />
-    <EmbeddedResource Remove="TestResults\**" />
-    <None Remove="TestResults\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="net\RTSP\RTSPConnectionUnitTest.cs" />

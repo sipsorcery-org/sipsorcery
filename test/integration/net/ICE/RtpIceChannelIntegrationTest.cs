@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: RtpIceChannelUnitTest.cs
+// Filename: RtpIceChannelIntegrationTest.cs
 //
-// Description: Unit tests for the RtpIceChannel class.
+// Description: Integration tests for the RtpIceChannel class.
 //
 // History:
 // 21 Mar 2020	Aaron Clauson	Created.
@@ -26,11 +26,11 @@ using Xunit;
 namespace SIPSorcery.Net.IntegrationTests
 {
     [Trait("Category", "integration")]
-    public class RtpIceChannelUnitTest
+    public class RtpIceChannelIntegrationTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
-        public RtpIceChannelUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        public RtpIceChannelIntegrationTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
@@ -143,7 +143,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that checklist entries get added correctly and duplicates are excluded.
         /// </summary>
         [Fact]
-        public async void ChecklistConstructionUnitTest()
+        public async Task ChecklistConstructionUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -165,9 +165,7 @@ namespace SIPSorcery.Net.IntegrationTests
             var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
             rtpIceChannel.AddRemoteCandidate(remoteCandidate2);
 
-#pragma warning disable RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
             await Task.Delay(500);
-#pragma warning restore RCS1090 // Add call to 'ConfigureAwait' (or vice versa).
 
             foreach (var entry in rtpIceChannel._checklist)
             {
@@ -181,7 +179,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that checklist gets processed and the status of the entry's gets updated as expected.
         /// </summary>
         [Fact]
-        public async void ChecklistProcessingUnitTest()
+        public async Task ChecklistProcessingUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -203,7 +201,7 @@ namespace SIPSorcery.Net.IntegrationTests
             rtpIceChannel.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             rtpIceChannel.StartGathering();
 
-            await Task.Delay(2000).ConfigureAwait(false);
+            await Task.Delay(2000);
 
             var checklistEntry = rtpIceChannel._checklist.Single();
 
@@ -216,7 +214,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that checklist gets processed and an entry that gets no response ends up in the failed state.
         /// </summary>
         [Fact]
-        public async void ChecklistProcessingToFailStateUnitTest()
+        public async Task ChecklistProcessingToFailStateUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -239,11 +237,11 @@ namespace SIPSorcery.Net.IntegrationTests
 
             logger.LogDebug("ICE session retry interval {RTO}ms.", rtpIceChannel.RTO);
 
-            await Task.Delay(1000).ConfigureAwait(false);
+            await Task.Delay(1000);
 
             rtpIceChannel._checklist.Single().FirstCheckSentAt = DateTime.Now.Subtract(TimeSpan.FromSeconds(RtpIceChannel.FAILED_TIMEOUT_PERIOD));
 
-            await Task.Delay(1000).ConfigureAwait(false);
+            await Task.Delay(1000);
 
             Assert.Equal(ChecklistEntryState.Failed, rtpIceChannel._checklist.Single().State);
             Assert.Equal(ChecklistState.Failed, rtpIceChannel._checklistState);
@@ -257,7 +255,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// NOTE: Another test that fails on macos appveyor CI with for no obvious reason.
         /// </summary>
         [Fact]
-        public async void CheckSuccessfulConnectionForHostCandidatesUnitTest()
+        public async Task CheckSuccessfulConnectionForHostCandidatesUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -289,14 +287,14 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
 
             // Give the RTP channel listeners time to start.
-            await Task.Delay(500).ConfigureAwait(false);
+            await Task.Delay(500);
 
             // Exchange ICE candidates.
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
             rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
 
             // Give the RTP ICE channel checklists time to send the first few checks.
-            await Task.Delay(4000).ConfigureAwait(false);
+            await Task.Delay(4000);
 
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
@@ -308,7 +306,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that an RTP ICE channel can get a server reflexive candidate from a mock STUN server.
         /// </summary>
         [Fact]
-        public async void CheckStunServerGetServerRefelxiveCandidateUnitTest()
+        public async Task CheckStunServerGetServerRefelxiveCandidateUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -316,7 +314,7 @@ namespace SIPSorcery.Net.IntegrationTests
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
                 // Give the TURN server socket receive tasks time to fire up.
-                await Task.Delay(1000).ConfigureAwait(false);
+                await Task.Delay(1000);
 
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
@@ -354,7 +352,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that an RTP ICE channel can get a relay candidate from a mock TURN server.
         /// </summary>
         [Fact]
-        public async void CheckTurnServerGetRelayCandidateUnitTest()
+        public async Task CheckTurnServerGetRelayCandidateUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -362,7 +360,7 @@ namespace SIPSorcery.Net.IntegrationTests
             using (MockTurnServer mockTurnServer = new MockTurnServer())
             {
                 // Give the TURN server socket receive tasks time to fire up.
-                await Task.Delay(1000).ConfigureAwait(false);
+                await Task.Delay(1000);
 
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
@@ -472,7 +470,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// hardware available.
         /// </summary>
         [Fact]
-        public async void CheckPeerReflexiveReplacedByHostCandidatesUnitTest()
+        public async Task CheckPeerReflexiveReplacedByHostCandidatesUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -517,7 +515,7 @@ namespace SIPSorcery.Net.IntegrationTests
             {
                 logger.LogDebug("Waiting for channel A to acquire peer reflexive candidates.");
                 retries++;
-                await Task.Delay(500).ConfigureAwait(false);
+                await Task.Delay(500);
             }
 
             Assert.True(rtpIceChannelA._remoteCandidates.Count > 0);
@@ -529,7 +527,7 @@ namespace SIPSorcery.Net.IntegrationTests
             // This pause is so that channel A can process the new remote candidates supplied by B.
             // These candidates are host candidates and should replace the peer reflexive candidates
             // that were automatically created previously.
-            await Task.Delay(1000).ConfigureAwait(false);
+            await Task.Delay(1000);
 
             logger.LogDebug("Setting remote credentials for channel A.");
 
@@ -550,7 +548,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// without needing to use DNS.
         /// </summary>
         [Fact]
-        public async void CheckIPAddressOnlyStunServerUnitTest()
+        public async Task CheckIPAddressOnlyStunServerUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -558,7 +556,7 @@ namespace SIPSorcery.Net.IntegrationTests
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
                 // Give the TURN server socket receive tasks time to fire up.
-                await Task.Delay(1000).ConfigureAwait(false);
+                await Task.Delay(1000);
 
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
@@ -612,11 +610,11 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("RTP ICE channel RTP socket local end point {RTPLocalEndPoint}.", rtpIceChannel.RTPLocalEndPoint);
             rtpIceChannel.StartGathering();
 
-            foreach(var pair in rtpIceChannel._iceServerConnections)
+            foreach(var pair in rtpIceChannel._iceServerResolver.IceServers)
             {
                 logger.LogDebug("ICE server {ServerKey}, tx ID {TransactionID}", pair.Key, pair.Value._id);
 
-                Assert.Equal(1, rtpIceChannel._iceServerConnections.Values.Count(x => x._id == pair.Value._id));
+                Assert.Equal(1, rtpIceChannel._iceServerResolver.IceServers.Values.Count(x => x._id == pair.Value._id));
             }
         }
     }

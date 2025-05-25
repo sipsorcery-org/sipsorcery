@@ -4,6 +4,7 @@
     <TargetFrameworks>net462;net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

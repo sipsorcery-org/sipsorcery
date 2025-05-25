@@ -25,7 +25,7 @@ namespace SIPSorcery.Net
     /// http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
     /// 
     /// This extension carries a 16-bit sequence number (2 bytes of payload).
-    /// The one-byte header is constructed as (id << 4) | (extensionSize - 1).
+    /// The one-byte header is constructed as (id &lt;&lt; 4) | (extensionSize - 1).
     /// </summary>
     public class TransportWideCCExtension : RTPHeaderExtension
     {

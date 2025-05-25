@@ -251,7 +251,7 @@ namespace SIPSorcery.SIP.App
         /// Cancels an in progress call. This method should be called prior to the remote user agent server answering the call.
         /// <param name="reason">The reason for canceling the call.</param>
         /// </summary>
-        public void Cancel(string? reason = null)
+        public void Cancel(string reason = null)
         {
             try
             {
@@ -320,7 +320,7 @@ namespace SIPSorcery.SIP.App
         /// Hangs up an answered call. This method should be called after the remote user agent server answered the call.
         /// <param name="reason">The reason for hanging up the call.</param>
         /// </summary>
-        public void Hangup(string? reason = null)
+        public void Hangup(string reason = null)
         {
             if (m_sipDialogue == null)
             {

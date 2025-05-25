@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Linq;
+using System.Threading.Tasks;
 using DnsClient;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
@@ -40,7 +41,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// </summary>
         [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
         //[Fact]
-        public async void LookupAnyRecordTest()
+        public async Task LookupAnyRecordTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -72,7 +73,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// </summary>
         [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
         //[Fact]
-        public async void LookupAnyRecordAsyncCacheTest()
+        public async Task LookupAnyRecordAsyncCacheTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -109,7 +110,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// </summary>
         [Fact]
         //[Fact(Skip = "Need to investigate why this fails on Appveyor Windows CI.")]
-        public async void LookupARecordMethod()
+        public async Task LookupARecordMethod()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -132,7 +133,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Test that a known AAAA record is resolved.
         /// </summary>
         [Fact]
-        public async void LookupAAAARecordMethod()
+        public async Task LookupAAAARecordMethod()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -168,7 +169,7 @@ namespace SIPSorcery.Net.IntegrationTests
         }
 
         [Fact]
-        public async void LookupSrvRecordMethod()
+        public async Task LookupSrvRecordMethod()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

@@ -114,7 +114,7 @@ namespace SIPSorcery.Net.UnitTests
             {
             }
             sessionParameter.Wsh = 64;
-            Assert.Equal(sessionParameter.ToString(), $"{SDPSecurityDescription.SessionParameter.WSH_PREFIX}64");
+            Assert.Equal($"{SDPSecurityDescription.SessionParameter.WSH_PREFIX}64", sessionParameter.ToString());
         }
         [Fact]
         public void KdrTest()

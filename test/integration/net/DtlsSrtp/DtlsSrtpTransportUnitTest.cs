@@ -12,6 +12,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
@@ -64,7 +65,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// handshake successfully.
         /// </summary>
         [Fact]
-        public void DoHandshakeUnitTest()
+        public async Task DoHandshakeUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -91,11 +92,16 @@ namespace SIPSorcery.Net.IntegrationTests
             var serverTask = Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
             var clientTask = Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
 
-            bool didComplete = Task.WaitAll(new Task[] { serverTask, clientTask }, 5000);
+            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(5000));
+            var winner = await Task.WhenAny(serverTask, clientTask, timeoutTask);
 
-            Assert.True(didComplete);
-            Assert.True(serverTask.Result);
-            Assert.True(clientTask.Result);
+            if (winner == timeoutTask)
+            {
+                Assert.Fail($"Test timed out after 5000ms.");
+            }
+
+            Assert.True(await serverTask);
+            Assert.True(await clientTask);
 
             logger.LogDebug("DTLS client fingerprint       : {Fingerprint}", dtlsServer.Fingerprint);
             //logger.LogDebug($"DTLS client server fingerprint: {dtlsClient.ServerFingerprint}.");
@@ -114,7 +120,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that attempting a client handshake times out correctly.
         /// </summary>
         [Fact]
-        public async void DoHandshakeClientTimeoutUnitTest()
+        public async Task DoHandshakeClientTimeoutUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -131,7 +137,7 @@ namespace SIPSorcery.Net.IntegrationTests
         /// Tests that attempting a server handshake times out correctly.
         /// </summary>
         [Fact]
-        public async void DoHandshakeServerTimeoutUnitTest()
+        public async Task DoHandshakeServerTimeoutUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
