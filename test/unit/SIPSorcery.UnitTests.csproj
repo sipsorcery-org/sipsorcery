@@ -8,12 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="TestResults\**" />
-    <EmbeddedResource Remove="TestResults\**" />
-    <None Remove="TestResults\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="net\RTSP\RTSPConnectionUnitTest.cs" />
   </ItemGroup>
 
