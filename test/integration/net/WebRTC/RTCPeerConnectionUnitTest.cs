@@ -890,9 +890,9 @@ a=rtpmap:126 telephone-event/8000";
             await Task.WhenAny(Task.WhenAll(aliceConnected.Task, bobConnected.Task), Task.Delay(2000));
 
             Assert.True(aliceConnected.Task.IsCompleted);
-            Assert.True(aliceConnected.Task.Result);
+            Assert.True(await aliceConnected.Task);
             Assert.True(bobConnected.Task.IsCompleted);
-            Assert.True(bobConnected.Task.Result);
+            Assert.True(await bobConnected.Task);
 
             bob.close();
             alice.close();
@@ -939,9 +939,9 @@ a=rtpmap:126 telephone-event/8000";
             await Task.WhenAny(Task.WhenAll(aliceDataConnected.Task, bobDataOpened.Task), Task.Delay(2000));
 
             Assert.True(aliceDataConnected.Task.IsCompleted);
-            Assert.True(aliceDataConnected.Task.Result);
+            Assert.True(await aliceDataConnected.Task);
             Assert.True(bobDataOpened.Task.IsCompleted);
-            Assert.True(bobDataOpened.Task.Result);
+            Assert.True(await bobDataOpened.Task);
             Assert.True(dc.IsOpened);
             Assert.True(bobData.IsOpened);
 

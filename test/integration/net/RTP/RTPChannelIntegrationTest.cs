@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -42,7 +43,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that multiple pairs of RTP channels can communicate.
         /// </summary>
         [Fact]
-        public void MultipleRtpChannelLoopbackUnitTest()
+        public async Task MultipleRtpChannelLoopbackUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -94,9 +95,13 @@ namespace SIPSorcery.Net.UnitTests
                 tasks.Add(t);
             }
 
-            CancellationTokenSource cts = new CancellationTokenSource();
+            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(10000));
+            var winner = await Task.WhenAny(tasks.Concat(new[] { timeoutTask }));
 
-            Assert.True(Task.WaitAll(tasks.ToArray(), 10000, cts.Token));
+            if (winner == timeoutTask)
+            {
+                Assert.Fail($"Test timed out after 10s.");
+            }
 
             logger.LogDebug("Test complete.");
         }
