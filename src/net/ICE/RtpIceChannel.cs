@@ -71,7 +71,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -115,8 +114,6 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RtpIceChannel : RTPChannel
     {
-        private static DnsClient.LookupClient _dnsLookupClient;
-
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
@@ -124,6 +121,10 @@ namespace SIPSorcery.Net
         private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
+
+        private static DnsClient.LookupClient _dnsLookupClient;
+
+        public static List<DnsClient.NameServer> DefaultNameServers { get; set; }
 
         public class IceTcpReceiver : UdpReceiver
         {
@@ -431,7 +432,9 @@ namespace SIPSorcery.Net
         private DateTime _startedGatheringAt = DateTime.MinValue;
         private DateTime _connectedAt = DateTime.MinValue;
 
-        internal ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
+        internal IceServerResolver _iceServerResolver = new IceServerResolver();
+
+        //internal ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
 
         private IceServer _activeIceServer;
 
@@ -550,8 +553,6 @@ namespace SIPSorcery.Net
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
         public event Action<RTCIceCandidate, string> OnIceCandidateError;
-
-        public static List<DnsClient.NameServer> DefaultNameServers { get; set; }
 
         /// <summary>
         /// This event gets fired when a STUN message is received by this channel.
@@ -696,6 +697,20 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+
+            if (_iceServers != null && _iceServers.Count > 0)
+            {
+                _iceServerResolver.InitialiseIceServers(_iceServers, _policy);
+            }
+
+            if (DefaultNameServers != null)
+            {
+                _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
+            }
+            else
+            {
+                _dnsLookupClient = new DnsClient.LookupClient();
+            }
         }
 
         /// <summary>
@@ -708,24 +723,6 @@ namespace SIPSorcery.Net
         {
             if (!_closed && IceGatheringState == RTCIceGatheringState.@new)
             {
-                if (_iceServers != null)
-                {
-                    InitialiseIceServers(_iceServers);
-
-                    // DNS is only needed if there are ICE server hostnames to lookup.
-                    if (_dnsLookupClient == null && _iceServerConnections.Any(x => !IPAddress.TryParse(x.Key.Host, out _)))
-                    {
-                        if (DefaultNameServers != null)
-                        {
-                            _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
-                        }
-                        else
-                        {
-                            _dnsLookupClient = new DnsClient.LookupClient();
-                        }
-                    }
-                }
-
                 _startedGatheringAt = DateTime.Now;
 
                 // Start listening on the UDP socket.
@@ -746,9 +743,8 @@ namespace SIPSorcery.Net
 
                 logger.LogDebug("RTP ICE Channel discovered {CandidateCount} local candidates.", _candidates.Count);
 
-                if (_iceServerConnections?.Count > 0)
+                if (_iceServerResolver.IceServers?.Count > 0)
                 {
-                    InitialiseIceServers(_iceServers);
                     _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
                 }
                 else
@@ -941,7 +937,7 @@ namespace SIPSorcery.Net
             {
                 _checklist?.Clear();
             }
-            _iceServerConnections?.Clear();
+            _iceServerResolver.InitialiseIceServers(_iceServers, _policy);
             IceGatheringState = RTCIceGatheringState.@new;
             IceConnectionState = RTCIceConnectionState.@new;
 
@@ -1058,71 +1054,6 @@ namespace SIPSorcery.Net
             return hostCandidates;
         }
 
-        /// <summary>
-        /// Initialises the ICE servers if any were provided in the initial configuration.
-        /// ICE servers are STUN and TURN servers and are used to gather "server reflexive"
-        /// and "relay" candidates. If the transport policy is "relay only" then only TURN 
-        /// servers will be added to the list of ICE servers being checked.
-        /// </summary>
-        /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.2</remarks>
-        private void InitialiseIceServers(List<RTCIceServer> iceServers)
-        {
-            _iceServerConnections = new ConcurrentDictionary<STUNUri, IceServer>();
-
-            int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
-
-            // Add each of the ICE servers to the list. Ideally only one will be used but add 
-            // all in case backups are needed.
-            foreach (var iceServer in iceServers)
-            {
-                string[] urls = iceServer.urls.Split(',');
-
-                foreach (string url in urls)
-                {
-                    if (!String.IsNullOrWhiteSpace(url))
-                    {
-                        if (STUNUri.TryParse(url, out var stunUri))
-                        {
-                            if (stunUri.Scheme == STUNSchemesEnum.stuns || stunUri.Scheme == STUNSchemesEnum.turns)
-                            {
-                                logger.LogWarning("ICE channel does not currently support TLS for STUN and TURN servers, not checking {stunUri}.", stunUri);
-                            }
-                            else if (_policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun)
-                            {
-                                logger.LogWarning("ICE channel policy is relay only, ignoring STUN server {stunUri}.", stunUri);
-                            }
-                            else if (!_iceServerConnections.ContainsKey(stunUri))
-                            {
-                                logger.LogDebug("Adding ICE server for {stunUri}.", stunUri);
-
-                                var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
-
-                                // Check whether the server end point can be set. IF it can't a DNS lookup will be required.
-                                if (IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
-                                {
-                                    iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
-                                    logger.LogDebug("ICE server end point for {Uri} set to {EndPoint}.", iceServerState._uri, iceServerState.ServerEndPoint);
-                                }
-
-                                _iceServerConnections.TryAdd(stunUri, iceServerState);
-
-                                iceServerID++;
-                                if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
-                                {
-                                    logger.LogWarning("The maximum number of ICE servers for the session has been reached.");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            logger.LogWarning("RTP ICE Channel could not parse ICE server URL {url}.", url);
-                        }
-                    }
-                }
-            }
-        }
-
         private void RefreshTurn(Object state)
         {
             try
@@ -1186,13 +1117,13 @@ namespace SIPSorcery.Net
             }
 
             // The lock is to ensure the timer callback doesn't run multiple instances in parallel. 
-            if (Monitor.TryEnter(_iceServerConnections))
+            if (Monitor.TryEnter(_iceServerResolver))
             {
                 try
                 {
                     if (_activeIceServer == null || _activeIceServer.Error != SocketError.Success)
                     {
-                        if (_iceServerConnections.Count(x => x.Value.Error == SocketError.Success) == 0)
+                        if (_iceServerResolver.IceServers.Count(x => x.Value.Error == SocketError.Success) == 0)
                         {
                             logger.LogDebug("RTP ICE Channel all ICE server connection checks failed, stopping ICE servers timer.");
                             _processIceServersTimer.Dispose();
@@ -1200,10 +1131,10 @@ namespace SIPSorcery.Net
                         else
                         {
                             // Select the next server to check.
-                            var entry = _iceServerConnections
-                            .Where(x => x.Value.Error == SocketError.Success)
-                            .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
-                            .FirstOrDefault();
+                            var entry = _iceServerResolver.IceServers
+                                .Where(x => x.Value.Error == SocketError.Success)
+                                .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
+                                .FirstOrDefault();
 
                             if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
                             {
@@ -1230,32 +1161,8 @@ namespace SIPSorcery.Net
                     {
                         // Successfully set up the ICE server. Do nothing.
                     }
-                    // If the ICE server hasn't yet been resolved initiate the DNS check.
-                    else if (_activeIceServer.ServerEndPoint == null && _activeIceServer.DnsLookupSentAt == DateTime.MinValue)
-                    {
-                        logger.LogDebug("Attempting to resolve STUN server URI {Uri}.", _activeIceServer._uri);
-
-                        _activeIceServer.DnsLookupSentAt = DateTime.Now;
-
-                        // Don't stop and wait for DNS. Let the timer callback complete and check for the DNS
-                        // result on the next few timer callbacks.
-                        Task.Run(async () =>
-                        {
-                            try
-                            {
-                                var result = await STUNDns.Resolve(_activeIceServer._uri).ConfigureAwait(false);
-                                logger.LogDebug("ICE server {Uri} successfully resolved to {Result}.", _activeIceServer._uri, result);
-                                _activeIceServer.ServerEndPoint = result;
-                            }
-                            catch
-                            {
-                                logger.LogWarning("Unable to resolve ICE server end point for {Uri}.", _activeIceServer._uri);
-                                _activeIceServer.Error = SocketError.HostNotFound;
-                            }
-                        });
-                    }
-                    // Waiting for DNS lookup to complete.
-                    else if (_activeIceServer.ServerEndPoint == null &&
+                    // If the ICE server hasn't yet been resolved skip and retyr again when teh next ICE server checnk runs.
+                    if (_activeIceServer.ServerEndPoint == null &&
                         DateTime.Now.Subtract(_activeIceServer.DnsLookupSentAt).TotalSeconds < IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)
                     {
                         // Do nothing.
@@ -1297,7 +1204,7 @@ namespace SIPSorcery.Net
                 }
                 finally
                 {
-                    Monitor.Exit(_iceServerConnections);
+                    Monitor.Exit(_iceServerResolver);
                 }
             }
         }
@@ -2261,7 +2168,7 @@ namespace SIPSorcery.Net
         /// <returns>If found a matching state object or null if not.</returns>
         private IceServer GetIceServerForTransactionID(byte[] transactionID)
         {
-            if (_iceServerConnections == null || _iceServerConnections.Count == 0)
+            if (_iceServerResolver.IceServers.Count() == 0)
             {
                 return null;
             }
@@ -2269,7 +2176,7 @@ namespace SIPSorcery.Net
             {
                 string txID = Encoding.ASCII.GetString(transactionID);
 
-                var entry = _iceServerConnections
+                var entry = _iceServerResolver.IceServers
                            .Where(x => x.Value.IsTransactionIDMatch(txID))
                            .SingleOrDefault();
 

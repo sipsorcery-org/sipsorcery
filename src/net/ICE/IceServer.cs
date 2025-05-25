@@ -19,6 +19,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -107,7 +108,7 @@ namespace SIPSorcery.Net
         /// The end point for this STUN or TURN server. Will be set asynchronously once
         /// any required DNS lookup completes.
         /// </summary>
-        internal IPEndPoint ServerEndPoint { get; set; }
+        public IPEndPoint ServerEndPoint { get; set; }
 
         /// <summary>
         /// The transaction ID to use in STUN requests. It is used to match responses
@@ -151,7 +152,7 @@ namespace SIPSorcery.Net
         /// If the initial Binding (for STUN) or Allocate (for TURN) connection check is successful 
         /// this will hold the resultant server reflexive transport address.
         /// </summary>
-        internal IPEndPoint ServerReflexiveEndPoint { get; set; }
+        public IPEndPoint ServerReflexiveEndPoint { get; set; }
 
         /// <summary>
         /// If the ICE server being checked is a TURN one and the Allocate request is successful this
@@ -178,6 +179,11 @@ namespace SIPSorcery.Net
         internal int ErrorResponseCount = 0;
 
         public ProtocolType Protocol { get { return _uri.Protocol; } }
+
+        /// <summary>
+        /// Task that completes when this server is done (resolved or timed out).
+        /// </summary>
+        internal Task DnsResolutionTask { get; set; }
 
         /// <summary>
         /// Default constructor.
