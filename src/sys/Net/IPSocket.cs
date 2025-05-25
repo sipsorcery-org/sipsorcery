@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: IPSocket.cs
 //
 // Description: Helper functions for socket strings and IP end points.
@@ -57,36 +57,53 @@ namespace SIPSorcery.Sys
         /// <param name="result">If the parse is successful this output parameter will contain the IPv4 or IPv6 end point.</param>
         /// <returns>Returns true if the string could be successfully parsed as an IPv4 or IPv6 end point. False if not.</returns>
         public static bool TryParseIPEndPoint(string s, out IPEndPoint result)
+            => TryParseIPEndPoint(s.AsSpan(), out result);
+
+        /// <summary>
+        /// This code is based on the IPEndPoint.TryParse method in the dotnet source code at
+        /// https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs.
+        /// If/when that feature makes it into .NET Standard this method can be replaced.
+        /// </summary>
+        /// <param name="s">The end point string to parse.</param>
+        /// <param name="result">If the parse is successful this output parameter will contain the IPv4 or IPv6 end point.</param>
+        /// <returns>Returns true if the string could be successfully parsed as an IPv4 or IPv6 end point. False if not.</returns>
+        public static bool TryParseIPEndPoint(ReadOnlySpan<char> s, out IPEndPoint result)
         {
-            int addressLength = s.Length;  // If there's no port then send the entire string to the address parser
+            result = null;
+            int addressLength = s.Length;
             int lastColonPos = s.LastIndexOf(':');
 
-            // Look to see if this is an IPv6 address with a port.
             if (lastColonPos > 0)
             {
                 if (s[lastColonPos - 1] == ']')
                 {
                     addressLength = lastColonPos;
                 }
-                // Look to see if this is IPv4 with a port (IPv6 will have another colon)
-                else if (s.Substring(0, lastColonPos).LastIndexOf(':') == -1)
+                else if (s.Slice(0, lastColonPos).LastIndexOf(':') == -1)
                 {
                     addressLength = lastColonPos;
                 }
             }
 
-            if (IPAddress.TryParse(s.Substring(0, addressLength), out IPAddress address))
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+            if (IPAddress.TryParse(s.Slice(0, addressLength), out IPAddress address))
+#else
+            if (IPAddress.TryParse(s.Slice(0, addressLength).ToString(), out IPAddress address))
+#endif
             {
                 uint port = 0;
                 if (addressLength == s.Length ||
-                    (uint.TryParse(s.Substring(addressLength + 1), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+                    (uint.TryParse(s.Slice(addressLength + 1), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
+#else
+                    (uint.TryParse(s.Slice(addressLength + 1).ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out port) && port <= MaxPort))
+#endif
                 {
                     result = new IPEndPoint(address, (int)port);
                     return true;
                 }
             }
 
-            result = null;
             return false;
         }
 
