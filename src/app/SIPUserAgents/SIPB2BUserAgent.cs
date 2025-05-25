@@ -80,7 +80,7 @@ namespace SIPSorcery.SIP.App
             m_uac.AckAnswer(sipResponse, content, contentType);
         }
 
-        public void Cancel(string? reason = null)
+        public void Cancel(string reason = null)
         {
             logger.LogDebug("SIPB2BUserAgent Cancel.");
             m_uac.Cancel(reason);

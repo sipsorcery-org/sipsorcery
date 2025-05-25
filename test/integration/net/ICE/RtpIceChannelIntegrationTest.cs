@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: RtpIceChannelUnitTest.cs
+// Filename: RtpIceChannelIntegrationTest.cs
 //
-// Description: Unit tests for the RtpIceChannel class.
+// Description: Integration tests for the RtpIceChannel class.
 //
 // History:
 // 21 Mar 2020	Aaron Clauson	Created.
@@ -26,11 +26,11 @@ using Xunit;
 namespace SIPSorcery.Net.IntegrationTests
 {
     [Trait("Category", "integration")]
-    public class RtpIceChannelUnitTest
+    public class RtpIceChannelIntegrationTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
-        public RtpIceChannelUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        public RtpIceChannelIntegrationTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }

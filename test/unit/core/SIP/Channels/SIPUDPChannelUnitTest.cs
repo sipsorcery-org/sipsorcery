@@ -10,6 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,7 +51,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Tests that two SIP UDP channels can communicate.
         /// </summary>
         [Fact]
-        public async void InterChannelCommsUnitTest()
+        public async Task InterChannelCommsUnitTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -80,18 +81,27 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Attempting to send OPTIONS request to {dstEndPoint}.", dstEndPoint);
 
-            // Give sockets a chance to start up.
-            //await Task.Delay(500);
-
             await udpChan1.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(optionsReq.ToString()), false, null);
 
-            bool res = gotMessage.Task.Wait(1000);
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(1));
+            var completed = await Task.WhenAny(gotMessage.Task, timeoutTask);
 
-            Assert.True(res);
-            Assert.NotNull(receivedFromEP);
-            Assert.NotNull(receivedOnEP);
-            Assert.Equal(IPAddress.Loopback, receivedFromEP.Address);
-            Assert.Equal(IPAddress.Any, receivedOnEP.Address);
+            if (completed == timeoutTask)
+            {
+                Assert.Fail("Timeout waiting for message to be received.");
+            }
+            else
+            {
+                logger.LogDebug("Message received successfully.");
+
+                bool res = await gotMessage.Task;
+
+                Assert.True(res);
+                Assert.NotNull(receivedFromEP);
+                Assert.NotNull(receivedOnEP);
+                Assert.Equal(IPAddress.Loopback, receivedFromEP.Address);
+                Assert.Equal(IPAddress.Any, receivedOnEP.Address);
+            }
 
             udpChan1.Close();
             udpChan2.Close();

@@ -188,7 +188,7 @@ namespace SIPSorcery.Net
         private BcTlsCrypto _crypto;
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceInitiateGatheringTask;
-        private new TaskCompletionSource<bool> _iceCompletedGatheringTask = new();
+        private readonly TaskCompletionSource<bool> _iceCompletedGatheringTask = new();
 
         private Dictionary<String, int> _rtpExtensionsUsed; // < Uri, Id>
 
