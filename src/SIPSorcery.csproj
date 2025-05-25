@@ -71,9 +71,9 @@
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>8.0.18-pre</Version>
-    <AssemblyVersion>8.0.18</AssemblyVersion>
-    <FileVersion>8.0.18</FileVersion>
+    <Version>8.0.19-pre</Version>
+    <AssemblyVersion>8.0.19</AssemblyVersion>
+    <FileVersion>8.0.19</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

@@ -165,7 +165,7 @@ namespace SIPSorcery
         private static void OnRtpPacketReceived(SIPUserAgent ua, IPEndPoint remoteEp, SDPMediaTypesEnum type, RTPPacket rtpPacket)
         {
             // The raw audio data is available in rtpPacket.Payload.
-            Log.LogTrace($"OnRtpPacketReceived from {remoteEp}.");
+            //Log.LogTrace($"OnRtpPacketReceived from {remoteEp}.");
         }
 
         /// <summary>
