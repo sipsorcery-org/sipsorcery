@@ -24,4 +24,4 @@ EXPOSE 5060/udp
 EXPOSE 5061/tcp
 
 # Run the server
-ENTRYPOINT ["dotnet", "SIPCallServer.dll"]
+ENTRYPOINT ["dotnet", "SIPCloudCallServer.dll"]

@@ -1271,6 +1271,8 @@ namespace SIPSorcery.Net
 
                         currentMediaStream.DestinationEndPoint = (remoteRtpEP != null && remoteRtpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtpEP : currentMediaStream.DestinationEndPoint;
                         currentMediaStream.ControlDestinationEndPoint = (remoteRtcpEP != null && remoteRtcpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtcpEP : currentMediaStream.ControlDestinationEndPoint;
+
+                        logger.LogDebug("Setting remote {SdpMediaType} track with destination {DestinationEndPoint} and control destination {ControlDestinationEndPoint}.", currentMediaStream.MediaType, currentMediaStream.DestinationEndPoint, currentMediaStream.ControlDestinationEndPoint);
                     }
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
@@ -2096,14 +2098,16 @@ namespace SIPSorcery.Net
                 {
                     if (rtpSessionConfig.IsMediaMultiplexed)
                     {
-                        rtpPort = m_primaryStream.GetRTPChannel().RTPPort;
+                        rtpPort = m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
+                            m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : m_primaryStream.GetRTPChannel().RTPPort;
                     }
                     else
                     {
                         // If media stream does not have a Rtp channel it means this media type is not supported and rtpPort will remain zero.
                         if (mediaStream.HasRtpChannel())
                         {
-                            rtpPort = mediaStream.GetRTPChannel().RTPPort;
+                            rtpPort = mediaStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
+                                 mediaStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : mediaStream.GetRTPChannel().RTPPort;
                         }
                     }
                 }

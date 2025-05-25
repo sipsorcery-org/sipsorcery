@@ -720,7 +720,7 @@ namespace SIPSorcery.SIP.App
 
                 string sdp = null;
 
-                if (!String.IsNullOrEmpty(sipRequest.Body))
+                if (!string.IsNullOrEmpty(sipRequest.Body))
                 {
                     // The SDP offer was included in the INVITE request.
                     SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);

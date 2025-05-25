@@ -50,8 +50,6 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        private uint m_lastRtpTimestamp;
-
         private RtpSessionConfig RtpSessionConfig;
 
         protected SecureContext SecureContext;
@@ -472,7 +470,6 @@ namespace SIPSorcery.Net
                         rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
                     }
                 }
-                m_lastRtpTimestamp = timestamp;
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
             }
@@ -690,7 +687,7 @@ namespace SIPSorcery.Net
 
                 if (isValidSource)
                 {
-                    logger.LogDebug("Set remote track ({MediaType} - index={Index}) SSRC to {SyncSource}.", MediaType, Index, hdr.SyncSource);
+                    logger.LogDebug("Set remote track ({MediaType} - index={Index}) SSRC to {SyncSource} remote RTP endpoint {rtpep}.", MediaType, Index, hdr.SyncSource, remoteEndPoint);
                     RemoteTrack.Ssrc = hdr.SyncSource;
                 }
             }
