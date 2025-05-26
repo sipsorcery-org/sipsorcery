@@ -15,13 +15,24 @@
 //-----------------------------------------------------------------------------
 
 using System;
+#if !NETCOREAPP2_1_OR_GREATER || NETFRAMEWORK
+using System.Linq;
+#endif
 
 namespace SIPSorcery.Net
 {
     public class RTPPacket
     {
         public RTPHeader Header;
-        public byte[] Payload;
+        private byte[] _payload;
+        private ArraySegment<byte> _payloadSegment;
+        private int _srtpProtectionLength = 0;
+
+        public byte[] Payload
+        {
+            get { return _payload; }
+            set { _payload = value; }
+        }
 
         public RTPPacket()
         {
@@ -31,23 +42,81 @@ namespace SIPSorcery.Net
         public RTPPacket(int payloadSize)
         {
             Header = new RTPHeader();
-            Payload = new byte[payloadSize];
+            _payload = new byte[payloadSize];
         }
 
         public RTPPacket(byte[] packet)
         {
             Header = new RTPHeader(packet);
-            Payload = new byte[Header.PayloadSize];
-            Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
+            _payload = new byte[Header.PayloadSize];
+            Array.Copy(packet, Header.Length, _payload, 0, _payload.Length);
+        }
+
+        public RTPPacket(ArraySegment<byte> packet, int srtpProtectionLength)
+        {
+            Header = new RTPHeader();
+            _payloadSegment = packet;
+            _srtpProtectionLength = srtpProtectionLength;
+        }
+
+        public uint GetPayloadLength()
+        {
+            return (uint)(_payload?.Length ?? _payloadSegment.Count);
+        }
+
+        public byte[] GetPayloadBytes()
+        {
+            Payload ??= _payloadSegment.ToArray();
+
+            return Payload;
+        }
+
+        public byte GetPayloadByteAt(int index)
+        {
+#if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
+            return _payload?[index] ?? _payloadSegment[index];
+#else
+            return _payload?[index] ?? _payloadSegment.ElementAt(index);
+#endif
+        }
+
+        public ArraySegment<byte> GetPayloadSegment(int offset, int length)
+        {
+            if (_payload != null)
+            {
+                return new ArraySegment<byte>(_payload, offset, length);
+            }
+
+#if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
+            return _payloadSegment.Slice(offset, length);
+#else
+            return new ArraySegment<byte>(_payloadSegment.Array!, offset + _payloadSegment.Offset, length);
+#endif
         }
 
         public byte[] GetBytes()
         {
             byte[] header = Header.GetBytes();
-            byte[] packet = new byte[header.Length + Payload.Length];
+            byte[] packet = new byte[header.Length + (_payload?.Length ?? _payloadSegment.Count) + _srtpProtectionLength];
 
             Array.Copy(header, packet, header.Length);
-            Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
+
+            if (_payloadSegment != null)
+            {
+#if NETCOREAPP2_1_OR_GREATER && !NETFRAMEWORK
+                _payloadSegment.CopyTo(packet, header.Length);
+#else
+                Array.Copy(_payloadSegment.Array!, _payloadSegment.Offset, packet, header.Length, _payloadSegment.Count);
+#endif
+            }
+            else if (_payload != null)
+            {
+                Array.Copy(_payload, 0, packet, header.Length, _payload.Length);
+            }
+            else
+            {
+                throw new ApplicationException("Either _payloadSegment or _payload should be defined");
+            }
 
             return packet;
         }
@@ -66,7 +135,7 @@ namespace SIPSorcery.Net
 
         public static bool TryParse(
             ReadOnlySpan<byte> buffer,
-             RTPPacket packet,
+            RTPPacket packet,
             out int consumed)
         {
             consumed = 0;
@@ -74,7 +143,7 @@ namespace SIPSorcery.Net
             {
                 packet.Header = header;
                 consumed += headerConsumed;
-                packet.Payload = buffer.Slice(headerConsumed, header.PayloadSize).ToArray();
+                packet._payload = buffer.Slice(headerConsumed, header.PayloadSize).ToArray();
                 consumed += header.PayloadSize;
                 return true;
             }
