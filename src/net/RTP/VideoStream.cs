@@ -106,23 +106,31 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
+                    var maxPayload = RTPSession.RTP_MAX_PAYLOAD;
+                    var headerLength = 8;
+
+                    using var memoryOwner = MemoryPool<byte>.Shared.Rent(headerLength + maxPayload);
+                    var payloadSpan = memoryOwner.Memory.Span;
+
+                    var offset = 0u;
+
+                    while (!jpegBytes.IsEmpty)
                     {
-                        var offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                        var payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTPSession.RTP_MAX_PAYLOAD : jpegBytes.Length - offset;
+                        var payloadLength = Math.Min(maxPayload, jpegBytes.Length);
 
-                        byte[] jpegHeader = RtpVideoFramer.CreateLowQualityRtpJpegHeader(Convert.ToUInt32(offset), jpegQuality, jpegWidth, jpegHeight);
+                        // Write JPEG RTP header directly into the buffer
+                        RtpVideoFramer.WriteLowQualityRtpJpegHeader(payloadSpan.Slice(0, headerLength), offset, jpegQuality, jpegWidth, jpegHeight);
 
-                        using var memoryOwner = MemoryPool<byte>.Shared.Rent(payloadLength + jpegHeader.Length);
-                        var payloadMemory = memoryOwner.Memory.Slice(0, payloadLength + jpegHeader.Length);
-                        var payloadSpan = payloadMemory.Span;
+                        // Copy JPEG payload
+                        jpegBytes.Slice(0, payloadLength).CopyTo(payloadSpan.Slice(headerLength));
 
-                        jpegHeader.CopyTo(payloadSpan);
-                        jpegBytes.Slice(offset, payloadLength).CopyTo(payloadSpan.Slice(jpegHeader.Length));
+                        var isLastPacket = payloadLength >= jpegBytes.Length;
+                        var markerBit = isLastPacket ? 1 : 0;
 
-                        var markerBit = (offset + payloadLength >= jpegBytes.Length) ? 1 : 0;
+                        SendRtpRaw(payloadSpan.Slice(0, headerLength + payloadLength), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
 
-                        SendRtpRaw(payloadSpan, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        jpegBytes = jpegBytes.Slice(payloadLength);
+                        offset += (uint)payloadLength;
                     }
 
                     LocalTrack.Timestamp += duration;
@@ -278,23 +286,25 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
+                    using var memoryOwner = MemoryPool<byte>.Shared.Rent(RTPSession.RTP_MAX_PAYLOAD + 1);
+                    var payloadSpan = memoryOwner.Memory.Span;
+                    payloadSpan[0] = (byte)0x10;
+
+                    while (!buffer.IsEmpty)
                     {
-                        var offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                        var payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
+                        var payloadLength = Math.Min(RTPSession.RTP_MAX_PAYLOAD, buffer.Length);
 
-                        using var memoryOwner = MemoryPool<byte>.Shared.Rent(payloadLength + 1);
-                        var payloadMemory = memoryOwner.Memory.Slice(0, payloadLength + 1);
-                        var payloadSpan = payloadMemory.Span;
+                        buffer.Slice(0, payloadLength).CopyTo(payloadSpan.Slice(1));
 
-                        payloadSpan[0] = (index == 0) ? (byte)0x10 : (byte)0x00;
-                        buffer.Slice(offset, payloadLength).CopyTo(payloadSpan.Slice(1));
-
-                        var markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                        var markerBit = (payloadLength >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
                         SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
-                        SendRtpRaw(payloadSpan, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(payloadSpan.Slice(0, payloadLength + 1), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+
+                        payloadSpan[0] = (byte)0x00;
+                        buffer = buffer.Slice(payloadLength);
                     }
+
                     LocalTrack.Timestamp += duration;
                 }
                 catch (SocketException sockExcp)

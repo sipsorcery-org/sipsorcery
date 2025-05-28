@@ -115,10 +115,10 @@ namespace SIPSorcery.Net
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            return ToByteBuffer(buffer.AsSpan(startIndex));
+            return WriteBytes(buffer.AsSpan(startIndex));
         }
 
-        public override int ToByteBuffer(Span<byte> buffer)
+        public override int WriteBytes(Span<byte> buffer)
         {
             BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), (ushort)base.AttributeType);
             BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2, 2), AddressAttributeLength);

@@ -99,10 +99,10 @@ namespace SIPSorcery.Net
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            return base.ToByteBuffer(buffer.AsSpan(startIndex));
+            return base.WriteBytes(buffer.AsSpan(startIndex));
         }
 
-        public override int ToByteBuffer(Span<byte> buffer)
+        public override int WriteBytes(Span<byte> buffer)
         {
             if (BitConverter.IsLittleEndian)
             {

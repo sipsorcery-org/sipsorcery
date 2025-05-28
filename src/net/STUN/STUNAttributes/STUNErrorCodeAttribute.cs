@@ -53,10 +53,10 @@ namespace SIPSorcery.Net
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            return ToByteBuffer(buffer.AsSpan(startIndex));
+            return WriteBytes(buffer.AsSpan(startIndex));
         }
 
-        public override int ToByteBuffer(Span<byte> buffer)
+        public override int WriteBytes(Span<byte> buffer)
         {
             buffer[0] = 0x00;
             buffer[1] = 0x00;

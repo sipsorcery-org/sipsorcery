@@ -241,12 +241,14 @@ namespace SIPSorcery.Net
             return attributes;
         }
 
+        [Obsolete("Use WriteBytes(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public virtual int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            return ToByteBuffer(buffer.AsSpan(startIndex));
+            return WriteBytes(buffer.AsSpan(startIndex));
         }
 
-        public virtual int ToByteBuffer(Span<byte> buffer)
+        public virtual int WriteBytes(Span<byte> buffer)
         {
             BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), (ushort)AttributeType);
 
@@ -268,11 +270,24 @@ namespace SIPSorcery.Net
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
 
-        public new virtual string ToString()
+        public override string ToString()
         {
-            string attrDescrString = "STUN Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
+            var sb = new ValueStringBuilder(stackalloc char[256]);
 
-            return attrDescrString;
+            ToString(ref sb);
+
+            return sb.ToString();
+        }
+
+        internal void ToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("STUN Attribute: ");
+            sb.Append(AttributeType.ToStringFast());
+            sb.Append('=');
+            sb.Append(Value);
+            sb.Append(", length=");
+            sb.Append(PaddedLength);
+            sb.Append('.');
         }
     }
 }

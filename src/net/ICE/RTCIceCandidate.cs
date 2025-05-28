@@ -153,7 +153,7 @@ namespace SIPSorcery.Net
             IPAddress cAddress,
             ushort cPort,
             RTCIceCandidateType cType,
-            IPAddress cRelatedAddress,
+            IPAddress? cRelatedAddress,
             ushort cRelatedPort)
         {
             protocol = cProtocol;

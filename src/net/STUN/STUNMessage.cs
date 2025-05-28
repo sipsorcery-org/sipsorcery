@@ -248,7 +248,7 @@ namespace SIPSorcery.Net
             var attributeIndex = 20;
             foreach (var attr in Attributes)
             {
-                attributeIndex += attr.ToByteBuffer(buffer.Slice(attributeIndex)); // Assuming ToByteBuffer still uses byte[]
+                attributeIndex += attr.WriteBytes(buffer.Slice(attributeIndex)); // Assuming ToByteBuffer still uses byte[]
             }
 
             if (!messageIntegrityKey.IsEmpty)
@@ -257,7 +257,7 @@ namespace SIPSorcery.Net
                 using var hmacSHA = new HMACSHA1(messageIntegrityKey.ToArray());
                 var hmac = hmacSHA.ComputeHash(buffer.Slice(0, attributeIndex));
                 integrityAttribute.Value = hmac;
-                attributeIndex += integrityAttribute.ToByteBuffer(buffer.Slice(attributeIndex));
+                attributeIndex += integrityAttribute.WriteBytes(buffer.Slice(attributeIndex));
             }
 
             if (addFingerprint)
@@ -270,20 +270,35 @@ namespace SIPSorcery.Net
                 BinaryPrimitives.WriteUInt32BigEndian(fingerprint, crc);
 
                 var fingerprintAttribute = new STUNAttribute(STUNAttributeTypesEnum.FingerPrint, fingerprint);
-                fingerprintAttribute.ToByteBuffer(buffer.Slice(attributeIndex));
+                fingerprintAttribute.WriteBytes(buffer.Slice(attributeIndex));
             }
         }
 
-        public new string ToString()
+        public override string ToString()
         {
-            string messageDescr = "STUN Message: " + Header.MessageType.ToString() + ", length=" + Header.MessageLength;
+            var sb = new ValueStringBuilder(stackalloc char[256]);
+
+            ToString(ref sb);
+
+            return sb.ToString();
+        }
+
+        internal void ToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("STUN Message: ");
+            sb.Append(Header.MessageType.ToStringFast());
+            sb.Append('[');
+            sb.Append((int)Header.MessageType);
+            sb.Append("], length=");
+            sb.Append(Header.MessageLength);
+            sb.Append(", transactionID=");
+            sb.Append(Header.TransactionId);
 
             foreach (STUNAttribute attribute in Attributes)
             {
-                messageDescr += "\n " + attribute.ToString();
+                sb.Append("\n ");
+                attribute.ToString(ref sb);
             }
-
-            return messageDescr;
         }
 
         /// <summary>

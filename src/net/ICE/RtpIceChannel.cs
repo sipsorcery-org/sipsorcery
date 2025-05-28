@@ -243,7 +243,7 @@ namespace SIPSorcery.Net
                                 recvLength = m_recvBuffer.Length;
                             }
 
-                            int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref remoteEP);
+                            var bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref remoteEP);
 
                             if (bytesReadSync > 0)
                             {
@@ -297,7 +297,7 @@ namespace SIPSorcery.Net
             // and initial byte in buffer is not a STUNHeader (starts with 0x00 0x00)
             // and our receive buffer is full, we need a way to discard whole buffer
             // or check for 0x00 0x00 start again.
-            protected virtual int ProcessRawBuffer(int bytesRead, IPEndPoint remoteEP)
+            protected virtual int ProcessRawBuffer(int bytesRead, IPEndPoint? remoteEP)
             {
                 var extractCount = 0;
                 if (bytesRead > 0)
@@ -793,7 +793,7 @@ namespace SIPSorcery.Net
                     {
                         var rtpTcpReceiver = new IceTcpReceiver(tcpSocket);
 
-                        rtpTcpReceiver.OnPacketReceived += OnRTPPacketReceived;
+                        rtpTcpReceiver.OnPacketReceivedEx += OnRTPPacketReceived;
                         rtpTcpReceiver.OnClosed += reason => CloseTcp(rtpTcpReceiver, reason);
                         rtpTcpReceiver.BeginReceiveFrom();
 
@@ -1118,7 +1118,7 @@ namespace SIPSorcery.Net
         /// is provided it will take precedence as it can potentially supply both Server Reflexive 
         /// and Relay candidates.
         /// </summary>
-        private void CheckIceServers(Object state)
+        private void CheckIceServers(object state)
         {
             if (_closed || IceGatheringState == RTCIceGatheringState.complete ||
                 !(IceConnectionState == RTCIceConnectionState.@new || IceConnectionState == RTCIceConnectionState.checking))
@@ -1746,7 +1746,14 @@ namespace SIPSorcery.Net
         {
             var stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest)
             {
-                Header = { TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID) }
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID)
+                },
+                Attributes =
+                {
+                    new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority))
+                },
             };
 
             stunRequest.AddUsernameAttribute($"{RemoteIceUser}:{LocalIceUser}");
@@ -2456,16 +2463,6 @@ namespace SIPSorcery.Net
                     refreshRequest.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), ReadOnlySpan<byte>.Empty, addFingerprint: false);
 
                     var sendResult = SendTurnRefreshRequestCore(iceServer, refreshRequest, rentedBuffer.AsMemory(0, bufferSize));
-
-                    if (sendResult != SocketError.Success)
-                    {
-                        logger.LogWarning("Error sending TURN Refresh request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
-                            iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
-                    }
-                    else
-                    {
-                        OnStunMessageSent?.Invoke(refreshRequest, iceServer.ServerEndPoint, false);
-                    }
 
                     return sendResult;
                 }
