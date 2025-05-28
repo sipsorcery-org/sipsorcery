@@ -35,7 +35,10 @@
 *   2025-02-20  Initial creation.
 */
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using SIPSorcery.Sys;
 
@@ -155,31 +158,44 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Parses a TWCC feedback packet from the given byte array.
         /// </summary>
-        public RTCPTWCCFeedback(byte[] packet)
+        [Obsolete("Use RTCPSDesReport(ReadOnlySpan<byte> packet) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public RTCPTWCCFeedback(byte[] packet) : this(new ReadOnlySpan<byte>(packet))
+        {
+        }
+
+        /// <summary>
+        /// Constructs a TWCC feedback message from the raw RTCP packet.
+        /// </summary>
+        /// <param name="packet">The complete RTCP TWCC feedback packet.</param>
+        /// <summary>
+        /// Parses a TWCC feedback packet from the given byte array.
+        /// </summary>
+        public RTCPTWCCFeedback(ReadOnlySpan<byte> packet)
         {
             ValidatePacket(packet);
 
             // Parse the RTCP header.
             Header = new RTCPHeader(packet);
-            int offset = RTCPHeader.HEADER_BYTES_LENGTH;
+            packet = packet.Slice(RTCPHeader.HEADER_BYTES_LENGTH);
 
             // Parse sender and media SSRCs
-            SenderSSRC = ReadUInt32(packet, ref offset);
-            MediaSSRC = ReadUInt32(packet, ref offset);
+            SenderSSRC = BinaryOperations.ReadUInt32BigEndian(ref packet);
+            MediaSSRC = BinaryOperations.ReadUInt32BigEndian(ref packet);
 
             // Parse Base Sequence Number and Packet Status Count
-            BaseSequenceNumber = ReadUInt16(packet, ref offset);
-            PacketStatusCount = ReadUInt16(packet, ref offset);
+            BaseSequenceNumber = BinaryOperations.ReadUInt16BigEndian(ref packet);
+            PacketStatusCount = BinaryOperations.ReadUInt16BigEndian(ref packet);
 
             // Parse Reference Time and Feedback Packet Count
-            ReferenceTime = ParseReferenceTime(packet, ref offset, out byte fbCount);
+            ReferenceTime = ParseReferenceTime(ref packet, out byte fbCount);
             FeedbackPacketCount = fbCount;
 
             // Parse status chunks
-            var statusSymbols = ParseStatusChunks(packet, ref offset);
+            var statusSymbols = ParseStatusChunks(ref packet);
 
             // Parse delta values with validation
-            var (deltaValues, lastOffset) = ParseDeltaValues(packet, offset, statusSymbols);
+            var deltaValues = ParseDeltaValues(ref packet, statusSymbols);
 
             // Build final packet status list
             BuildPacketStatusList(statusSymbols, deltaValues);
@@ -220,6 +236,8 @@ namespace SIPSorcery.Net
             remainingStatuses -= runLength;
         }
 
+        [Obsolete("Use ValidatePacket(ReadOnlySpan<byte> packet) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         private void ValidatePacket(byte[] packet)
         {
             if (packet == null)
@@ -227,40 +245,46 @@ namespace SIPSorcery.Net
                 throw new ArgumentNullException(nameof(packet));
             }
 
+            ValidatePacket(new ReadOnlySpan<byte>(packet));
+        }
+
+        private void ValidatePacket(ReadOnlySpan<byte> packet)
+        {
             if (packet.Length < (RTCPHeader.HEADER_BYTES_LENGTH + 12))
             {
                 throw new ArgumentException("Packet too short to be a valid TWCC feedback message.");
             }
         }
 
-        private uint ParseReferenceTime(byte[] packet, ref int offset, out byte fbCount)
+        private uint ParseReferenceTime(ref ReadOnlySpan<byte> packet, out byte fbCount)
         {
-            if (offset + 4 > packet.Length)
+            if (packet.Length < 4)
             {
                 throw new ArgumentException("Packet truncated at reference time.");
             }
 
-            byte b1 = packet[offset++];
-            byte b2 = packet[offset++];
-            byte b3 = packet[offset++];
-            fbCount = packet[offset++];
+            var b1 = packet[0];
+            var b2 = packet[1];
+            var b3 = packet[2];
+            fbCount = packet[3];
+            packet = packet.Slice(4);
             return (uint)((b1 << 16) | (b2 << 8) | b3);
         }
 
-        private List<TWCCPacketStatusType> ParseStatusChunks(byte[] packet, ref int offset)
+        private List<TWCCPacketStatusType> ParseStatusChunks(ref ReadOnlySpan<byte> packet)
         {
             var statusSymbols = new List<TWCCPacketStatusType>();
             int remainingStatuses = PacketStatusCount;
 
             while (remainingStatuses > 0)
             {
-                if (offset + 2 > packet.Length)
+                if (packet.Length < 2)
                 {
                     throw new ArgumentException($"Packet truncated during status chunk parsing. Expected {remainingStatuses} more statuses.");
                 }
 
-                ushort chunk = ReadUInt16(packet, ref offset);
-                int chunkType = chunk >> 14;
+                var chunk = BinaryOperations.ReadUInt16BigEndian(ref packet);
+                var chunkType = chunk >> 14;
 
                 switch (chunkType)
                 {
@@ -344,6 +368,44 @@ namespace SIPSorcery.Net
             return (deltaValues, offset);
         }
 
+        private List<int> ParseDeltaValues(ref ReadOnlySpan<byte> packet, List<TWCCPacketStatusType> statusSymbols)
+        {
+            var deltaValues = new List<int>();
+            int expectedDeltaCount = statusSymbols.Count(s => s is TWCCPacketStatusType.ReceivedSmallDelta or TWCCPacketStatusType.ReceivedLargeDelta);
+
+            foreach (var status in statusSymbols)
+            {
+                if (status is TWCCPacketStatusType.NotReceived or TWCCPacketStatusType.Reserved)
+                {
+                    deltaValues.Add(0);
+                    continue;
+                }
+
+                // Check if we have enough data for the delta
+                var deltaSize = status == TWCCPacketStatusType.ReceivedSmallDelta ? 1 : 2;
+                if (deltaSize > packet.Length)
+                {
+                    // Instead of throwing, we'll add a special value to indicate truncation
+                    deltaValues.Add(int.MinValue);
+                    break;
+                }
+
+                if (status == TWCCPacketStatusType.ReceivedSmallDelta)
+                {
+                    deltaValues.Add((sbyte)packet[0] * DeltaScale);
+                    packet = packet.Slice(1);
+                }
+                else // ReceivedLargeDelta
+                {
+                    var rawDelta = (short)((packet[0] << 8) | packet[1]);
+                    deltaValues.Add(rawDelta * DeltaScale);
+                    packet = packet.Slice(2);
+                }
+            }
+
+            return deltaValues;
+        }
+
         private void BuildPacketStatusList(List<TWCCPacketStatusType> statusSymbols, List<int> deltaValues)
         {
             PacketStatuses = new List<TWCCPacketStatus>();
@@ -364,27 +426,17 @@ namespace SIPSorcery.Net
             }
         }
 
-        /// <summary>
-        /// Serializes this TWCC feedback message to a byte array.
-        /// Note: The serialization logic rebuilds the packet status chunks from the PacketStatuses list.
-        /// This implements the run-length chunk when possible and defaults to two-bit
-        /// status vector chunks if a run-length encoding isn’t efficient.
-        /// </summary>
-        /// <returns>The serialized RTCP TWCC feedback packet.</returns>
-        public byte[] GetBytes()
+        public int GetPacketSize()
         {
-            // Build a list of TWCCPacketStatusType from PacketStatuses.
-            List<TWCCPacketStatusType> symbols = PacketStatuses.Select(ps => ps.Status).ToList();
+            var length = RTCPHeader.HEADER_BYTES_LENGTH + 4 + 4 + 2 + 2 + 4;
 
-            // Reconstruct packet status chunks.
-            List<ushort> chunks = new List<ushort>();
-            int i = 0;
-            while (i < symbols.Count)
+            var packageStatusesCount = PacketStatuses.Count;
+            for (var i = 0; i < packageStatusesCount;)
             {
                 // Try to use run-length chunk: count how many consecutive statuses are identical.
-                int runLength = 1;
-                TWCCPacketStatusType current = symbols[i];
-                while (i + runLength < symbols.Count && symbols[i + runLength] == current && runLength < 0x0FFF)
+                var runLength = 1;
+                var current = PacketStatuses[i].Status;
+                while (i + runLength < packageStatusesCount && PacketStatuses[i + runLength].Status == current && runLength < 0x0FFF)
                 {
                     runLength++;
                 }
@@ -413,22 +465,22 @@ namespace SIPSorcery.Net
                             break;
                     }
 
-                    ushort chunk = (ushort)(statusBits << 12);
+                    var chunk = (ushort)(statusBits << 12);
                     chunk |= (ushort)(runLength & 0x0FFF);
-                    chunks.Add(chunk);
+                    length += 2;
                     i += runLength;
                 }
                 else
                 {
                     // Otherwise, pack into a two-bit status vector chunk.
-                    int count = Math.Min(7, symbols.Count - i);
+                    var count = Math.Min(7, packageStatusesCount - i);
                     ushort chunk = 0x8000; // Set top bits to 10 for vector chunk
 
-                    for (int j = 0; j < count; j++)
+                    for (var j = 0; j < count; j++)
                     {
                         // Convert status to correct bit pattern
                         ushort statusBits;
-                        switch (symbols[i + j])
+                        switch (PacketStatuses[i + j].Status)
                         {
                             case TWCCPacketStatusType.NotReceived:
                                 statusBits = 0;
@@ -446,77 +498,178 @@ namespace SIPSorcery.Net
 
                         chunk |= (ushort)(statusBits << (12 - 2 * j));
                     }
-                    chunks.Add(chunk);
+                    length += 2;
                     i += count;
                 }
             }
 
-            // Build the delta values array.
-            List<byte> deltaBytes = new List<byte>();
+            foreach (var ps in PacketStatuses)
+            {
+                length += GetDeltaLength(ps);
+            }
+
+            var check = GetBytes().Length;
+
+            Debug.Assert(check == length);
+
+            return check;
+
+            static int GetDeltaLength(TWCCPacketStatus ps)
+            {
+                if (ps.Status == TWCCPacketStatusType.ReceivedSmallDelta)
+                {
+                    return 1;
+                }
+                
+                if (ps.Status == TWCCPacketStatusType.ReceivedLargeDelta)
+                {
+                    return 2;
+                }
+
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Serializes this TWCC feedback message to a byte array.
+        /// Note: The serialization logic rebuilds the packet status chunks from the PacketStatuses list.
+        /// This implements the run-length chunk when possible and defaults to two-bit
+        /// status vector chunks if a run-length encoding isn’t efficient.
+        /// </summary>
+        /// <returns>The serialized RTCP TWCC feedback packet.</returns>
+        public byte[] GetBytes()
+                    {
+            var buffer = new byte[GetPacketSize()];
+
+            WriteBytesCore(buffer);
+
+            return buffer;
+                    }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+                }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+            }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            // Update the header length (in 32-bit words minus one).
+            Header.SetLength((ushort)(buffer.Length / 4 - 1));
+            _ = Header.WriteBytes(buffer);
+            buffer = buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH);
+
+            // Write Sender and Media SSRC.
+            BinaryOperations.WriteUInt32BigEndian(ref buffer, SenderSSRC);
+            BinaryOperations.WriteUInt32BigEndian(ref buffer, MediaSSRC);
+
+            // Write Base Sequence Number and Packet Status Count.
+            BinaryOperations.WriteUInt16BigEndian(ref buffer, BaseSequenceNumber);
+            BinaryOperations.WriteUInt16BigEndian(ref buffer, PacketStatusCount);
+
+            // Build the 32-bit word for ReferenceTime and FeedbackPacketCount.
+            BinaryOperations.WriteUInt32BigEndian(ref buffer, (ReferenceTime << 8) | FeedbackPacketCount);
+
+            for (var i = 0; i < PacketStatuses.Count;)
+            {
+                // Try to use run-length chunk: count how many consecutive statuses are identical.
+                var runLength = 1;
+                var current = PacketStatuses[i].Status;
+                while (i + runLength < PacketStatuses.Count && PacketStatuses[i + runLength].Status == current && runLength < 0x0FFF)
+            {
+                    runLength++;
+                }
+                if (runLength >= 2)
+                {
+                    // Build run-length chunk.
+                    // Currently:
+                    // ushort chunk = (ushort)(((int)current & 0x3) << 12);
+
+                    // Need to modify to use correct status bit mapping:
+                    ushort statusBits;
+                    switch (current)
+                    {
+                        case TWCCPacketStatusType.NotReceived:
+                            statusBits = 0; // 00
+                            break;
+                        case TWCCPacketStatusType.ReceivedSmallDelta:
+                            statusBits = 1; // 01 for small delta
+                                            // Note: status 10 (2) also means small delta
+                            break;
+                        case TWCCPacketStatusType.ReceivedLargeDelta:
+                            statusBits = 3; // 11 for large delta
+                            break;
+                        default:
+                            statusBits = 0;
+                            break;
+                    }
+
+                    var chunk = (ushort)(statusBits << 12);
+                    chunk |= (ushort)(runLength & 0x0FFF);
+                    BinaryOperations.WriteUInt16BigEndian(ref buffer, chunk);
+                    i += runLength;
+            }
+                else
+                {
+                    // Otherwise, pack into a two-bit status vector chunk.
+                    var count = Math.Min(7, PacketStatuses.Count - i);
+                    ushort chunk = 0x8000; // Set top bits to 10 for vector chunk
+
+                    for (var j = 0; j < count; j++)
+                    {
+                        // Convert status to correct bit pattern
+                        ushort statusBits;
+                        switch (PacketStatuses[i + j].Status)
+            {
+                            case TWCCPacketStatusType.NotReceived:
+                                statusBits = 0;
+                                break;
+                            case TWCCPacketStatusType.ReceivedSmallDelta:
+                                statusBits = 1;
+                                break;
+                            case TWCCPacketStatusType.ReceivedLargeDelta:
+                                statusBits = 3;
+                                break;
+                            default:
+                                statusBits = 0;
+                                break;
+            }
+
+                        chunk |= (ushort)(statusBits << (12 - 2 * j));
+                    }
+                    BinaryOperations.WriteUInt16BigEndian(ref buffer, chunk);
+                    i += count;
+                }
+            }
+
             foreach (var ps in PacketStatuses)
             {
                 if (ps.Status == TWCCPacketStatusType.ReceivedSmallDelta)
                 {
                     // Delta was stored already scaled; convert back to raw units.
-                    sbyte delta = (sbyte)(ps.Delta.HasValue ? ps.Delta.Value / DeltaScale : 0);
-                    deltaBytes.Add((byte)delta);
+                    var delta = (sbyte)(ps.Delta.GetValueOrDefault() / DeltaScale);
+                    buffer[0] = (byte)delta;
+                    buffer = buffer.Slice(1);
                 }
                 else if (ps.Status == TWCCPacketStatusType.ReceivedLargeDelta)
                 {
-                    if (!ps.Delta.HasValue)
-                    {
-                        ps.Delta = 0;
-                        //throw new ApplicationException("Missing delta for a large delta packet.");
-                    }
-                    short delta = (short)(ps.Delta.Value / DeltaScale);
-                    byte high = (byte)(delta >> 8);
-                    byte low = (byte)(delta & 0xFF);
-                    deltaBytes.Add(high);
-                    deltaBytes.Add(low);
+                    var delta = (short)(ps.Delta.GetValueOrDefault() / DeltaScale);
+                    var high = (byte)(delta >> 8);
+                    var low = (byte)(delta & 0xFF);
+                    buffer[0] = high;
+                    buffer[1] = low;
+                    buffer = buffer.Slice(2);
                 }
                 // For not received or reserved, no delta bytes are added.
             }
-
-            // Calculate fixed part length.
-            int fixedPart = RTCPHeader.HEADER_BYTES_LENGTH + 4 + 4 + 2 + 2 + 4; // header, two SSRCs, Base Seq, Status Count, RefTime+FbkCnt
-            int chunksPart = chunks.Count * 2;
-            int deltasPart = deltaBytes.Count;
-            int totalLength = fixedPart + chunksPart + deltasPart;
-            byte[] buffer = new byte[totalLength];
-
-            // Write header (we update length later).
-            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int offset = RTCPHeader.HEADER_BYTES_LENGTH;
-
-            // Write Sender and Media SSRC.
-            WriteUInt32(buffer, ref offset, SenderSSRC);
-            WriteUInt32(buffer, ref offset, MediaSSRC);
-
-            // Write Base Sequence Number and Packet Status Count.
-            WriteUInt16(buffer, ref offset, BaseSequenceNumber);
-            WriteUInt16(buffer, ref offset, PacketStatusCount);
-
-            // Build the 32-bit word for ReferenceTime and FeedbackPacketCount.
-            uint refTimeAndCount = (ReferenceTime << 8) | FeedbackPacketCount;
-            WriteUInt32(buffer, ref offset, refTimeAndCount);
-
-            // Write packet status chunks.
-            foreach (ushort chunk in chunks)
-            {
-                WriteUInt16(buffer, ref offset, chunk);
-            }
-
-            // Write delta values.
-            foreach (byte b in deltaBytes)
-            {
-                buffer[offset++] = b;
-            }
-
-            // Update the header length (in 32-bit words minus one).
-            Header.SetLength((ushort)(totalLength / 4 - 1));
-            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-
-            return buffer;
         }
 
         public override string ToString()
@@ -528,51 +681,5 @@ namespace SIPSorcery.Net
                    $"StatusCount={PacketStatusCount}, RefTime={ReferenceTime} (1/64 sec), " +
                    $"FbkPktCount={FeedbackPacketCount}, PacketStatuses=[{packetStatusInfo}]";
         }
-
-        #region Helper Methods
-
-        private uint ReadUInt32(byte[] buffer, ref int offset)
-        {
-            uint value = BitConverter.ToUInt32(buffer, offset);
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            offset += 4;
-            return value;
-        }
-
-        private ushort ReadUInt16(byte[] buffer, ref int offset)
-        {
-            ushort value = BitConverter.ToUInt16(buffer, offset);
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            offset += 2;
-            return value;
-        }
-
-        private void WriteUInt32(byte[] buffer, ref int offset, uint value)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, buffer, offset, 4);
-            offset += 4;
-        }
-
-        private void WriteUInt16(byte[] buffer, ref int offset, ushort value)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, buffer, offset, 2);
-            offset += 2;
-        }
-
-        #endregion
     }
 }

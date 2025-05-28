@@ -148,7 +148,7 @@ namespace SIPSorcery.Net
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
             var naluHeaderSize = is265 ? 2 : 1;
-            byte[] naluHeader = is265 ? nal.Take(2).ToArray() : nal.Take(1).ToArray();
+            byte[] naluHeader = is265 ? nal.AsSpan(0, 2).ToArray() : nal.AsSpan(0, 1).ToArray();
 
             if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                nal = nal.Skip(naluHeaderSize).ToArray();
+                nal = nal.AsSpan(naluHeaderSize).ToArray();
                 //logger.LogTrace("Fragmenting");
 
                 // Send as Fragmentation Unit A (FU-A):
@@ -288,14 +288,14 @@ namespace SIPSorcery.Net
                         {
                             var dataSize = RTPSession.RTP_MAX_PAYLOAD - rtpHeader.Length;
                             var isLast = dataSize >= restBytes.Length;
-                            var data = isLast ? restBytes : restBytes.Take(dataSize).ToArray();
+                            var data = isLast ? restBytes : restBytes.AsSpan(0, dataSize).ToArray();
                             var markerBit = isLast ? 0 : 1;
                             var payload = rtpHeader.Concat(data).ToArray();
                             SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadID, true);
 
                             offset += RTPSession.RTP_MAX_PAYLOAD;
                             rtpHeader = MJPEGPacketiser.GetMJPEGRTPHeader(customData, offset);
-                            restBytes = restBytes.Skip(data.Length).ToArray();
+                            restBytes = restBytes.AsSpan(data.Length).ToArray();
                         }
                     }
                 }

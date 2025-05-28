@@ -24,4 +24,22 @@ csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true
 
 # Don't allow single line if/else blocks without braces.
-csharp_prefer_braces = true:error 
+csharp_prefer_braces = true:error
+
+# IDE0007: Use implicit type
+dotnet_diagnostic.IDE0007.severity = suggestion
+
+# IDE0019: Use pattern matching
+dotnet_diagnostic.IDE0019.severity = suggestion
+
+# IDE0030: Use coalesce expression
+dotnet_diagnostic.IDE0030.severity = suggestion
+
+# IDE0031: Use null propagation
+dotnet_diagnostic.IDE0031.severity = suggestion
+
+# IDE0078: Use pattern matching
+dotnet_diagnostic.IDE0078.severity = suggestion
+
+# IDE0083: Use pattern matching
+dotnet_diagnostic.IDE0083.severity = suggestion

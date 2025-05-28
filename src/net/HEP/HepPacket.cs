@@ -316,7 +316,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(BitConverter.GetBytes((ushort)offset), 0, packetBuffer, 4, 2);
             }
 
-            return packetBuffer.Take(offset).ToArray();
+            return packetBuffer.AsSpan(0, offset).ToArray();
         }
     }
 }

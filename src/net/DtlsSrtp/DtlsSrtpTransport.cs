@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls;
 using SIPSorcery.Sys;
@@ -482,11 +483,15 @@ namespace SIPSorcery.Net
             return this._sendLimit;
         }
 
-        public void WriteToRecvStream(byte[] buf)
+        [Obsolete("Use WriteToRecvStream(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public void WriteToRecvStream(byte[] buf) => WriteToRecvStream(buf.AsSpan());
+
+        public void WriteToRecvStream(ReadOnlySpan<byte> buf)
         {
             if (!_isClosed)
             {
-                _chunks.Add(buf);
+                _chunks.Add(buf.ToArray());
             }
         }
 

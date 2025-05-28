@@ -17,7 +17,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.ComponentModel;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -79,7 +82,7 @@ namespace SIPSorcery.Net
         /// <returns>The length of the chunk.</returns>
         public override ushort GetChunkLength(bool padded)
         {
-            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH + 
+            var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH +
                 FIXED_PARAMETERS_LENGTH +
                 GapAckBlocks.Count * GAP_REPORT_LENGTH +
                 DuplicateTSN.Count * DUPLICATE_TSN_LENGTH);
@@ -97,31 +100,47 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
+            WriteToCore(buffer.AsSpan(posn));
 
-            ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
+            return GetChunkLength(true);
+        }
 
-            NetConvert.ToBuffer(CumulativeTsnAck, buffer, startPosn);
-            NetConvert.ToBuffer(ARwnd, buffer, startPosn + 4);
-            NetConvert.ToBuffer((ushort)GapAckBlocks.Count, buffer, startPosn + 8);
-            NetConvert.ToBuffer((ushort)DuplicateTSN.Count, buffer, startPosn + 10);
+        /// <summary>
+        /// Serialises the SACK chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
 
-            int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            var bytesWritten = WriteChunkHeader(buffer);
+
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), CumulativeTsnAck);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4), ARwnd);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8), (ushort)GapAckBlocks.Count);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 10), (ushort)DuplicateTSN.Count);
+
+            var reportPosn = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
 
             foreach (var gapBlock in GapAckBlocks)
             {
-                NetConvert.ToBuffer(gapBlock.Start, buffer, reportPosn);
-                NetConvert.ToBuffer(gapBlock.End, buffer, reportPosn + 2);
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(reportPosn), gapBlock.Start);
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(reportPosn + 2), gapBlock.End);
                 reportPosn += GAP_REPORT_LENGTH;
             }
 
-            foreach(var dupTSN in DuplicateTSN)
+            foreach (var dupTSN in DuplicateTSN)
             {
-                NetConvert.ToBuffer(dupTSN, buffer, reportPosn);
+                BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(reportPosn), dupTSN);
                 reportPosn += DUPLICATE_TSN_LENGTH;
             }
-
-            return GetChunkLength(true);
         }
 
         /// <summary>
@@ -129,31 +148,38 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
+        [Obsolete("Use ParseChunk(ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static SctpSackChunk ParseChunk(byte[] buffer, int posn)
+            => ParseChunk(buffer.AsSpan(posn));
+
+        /// <summary>
+        /// Parses the SACK chunk fields.
+        /// </summary>
+        /// <param name="buffer">The buffer holding the serialised chunk.</param>
+        public static SctpSackChunk ParseChunk(ReadOnlySpan<byte> buffer)
         {
             var sackChunk = new SctpSackChunk();
-            ushort chunkLen = sackChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = sackChunk.ParseFirstWord(buffer);
 
-            ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
+            sackChunk.CumulativeTsnAck = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice((ushort)(SCTP_CHUNK_HEADER_LENGTH)));
+            sackChunk.ARwnd = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(((ushort)(SCTP_CHUNK_HEADER_LENGTH)) + 4));
+            var numGapAckBlocks = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(((ushort)(SCTP_CHUNK_HEADER_LENGTH)) + 8));
+            var numDuplicateTSNs = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(((ushort)(SCTP_CHUNK_HEADER_LENGTH)) + 10));
 
-            sackChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, startPosn);
-            sackChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
-            ushort numGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
-            ushort numDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
+            var reportPosn = ((ushort)(SCTP_CHUNK_HEADER_LENGTH)) + FIXED_PARAMETERS_LENGTH;
 
-            int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-
-            for (int i=0; i < numGapAckBlocks; i++)
+            for (var i = 0; i < numGapAckBlocks; i++)
             {
-                ushort start = NetConvert.ParseUInt16(buffer, reportPosn);
-                ushort end = NetConvert.ParseUInt16(buffer, reportPosn + 2);
+                var start = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(reportPosn));
+                var end = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(reportPosn + 2));
                 sackChunk.GapAckBlocks.Add(new SctpTsnGapBlock { Start = start, End = end });
                 reportPosn += GAP_REPORT_LENGTH;
             }
 
-            for(int j=0; j < numDuplicateTSNs; j++)
+            for (var j = 0; j < numDuplicateTSNs; j++)
             {
-                sackChunk.DuplicateTSN.Add(NetConvert.ParseUInt32(buffer, reportPosn));
+                sackChunk.DuplicateTSN.Add(BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(reportPosn)));
                 reportPosn += DUPLICATE_TSN_LENGTH;
             }
 

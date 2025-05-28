@@ -142,45 +142,50 @@ namespace SIPSorcery.Net
             return GetBytes();
         }
 
+        public int GetPacketSize() => Length;
+
         public byte[] GetBytes()
         {
-            byte[] header = new byte[Length];
+            var buffer = new byte[Length];
 
-            UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+            WriteBytesCore(buffer);
 
-            if (BitConverter.IsLittleEndian)
+            return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, header, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, header, 4, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, header, 8, 4);
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+                {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+                }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+            }
+
+        private void WriteBytesCore(Span<byte> buffer)
+            {
+            var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+
+            BinaryPrimitives.WriteUInt16BigEndian(buffer, firstWord);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), SequenceNumber);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), Timestamp);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(8), SyncSource);
 
                 if (HeaderExtensionFlag == 1)
                 {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionProfile)), 0, header, 12 + 4 * CSRCCount, 2);
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionLength)), 0, header, 14 + 4 * CSRCCount, 2);
-                }
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(12 + 4 * CSRCCount), ExtensionProfile);
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(14 + 4 * CSRCCount), ExtensionLength);
             }
-            else
+
+            if (ExtensionLength > 0 && ExtensionPayload is { Length: > 0 })
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, header, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, header, 4, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, header, 8, 4);
-
-                if (HeaderExtensionFlag == 1)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionProfile), 0, header, 12 + 4 * CSRCCount, 2);
-                    Buffer.BlockCopy(BitConverter.GetBytes(ExtensionLength), 0, header, 14 + 4 * CSRCCount, 2);
-                }
+                ExtensionPayload.CopyTo(buffer.Slice(16 + 4 * CSRCCount));
             }
-
-            if (ExtensionLength > 0 && ExtensionPayload != null)
-            {
-                Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
-            }
-
-            return header;
         }
 
         private RTPHeaderExtensionData GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid)
@@ -196,7 +201,7 @@ namespace SIPSorcery.Net
                         invalid = true;
                         return null;
                     }
-                    ext = new RTPHeaderExtensionData(id, ExtensionPayload.Skip(position).Take(len).ToArray(), type);
+                    ext = new RTPHeaderExtensionData(id, ExtensionPayload.AsSpan(position, len).ToArray(), type);
                     position += len;
                 }
                 else

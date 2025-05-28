@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
 
                     if (rtpPacket.Header.MarkerBit > 0)
                     {
-                        var frame = _currVideoFrame.Take(_currVideoFramePosn).ToArray();
+                        var frame = _currVideoFrame.AsSpan(0, _currVideoFramePosn).ToArray();
 
                         _currVideoFramePosn = 0;
 
