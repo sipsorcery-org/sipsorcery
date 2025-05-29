@@ -89,6 +89,30 @@ namespace SIPSorcery.Sys
             }
         }
 
+        public void Trim()
+        {
+#if NETCOREAPP3_1_OR_GREATER
+            var temp = _chars.Slice(0, _pos).Trim();
+#else
+            var start = 0;
+            var end = _pos - 1;
+
+            while (start <= end && char.IsWhiteSpace(_chars[start]))
+            {
+                start++;
+            }
+
+            while (end >= start && char.IsWhiteSpace(_chars[end]))
+            {
+                end--;
+            }
+
+            var temp = _chars.Slice(start, end - start + 1);
+#endif
+            temp.CopyTo(_chars);
+            _pos = temp.Length;
+        }
+
         public new string ToString()
         {
             var s = _chars.Slice(0, _pos).ToString();
@@ -273,6 +297,53 @@ namespace SIPSorcery.Sys
         public void Append(ushort value, string? format = null, IFormatProvider? provider = null) => AppendSpanFormattable(value, format, provider);
 #else
         public void Append(ushort value, string? format = null, IFormatProvider? provider = null) => Append(value.ToString(format, provider));
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NET6_0_OR_GREATER
+        public void Append(ushort? value, string? format = null, IFormatProvider? provider = null)
+        {
+            if (value is { } v)
+            {
+                AppendSpanFormattable(v, format, provider);
+            }
+        }
+#else
+        public void Append(ushort? value, string? format = null, IFormatProvider? provider = null)
+        {
+            if (value is { } v)
+            {
+                Append(v.ToString(format, provider));
+            }
+        }
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NET6_0_OR_GREATER
+        public void Append(long value, string? format = null, IFormatProvider? provider = null) => AppendSpanFormattable(value, format, provider);
+#else
+        public void Append(long value, string? format = null, IFormatProvider? provider = null) => Append(value.ToString(format, provider));
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NET6_0_OR_GREATER
+        public void Append(float value, string? format = null, IFormatProvider? provider = null) => AppendSpanFormattable(value, format, provider);
+#else
+        public void Append(float value, string? format = null, IFormatProvider? provider = null) => Append(value.ToString(format, provider));
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NET6_0_OR_GREATER
+        public void Append(double value, string? format = null, IFormatProvider? provider = null) => AppendSpanFormattable(value, format, provider);
+#else
+        public void Append(double value, string? format = null, IFormatProvider? provider = null) => Append(value.ToString(format, provider));
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NET6_0_OR_GREATER
+        public void Append(decimal value, string? format = null, IFormatProvider? provider = null) => AppendSpanFormattable(value, format, provider);
+#else
+        public void Append(decimal value, string? format = null, IFormatProvider? provider = null) => Append(value.ToString(format, provider));
 #endif
 
         [MethodImpl(MethodImplOptions.NoInlining)]

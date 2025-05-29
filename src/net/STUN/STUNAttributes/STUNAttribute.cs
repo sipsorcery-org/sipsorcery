@@ -274,9 +274,16 @@ namespace SIPSorcery.Net
         {
             var sb = new ValueStringBuilder(stackalloc char[256]);
 
-            ToString(ref sb);
+            try
+            {
+                ToString(ref sb);
 
-            return sb.ToString();
+                return sb.ToString();
+            }
+            finally
+            {
+                sb.Dispose();
+            }
         }
 
         internal void ToString(ref ValueStringBuilder sb)

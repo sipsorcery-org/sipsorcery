@@ -724,36 +724,47 @@ namespace SIPSorcery.Net
 
         protected void LogRemoteSDPSsrcAttributes()
         {
-            string str = "Audio:[ ";
+            if (!logger.IsEnabled(LogLevel.Debug))
+            {
+                return;
+            }
+
+            using var builder = new ValueStringBuilder();
+
+            builder.Append("Audio:[ ");
             foreach (var audioRemoteSDPSsrcAttribute in audioRemoteSDPSsrcAttributes)
             {
                 foreach (var attr in audioRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    builder.Append(attr.SSRC);
+                    builder.Append(" - ");
                 }
             }
-            str += "] \r\n Video: [ ";
+            builder.Append("] \r\n Video: [ ");
             foreach (var videoRemoteSDPSsrcAttribute in videoRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                builder.Append(" [");
                 foreach (var attr in videoRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    builder.Append(attr.SSRC);
+                    builder.Append(" - ");
                 }
-                str += "] ";
+                builder.Append("] ");
             }
-            str += "] \r\n Text: [ ";
+            builder.Append("] \r\n Text: [ ");
             foreach (var textRemoteSDPSsrcAttribute in textRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                builder.Append(" [");
                 foreach (var attr in textRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    builder.Append(attr.SSRC);
+                    builder.Append(" - ");
                 }
-                str += "] ";
+                builder.Append("] ");
             }
-            str += " ]";
-            logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", str);
+            builder.Append(" ]");
+
+            logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", builder.ToString());
         }
 
         private void CreateRtcpSession(MediaStream mediaStream)
@@ -1195,11 +1206,11 @@ namespace SIPSorcery.Net
                             var srtpHandler = currentMediaStream.GetOrCreateSrtpHandler();
                             if (!(srtpHandler.IsNegotiationComplete && srtpHandler.RemoteSecurityDescriptionUnchanged(announcement.SecurityDescriptions)))
                             {
-                               if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
-                               {
+                                if (!srtpHandler.SetupRemote(announcement.SecurityDescriptions, sdpType))
+                                {
                                     logger.LogError("Error negotiating secure media for type {MediaType}. Incompatible crypto parameter.", mediaType);
-                                   return SetDescriptionResultEnum.CryptoNegotiationFailed;
-                               }
+                                    return SetDescriptionResultEnum.CryptoNegotiationFailed;
+                                }
 
                                 if (srtpHandler.IsNegotiationComplete)
                                 {
@@ -2516,13 +2527,13 @@ namespace SIPSorcery.Net
                 {
                     buffer.CopyTo(tempBuffer);
                     var res = secureContext.UnprotectRtcpPacket(tempBuffer, buffer.Length, out int outBufLen);
-                if (res != 0)
-                {
-                    logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", PrimaryStream.MediaType, res);
-                    return;
-                }
-                else
-                {
+                    if (res != 0)
+                    {
+                        logger.LogWarning("SRTCP unprotect failed for {MediaType} track, result {Result}.", PrimaryStream.MediaType, res);
+                        return;
+                    }
+                    else
+                    {
                         if (outBufLen < buffer.Length)
                         {
                             OnReceiveRTCPPacketCore(tempBuffer.AsSpan(0, outBufLen), remoteEndPoint, mediaStream);
@@ -2535,7 +2546,7 @@ namespace SIPSorcery.Net
                 {
                     ArrayPool<byte>.Shared.Return(tempBuffer);
                 }
-            }           
+            }
 
             OnReceiveRTCPPacketCore(buffer.Span, remoteEndPoint, mediaStream);
 
@@ -2548,7 +2559,7 @@ namespace SIPSorcery.Net
                     if (rtcpPkt.Bye != null)
                     {
                         logger.LogDebug("RTCP BYE received for SSRC {SSRC}, reason {Reason}.", rtcpPkt.Bye.SSRC, rtcpPkt.Bye.Reason);
-    
+
                         // In some cases, such as a SIP re-INVITE, it's possible the RTP session
                         // will keep going with a new remote SSRC. 
                         if (mediaStream?.RemoteTrack != null && rtcpPkt.Bye.SSRC == mediaStream.RemoteTrack.Ssrc)
@@ -2584,7 +2595,7 @@ namespace SIPSorcery.Net
                                     mediaStream.ControlDestinationEndPoint = remoteEndPoint;
                                 }
                             }
-    
+
                             mediaStream.RtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
                             mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
                         }

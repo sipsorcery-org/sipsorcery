@@ -15,6 +15,7 @@
 
 using System.Net;
 using System.Net.Sockets;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -62,6 +63,18 @@ namespace SIPSorcery.Net
         public override string ToString()
         {
             return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append("c=");
+            builder.Append(ConnectionNetworkType);
+            builder.Append(' ');
+            builder.Append(ConnectionAddressType);
+            builder.Append(' ');
+            builder.Append(ConnectionAddress);
+            builder.Append(m_CRLF);
+
         }
     }
 }
