@@ -532,22 +532,30 @@ namespace SIPSorcery.Net
             }
             else if (Media == SDPMediaTypesEnum.application)
             {
+                var first = true;
                 foreach (var appFormat in ApplicationMediaFormats)
                 {
+                    if (!first)
+                    {
+                        builder.Append(' ');
+                    }
                     builder.Append(appFormat.Key);
-                    builder.Append(' ');
+                    first = false;
                 }
             }
             else
             {
+                var first = true;
                 foreach (var mediaFormat in MediaFormats)
                 {
+                    if (!first)
+                    {
+                        builder.Append(' ');
+                    }
                     builder.Append(mediaFormat.Key);
-                    builder.Append(' ');
+                    first = false;
                 }
             }
-
-            builder.Trim();
         }
 
         public string GetFormatListAttributesToString()

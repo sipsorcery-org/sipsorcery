@@ -15,7 +15,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -30,6 +32,17 @@ namespace TinyJson
     //- Will only output public fields and property getters on objects
     public static class JSONWriter
     {
+        private static readonly FrozenDictionary<char, char> EscapeMap = new Dictionary<char, char>
+        {
+            ['"'] = '"',
+            ['\\'] = '\\',
+            ['\n'] = 'n',
+            ['\r'] = 'r',
+            ['\t'] = 't',
+            ['\b'] = 'b',
+            ['\f'] = 'f'
+        }.ToFrozenDictionary();
+
         public static string ToJson(this object item)
         {
             var builder = new ValueStringBuilder();
@@ -46,70 +59,71 @@ namespace TinyJson
             }
         }
 
-        static void AppendValue(ref ValueStringBuilder stringBuilder, object item)
+        static void AppendValue(ref ValueStringBuilder builder, object item)
         {
             if (item == null)
             {
-                stringBuilder.Append("null");
+                builder.Append("null");
                 return;
             }
 
             var type = item.GetType();
+
+            if (type.IsEnum)
+            {
+                builder.Append('"');
+                builder.Append(item.ToString());
+                builder.Append('"');
+                return;
+            }
+
             var typeCode = Type.GetTypeCode(type);
 
             switch (typeCode)
             {
+
                 case TypeCode.String:
+                    {
+                        builder.Append('"');
+                        var str = ((string)item).AsSpan();
+                        for (var i = 0; i < str.Length; i++)
+                        {
+                            AppendEscapedChar(ref builder, str[i]);
+                        }
+                        builder.Append('"');
+                        return;
+                    }
+
                 case TypeCode.Char:
                     {
-                        stringBuilder.Append('"');
-                        var str = item.ToString();
-                        for (var i = 0; i < str.Length; ++i)
-                        {
-                            if (str[i] < ' ' || str[i] == '"' || str[i] == '\\')
-                            {
-                                stringBuilder.Append('\\');
-                                var j = "\"\\\n\r\t\b\f".IndexOf(str[i]);
-                                if (j >= 0)
-                                {
-                                    stringBuilder.Append("\"\\nrtbf"[j]);
-                                }
-                                else
-                                {
-                                    stringBuilder.Append("u");
-                                    stringBuilder.Append((uint)str[i], "X4");
-                                }
-                            }
-                            else
-                            {
-                                stringBuilder.Append(str[i]);
-                            }
-                        }
-                        stringBuilder.Append('"');
+                        builder.Append('"');
+                        AppendEscapedChar(ref builder, (char)item);
+                        builder.Append('"');
                         return;
+
                     }
 
                 case TypeCode.Boolean:
                     {
-                        stringBuilder.Append((bool)item ? "true" : "false");
+                        builder.Append((bool)item ? "true" : "false");
                         return;
                     }
 
                 case TypeCode.Single:
                     {
-                        stringBuilder.Append((float)item, provider: System.Globalization.CultureInfo.InvariantCulture);
+                        builder.Append((float)item, provider: System.Globalization.CultureInfo.InvariantCulture);
                         return;
                     }
 
                 case TypeCode.Double:
                     {
-                        stringBuilder.Append((double)item, provider: System.Globalization.CultureInfo.InvariantCulture);
+                        builder.Append((double)item, provider: System.Globalization.CultureInfo.InvariantCulture);
                         return;
                     }
 
                 case TypeCode.Decimal:
                     {
-                        stringBuilder.Append((decimal)item, provider: System.Globalization.CultureInfo.InvariantCulture);
+                        builder.Append((decimal)item, provider: System.Globalization.CultureInfo.InvariantCulture);
                         return;
                     }
 
@@ -122,74 +136,89 @@ namespace TinyJson
                 case TypeCode.Int64:
                 case TypeCode.UInt64:
                     {
-                        stringBuilder.Append(item.ToString());
+                        builder.Append(item.ToString());
                         return;
                     }
 
                 case TypeCode.DBNull:
                 case TypeCode.Empty:
                     {
-                        stringBuilder.Append("null");
+                        builder.Append("null");
                         return;
                     }
             }
 
-            if (type.IsEnum)
+            static void AppendEscapedChar(ref ValueStringBuilder builder, char ch)
             {
-                stringBuilder.Append('"');
-                stringBuilder.Append(item.ToString());
-                stringBuilder.Append('"');
+                if (ch is >= ' ' and not '"' and not '\\')
+                {
+                    builder.Append(ch);
+                }
+                else
+                {
+                    builder.Append('\\');
+                    if (EscapeMap.TryGetValue(ch, out var escapeChar))
+                    {
+                        builder.Append(escapeChar);
+                    }
+                    else
+                    {
+                        builder.Append('u');
+                        builder.Append(((uint)ch).ToString("X4"));
+                    }
+                }
             }
-            else if (item is IList list)
+
+            if (item is IList list)
             {
-                stringBuilder.Append('[');
+                builder.Append('[');
                 var isFirst = true;
                 for (var i = 0; i < list.Count; i++)
                 {
                     if (!isFirst)
                     {
-                        stringBuilder.Append(',');
+                        builder.Append(',');
                     }
                     else
                     {
                         isFirst = false;
                     }
-                    AppendValue(ref stringBuilder, list[i]);
+                    AppendValue(ref builder, list[i]);
                 }
-                stringBuilder.Append(']');
+                builder.Append(']');
             }
             else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 var keyType = type.GetGenericArguments()[0];
                 if (keyType != typeof(string))
                 {
-                    stringBuilder.Append("{}");
+                    builder.Append("{}");
                     return;
                 }
 
                 var dict = item as IDictionary;
-                stringBuilder.Append('{');
+                builder.Append('{');
                 var isFirst = true;
                 foreach (var key in dict.Keys)
                 {
                     if (!isFirst)
                     {
-                        stringBuilder.Append(',');
+                        builder.Append(',');
                     }
                     else
                     {
                         isFirst = false;
                     }
-                    stringBuilder.Append('\"');
-                    stringBuilder.Append((string)key);
-                    stringBuilder.Append("\":");
-                    AppendValue(ref stringBuilder, dict[key]);
+                    builder.Append('\"');
+                    builder.Append((string)key);
+                    builder.Append("\":");
+                    AppendValue(ref builder, dict[key]);
                 }
-                stringBuilder.Append('}');
+                builder.Append('}');
             }
             else
             {
-                stringBuilder.Append('{');
+                builder.Append('{');
                 var isFirst = true;
 
                 var fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
@@ -205,16 +234,16 @@ namespace TinyJson
                     {
                         if (!isFirst)
                         {
-                            stringBuilder.Append(',');
+                            builder.Append(',');
                         }
                         else
                         {
                             isFirst = false;
                         }
-                        stringBuilder.Append('\"');
-                        stringBuilder.Append(GetMemberName(field));
-                        stringBuilder.Append("\":");
-                        AppendValue(ref stringBuilder, value);
+                        builder.Append('\"');
+                        builder.Append(GetMemberName(field));
+                        builder.Append("\":");
+                        AppendValue(ref builder, value);
                     }
                 }
 
@@ -231,20 +260,20 @@ namespace TinyJson
                     {
                         if (!isFirst)
                         {
-                            stringBuilder.Append(',');
+                            builder.Append(',');
                         }
                         else
                         {
                             isFirst = false;
                         }
-                        stringBuilder.Append('\"');
-                        stringBuilder.Append(GetMemberName(prop));
-                        stringBuilder.Append("\":");
-                        AppendValue(ref stringBuilder, value);
+                        builder.Append('\"');
+                        builder.Append(GetMemberName(prop));
+                        builder.Append("\":");
+                        AppendValue(ref builder, value);
                     }
                 }
 
-                stringBuilder.Append('}');
+                builder.Append('}');
             }
         }
 

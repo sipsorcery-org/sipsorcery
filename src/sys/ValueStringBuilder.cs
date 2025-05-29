@@ -89,29 +89,30 @@ namespace SIPSorcery.Sys
             }
         }
 
-        public void Trim()
-        {
-#if NETCOREAPP3_1_OR_GREATER
-            var temp = _chars.Slice(0, _pos).Trim();
-#else
-            var start = 0;
-            var end = _pos - 1;
+// Needs validation
+//        public void Trim()
+//        {
+//#if NETCOREAPP3_1_OR_GREATER
+//            var temp = _chars.Slice(0, _pos).Trim();
+//#else
+//            var start = 0;
+//            var end = _pos - 1;
 
-            while (start <= end && char.IsWhiteSpace(_chars[start]))
-            {
-                start++;
-            }
+//            while (start <= end && char.IsWhiteSpace(_chars[start]))
+//            {
+//                start++;
+//            }
 
-            while (end >= start && char.IsWhiteSpace(_chars[end]))
-            {
-                end--;
-            }
+//            while (end >= start && char.IsWhiteSpace(_chars[end]))
+//            {
+//                end--;
+//            }
 
-            var temp = _chars.Slice(start, end - start + 1);
-#endif
-            temp.CopyTo(_chars);
-            _pos = temp.Length;
-        }
+//            var temp = _chars.Slice(start, end - start + 1);
+//#endif
+//            temp.CopyTo(_chars);
+//            _pos = temp.Length;
+//        }
 
         public new string ToString()
         {
