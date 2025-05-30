@@ -256,23 +256,115 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
-            string authHeader = AuthHeaders.AUTH_DIGEST_KEY + " ";
+            var builder = new ValueStringBuilder();
 
-            authHeader += (Username != null && Username.Trim().Length != 0) ? AuthHeaders.AUTH_USERNAME_KEY + "=\"" + Username + "\"" : null;
-            authHeader += (authHeader.IndexOf('=') != -1) ? "," + AuthHeaders.AUTH_REALM_KEY + "=\"" + Realm + "\"" : AuthHeaders.AUTH_REALM_KEY + "=\"" + Realm + "\"";
-            authHeader += (Nonce != null) ? "," + AuthHeaders.AUTH_NONCE_KEY + "=\"" + Nonce + "\"" : null;
-            authHeader += (URI != null && URI.Trim().Length != 0) ? "," + AuthHeaders.AUTH_URI_KEY + "=\"" + URI + "\"" : null;
-            authHeader += (Response != null && Response.Length != 0) ? "," + AuthHeaders.AUTH_RESPONSE_KEY + "=\"" + Response + "\"" : null;
-            authHeader += (Cnonce != null) ? "," + AuthHeaders.AUTH_CNONCE_KEY + "=\"" + Cnonce + "\"" : null;
-            authHeader += (NonceCount != 0) ? "," + AuthHeaders.AUTH_NONCECOUNT_KEY + "=" + GetPaddedNonceCount(NonceCount) : null;
-            authHeader += (Qop != null) ? "," + AuthHeaders.AUTH_QOP_KEY + "=" + Qop : null;
-            authHeader += (Opaque != null) ? "," + AuthHeaders.AUTH_OPAQUE_KEY + "=\"" + Opaque + "\"" : null;
+            try
+            {
+                ToString(ref builder);
 
-            string algorithmID = (DigestAlgorithm == DigestAlgorithmsEnum.SHA256) ? SHA256_ALGORITHM_ID : DigestAlgorithm.ToString();
-            authHeader += (Response != null) ? "," + AuthHeaders.AUTH_ALGORITHM_KEY + "=" + algorithmID : null;
-
-            return authHeader;
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
         }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append(AuthHeaders.AUTH_DIGEST_KEY);
+            builder.Append(' ');
+
+            bool hasUsername = !string.IsNullOrWhiteSpace(Username);
+            if (hasUsername)
+            {
+                builder.Append(AuthHeaders.AUTH_USERNAME_KEY);
+                builder.Append("=\"");
+                builder.Append(Username);
+                builder.Append('"');
+            }
+
+            builder.Append(hasUsername ? ',' : '\0');
+            builder.Append(AuthHeaders.AUTH_REALM_KEY);
+            builder.Append("=\"");
+            builder.Append(Realm);
+            builder.Append('"');
+
+            if (Nonce != null)
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_NONCE_KEY);
+                builder.Append("=\"");
+                builder.Append(Nonce);
+                builder.Append('"');
+            }
+
+            if (!string.IsNullOrWhiteSpace(URI))
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_URI_KEY);
+                builder.Append("=\"");
+                builder.Append(URI);
+                builder.Append('"');
+            }
+
+            if (!string.IsNullOrEmpty(Response))
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_RESPONSE_KEY);
+                builder.Append("=\"");
+                builder.Append(Response);
+                builder.Append('"');
+            }
+
+            if (Cnonce != null)
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_CNONCE_KEY);
+                builder.Append("=\"");
+                builder.Append(Cnonce);
+                builder.Append('"');
+            }
+
+            if (NonceCount != 0)
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_NONCECOUNT_KEY);
+                builder.Append('=');
+                builder.Append(GetPaddedNonceCount(NonceCount));
+        }
+
+            if (Qop != null)
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_QOP_KEY);
+                builder.Append('=');
+                builder.Append(Qop);
+            }
+
+            if (Opaque != null)
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_OPAQUE_KEY);
+                builder.Append("=\"");
+                builder.Append(Opaque);
+                builder.Append('"');
+            }
+
+            if (Response != null)
+            {
+                builder.Append(',');
+                builder.Append(AuthHeaders.AUTH_ALGORITHM_KEY);
+                builder.Append('=');
+
+                string algorithmID = (DigestAlgorithm == DigestAlgorithmsEnum.SHA256)
+                ? SHA256_ALGORITHM_ID
+                : DigestAlgorithm.ToString();
+
+                builder.Append(algorithmID);
+            }
+        }
+
 
         public SIPAuthorisationDigest CopyOf()
         {
@@ -385,7 +477,7 @@ namespace SIPSorcery.SIP
                 case DigestAlgorithmsEnum.SHA256:
                     using (var hash = new SHA256CryptoServiceProvider())
                     {
-                        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
+                        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).AsSpan().HexStr(lowercase: true);
                     }
                 // This is commented because RFC8760 does not have an SHA-512 option. Instead it's HSA-512-sess which
                 // means the SIP request body needs to be included in the digest as well. Including the body will require 
@@ -393,13 +485,13 @@ namespace SIPSorcery.SIP
                 //case DigestAlgorithmsEnum.SHA512:
                 //    using (var hash = new SHA512CryptoServiceProvider())
                 //    {
-                //        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
+                //        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr(lowercase: false);
                 //    }
                 case DigestAlgorithmsEnum.MD5:
                 default:
                     using (var hash = new MD5CryptoServiceProvider())
                     {
-                        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).HexStr().ToLower();
+                        return hash.ComputeHash(Encoding.UTF8.GetBytes(val)).AsSpan().HexStr(lowercase: true);
                     }
             }
 #pragma warning restore SYSLIB0021

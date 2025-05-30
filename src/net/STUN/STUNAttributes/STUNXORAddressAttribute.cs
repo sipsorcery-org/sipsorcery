@@ -173,5 +173,7 @@ namespace SIPSorcery.Net
                 return null;
             }
         }
+
+        private protected override void ValueToString(ref ValueStringBuilder sb) => base.ValueToString(ref sb);
     }
 }
