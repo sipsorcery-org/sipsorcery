@@ -192,6 +192,9 @@ namespace SIPSorcery.Sys
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Append(bool value) => Append(value ? "true" : "false");
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(char c)
         {
             var pos = _pos;

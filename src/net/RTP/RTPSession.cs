@@ -2486,20 +2486,19 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    if (Enum.IsDefined(typeof(RTCPReportTypesEnum), bufferSpan[1]))
+                    var retcReportType = (RTCPReportTypesEnum)bufferSpan[1];
+                    if (retcReportType is
+                        RTCPReportTypesEnum.SR or
+                        RTCPReportTypesEnum.RR or
+                        RTCPReportTypesEnum.SDES or
+                        RTCPReportTypesEnum.BYE or
+                        RTCPReportTypesEnum.PSFB or
+                        RTCPReportTypesEnum.RTPFB)
                     {
                         // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
-                        if (bufferSpan[1] is (byte)RTCPReportTypesEnum.SR or
-                            (byte)RTCPReportTypesEnum.RR or
-                            (byte)RTCPReportTypesEnum.SDES or
-                            (byte)RTCPReportTypesEnum.BYE or
-                            (byte)RTCPReportTypesEnum.PSFB or
-                            (byte)RTCPReportTypesEnum.RTPFB)
-                        {
-                            OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
-                        }
+                        OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
                     }
-                    else
+                    else if (!Enum.IsDefined(typeof(RTCPReportTypesEnum), retcReportType))
                     {
                         OnReceiveRTPPacket(localPort, remoteEndPoint, buffer);
                     }

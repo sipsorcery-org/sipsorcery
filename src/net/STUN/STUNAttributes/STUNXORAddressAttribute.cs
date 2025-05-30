@@ -154,13 +154,6 @@ namespace SIPSorcery.Net
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
 
-        public override string ToString()
-        {
-            string attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
-
-            return attrDescrStr;
-        }
-
         public IPEndPoint GetIPEndPoint()
         {
             if (Address != null)
@@ -172,5 +165,7 @@ namespace SIPSorcery.Net
                 return null;
             }
         }
+
+        private protected override void ValueToString(ref ValueStringBuilder sb) => base.ValueToString(ref sb);
     }
 }

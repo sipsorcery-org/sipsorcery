@@ -18,6 +18,7 @@ using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -292,8 +293,11 @@ namespace SIPSorcery.Net
 
         internal void ToString(ref ValueStringBuilder sb)
         {
+            Debug.Assert(Header is not null);
+            Debug.Assert(Attributes is not null);
+
             sb.Append("STUN Message: ");
-            sb.Append(Header.MessageType.ToStringFast());
+            sb.Append(Header.MessageType.ToString());
             sb.Append('[');
             sb.Append((int)Header.MessageType);
             sb.Append("], length=");
@@ -301,7 +305,7 @@ namespace SIPSorcery.Net
             sb.Append(", transactionID=");
             sb.Append(Header.TransactionId);
 
-            foreach (STUNAttribute attribute in Attributes)
+            foreach (var attribute in Attributes)
             {
                 sb.Append("\n ");
                 attribute.ToString(ref sb);

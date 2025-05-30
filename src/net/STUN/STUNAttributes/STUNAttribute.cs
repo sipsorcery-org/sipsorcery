@@ -289,12 +289,17 @@ namespace SIPSorcery.Net
         internal void ToString(ref ValueStringBuilder sb)
         {
             sb.Append("STUN Attribute: ");
-            sb.Append(AttributeType.ToStringFast());
-            sb.Append('=');
+            sb.Append(AttributeType.ToString());
+            sb.Append(", ");
+            ValueToString(ref sb);
+            sb.Append('.');
+        }
+
+        private protected virtual void ValueToString(ref ValueStringBuilder sb)
+        {
             sb.Append(Value);
             sb.Append(", length=");
             sb.Append(PaddedLength);
-            sb.Append('.');
         }
     }
 }

@@ -2308,20 +2308,27 @@ namespace SIPSorcery.Net
             // Send a STUN binding request.
             var stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest)
             {
-                Header = { TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID) }
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID),
+                },
             };
 
-            var keySpan = ReadOnlySpan<byte>.Empty;
-            var addFingerprint = false;
             SocketError sendResult;
 
             if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
             {
-                var stunReqBytes = GetAuthenticatedStunRequest(stunRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
-                sendResult = Send(iceServer, stunReqBytes.AsMemory(), null);
+                var (stunReqBytes, memoryOwner) = GetAuthenticatedStunRequest(stunRequest, iceServer._username, iceServer._password, iceServer.Realm, iceServer.Nonce);
+
+                using (memoryOwner)
+                {
+                    sendResult = Send(iceServer, stunReqBytes, null);
+                }
             }
             else
             {
+                var keySpan = ReadOnlySpan<byte>.Empty;
+                var addFingerprint = false;
                 var bufferSize = stunRequest.GetByteBufferSize(keySpan, addFingerprint);
                 var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
 
@@ -2359,27 +2366,39 @@ namespace SIPSorcery.Net
             iceServer.OutstandingRequestsSent += 1;
             iceServer.LastRequestSentAt = DateTime.Now;
 
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
             var allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate)
             {
-                Header = { TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID) }
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID),
+                },
+                Attributes =
+                {
+                    new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType),
+                    new STUNAttribute(
+                        STUNAttributeTypesEnum.RequestedAddressFamily,
+                        iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork
+                            ? STUNAttributeConstants.IPv4AddressFamily
+                            : STUNAttributeConstants.IPv6AddressFamily),
+                },
             };
-            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
-            allocateRequest.Attributes.Add(
-                new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
-                iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
-                STUNAttributeConstants.IPv4AddressFamily : STUNAttributeConstants.IPv6AddressFamily));
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
 
             if (iceServer.Nonce != null && iceServer.Realm != null &&
                 iceServer._username != null && iceServer._password != null)
             {
-                var allocateReqBytes = GetAuthenticatedStunRequest(
+                var (allocateReqBytes, memoryOwner) = GetAuthenticatedStunRequest(
                     allocateRequest,
                     iceServer._username,
-                    iceServer.Realm,
                     iceServer._password,
+                    iceServer.Realm,
                     iceServer.Nonce);
 
-                return SendTurnAllocateRequestCore(iceServer, allocateRequest, allocateReqBytes.AsMemory());
+                using (memoryOwner)
+                {
+                    return SendTurnAllocateRequestCore(iceServer, allocateRequest, allocateReqBytes);
+                }
             }
             else
             {
@@ -2426,32 +2445,40 @@ namespace SIPSorcery.Net
             iceServer.OutstandingRequestsSent += 1;
             iceServer.LastRequestSentAt = DateTime.Now;
 
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
             var refreshRequest = new STUNMessage(STUNMessageTypesEnum.Refresh)
             {
-                Header = { TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID) }
+                Header =
+                {
+                    TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID),
+                },
+                Attributes =
+                {
+                    // new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600),
+                    new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_VALUE),
+                    new STUNAttribute(
+                        STUNAttributeTypesEnum.RequestedAddressFamily,
+                        iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork
+                            ? STUNAttributeConstants.IPv4AddressFamily
+                            : STUNAttributeConstants.IPv6AddressFamily),
+                }
             };
-            //refreshRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
-            refreshRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_VALUE));
-
-            refreshRequest.Attributes.Add(
-                new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
-                iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
-                STUNAttributeConstants.IPv4AddressFamily : STUNAttributeConstants.IPv6AddressFamily));
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
 
             if (iceServer.Nonce != null && iceServer.Realm != null &&
                 iceServer._username != null && iceServer._password != null)
             {
-                // Assuming this method is not yet refactored and returns a byte[]
-                var refreshReqBytes = GetAuthenticatedStunRequest(
+                var (refreshReqBytes, memoryOwner) = GetAuthenticatedStunRequest(
                     refreshRequest,
                     iceServer._username,
-                    iceServer.Realm,
                     iceServer._password,
+                    iceServer.Realm,
                     iceServer.Nonce);
 
-                var sendResult = SendTurnRefreshRequestCore(iceServer, refreshRequest, refreshReqBytes.AsMemory());
-
-                return sendResult;
+                using (memoryOwner)
+                {
+                    return SendTurnRefreshRequestCore(iceServer, refreshRequest, refreshReqBytes);
+                }
             }
             else
             {
@@ -2500,24 +2527,39 @@ namespace SIPSorcery.Net
         /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
         private SocketError SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
         {
+            var transactionId = Encoding.ASCII.GetBytes(transactionID);
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
             var permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission)
             {
-                Header = { TransactionId = Encoding.ASCII.GetBytes(transactionID) }
+                Header =
+                {
+                    TransactionId = transactionId,
+                },
+                Attributes =
+                {
+                    new STUNXORAddressAttribute(
+                        STUNAttributeTypesEnum.XORPeerAddress,
+                        peerEndPoint.Port,
+                        peerEndPoint.Address,
+                        transactionId)
+                }
             };
-            permissionsRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address, permissionsRequest.Header.TransactionId));
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
 
             if (iceServer.Nonce != null && iceServer.Realm != null &&
                 iceServer._username != null && iceServer._password != null)
             {
-                // Assuming this method is not yet refactored and returns a byte[]
-                var createPermissionReqBytes = GetAuthenticatedStunRequest(
+                var (createPermissionReqBytes, memoryOwner) = GetAuthenticatedStunRequest(
                     permissionsRequest,
                     iceServer._username,
-                    iceServer.Realm,
                     iceServer._password,
+                    iceServer.Realm,
                     iceServer.Nonce);
 
-                return SendTurnCreatePermissionsRequestCore(iceServer, permissionsRequest, createPermissionReqBytes.AsMemory());
+                using (memoryOwner)
+                {
+                    return SendTurnCreatePermissionsRequestCore(iceServer, permissionsRequest, createPermissionReqBytes);
+                }
             }
             else
             {
@@ -2638,7 +2680,7 @@ namespace SIPSorcery.Net
         /// Adds the authentication fields to a STUN request.
         /// </summary>
         /// <returns>The serialised STUN request.</returns>
-        private byte[] GetAuthenticatedStunRequest(STUNMessage stunRequest, string username, byte[] realm, string password, byte[] nonce)
+        private (Memory<byte> requestBytes, IDisposable memoryOwner) GetAuthenticatedStunRequest(STUNMessage stunRequest, string username, string password, byte[] realm, byte[] nonce)
         {
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, nonce));
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, realm));
@@ -2671,17 +2713,10 @@ namespace SIPSorcery.Net
                 md5Digest.DoFinal(hash, 0);
 
                 var bufferSize = stunRequest.GetByteBufferSize(hash, addFingerprint: true);
-                var rentedBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+                var memoryOwner = MemoryPool<byte>.Shared.Rent(bufferSize);
 
-                try
-                {
-                    stunRequest.WriteToBuffer(rentedBuffer.AsSpan(0, bufferSize), hash, addFingerprint: true);
-                    return rentedBuffer.AsSpan(0, bufferSize).ToArray();
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(rentedBuffer);
-                }
+                stunRequest.WriteToBuffer(memoryOwner.Memory.Span.Slice(0, bufferSize), hash, addFingerprint: true);
+                return (memoryOwner.Memory.Slice(0, bufferSize), memoryOwner);
             }
             finally
             {
