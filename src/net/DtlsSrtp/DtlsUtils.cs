@@ -514,20 +514,24 @@ namespace SIPSorcery.Net
         /// <param name="hashAlgorithm">The hash algorithm to check.</param>
         public static bool IsHashSupported(string hashAlgorithm)
         {
-            switch (hashAlgorithm.ToLower())
-            {
-                case "sha1":
-                case "sha-1":
-                case "sha256":
-                case "sha-256":
-                case "sha384":
-                case "sha-384":
-                case "sha512":
-                case "sha-512":
-                    return true;
-                default:
-                    return false;
-            }
+            return hashAlgorithm != null && IsHashSupported(hashAlgorithm.AsSpan());
+        }
+
+        /// <summary>
+        /// Verifies the hash algorithm is supported by the utility functions in this class.
+        /// </summary>
+        /// <param name="hashAlgorithm">The hash algorithm to check.</param>
+        public static bool IsHashSupported(ReadOnlySpan<char> hashAlgorithm)
+        {
+            return !hashAlgorithm.IsEmpty && (
+                hashAlgorithm.Equals("sha1".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-1".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha256".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-256".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha384".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-384".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha512".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                hashAlgorithm.Equals("sha-512".AsSpan(), StringComparison.OrdinalIgnoreCase));
         }
 
         public static string ExportToDerBase64(Certificate certificate)

@@ -320,7 +320,7 @@ namespace SIPSorcery.SIP
 
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogWarning(excp, "Failed to parse UserParameters, error: {ErrorMessage}", excp.Message);
             }
@@ -485,35 +485,57 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
+            var builder = new ValueStringBuilder();
+
             try
             {
-                string uriStr = Scheme.ToString() + SCHEME_ADDR_SEPARATOR;
+                ToString(ref builder);
 
-                uriStr = (User != null) ? uriStr + User + USER_HOST_SEPARATOR + Host : uriStr + Host;
-
-                if (Parameters != null && Parameters.Count > 0)
-                {
-                    uriStr += Parameters.ToString();
-                }
-
-                // If the URI's protocol is not implied already set the transport parameter.
-                if (Scheme != SIPSchemesEnum.sips && Protocol != SIPProtocolsEnum.udp && !Parameters.Has(m_uriParamTransportKey))
-                {
-                    uriStr += PARAM_TAG_DELIMITER + m_uriParamTransportKey + TAG_NAME_VALUE_SEPERATOR + Protocol.ToString();
-                }
-
-                if (Headers != null && Headers.Count > 0)
-                {
-                    string headerStr = Headers.ToString();
-                    uriStr += HEADER_START_DELIMITER + headerStr.Substring(1);
-                }
-
-                return uriStr;
+                return builder.ToString();
             }
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SIPURI ToString. {ErrorMessage}", excp.Message);
                 throw;
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append(Scheme.ToString());
+            builder.Append(SCHEME_ADDR_SEPARATOR);
+
+            if (User != null)
+            {
+                builder.Append(User);
+                builder.Append(USER_HOST_SEPARATOR);
+            }
+
+            builder.Append(Host);
+
+            if (Parameters != null && Parameters.Count > 0)
+            {
+                builder.Append(Parameters.ToString());
+            }
+
+            // If the URI's protocol is not implied already, set the transport parameter.
+            if (Scheme != SIPSchemesEnum.sips &&
+                Protocol != SIPProtocolsEnum.udp &&
+                !Parameters.Has(m_uriParamTransportKey))
+            {
+                builder.Append(PARAM_TAG_DELIMITER);
+                builder.Append(m_uriParamTransportKey);
+                builder.Append(TAG_NAME_VALUE_SEPERATOR);
+                builder.Append(Protocol.ToString());
+            }
+
+            if (Headers != null && Headers.Count > 0)
+            {
+                Headers.ToString(ref builder, HEADER_START_DELIMITER);
             }
         }
 

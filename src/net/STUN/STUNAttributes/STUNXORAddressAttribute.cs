@@ -14,6 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using SIPSorcery.Sys;
@@ -64,7 +66,7 @@ namespace SIPSorcery.Net
             else
             {
                 Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                address = BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 4)  ^ STUNHeader.MAGIC_COOKIE);
+                address = BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 4) ^ STUNHeader.MAGIC_COOKIE);
             }
 
             if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
@@ -109,57 +111,47 @@ namespace SIPSorcery.Net
             TransactionId = transactionId;
         }
 
+        [Obsolete("Use ToByteBuffer(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(AddressAttributeLength)), 0, buffer, startIndex + 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(AddressAttributeLength), 0, buffer, startIndex + 2, 2);
-            }
+            return WriteBytes(buffer.AsSpan(startIndex));
+        }
 
-            buffer[startIndex + 4] = 0x00;
-            buffer[startIndex + 5] = (byte)Family;
+        public override int WriteBytes(Span<byte> buffer)
+        {
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(0, 2), (ushort)base.AttributeType);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2, 2), AddressAttributeLength);
+
+            buffer[4] = 0x00;
+            buffer[5] = (byte)Family;
 
             var address = Address.GetAddressBytes();
 
-            if (BitConverter.IsLittleEndian)
-            {
-                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
-                UInt32 xorAddress = NetConvert.DoReverseEndian(BitConverter.ToUInt32(address, 0)) ^ STUNHeader.MAGIC_COOKIE;
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorPort)), 0, buffer, startIndex + 6, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorAddress)), 0, buffer, startIndex + 8, 4);
-            }
-            else
-            {
-                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
-                UInt32 xorAddress = BitConverter.ToUInt32(address, 0) ^ STUNHeader.MAGIC_COOKIE;
-                Buffer.BlockCopy(BitConverter.GetBytes(xorPort), 0, buffer, startIndex + 6, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);
-            }
+            var xorPort = (ushort)(Port ^ (STUNHeader.MAGIC_COOKIE >> 16));
+            var xorAddress = BinaryPrimitives.ReadUInt32BigEndian(address) ^ STUNHeader.MAGIC_COOKIE;
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(6, 2), xorPort);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(8, 4), xorAddress);
 
             if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
             {
-                Buffer.BlockCopy(
-                            BitConverter.GetBytes(BitConverter.ToUInt32(address, 04) ^ BitConverter.ToUInt32(TransactionId, 0))
-                    .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(address, 08) ^ BitConverter.ToUInt32(TransactionId, 4)))
-                    .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(address, 12) ^ BitConverter.ToUInt32(TransactionId, 8)))
-                    .ToArray(),
-                0, buffer, startIndex + 12, 12);
+                BinaryPrimitives.WriteUInt32BigEndian(
+                    buffer.Slice(12, 4),
+                    BinaryPrimitives.ReadUInt32BigEndian(address.AsSpan(4)) ^ BinaryPrimitives.ReadUInt32BigEndian(TransactionId.AsSpan(0))
+                );
+
+                BinaryPrimitives.WriteUInt32BigEndian(
+                    buffer.Slice(16, 4),
+                    BinaryPrimitives.ReadUInt32BigEndian(address.AsSpan(8)) ^ BinaryPrimitives.ReadUInt32BigEndian(TransactionId.AsSpan(4))
+                );
+
+                BinaryPrimitives.WriteUInt32BigEndian(
+                    buffer.Slice(20, 4),
+                    BinaryPrimitives.ReadUInt32BigEndian(address.AsSpan(12)) ^ BinaryPrimitives.ReadUInt32BigEndian(TransactionId.AsSpan(8))
+                );
             }
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
-        }
-
-        public override string ToString()
-        {
-            string attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
-
-            return attrDescrStr;
         }
 
         public IPEndPoint GetIPEndPoint()
@@ -173,5 +165,7 @@ namespace SIPSorcery.Net
                 return null;
             }
         }
+
+        private protected override void ValueToString(ref ValueStringBuilder sb) => base.ValueToString(ref sb);
     }
 }

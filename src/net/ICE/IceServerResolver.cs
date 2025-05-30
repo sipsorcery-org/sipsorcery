@@ -157,22 +157,23 @@ public class IceServerResolver
     /// </summary>
     public async Task WaitForAllIceServersAsync(TimeSpan? timeout = null)
     {
-        var tasks = _iceServers.Values
-            .Select(s => s.DnsResolutionTask ?? Task.CompletedTask)
-            .ToArray();
-
-        var all = Task.WhenAll(tasks);
-        if (timeout.HasValue)
+        var all = new Task[_iceServers.Values.Count];
+        var index = 0;
+        foreach (var server in _iceServers.Values)
         {
-            if (await Task.WhenAny(all, Task.Delay(timeout.Value)).ConfigureAwait(false) != all)
-            {
-                throw new TimeoutException(
-                  $"Timed out waiting {timeout.Value} for ICE server DNS resolutions");
-            }
+            all[index++] = server.DnsResolutionTask ?? Task.CompletedTask;
         }
 
         // propagate any resolution exception
-        await all.ConfigureAwait(false);
+        try
+        {
+            await Task.WhenAny(all).WaitAsync(timeout).ConfigureAwait(false);
+        }
+        catch (TimeoutException ex)
+        {
+            throw new TimeoutException(
+            $"Timed out waiting {timeout.GetValueOrDefault()} for ICE server DNS resolutions", ex);
+        }
     }
 }
 

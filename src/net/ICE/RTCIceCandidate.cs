@@ -20,6 +20,7 @@
 
 using System;
 using System.Net;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -152,7 +153,7 @@ namespace SIPSorcery.Net
             IPAddress cAddress,
             ushort cPort,
             RTCIceCandidateType cType,
-            IPAddress cRelatedAddress,
+            IPAddress? cRelatedAddress,
             ushort cRelatedPort)
         {
             protocol = cProtocol;
@@ -321,7 +322,7 @@ namespace SIPSorcery.Net
        
         private string GetFoundation()
         {
-            var serverProtocol = IceServer != null ? IceServer.Protocol.ToString().ToLower() : "udp";
+            var serverProtocol = IceServer?.Protocol.ToLowerString() ?? "udp";
             var builder = new System.Text.StringBuilder();
             builder = builder.Append(type).Append(address).Append(protocol).Append(serverProtocol);
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(builder.ToString());

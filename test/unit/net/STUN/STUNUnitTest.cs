@@ -139,29 +139,20 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that putting an XOR-MAPPED-ADDRESS attribute to a byte buffer works correctly.
         /// </summary>
-        [Fact]
-        public void PutXORMappedAddressAttributeToBufferTestMethod()
+        [Theory]
+        [InlineData("192.168.33.125", new byte[] { 0x00, 0x20, 0x00, 0x08, 0x00, 0x01, 0xe0, 0xda, 0xe1, 0xba, 0x85, 0x3f, })]
+        [InlineData("fe80::464c:5d73:4576:a13c%9", new byte[] { 0x00, 0x20, 0x00, 0x14, 0x00, 0x02, 0xE0, 0xDA, 0xDF, 0x92, 0xA4, 0x42, })]
+        public void PutXORMappedAddressAttributeToBufferTestMethod(string ipAddress, byte[] expectedResult)
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"), null);
+            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse(ipAddress), null);
 
             byte[] buffer = new byte[12];
             xorAddressAttribute.ToByteBuffer(buffer, 0);
 
-            Assert.Equal(0x00, buffer[0]);
-            Assert.Equal(0x20, buffer[1]);
-            Assert.Equal(0x00, buffer[2]);
-            Assert.Equal(0x08, buffer[3]);
-            Assert.Equal(0x00, buffer[4]);
-            Assert.Equal(0x01, buffer[5]);
-            Assert.Equal(0xe0, buffer[6]);
-            Assert.Equal(0xda, buffer[7]);
-            Assert.Equal(0xe1, buffer[8]);
-            Assert.Equal(0xba, buffer[9]);
-            Assert.Equal(0x85, buffer[10]);
-            Assert.Equal(0x3f, buffer[11]);
+            Assert.Equal(expectedResult, buffer);
         }
 
         /// <summary>

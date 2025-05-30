@@ -523,7 +523,7 @@ namespace SIPSorcery.Net
                     tsn++;
                 }
 
-                frame.UserData = frame.UserData.Take(posn).ToArray();
+                frame.UserData = frame.UserData.AsSpan(0, posn).ToArray();
 
                 return frame;
             }

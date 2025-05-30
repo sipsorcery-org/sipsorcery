@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SIPSorceryMedia.Abstractions;
+using SIPSorcery.Sys;
 using Concentus.Enums;
 
 namespace SIPSorcery.Media
@@ -121,16 +122,13 @@ namespace SIPSorcery.Media
             }
             else if (format.Codec == AudioCodecsEnum.L16)
             {
-                // When netstandard2.1 can be used.
-                //return MemoryMarshal.Cast<short, byte>(pcm)
-
                 // Put on the wire in network byte order (big endian).
-                return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) }).ToArray();
+                return MemoryOperations.ToBigEndianBytes(pcm);
             }
             else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
             {
                 // Put on the wire as little endian.
-                return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
+                return MemoryOperations.ToLittleEndianBytes(pcm);
             }
             else if (format.Codec == AudioCodecsEnum.OPUS)
             {
@@ -148,7 +146,7 @@ namespace SIPSorcery.Media
 
                 byte[] encodedSample = new byte[pcm.Length];
                 int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / format.ChannelCount, encodedSample, encodedSample.Length);
-                return encodedSample.Take(encodedLength).ToArray();
+                return encodedSample.AsSpan(0, encodedLength).ToArray();
             }
             else
             {
@@ -174,7 +172,7 @@ namespace SIPSorcery.Media
                 short[] decodedPcm = new short[encodedSample.Length * 2];
                 int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
 
-                return decodedPcm.Take(decodedSampleCount).ToArray();
+                return decodedPcm.AsSpan(0, decodedSampleCount).ToArray();
             }
             if (format.Codec == AudioCodecsEnum.G729)
             {

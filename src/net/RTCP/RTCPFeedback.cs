@@ -27,6 +27,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
+using System.ComponentModel;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -146,21 +149,23 @@ namespace SIPSorcery.Net
         /// Create a new RTCP Report from a serialised byte array.
         /// </summary>
         /// <param name="packet">The byte array holding the serialised feedback report.</param>
-        public RTCPFeedback(byte[] packet)
+        [Obsolete("Use RTCPFeedback(ReadOnlySpan<byte> packet) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public RTCPFeedback(byte[] packet) : this(new ReadOnlySpan<byte>(packet))
+        {
+        }
+
+        /// <summary>
+        /// Create a new RTCP Report from a serialised byte array.
+        /// </summary>
+        /// <param name="packet">The byte array holding the serialised feedback report.</param>
+        public RTCPFeedback(ReadOnlySpan<byte> packet)
         {
             Header = new RTCPHeader(packet);
 
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
-            if (BitConverter.IsLittleEndian)
-            {
-                SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex));
-                MediaSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex + 4));
-            }
-            else
-            {
-                SenderSSRC = BitConverter.ToUInt32(packet, payloadIndex);
-                MediaSSRC = BitConverter.ToUInt32(packet, payloadIndex + 4);
-            }
+            var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            SenderSSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(payloadIndex));
+            MediaSSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(payloadIndex + 4));
 
             switch (Header)
             {
@@ -170,16 +175,8 @@ namespace SIPSorcery.Net
                     break;
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
                     SENDER_PAYLOAD_SIZE = 12;
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        PID = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 8));
-                        BLP = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, payloadIndex + 10));
-                    }
-                    else
-                    {
-                        PID = BitConverter.ToUInt16(packet, payloadIndex + 8);
-                        BLP = BitConverter.ToUInt16(packet, payloadIndex + 10);
-                    }
+                    PID = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(payloadIndex + 8));
+                    BLP = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(payloadIndex + 10));
                     break;
 
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
@@ -202,10 +199,10 @@ namespace SIPSorcery.Net
                     SENDER_PAYLOAD_SIZE = 8 + 12; // 8 bytes from (SenderSSRC + MediaSSRC) + extra 12 bytes from REMB Definition
 
                     var currentCounter = payloadIndex + 8;
-                    UniqueID = System.Text.ASCIIEncoding.ASCII.GetString(packet, currentCounter, 4);
+                    UniqueID = Encoding.ASCII.GetString(packet.Slice(currentCounter, 4));
                     currentCounter += 4;
 
-                    if (string.Equals(UniqueID,"REMB", StringComparison.CurrentCultureIgnoreCase))
+                    if (string.Equals(UniqueID, "REMB", StringComparison.CurrentCultureIgnoreCase))
                     {
                         // Read first 8 bits
                         NumSsrcs = packet[currentCounter];
@@ -215,26 +212,12 @@ namespace SIPSorcery.Net
                         BitrateExp = (byte)(packet[currentCounter] >> 2);
 
                         // Now read next 18 bits
-                        var remaininMantissaBytes = new byte[] { (byte)0, (byte)(packet[currentCounter] & 3), packet[currentCounter + 1], packet[currentCounter + 2] };
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            BitrateMantissa = NetConvert.DoReverseEndian(BitConverter.ToUInt32(remaininMantissaBytes, 0));
-                        }
-                        else
-                        {
-                            BitrateMantissa = BitConverter.ToUInt32(remaininMantissaBytes, 0);
-                        }
-                        
-                        currentCounter += 3;
+                        BitrateMantissa =
+                            ((((uint)packet[currentCounter++]) & 0b11U) << 16) |
+                            (((uint)packet[currentCounter++]) << 8) |
+                            ((uint)packet[currentCounter++]);
 
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            FeedbackSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, currentCounter));
-                        }
-                        else
-                        {
-                            FeedbackSSRC = BitConverter.ToUInt32(packet, currentCounter);
-                        }
+                        FeedbackSSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(currentCounter));
                     }
 
                     break;
@@ -244,36 +227,50 @@ namespace SIPSorcery.Net
             }
         }
 
-       //0                   1                   2                   3
-       //0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       //|V=2|P|   FMT   |       PT      |          length               |
-       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       //|                  SSRC of packet sender                        |
-       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       //|                  SSRC of media source                         |
-       //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-       //:            Feedback Control Information(FCI)                  :
-       //:                                                               :
+        public int GetPacketSize() => RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE;
+
+        //0                   1                   2                   3
+        //0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        //|V=2|P|   FMT   |       PT      |          length               |
+        //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        //|                  SSRC of packet sender                        |
+        //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        //|                  SSRC of media source                         |
+        //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        //:            Feedback Control Information(FCI)                  :
+        //:                                                               :
         public byte[] GetBytes()
         {
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
-            Header.SetLength((ushort)(buffer.Length / 4 - 1));
+            var buffer = new byte[GetPacketSize()];
 
-            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            WriteBytesCore(buffer);
+
+            return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            Header.SetLength((ushort)(buffer.Length / 4 - 1));
+            _ = Header.WriteBytes(buffer);
 
             // All feedback packets require the Sender and Media SSRC's to be set.
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SenderSSRC)), 0, buffer, payloadIndex, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(MediaSSRC)), 0, buffer, payloadIndex + 4, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SenderSSRC), 0, buffer, payloadIndex, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(MediaSSRC), 0, buffer, payloadIndex + 4, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH), SenderSSRC);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 4), MediaSSRC);
 
             switch (Header)
             {
@@ -281,16 +278,8 @@ namespace SIPSorcery.Net
                     // PLI feedback reports do no have any additional parameters.
                     break;
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 8, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(BLP)), 0, buffer, payloadIndex + 10, 2);
-                    }
-                    else
-                    {
-                        Buffer.BlockCopy(BitConverter.GetBytes(PID), 0, buffer, payloadIndex + 8, 2);
-                        Buffer.BlockCopy(BitConverter.GetBytes(BLP), 0, buffer, payloadIndex + 10, 2);
-                    }
+                    BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 8), PID);
+                    BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 10), BLP);
                     break;
 
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
@@ -308,51 +297,30 @@ namespace SIPSorcery.Net
                     //|  Num SSRC     | BR Exp    |  BR Mantissa                      |
                     //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                     //|   SSRC feedback                                               |
-                    var currentCounter = payloadIndex + 8;
 
                     //Fix UniqueID Size
-                    if(string.IsNullOrEmpty(UniqueID))
+                    if (string.IsNullOrEmpty(UniqueID))
                     {
-                        UniqueID = System.Text.ASCIIEncoding.ASCII.GetString(new byte[4]);
+                        UniqueID = new string('\0', 4);
                     }
                     while (UniqueID.Length < 4)
                     {
                         UniqueID += (char)0;
                     }
 
-                    Buffer.BlockCopy(System.Text.ASCIIEncoding.ASCII.GetBytes(UniqueID), 0, buffer, currentCounter, 4);
-                    currentCounter += 4;
+                    Encoding.ASCII.GetBytes(UniqueID.AsSpan(), buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 8));
 
-                    if (string.Equals(UniqueID, "REMB", StringComparison.CurrentCultureIgnoreCase))
+                    if (string.Equals(UniqueID, "REMB", StringComparison.OrdinalIgnoreCase))
                     {
                         // Copy NumSsrcs
-                        buffer[currentCounter] = NumSsrcs;
-                        currentCounter++;
-                       
+                        buffer[RTCPHeader.HEADER_BYTES_LENGTH + 12] = NumSsrcs;
 
-                        byte[] remaininMantissaBytes;
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            remaininMantissaBytes = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitrateMantissa));
-                        }
-                        else
-                        {
-                            remaininMantissaBytes = BitConverter.GetBytes(BitrateMantissa);
-                        }
-                        buffer[currentCounter] = (byte)((BitrateExp << 2) | (remaininMantissaBytes[1] & 3));
-                        buffer[currentCounter + 1] = remaininMantissaBytes[2];
-                        buffer[currentCounter + 2] = remaininMantissaBytes[3];
+                        var temp = BitrateMantissa;
+                        buffer[RTCPHeader.HEADER_BYTES_LENGTH + 15] = (byte)temp;
+                        buffer[RTCPHeader.HEADER_BYTES_LENGTH + 14] = (byte)(temp >>= 8);
+                        buffer[RTCPHeader.HEADER_BYTES_LENGTH + 13] = (byte)((BitrateExp << 2) | (byte)((temp >>= 8) & 0b11));
 
-                        currentCounter += 3;
-
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRC)), 0, buffer, currentCounter, 4);
-                        }
-                        else
-                        {
-                            Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRC), 0, buffer, currentCounter, 4);
-                        }
+                        BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 16), FeedbackSSRC);
                     }
 
                     break;
@@ -362,7 +330,6 @@ namespace SIPSorcery.Net
                     //throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} and message type "
                     //+ $"{Header.FeedbackMessageType} not yet implemented.");
             }
-            return buffer;
         }
     }
 }

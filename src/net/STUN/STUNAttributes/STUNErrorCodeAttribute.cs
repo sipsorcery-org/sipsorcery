@@ -14,7 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.ComponentModel;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -48,24 +50,32 @@ namespace SIPSorcery.Net
             ReasonPhrase = reasonPhrase;
         }
 
+        [Obsolete("Use ToByteBuffer(Span<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            buffer[startIndex] = 0x00;
-            buffer[startIndex + 1] = 0x00;
-            buffer[startIndex + 2] = ErrorClass;
-            buffer[startIndex + 3] = ErrorNumber;
+            return WriteBytes(buffer.AsSpan(startIndex));
+        }
 
-            byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
-            Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
+        public override int WriteBytes(Span<byte> buffer)
+        {
+            buffer[0] = 0x00;
+            buffer[1] = 0x00;
+            buffer[2] = ErrorClass;
+            buffer[3] = ErrorNumber;
+
+            var reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
+            reasonPhraseBytes.CopyTo(buffer.Slice(4, reasonPhraseBytes.Length));
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
-
-            return attrDescrStr;
+            sb.Append("error code=");
+            sb.Append(ErrorCode);
+            sb.Append(", reason phrase=");
+            sb.Append(ReasonPhrase);
         }
     }
 }

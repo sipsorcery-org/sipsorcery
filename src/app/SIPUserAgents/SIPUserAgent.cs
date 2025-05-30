@@ -586,10 +586,7 @@ namespace SIPSorcery.SIP.App
                 }
             }
 
-            if (MediaSession != null)
-            {
-                MediaSession.Close("call cancelled");
-            }
+            MediaSession?.Close("call cancelled");
         }
 
         /// <summary>
@@ -1858,15 +1855,30 @@ namespace SIPSorcery.SIP.App
 
             SIPParameters replacesHeaders = new SIPParameters();
 
+            var builder = new ValueStringBuilder(stackalloc char[256]);
+            try
+            {
+
+                SIPEscape.SIPURIParameterEscape(ref builder, target.CallId.AsSpan());
+                builder.Append(";to-tag=");
+                SIPEscape.SIPURIParameterEscape(ref builder, target.RemoteTag.AsSpan());
+                builder.Append(";from-tag=");
+                SIPEscape.SIPURIParameterEscape(ref builder, target.LocalTag.AsSpan());
+
+                replacesHeaders.Set("Replaces", builder.ToString());
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+
             if (target.Direction == SIPCallDirection.Out)
             {
-                replacesHeaders.Set("Replaces", SIPEscape.SIPURIParameterEscape($"{target.CallId};to-tag={target.RemoteTag};from-tag={target.LocalTag}"));
                 var from = new SIPUserField(target.LocalUserField.Name, target.LocalUserField.URI.CopyOf(), null);
                 referRequest.Header.ReferredBy = from.ToString();
             }
             else
             {
-                replacesHeaders.Set("Replaces", SIPEscape.SIPURIParameterEscape($"{target.CallId};to-tag={target.RemoteTag};from-tag={target.LocalTag}"));
                 var from = new SIPUserField(target.RemoteUserField.Name, target.RemoteUserField.URI.CopyOf(), null);
                 referRequest.Header.ReferredBy = from.ToString();
             }

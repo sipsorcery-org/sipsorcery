@@ -233,7 +233,7 @@ namespace SIPSorcery.Net
                                 break;
 
                             case var l when l.StartsWith("o="):
-                                var ownerFields = sdpLineTrimmed.Substring(2).Split(new []{' '}, 6, StringSplitOptions.RemoveEmptyEntries);
+                                var ownerFields = sdpLineTrimmed.Substring(2).Split(new[] { ' ' }, 6, StringSplitOptions.RemoveEmptyEntries);
 
                                 if (ownerFields.Length >= 5)
                                 {
@@ -438,23 +438,28 @@ namespace SIPSorcery.Net
                                 // TODO: Set a flag.
                                 break;
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null) {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video) {
-                                         var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX + @"(?<id>\d+) (?<url>\S+)$");
-                                         if (formatAttributeMatch.Success) {
-                                             var extensionId = formatAttributeMatch.Result("${id}");
-                                             var uri = formatAttributeMatch.Result("${url}");
-                                             if (Int32.TryParse(extensionId, out var id)) {
+                                if (activeAnnouncement != null)
+                                {
+                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
+                                    {
+                                        var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX + @"(?<id>\d+) (?<url>\S+)$");
+                                        if (formatAttributeMatch.Success)
+                                        {
+                                            var extensionId = formatAttributeMatch.Result("${id}");
+                                            var uri = formatAttributeMatch.Result("${url}");
+                                            if (Int32.TryParse(extensionId, out var id))
+                                            {
                                                 var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(id, uri, activeAnnouncement.Media);
-                                                if ( (rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(id))
+                                                if ((rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(id))
                                                 {
                                                     activeAnnouncement.HeaderExtensions.Add(id, rtpExtension);
                                                 }
-                                             }
-                                             else {
-                                                 logger.LogWarning("Invalid id of header extension in " + SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
-                                             }
-                                         }
+                                            }
+                                            else
+                                            {
+                                                logger.LogWarning("Invalid id of header extension in " + SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
+                                            }
+                                        }
                                     }
                                 }
 
@@ -764,13 +769,13 @@ namespace SIPSorcery.Net
                                     string pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                     string pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
                                     activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
-                                    
+
                                     pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
                                     activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
-                                    
+
                                     pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
                                     activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
-                                    
+
                                 }
                                 else
                                 {
@@ -824,67 +829,169 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string sdp =
-                "v=" + SDP_PROTOCOL_VERSION + CRLF +
-                "o=" + Owner + CRLF +
-                "s=" + SessionName + CRLF +
-                ((Connection != null) ? Connection.ToString() : null);
-            foreach (string bandwidth in BandwidthAttributes)
+            var builder = new ValueStringBuilder();
+
+            try
             {
-                sdp += "b=" + bandwidth + CRLF;
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append("v=");
+            builder.Append(SDP_PROTOCOL_VERSION);
+            builder.Append(CRLF);
+
+            builder.Append("o=");
+            builder.Append(Owner);
+            builder.Append(CRLF);
+
+            builder.Append("s=");
+            builder.Append(SessionName);
+            builder.Append(CRLF);
+
+            if (Connection != null)
+            {
+                Connection.ToString(ref builder);
             }
 
-            sdp += "t=" + Timing + CRLF;
+            foreach (string bandwidth in BandwidthAttributes)
+            {
+                builder.Append("b=");
+                builder.Append(bandwidth);
+                builder.Append(CRLF);
+            }
 
-            sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
-            sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
-            sdp += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{CRLF}" : null;
-            sdp += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + CRLF : null;
+            builder.Append("t=");
+            builder.Append(Timing);
+            builder.Append(CRLF);
+
+            if (!string.IsNullOrWhiteSpace(IceUfrag))
+            {
+                builder.Append("a=");
+                builder.Append(ICE_UFRAG_ATTRIBUTE_PREFIX);
+                builder.Append(":");
+                builder.Append(IceUfrag);
+                builder.Append(CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(IcePwd))
+            {
+                builder.Append("a=");
+                builder.Append(ICE_PWD_ATTRIBUTE_PREFIX);
+                builder.Append(":");
+                builder.Append(IcePwd);
+                builder.Append(CRLF);
+            }
+
+            if (IceRole != null)
+            {
+                builder.Append("a=");
+                builder.Append(SDP.ICE_SETUP_ATTRIBUTE_PREFIX);
+                builder.Append(":");
+                builder.Append(IceRole.ToString());
+                builder.Append(CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
+            {
+                builder.Append("a=");
+                builder.Append(DTLS_FINGERPRINT_ATTRIBUTE_PREFIX);
+                builder.Append(":");
+                builder.Append(DtlsFingerprint);
+                builder.Append(CRLF);
+            }
+
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    sdp += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{CRLF}";
+                    builder.Append("a=");
+                    builder.Append(SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX);
+                    builder.Append(":");
+                    builder.Append(candidate);
+                    builder.Append(CRLF);
                 }
             }
-            sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
-            sdp += string.IsNullOrWhiteSpace(URI) ? null : "u=" + URI + CRLF;
 
-            if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
+            if (!string.IsNullOrWhiteSpace(SessionDescription))
+            {
+                builder.Append("i=");
+                builder.Append(SessionDescription);
+                builder.Append(CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(URI))
+            {
+                builder.Append("u=");
+                builder.Append(URI);
+                builder.Append(CRLF);
+            }
+
+            if (OriginatorEmailAddresses != null)
             {
                 foreach (string originatorAddress in OriginatorEmailAddresses)
                 {
-                    sdp += string.IsNullOrWhiteSpace(originatorAddress) ? null : "e=" + originatorAddress + CRLF;
+                    if (!string.IsNullOrWhiteSpace(originatorAddress))
+                    {
+                        builder.Append("e=");
+                        builder.Append(originatorAddress);
+                        builder.Append(CRLF);
+                    }
                 }
             }
 
-            if (OriginatorPhoneNumbers != null && OriginatorPhoneNumbers.Length > 0)
+            if (OriginatorPhoneNumbers != null)
             {
                 foreach (string originatorNumber in OriginatorPhoneNumbers)
                 {
-                    sdp += string.IsNullOrWhiteSpace(originatorNumber) ? null : "p=" + originatorNumber + CRLF;
+                    if (!string.IsNullOrWhiteSpace(originatorNumber))
+                    {
+                        builder.Append("p=");
+                        builder.Append(originatorNumber);
+                        builder.Append(CRLF);
+                    }
                 }
             }
 
-            sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
+            if (Group != null)
+            {
+                builder.Append("a=");
+                builder.Append(GROUP_ATRIBUTE_PREFIX);
+                builder.Append(":");
+                builder.Append(Group);
+                builder.Append(CRLF);
+            }
 
             foreach (string extra in ExtraSessionAttributes)
             {
-                sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
+                if (!string.IsNullOrWhiteSpace(extra))
+                {
+                    builder.Append(extra);
+                    builder.Append(CRLF);
+                }
             }
 
             if (SessionMediaStreamStatus != null)
             {
-                sdp += MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value) + CRLF;
+                builder.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value));
+                builder.Append(CRLF);
             }
 
-            //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
-                sdp += (media == null) ? null : media.ToString();
+                if (media != null)
+                {
+                    media.ToString(ref builder);
+                }
             }
-
-            return sdp;
         }
 
         /// <summary>
@@ -901,7 +1008,7 @@ namespace SIPSorcery.Net
             {
                 return new IPEndPoint(IPAddress.Parse(sessionConnection.ConnectionAddress), firstMediaOffer.Port);
             }
-            else if(firstMediaOffer != null && firstMediaOffer.Connection != null)
+            else if (firstMediaOffer != null && firstMediaOffer.Connection != null)
             {
                 return new IPEndPoint(IPAddress.Parse(firstMediaOffer.Connection.ConnectionAddress), firstMediaOffer.Port);
             }

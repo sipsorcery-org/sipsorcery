@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -37,7 +38,14 @@ namespace SIPSorcery.Net
             }
         }
 
+        [Obsolete("Use SendText(ReadOnlySpan<byte>) instead", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public void SendText(byte[] sample)
+        {
+            SendText(new ReadOnlySpan<byte>(sample));
+        }
+
+        public void SendText(ReadOnlySpan<byte> sample)
         {
             if (!sendingFormatFound)
             {
@@ -47,7 +55,7 @@ namespace SIPSorcery.Net
             SendTextFrame(NegotiatedFormat.ID, sample);
         }
 
-        private void SendTextFrame(int payloadTypeID, byte[] buffer)
+        private void SendTextFrame(int payloadTypeID, ReadOnlySpan<byte> buffer)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -81,11 +89,8 @@ namespace SIPSorcery.Net
                         // Set the marker bit for the first packet after idle or session start
                         int markerBit = _lastSendTime == DateTime.MinValue ? 1 : 0;
 
-                        byte[] payload = new byte[payloadLength];
-                        Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
-
                         // Send the RTP packet with the updated timestamp
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(buffer.Slice(offset, payloadLength), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     }
 
                     // Update the last send time

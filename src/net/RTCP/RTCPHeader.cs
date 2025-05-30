@@ -33,6 +33,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
+using System.ComponentModel;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -128,18 +130,20 @@ namespace SIPSorcery.Net
             }
         }
 
+        [Obsolete("Use ParseFeedbackType(ReadOnlySpan<byte> packet) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static RTCPFeedbackTypesEnum ParseFeedbackType(byte[] packet)
+            => ParseFeedbackType(new ReadOnlySpan<byte>(packet));
+
+        public static RTCPFeedbackTypesEnum ParseFeedbackType(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < HEADER_BYTES_LENGTH)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-            }
+            var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+
             return (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
         }
 
@@ -147,24 +151,21 @@ namespace SIPSorcery.Net
         /// Extract and load the RTCP header from an RTCP packet.
         /// </summary>
         /// <param name="packet"></param>
-        public RTCPHeader(byte[] packet)
+        [Obsolete("Use RTCPHeader(ReadOnlySpan<byte> packet) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public RTCPHeader(byte[] packet) : this(new ReadOnlySpan<byte>(packet))
+        {
+        }
+
+        public RTCPHeader(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < HEADER_BYTES_LENGTH)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-                Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Length = BitConverter.ToUInt16(packet, 2);
-            }
+            var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+            Length = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
 
             Version = Convert.ToInt32(firstWord >> 14);
             PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
@@ -209,11 +210,34 @@ namespace SIPSorcery.Net
             Length = length;
         }
 
+        public int GetPacketSize() => 4;
+
         public byte[] GetBytes()
         {
-            byte[] header = new byte[4];
+            var buffer = new byte[GetPacketSize()];
 
-            UInt32 firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
+            WriteBytesCore(buffer);
+
+            return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            var firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
 
             if (IsFeedbackReport())
             {
@@ -231,16 +255,7 @@ namespace SIPSorcery.Net
                 firstWord += (uint)ReceptionReportCount << 24;
             }
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
-            }
-
-            return header;
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, firstWord);
         }
     }
 }
