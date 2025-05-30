@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -355,10 +354,32 @@ namespace SIPSorcery.SIP
 
         public new string ToString()
         {
-            string sipViaHeader = SIPHeaders.SIP_HEADER_VIA + ": " + this.Version + "/" + this.Transport.ToString().ToUpper() + " " + ContactAddress;
-            sipViaHeader += (ViaParameters != null && ViaParameters.Count > 0) ? ViaParameters.ToString() : null;
+            var builder = new ValueStringBuilder();
+            try
+            {
+                ToString(ref builder);
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
 
-            return sipViaHeader;
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append(SIPHeaders.SIP_HEADER_VIA);
+            builder.Append(": ");
+            builder.Append(Version);
+            builder.Append('/');
+            builder.Append(Transport.ToString().ToUpperInvariant());
+            builder.Append(' ');
+            builder.Append(ContactAddress);
+
+            if (ViaParameters != null && ViaParameters.Count > 0)
+            {
+                builder.Append(ViaParameters.ToString());
+            }
         }
     }
 
@@ -466,7 +487,23 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
-            return m_userField.ToString();
+            var builder = new ValueStringBuilder();
+
+            try
+            {
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            m_userField.ToString(ref builder);
         }
 
         /// <summary>
@@ -574,7 +611,23 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
-            return m_userField.ToString();
+            var builder = new ValueStringBuilder();
+
+            try
+            {
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            m_userField.ToString(ref builder);
         }
     }
 
@@ -797,16 +850,30 @@ namespace SIPSorcery.SIP
             {
                 return SIPConstants.SIP_REGISTER_REMOVEALL;
             }
+
+            var builder = new ValueStringBuilder();
+
+            try
+            {
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            if (m_userField.URI.Host == SIPConstants.SIP_REGISTER_REMOVEALL)
+            {
+                builder.Append(SIPConstants.SIP_REGISTER_REMOVEALL);
+            }
             else
             {
-                //if (m_userField.URI.Protocol == SIPProtocolsEnum.UDP)
-                //{
-                return m_userField.ToString();
-                //}
-                //else
-                //{
-                //    return m_userField.ToContactString();
-                //}
+                m_userField.ToString(ref builder);
             }
         }
 
@@ -903,20 +970,37 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
+            var builder = new ValueStringBuilder();
+
+            try
+            {
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
             if (SIPDigest != null)
             {
-                var authorisationHeaderType = (SIPDigest.AuthorisationResponseType != SIPAuthorisationHeadersEnum.Unknown) ? SIPDigest.AuthorisationResponseType : SIPDigest.AuthorisationType;
+                var authorisationHeaderType = (SIPDigest.AuthorisationResponseType != SIPAuthorisationHeadersEnum.Unknown)
+                    ? SIPDigest.AuthorisationResponseType
+                    : SIPDigest.AuthorisationType;
+
                 string authHeader = BuildAuthorisationHeaderName(authorisationHeaderType);
-                return authHeader + SIPDigest.ToString();
+                builder.Append(authHeader);
+                SIPDigest.ToString(ref builder);
             }
             else if (!string.IsNullOrEmpty(Value))
             {
                 string authHeader = BuildAuthorisationHeaderName(AuthorisationType);
-                return authHeader + Value;
-            }
-            else
-            {
-                return null;
+                builder.Append(authHeader);
+                builder.Append(Value);
             }
         }
     }
@@ -1153,7 +1237,7 @@ namespace SIPSorcery.SIP
             if (m_sipRoutes.Count > 0)
             {
                 m_sipRoutes.RemoveAt(m_sipRoutes.Count - 1);
-            };
+            }
         }
 
         public SIPRouteSet Reversed()
@@ -1191,19 +1275,36 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public new string ToString()
+        public override string ToString()
         {
-            string routeStr = null;
+            var builder = new ValueStringBuilder();
 
+            try
+            {
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+        {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
             if (m_sipRoutes != null && m_sipRoutes.Count > 0)
             {
                 for (int routeIndex = 0; routeIndex < m_sipRoutes.Count; routeIndex++)
                 {
-                    routeStr += (routeStr != null) ? "," + m_sipRoutes[routeIndex].ToString() : m_sipRoutes[routeIndex].ToString();
+                    if (routeIndex > 0)
+                    {
+                        builder.Append(",");
+                    }
+
+                    builder.Append(m_sipRoutes[routeIndex].ToString());
                 }
             }
-
-            return routeStr;
         }
     }
 
@@ -1307,17 +1408,30 @@ namespace SIPSorcery.SIP
 
         public new string ToString()
         {
-            string viaStr = null;
+            var builder = new ValueStringBuilder();
 
+            try
+            {
+                ToString(ref builder);
+
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
             if (m_viaHeaders != null && m_viaHeaders.Count > 0)
             {
                 for (int viaIndex = 0; viaIndex < m_viaHeaders.Count; viaIndex++)
                 {
-                    viaStr += (m_viaHeaders[viaIndex]).ToString() + m_CRLF;
+                    m_viaHeaders[viaIndex].ToString(ref builder);
+                    builder.Append(m_CRLF);
                 }
             }
-
-            return viaStr;
         }
     }
 
@@ -2201,148 +2315,531 @@ namespace SIPSorcery.SIP
         /// <returns>String representing the SIP headers.</returns>
         public new string ToString()
         {
+            var builder = new ValueStringBuilder();
+
             try
             {
-                StringBuilder headersBuilder = new StringBuilder();
+                ToString(ref builder);
 
-                headersBuilder.Append(Vias.ToString());
-
-                string cseqField = null;
-                if (this.CSeq >= 0)
-                {
-                    cseqField = (this.CSeqMethod != SIPMethodsEnum.NONE) ? this.CSeq + " " + this.CSeqMethod.ToString() : this.CSeq.ToString();
-                }
-
-                headersBuilder.Append((To != null) ? SIPHeaders.SIP_HEADER_TO + ": " + this.To.ToString() + m_CRLF : null);
-                headersBuilder.Append((From != null) ? SIPHeaders.SIP_HEADER_FROM + ": " + this.From.ToString() + m_CRLF : null);
-                headersBuilder.Append((CallId != null) ? SIPHeaders.SIP_HEADER_CALLID + ": " + this.CallId + m_CRLF : null);
-                headersBuilder.Append((CSeq >= 0) ? SIPHeaders.SIP_HEADER_CSEQ + ": " + cseqField + m_CRLF : null);
-
-                #region Appending Contact header.
-
-                if (Contact != null && Contact.Count == 1)
-                {
-                    headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTACT + ": " + Contact[0].ToString() + m_CRLF);
-                }
-                else if (Contact != null && Contact.Count > 1)
-                {
-                    StringBuilder contactsBuilder = new StringBuilder();
-                    contactsBuilder.Append(SIPHeaders.SIP_HEADER_CONTACT + ": ");
-
-                    bool firstContact = true;
-                    foreach (SIPContactHeader contactHeader in Contact)
-                    {
-                        if (firstContact)
-                        {
-                            contactsBuilder.Append(contactHeader.ToString());
-                        }
-                        else
-                        {
-                            contactsBuilder.Append("," + contactHeader.ToString());
-                        }
-
-                        firstContact = false;
-                    }
-
-                    headersBuilder.Append(contactsBuilder.ToString() + m_CRLF);
-                }
-
-                #endregion
-
-                headersBuilder.Append((MaxForwards >= 0) ? SIPHeaders.SIP_HEADER_MAXFORWARDS + ": " + this.MaxForwards + m_CRLF : null);
-                headersBuilder.Append((Routes != null && Routes.Length > 0) ? SIPHeaders.SIP_HEADER_ROUTE + ": " + Routes.ToString() + m_CRLF : null);
-                headersBuilder.Append((RecordRoutes != null && RecordRoutes.Length > 0) ? SIPHeaders.SIP_HEADER_RECORDROUTE + ": " + RecordRoutes.ToString() + m_CRLF : null);
-                headersBuilder.Append((UserAgent != null && UserAgent.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_USERAGENT + ": " + this.UserAgent + m_CRLF : null);
-                headersBuilder.Append((Expires != -1) ? SIPHeaders.SIP_HEADER_EXPIRES + ": " + this.Expires + m_CRLF : null);
-                headersBuilder.Append((MinExpires != -1) ? SIPHeaders.SIP_HEADER_MINEXPIRES + ": " + this.MinExpires + m_CRLF : null);
-                headersBuilder.Append((Accept != null) ? SIPHeaders.SIP_HEADER_ACCEPT + ": " + this.Accept + m_CRLF : null);
-                headersBuilder.Append((AcceptEncoding != null) ? SIPHeaders.SIP_HEADER_ACCEPTENCODING + ": " + this.AcceptEncoding + m_CRLF : null);
-                headersBuilder.Append((AcceptLanguage != null) ? SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE + ": " + this.AcceptLanguage + m_CRLF : null);
-                headersBuilder.Append((Allow != null) ? SIPHeaders.SIP_HEADER_ALLOW + ": " + this.Allow + m_CRLF : null);
-                headersBuilder.Append((AlertInfo != null) ? SIPHeaders.SIP_HEADER_ALERTINFO + ": " + this.AlertInfo + m_CRLF : null);
-                headersBuilder.Append((AuthenticationInfo != null) ? SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO + ": " + this.AuthenticationInfo + m_CRLF : null);
-
-                if (AuthenticationHeaders.Count > 0)
-                {
-                    foreach (var authHeader in AuthenticationHeaders)
-                    {
-                        var value = authHeader.ToString();
-                        if (value != null)
-                        {
-                            headersBuilder.Append(authHeader.ToString() + m_CRLF);
-                        }
-                    }
-                }
-                headersBuilder.Append((CallInfo != null) ? SIPHeaders.SIP_HEADER_CALLINFO + ": " + this.CallInfo + m_CRLF : null);
-                headersBuilder.Append((ContentDisposition != null) ? SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION + ": " + this.ContentDisposition + m_CRLF : null);
-                headersBuilder.Append((ContentEncoding != null) ? SIPHeaders.SIP_HEADER_CONTENT_ENCODING + ": " + this.ContentEncoding + m_CRLF : null);
-                headersBuilder.Append((ContentLanguage != null) ? SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE + ": " + this.ContentLanguage + m_CRLF : null);
-                headersBuilder.Append((Date != null) ? SIPHeaders.SIP_HEADER_DATE + ": " + Date + m_CRLF : null);
-                headersBuilder.Append((ErrorInfo != null) ? SIPHeaders.SIP_HEADER_ERROR_INFO + ": " + this.ErrorInfo + m_CRLF : null);
-                headersBuilder.Append((InReplyTo != null) ? SIPHeaders.SIP_HEADER_IN_REPLY_TO + ": " + this.InReplyTo + m_CRLF : null);
-                headersBuilder.Append((Organization != null) ? SIPHeaders.SIP_HEADER_ORGANIZATION + ": " + this.Organization + m_CRLF : null);
-                headersBuilder.Append((Priority != null) ? SIPHeaders.SIP_HEADER_PRIORITY + ": " + Priority + m_CRLF : null);
-                headersBuilder.Append((ProxyRequire != null) ? SIPHeaders.SIP_HEADER_PROXY_REQUIRE + ": " + this.ProxyRequire + m_CRLF : null);
-                headersBuilder.Append((ReplyTo != null) ? SIPHeaders.SIP_HEADER_REPLY_TO + ": " + this.ReplyTo + m_CRLF : null);
-                headersBuilder.Append((Require != null) ? SIPHeaders.SIP_HEADER_REQUIRE + ": " + Require + m_CRLF : null);
-                headersBuilder.Append((RetryAfter != null) ? SIPHeaders.SIP_HEADER_RETRY_AFTER + ": " + this.RetryAfter + m_CRLF : null);
-                headersBuilder.Append((Server != null && Server.Trim().Length != 0) ? SIPHeaders.SIP_HEADER_SERVER + ": " + this.Server + m_CRLF : null);
-                headersBuilder.Append((Subject != null) ? SIPHeaders.SIP_HEADER_SUBJECT + ": " + Subject + m_CRLF : null);
-                headersBuilder.Append((Supported != null) ? SIPHeaders.SIP_HEADER_SUPPORTED + ": " + Supported + m_CRLF : null);
-                headersBuilder.Append((Timestamp != null) ? SIPHeaders.SIP_HEADER_TIMESTAMP + ": " + Timestamp + m_CRLF : null);
-                headersBuilder.Append((Unsupported != null) ? SIPHeaders.SIP_HEADER_UNSUPPORTED + ": " + Unsupported + m_CRLF : null);
-                headersBuilder.Append((Warning != null) ? SIPHeaders.SIP_HEADER_WARNING + ": " + Warning + m_CRLF : null);
-                headersBuilder.Append((ETag != null) ? SIPHeaders.SIP_HEADER_ETAG + ": " + ETag + m_CRLF : null);
-                headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTENTLENGTH + ": " + this.ContentLength + m_CRLF);
-                if (this.ContentType != null && this.ContentType.Trim().Length > 0)
-                {
-                    headersBuilder.Append(SIPHeaders.SIP_HEADER_CONTENTTYPE + ": " + this.ContentType + m_CRLF);
-                }
-
-                // Non-core SIP headers.
-                headersBuilder.Append((AllowEvents != null) ? SIPHeaders.SIP_HEADER_ALLOW_EVENTS + ": " + AllowEvents + m_CRLF : null);
-                headersBuilder.Append((Event != null) ? SIPHeaders.SIP_HEADER_EVENT + ": " + Event + m_CRLF : null);
-                headersBuilder.Append((SubscriptionState != null) ? SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE + ": " + SubscriptionState + m_CRLF : null);
-                headersBuilder.Append((ReferSub != null) ? SIPHeaders.SIP_HEADER_REFERSUB + ": " + ReferSub + m_CRLF : null);
-                headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
-                headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
-                headersBuilder.Append((Replaces != null) ? SIPHeaders.SIP_HEADER_REPLACES + ": " + Replaces + m_CRLF : null);
-                headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
-                headersBuilder.Append((RSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_SEQ + ": " + RSeq + m_CRLF : null);
-                headersBuilder.Append((RAckRSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_ACK + ": " + RAckRSeq + " " + RAckCSeq + " " + RAckCSeqMethod + m_CRLF : null);
-
-                foreach (var PAI in PassertedIdentity)
-                {
-                    headersBuilder.Append(SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY + ": " + PAI + m_CRLF);
-                }
-
-                foreach (var HistInfo in HistoryInfo)
-                {
-                    headersBuilder.Append(SIPHeaders.SIP_HEADER_HISTORY_INFO + ": " + HistInfo + m_CRLF);
-                }
-
-                foreach (var DiversionHeader in Diversion)
-                {
-                    headersBuilder.Append(SIPHeaders.SIP_HEADER_DIVERSION + ": " + DiversionHeader + m_CRLF);
-                }
-
-                // Custom SIP headers.
-                headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
-                headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
-                headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
-
-                // Unknown SIP headers
-                foreach (string unknownHeader in UnknownHeaders)
-                {
-                    headersBuilder.Append(unknownHeader + m_CRLF);
-                }
-
-                return headersBuilder.ToString();
+                return builder.ToString();
             }
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SIPHeader ToString. Exception: {ErrorMessage}", excp.Message);
                 throw;
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            Vias.ToString(ref builder);
+
+            if (To != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_TO);
+                builder.Append(": ");
+                To.ToString(ref builder);
+                builder.Append(m_CRLF);
+            }
+
+            if (From != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_FROM);
+                builder.Append(": ");
+                From.ToString(ref builder);
+                builder.Append(m_CRLF);
+            }
+
+            if (CallId != null)
+                {
+                builder.Append(SIPHeaders.SIP_HEADER_CALLID);
+                builder.Append(": ");
+                builder.Append(CallId);
+                builder.Append(m_CRLF);
+                }
+
+            if (CSeq >= 0)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_CSEQ);
+                builder.Append(": ");
+                builder.Append(CSeq);
+
+                if (CSeqMethod != SIPMethodsEnum.NONE)
+                {
+                    builder.Append(' ');
+                    builder.Append(CSeqMethod.ToString());
+                }
+
+                builder.Append(m_CRLF);
+            }
+
+                #region Appending Contact header.
+
+                if (Contact != null && Contact.Count == 1)
+                {
+                builder.Append(SIPHeaders.SIP_HEADER_CONTACT);
+                builder.Append(": ");
+                Contact[0].ToString(ref builder);
+                builder.Append(m_CRLF);
+                }
+                else if (Contact != null && Contact.Count > 1)
+                {
+                builder.Append(SIPHeaders.SIP_HEADER_CONTACT);
+                builder.Append(": ");
+
+                    bool firstContact = true;
+                    foreach (SIPContactHeader contactHeader in Contact)
+                    {
+                    if (!firstContact)
+                        {
+                        builder.Append(',');
+                        }
+
+                    contactHeader.ToString(ref builder);
+                    firstContact = false;
+                }
+
+                builder.Append(m_CRLF);
+            }
+
+            #endregion
+
+            if (MaxForwards >= 0)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_MAXFORWARDS);
+                builder.Append(": ");
+                builder.Append(MaxForwards);
+                builder.Append(m_CRLF);
+            }
+
+            if (Routes != null && Routes.Length > 0)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ROUTE);
+                builder.Append(": ");
+                Routes.ToString(ref builder);
+                builder.Append(m_CRLF);
+            }
+
+            if (RecordRoutes != null && RecordRoutes.Length > 0)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_RECORDROUTE);
+                builder.Append(": ");
+                RecordRoutes.ToString(ref builder);
+                builder.Append(m_CRLF);
+            }
+
+            if (UserAgent != null && UserAgent.Trim().Length != 0)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_USERAGENT);
+                builder.Append(": ");
+                builder.Append(UserAgent);
+                builder.Append(m_CRLF);
+            }
+
+            if (Expires != -1)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_EXPIRES);
+                builder.Append(": ");
+                builder.Append(Expires);
+                builder.Append(m_CRLF);
+            }
+
+            if (MinExpires != -1)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_MINEXPIRES);
+                builder.Append(": ");
+                builder.Append(MinExpires);
+                builder.Append(m_CRLF);
+            }
+
+            if (Accept != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ACCEPT);
+                builder.Append(": ");
+                builder.Append(Accept);
+                builder.Append(m_CRLF);
+            }
+
+            if (AcceptEncoding != null)
+                        {
+                builder.Append(SIPHeaders.SIP_HEADER_ACCEPTENCODING);
+                builder.Append(": ");
+                builder.Append(AcceptEncoding);
+                builder.Append(m_CRLF);
+                        }
+
+            if (AcceptLanguage != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ACCEPTLANGUAGE);
+                builder.Append(": ");
+                builder.Append(AcceptLanguage);
+                builder.Append(m_CRLF);
+                    }
+
+            if (Allow != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ALLOW);
+                builder.Append(": ");
+                builder.Append(Allow);
+                builder.Append(m_CRLF);
+                }
+
+            if (AlertInfo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ALERTINFO);
+                builder.Append(": ");
+                builder.Append(AlertInfo);
+                builder.Append(m_CRLF);
+            }
+
+            if (AuthenticationInfo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_AUTHENTICATIONINFO);
+                builder.Append(": ");
+                builder.Append(AuthenticationInfo);
+                builder.Append(m_CRLF);
+            }
+
+                if (AuthenticationHeaders.Count > 0)
+                {
+                    foreach (var authHeader in AuthenticationHeaders)
+                    {
+                    if (authHeader is not null)
+                        {
+                        authHeader.ToString(ref builder);
+                        builder.Append(m_CRLF);
+                    }
+                }
+            }
+
+            if (CallInfo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_CALLINFO);
+                builder.Append(": ");
+                builder.Append(CallInfo);
+                builder.Append(m_CRLF);
+            }
+
+            if (ContentDisposition != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_CONTENT_DISPOSITION);
+                builder.Append(": ");
+                builder.Append(ContentDisposition);
+                builder.Append(m_CRLF);
+            }
+
+            if (ContentEncoding != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_CONTENT_ENCODING);
+                builder.Append(": ");
+                builder.Append(ContentEncoding);
+                builder.Append(m_CRLF);
+            }
+
+            if (ContentLanguage != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_CONTENT_LANGUAGE);
+                builder.Append(": ");
+                builder.Append(ContentLanguage);
+                builder.Append(m_CRLF);
+            }
+
+            if (Date != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_DATE);
+                builder.Append(": ");
+                builder.Append(Date);
+                builder.Append(m_CRLF);
+            }
+
+            if (ErrorInfo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ERROR_INFO);
+                builder.Append(": ");
+                builder.Append(ErrorInfo);
+                builder.Append(m_CRLF);
+            }
+
+            if (InReplyTo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_IN_REPLY_TO);
+                builder.Append(": ");
+                builder.Append(InReplyTo);
+                builder.Append(m_CRLF);
+            }
+
+            if (Organization != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ORGANIZATION);
+                builder.Append(": ");
+                builder.Append(Organization);
+                builder.Append(m_CRLF);
+            }
+
+            if (Priority != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_PRIORITY);
+                builder.Append(": ");
+                builder.Append(Priority);
+                builder.Append(m_CRLF);
+                        }
+
+            if (ProxyRequire != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_PROXY_REQUIRE);
+                builder.Append(": ");
+                builder.Append(ProxyRequire);
+                builder.Append(m_CRLF);
+            }
+
+            if (ReplyTo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REPLY_TO);
+                builder.Append(": ");
+                builder.Append(ReplyTo);
+                builder.Append(m_CRLF);
+            }
+
+            if (Require != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REQUIRE);
+                builder.Append(": ");
+                builder.Append(Require);
+                builder.Append(m_CRLF);
+            }
+
+            if (RetryAfter != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_RETRY_AFTER);
+                builder.Append(": ");
+                builder.Append(RetryAfter);
+                builder.Append(m_CRLF);
+            }
+
+            if (Server != null && Server.Trim().Length != 0)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_SERVER);
+                builder.Append(": ");
+                builder.Append(Server);
+                builder.Append(m_CRLF);
+            }
+
+            if (Subject != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_SUBJECT);
+                builder.Append(": ");
+                builder.Append(Subject);
+                builder.Append(m_CRLF);
+                    }
+
+            if (Supported != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_SUPPORTED);
+                builder.Append(": ");
+                builder.Append(Supported);
+                builder.Append(m_CRLF);
+                }
+
+            if (Timestamp != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_TIMESTAMP);
+                builder.Append(": ");
+                builder.Append(Timestamp);
+                builder.Append(m_CRLF);
+            }
+
+            if (Unsupported != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_UNSUPPORTED);
+                builder.Append(": ");
+                builder.Append(Unsupported);
+                builder.Append(m_CRLF);
+            }
+
+            if (Warning != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_WARNING);
+                builder.Append(": ");
+                builder.Append(Warning);
+                builder.Append(m_CRLF);
+            }
+
+            if (ETag != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ETAG);
+                builder.Append(": ");
+                builder.Append(ETag);
+                builder.Append(m_CRLF);
+            }
+
+            builder.Append(SIPHeaders.SIP_HEADER_CONTENTLENGTH);
+            builder.Append(": ");
+            builder.Append(ContentLength);
+            builder.Append(m_CRLF);
+
+            if (ContentType != null && ContentType.Trim().Length > 0)
+                {
+                builder.Append(SIPHeaders.SIP_HEADER_CONTENTTYPE);
+                builder.Append(": ");
+                builder.Append(ContentType);
+                builder.Append(m_CRLF);
+                }
+
+                // Non-core SIP headers.
+            if (AllowEvents != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_ALLOW_EVENTS);
+                builder.Append(": ");
+                builder.Append(AllowEvents);
+                builder.Append(m_CRLF);
+            }
+
+            if (Event != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_EVENT);
+                builder.Append(": ");
+                builder.Append(Event);
+                builder.Append(m_CRLF);
+            }
+
+            if (SubscriptionState != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_SUBSCRIPTION_STATE);
+                builder.Append(": ");
+                builder.Append(SubscriptionState);
+                builder.Append(m_CRLF);
+            }
+
+            if (ReferSub != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REFERSUB);
+                builder.Append(": ");
+                builder.Append(ReferSub);
+                builder.Append(m_CRLF);
+            }
+
+            if (ReferTo != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REFERTO);
+                builder.Append(": ");
+                builder.Append(ReferTo);
+                builder.Append(m_CRLF);
+            }
+
+            if (ReferredBy != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REFERREDBY);
+                builder.Append(": ");
+                builder.Append(ReferredBy);
+                builder.Append(m_CRLF);
+            }
+
+            if (Replaces != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REPLACES);
+                builder.Append(": ");
+                builder.Append(Replaces);
+                builder.Append(m_CRLF);
+            }
+
+            if (Reason != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_REASON);
+                builder.Append(": ");
+                builder.Append(Reason);
+                builder.Append(m_CRLF);
+            }
+
+            if (RSeq != -1)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_RELIABLE_SEQ);
+                builder.Append(": ");
+                builder.Append(RSeq);
+                builder.Append(m_CRLF);
+            }
+
+            if (RAckRSeq != -1)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_RELIABLE_ACK);
+                builder.Append(": ");
+                builder.Append(RAckRSeq);
+                builder.Append(' ');
+                builder.Append(RAckCSeq);
+                builder.Append(' ');
+                builder.Append(RAckCSeqMethod.ToString());
+                builder.Append(m_CRLF);
+            }
+
+                foreach (var PAI in PassertedIdentity)
+                {
+                if (PAI != null)
+                {
+                    builder.Append(SIPHeaders.SIP_HEADER_PASSERTED_IDENTITY);
+                    builder.Append(": ");
+                    builder.Append(PAI.ToString());
+                    builder.Append(m_CRLF);
+                }
+                }
+
+                foreach (var HistInfo in HistoryInfo)
+                {
+                if (HistInfo != null)
+                {
+                    builder.Append(SIPHeaders.SIP_HEADER_HISTORY_INFO);
+                    builder.Append(": ");
+                    builder.Append(HistInfo.ToString());
+                    builder.Append(m_CRLF);
+                }
+                }
+
+                foreach (var DiversionHeader in Diversion)
+                {
+                if (DiversionHeader != null)
+                {
+                    builder.Append(SIPHeaders.SIP_HEADER_DIVERSION);
+                    builder.Append(": ");
+                    builder.Append(DiversionHeader.ToString());
+                    builder.Append(m_CRLF);
+                }
+                }
+
+                // Custom SIP headers.
+            if (ProxyReceivedFrom != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM);
+                builder.Append(": ");
+                builder.Append(ProxyReceivedFrom);
+                builder.Append(m_CRLF);
+            }
+
+            if (ProxyReceivedOn != null)
+                {
+                builder.Append(SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON);
+                builder.Append(": ");
+                builder.Append(ProxyReceivedOn);
+                builder.Append(m_CRLF);
+                }
+
+            if (ProxySendFrom != null)
+            {
+                builder.Append(SIPHeaders.SIP_HEADER_PROXY_SENDFROM);
+                builder.Append(": ");
+                builder.Append(ProxySendFrom);
+                builder.Append(m_CRLF);
+            }
+
+            // Unknown SIP headers
+            foreach (string unknownHeader in UnknownHeaders)
+            {
+                if (unknownHeader != null)
+            {
+                    builder.Append(unknownHeader);
+                    builder.Append(m_CRLF);
+                }
             }
         }
 

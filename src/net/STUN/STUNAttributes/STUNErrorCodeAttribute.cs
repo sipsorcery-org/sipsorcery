@@ -15,6 +15,7 @@
 
 using System;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -61,11 +62,12 @@ namespace SIPSorcery.Net
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
-
-            return attrDescrStr;
+            sb.Append("error code=");
+            sb.Append(ErrorCode);
+            sb.Append(", reason phrase=");
+            sb.Append(ReasonPhrase);
         }
     }
 }

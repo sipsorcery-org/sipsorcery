@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -36,6 +37,16 @@ namespace SIPSorcery.Net
         public STUNAddressAttributeBase(STUNAttributeTypesEnum attributeType, byte[] value)
             : base(attributeType, value)
         {
+        }
+
+        private protected override void ValueToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("Address=");
+            sb.Append(Address.ToString());
+            sb.Append(", Port=");
+            sb.Append(Port);
+            sb.Append(", Family=");
+            sb.Append(Family switch { 1 => "IPV4", 2 => "IPV6", _ => "Invalid", });
         }
     }
 }

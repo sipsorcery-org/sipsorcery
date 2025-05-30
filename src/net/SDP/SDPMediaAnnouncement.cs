@@ -32,6 +32,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -282,87 +283,189 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
+            var builder = new ValueStringBuilder();
 
-            announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
+            try
+            {
+                ToString(ref builder);
 
-            announcement += (Connection == null) ? null : Connection.ToString();
+                return builder.ToString();
+            }
+            finally
+            {
+                builder.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            builder.Append("m=");
+            builder.Append(Media.ToString());
+            builder.Append(' ');
+            builder.Append(Port);
+            builder.Append(' ');
+            builder.Append(Transport);
+            builder.Append(' ');
+            WriteFormatListString(ref builder);
+            builder.Append(m_CRLF);
+
+            if (!string.IsNullOrWhiteSpace(MediaDescription))
+            {
+                builder.Append("i=");
+                builder.Append(MediaDescription);
+                builder.Append(m_CRLF);
+            }
+
+            if (Connection != null)
+            {
+                builder.Append(Connection.ToString());
+            }
 
             if (TIASBandwidth > 0)
             {
-                announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
+                builder.Append(TIAS_BANDWIDTH_ATTRIBUE_PREFIX);
+                builder.Append(TIASBandwidth);
+                builder.Append(m_CRLF);
             }
 
             foreach (string bandwidthAttribute in BandwidthAttributes)
             {
-                announcement += "b=" + bandwidthAttribute + m_CRLF;
+                builder.Append("b=");
+                builder.Append(bandwidthAttribute);
+                builder.Append(m_CRLF);
             }
 
-            announcement += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + m_CRLF : null;
-            announcement += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + m_CRLF : null;
-            announcement += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + m_CRLF : null;
-            announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null; 
+            if (!string.IsNullOrWhiteSpace(IceUfrag))
+            {
+                builder.Append("a=");
+                builder.Append(SDP.ICE_UFRAG_ATTRIBUTE_PREFIX);
+                builder.Append(':');
+                builder.Append(IceUfrag);
+                builder.Append(m_CRLF);
+            }
 
-            if (IceCandidates?.Count() > 0)
+            if (!string.IsNullOrWhiteSpace(IcePwd))
+            {
+                builder.Append("a=");
+                builder.Append(SDP.ICE_PWD_ATTRIBUTE_PREFIX);
+                builder.Append(':');
+                builder.Append(IcePwd);
+                builder.Append(m_CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
+            {
+                builder.Append("a=");
+                builder.Append(SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX);
+                builder.Append(':');
+                builder.Append(DtlsFingerprint);
+                builder.Append(m_CRLF);
+            }
+
+            if (IceRole != null)
+            {
+                builder.Append("a=");
+                builder.Append(SDP.ICE_SETUP_ATTRIBUTE_PREFIX);
+                builder.Append(':');
+                builder.Append(IceRole.ToString());
+                builder.Append(m_CRLF);
+            }
+
+            if (IceCandidates?.Any() == true)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    announcement += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{m_CRLF}";
+                    builder.Append("a=");
+                    builder.Append(SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX);
+                    builder.Append(':');
+                    builder.Append(candidate);
+                    builder.Append(m_CRLF);
                 }
             }
 
             if (IceOptions != null)
             {
-                announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
+                builder.Append("a=");
+                builder.Append(SDP.ICE_OPTIONS);
+                builder.Append(':');
+                builder.Append(IceOptions);
+                builder.Append(m_CRLF);
             }
 
             if (IceEndOfCandidates)
             {
-                announcement += $"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}" + m_CRLF;
+                builder.Append("a=");
+                builder.Append(SDP.END_ICE_CANDIDATES_ATTRIBUTE);
+                builder.Append(m_CRLF);
             }
 
-            announcement += !string.IsNullOrWhiteSpace(MediaID) ? "a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":" + MediaID + m_CRLF : null;
+            if (!string.IsNullOrWhiteSpace(MediaID))
+            {
+                builder.Append("a=");
+                builder.Append(SDP.MEDIA_ID_ATTRIBUTE_PREFIX);
+                builder.Append(':');
+                builder.Append(MediaID);
+                builder.Append(m_CRLF);
+            }
 
-            announcement += GetFormatListAttributesToString();
+            builder.Append(GetFormatListAttributesToString());
 
-            announcement += string.Join("", HeaderExtensions.Select(x => $"{MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX}{x.Value.Id} {x.Value.Uri}{m_CRLF}"));
+            foreach (var ext in HeaderExtensions)
+            {
+                builder.Append(MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
+                builder.Append(ext.Value.Id);
+                builder.Append(' ');
+                builder.Append(ext.Value.Uri);
+                builder.Append(m_CRLF);
+            }
+
             foreach (string extra in ExtraMediaAttributes)
             {
-                announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
+                if (!string.IsNullOrWhiteSpace(extra))
+                {
+                    builder.Append(extra);
+                    builder.Append(m_CRLF);
+                }
             }
 
             foreach (SDPSecurityDescription desc in this.SecurityDescriptions)
             {
-                announcement += desc.ToString() + m_CRLF;
+                builder.Append(desc.ToString());
+                builder.Append(m_CRLF);
             }
 
             if (MediaStreamStatus != null)
             {
-                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value) + m_CRLF;
+                builder.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value));
+                builder.Append(m_CRLF);
             }
 
             if (SsrcGroupID != null && SsrcAttributes.Count > 0)
             {
-                announcement += MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX + SsrcGroupID;
+                builder.Append(MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX);
+                builder.Append(SsrcGroupID);
                 foreach (var ssrcAttr in SsrcAttributes)
                 {
-                    announcement += $" {ssrcAttr.SSRC}";
+                    builder.Append(' ');
+                    builder.Append(ssrcAttr.SSRC);
                 }
-                announcement += m_CRLF;
+                builder.Append(m_CRLF);
             }
 
             if (SsrcAttributes.Count > 0)
             {
                 foreach (var ssrcAttr in SsrcAttributes)
                 {
+                    builder.Append(MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX);
+                    builder.Append(ssrcAttr.SSRC);
                     if (!string.IsNullOrWhiteSpace(ssrcAttr.Cname))
                     {
-                        announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC} {SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX}:{ssrcAttr.Cname}" + m_CRLF;
+                        builder.Append(' ');
+                        builder.Append(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX);
+                        builder.Append(':');
+                        builder.Append(ssrcAttr.Cname);
                     }
-                    else
-                    {
-                        announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC}" + m_CRLF;
-                    }
+                    builder.Append(m_CRLF);
                 }
             }
 
@@ -371,50 +474,87 @@ namespace SIPSorcery.Net
             // an application sets it then it's likely to be for a specific reason.
             if (SctpMap != null)
             {
-                announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
+                builder.Append(MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX);
+                builder.Append(SctpMap);
+                builder.Append(m_CRLF);
             }
             else
             {
                 if (SctpPort != null)
                 {
-                    announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
+                    builder.Append(MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX);
+                    builder.Append(SctpPort);
+                    builder.Append(m_CRLF);
                 }
 
                 if (MaxMessageSize != 0)
                 {
-                    announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
+                    builder.Append(MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX);
+                    builder.Append(MaxMessageSize);
+                    builder.Append(m_CRLF);
+                }
                 }
             }
-
-            return announcement;
-        }
 
         public string GetFormatListToString()
         {
-            if (Media == SDPMediaTypesEnum.application)
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (var appFormat in ApplicationMediaFormats)
-                {
-                    sb.Append(appFormat.Key);
-                    sb.Append(" ");
-                }
-
-                return sb.ToString().Trim();
-            }
-            else if (Media == SDPMediaTypesEnum.message)
+            if (Media == SDPMediaTypesEnum.message)
             {
                 return "*";
+        }
+
+            var builder = new ValueStringBuilder();
+
+            try
+        {
+                WriteFormatListString(ref builder);
+
+            if (Media == SDPMediaTypesEnum.application)
+            {
+                    return builder.ToString();
+                }
+                else
+                {
+                    return builder.Length > 0 ? builder.ToString() : null;
+                }
+            }
+            finally
+                {
+                builder.Dispose();
+            }
+                }
+
+        internal void WriteFormatListString(ref ValueStringBuilder builder)
+        {
+            if (Media == SDPMediaTypesEnum.message)
+            {
+                builder.Append('*');
+            }
+            else if (Media == SDPMediaTypesEnum.application)
+            {
+                var first = true;
+                foreach (var appFormat in ApplicationMediaFormats)
+                {
+                    if (!first)
+            {
+                        builder.Append(' ');
+                    }
+                    builder.Append(appFormat.Key);
+                    first = false;
+                }
             }
             else
             {
-                string mediaFormatList = null;
+                var first = true;
                 foreach (var mediaFormat in MediaFormats)
                 {
-                    mediaFormatList += mediaFormat.Key + " ";
+                    if (!first)
+                    {
+                        builder.Append(' ');
+                    }
+                    builder.Append(mediaFormat.Key);
+                    first = false;
                 }
-
-                return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
             }
         }
 

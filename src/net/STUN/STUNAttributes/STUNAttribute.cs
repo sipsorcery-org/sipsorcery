@@ -272,11 +272,36 @@ namespace SIPSorcery.Net
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
 
-        public new virtual string ToString()
+        public override string ToString()
         {
-            string attrDescrString = "STUN Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
+            var sb = new ValueStringBuilder(stackalloc char[256]);
 
-            return attrDescrString;
+            try
+            {
+                ToString(ref sb);
+
+                return sb.ToString();
+            }
+            finally
+            {
+                sb.Dispose();
+            }
+        }
+
+        internal void ToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("STUN Attribute: ");
+            sb.Append(AttributeType.ToString());
+            sb.Append(", ");
+            ValueToString(ref sb);
+            sb.Append('.');
+        }
+
+        private protected virtual void ValueToString(ref ValueStringBuilder sb)
+        {
+            sb.Append(Value);
+            sb.Append(", length=");
+            sb.Append(PaddedLength);
         }
     }
 }

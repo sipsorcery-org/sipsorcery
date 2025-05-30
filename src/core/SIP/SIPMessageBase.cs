@@ -118,19 +118,33 @@ namespace SIPSorcery.SIP
 
         protected byte[] GetBytes(string firstLine)
         {
-            string headers = firstLine + this.Header.ToString() + m_CRLF;
+            var builder = new ValueStringBuilder();
 
-            if (_body != null && _body.Length > 0)
+            try
             {
-                var headerBytes = SIPEncoding.GetBytes(headers);
-                byte[] buffer = new byte[headerBytes.Length + _body.Length];
-                Buffer.BlockCopy(headerBytes, 0, buffer, 0, headerBytes.Length);
-                Buffer.BlockCopy(_body, 0, buffer, headerBytes.Length, _body.Length);
+                builder.Append(firstLine);
+                this.Header.ToString(ref builder);
+                builder.Append(m_CRLF);
+
+                if (_body is { Length: > 0 })
+                {
+                    var headerByteCount = SIPEncoding.GetByteCount(builder.AsSpan());
+                    var buffer = new byte[headerByteCount + _body.Length];
+                    SIPEncoding.GetBytes(builder.AsSpan(), buffer.AsSpan());
+                    _body.CopyTo(buffer.AsSpan(headerByteCount));
                 return buffer;
             }
             else
             {
-                return SIPEncoding.GetBytes(headers);
+                    var headerByteCount = SIPEncoding.GetByteCount(builder.AsSpan());
+                    var buffer = new byte[headerByteCount];
+                    SIPEncoding.GetBytes(builder.AsSpan(), buffer.AsSpan());
+                    return buffer;
+                }
+            }
+            finally
+            {
+                builder.Dispose();
             }
         }
     }

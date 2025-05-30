@@ -45,11 +45,10 @@ namespace SIPSorcery.Net
             ConnectionId = connectionId;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
-
-            return attrDescrStr;
+            sb.Append("connection ID=");
+            sb.Append(ConnectionId);
         }
     }
 }

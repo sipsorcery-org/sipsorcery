@@ -142,33 +142,38 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
+            var builder = new ValueStringBuilder();
+
             try
             {
-                string userFieldStr = null;
+                ToString(ref builder);
 
-                if (Name != null)
-                {
-                    /*if(Regex.Match(Name, @"\s").Success)
-                    {
-                    userFieldStr = "\"" + Name + "\" ";
-                }
-                    else
-                    {
-                        userFieldStr = Name + " ";
-                    }*/
-
-                    userFieldStr = "\"" + Name + "\" ";
-                }
-
-                userFieldStr += "<" + URI.ToString() + ">" + Parameters.ToString();
-
-                return userFieldStr;
+                return builder.ToString();
             }
             catch (Exception excp)
-            {
+                {
                 logger.LogError(excp, "Exception SIPUserField ToString. {Message}", excp.Message);
                 throw;
             }
+            finally
+                    {
+                builder.Dispose();
+                }
+                }
+
+        internal void ToString(ref ValueStringBuilder builder)
+        {
+            if (Name != null)
+            {
+                builder.Append("\"");
+                builder.Append(Name);
+                builder.Append("\" ");
+            }
+
+            builder.Append('<');
+            builder.Append(URI.ToString());
+            builder.Append('>');
+            builder.Append(Parameters.ToString());
         }
 
         public string ToParameterlessString()

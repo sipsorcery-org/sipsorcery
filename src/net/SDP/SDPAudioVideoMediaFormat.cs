@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
         public const int DYNAMIC_ID_MAX = 127;
         public const int DEFAULT_AUDIO_CHANNEL_COUNT = 1;
 
-        public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat() { _isEmpty = true };
+        public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat();
 
         /// <summary>
         /// Indicates whether the format is for audio or video.
@@ -116,7 +116,7 @@ namespace SIPSorcery.Net
         /// </summary>
         //public string Name { get; set; }
 
-        private bool _isEmpty;
+        private bool _isNotEmpty;
 
         /// <summary>
         /// Creates a new SDP media format for a well known media type. Well known type are those that use 
@@ -130,7 +130,7 @@ namespace SIPSorcery.Net
             ID = (int)knownFormat;
             Rtpmap = null;
             Fmtp = null;
-            _isEmpty = false;
+            _isNotEmpty = true;
 
             if (Kind == SDPMediaTypesEnum.audio)
             {
@@ -144,28 +144,20 @@ namespace SIPSorcery.Net
             }
         }
 
-        public bool IsH264
-        {
-            get
-            {
-                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("H264");
-            }
-        }
+        public bool IsH264 => RtmapIs("H264");
 
-        public bool IsMJPEG
-        {
-            get
-            {
-                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("JPEG");
-            }
-        }
+        public bool IsMJPEG => RtmapIs("JPEG");
 
-        public bool isH265
+        public bool isH265 => RtmapIs("H265");
+
+        private bool RtmapIs(string codec)
         {
-            get
+            if (Rtpmap is null)
             {
-                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("H265");
-            }
+                return false;
+        	}
+
+            return Rtpmap.AsSpan().TrimStart().StartsWith(codec.AsSpan(), StringComparison.OrdinalIgnoreCase);
         }
 
         public bool CheckCompatible()
@@ -224,7 +216,7 @@ namespace SIPSorcery.Net
             ID = id;
             Rtpmap = rtpmap;
             Fmtp = fmtp;
-            _isEmpty = false;
+            _isNotEmpty = true;
         }
 
         /// <summary>
@@ -246,7 +238,7 @@ namespace SIPSorcery.Net
             ID = id;
             Rtpmap = null;
             Fmtp = fmtp;
-            _isEmpty = false;
+            _isNotEmpty = true;
 
             Rtpmap = SetRtpmap(name, clockRate, channels);
         }
@@ -263,7 +255,7 @@ namespace SIPSorcery.Net
             ID = audioFormat.FormatID;
             Rtpmap = null;
             Fmtp = audioFormat.Parameters;
-            _isEmpty = false;
+            _isNotEmpty = true;
 
             Rtpmap = SetRtpmap(audioFormat.FormatName, audioFormat.RtpClockRate, audioFormat.ChannelCount);
         }
@@ -280,7 +272,7 @@ namespace SIPSorcery.Net
             ID = videoFormat.FormatID;
             Rtpmap = null;
             Fmtp = videoFormat.Parameters;
-            _isEmpty = false;
+            _isNotEmpty = true;
 
             Rtpmap = SetRtpmap(videoFormat.FormatName, videoFormat.ClockRate);
         }
@@ -291,7 +283,7 @@ namespace SIPSorcery.Net
             ID = textFormat.FormatID;
             Rtpmap = null;  
             Fmtp = textFormat.Parameters;
-            _isEmpty = false;
+            _isNotEmpty = true;
 
             Rtpmap = SetRtpmap(textFormat.FormatName, textFormat.ClockRate);
         }
@@ -300,7 +292,7 @@ namespace SIPSorcery.Net
                 ? $"{name}/{clockRate}"
                 : (channels == DEFAULT_AUDIO_CHANNEL_COUNT) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
 
-        public bool IsEmpty() => _isEmpty;
+        public bool IsEmpty() => !_isNotEmpty;
         public int ClockRate()
         {
             if (Kind == SDPMediaTypesEnum.video)
@@ -599,16 +591,20 @@ namespace SIPSorcery.Net
         /// <returns>If found the matching format or the empty format if not.</returns>
         public static SDPAudioVideoMediaFormat GetFormatForName(List<SDPAudioVideoMediaFormat> formats, string formatName)
         {
-            if (formats == null || formats.Count == 0)
+            if (formats != null && formats.Count != 0 && formatName != null)
             {
+                foreach (var format in formats)
+                {
+                    if (string.Equals(format.Name(), formatName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return format;
+                    }
+                }
+
                 return Empty;
             }
-            else
-            {
-                return formats.Any(x => x.Name()?.ToLower() == formatName?.ToLower()) ?
-                   formats.First(x => x.Name()?.ToLower() == formatName?.ToLower()) :
-                   Empty;
-            }
+
+            return Empty;
         }
     }
 }
