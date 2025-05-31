@@ -26,13 +26,13 @@
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>8.0.12-pre</Version>
-    <AssemblyVersion>8.0.12.0</AssemblyVersion>
-    <FileVersion>8.0.12.0</FileVersion>
+    <Version>8.0.13-pre</Version>
+    <AssemblyVersion>8.0.13.0</AssemblyVersion>
+    <FileVersion>8.0.13.0</FileVersion>
 	<RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-	  <PackageReleaseNotes>-v8.0.12-pre: Improvements to audio sink handling and implementeed IAudioEndPoint interface.
+	  <PackageReleaseNotes>-v8.0.13-pre: Improvements to audio sink handling and implementeed IAudioEndPoint interface.
 -v8.0.11: Support more than one audo channel.
 -v8.0.7: Updated for changes to abstractions library.
 -v6.0.5: Updated for changes to abstractions library.
