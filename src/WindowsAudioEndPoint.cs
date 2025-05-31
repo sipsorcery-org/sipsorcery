@@ -82,10 +82,14 @@ namespace SIPSorceryMedia.Windows
         protected bool _isAudioSinkClosed;
 
         /// <summary>
-        /// Not used by this audio source.
+        /// Obsolete. Use the <cref="OnAudioSourceEncodedSample"/> event instead.
         /// </summary>
         public event EncodedSampleDelegate OnAudioSourceEncodedSample;
 
+        /// <summary>
+        /// Event handler for when an encoded audio frame is ready to be sent to the RTP transport layer.
+        /// The sample contained in this event is already encoded with the chosen audio format (codec) and ready for transmission.
+        /// </summary>
         public event Action<EncodedAudioFrame> OnAudioSourceEncodedFrameReady;
 
         /// <summary>
@@ -333,19 +337,30 @@ namespace SIPSorceryMedia.Windows
         {
             // Note NAudio.Wave.WaveBuffer.ShortBuffer does not take into account little endian.
             // https://github.com/naudio/NAudio/blob/master/NAudio/Wave/WaveOutputs/WaveBuffer.cs
-            // WaveBuffer wavBuffer = new WaveBuffer(args.Buffer.Take(args.BytesRecorded).ToArray());
-            // byte[] encodedSample = _audioEncoder.EncodeAudio(wavBuffer.ShortBuffer, _audioFormatManager.SelectedFormat);
 
             byte[] buffer = args.Buffer.Take(args.BytesRecorded).ToArray();
             short[] pcm = buffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
             byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
+            
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
 
             if (OnAudioSourceEncodedFrameReady != null)
             {
-                var encodedAudioFrame = new EncodedAudioFrame(0, _audioFormatManager.SelectedFormat, 0, encodedSample);
+                var encodedAudioFrame = new EncodedAudioFrame(0,
+                    _audioFormatManager.SelectedFormat,
+                    GetEncodSampleDurationMs(pcm.Length, _audioFormatManager.SelectedFormat),
+                    encodedSample);
                 OnAudioSourceEncodedFrameReady(encodedAudioFrame);
             }
+        }
+
+        private uint GetEncodSampleDurationMs(int totalPcmSamples, AudioFormat audioFormat)
+        {
+            int numChannels = audioFormat.ChannelCount; 
+            int sampleRate = audioFormat.ClockRate;
+            int frames = totalPcmSamples / numChannels;
+            double durationMsD = sampleRate > 0 ? (frames / (double)sampleRate) * 1000.0 : 0;
+            return (uint)Math.Round(durationMsD);
         }
 
         /// <summary>
