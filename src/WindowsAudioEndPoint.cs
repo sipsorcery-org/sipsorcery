@@ -86,6 +86,8 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public event EncodedSampleDelegate OnAudioSourceEncodedSample;
 
+        public event Action<EncodedAudioFrame> OnAudioSourceEncodedFrameReady;
+
         /// <summary>
         /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event
         /// to get samples ready for passing to the RTP transport layer.
@@ -191,8 +193,8 @@ namespace SIPSorceryMedia.Windows
         {
             return new MediaEndPoints
             {
-                AudioSource = (_disableSource) ? null : this,
-                AudioSink = (_disableSink) ? null : this,
+                AudioSource = _disableSource ? null : this,
+                AudioSink = _disableSink ? null : this,
             };
         }
 
@@ -338,6 +340,12 @@ namespace SIPSorceryMedia.Windows
             short[] pcm = buffer.Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
             byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
+
+            if (OnAudioSourceEncodedFrameReady != null)
+            {
+                var encodedAudioFrame = new EncodedAudioFrame(0, _audioFormatManager.SelectedFormat, 0, encodedSample);
+                OnAudioSourceEncodedFrameReady(encodedAudioFrame);
+            }
         }
 
         /// <summary>
@@ -352,11 +360,31 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
+        /// <summary>
+        /// Obsolete. Use the <cref="GotEncodedMediaFrame"/> method instead.
+        /// </summary>
+        [Obsolete("Use GotEncodedMediaFrame instead.")]
         public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
             if (_waveProvider != null && _audioEncoder != null)
             {
                 var pcmSample = _audioEncoder.DecodeAudio(payload, _audioFormatManager.SelectedFormat);
+                byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
+                _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
+            }
+        }
+
+        /// <summary>
+        /// Handler for receiving an encoded audio frame from the remote party.
+        ///</summary>
+        /// <param name="encodedMediaFrame">Encoded audio frame received from the remote party.</param>
+        public void GotEncodedMediaFrame(EncodedAudioFrame encodedMediaFrame)
+        {
+            var audioFormat = encodedMediaFrame.AudioFormat;
+
+            if (_waveProvider != null && _audioEncoder != null && !audioFormat.IsEmpty())
+            {
+                var pcmSample = _audioEncoder.DecodeAudio(encodedMediaFrame.EncodedAudio, audioFormat);
                 byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
                 _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
             }
