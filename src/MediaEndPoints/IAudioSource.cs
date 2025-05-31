@@ -27,6 +27,8 @@ public interface IAudioSource
 {
     event EncodedSampleDelegate OnAudioSourceEncodedSample;
 
+    event Action<EncodedAudioFrame> OnAudioSourceEncodedFrameReady;
+
     event RawAudioSampleDelegate OnAudioSourceRawSample;
 
     event SourceErrorDelegate OnAudioSourceError;

@@ -30,7 +30,10 @@ public interface IAudioSink
 
     void SetAudioSinkFormat(AudioFormat audioFormat);
 
+    [Obsolete("Use GotEncodedMediaFrame instead.")]
     void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
+
+    void GotEncodedMediaFrame(EncodedAudioFrame encodedMediaFrame);
 
     void RestrictFormats(Func<AudioFormat, bool> filter);
 
