@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.cloudflare.com";
+        const TEST_SERVER_URL = "https://localhost:5443/offer"
+
+        var pc, getBitrateInterval;
+        var lastBytesReceived = 0, lastTimestamp = 0;
+
+        async function start() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+
+            getBitrateInterval = window.setInterval(getBitrate, 1000);
+
+            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
+            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+
+            pc.addTransceiver("audio", { direction: "recvonly" });
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            // Create an SDP offer:
+            console.log("Creating SDP offer...");
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            console.log("Local description (offer) set.");
+
+            const sdpOffer = pc.localDescription.sdp;
+            console.log("Sending SDP offer to signaling server:\n", sdpOffer);
+
+            const response = await fetch(document.querySelector('#testserverurl').value, {
+                method: "POST",
+                headers: { "Content-Type": "application/sdp" },
+                body: sdpOffer
+            });
+
+            if (!response.ok) {
+                console.error("Failed to negotiate SDP with server. HTTP status:", response.status);
+                return;
+            }
+
+            const sdpAnswer = await response.text();
+            console.log("Received SDP answer from server:\n", sdpAnswer);
+
+            const answerDesc = new RTCSessionDescription({
+                type: "answer",
+                sdp: sdpAnswer
+            });
+            await pc.setRemoteDescription(answerDesc);
+            console.log("Remote description (answer) set successfully.");
+        };
+
+        function getBitrate() {
+
+            pc.getReceivers().forEach(receiver => {
+                //console.log(sender);
+
+                //let parameters = sender.getParameters();
+                //console.log(`parameters.transactionId ${parameters.transactionId}.`);
+                //parameters.encodings.forEach(enc => {
+                //    console.log(enc);
+                //    console.log(`maxBitrate=${enc.maxBitrate}.`);
+                //});
+
+                receiver.getStats().then(stats => {
+                    stats.forEach(report => {
+                        if (report.type === "inbound-rtp" && report.kind === "video") {
+                            let timestamp = report["timestamp"];
+                            let bytesReceived = report["bytesReceived"];
+                            let bw = ((bytesReceived - lastBytesReceived) * 8) / ((timestamp - lastTimestamp) / 1000)
+
+                            document.querySelector("#videoBandwidth").innerText = bw.toFixed(0);
+
+                            lastBytesReceived = bytesReceived;
+                            lastTimestamp = timestamp;
+                        }
+                    });
+                });
+            });
+        };
+
+        async function closePeer() {
+            await pc.close();
+            clearInterval(getBitrateInterval);
+        };
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <input type="text" id="testserverurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+    <div>
+        Video Receive Bandwidth (bps): <span id="videoBandwidth"></span>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#testserverurl').value = TEST_SERVER_URL;
+</script>

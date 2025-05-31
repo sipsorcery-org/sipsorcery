@@ -1,8 +1,12 @@
-{
+﻿{
   "profiles": {
-    "WebRTCTestPatternServer": {
-      "commandName": "Project"
-      //"commandLineArgs": "--rest https://localhost:5001/api/webrtcsignal;a;b"
+    "WebRTCOpenAIBridge": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:5443;http://localhost:5542"
     }
   }
 }
