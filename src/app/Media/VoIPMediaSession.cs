@@ -162,7 +162,7 @@ namespace SIPSorcery.Media
 
             if (Media.AudioSink != null)
             {
-                base.OnRtpPacketReceived += RtpMediaPacketReceived;
+                base.OnAudioFrameReceived += Media.AudioSink.GotEncodedMediaFrame; 
             }
 
             if (Media.TextSink != null)
@@ -299,6 +299,7 @@ namespace SIPSorcery.Media
 
                 if (Media.AudioSink != null)
                 {
+                    base.OnAudioFrameReceived -= Media.AudioSink.GotEncodedMediaFrame;
                     await Media.AudioSink.CloseAudioSink().ConfigureAwait(false);
                 }
 
@@ -317,6 +318,7 @@ namespace SIPSorcery.Media
                 {
                     await Media.TextSource.CloseText().ConfigureAwait(false);
                 }
+
                 if (Media.TextSink != null)
                 {
                     await Media.TextSink.CloseTextSink().ConfigureAwait(false);
@@ -334,17 +336,15 @@ namespace SIPSorcery.Media
             var hdr = rtpPacket.Header;
             bool marker = rtpPacket.Header.MarkerBit > 0;
 
-            if (mediaType == SDPMediaTypesEnum.audio && Media.AudioSink != null)
-            {
-                logger.LogTrace(nameof(RtpMediaPacketReceived) + " audio RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
-
-                Media.AudioSink.GotAudioRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, marker, rtpPacket.Payload);
-            }
-            else if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
+            if (mediaType == SDPMediaTypesEnum.text && Media.TextSink != null)
             {
                 logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
                 Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.Payload);
+            }
+            else
+            {
+                logger.LogWarning(nameof(RtpMediaPacketReceived) + " RTP packet without a media handler received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
             }
         }
 

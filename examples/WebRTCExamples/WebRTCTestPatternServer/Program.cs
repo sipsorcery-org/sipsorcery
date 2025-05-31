@@ -16,109 +16,99 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading;
 using System.Threading.Tasks;
-using CommandLine;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
-using WebSocketSharp.Server;
 
 namespace demo
 {
-    public class Options
-    {
-        [Option("rest", Required = false,
-            HelpText = "Address and ID's for a REST, simple HTTP signalling, server to exchange SDP and ice candidates. Format \"--rest=https://localhost:5001/api/webrtcsignal;myid;theirid\".")]
-        public string RestSignalingServer { get; set; }
-    }
-
     class Program
     {
         // Install with: winget install "FFmpeg (Shared)" 
         private const string ffmpegLibFullPath = null; //@"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
 
-        private const int WEBSOCKET_PORT = 8081;
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
+        private const string STUN_URL = "stun:stun.cloudflare.com";
         private const int TEST_PATTERN_FRAMES_PER_SECOND = 5; //30;
 
-        private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+        private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;
 
         private static int _frameCount = 0;
         private static DateTime _startTime;
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("WebRTC Test Pattern Server Demo");
+            Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
 
-            logger = AddConsoleLogger();
+            Log.Information("WebRTC Test Pattern Server Demo");
 
-            CancellationTokenSource cts = new CancellationTokenSource();
+            var factory = new SerilogLoggerFactory(Log.Logger);
+            SIPSorcery.LogFactory.Set(factory);
+            _logger = factory.CreateLogger<Program>();
 
-            var parseResult = Parser.Default.ParseArguments<Options>(args);
-            var options = (parseResult as Parsed<Options>)?.Value;
+            var builder = WebApplication.CreateBuilder();
 
-            //X509Certificate2 cert = new X509Certificate2("localhost.pfx", "", X509KeyStorageFlags.Exportable);
-            //if (cert == null)
-            //{
-            //    Console.WriteLine("Could not load certificate file.");
-            //}
-            //else
-            //{
-            //    Console.WriteLine($"Certificate file successfully loaded {cert.Thumbprint}, have private key {cert.HasPrivateKey}.");
-            //}
-            X509Certificate2 cert = null;
+            builder.Host.UseSerilog();
 
-            if (options?.RestSignalingServer == null)
+            builder.Services.AddLogging(builder =>
             {
-                // Start web socket.
-                Console.WriteLine("Starting web socket server...");
-                var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
-                webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = () => CreatePeerConnection(cert));
-                webSocketServer.Start();
+                builder.AddSerilog(dispose: true);
+            });
 
-                Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
-                Console.WriteLine("Press ctrl-c to exit.");
-            }
-            else
+            var app = builder.Build();
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
+            app.MapPost("/offer", async (HttpRequest request) =>
             {
-                string[] fields = options.RestSignalingServer.Split(';');
-                if (fields.Length < 3)
+                string sdpOffer;
+                using (var reader = new StreamReader(request.Body))
                 {
-                    throw new ArgumentException("The 'rest' option must contain 3 semi-colon separated fields, e.g. --rest=https://localhost:5001/api/webrtcsignal;myid;theirid.");
+                    sdpOffer = await reader.ReadToEndAsync().ConfigureAwait(false);
                 }
 
-                Console.WriteLine($"Connecting to REST signaling server at {fields[0]}, our ID={fields[1]}, their ID={fields[2]}.");
+                _logger.LogInformation("Received SDP Offer:\n{Sdp}", sdpOffer);
 
-                var restSignalingPeer = new WebRTCRestSignalingPeer(fields[0], fields[1], fields[2], () => CreatePeerConnection(cert));
-                await restSignalingPeer.Start(cts);
+                var pc = await CreatePeerConnection();
 
-                Console.WriteLine($"Waiting for remote REST signaling peer to connect...");
-                Console.WriteLine("Press ctrl-c to exit.");
-            }
+                var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sdpOffer, type = RTCSdpType.offer });
 
-            // Ctrl-c will gracefully exit the call at any point.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                cts.Cancel();
-                exitMre.Set();
-            };
+                if(result == SetDescriptionResultEnum.OK)
+                {
+                    var answerSdp = pc.createAnswer();
 
-            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-            exitMre.WaitOne();
+                    await pc.setLocalDescription(answerSdp);
+
+                    _logger.LogInformation("Returning answer SDP:\n{Sdp}", answerSdp.sdp);
+
+                    return Results.Text(pc.localDescription.sdp.ToString());
+                }
+                else
+                {
+                    _logger.LogError("Failed to set remote description: {Result}", result);
+                    return Results.BadRequest(result.ToString());
+                }
+            });
+
+            await app.RunAsync();
         }
 
-        private static Task<RTCPeerConnection> CreatePeerConnection(X509Certificate2 cert)
+        private static Task<RTCPeerConnection> CreatePeerConnection()
         {
             //RTCConfiguration config = new RTCConfiguration
             //{
@@ -129,7 +119,7 @@ namespace demo
             var pc = new RTCPeerConnection(null);
 
             //var testPatternSource = new VideoTestPatternSource(new SIPSorceryMedia.Encoders.VideoEncoder());
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, logger);
+            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, ffmpegLibFullPath, _logger);
             var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
             testPatternSource.SetFrameRate(TEST_PATTERN_FRAMES_PER_SECOND);
             //testPatternSource.SetMaxFrameRate(true);
@@ -146,10 +136,18 @@ namespace demo
             testPatternSource.OnVideoSourceRawSample += MesasureTestPatternSourceFrameRate;
             testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
             pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
-            
+
+            AudioExtrasSource audioSource = new AudioExtrasSource(new AudioEncoder(includeOpus: false), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+            //audioSource.RestrictFormats(x => x.FormatName == "OPUS");
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(audioTrack);
+            pc.OnAudioFormatsNegotiated += (audioFormats) => audioSource.SetAudioSourceFormat(audioFormats.First());
+
             pc.onconnectionstatechange += async (state) =>
             {
-                logger.LogDebug($"Peer connection state change to {state}.");
+                _logger.LogDebug($"Peer connection state change to {state}.");
 
                 if (state == RTCPeerConnectionState.failed)
                 {
@@ -157,11 +155,13 @@ namespace demo
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
+                    await audioSource.CloseAudio();
                     await testPatternSource.CloseVideo();
                     testPatternSource.Dispose();
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
+                    await audioSource.StartAudio();
                     await testPatternSource.StartVideo();
                 }
             };
@@ -170,18 +170,18 @@ namespace demo
             //pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
             //pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
-            pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+            pc.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state change to {state}.");
             pc.onsignalingstatechange += () =>
             {
-                if(pc.signalingState == RTCSignalingState.have_local_offer)
+                if (pc.signalingState == RTCSignalingState.have_local_offer)
                 {
-                    logger.LogDebug($"Local SDP set, type {pc.localDescription.type}.");
-                    logger.LogDebug(pc.localDescription.sdp.ToString());
+                    _logger.LogDebug($"Local SDP set, type {pc.localDescription.type}.");
+                    _logger.LogDebug(pc.localDescription.sdp.ToString());
                 }
-                else if(pc.signalingState == RTCSignalingState.have_remote_offer)
+                else if (pc.signalingState == RTCSignalingState.have_remote_offer)
                 {
-                    logger.LogDebug($"Remote SDP set, type {pc.remoteDescription.type}.");
-                    logger.LogDebug(pc.remoteDescription.sdp.ToString());
+                    _logger.LogDebug($"Remote SDP set, type {pc.remoteDescription.type}.");
+                    _logger.LogDebug(pc.remoteDescription.sdp.ToString());
                 }
             };
 
@@ -190,7 +190,7 @@ namespace demo
 
         private static void MesasureTestPatternSourceFrameRate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
-            if(_startTime == DateTime.MinValue)
+            if (_startTime == DateTime.MinValue)
             {
                 _startTime = DateTime.Now;
             }
@@ -200,7 +200,7 @@ namespace demo
             if (DateTime.Now.Subtract(_startTime).TotalSeconds > 5)
             {
                 double fps = _frameCount / DateTime.Now.Subtract(_startTime).TotalSeconds;
-                Console.WriteLine($"Frame rate {fps:0.##}fps.");
+                _logger.LogDebug($"Frame rate {fps:0.##}fps.");
                 _startTime = DateTime.Now;
                 _frameCount = 0;
             }

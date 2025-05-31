@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,13 +29,23 @@ namespace SIPSorcery.Net
 {
     public class AudioStream : MediaStream
     {
+        private const uint DEFAULT_AUDIO_SAMPLE_DURATION_MILLISECONDS = 20;
+
         protected static ILogger logger = Log.Logger;
         protected bool rtpEventInProgress = false;
 
         private bool sendingFormatFound = false;
 
+        private bool _rtpPreviousTimestampSet = false;
+
         /// <summary>
-        /// The audio format negotiated fir the audio stream by the SDP offer/answer exchange.
+        /// The RTP timestamp for the previously received RTP packet. Used to calculate the
+        /// duration of the RTP packet in RTP timestamp units.
+        /// </summary>
+        private uint _rtpPreviousTimestamp = 0;
+
+        /// <summary>
+        /// The audio format negotiated for the audio stream by the SDP offer/answer exchange.
         /// </summary>
         public SDPAudioVideoMediaFormat NegotiatedFormat { get; private set; }
 
@@ -42,6 +53,8 @@ namespace SIPSorcery.Net
         /// Gets fired when the remote SDP is received and the set of common audio formats is set.
         /// </summary>
         public event Action<int, List<AudioFormat>> OnAudioFormatsNegotiatedByIndex;
+
+        public event Action<EncodedAudioFrame> OnAudioFrameReceived;
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -53,6 +66,11 @@ namespace SIPSorcery.Net
                 return (LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                   || (RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive);
             }
+        }
+
+        public AudioStream(RtpSessionConfig config, int index) : base(config, index)
+        {
+            MediaType = SDPMediaTypesEnum.audio;
         }
 
         /// <summary>
@@ -92,10 +110,10 @@ namespace SIPSorcery.Net
                 {
                     // Basic RTP audio formats (such as G711, G722) do not have a concept of frames. The payload of the RTP packet is
                     // considered a single frame. This results in a problem is the audio frame being sent is larger than the MTU. In 
-                    // that case the audio frame must be split across mutliple RTP packets. Unlike video frames theres no way to 
+                    // that case the audio frame must be split across mutliple RTP packets. Unlike video frames there's no way to 
                     // indicate that a series of RTP packets are correlated to the same timestamp. For that reason if an audio buffer
                     // is supplied that's larger than MTU it will be split and the timestamp will be adjusted to best fit each RTP 
-                    // paylaod.
+                    // payload.
                     // See https://github.com/sipsorcery/sipsorcery/issues/394.
 
                     int maxPayload = RTPSession.RTP_MAX_PAYLOAD;
@@ -253,9 +271,29 @@ namespace SIPSorcery.Net
             }
         }
 
-        public AudioStream(RtpSessionConfig config, int index) : base(config, index)
+        protected override void ProcessRtpPacket(IPEndPoint remoteEndPoint, RTPPacket rtpPacket, SDPAudioVideoMediaFormat format)
         {
-            MediaType = SDPMediaTypesEnum.audio;
+            var audioFormat = format.ToAudioFormat();
+
+            if (!audioFormat.IsEmpty())
+            {
+                uint durationMilliseconds = _rtpPreviousTimestampSet switch
+                {
+                    true => RtpTimestampExtensions.ToDurationMillisecondsInt(rtpPacket.Header.GetTimestampDelta(_rtpPreviousTimestamp), audioFormat.RtpClockRate),
+                    false => DEFAULT_AUDIO_SAMPLE_DURATION_MILLISECONDS
+                };
+
+                OnAudioFrameReceived?.Invoke(new EncodedAudioFrame(Index, format.ToAudioFormat(), durationMilliseconds, rtpPacket.Payload));
+            }
+
+            RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
+
+            _rtpPreviousTimestamp = rtpPacket.Header.Timestamp;
+
+            if (!_rtpPreviousTimestampSet)
+            {
+                _rtpPreviousTimestampSet = true;
+            }
         }
     }
 }

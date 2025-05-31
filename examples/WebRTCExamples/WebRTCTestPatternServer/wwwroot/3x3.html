@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const STUN_URL = "stun:stun.cloudflare.com";
+        const TEST_SERVER_URL = "https://localhost:5443/offer";
+
+        var pcs = [];
+
+        async function start() {
+
+            for (i = 0; i < 9; i++) {
+                let name = `#videoCtl${i}`;
+                let pc = await startPeer(document.querySelector(name), name);
+                pcs.push(pc);
+
+                await new Promise(r => setTimeout(r, 1000));
+            }
+        }
+
+        async function startPeer(videoCtl, name) {
+
+            var pc = new RTCPeerConnection();
+            var vc = videoCtl;
+            var nm = name;
+
+            console.log(`start peer ${nm}.`);
+
+            pc.ontrack = ({ track, streams: [stream] }) => {
+                console.log(`pc.ontrack for ${nm}.`);
+                track.onunmute = () => {
+                    vc.srcObject = stream;
+                };
+            };
+
+            // Diagnostics.
+            pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            pc.oniceconnectionstatechange = () => console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
+            pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
+
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            await createAndSendOffer(pc);
+
+            return pc;
+        };
+
+        async function createAndSendOffer(pc) {
+            // Create an SDP offer:
+            console.log("Creating SDP offer...");
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            console.log("Local description (offer) set.");
+
+            const sdpOffer = pc.localDescription.sdp;
+            console.log("Sending SDP offer to signaling server:\n", sdpOffer);
+
+            const response = await fetch(document.querySelector('#testserverurl').value, {
+                method: "POST",
+                headers: { "Content-Type": "application/sdp" },
+                body: sdpOffer
+            });
+
+            if (!response.ok) {
+                console.error("Failed to negotiate SDP with server. HTTP status:", response.status);
+                return;
+            }
+
+            const sdpAnswer = await response.text();
+            console.log("Received SDP answer from server:\n", sdpAnswer);
+
+            const answerDesc = new RTCSessionDescription({
+                type: "answer",
+                sdp: sdpAnswer
+            });
+            await pc.setRemoteDescription(answerDesc);
+            console.log("Remote description (answer) set successfully.");
+        }
+
+        function closePeers() {
+
+            pcs.forEach((pc) => {
+                console.log("close peer");
+                pc.close();
+            });
+        };
+
+    </script>
+</head>
+<body>
+
+    <div>
+        <input type="text" id="testserverurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeers();">Close</button>
+    </div>
+
+    <video controls autoplay="autoplay" id="videoCtl0" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl1" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl2" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl3" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl4" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl5" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl6" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl7" width="640" height="480"></video>
+    <video controls autoplay="autoplay" id="videoCtl8" width="640" height="480"></video>
+
+</body>
+
+<script>
+    document.querySelector('#testserverurl').value = TEST_SERVER_URL;
+</script>

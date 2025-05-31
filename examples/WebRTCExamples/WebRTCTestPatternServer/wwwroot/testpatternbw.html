@@ -4,10 +4,10 @@
 
     <script type="text/javascript">
 
-        const STUN_URL = "stun:stun.sipsorcery.com";
-        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+        const STUN_URL = "stun:stun.cloudflare.com";
+        const TEST_SERVER_URL = "https://localhost:5443/offer"
 
-        var pc, ws, getBitrateInterval;
+        var pc, getBitrateInterval;
         var lastBytesReceived = 0, lastTimestamp = 0;
 
         async function start() {
@@ -16,7 +16,6 @@
             getBitrateInterval = window.setInterval(getBitrate, 1000);
 
             pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
-            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
             // Diagnostics.
             pc.onicegatheringstatechange = () => console.log("onicegatheringstatechange: " + pc.iceGatheringState);
@@ -24,18 +23,38 @@
             pc.onsignalingstatechange = () => console.log("onsignalingstatechange: " + pc.signalingState);
             pc.onconnectionstatechange = () => console.log("onconnectionstatechange: " + pc.connectionState);
 
-            ws = new WebSocket(document.querySelector('#websockurl').value, []);
-            ws.onmessage = async function (evt) {
-                if (/^[\{"'\s]*candidate/.test(evt.data)) {
-                    pc.addIceCandidate(JSON.parse(evt.data));
-                }
-                else {
-                    await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(evt.data)));
-                    pc.createAnswer()
-                        .then((answer) => pc.setLocalDescription(answer))
-                        .then(() => ws.send(JSON.stringify(pc.localDescription)));
-                }
-            };
+            pc.addTransceiver("audio", { direction: "recvonly" });
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            // Create an SDP offer:
+            console.log("Creating SDP offer...");
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            console.log("Local description (offer) set.");
+
+            const sdpOffer = pc.localDescription.sdp;
+            console.log("Sending SDP offer to signaling server:\n", sdpOffer);
+
+            const response = await fetch(document.querySelector('#testserverurl').value, {
+                method: "POST",
+                headers: { "Content-Type": "application/sdp" },
+                body: sdpOffer
+            });
+
+            if (!response.ok) {
+                console.error("Failed to negotiate SDP with server. HTTP status:", response.status);
+                return;
+            }
+
+            const sdpAnswer = await response.text();
+            console.log("Received SDP answer from server:\n", sdpAnswer);
+
+            const answerDesc = new RTCSessionDescription({
+                type: "answer",
+                sdp: sdpAnswer
+            });
+            await pc.setRemoteDescription(answerDesc);
+            console.log("Remote description (answer) set successfully.");
         };
 
         function getBitrate() {
@@ -69,7 +88,6 @@
 
         async function closePeer() {
             await pc.close();
-            await ws.close();
             clearInterval(getBitrateInterval);
         };
 
@@ -80,7 +98,7 @@
     <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
 
     <div>
-        <input type="text" id="websockurl" size="40" />
+        <input type="text" id="testserverurl" size="40" />
         <button type="button" class="btn btn-success" onclick="start();">Start</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
     </div>
@@ -90,5 +108,5 @@
 </body>
 
 <script>
-    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+    document.querySelector('#testserverurl').value = TEST_SERVER_URL;
 </script>

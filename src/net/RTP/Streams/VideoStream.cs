@@ -21,7 +21,6 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP.Packetisation;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
@@ -69,6 +68,12 @@ namespace SIPSorcery.Net
         /// process.
         /// </summary>
         public int MaxReconstructedVideoFrameSize { get; set; } = 1048576;
+
+        public VideoStream(RtpSessionConfig config, int index) : base(config, index)
+        {
+            MediaType = SDPMediaTypesEnum.video;
+            NegotiatedRtpEventPayloadID = 0;
+        }
 
         /// <summary>
         /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
@@ -260,12 +265,13 @@ namespace SIPSorcery.Net
                 }
             }
         }
+
         /// <summary>
-        /// 
+        /// Sends a JPEG frame as one or more RTP packets.
         /// </summary>
-        /// <param name="durationRtpUnits"></param>
-        /// <param name="payloadID"></param>
-        /// <param name="sample"></param>
+        /// <param name="durationRtpUnits"> The duration in timestamp units of the payload.</param>
+        /// <param name="payloadID">The payload ID to place in the RTP header.</param>
+        /// <param name="sample">The JPEG encoded payload.</param>
         public void SendMJPEGFrame(uint durationRtpUnits, int payloadID, byte[] sample)
         {
             if (CheckIfCanSendRtpRaw())
@@ -312,7 +318,6 @@ namespace SIPSorcery.Net
         /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
         /// value is added to the previous RTP timestamp when building the RTP header.</param>
         /// <param name="sample">The video sample to set as the RTP packet payload.</param>
-        ///
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             if (!sendingFormatFound)
@@ -340,6 +345,12 @@ namespace SIPSorcery.Net
                 default:
                     throw new ApplicationException($"Unsupported video format selected {sendingFormat.FormatName}.");
             }
+        }
+
+        protected override void ProcessRtpPacket(IPEndPoint remoteEndPoint, RTPPacket rtpPacket, SDPAudioVideoMediaFormat format)
+        {
+            ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format);
+            RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
         }
 
         public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
@@ -390,12 +401,6 @@ namespace SIPSorcery.Net
                             LocalTrack.Capabilities
                             .Select(x => x.ToVideoFormat()).ToList());
             }
-        }
-
-        public VideoStream(RtpSessionConfig config, int index) : base(config, index)
-        {
-            MediaType = SDPMediaTypesEnum.video;
-            NegotiatedRtpEventPayloadID = 0;
         }
     }
 }

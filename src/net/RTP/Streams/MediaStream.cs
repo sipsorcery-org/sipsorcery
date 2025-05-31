@@ -31,17 +31,15 @@ namespace SIPSorcery.Net
             public int localPort;
             public IPEndPoint remoteEndPoint;
             public byte[] buffer;
-            public VideoStream videoStream;
 
             public PendingPackages() { }
 
-            public PendingPackages(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream)
+            public PendingPackages(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
             {
                 this.hdr = hdr;
                 this.localPort = localPort;
                 this.remoteEndPoint = remoteEndPoint;
                 this.buffer = buffer;
-                this.videoStream = videoStream;
             }
         }
 
@@ -99,7 +97,7 @@ namespace SIPSorcery.Net
         ///  - The media type the packet contains, will be audio or video,
         ///  - The RTP Header exension URI.
         /// </summary>
-        public event Action<int, IPEndPoint, SDPMediaTypesEnum, String, Object> OnRtpHeaderReceivedByIndex;
+        public event Action<int, IPEndPoint, SDPMediaTypesEnum, string, object> OnRtpHeaderReceivedByIndex;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
@@ -184,7 +182,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// The remote video track. Will be null if the remote party is not sending this media
+        /// The remote track. Will be null if the remote party is not sending this media
         /// </summary>
         public MediaStreamTrack RemoteTrack
         {
@@ -228,6 +226,12 @@ namespace SIPSorcery.Net
                                 SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
                                 "0-16");
             }
+        }
+
+        public MediaStream(RtpSessionConfig config, int index)
+        {
+            RtpSessionConfig = config;
+            this.Index = index;
         }
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
@@ -412,7 +416,7 @@ namespace SIPSorcery.Net
                     foreach (var ext in LocalTrack.HeaderExtensions.Values)
                     {
                         // We support up to 14 extensions .... Not clear at all how to manage more ...
-                        if ( (ext.Id < 1) || (ext.Id > 14) )
+                        if ((ext.Id < 1) || (ext.Id > 14))
                         {
                             continue;
                         }
@@ -429,18 +433,18 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    if(payload?.Length > 0)
+                    if (payload?.Length > 0)
                     {
                         // Need to round to 4 bytes boundaries
                         var roundedExtSize = payload.Length % 4;
-                        if(roundedExtSize > 0)
+                        if (roundedExtSize > 0)
                         {
                             var padding = Enumerable.Repeat((byte)0, 4 - roundedExtSize).ToArray();
                             payload = Combine(payload, padding);
                         }
 
                         rtpPacket.Header.HeaderExtensionFlag = 1; // We have at least one extension
-                        rtpPacket.Header.ExtensionLength = (ushort) (payload.Length / 4);  // payload length / 4 
+                        rtpPacket.Header.ExtensionLength = (ushort)(payload.Length / 4);  // payload length / 4 
                         rtpPacket.Header.ExtensionProfile = RTPHeader.ONE_BYTE_EXTENSION_PROFILE; // We support up to 14 extensions .... Not clear at all how to manage more ...
                         rtpPacket.Header.ExtensionPayload = payload;
                     }
@@ -506,7 +510,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
-                        //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
+                            //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
                             if (ext is TransportWideCCExtension transportWideCCExtension)
                             {
                                 transportWideCCExtension.Set(_twccPacketCount++);
@@ -663,7 +667,7 @@ namespace SIPSorcery.Net
             SendRtcpReport(reportBytes);
         }
 
-        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             RTPPacket rtpPacket;
             if (NegotiatedRtpEventPayloadID != 0 && hdr.PayloadType == NegotiatedRtpEventPayloadID)
@@ -672,7 +676,7 @@ namespace SIPSorcery.Net
                 {
                     // Cache pending packages to use it later to prevent missing frames
                     // when DTLS was not completed yet as a Server bt already completed as a client
-                    AddPendingPackage(hdr, localPort, remoteEndPoint, buffer, videoStream);
+                    AddPendingPackage(hdr, localPort, remoteEndPoint, buffer);
                     return;
                 }
 
@@ -692,35 +696,20 @@ namespace SIPSorcery.Net
                 }
             }
 
-            // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
-            // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
-            // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual 
-            // intervention to synchronise.
-            //if (RemoteDescription != null)
-            //{
-
-            // Don't hand RTP packets to the application until the remote description has been set. Without it
-            // things like the common codec, DTMF support etc. are not known.
-
-            //SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
-
-            // For video RTP packets an attempt will be made to collate into frames. It's up to the application
-            // whether it wants to subscribe to frames of RTP packets.
-
             if (RemoteTrack != null)
             {
                 LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
                 ProcessHeaderExtensions(hdr, remoteEndPoint);
             }
+
             if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
             {
                 return;
             }
 
-            // When receiving an Payload from other peer, it will be related to our LocalDescription,
-            // not to RemoteDescription (as proved by Azure WebRTC Implementation)
             var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
-            if ((rtpPacket != null) && (format != null))
+
+            if (rtpPacket != null && format != null)
             {
                 if (UseBuffer())
                 {
@@ -733,18 +722,30 @@ namespace SIPSorcery.Net
                             LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
                             RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
                         }
-                        videoStream?.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, format.Value);
-                        RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, bufferedPacket);
+                        ProcessRtpPacket(remoteEndPoint, bufferedPacket, format.Value);
                     }
                 }
                 else
                 {
-                    videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format.Value);
-                    RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
+                    ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
                 }
 
                 RtcpSession?.RecordRtpPacketReceived(rtpPacket);
             }
+        }
+
+        /// <summary>
+        /// Do any additional processing for the RTP packet. For vidoe streams this method will be overridden to handle video packetisation.
+        /// Audio and other media types typially don't use framing but have other processing they'd like to do.
+        /// </summary>
+        /// <param name="remoteEndPoint">The remote peer the RTP pakcet was received from.</param>
+        /// <param name="rtpPacket">The RTP apcet received.</param>
+        /// <param name="format">The SDP format for the payload ID in the RTP header.</param>
+        protected virtual void ProcessRtpPacket(IPEndPoint remoteEndPoint, RTPPacket rtpPacket, SDPAudioVideoMediaFormat format)
+        {
+            // If not overridden the default behaviour is to raise an event to inform the owner of the RTP transport
+            // that a new RTP packet has been received.
+            RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
         }
 
         public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
@@ -788,7 +789,7 @@ namespace SIPSorcery.Net
                 {
                     if (pendingPackage != null)
                     {
-                        OnReceiveRTPPacket(pendingPackage.hdr, pendingPackage.localPort, pendingPackage.remoteEndPoint, pendingPackage.buffer, pendingPackage.videoStream);
+                        OnReceiveRTPPacket(pendingPackage.hdr, pendingPackage.localPort, pendingPackage.remoteEndPoint, pendingPackage.buffer);
                     }
                 }
             }
@@ -805,7 +806,7 @@ namespace SIPSorcery.Net
 
         // Cache pending packages to use it later to prevent missing frames
         // when DTLS was not completed yet as a Server but already completed as a client
-        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             const int MAX_PENDING_PACKAGES_BUFFER_SIZE = 32;
 
@@ -818,7 +819,7 @@ namespace SIPSorcery.Net
                     {
                         _pendingPackagesBuffer.RemoveAt(0);
                     }
-                    _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer, videoStream));
+                    _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer));
                 }
                 return true;
             }
@@ -966,18 +967,12 @@ namespace SIPSorcery.Net
         {
             header.GetHeaderExtensions().ToList().ForEach(rtpHeaderExtensionData =>
             {
-                if(RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
+                if (RemoteTrack?.HeaderExtensions?.TryGetValue(rtpHeaderExtensionData.Id, out RTPHeaderExtension rtpHeaderExtension) == true)
                 {
                     var value = rtpHeaderExtension.Unmarshal(header, rtpHeaderExtensionData.Data);
                     OnRtpHeaderReceivedByIndex?.Invoke(Index, remoteEndPoint, MediaType, rtpHeaderExtension.Uri, value);
                 }
             });
-        }
-
-        public MediaStream(RtpSessionConfig config, int index)
-        {
-            RtpSessionConfig = config;
-            this.Index = index;
         }
     }
 }
