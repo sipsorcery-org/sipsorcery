@@ -271,7 +271,6 @@ namespace SIPSorcery.Media
                     await Media.TextSink.StartTextSink().ConfigureAwait(false);
                 }
             }
-
         }
 
         public async override void Close(string reason)
