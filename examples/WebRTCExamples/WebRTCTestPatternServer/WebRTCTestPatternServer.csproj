@@ -1,27 +1,24 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>12.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.8.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <Content Include="Properties\launchSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.7" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
   </ItemGroup>
     
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
     </ItemGroup>
-
-  <ItemGroup>
-    <None Update="localhost.pfx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 
 </Project>

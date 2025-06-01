@@ -650,7 +650,7 @@ a=rtpmap:100 VP8/90000";
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 
-            var answer = pc.CreateAnswer(null);
+            var answer = pc.createAnswer();
 
             logger.LogDebug("Local answer: {Answer}", answer);
 
@@ -1007,7 +1007,7 @@ a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:A
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 
-            var answer = pc.CreateAnswer(null);
+            var answer = pc.createAnswer();
 
             logger.LogDebug("Local answer: {Answer}", answer);
 

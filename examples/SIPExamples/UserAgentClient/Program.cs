@@ -129,7 +129,7 @@ namespace demo
                             uac.Hangup();
                         }
                     }
-                    else if(!rtpSession.IsStarted)
+                    else if(!rtpSession.IsAudioStarted)
                     {
                         Log.LogWarning($"Failed to set get remote description in session progress or final response.");
                         uac.Hangup();

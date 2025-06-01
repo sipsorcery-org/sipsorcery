@@ -9,13 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.7" />
-    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.7" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
   </ItemGroup>
 
     <ItemGroup>

@@ -57,7 +57,7 @@ namespace SIPSorcery.Media
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G729),
 
             // Need more testing befoer adding OPUS by default. 24 Dec 2024 AC.
-            //new AudioFormat(111, "OPUS", OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
+            //new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
         };
 
         public List<AudioFormat> SupportedFormats
@@ -80,8 +80,13 @@ namespace SIPSorcery.Media
 
             if(includeOpus)
             {
-                _supportedFormats.Add(new AudioFormat(111, "OPUS", OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
+                _supportedFormats.Add(new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
             }
+        }
+
+        public AudioEncoder(params AudioFormat[] supportedFormats)
+        {
+            _supportedFormats = supportedFormats.ToList();
         }
 
         public byte[] EncodeAudio(short[] pcm, AudioFormat format)
@@ -134,9 +139,11 @@ namespace SIPSorcery.Media
             }
             else if (format.Codec == AudioCodecsEnum.OPUS)
             {
+                var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
+
                 if (_opusEncoder == null)
                 {
-                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, format.ChannelCount, OpusApplication.OPUS_APPLICATION_VOIP);
+                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, channelCount, OpusApplication.OPUS_APPLICATION_VOIP);
                 }
 
                 // Opus expects PCM data in float format [-1.0, 1.0].
@@ -146,8 +153,8 @@ namespace SIPSorcery.Media
                     pcmFloat[i] = pcm[i] / 32768f; // Convert to float range [-1.0, 1.0]
                 }
 
-                byte[] encodedSample = new byte[pcm.Length];
-                int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / format.ChannelCount, encodedSample, encodedSample.Length);
+                byte[] encodedSample = new byte[OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount];
+                int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / channelCount, encodedSample, encodedSample.Length);
                 return encodedSample.Take(encodedLength).ToArray();
             }
             else
@@ -246,19 +253,6 @@ namespace SIPSorcery.Media
         public short[] Resample(short[] pcm, int inRate, int outRate)
         {
             return PcmResampler.Resample(pcm, inRate, outRate);
-        }
-
-        private short ClampToShort(float value)
-        {
-            if (value > short.MaxValue)
-            {
-                return short.MaxValue;
-            }
-            if (value < short.MinValue)
-            {
-                return short.MinValue;
-            }
-            return (short)value;
         }
 
         private float ClampToFloat(float value, float min, float max)

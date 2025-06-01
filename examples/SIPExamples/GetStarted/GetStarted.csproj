@@ -10,7 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.7" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
     <PackageReference Include="System.Net.Security" Version="4.3.2" />
   </ItemGroup>
 
