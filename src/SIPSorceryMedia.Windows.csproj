@@ -3,7 +3,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <!--<PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.10" />-->
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.12" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -60,10 +60,6 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
 	<None Include="..\README.md" Pack="true" PackagePath="" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\SIPSorceryMedia.Abstractions\src\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
