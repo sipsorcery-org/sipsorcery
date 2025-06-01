@@ -27,7 +27,7 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.8" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
   </ItemGroup>
 
     <ItemGroup>
