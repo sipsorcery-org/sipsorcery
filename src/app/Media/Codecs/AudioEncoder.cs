@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: AudioEncoder.cs
 //
 // Description: Audio codecs for the simpler codecs.
@@ -76,9 +76,9 @@ namespace SIPSorcery.Media
                 _supportedFormats.AddRange(_linearFormats);
             }
 
-            if(includeOpus)
+            if (includeOpus)
             {
-                _supportedFormats.Insert(0, new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
+                _supportedFormats.Add(new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
             }
         }
 
@@ -89,68 +89,68 @@ namespace SIPSorcery.Media
 
         public byte[] EncodeAudio(short[] pcm, AudioFormat format)
         {
-            if (format.Codec == AudioCodecsEnum.G722)
+            switch(format.Codec)
             {
-                if (_g722Codec == null)
-                {
-                    _g722Codec = new G722Codec();
-                    _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
-                }
+                case AudioCodecsEnum.G722:
+                    {
+                        if (_g722Codec == null)
+                        {
+                            _g722Codec = new G722Codec();
+                            _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                        }
 
-                int outputBufferSize = pcm.Length / 2;
-                byte[] encodedSample = new byte[outputBufferSize];
-                int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
+                        int outputBufferSize = pcm.Length / 2;
+                        byte[] encodedSample = new byte[outputBufferSize];
+                        int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
 
-                return encodedSample;
-            }
-            else if (format.Codec == AudioCodecsEnum.G729)
-            {
-                if (_g729Encoder == null)
-                {
-                    _g729Encoder = new G729Encoder();
-                }
+                        return encodedSample;
+                    }
+                case AudioCodecsEnum.G729:
+                    {
+                        if (_g729Encoder == null)
+                        {
+                            _g729Encoder = new G729Encoder();
+                        }
 
-                byte[] pcmBytes = new byte[pcm.Length * sizeof(short)];
-                Buffer.BlockCopy(pcm, 0, pcmBytes, 0, pcmBytes.Length);
-                return _g729Encoder.Process(pcmBytes);
-            }
-            else if (format.Codec == AudioCodecsEnum.PCMA)
-            {
-                return pcm.Select(x => ALawEncoder.LinearToALawSample(x)).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.PCMU)
-            {
-                return pcm.Select(x => MuLawEncoder.LinearToMuLawSample(x)).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.L16)
-            {
-                // When netstandard2.1 can be used.
-                //return MemoryMarshal.Cast<short, byte>(pcm)
+                        byte[] pcmBytes = new byte[pcm.Length * sizeof(short)];
+                        Buffer.BlockCopy(pcm, 0, pcmBytes, 0, pcmBytes.Length);
+                        return _g729Encoder.Process(pcmBytes);
+                    }
+                case AudioCodecsEnum.PCMU:
+                    return pcm.Select(x => MuLawEncoder.LinearToMuLawSample(x)).ToArray();
+                case AudioCodecsEnum.PCMA:
+                    return pcm.Select(x => ALawEncoder.LinearToALawSample(x)).ToArray();
+                case AudioCodecsEnum.L16:
+                    // When netstandard2.1 can be used.
+                    //return MemoryMarshal.Cast<short, byte>(pcm)
+                    // Put on the wire in network byte order (big endian).
+                    return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) }).ToArray();
+                case AudioCodecsEnum.PCM_S16LE:
+                    // Put on the wire as little endian.
+                    return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
 
-                // Put on the wire in network byte order (big endian).
-                return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) }).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
-            {
-                // Put on the wire as little endian.
-                return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
-            }
-            else if ((format.FormatName??"").ToUpper() == "OPUS")
-            {
-                var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
-                if (_opusEncoder == null)
-                {
-                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, channelCount, OpusApplication.OPUS_APPLICATION_VOIP);
-                    _opusEncodedSampleBuffer = new byte[OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount];
-                }
-                //OPUS for webrtc almost always uses 48hz stereo @ 20ms so ensure audio is in that format before encoding. pcm.Length should be 1920.
-                int samplesPerChannel = pcm.Length / format.ChannelCount;
-                int encodedLength = _opusEncoder.Encode(pcm, samplesPerChannel, _opusEncodedSampleBuffer, _opusEncodedSampleBuffer.Length);
-                return _opusEncodedSampleBuffer.Take(encodedLength).ToArray();
-            }
-            else
-            {
-                throw new ApplicationException($"Audio format {format.Codec} cannot be encoded.");
+                default:
+                case AudioCodecsEnum.Unknown:
+                    {
+                        switch(format.FormatName?.ToUpper())
+                        {
+                            //OPUS doesn't have a set ID so match on name
+                            case "OPUS":
+                                var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
+                                if (_opusEncoder == null)
+                                {
+                                    _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, channelCount, OpusApplication.OPUS_APPLICATION_VOIP);
+                                    _opusEncodedSampleBuffer = new byte[OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount];
+                                }
+                                //OPUS for webrtc almost always uses 48khz stereo @ 20ms so ensure audio is in that format before encoding. pcm.Length should be 1920.
+                                int samplesPerChannel = pcm.Length / format.ChannelCount;
+                                int encodedLength = _opusEncoder.Encode(pcm, samplesPerChannel, _opusEncodedSampleBuffer, _opusEncodedSampleBuffer.Length);
+                                return _opusEncodedSampleBuffer.Take(encodedLength).ToArray();
+                            default:
+                                throw new ApplicationException($"Audio format {format.Codec} cannot be encoded.");
+                        }
+                    }
+
             }
         }
 
@@ -259,7 +259,7 @@ namespace SIPSorcery.Media
             DisposeInternal();
             GC.SuppressFinalize(this);
         }
-        
+
         ~AudioEncoder()
         {
             DisposeInternal();
@@ -273,6 +273,6 @@ namespace SIPSorcery.Media
                 _disposed = true;
             }
         }
-        
+
     }
 }
