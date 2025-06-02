@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
 
         public uint GetPayloadLength()
         {
-            return (uint)(_payload?.Length ?? _payloadSegment.Count);
+            return (uint)(_payload?.Length ?? _payloadSegment.Count + _srtpProtectionLength);
         }
 
         public byte[] GetPayloadBytes()
