@@ -39,6 +39,7 @@ namespace SIPSorcery.Media
 
         private IOpusDecoder _opusDecoder;
         private IOpusEncoder _opusEncoder;
+        private byte[] _opusEncodedSampleBuffer;
 
         private List<AudioFormat> _linearFormats = new List<AudioFormat>
         {
@@ -55,9 +56,6 @@ namespace SIPSorcery.Media
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G729),
-
-            // Need more testing befoer adding OPUS by default. 24 Dec 2024 AC.
-            //new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
         };
 
         public List<AudioFormat> SupportedFormats
@@ -80,7 +78,7 @@ namespace SIPSorcery.Media
 
             if(includeOpus)
             {
-                _supportedFormats.Add(new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
+                _supportedFormats.Insert(0, new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
             }
         }
 
@@ -137,25 +135,18 @@ namespace SIPSorcery.Media
                 // Put on the wire as little endian.
                 return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
             }
-            else if (format.Codec == AudioCodecsEnum.OPUS)
+            else if ((format.FormatName??"").ToUpper() == "OPUS")
             {
                 var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
-
                 if (_opusEncoder == null)
                 {
                     _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, channelCount, OpusApplication.OPUS_APPLICATION_VOIP);
+                    _opusEncodedSampleBuffer = new byte[OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount];
                 }
-
-                // Opus expects PCM data in float format [-1.0, 1.0].
-                float[] pcmFloat = new float[pcm.Length];
-                for (int i = 0; i < pcm.Length; i++)
-                {
-                    pcmFloat[i] = pcm[i] / 32768f; // Convert to float range [-1.0, 1.0]
-                }
-
-                byte[] encodedSample = new byte[OPUS_MAXIMUM_FRAME_SIZE * format.ChannelCount];
-                int encodedLength = _opusEncoder.Encode(pcmFloat, pcmFloat.Length / channelCount, encodedSample, encodedSample.Length);
-                return encodedSample.Take(encodedLength).ToArray();
+                //OPUS for webrtc almost always uses 48hz stereo @ 20ms so ensure audio is in that format before encoding. pcm.Length should be 1920.
+                int samplesPerChannel = pcm.Length / format.ChannelCount;
+                int encodedLength = _opusEncoder.Encode(pcm, samplesPerChannel, _opusEncodedSampleBuffer, _opusEncodedSampleBuffer.Length);
+                return _opusEncodedSampleBuffer.Take(encodedLength).ToArray();
             }
             else
             {
@@ -261,5 +252,27 @@ namespace SIPSorcery.Media
             if (value > max) { return max; }
             return value;
         }
+
+        private bool _disposed = false;
+        public void Dispose()
+        {
+            DisposeInternal();
+            GC.SuppressFinalize(this);
+        }
+        
+        ~AudioEncoder()
+        {
+            DisposeInternal();
+        }
+        private void DisposeInternal()
+        {
+            if (!_disposed)
+            {
+                _opusEncoder?.Dispose();
+                _opusDecoder?.Dispose();
+                _disposed = true;
+            }
+        }
+        
     }
 }
