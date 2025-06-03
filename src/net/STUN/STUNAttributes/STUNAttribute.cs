@@ -135,10 +135,17 @@ namespace SIPSorcery.Net
             }
         }
 
+        [Obsolete("Use STUNAttribute(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAttribute(STUNAttributeTypesEnum attributeType, byte[] value)
+            : this(attributeType, (ReadOnlySpan<byte>)value)
+        {
+        }
+
+        public STUNAttribute(STUNAttributeTypesEnum attributeType, ReadOnlySpan<byte> value)
         {
             AttributeType = attributeType;
-            Value = value;
+            Value = value.ToArray();
         }
 
         public STUNAttribute(STUNAttributeTypesEnum attributeType, ushort value)

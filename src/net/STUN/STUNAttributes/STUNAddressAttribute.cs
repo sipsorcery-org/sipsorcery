@@ -14,8 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.ComponentModel;
 using System.Net;
+using System.Runtime.InteropServices;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -37,19 +39,11 @@ namespace SIPSorcery.Net
         /// Reverted this obsoletion on 13 Nov 2024 AC. 
         /// </remarks>
         //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        [Obsolete("Use STUNAddressAttribute(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAddressAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.MappedAddress, attributeValue)
+            : this(STUNAttributeTypesEnum.MappedAddress, (ReadOnlySpan<byte>)attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2);
-            }
-
-            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
         /// <summary>
@@ -61,19 +55,42 @@ namespace SIPSorcery.Net
         /// Reverted this obsoletion on 13 Nov 2024 AC. 
         /// </remarks>
         //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        public STUNAddressAttribute(ReadOnlySpan<byte> attributeValue)
+            : this(STUNAttributeTypesEnum.MappedAddress, attributeValue)
+        {
+        }
+
+        /// <summary>
+        /// Parses an IPv4 Address attribute.
+        /// </summary>
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        [Obsolete("Use STUNAddressAttribute(STUNAttributeTypesEnum, ReadOnlySpan<byte>) instead.", false)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
+            : this(attributeType, (ReadOnlySpan<byte>)attributeValue)
+        {
+        }
+
+        /// <summary>
+        /// Parses an IPv4 Address attribute.
+        /// </summary>
+        /// <remarks>
+        /// There's no proper explanation of why this STUN attribute was obsoleted. My guess is to favour using the XOR Maoped Address attribute
+        /// BUT that does not help when a STUN server provides this atype of address attribute. It will still need to be parsed and understood,
+        /// Reverted this obsoletion on 13 Nov 2024 AC. 
+        /// </remarks>
+        //[Obsolete("Provided for backward compatibility with RFC3489 clients.")]
+        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, ReadOnlySpan<byte> attributeValue)
             : base(attributeType, attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2);
-            }
+            Port = BinaryPrimitives.ReadUInt16BigEndian(attributeValue.Slice(2, 2));
 
-            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
+            Address = attributeValue.Slice(4, 4).ToIPAddress();
         }
 
         /// <summary>
