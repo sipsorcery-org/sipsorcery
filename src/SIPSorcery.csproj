@@ -63,7 +63,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v8.0.21-pre: Improvements to OPUS encoder wiring.
+    <PackageReleaseNotes>-v8.0.22: Stable release.
+-v8.0.21-pre: Improvements to OPUS encoder wiring.
 -v8.0.20-pre: Improvements to the audio pipeline to avoid consumers needing to handle raw RTP packets.
 -v8.0.15-pre: BouncyCastle update (thanks to @joaoladeiraext).
 -v8.0.14: Fix for OPUS codec using multiple channels.
@@ -79,9 +80,9 @@
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>8.0.21-pre</Version>
-    <AssemblyVersion>8.0.21</AssemblyVersion>
-    <FileVersion>8.0.21</FileVersion>
+    <Version>8.0.22</Version>
+    <AssemblyVersion>8.0.22</AssemblyVersion>
+    <FileVersion>8.0.22</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
