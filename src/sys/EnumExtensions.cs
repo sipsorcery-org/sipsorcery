@@ -1,44 +1,33 @@
-﻿using System.Net.Sockets;
+﻿using System;
 
-[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<SIPSorcery.Net.STUNMessageTypesEnum>()]
-[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<SIPSorcery.Net.STUNAttributeTypesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.STUNMessageTypesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.STUNAttributeTypesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.SctpErrorCauseCode>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.SDPMediaTypesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.SDPSecurityDescription.SessionParameter.SrtpSessionParams>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.AlertLevelsEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.AlertTypesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.SctpChunkType>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.DataChannelTypes>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.DataChannelPayloadProtocols>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.STUNSchemesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.IceRolesEnum>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.SDPSecurityDescription.SessionParameter.FecTypes>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::SIPSorcery.Net.SDPSecurityDescription.CryptoSuites>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::Org.BouncyCastle.Bcpg.HashAlgorithmTag>()]
+//[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::System.Net.Sockets.AddressFamily>()]
+[assembly: global::NetEscapades.EnumGenerators.EnumExtensions<global::System.Net.Sockets.SocketError>()]
 
-namespace SIPSorcery.Sys;
-
-internal static class EnumExtensions
+#if NETFRAMEWORK || NETSTANDARD
+namespace SIPSorcery.Net
 {
-    public static string ToLowerString(this ProtocolType protocolType)
+    static partial class IceRolesEnumExtensions
     {
-        return protocolType switch
-        {
-            ProtocolType.IP => "ip",
-
-            ProtocolType.Icmp => "icmp",
-            ProtocolType.Igmp => "igmp",
-            ProtocolType.Ggp => "ggp",
-
-            ProtocolType.IPv4 => "ipv4",
-            ProtocolType.Tcp => "tcp",
-            ProtocolType.Pup => "pup",
-            ProtocolType.Udp => "udp",
-            ProtocolType.Idp => "idp",
-            ProtocolType.IPv6 => "ipv6",
-            ProtocolType.IPv6RoutingHeader => "routing",
-            ProtocolType.IPv6FragmentHeader => "fragment",
-            ProtocolType.IPSecEncapsulatingSecurityPayload => "ipsecencapsulatingsecuritypayload",
-            ProtocolType.IPSecAuthenticationHeader => "ipsecauthenticationheader",
-            ProtocolType.IcmpV6 => "icmpv6",
-            ProtocolType.IPv6NoNextHeader => "nonext",
-            ProtocolType.IPv6DestinationOptions => "dstopts",
-            ProtocolType.ND => "nd",
-            ProtocolType.Raw => "raw",
-
-            ProtocolType.Ipx => "ipx",
-            ProtocolType.Spx => "spx",
-            ProtocolType.SpxII => "spx2",
-            ProtocolType.Unknown => "unknown",
-
-            _ => protocolType.ToString().ToLowerInvariant()
-        };
+        public static bool TryParse(
+                ReadOnlySpan<char> name,
+                out IceRolesEnum value,
+                bool ignoreCase)
+            => System.Enum.TryParse<IceRolesEnum>(name.ToString(), ignoreCase, out value);
     }
 }
+#endif

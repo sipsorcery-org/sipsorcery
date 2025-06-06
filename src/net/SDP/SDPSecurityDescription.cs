@@ -41,7 +41,8 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPSecurityDescription
     {
-        public const string CRYPTO_ATTRIBUE_PREFIX = "a=crypto:";
+        public const string CRYPTO_ATTRIBUTE_NAME = "crypto";
+        public const string CRYPTO_ATTRIBUE_PREFIX = "a="+"crypto"+":";
         private readonly char[] WHITE_SPACES = new char[] { ' ', '\t' };
         private const char SEMI_COLON = ';';
         private const string COLON = ":";

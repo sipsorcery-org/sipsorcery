@@ -19,6 +19,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace SIPSorcery.Sys
 {
@@ -228,6 +229,66 @@ namespace SIPSorcery.Sys
             second = list.Count > 1 ? list[1] : default(T);
             third = list.Count > 2 ? list[2] : default(T);
             fourth = list.Count > 3 ? list[3] : default(T);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseUInt64(ReadOnlySpan<char> s, out ulong result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return ulong.TryParse(s, out result);
+#else
+            return ulong.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseInt64(ReadOnlySpan<char> s, out long result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return long.TryParse(s, out result);
+#else
+            return long.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseUInt32(ReadOnlySpan<char> s, out uint result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return uint.TryParse(s, out result);
+#else
+            return uint.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseInt32(ReadOnlySpan<char> s, out int result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return int.TryParse(s, out result);
+#else
+            return int.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseUInt16(ReadOnlySpan<char> s, out ushort result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return ushort.TryParse(s, out result);
+#else
+            return ushort.TryParse(s.ToString(), out result);
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryParseDecimal(ReadOnlySpan<char> s, out decimal result)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return decimal.TryParse(s, out result);
+#else
+            return decimal.TryParse(s.ToString(), out result);
+#endif
         }
     }
 }
