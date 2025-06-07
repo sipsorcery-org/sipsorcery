@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -51,11 +52,14 @@ namespace SIPSorcery.Net
             }
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
-
-            return attrDescrStr;
+            sb.Append("key byte=");
+            sb.Append(m_changeRequestByte, "X");
+            sb.Append(", change address=");
+            sb.Append(ChangeAddress);
+            sb.Append(", change port=");
+            sb.Append(ChangePort);
         }
     }
 }
