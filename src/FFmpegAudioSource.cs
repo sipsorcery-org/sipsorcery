@@ -35,6 +35,7 @@ namespace SIPSorceryMedia.FFmpeg
 
 #pragma warning disable CS0067
         public event RawAudioSampleDelegate? OnAudioSourceRawSample;
+        public event Action<EncodedAudioFrame>? OnAudioSourceEncodedFrameReady;
 #pragma warning restore CS0067
 
 
