@@ -449,7 +449,7 @@ namespace Vpx.Net.UnitTest
         /// The encoded frames in this sequence were generated from the WebRTC Test Pattern demo using
         /// the FFMpeg codec (which wraps libvpx but could be doing something different).
         /// </summary>
-        [Fact]
+        [Fact(Skip = "Capture.stm file missing.")]
         public unsafe void DecodeTestPatternSequence()
         {
             vpx_codec_ctx_t decoder = new vpx_codec_ctx_t();
