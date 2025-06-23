@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30611.23
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36212.18
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{D39CEEC7-7259-4780-805E-2BEF90FC1C5A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VP8.Net", "VP8.Net.csproj", "{DCD7850C-1124-4551-A4AC-6F78BC3929B0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VP8.Net.UnitTest", "..\test\VP8.Net.UnitTest\VP8.Net.UnitTest.csproj", "{60C20EC0-9628-40B5-B255-9DFB1A7C380E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VP8.Net.TestVectors", "..\test\VP8.Net.TestVectors\VP8.Net.TestVectors.csproj", "{13C5CB26-04FE-F39A-A3E6-3FBF3DD057FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,12 +25,17 @@ Global
 		{60C20EC0-9628-40B5-B255-9DFB1A7C380E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60C20EC0-9628-40B5-B255-9DFB1A7C380E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60C20EC0-9628-40B5-B255-9DFB1A7C380E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13C5CB26-04FE-F39A-A3E6-3FBF3DD057FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13C5CB26-04FE-F39A-A3E6-3FBF3DD057FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13C5CB26-04FE-F39A-A3E6-3FBF3DD057FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13C5CB26-04FE-F39A-A3E6-3FBF3DD057FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{60C20EC0-9628-40B5-B255-9DFB1A7C380E} = {D39CEEC7-7259-4780-805E-2BEF90FC1C5A}
+		{13C5CB26-04FE-F39A-A3E6-3FBF3DD057FD} = {D39CEEC7-7259-4780-805E-2BEF90FC1C5A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9648F85D-DDAA-448B-AA37-955C56C47B36}
