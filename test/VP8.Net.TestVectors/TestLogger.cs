@@ -4,10 +4,10 @@
 // Description: Helper class for test logging.
 //
 // Author(s):
-// Aaron Clauson (aaron@sipsorcery.com)
+// Copilot
 //
 // History:
-// 25 Dec 2024	Generated	Created for VP8 test vectors.
+// 25 Jun 2025	Generated	Copilot.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
