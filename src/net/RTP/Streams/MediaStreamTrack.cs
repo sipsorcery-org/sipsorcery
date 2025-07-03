@@ -55,7 +55,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The last abs-capture-time received from the remote peer for this stream.
         /// </summary>
-        public TimestampPair LastAbsoluteCaptureTimestamp{ get; internal set; }
+        public TimestampPair LastAbsoluteCaptureTimestamp { get; internal set; }
 
         /// <summary>
         /// The value used in the RTP Timestamp header field for media packets
@@ -128,7 +128,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogWarning("The maximum bandwith cannot be set for remote tracks.");
+                    logger.LogRtpMaximumBandwidthRemoteTrack();
                 }
             }
         }
@@ -175,8 +175,8 @@ namespace SIPSorcery.Net
             HeaderExtensions = headerExtensions ?? new Dictionary<int, RTPHeaderExtension>();
             if (!isRemote)
             {
-                Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-                m_seqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+                Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, int.MaxValue));
+                m_seqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, ushort.MaxValue));
             }
 
             // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
@@ -202,7 +202,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
             TextFormat format,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this (SDPMediaTypesEnum.text, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format)}, streamStatus)
+            this(SDPMediaTypesEnum.text, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
         { }
 
         /// <summary>
@@ -310,7 +310,7 @@ namespace SIPSorcery.Net
                 result = (Capabilities.Exists(x => x.ID == sdpAudioVideoMediaFormat.ID));
             }
 
-            if(result)
+            if (result)
             {
                 Capabilities = new List<SDPAudioVideoMediaFormat> { sdpAudioVideoMediaFormat };
             }
@@ -326,7 +326,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the operation has been performed</returns>
         public Boolean RestrictCapabilities(VideoFormat videoFormat)
         {
-            return RestrictCapabilities(new SDPAudioVideoMediaFormat(videoFormat) );
+            return RestrictCapabilities(new SDPAudioVideoMediaFormat(videoFormat));
         }
 
         /// <summary>
@@ -339,7 +339,7 @@ namespace SIPSorcery.Net
         public bool RestrictCapabilities(AudioFormat audioFormat)
         {
             return RestrictCapabilities(new SDPAudioVideoMediaFormat(audioFormat));
-        }        
+        }
 
         /// <summary>
         /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets
@@ -358,7 +358,7 @@ namespace SIPSorcery.Net
                     throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
                 }
                 expectedSeqNum = actualSeqNum;
-                int nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? (ushort)0 : (ushort)(actualSeqNum + 1);
+                int nextSeqNum = (actualSeqNum >= ushort.MaxValue) ? (ushort)0 : (ushort)(actualSeqNum + 1);
                 actualSeqNum = Interlocked.CompareExchange(ref m_seqNum, nextSeqNum, expectedSeqNum);
             } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
             return (ushort)expectedSeqNum;

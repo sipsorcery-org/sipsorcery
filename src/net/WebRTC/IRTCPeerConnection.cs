@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
@@ -97,6 +98,7 @@ namespace SIPSorcery.Net
         public string username;
         public RTCIceCredentialType credentialType;
         public string credential;
+        public SslClientAuthenticationOptions? SslClientAuthenticationOptions;
     }
 
     /// <summary>
@@ -165,41 +167,37 @@ namespace SIPSorcery.Net
         /// <param name="str">The string to parse from.</param>
         /// <param name="fingerprint">If successful a fingerprint object.</param>
         /// <returns>True if a fingerprint was successfully parsed. False if not.</returns>
-        public static bool TryParse(string str, out RTCDtlsFingerprint fingerprint)
+        public static bool TryParse(string str, out RTCDtlsFingerprint? fingerprint)
         {
             fingerprint = null;
 
-            if (string.IsNullOrEmpty(str))
+            if (string.IsNullOrWhiteSpace(str))
             {
                 return false;
             }
-            else
-            {
-                int spaceIndex = str.IndexOf(' ');
-                if (spaceIndex == -1)
-                {
-                    return false;
-                }
-                else
-                {
-                    string algStr = str.Substring(0, spaceIndex);
-                    string val = str.Substring(spaceIndex + 1);
 
-                    if (!DtlsUtils.IsHashSupported(algStr))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        fingerprint = new RTCDtlsFingerprint
-                        {
-                            algorithm = algStr,
-                            value = val
-                        };
-                        return true;
-                    }
-                }
+            var strSpan = str.AsSpan().Trim();
+            var spaceIndex = strSpan.IndexOf(' ');
+            if (spaceIndex == -1)
+            {
+                return false;
             }
+
+            var algorithm = strSpan.Slice(0, spaceIndex);
+            var value = strSpan.Slice(spaceIndex + 1);
+
+            if (!DtlsUtils.IsHashSupported(algorithm))
+            {
+                return false;
+            }
+
+            fingerprint = new RTCDtlsFingerprint
+            {
+                algorithm = algorithm.ToLowerString(),
+                value = value.ToLowerString()
+            };
+
+            return true;
         }
     }
 

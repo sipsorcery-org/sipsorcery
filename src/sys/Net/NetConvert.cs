@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Utilities.cs
 //
 // Description: Useful functions for VoIP protocol implementation.
@@ -14,13 +14,17 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using Org.BouncyCastle.Utilities.Net;
 
 namespace SIPSorcery.Sys
 {
-    public class NetConvert
+    public static class NetConvert
     {
-        public static UInt16 DoReverseEndian(UInt16 x)
+        public static ushort DoReverseEndian(ushort x)
         {
             //return Convert.ToUInt16((x << 8 & 0xff00) | (x >> 8));
             return BitConverter.ToUInt16(BitConverter.GetBytes(x).Reverse().ToArray(), 0);
@@ -141,8 +145,8 @@ namespace SIPSorcery.Sys
         /// <returns>A buffer representing the value in network order </returns>
         public static byte[] GetBytes(uint val)
         {
-            var buffer = new byte[4];
-            ToBuffer(val, buffer, 0);
+            var buffer = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(buffer, val);
             return buffer;
         }
 
@@ -177,8 +181,8 @@ namespace SIPSorcery.Sys
         /// <returns>A buffer representing the value in network order </returns>
         public static byte[] GetBytes(ulong val)
         {
-            var buffer = new byte[8];
-            ToBuffer(val, buffer, 0);
+            var buffer = new byte[sizeof(ulong)];
+            BinaryPrimitives.WriteUInt64BigEndian(buffer, val);
             return buffer;
         }
 
@@ -190,6 +194,22 @@ namespace SIPSorcery.Sys
         public static uint EndianFlip(uint val)
         {
             return val << 24 | val << 8 & 0xff0000 | val >> 8 & 0xff00 | val >> 24;
+        }
+
+        public static global::System.Net.IPAddress ToIPAddress(this ReadOnlySpan<byte> address)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+            return new global::System.Net.IPAddress(address);
+#else
+            if (address.Length == 4)
+            {
+                return new global::System.Net.IPAddress((long)MemoryMarshal.Read<uint>(address));
+            }
+            else
+            {
+                return new global::System.Net.IPAddress(address.ToArray());
+            }
+#endif
         }
     }
 }

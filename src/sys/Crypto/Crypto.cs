@@ -174,7 +174,7 @@ namespace SIPSorcery.Sys
         public static int GetRandomInt(int length)
         {
             int randomStart = 1000000000;
-            int randomEnd = Int32.MaxValue;
+            int randomEnd = int.MaxValue;
 
             if (length > 0 && length < DEFAULT_RANDOM_LENGTH)
             {
@@ -185,7 +185,7 @@ namespace SIPSorcery.Sys
             return GetRandomInt(randomStart, randomEnd);
         }
 
-        public static Int32 GetRandomInt(Int32 minValue, Int32 maxValue)
+        public static int GetRandomInt(int minValue, int maxValue)
         {
 
             if (minValue > maxValue)
@@ -197,33 +197,33 @@ namespace SIPSorcery.Sys
                 return minValue;
             }
 
-            Int64 diff = maxValue - minValue + 1;
+            long diff = maxValue - minValue + 1;
             int attempts = 0;
             while (attempts < 10)
             {
                 byte[] uint32Buffer = new byte[4];
                 m_randomProvider.GetBytes(uint32Buffer);
-                UInt32 rand = BitConverter.ToUInt32(uint32Buffer, 0);
+                uint rand = BitConverter.ToUInt32(uint32Buffer, 0);
 
-                Int64 max = (1 + (Int64)UInt32.MaxValue);
-                Int64 remainder = max % diff;
+                long max = (1 + (long)uint.MaxValue);
+                long remainder = max % diff;
                 if (rand <= max - remainder)
                 {
-                    return (Int32)(minValue + (rand % diff));
+                    return (int)(minValue + (rand % diff));
                 }
                 attempts++;
             }
             throw new ApplicationException("GetRandomInt did not return an appropriate random number within 10 attempts.");
         }
 
-        public static UInt16 GetRandomUInt16()
+        public static ushort GetRandomUInt16()
         {
             byte[] uint16Buffer = new byte[2];
             m_randomProvider.GetBytes(uint16Buffer);
             return BitConverter.ToUInt16(uint16Buffer, 0);
         }
 
-        public static UInt32 GetRandomUInt(bool noZero = false)
+        public static uint GetRandomUInt(bool noZero = false)
         {
             byte[] uint32Buffer = new byte[4];
             m_randomProvider.GetBytes(uint32Buffer);
@@ -238,7 +238,7 @@ namespace SIPSorcery.Sys
             return randomUint;
         }
 
-        public static UInt64 GetRandomULong()
+        public static ulong GetRandomULong()
         {
             byte[] uint64Buffer = new byte[8];
             m_randomProvider.GetBytes(uint64Buffer);
@@ -288,7 +288,7 @@ namespace SIPSorcery.Sys
             // Check that the file exists.
             if (!File.Exists(filepath))
             {
-                logger.LogError("Cannot open a non-existent file for a hash operation, {FilePath}.",  filepath);
+                logger.LogNonExistentHashFile(filepath);
                 throw new IOException("Cannot open a non-existent file for a hash operation, " + filepath + ".");
             }
 
@@ -298,7 +298,7 @@ namespace SIPSorcery.Sys
             if (inputStream.Length == 0)
             {
                 inputStream.Close();
-                logger.LogError("Cannot perform a hash operation on an empty file, {FilePath}.", filepath);
+                logger.LogEmptyHashFile(filepath);
                 throw new IOException("Cannot perform a hash operation on an empty file, " + filepath + ".");
             }
 
@@ -382,19 +382,19 @@ namespace SIPSorcery.Sys
         public static X509Certificate2 LoadCertificate(StoreLocation storeLocation, string certificateSubject, bool checkValidity)
         {
             X509Store store = new X509Store(storeLocation);
-            logger.LogDebug("Certificate store {StoreLocation} opened", store.Location);
+            logger.LogCertificateStoreOpen(store.Location);
             store.Open(OpenFlags.OpenExistingOnly);
             X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySubjectName, certificateSubject, checkValidity);
             if (collection != null && collection.Count > 0)
             {
                 X509Certificate2 serverCertificate = collection[0];
                 bool verifyCert = serverCertificate.Verify();
-                logger.LogDebug("X509 certificate loaded from current user store, subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
+                logger.LogCertificateLoaded(serverCertificate.Subject, verifyCert);
                 return serverCertificate;
             }
             else
             {
-                logger.LogWarning("X509 certificate with subject name={CertificateSubject}, not found in {StoreLocation} store.", certificateSubject, store.Location);
+                logger.LogCertificateNotFound(certificateSubject, store.Location);
                 return null;
             }
         }

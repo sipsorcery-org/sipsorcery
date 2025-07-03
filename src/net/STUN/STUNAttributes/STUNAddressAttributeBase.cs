@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public abstract class STUNAddressAttributeBase : STUNAttribute
+    public abstract partial class STUNAddressAttributeBase : STUNAttribute
     {
         /// <summary>
         /// Obsolete.
@@ -13,12 +12,12 @@ namespace SIPSorcery.Net
         /// <br/> <br/>
         /// </summary>
         [Obsolete("Default attribute length for IPv4 only.")]
-        public const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+        public const ushort ADDRESS_ATTRIBUTE_LENGTH = 8;
 
-        public const UInt16 ADDRESS_ATTRIBUTE_IPV4_LENGTH = 8;
-        public const UInt16 ADDRESS_ATTRIBUTE_IPV6_LENGTH = 20;
+        public const ushort ADDRESS_ATTRIBUTE_IPV4_LENGTH = 8;
+        public const ushort ADDRESS_ATTRIBUTE_IPV6_LENGTH = 20;
 
-        protected UInt16 AddressAttributeLength = ADDRESS_ATTRIBUTE_IPV4_LENGTH;
+        protected ushort AddressAttributeLength = ADDRESS_ATTRIBUTE_IPV4_LENGTH;
         protected byte[] TransactionId;
 
         /// <summary>
@@ -28,14 +27,24 @@ namespace SIPSorcery.Net
         public int Port;
         public IPAddress Address;
 
-        public override UInt16 PaddedLength
+        public override ushort PaddedLength
         {
             get => AddressAttributeLength;
         }
 
-        public STUNAddressAttributeBase(STUNAttributeTypesEnum attributeType, byte[] value)
+        public STUNAddressAttributeBase(STUNAttributeTypesEnum attributeType, ReadOnlyMemory<byte> value)
             : base(attributeType, value)
         {
+        }
+
+        private protected override void ValueToString(ref ValueStringBuilder sb)
+        {
+            sb.Append("Address=");
+            sb.Append(Address.ToString());
+            sb.Append(", Port=");
+            sb.Append(Port);
+            sb.Append(", Family=");
+            sb.Append(Family switch { 1 => "IPV4", 2 => "IPV6", _ => "Invalid", });
         }
     }
 }

@@ -17,7 +17,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.IO;
+using Org.BouncyCastle.Asn1.X509;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.net.RTP.Packetisation
 {
@@ -139,9 +143,7 @@ namespace SIPSorcery.net.RTP.Packetisation
             0xf9, 0xfa
         };
 
-        private MemoryStream _frameStream = new MemoryStream();
-        private MemoryStream _returnFrame = new MemoryStream();
-        private bool _resetReturnFrame;
+        private PooledBuffer<byte> _frameBuffer = new PooledBuffer<byte>();
 
         private int _currentDri;
         private int _currentQ;
@@ -151,69 +153,67 @@ namespace SIPSorcery.net.RTP.Packetisation
 
         private bool _hasExternalQuantizationTable;
 
-        private byte[] _jpegHeaderBytes = new byte[0];
+        private byte[] _jpegHeaderBytes = Array.Empty<byte>();
         private ArraySegment<byte> _jpegHeaderBytesSegment;
 
-        private byte[] _quantizationTables = new byte[0];
+        private byte[] _quantizationTables = Array.Empty<byte>();
         private int _quantizationTablesLength;
 
-        
+
         #endregion
 
-        public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
+        public virtual bool ProcessRTPPayload(IBufferWriter<byte> bufferWriter, ReadOnlySpan<byte> rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
         {
             //MJPEG only contains full frames
             isKeyFrame = true;
 
-            if (_resetReturnFrame)
-            {
-                _returnFrame = new MemoryStream();
-                _resetReturnFrame = false;
-            }
-            int offset = 1;
-            int fragmentOffset = ReadUInt24(rtpPayload, offset);
+            var offset = 1;
+            var fragmentOffset = BinaryPrimitives.ReadUInt32BigEndian(rtpPayload.Slice(offset)) & 0x00FFFFFFU;
             offset += 3;
 
             int type = rtpPayload[offset++];
             int q = rtpPayload[offset++];
-            int width = rtpPayload[offset++] * 8;
-            int height = rtpPayload[offset++] * 8;
-            int dri = 0;
+            var width = rtpPayload[offset++] * 8;
+            var height = rtpPayload[offset++] * 8;
+            var dri = 0;
 
-            if(type > 63)
+            if (type > 63)
             {
-                dri = ReadUInt16(rtpPayload, offset);
+                dri = BinaryPrimitives.ReadUInt16BigEndian(rtpPayload.Slice(offset));
                 offset += 4;
             }
 
-            if(fragmentOffset == 0)
+            var frameWritten = false;
+
+            if (fragmentOffset == 0)
             {
-                if(_frameStream.Position != 0)
+                if (_frameBuffer.Length != 0)
                 {
-                    GenerateFrame();
+                    GenerateFrame(bufferWriter);
+                    frameWritten = true;
                 }
 
-                bool quantizationTablesChanged = false;
+                var quantizationTablesChanged = false;
 
                 if (q > 127)
                 {
                     int mbz = rtpPayload[offset];
 
-                    if(mbz == 0)
+                    if (mbz == 0)
                     {
                         _hasExternalQuantizationTable = true;
 
-                        int quantizationTablesLength = ReadUInt16(rtpPayload, offset + 2);
+                        var quantizationTablesLength = BinaryPrimitives.ReadUInt16BigEndian(rtpPayload.Slice(offset + 2));
                         offset += 4;
 
-                        if(!AreBytesEqual(rtpPayload, offset, quantizationTablesLength, _quantizationTables, 0, _quantizationTablesLength))
+                        if (!rtpPayload.Slice(offset, quantizationTablesLength).SequenceEqual(_quantizationTables.AsSpan(0, _quantizationTablesLength)))
                         {
-                            if(_quantizationTablesLength < quantizationTablesLength)
+                            if (_quantizationTablesLength < quantizationTablesLength)
                             {
                                 _quantizationTables = new byte[quantizationTablesLength];
                             }
 
-                            Buffer.BlockCopy(rtpPayload, offset, _quantizationTables, 0, quantizationTablesLength);
+                            rtpPayload.Slice(offset, quantizationTablesLength).CopyTo(_quantizationTables);
                             _quantizationTablesLength = quantizationTablesLength;
                             quantizationTablesChanged = true;
                         }
@@ -223,7 +223,7 @@ namespace SIPSorcery.net.RTP.Packetisation
                     }
                 }
 
-                if(quantizationTablesChanged || _currentType != type || _currentQ != q ||
+                if (quantizationTablesChanged || _currentType != type || _currentQ != q ||
                     _currentFrameWidth != width || _currentFrameHeight != height || _currentDri != dri)
                 {
                     _currentType = type;
@@ -235,7 +235,7 @@ namespace SIPSorcery.net.RTP.Packetisation
                     ReInitializeJpegHeader();
                 }
 
-                _frameStream.Write(_jpegHeaderBytesSegment.Array, _jpegHeaderBytesSegment.Offset, _jpegHeaderBytesSegment.Count);
+                _frameBuffer.Write(_jpegHeaderBytesSegment.Array);
             }
 
             //if(fragmentOffset != 0 && _frameStream.Position == 0)
@@ -243,76 +243,11 @@ namespace SIPSorcery.net.RTP.Packetisation
             //    return;
             //}
 
-            int dataSize = rtpPayload.Length - offset;
+            var dataSize = rtpPayload.Length - offset;
 
-            _frameStream.Write(rtpPayload, offset, dataSize);
+            _frameBuffer.Write(rtpPayload.Slice(offset, dataSize));
 
-            if(_returnFrame.Length > 0)
-            {
-                _resetReturnFrame = true;
-                return _returnFrame;
-            }
-            return null;
-        }
-
-        private uint ReadUInt32(byte[] buffer, int offset)
-        {
-            return (uint)(buffer[offset] << 24 |
-                           buffer[offset + 1] << 16 |
-                           buffer[offset + 2] << 8 |
-                           buffer[offset + 3]);
-        }
-
-        private int ReadUInt24(byte[] buffer, int offset)
-        {
-            return buffer[offset] << 16 |
-                   buffer[offset + 1] << 8 |
-                   buffer[offset + 2];
-        }
-
-        private int ReadUInt16(byte[] buffer, int offset)
-        {
-            return (buffer[offset] << 8) | buffer[offset + 1];
-        }
-
-        private bool AreBytesEqual(byte[] bytes1, int offset1, int count1, byte[] bytes2, int offset2, int count2)
-        {
-            if (count1 != count2)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < count1; i++)
-            {
-                if (bytes1[offset1 + i] != bytes2[offset2 + i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static bool EndsWith(byte[] array, int offset, int count, byte[] pattern)
-        {
-            int patternLength = pattern.Length;
-
-            if (count < patternLength)
-            {
-                return false;
-            }
-
-            offset = offset + count - patternLength;
-
-            for (int i = 0; i < patternLength; i++, offset++)
-            {
-                if (array[offset] != pattern[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return frameWritten;
         }
 
         private void ReInitializeJpegHeader()
@@ -361,7 +296,7 @@ namespace SIPSorcery.net.RTP.Packetisation
 
             for (var i = 0; i < 128; ++i)
             {
-                int newVal = (DefaultQuantizers[i] * q + 50) / 100;
+                var newVal = (DefaultQuantizers[i] * q + 50) / 100;
 
                 if (newVal < 1)
                 {
@@ -378,19 +313,19 @@ namespace SIPSorcery.net.RTP.Packetisation
 
         private int GetJpegHeaderSize(int dri)
         {
-            int qtlen = _quantizationTablesLength;
+            var qtlen = _quantizationTablesLength;
 
-            int qtlenHalf = qtlen / 2;
+            var qtlenHalf = qtlen / 2;
             qtlen = qtlenHalf * 2;
 
-            int qtablesCount = qtlen > 64 ? 2 : 1;
+            var qtablesCount = qtlen > 64 ? 2 : 1;
             return 485 + qtablesCount * 5 + qtlen + (dri > 0 ? 6 : 0);
         }
 
         private void FillJpegHeader(byte[] buffer, int type, int width, int height, int dri)
         {
-            int qtablesCount = _quantizationTablesLength > 64 ? 2 : 1;
-            int offset = 0;
+            var qtablesCount = _quantizationTablesLength > 64 ? 2 : 1;
+            var offset = 0;
 
             buffer[offset++] = 0xFF;
             buffer[offset++] = 0xD8;
@@ -423,14 +358,14 @@ namespace SIPSorcery.net.RTP.Packetisation
                 buffer[offset++] = (byte)dri;
             }
 
-            int tableSize = qtablesCount == 1 ? _quantizationTablesLength : _quantizationTablesLength / 2;
+            var tableSize = qtablesCount == 1 ? _quantizationTablesLength : _quantizationTablesLength / 2;
             buffer[offset++] = 0xFF;
             buffer[offset++] = 0xdb;
             buffer[offset++] = 0x00;
             buffer[offset++] = (byte)(tableSize + 3);
             buffer[offset++] = 0x00;
 
-            int qtablesOffset = 0;
+            var qtablesOffset = 0;
             Buffer.BlockCopy(_quantizationTables, qtablesOffset, buffer, offset, tableSize);
             qtablesOffset += tableSize;
             offset += tableSize;
@@ -513,16 +448,40 @@ namespace SIPSorcery.net.RTP.Packetisation
             Buffer.BlockCopy(symbols, 0, buffer, offset, nsymbols);
         }
 
-        private void GenerateFrame()
+        private void GenerateFrame(IBufferWriter<byte> returnFrame)
         {
-            if (!EndsWith(_frameStream.GetBuffer(), 0,
-                (int)_frameStream.Position, EndMarkerBytes))
+            if (!EndsWithEndMarkerBytes(_frameBuffer))
             {
-                _frameStream.Write(JpegEndMarkerByteSegment.Array, JpegEndMarkerByteSegment.Offset, JpegEndMarkerByteSegment.Count);
+                _frameBuffer.Write(JpegEndMarkerByteSegment);
             }
 
-            _returnFrame.Write(_frameStream.ToArray(), 0, (int)_frameStream.Length);
-            _frameStream = new MemoryStream();
+            foreach (var segment in _frameBuffer.GetReadOnlySequence())
+            {
+                returnFrame.Write(segment.Span);
+            }
+
+            _frameBuffer.Clear();
+
+            static bool EndsWithEndMarkerBytes(PooledBuffer<byte> buffer)
+            {
+                if (buffer.Length < EndMarkerBytes.Length)
+                {
+                    return false;
+                }
+
+                var sequence = buffer.GetReadOnlySequence().Slice(buffer.Length - EndMarkerBytes.Length);
+
+                if (sequence.IsSingleSegment)
+                {
+                    return sequence.First.Span.SequenceEqual(EndMarkerBytes);
+                }
+                else
+                {
+                    Span<byte> temp = stackalloc byte[EndMarkerBytes.Length];
+                    sequence.CopyTo(temp);
+                    return temp.SequenceEqual(EndMarkerBytes);
+                }
+            }
         }
     }
 }

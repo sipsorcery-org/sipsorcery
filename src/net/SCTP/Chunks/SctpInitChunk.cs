@@ -18,12 +18,13 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -52,7 +53,7 @@ namespace SIPSorcery.Net
     /// endpoints. The INIT ACK chunk is used to respond to an incoming
     /// INIT chunk from a remote peer.
     /// </summary>
-    public class SctpInitChunk : SctpChunk
+    public partial class SctpInitChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 16;
 
@@ -239,11 +240,11 @@ namespace SIPSorcery.Net
 
             if (SupportedAddressTypes.Count > 0)
             {
-                byte[] paramVal = new byte[SupportedAddressTypes.Count * 2];
-                int paramValPosn = 0;
+                var paramVal = new byte[SupportedAddressTypes.Count * 2];
+                var paramValPosn = 0;
                 foreach (var supAddr in SupportedAddressTypes)
                 {
-                    NetConvert.ToBuffer((ushort)supAddr, paramVal, paramValPosn);
+                    BinaryPrimitives.WriteUInt16BigEndian(paramVal.AsSpan(paramValPosn), (ushort)supAddr);
                     paramValPosn += 2;
                 }
                 varParams.Add(
@@ -288,59 +289,74 @@ namespace SIPSorcery.Net
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
         public override ushort WriteTo(byte[] buffer, int posn)
         {
-            WriteChunkHeader(buffer, posn);
-
-            // Write fixed parameters.
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
-
-            NetConvert.ToBuffer(InitiateTag, buffer, startPosn);
-            NetConvert.ToBuffer(ARwnd, buffer, startPosn + 4);
-            NetConvert.ToBuffer(NumberOutboundStreams, buffer, startPosn + 8);
-            NetConvert.ToBuffer(NumberInboundStreams, buffer, startPosn + 10);
-            NetConvert.ToBuffer(InitialTSN, buffer, startPosn + 12);
-
-            var varParameters = GetVariableParameters();
-
-            // Write optional parameters.
-            if (varParameters.Count > 0)
-            {
-                int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-                foreach (var optParam in varParameters)
-                {
-                    paramPosn += optParam.WriteTo(buffer, paramPosn);
-                }
-            }
+            WriteToCore(buffer.AsSpan(posn));
 
             return GetChunkLength(true);
+        }
+
+        /// <summary>
+        /// Serialises an INIT or INIT ACK chunk to a pre-allocated buffer.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the serialised chunk bytes to. It
+        /// must have the required space already allocated.</param>
+        /// <returns>The number of bytes, including padding, written to the buffer.</returns>
+        public override int WriteTo(Span<byte> buffer)
+        {
+            WriteToCore(buffer);
+
+            return GetChunkLength(true);
+        }
+
+        private void WriteToCore(Span<byte> buffer)
+        {
+            var bytesWritten = WriteChunkHeader(buffer);
+
+            // Write fixed parameters.
+
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH), InitiateTag);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4), ARwnd);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8), NumberOutboundStreams);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 10), NumberInboundStreams);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 12), InitialTSN);
+
+            // Write optional parameters.
+            if (GetVariableParameters() is { Count: > 0 } varParameters)
+            {
+                buffer = buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH);
+                foreach (var optParam in varParameters)
+                {
+                    var bytesWriten = optParam.WriteTo(buffer);
+                    buffer = buffer.Slice(bytesWriten);
+                }
+            }
         }
 
         /// <summary>
         /// Parses the INIT or INIT ACK chunk fields
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
-        /// <param name="posn">The position to start parsing at.</param>
-        public static SctpInitChunk ParseChunk(byte[] buffer, int posn)
+        public static SctpInitChunk ParseChunk(ReadOnlySpan<byte> buffer)
         {
             var initChunk = new SctpInitChunk();
-            ushort chunkLen = initChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = initChunk.ParseFirstWord(buffer);
 
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            initChunk.InitiateTag = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH));
+            initChunk.ARwnd = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 4));
+            initChunk.NumberOutboundStreams = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 8));
+            initChunk.NumberInboundStreams = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 10));
+            initChunk.InitialTSN = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(SCTP_CHUNK_HEADER_LENGTH + 12));
 
-            initChunk.InitiateTag = NetConvert.ParseUInt32(buffer, startPosn);
-            initChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
-            initChunk.NumberOutboundStreams = NetConvert.ParseUInt16(buffer, startPosn + 8);
-            initChunk.NumberInboundStreams = NetConvert.ParseUInt16(buffer, startPosn + 10);
-            initChunk.InitialTSN = NetConvert.ParseUInt32(buffer, startPosn + 12);
-
-            int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-            int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
+            var paramPosn = SCTP_CHUNK_HEADER_LENGTH + FIXED_PARAMETERS_LENGTH;
+            var paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
 
             if (paramPosn < paramsBufferLength)
             {
-                bool stopProcessing = false;
+                var stopProcessing = false;
 
-                foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
+                foreach (var varParam in GetParameters(buffer.Slice(paramPosn, paramsBufferLength)))
                 {
+                    Debug.Assert(varParam is not null);
+
                     switch (varParam.ParameterType)
                     {
                         case (ushort)SctpInitChunkParameterType.IPv4Address:
@@ -350,7 +366,7 @@ namespace SIPSorcery.Net
                             break;
 
                         case (ushort)SctpInitChunkParameterType.CookiePreservative:
-                            initChunk.CookiePreservative = NetConvert.ParseUInt32(varParam.ParameterValue, 0);
+                            initChunk.CookiePreservative = BinaryPrimitives.ReadUInt32BigEndian(varParam.ParameterValue.AsSpan());
                             break;
 
                         case (ushort)SctpInitChunkParameterType.HostNameAddress:
@@ -360,7 +376,7 @@ namespace SIPSorcery.Net
                         case (ushort)SctpInitChunkParameterType.SupportedAddressTypes:
                             for (int valPosn = 0; valPosn < varParam.ParameterValue.Length; valPosn += 2)
                             {
-                                switch (NetConvert.ParseUInt16(varParam.ParameterValue, valPosn))
+                                switch (BinaryPrimitives.ReadUInt16BigEndian(varParam.ParameterValue.AsSpan(valPosn)))
                                 {
                                     case (ushort)SctpInitChunkParameterType.IPv4Address:
                                         initChunk.SupportedAddressTypes.Add(SctpInitChunkParameterType.IPv4Address);
@@ -397,7 +413,7 @@ namespace SIPSorcery.Net
 
                     if (stopProcessing)
                     {
-                        logger.LogWarning("SCTP unrecognised parameter {ParameterType} for chunk type {ChunkType} indicated no further chunks should be processed.", varParam.ParameterType, initChunk.KnownType);
+                        logger.LogSctpUnrecognisedParameter(varParam.ParameterType, initChunk.KnownType);
                         break;
                     }
                 }
