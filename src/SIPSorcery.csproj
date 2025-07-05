@@ -34,7 +34,6 @@
     <PackageReference Include="System.Memory" Version="4.6.3" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
   </ItemGroup>
-
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net462;net5.0;net6.0;net8.0</TargetFrameworks>
     <LangVersion>12.0</LangVersion>
@@ -42,46 +41,36 @@
     <NoWarn>$(NoWarn);SYSLIB0050</NoWarn>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Disable warning for missing XML doc comments. -->
     <NoWarn>$(NoWarn);CS1591;CS1573;CS1587</NoWarn>
-    <Authors>Aaron Clauson, Christophe Irles, Rafael Soares &amp; Contributors</Authors>
-    <Copyright>Copyright © 2010-2025 Aaron Clauson</Copyright>
+
+    <Authors>Aaron Clauson, Christophe Irles, Rafael Soares, DatMoshu &amp; Contributors</Authors>
+    <Copyright>Copyright © 2010-2025 Aaron Clauson, DatMoshu</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-    <Title>SIPSorcery</Title>
-    <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
-    <Description>Real-time communications library with full support for the Session Initiation Protocol (SIP) and WebRTC. No wrappers and no native libraries required.
+    <Title>SIPSorcery (DatMoshu Fork)</Title>
+    <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC (DatMoshu Fork).</Summary>
+    <Description>
+        Real-time communications library with full support for the Session Initiation Protocol (SIP) and WebRTC. No wrappers and no native libraries required. This is a private fork by DatMoshu.
     </Description>
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery</Product>
-    <PackageId>SIPSorcery</PackageId>
+    <PackageId>SIPSorcery.DatMoshu</PackageId>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/DatMoshu/sipsorcery</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DatMoshu/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v8.0.21-pre: Improvements to OPUS encoder wiring.
--v8.0.20-pre: Improvements to the audio pipeline to avoid consumers needing to handle raw RTP packets.
--v8.0.15-pre: BouncyCastle update (thanks to @joaoladeiraext).
--v8.0.14: Fix for OPUS codec using multiple channels.
--v8.0.13: Added ASP.NET web socket signalling option for WebRTC. Bug fixes.
--v8.0.12: Bug fixes.
--v8.0.11: Real-time text (thanks to @xBasov). Bug fixes.
--v8.0.10: H265 and MJEG packetisation (thanks to @Drescher86), RTCP feedback improvements (thanks to @ispysoftware).
--v8.0.9: Minor improvements and bug fixes.
--v8.0.7: Bug fixes and all sipsorcery packages release.
--v8.0.6: Nuget publish.
--v8.0.4: Bug fixes.
--v8.0.3: Bug fixes.
--v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
--v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
+    <PackageReleaseNotes>
+        - Private build from DatMoshu fork.
+        - Based on original version 8.0.22.
+    </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>8.0.21-pre</Version>
-    <AssemblyVersion>8.0.21</AssemblyVersion>
-    <FileVersion>8.0.21</FileVersion>
+    <Version>8.0.22-private</Version>
+    <AssemblyVersion>8.0.22.0</AssemblyVersion>
+    <FileVersion>8.0.22.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
