@@ -34,6 +34,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using WebSocketSharp;
+using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 
 namespace SIPSorcery.SIP
@@ -156,8 +157,17 @@ namespace SIPSorcery.SIP
         public SIPWebSocketChannel(
             IPEndPoint endPoint,
             Encoding sipEncoding,
-            Encoding sipBodyEncoding, 
-            X509Certificate2 certificate) : base(sipEncoding, sipBodyEncoding)
+            Encoding sipBodyEncoding,
+            X509Certificate2 certificate)
+            // default ServerSslConfiguration of previous implementation
+            : this(endPoint, sipEncoding, sipBodyEncoding, certificate == null ? null : new ServerSslConfiguration(certificate) { CheckCertificateRevocation = false})
+        { }
+
+        public SIPWebSocketChannel(
+            IPEndPoint endPoint,
+            Encoding sipEncoding,
+            Encoding sipBodyEncoding,
+            ServerSslConfiguration sslConfiguration) : base(sipEncoding, sipBodyEncoding)
         {
             if (endPoint == null)
             {
@@ -168,7 +178,7 @@ namespace SIPSorcery.SIP
             Port = endPoint.Port;
             IsReliable = true;
 
-            if (certificate == null)
+            if (sslConfiguration == null || sslConfiguration.ServerCertificate == null)
             {
                 SIPProtocol = SIPProtocolsEnum.ws;
                 m_webSocketServer = new WebSocketServer(endPoint.Address, endPoint.Port, false);
@@ -177,9 +187,14 @@ namespace SIPSorcery.SIP
             {
                 SIPProtocol = SIPProtocolsEnum.wss;
                 m_webSocketServer = new WebSocketServer(endPoint.Address, endPoint.Port, true);
-                var sslConfig = m_webSocketServer.SslConfiguration;
-                sslConfig.ServerCertificate = certificate;
-                sslConfig.CheckCertificateRevocation = false;
+                var appliedSslConfig = m_webSocketServer.SslConfiguration;
+
+                appliedSslConfig.ServerCertificate = sslConfiguration.ServerCertificate;
+                appliedSslConfig.CheckCertificateRevocation = sslConfiguration.CheckCertificateRevocation;
+                appliedSslConfig.ClientCertificateRequired = sslConfiguration.ClientCertificateRequired;
+                appliedSslConfig.ClientCertificateValidationCallback = sslConfiguration.ClientCertificateValidationCallback;
+                appliedSslConfig.EnabledSslProtocols = sslConfiguration.EnabledSslProtocols;
+
                 IsSecure = true;
             }
 
@@ -267,11 +282,15 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Not implemented for the WebSocket channel.
+        /// Asynchronous SIP message send over a web socket connetion secured by TLS to a remote end point.
         /// </summary>
-        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, bool canInitiateConnection, string connectionIDHint)
+        /// <param name="dstEndPoint">The remote end point to send the message to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>
+        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
+        public async override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, bool canInitiateConnection, string connectionIDHint)
         {
-            throw new NotImplementedException("This Send method is not available in the SIP Web Socket channel, please use an alternative overload.");
+            return await this.SendAsync(dstEndPoint, buffer, canInitiateConnection, connectionIDHint);
         }
 
         /// <summary>
