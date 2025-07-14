@@ -112,7 +112,7 @@ namespace SIPSorcery.Net
     ///   action needs to be taken to update the status of the ICE server or checklist entry
     ///   check.
     /// </remarks>
-    partial class RtpIceChannel : RTPChannel
+    public partial class RtpIceChannel : RTPChannel
     {
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
