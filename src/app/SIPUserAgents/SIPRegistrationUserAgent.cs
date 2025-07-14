@@ -216,11 +216,13 @@ namespace SIPSorcery.SIP.App
 
             if (callbackPeriod < REGISTER_MINIMUM_EXPIRY * 1000)
             {
-                m_registrationTimer = new Timer(DoRegistration, null, 0, REGISTER_MINIMUM_EXPIRY * 1000);
+                m_registrationTimer = new Timer(DoRegistration);
+                m_registrationTimer.Change(0, REGISTER_MINIMUM_EXPIRY * 1000);
             }
             else
             {
-                m_registrationTimer = new Timer(DoRegistration, null, 0, callbackPeriod);
+                m_registrationTimer = new Timer(DoRegistration);
+                m_registrationTimer.Change(0, callbackPeriod);
             }
         }
 

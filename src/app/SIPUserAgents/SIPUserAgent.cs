@@ -556,7 +556,8 @@ namespace SIPSorcery.SIP.App
                 if (ringTimeout > 0)
                 {
                     logger.LogDebug("Setting ring timeout of {RingTimeout}s.", ringTimeout);
-                    _ringTimeout = new Timer((state) => m_uac?.Cancel(), null, ringTimeout * 1000, Timeout.Infinite);
+                    _ringTimeout = new Timer((state) => m_uac?.Cancel());
+                    _ringTimeout.Change(ringTimeout * 1000, Timeout.Infinite);
                 }
 
                 // This initiates the call but does not wait for an answer.

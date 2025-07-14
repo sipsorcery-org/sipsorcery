@@ -522,7 +522,8 @@ namespace SIPSorcery.Net
                                 SendPacket(cookieEchoPkt);
                                 SetState(SctpAssociationState.CookieEchoed);
 
-                                _t1Cookie = new Timer(T1CookieTimerExpired, cookieEchoPkt, T1_COOKIE_TIMER_MILLISECONDS, T1_COOKIE_TIMER_MILLISECONDS);
+                                _t1Cookie = new Timer(T1CookieTimerExpired, cookieEchoPkt, Timeout.Infinite, Timeout.Infinite);
+                                _t1Cookie.Change(T1_COOKIE_TIMER_MILLISECONDS, T1_COOKIE_TIMER_MILLISECONDS);
                             }
                             break;
 
@@ -707,7 +708,8 @@ namespace SIPSorcery.Net
                 byte[] buffer = init.GetBytes();
                 _sctpTransport.Send(ID, buffer, 0, buffer.Length);
 
-                _t1Init = new Timer(T1InitTimerExpired, init, T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
+                _t1Init = new Timer(T1InitTimerExpired, init, Timeout.Infinite, Timeout.Infinite);
+                _t1Init.Change(T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
             }
         }
 

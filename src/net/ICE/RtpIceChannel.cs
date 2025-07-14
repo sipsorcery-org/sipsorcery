@@ -745,7 +745,8 @@ namespace SIPSorcery.Net
 
                 if (_iceServerResolver.IceServers?.Count > 0)
                 {
-                    _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
+                    _processIceServersTimer = new Timer(CheckIceServers);
+                    _processIceServersTimer.Change(0, Ta);
                 }
                 else
                 {
@@ -754,7 +755,8 @@ namespace SIPSorcery.Net
                     OnIceGatheringStateChange?.Invoke(IceGatheringState);
                 }
 
-                _connectivityChecksTimer = new Timer(DoConnectivityCheck, null, 0, Ta);
+                _connectivityChecksTimer = new Timer(DoConnectivityCheck);
+                _connectivityChecksTimer.Change(0, Ta);
             }
         }
 
@@ -1111,7 +1113,8 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug("ICE RTP channel stopping ICE server checks in gathering state {IceGatheringState} and connection state {IceConnectionState}.", IceGatheringState, IceConnectionState);
                 _refreshTurnTimer?.Dispose();
-                _refreshTurnTimer = new Timer(RefreshTurn, null, 0, 2000);
+                _refreshTurnTimer = new Timer(RefreshTurn);
+                _refreshTurnTimer.Change(0, 2000);
                 _processIceServersTimer.Dispose();
                 return;
             }
