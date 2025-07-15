@@ -101,7 +101,6 @@ class Program
                 RTCConfiguration config = new RTCConfiguration
                 {
                     X_ICEIncludeAllInterfaceAddresses = true,
-                    //iceTransportPolicy = RTCIceTransportPolicy.relay
                 };
 
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
