@@ -36,6 +36,7 @@ class Program
     private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
 
     private static string _stunUrl = string.Empty;
+    private static string _turnUrl = string.Empty;
     private static bool _waitForIceGatheringToSendOffer = false;
     private static int _webrtcBindPort = 0;
 
@@ -46,6 +47,7 @@ class Program
         Console.WriteLine("WebRTC FFmpeg Get Started");
 
         _stunUrl = Environment.GetEnvironmentVariable("STUN_URL");
+        _turnUrl = Environment.GetEnvironmentVariable("TURN_URL");
         bool.TryParse(Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_OFFER"), out _waitForIceGatheringToSendOffer);
         int.TryParse(Environment.GetEnvironmentVariable("BIND_PORT"), out _webrtcBindPort);
 
@@ -70,6 +72,7 @@ class Program
         }
 
         _logger.LogDebug(_stunUrl != null ? $"STUN URL: {_stunUrl}" : "No STUN URL provided.");
+        _logger.LogDebug(_turnUrl != null ? $"TURN URL: {_turnUrl}" : "No TURN URL provided.");
         _logger.LogDebug($"Wait for ICE gathering to send offer: {_waitForIceGatheringToSendOffer}");
 
         var builder = WebApplication.CreateBuilder();
@@ -97,7 +100,7 @@ class Program
 
                 RTCConfiguration config = new RTCConfiguration
                 {
-                    X_ICEIncludeAllInterfaceAddresses = true
+                    X_ICEIncludeAllInterfaceAddresses = true,
                 };
 
                 var webSocketPeer = new WebRTCWebSocketPeerAspNet(webSocket,
@@ -126,9 +129,16 @@ class Program
 
     private static Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration config)
     {
+        config.iceServers = new List<RTCIceServer>();
+
         if (!string.IsNullOrWhiteSpace(_stunUrl))
         {
-            config.iceServers = new List<RTCIceServer> { new RTCIceServer { urls = _stunUrl } };
+            config.iceServers.Add(_stunUrl.ParseStunServer());
+        }
+
+        if (!string.IsNullOrWhiteSpace(_turnUrl))
+        {
+            config.iceServers.Add(_turnUrl.ParseStunServer());
         }
 
         var pc = new RTCPeerConnection(config, _webrtcBindPort);
@@ -190,5 +200,21 @@ class Program
         pc.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state change to {state}.");
 
         return Task.FromResult(pc);
+    }
+}
+
+public static class StunServerExtensions
+{
+    public static RTCIceServer ParseStunServer(this string stunServer)
+    {
+        var fields = stunServer.Split(';');
+
+        return new RTCIceServer
+        {
+            urls = fields[0],
+            username = fields.Length > 1 ? fields[1] : null,
+            credential = fields.Length > 2 ? fields[2] : null,
+            credentialType = RTCIceCredentialType.password
+        };
     }
 }
