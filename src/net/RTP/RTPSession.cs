@@ -1239,9 +1239,12 @@ namespace SIPSorcery.Net
                             return SetDescriptionResultEnum.TextIncompatible;
                         }
                     }
-                    else if (currentMediaStream.RemoteTrack.Capabilities.Count != 0 && announcement.Port != 0 && (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0)))
+                    else if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
                     {
-                        return SetDescriptionResultEnum.VideoIncompatible;
+                        if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
+                        {
+                            return SetDescriptionResultEnum.VideoIncompatible;
+                        }
                     }
                 }
 
@@ -1459,10 +1462,6 @@ namespace SIPSorcery.Net
                     {
                         RequireRenegotiation = true;
                         textStream.LocalTrack = null;
-
-                        CloseMediaStream("normal", textStream);
-                        IsVideoStarted = false;
-                        TextStreamList.Remove(textStream);
                         return true;
                     }
                 }
@@ -1475,10 +1474,6 @@ namespace SIPSorcery.Net
                     {
                         RequireRenegotiation = true;
                         videoStream.LocalTrack = null;
-
-                        CloseMediaStream("normal", videoStream);
-                        IsVideoStarted = false;
-                        VideoStreamList.Remove(videoStream);
                         return true;
                     }
                 }
@@ -1944,25 +1939,6 @@ namespace SIPSorcery.Net
                                 else
                                 {
                                     localAddress = NetServices.GetLocalAddressForRemote(videoStream.DestinationEndPoint.Address);
-                                }
-                            }
-                        }
-                    }
-
-                    if (localAddress == null)
-                    {
-                        foreach (var textStream in TextStreamList)
-                        {
-                            if (textStream.DestinationEndPoint != null && textStream.DestinationEndPoint.Address != null)
-                            {
-                                if (IPAddress.Any.Equals(textStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(textStream.DestinationEndPoint.Address))
-                                {
-                                    // If the remote party has set an inactive media stream via the connection address then we do the same.
-                                    localAddress = textStream.DestinationEndPoint.Address;
-                                }
-                                else
-                                {
-                                    localAddress = NetServices.GetLocalAddressForRemote(textStream.DestinationEndPoint.Address);
                                 }
                             }
                         }
@@ -2731,6 +2707,10 @@ namespace SIPSorcery.Net
             {
                 VideoStream?.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
             }
+            else if (mediaType == SDPMediaTypesEnum.text)
+            {
+                TextStream?.SendRtpRaw(payload, timestamp, markerBit, payloadTypeID);
+            }
         }
 
         /// <summary>
@@ -2818,6 +2798,10 @@ namespace SIPSorcery.Net
             else if (mediaType == SDPMediaTypesEnum.video)
             {
                 VideoStream?.SendRtcpTWCCFeedback(feedback);
+            }
+            else if (mediaType == SDPMediaTypesEnum.text)
+            {
+                TextStream?.SendRtcpTWCCFeedback(feedback);
             }
         }
 
