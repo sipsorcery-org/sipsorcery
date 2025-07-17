@@ -132,7 +132,8 @@ namespace SIPSorcery.SoftPhone
                 m_sipUsername,
                 m_sipPassword,
                 m_sipServer,
-                REGISTRATION_EXPIRY);
+                REGISTRATION_EXPIRY,
+                sendUsernameInContactHeader: true);
 
             _sipRegistrationClient.Start();
         }
