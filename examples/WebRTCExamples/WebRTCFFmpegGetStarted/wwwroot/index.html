@@ -1,5 +1,89 @@
 ﻿<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC FFmpeg Get Started</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        video {
+            width: 640px;
+            height: 480px;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: stretch;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+        @media (min-width: 480px) {
+            .controls {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: stretch;
+            }
+        }
+        input[type="text"] {
+            flex: 1 1 0;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 0;
+        }
+        button {
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            min-width: 120px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button.btn-start {
+            background: #28a745;
+        }
+        button.btn-start:active {
+            background: #218838;
+        }
+        button.btn-close {
+            background: #dc3545;
+        }
+        button.btn-close:active {
+            background: #b52a37;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
     <script type="text/javascript">
         const WEBSOCKET_URL = "ws://127.0.0.1:8080/ws"
         const STUN_URL = "stun:stun.cloudflare.com";
@@ -16,7 +100,14 @@
             return `${protocol}//${host}${path}`;
         }
 
+        function setButtonStates(startEnabled, closeEnabled) {
+            document.getElementById('startBtn').disabled = !startEnabled;
+            document.getElementById('closeBtn').disabled = !closeEnabled;
+        }
+
         async function start() {
+            // Disable both buttons while connecting
+            setButtonStates(false, false);
             pc = new RTCPeerConnection({
                 iceServers: [
                     {
@@ -26,25 +117,35 @@
             });
 
             pc.ontrack = evt => {
-				console.log("Adding track to video control.");
-				document.querySelector('#videoCtl').srcObject = evt.streams[0];
-				
-				evt.streams[0].onunmute = () => {
-					console.log("Adding track to video control.");
-				};
-                    
-			   evt.streams[0].onended = () => {
-				  console.log("Track ended.");
-			   };
-			}
-			
+                console.log("Adding track to video control.");
+                document.querySelector('#videoCtl').srcObject = evt.streams[0];
+                evt.streams[0].onunmute = () => {
+                    console.log("Adding track to video control.");
+                };
+                evt.streams[0].onended = () => {
+                    console.log("Track ended.");
+                };
+            }
+
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
-			pc.onclose= () => {
-			   console.log("pc close");
-			};
-			
+            pc.onconnectionstatechange = () => {
+                console.log(`Peer connection state changed to ${pc.connectionState}`);
+                connectionReady.peer = (pc.connectionState === 'connected');
+                updateButtonStates();
+            }
+
+            pc.onclose= () => {
+                console.log("pc close");
+                setButtonStates(true, false);
+            };
+
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
+
+            ws.onopen = function () {
+                // Only enable Close after connection is open
+                setButtonStates(false, true);
+            };
 
             ws.onmessage = async function (evt) {
                 console.log("WebSocket message received:", evt.data);
@@ -72,21 +173,26 @@
         async function closePeer() {
             await pc?.close();
             await ws?.close();
+            setButtonStates(true, false);
         };
     </script>
 </head>
 <body>
-
-    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
-
-    <div>
-        <input type="text" id="websockurl" size="40" />
-        <button type="button" class="btn btn-success" onclick="start();">Start</button>
-        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    <div class="container">
+        <video controls autoplay="autoplay" id="videoCtl" playsinline width="640" height="480"></video>
+        <form class="controls" onsubmit="return false;">
+            <input type="text" id="websockurl" autocomplete="off" inputmode="url" placeholder="WebSocket URL" />
+            <div class="button-group">
+                <button type="button" id="startBtn" class="btn-start" onclick="start();">Start</button>
+                <button type="button" id="closeBtn" class="btn-close" onclick="closePeer();">Close</button>
+            </div>
+        </form>
     </div>
-
+    <script>
+        document.querySelector('#websockurl').value = getWebSocketUrl();
+        // Initial state: Start enabled, Close disabled
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('closeBtn').disabled = true;
+    </script>
 </body>
-
-<script>
-    document.querySelector('#websockurl').value = getWebSocketUrl();
-</script>
+</html>
