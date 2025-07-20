@@ -131,11 +131,8 @@
 
             pc.onconnectionstatechange = () => {
                 console.log(`Peer connection state changed to ${pc.connectionState}`);
-                if (pc.connectionState === 'connected' || pc.connectionState === 'connecting') {
-                    setButtonStates(false, true);
-                } else {
-                    setButtonStates(true, false);
-                }
+                connectionReady.peer = (pc.connectionState === 'connected');
+                updateButtonStates();
             }
 
             pc.onclose= () => {
