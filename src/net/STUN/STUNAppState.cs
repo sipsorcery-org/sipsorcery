@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // FileName: STUNLog.cs
 //
 // Description:
@@ -20,12 +20,12 @@ namespace SIPSorcery.Net
 {
     public class Utility
     {
-        public static UInt16 ReverseEndian(UInt16 val)
+        public static ushort ReverseEndian(ushort val)
         {
             return Convert.ToUInt16(val << 8 & 0xff00 | (val >> 8));
         }
 
-        public static UInt32 ReverseEndian(UInt32 val)
+        public static uint ReverseEndian(uint val)
         {
             return Convert.ToUInt32((val << 24 & 0xff000000) | (val << 8 & 0x00ff0000) | (val >> 8 & 0xff00) | (val >> 24));
         }

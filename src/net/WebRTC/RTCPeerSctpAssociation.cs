@@ -77,7 +77,7 @@ namespace SIPSorcery.Net
             : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
         {
             _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug("SCTP creating DTLS based association, is DTLS client {IsDtlsClient}, ID {ID}.", _rtcSctpTransport.IsDtlsClient, ID);
+            logger.LogSctpAssociationCreating(_rtcSctpTransport.IsDtlsClient, ID);
 
             OnData += OnDataFrameReceived;
         }
@@ -99,19 +99,18 @@ namespace SIPSorcery.Net
                             OnDataChannelOpened?.Invoke(frame.StreamID);
                             break;
                         case (byte)DataChannelMessageTypes.OPEN:
-                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
+                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData);
 
-                            logger.LogDebug("DCEP OPEN channel type {ChannelType}, priority {Priority}, reliability {Reliability}, label {Label}, protocol {Protocol}.",
-                                dcepOpen.ChannelType, dcepOpen.Priority, dcepOpen.Reliability, dcepOpen.Label, dcepOpen.Protocol);
+                            logger.LogWebRtcDcepOpen(dcepOpen.ChannelType, dcepOpen.Priority, dcepOpen.Reliability, dcepOpen.Label, dcepOpen.Protocol);
 
                             DataChannelTypes channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
-                            if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
+                            if (DataChannelTypesExtensions.IsDefined((DataChannelTypes)dcepOpen.ChannelType))
                             {
                                 channelType = (DataChannelTypes)dcepOpen.ChannelType;
                             }
                             else
                             {
-                                logger.LogWarning("DECP OPEN channel type of {ChannelType} not recognised, defaulting to {DefaultChannelType}.", dcepOpen.ChannelType, channelType);
+                                logger.LogWebRtcDcepUnknownChannelType(dcepOpen.ChannelType, channelType);
                             }
 
                             OnNewDataChannel?.Invoke(
@@ -124,7 +123,7 @@ namespace SIPSorcery.Net
 
                             break;
                         default:
-                            logger.LogWarning("DCEP message type {MessageType} not recognised, ignoring.", frame.UserData[0]);
+                            logger.LogWebRtcDcepUnrecognized(frame.UserData[0]);
                             break;
                     }
                     break;

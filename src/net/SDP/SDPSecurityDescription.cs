@@ -41,7 +41,8 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPSecurityDescription
     {
-        public const string CRYPTO_ATTRIBUE_PREFIX = "a=crypto:";
+        public const string CRYPTO_ATTRIBUTE_NAME = "crypto";
+        public const string CRYPTO_ATTRIBUE_PREFIX = "a="+"crypto"+":";
         private readonly char[] WHITE_SPACES = new char[] { ' ', '\t' };
         private const char SEMI_COLON = ';';
         private const string COLON = ":";
@@ -388,7 +389,7 @@ namespace SIPSorcery.Net
 
             private static void checkValidKeyInfoCharacters(string keyParameter, string keyInfo)
             {
-                foreach (char c in keyInfo.ToCharArray())
+                foreach (char c in keyInfo.AsSpan())
                 {
                     if (c < 0x21 || c > 0x7e)
                     {
@@ -689,13 +690,13 @@ namespace SIPSorcery.Net
                     case SrtpSessionParams.UNAUTHENTICATED_SRTP:
                     case SrtpSessionParams.UNENCRYPTED_SRTP:
                     case SrtpSessionParams.UNENCRYPTED_SRTCP:
-                        return this.SrtpSessionParam.ToString();
+                        return this.SrtpSessionParam.ToStringFast();
                     case SrtpSessionParams.wsh:
                         return $"{WSH_PREFIX}{this.Wsh}";
                     case SrtpSessionParams.kdr:
                         return $"{KDR_PREFIX}{this.Kdr}";
                     case SrtpSessionParams.fec_order:
-                        return $"{FEC_ORDER_PREFIX}{this.FecOrder.ToString()}";
+                        return $"{FEC_ORDER_PREFIX}{this.FecOrder.ToStringFast()}";
                     case SrtpSessionParams.fec_key:
                         return $"{FEC_KEY_PREFIX}{this.FecKey?.ToString()}";
                 }
@@ -837,7 +838,7 @@ namespace SIPSorcery.Net
                 return null;
             }
 
-            string s = CRYPTO_ATTRIBUE_PREFIX + this.Tag + WHITE_SPACE + this.CryptoSuite.ToString() + WHITE_SPACE;
+            string s = CRYPTO_ATTRIBUE_PREFIX + this.Tag + WHITE_SPACE + this.CryptoSuite.ToStringFast() + WHITE_SPACE;
             for (int i = 0; i < this.KeyParams.Count; i++)
             {
                 if (i > 0)

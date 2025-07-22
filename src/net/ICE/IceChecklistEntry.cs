@@ -179,26 +179,29 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The transaction ID that was set in the last STUN request connectivity check.
         /// </summary>
-        public string RequestTransactionID 
-        { 
-            get 
-            { 
-                return _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null; 
+        public string? RequestTransactionID
+        {
+            get
+            {
+                return _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null;
             }
             set
             {
-                var currentValue = _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null;
-                if (value != currentValue)
+                if (value is not null)
                 {
-                    const int MAX_CACHED_REQUEST_IDS = 30;
-                    while (_cachedRequestTransactionIDs.Count >= MAX_CACHED_REQUEST_IDS && _cachedRequestTransactionIDs.Count > 0)
+                    var currentValue = RequestTransactionID;
+                    if (value != currentValue && _cachedRequestTransactionIDs is not null)
                     {
-                        _cachedRequestTransactionIDs.RemoveAt(_cachedRequestTransactionIDs.Count - 1);
-                    }
+                        const int MAX_CACHED_REQUEST_IDS = 30;
+                        while (_cachedRequestTransactionIDs.Count is >= MAX_CACHED_REQUEST_IDS and > 0)
+                        {
+                            _cachedRequestTransactionIDs.RemoveAt(_cachedRequestTransactionIDs.Count - 1);
+                        }
 
-                    if (MAX_CACHED_REQUEST_IDS > 0)
-                    {
-                        _cachedRequestTransactionIDs.Insert(0, value);
+                        if (MAX_CACHED_REQUEST_IDS > 0)
+                        {
+                            _cachedRequestTransactionIDs.Insert(0, value);
+                        }
                     }
                 }
             }
@@ -252,7 +255,7 @@ namespace SIPSorcery.Net
 
             if (index >= 1)
             {
-                logger.LogInformation("Received transaction id from a previous cached RequestTransactionID {Id} Index: {Index}", id, index);
+                logger.LogIceChecklistEntryTxIdMatch(id, index);
             }
 
             return index >= 0;
@@ -277,91 +280,96 @@ namespace SIPSorcery.Net
         internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
         {
             bool retry = false;
-            var msgType = stunResponse.Header.MessageClass;
-            if (msgType == STUNClassTypesEnum.ErrorResponse)
+            if (stunResponse.Header.MessageClass == STUNClassTypesEnum.ErrorResponse)
             {
-                if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                if (stunResponse.Attributes != null)
                 {
-                    var errCodeAttribute =
-                        stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as
-                            STUNErrorCodeAttribute;
-                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
-                        errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    foreach (var attr in stunResponse.Attributes)
                     {
-                        if (LocalCandidate.IceServer == null)
+                        if (attr.AttributeType == STUNAttributeTypesEnum.ErrorCode)
                         {
-                            logger.LogWarning("A STUN error response was received on an ICE candidate without a corresponding ICE server, ignoring.");
-                        }
-                        else
-                        {
-                            LocalCandidate.IceServer.SetAuthenticationFields(stunResponse);
-                            LocalCandidate.IceServer.GenerateNewTransactionID();
-                            retry = true;
+                            var errCodeAttribute = attr as STUNErrorCodeAttribute;
+                            if (errCodeAttribute != null &&
+                                (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
+                                 errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE))
+                            {
+                                if (LocalCandidate.IceServer == null)
+                                {
+                                    logger.LogIceStunNoAuthServer();
+                                }
+                                else
+                                {
+                                    LocalCandidate.IceServer.SetAuthenticationFields(stunResponse);
+                                    LocalCandidate.IceServer.GenerateNewTransactionID();
+                                    retry = true;
+                                }
+                            }
+                            break;
                         }
                     }
                 }
-
             }
 
-            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
+            switch (stunResponse.Header.MessageType)
             {
-                var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+                case STUNMessageTypesEnum.RefreshSuccessResponse:
+                    if (stunResponse.Attributes != null)
+                    {
+                        foreach (var attr in stunResponse.Attributes)
+                        {
+                            if (attr.AttributeType == STUNAttributeTypesEnum.Lifetime)
+                            {
+                                LocalCandidate.IceServer.TurnTimeToExpiry =
+                                    DateTime.Now + TimeSpan.FromSeconds(BitConverter.ToUInt32(attr.Value.ToArray().Reverse().ToArray(), 0));
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                case STUNMessageTypesEnum.RefreshErrorResponse:
+                    logger.LogIceServerRefreshError();
+                    break;
+                case STUNMessageTypesEnum.BindingSuccessResponse:
+                    if (Nominated)
+                    {
+                        // If the candidate has been nominated then this is a response to a periodic
+                        // check to whether the connection is still available.
+                        LastConnectedResponseAt = DateTime.Now;
+                        RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
+                    }
+                    else
+                    {
+                        State = ChecklistEntryState.Succeeded;
+                        ChecksSent = 0;
+                        //LastCheckSentAt = DateTime.MinValue;
+                    }
+                    break;
+                case STUNMessageTypesEnum.BindingErrorResponse:
+                    logger.LogIceStunBindingErrorResponse(remoteEndPoint);
+                    logger.LogIceChecklistEntryFailed(RemoteCandidate);
+                    State = ChecklistEntryState.Failed;
+                    break;
+                case STUNMessageTypesEnum.CreatePermissionSuccessResponse:
+                    logger.LogIceTurnPermissionResponse(remoteEndPoint, Encoding.ASCII.GetString(stunResponse.Header.TransactionId));
+                    TurnPermissionsRequestSent = 1;
+                    TurnPermissionsResponseAt = DateTime.Now;
 
-                if (lifetime != null)
-                {
-                    LocalCandidate.IceServer.TurnTimeToExpiry = DateTime.Now +
-                                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
-                }
-            }
-            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
-            {
-                logger.LogError("Cannot refresh TURN allocation");
-            }
-            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
-            {
-                if (Nominated)
-                {
-                    // If the candidate has been nominated then this is a response to a periodic
-                    // check to whether the connection is still available.
-                    LastConnectedResponseAt = DateTime.Now;
-                    RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
-                }
-                else
-                {
-                    State = ChecklistEntryState.Succeeded;
-                    ChecksSent = 0;
-                    //LastCheckSentAt = DateTime.MinValue;
-                }
-            }
-            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
-            {
-                logger.LogWarning("ICE RTP channel a STUN binding error response was received from {RemoteEndPoint}.", remoteEndPoint);
-                logger.LogWarning("ICE RTP channel check list entry set to failed: {RemoteCandidate}.", RemoteCandidate);
-                State = ChecklistEntryState.Failed;
-            }
-            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
-            {
-                logger.LogDebug("A TURN Create Permission success response was received from {RemoteEndPoint} (TxID: {TransactionId}).", remoteEndPoint, Encoding.ASCII.GetString(stunResponse.Header.TransactionId));
-                TurnPermissionsRequestSent = 1;
-                TurnPermissionsResponseAt = DateTime.Now;
-
-                //After creating permission we need to return InProgressState to Waiting to send request again
-                if (State == ChecklistEntryState.InProgress)
-                {
-                    State = ChecklistEntryState.Waiting;
-                    //Clear CheckSentAt Time to force send it again
-                    FirstCheckSentAt = DateTime.MinValue;
-                }
-            }
-            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
-            {
-                logger.LogWarning("ICE RTP channel TURN Create Permission error response was received from {RemoteEndPoint}.", remoteEndPoint);
-                TurnPermissionsResponseAt = DateTime.Now;
-                State = retry ? State : ChecklistEntryState.Failed;
-            }
-            else
-            {
-                logger.LogWarning("ICE RTP channel received an unexpected STUN response {MessageType} from {RemoteEndPoint}.", stunResponse.Header.MessageType, remoteEndPoint);
+                    //After creating permission we need to return InProgressState to Waiting to send request again
+                    if (State == ChecklistEntryState.InProgress)
+                    {
+                        State = ChecklistEntryState.Waiting;
+                        //Clear CheckSentAt Time to force send it again
+                        FirstCheckSentAt = DateTime.MinValue;
+                    }
+                    break;
+                case STUNMessageTypesEnum.CreatePermissionErrorResponse:
+                    logger.LogIceTurnCreatePermissionsError(remoteEndPoint);
+                    TurnPermissionsResponseAt = DateTime.Now;
+                    State = retry ? State : ChecklistEntryState.Failed;
+                    break;
+                default:
+                    logger.LogIceUnexpectedStunResponse(stunResponse.Header.MessageType, remoteEndPoint);
+                    break;
             }
         }
     }

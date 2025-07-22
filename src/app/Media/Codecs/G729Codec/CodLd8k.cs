@@ -41,7 +41,6 @@ namespace SIPSorcery.Media.G729Codec
 {
     internal class CodLd8k : Ld8k
     {
-
         private readonly AcelpCo acelpCo = new AcelpCo();
 
         /* Zero vector */

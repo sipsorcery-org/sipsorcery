@@ -18,6 +18,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -47,7 +49,14 @@ namespace SIPSorcery.Net
 
         public static uint Calculate(byte[] buffer, int offset, int length)
         {
-            uint crc = ~0u;
+            return Calculate(buffer.AsSpan(offset, length));
+        }
+
+        public static uint Calculate(ReadOnlySpan<byte> buffer)
+        {
+            var crc = ~0u;
+            var length = buffer.Length;
+            var offset = 0;
             while (--length >= 0)
             {
                 crc = _table[(crc ^ buffer[offset++]) & 0xff] ^ crc >> 8;
@@ -60,7 +69,7 @@ namespace SIPSorcery.Net
     /// An SCTP packet is composed of a common header and chunks. A chunk
     /// contains either control information or user data.
     /// </summary>
-    public class SctpPacket
+    public partial class SctpPacket
     {
         /// <summary>
         /// The position in a serialised SCTP packet buffer that the verification
@@ -118,28 +127,50 @@ namespace SIPSorcery.Net
             UnrecognisedChunks = new List<byte[]>();
         }
 
+        public int GetPacketSize() => SctpHeader.SCTP_HEADER_LENGTH + Chunks.Sum(x => x.GetChunkLength(true));
+
         /// <summary>
         /// Serialises an SCTP packet to a byte array.
         /// </summary>
         /// <returns>The byte array containing the serialised SCTP packet.</returns>
         public byte[] GetBytes()
         {
-            int chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
-            byte[] buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
+            var buffer = new byte[GetPacketSize()];
 
-            Header.WriteToBuffer(buffer, 0);
-
-            int writePosn = SctpHeader.SCTP_HEADER_LENGTH;
-            foreach (var chunk in Chunks)
-            {
-                writePosn += chunk.WriteTo(buffer, writePosn);
-            }
-
-            NetConvert.ToBuffer(0U, buffer, CHECKSUM_BUFFER_POSITION);
-            uint checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-            NetConvert.ToBuffer(NetConvert.EndianFlip(checksum), buffer, CHECKSUM_BUFFER_POSITION);
+            WriteBytesCore(buffer);
 
             return buffer;
+        }
+
+        public int WriteBytes(Span<byte> buffer)
+        {
+            var size = GetPacketSize();
+
+            if (buffer.Length < size)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+            }
+
+            WriteBytesCore(buffer.Slice(0, size));
+
+            return size;
+        }
+
+        private void WriteBytesCore(Span<byte> buffer)
+        {
+            var bytesWritten = Header.WriteBytes(buffer);
+
+            var contentBuffer = buffer.Slice(SctpHeader.SCTP_HEADER_LENGTH);
+            foreach (var chunk in Chunks)
+            {
+                bytesWritten = chunk.WriteTo(contentBuffer);
+                contentBuffer = contentBuffer.Slice(bytesWritten);
+            }
+
+            var checksumBuffer = buffer.Slice(CHECKSUM_BUFFER_POSITION, sizeof(uint));
+            checksumBuffer.Clear();
+            var checksum = CRC32C.Calculate(buffer);
+            BinaryPrimitives.WriteUInt32LittleEndian(checksumBuffer, checksum);
         }
 
         /// <summary>
@@ -155,13 +186,11 @@ namespace SIPSorcery.Net
         /// Parses an SCTP packet from a serialised buffer.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="offset">The position in the buffer of the packet.</param>
-        /// <param name="length">The length of the serialised packet in the buffer.</param>
-        public static SctpPacket Parse(byte[] buffer, int offset, int length)
+        public static SctpPacket Parse(ReadOnlySpan<byte> buffer)
         {
             var pkt = new SctpPacket();
-            pkt.Header = SctpHeader.Parse(buffer, offset);
-            (pkt.Chunks, pkt.UnrecognisedChunks) = ParseChunks(buffer, offset, length);
+            pkt.Header = SctpHeader.Parse(buffer);
+            (pkt.Chunks, pkt.UnrecognisedChunks) = ParseChunks(buffer);
 
             return pkt;
         }
@@ -170,25 +199,24 @@ namespace SIPSorcery.Net
         /// Parses the chunks from a serialised SCTP packet.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="offset">The position in the buffer of the packet.</param>
-        /// <param name="length">The length of the serialised packet in the buffer.</param>
         /// <returns>The lsit of parsed chunks and a list of unrecognised chunks that were not de-serialised.</returns>
-        private static (List<SctpChunk> chunks, List<byte[]> unrecognisedChunks) ParseChunks(byte[] buffer, int offset, int length)
+        private static (List<SctpChunk> chunks, List<byte[]> unrecognisedChunks) ParseChunks(ReadOnlySpan<byte> buffer)
         {
-            List<SctpChunk> chunks = new List<SctpChunk>();
-            List<byte[]> unrecognisedChunks = new List<byte[]>();
+            var chunks = new List<SctpChunk>();
+            var unrecognisedChunks = new List<byte[]>();
 
-            int posn = offset + SctpHeader.SCTP_HEADER_LENGTH;
+            int posn = SctpHeader.SCTP_HEADER_LENGTH;
 
-            bool stop = false;
+            var stop = false;
 
-            while (posn < length)
+            while (posn < buffer.Length)
             {
-                byte chunkType = buffer[posn];
+                var chunkSpan = buffer.Slice(posn);
+                var chunkType = chunkSpan[0];
 
-                if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
+                if (SctpChunkTypeExtensions.IsDefined((SctpChunkType)chunkType))
                 {
-                    var chunk = SctpChunk.Parse(buffer, posn);
+                    var chunk = SctpChunk.Parse(chunkSpan);
                     chunks.Add(chunk);
                 }
                 else
@@ -200,23 +228,23 @@ namespace SIPSorcery.Net
                             break;
                         case SctpUnrecognisedChunkActions.StopAndReport:
                             stop = true;
-                            unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(buffer, posn));
+                            unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(chunkSpan));
                             break;
                         case SctpUnrecognisedChunkActions.Skip:
                             break;
                         case SctpUnrecognisedChunkActions.SkipAndReport:
-                            unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(buffer, posn));
+                            unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(chunkSpan));
                             break;
                     }
                 }
 
                 if (stop)
                 {
-                    logger.LogWarning("SCTP unrecognised chunk type {chunkType} indicated no further chunks should be processed.", chunkType);
+                    logger.LogSctpUnrecognisedChunkType(chunkType);
                     break;
                 }
 
-                posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
+                posn += (int)SctpChunk.GetChunkLengthFromHeader(chunkSpan, true);
             }
 
             return (chunks, unrecognisedChunks);
@@ -226,19 +254,25 @@ namespace SIPSorcery.Net
         /// Verifies whether the checksum for a serialised SCTP packet is valid.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="posn">The start position in the buffer.</param>
-        /// <param name="length">The length of the packet in the buffer.</param>
         /// <returns>True if the checksum was valid, false if not.</returns>
-        public static bool VerifyChecksum(byte[] buffer, int posn, int length)
+        public static bool VerifyChecksum(ReadOnlySpan<byte> buffer)
         {
-            uint origChecksum = NetConvert.ParseUInt32(buffer, posn + CHECKSUM_BUFFER_POSITION);
-            NetConvert.ToBuffer(0U, buffer, posn + CHECKSUM_BUFFER_POSITION);
-            uint calcChecksum = CRC32C.Calculate(buffer, posn, length);
+            var tempBuffer = ArrayPool<byte>.Shared.Rent(buffer.Length);
+            try
+            {
+                var tempSpan = tempBuffer.AsSpan(0, buffer.Length);
+                buffer.CopyTo(tempBuffer);
+                var checksumSpan = tempSpan.Slice(CHECKSUM_BUFFER_POSITION, sizeof(uint));
+                var origChecksum = BinaryPrimitives.ReadUInt32LittleEndian(checksumSpan);
+                checksumSpan.Clear();
+                var calcChecksum = CRC32C.Calculate(tempSpan);
 
-            // Put the original checksum back.
-            NetConvert.ToBuffer(origChecksum, buffer, posn + CHECKSUM_BUFFER_POSITION);
-
-            return origChecksum == NetConvert.EndianFlip(calcChecksum);
+                return origChecksum == calcChecksum;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(tempBuffer);
+            }
         }
 
         /// <summary>
@@ -246,27 +280,23 @@ namespace SIPSorcery.Net
         /// a pre-flight check to be carried out before de-serialising the whole buffer.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="posn">The start position in the buffer.</param>
-        /// <param name="length">The length of the packet in the buffer.</param>
         /// <returns>The verification tag for the serialised SCTP packet.</returns>
-        public static uint GetVerificationTag(byte[] buffer, int posn, int length)
+        public static uint GetVerificationTag(ReadOnlySpan<byte> buffer)
         {
-            return NetConvert.ParseUInt32(buffer, posn + VERIFICATIONTAG_BUFFER_POSITION);
+            return BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(VERIFICATIONTAG_BUFFER_POSITION));
         }
 
         /// <summary>
         /// Performs verification checks on a serialised SCTP packet.
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="posn">The start position in the buffer.</param>
-        /// <param name="length">The length of the packet in the buffer.</param>
         /// <param name="requiredTag">The required verification tag for the serialised
         /// packet. This should match the verification tag supplied by the remote party.</param>
         /// <returns>True if the packet is valid, false if not.</returns>
-        public static bool IsValid(byte[] buffer, int posn, int length, uint requiredTag)
+        public static bool IsValid(ReadOnlySpan<byte> buffer, uint requiredTag)
         {
-            return GetVerificationTag(buffer, posn, length) == requiredTag &&
-                VerifyChecksum(buffer, posn, length);
+            return GetVerificationTag(buffer) == requiredTag &&
+                VerifyChecksum(buffer);
         }
     }
 }

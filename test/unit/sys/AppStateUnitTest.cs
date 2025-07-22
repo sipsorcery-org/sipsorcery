@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -27,8 +28,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CheckLoggingTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             Log.Logger.LogDebug("LogDebug CheckLoggingTest");
             Log.Logger.LogInformation("LogInfo CheckLoggingTest");

@@ -14,8 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Concentus;
 using Concentus.Enums;
 using Microsoft.Extensions.Logging;
@@ -35,7 +37,7 @@ namespace SIPSorcery.Media
         /// 2880 corresponds to a sample size of 30ms for a single channel at 48Khz with 16 bit PCM. Therefore
         /// the max sample size supported by OPUS is 30ms.
         /// </summary>
-        private const int OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL = 2880; 
+        private const int OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL = 2880;
 
         /// <summary>
         /// OPUS max encode size (see IOpusEncoder.Encode).
@@ -44,20 +46,20 @@ namespace SIPSorcery.Media
 
         private static ILogger logger = Log.Logger;
 
-        private bool _disposedValue = false;
+        private bool _disposedValue;
 
-        private G722Codec _g722Codec;
-        private G722CodecState _g722CodecState;
-        private G722Codec _g722Decoder;
-        private G722CodecState _g722DecoderState;
+        private G722Codec? _g722Codec;
+        private G722CodecState? _g722CodecState;
+        private G722Codec? _g722Decoder;
+        private G722CodecState? _g722DecoderState;
 
-        private G729Encoder _g729Encoder;
-        private G729Decoder _g729Decoder;
+        private G729Encoder? _g729Encoder;
+        private G729Decoder? _g729Decoder;
 
-        private IOpusDecoder _opusDecoder;
-        private IOpusEncoder _opusEncoder;
+        private IOpusDecoder? _opusDecoder;
+        private IOpusEncoder? _opusEncoder;
 
-        private List<AudioFormat> _linearFormats = new List<AudioFormat>
+        private static readonly ReadOnlyMemory<AudioFormat> _linearFormats = new AudioFormat[]
         {
             new AudioFormat(AudioCodecsEnum.L16, 117, 16000),
             new AudioFormat(AudioCodecsEnum.L16, 118, 8000),
@@ -73,8 +75,8 @@ namespace SIPSorcery.Media
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G722),
             new AudioFormat(SDPWellKnownMediaFormatsEnum.G729),
 
-            // Need more testing before adding OPUS by default. 24 Dec 2024 AC.
-            //new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
+            // Need more testing befoer adding OPUS by default. 24 Dec 2024 AC.
+            //new AudioFormat(111, nameof(AudioCodecsEnum.OPUS), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
         };
 
         public List<AudioFormat> SupportedFormats
@@ -92,12 +94,17 @@ namespace SIPSorcery.Media
         {
             if (includeLinearFormats)
             {
-                _supportedFormats.AddRange(_linearFormats);
+                _supportedFormats.Capacity = Math.Max(_supportedFormats.Count + _linearFormats.Length, _supportedFormats.Capacity);
+                var linearFormatsSpan = _linearFormats.Span;
+                for (var i = 0; i < linearFormatsSpan.Length; i++)
+                {
+                    _supportedFormats.Add(linearFormatsSpan[i]);
+                }
             }
 
-            if(includeOpus)
+            if (includeOpus)
             {
-                _supportedFormats.Add(new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
+                _supportedFormats.Add(new AudioFormat(111, nameof(AudioCodecsEnum.OPUS), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
             }
         }
 
@@ -106,7 +113,7 @@ namespace SIPSorcery.Media
             _supportedFormats = supportedFormats.ToList();
         }
 
-        public byte[] EncodeAudio(short[] pcm, AudioFormat format)
+        public void EncodeAudio(ReadOnlySpan<short> pcm, AudioFormat format, IBufferWriter<byte> destination)
         {
             if (format.Codec == AudioCodecsEnum.G722)
             {
@@ -116,11 +123,10 @@ namespace SIPSorcery.Media
                     _g722CodecState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
                 }
 
-                int outputBufferSize = pcm.Length / 2;
-                byte[] encodedSample = new byte[outputBufferSize];
-                int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
-
-                return encodedSample;
+                var outputBufferSize = pcm.Length / 2;
+                var encodedSpan = destination.GetSpan(outputBufferSize);
+                var res = _g722Codec.Encode(_g722CodecState, encodedSpan, pcm);
+                destination.Advance(res);
             }
             else if (format.Codec == AudioCodecsEnum.G729)
             {
@@ -129,30 +135,46 @@ namespace SIPSorcery.Media
                     _g729Encoder = new G729Encoder();
                 }
 
-                byte[] pcmBytes = new byte[pcm.Length * sizeof(short)];
-                Buffer.BlockCopy(pcm, 0, pcmBytes, 0, pcmBytes.Length);
-                return _g729Encoder.Process(pcmBytes);
+                var pcmBytes = new byte[pcm.Length * sizeof(short)];
+                MemoryMarshal.AsBytes(pcm).CopyTo(pcmBytes);
+                var encoded = _g729Encoder.Process(pcmBytes);
+                encoded.CopyTo(destination.GetSpan(encoded.Length));
+                destination.Advance(encoded.Length);
             }
             else if (format.Codec == AudioCodecsEnum.PCMA)
             {
-                return pcm.Select(x => ALawEncoder.LinearToALawSample(x)).ToArray();
+                var encoded = new byte[pcm.Length];
+                for (var i = 0; i < pcm.Length; i++)
+                {
+                    encoded[i] = ALawEncoder.LinearToALawSample(pcm[i]);
+                }
+                encoded.CopyTo(destination.GetSpan(encoded.Length));
+                destination.Advance(encoded.Length);
             }
             else if (format.Codec == AudioCodecsEnum.PCMU)
             {
-                return pcm.Select(x => MuLawEncoder.LinearToMuLawSample(x)).ToArray();
+                var encoded = new byte[pcm.Length];
+                for (var i = 0; i < pcm.Length; i++)
+                {
+                    encoded[i] = MuLawEncoder.LinearToMuLawSample(pcm[i]);
+                }
+                encoded.CopyTo(destination.GetSpan(encoded.Length));
+                destination.Advance(encoded.Length);
             }
             else if (format.Codec == AudioCodecsEnum.L16)
             {
-                // When netstandard2.1 can be used.
-                //return MemoryMarshal.Cast<short, byte>(pcm)
-
                 // Put on the wire in network byte order (big endian).
-                return pcm.SelectMany(x => new byte[] { (byte)(x >> 8), (byte)(x) }).ToArray();
+                var encoded = MemoryMarshal.Cast<short, byte>(pcm);
+                encoded.CopyTo(destination.GetSpan(encoded.Length));
+                destination.Advance(encoded.Length);
             }
             else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
             {
                 // Put on the wire as little endian.
-                return pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray();
+                var length = pcm.Length / 2;
+                var encoded = destination.GetSpan(length);
+                MemoryOperations.ToLittleEndianBytes(pcm, encoded);
+                destination.Advance(length);
             }
             else if (format.Codec == AudioCodecsEnum.OPUS)
             {
@@ -162,16 +184,16 @@ namespace SIPSorcery.Media
                     _opusEncoder = OpusCodecFactory.CreateEncoder(format.ClockRate, channelCount, OpusApplication.OPUS_APPLICATION_VOIP);
                 }
 
+
                 if (pcm.Length > _opusEncoder.NumChannels * OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL)
                 {
-                    logger.LogWarning("{audioEncoder} input sample of length {inputSize} supplied to OPUS encoder exceeded maximum limit of {maxLimit}. Reduce sampling period.", nameof(AudioEncoder), pcm.Length, _opusEncoder.NumChannels * OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL);
-                    return [];
+                    logger.LogSettingAudioFormatWarning(nameof(AudioEncoder), pcm.Length, _opusEncoder.NumChannels * OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL);
                 }
                 else
                 {
                     Span<byte> encodedSample = stackalloc byte[OPUS_MAXIMUM_ENCODED_FRAME_SIZE];
-                    int encodedLength = _opusEncoder.Encode(pcm, pcm.Length / _opusEncoder.NumChannels, encodedSample, encodedSample.Length);
-                    return encodedSample.Slice(0, encodedLength).ToArray();
+                    var encodedLength = _opusEncoder.Encode(pcm, pcm.Length / _opusEncoder.NumChannels, encodedSample, encodedSample.Length);
+                    destination.Write(encodedSample.Slice(0, encodedLength));
                 }
             }
             else
@@ -181,89 +203,119 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Event handler for receiving RTP packets from the remote party.
+        /// Decodes to 16bit signed PCM samples.
         /// </summary>
-        /// <param name="encodedSample">Data received from an RTP socket.</param>
-        /// <param name="format">The audio format of the encoded packets.</param>
-        public short[] DecodeAudio(byte[] encodedSample, AudioFormat format)
+        /// <param name="encodedSample">The span containing the encoded sample.</param>
+        /// <param name="format">The audio format of the encoded sample.</param>
+        /// <param name="destination">A <see cref="IBufferWriter{T}"/> of <see langword="short"/> to receive the decoded PCM samples.</param>
+        public void DecodeAudio(ReadOnlySpan<byte> encodedSample, AudioFormat format, IBufferWriter<short> destination)
         {
-            if (format.Codec == AudioCodecsEnum.G722)
+            switch (format.Codec)
             {
-                if (_g722Decoder == null)
-                {
-                    _g722Decoder = new G722Codec();
-                    _g722DecoderState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
-                }
+                case AudioCodecsEnum.G722:
+                    {
+                        if (_g722Decoder == null)
+                        {
+                            _g722Decoder = new G722Codec();
+                            _g722DecoderState = new G722CodecState(G722_BIT_RATE, G722Flags.None);
+                        }
 
-                short[] decodedPcm = new short[encodedSample.Length * 2];
-                int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
+                        // Use the new IBufferWriter-based decode method directly
+                        _g722Decoder.Decode(_g722DecoderState, destination, encodedSample);
+                    }
 
-                return decodedPcm.Take(decodedSampleCount).ToArray();
-            }
-            if (format.Codec == AudioCodecsEnum.G729)
-            {
-                if (_g729Decoder == null)
-                {
-                    _g729Decoder = new G729Decoder();
-                }
+                    break;
+                case AudioCodecsEnum.G729:
+                    {
+                        if (_g729Decoder == null)
+                        {
+                            _g729Decoder = new G729Decoder();
+                        }
 
-                byte[] decodedBytes = _g729Decoder.Process(encodedSample);
-                short[] decodedPcm = new short[decodedBytes.Length / sizeof(short)];
-                Buffer.BlockCopy(decodedBytes, 0, decodedPcm, 0, decodedBytes.Length);
-                return decodedPcm;
-            }
-            else if (format.Codec == AudioCodecsEnum.PCMA)
-            {
-                return encodedSample.Select(x => ALawDecoder.ALawToLinearSample(x)).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.PCMU)
-            {
-                return encodedSample.Select(x => MuLawDecoder.MuLawToLinearSample(x)).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.L16)
-            {
-                // Samples are on the wire as big endian.
-                return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(encodedSample[i * 2] << 8 | encodedSample[i * 2 + 1])).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.PCM_S16LE)
-            {
-                // Samples are on the wire as little endian (well unlikely to be on the wire in this case but when they 
-                // arrive from somewhere like the SkypeBot SDK they will be in little endian format).
-                return encodedSample.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(encodedSample[i * 2 + 1] << 8 | encodedSample[i * 2])).ToArray();
-            }
-            else if (format.Codec == AudioCodecsEnum.OPUS)
-            {
-                if (_opusDecoder == null)
-                {
-                    var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
-                    _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, channelCount);
-                }
+                        // Use the new span-based decode method directly
+                        _g729Decoder.Process(encodedSample, destination);
+                    }
 
-                int maxSamples = OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL * _opusDecoder.NumChannels;
-                float[] floatBuf = new float[maxSamples];
+                    break;
+                case AudioCodecsEnum.PCMA:
+                    {
+                        var outputSpan = destination.GetSpan(encodedSample.Length);
+                        for (var i = 0; i < encodedSample.Length; i++)
+                        {
+                            outputSpan[i] = ALawDecoder.ALawToLinearSample(encodedSample[i]);
+                        }
+                        destination.Advance(encodedSample.Length);
+                    }
 
-                // Decode returns the number of samples per channel.
-                int samplesPerChannel = _opusDecoder.Decode(
-                    encodedSample,
-                    floatBuf,
-                    floatBuf.Length,
-                    false);
+                    break;
+                case AudioCodecsEnum.PCMU:
+                    {
+                        var outputSpan = destination.GetSpan(encodedSample.Length);
+                        for (var i = 0; i < encodedSample.Length; i++)
+                        {
+                            outputSpan[i] = MuLawDecoder.MuLawToLinearSample(encodedSample[i]);
+                        }
+                        destination.Advance(encodedSample.Length);
+                    }
 
-                int totalFloats = samplesPerChannel * _opusDecoder.NumChannels;
+                    break;
+                case AudioCodecsEnum.L16:
+                    {
+                        // Samples are on the wire as big endian.
+                        var sampleCount = encodedSample.Length / 2;
+                        var outputSpan = destination.GetSpan(sampleCount);
+                        for (var i = 0; i < sampleCount; i++)
+                        {
+                            var byteIndex = i * 2;
+                            outputSpan[i] = (short)(encodedSample[byteIndex] << 8 | encodedSample[byteIndex + 1]);
+                        }
+                        destination.Advance(sampleCount);
+                    }
 
-                // Convert to 16-bit interleaved PCM.
-                short[] pcm16 = new short[totalFloats];
-                for (int i = 0; i < totalFloats; i++)
-                {
-                    var f = ClampToFloat(floatBuf[i], -1.0f, 1.0f);
-                    pcm16[i] = (short)(f * 32767);
-                }
+                    break;
+                case AudioCodecsEnum.PCM_S16LE:
+                    {
+                        // Samples are on the wire as little endian.
+                        var sampleCount = encodedSample.Length / 2;
+                        var outputSpan = destination.GetSpan(sampleCount);
+                        for (var i = 0; i < sampleCount; i++)
+                        {
+                            var byteIndex = i * 2;
+                            outputSpan[i] = (short)(encodedSample[byteIndex + 1] << 8 | encodedSample[byteIndex]);
+                        }
+                        destination.Advance(sampleCount);
+                    }
 
-                return pcm16;
-            }
-            else
-            {
-                throw new ApplicationException($"Audio format {format.Codec} cannot be decoded.");
+                    break;
+                case AudioCodecsEnum.OPUS:
+                    {
+                        if (_opusDecoder == null)
+                        {
+                            var channelCount = format.ChannelCount > 0 ? format.ChannelCount : OPUS_CHANNELS;
+                            _opusDecoder = OpusCodecFactory.CreateDecoder(format.ClockRate, channelCount);
+                        }
+
+                        var maxSamples = OPUS_MAXIMUM_INPUT_SAMPLES_PER_CHANNEL * _opusDecoder.NumChannels;
+
+                        var outputSpan = destination.GetSpan(maxSamples);
+
+                        var samplesPerChannel = _opusDecoder.Decode(
+                            encodedSample,
+                            outputSpan,
+                            maxSamples,
+                            false);
+
+                        var totalSamples = samplesPerChannel * _opusDecoder.NumChannels;
+
+                        if (totalSamples > 0)
+                        {
+                            destination.Advance(totalSamples);
+                        }
+                    }
+
+                    break;
+                default:
+                    throw new ApplicationException($"Audio format {format.Codec} cannot be decoded.");
             }
         }
 
@@ -271,13 +323,6 @@ namespace SIPSorcery.Media
         public short[] Resample(short[] pcm, int inRate, int outRate)
         {
             return PcmResampler.Resample(pcm, inRate, outRate);
-        }
-
-        private float ClampToFloat(float value, float min, float max)
-        {
-            if (value < min) { return min; }
-            if (value > max) { return max; }
-            return value;
         }
 
         protected virtual void Dispose(bool disposing)

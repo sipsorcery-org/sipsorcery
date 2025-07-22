@@ -13,43 +13,32 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
 using System;
-using System.Text;
+using System.Buffers.Binary;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class STUNConnectionIdAttribute : STUNAttribute
+    public partial class STUNConnectionIdAttribute : STUNAttribute
     {
         public readonly uint ConnectionId;
 
-        public STUNConnectionIdAttribute(byte[] attributeValue)
+        public STUNConnectionIdAttribute(ReadOnlyMemory<byte> attributeValue)
             : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                ConnectionId = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 0));
-            }
-            else
-            {
-                ConnectionId = BitConverter.ToUInt32(attributeValue, 0);
-            }
+            ConnectionId = BinaryPrimitives.ReadUInt32BigEndian(attributeValue.Span);
         }
 
         public STUNConnectionIdAttribute(uint connectionId)
-            : base(STUNAttributeTypesEnum.ConnectionId, 
-                  BitConverter.IsLittleEndian?
-                  BitConverter.GetBytes(NetConvert.DoReverseEndian(connectionId)) : 
-                  BitConverter.GetBytes(connectionId))
+            : base(STUNAttributeTypesEnum.ConnectionId, connectionId)
         {
             ConnectionId = connectionId;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
-
-            return attrDescrStr;
+            sb.Append("connection ID=");
+            sb.Append(ConnectionId);
         }
     }
 }

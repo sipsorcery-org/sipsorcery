@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public int RetransmissionMilliseconds = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
 
-        public Action<byte[]> OnDataReady;
+        public ReadOnlyMemoryAction<byte> OnDataReady;
 
         /// <summary>
         /// Parameters:
@@ -163,14 +163,14 @@ namespace SIPSorcery.Net
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as client.");
+            logger.LogDtlsHandshakeStartUnchecked("client");
 
             if (!_handshaking && !_handshakeComplete)
             {
                 this._waitMillis = RetransmissionMilliseconds;
                 this._startTime = System.DateTime.Now;
                 this._handshaking = true;
-                DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
+                var clientProtocol = new DtlsClientProtocol();
                 try
                 {
                     var client = (DtlsSrtpClient)connection;
@@ -200,7 +200,7 @@ namespace SIPSorcery.Net
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, $"DTLS handshake as client timed out waiting for handshake to complete.");
+                        logger.LogDtlsHandshakeTimeout("client", excp);
                         handshakeError = "timeout";
                     }
                     else
@@ -211,7 +211,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, "DTLS handshake as client failed. {ErrorMessage}", excp.Message);
+                        logger.LogDtlsHandshakeFailed("client", excp.Message, excp);
                     }
 
                     // Declare handshake as failed
@@ -229,14 +229,14 @@ namespace SIPSorcery.Net
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as server.");
+            logger.LogDtlsHandshakeStartUnchecked("server");
 
             if (!_handshaking && !_handshakeComplete)
             {
                 this._waitMillis = RetransmissionMilliseconds;
                 this._startTime = System.DateTime.Now;
                 this._handshaking = true;
-                DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
+                var serverProtocol = new DtlsServerProtocol();
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
@@ -265,7 +265,7 @@ namespace SIPSorcery.Net
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, $"DTLS handshake as server timed out waiting for handshake to complete.");
+                        logger.LogDtlsHandshakeTimeout("server", excp);
                         handshakeError = "timeout";
                     }
                     else
@@ -276,7 +276,7 @@ namespace SIPSorcery.Net
                             handshakeError = (excp as Org.BouncyCastle.Tls.TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, "DTLS handshake as server failed. {ErrorMessage}", excp.Message);
+                        logger.LogDtlsHandshakeFailed("server", excp.Message, excp);
                     }
 
                     // Declare handshake as failed
@@ -350,7 +350,7 @@ namespace SIPSorcery.Net
 
         protected IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
         {
-            SrtpTransformEngine engine = null;
+            SrtpTransformEngine engine;
             if (!isClient)
             {
                 engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
@@ -370,7 +370,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        public byte[]? UnprotectRTP(byte[] packet, int offset, int length)
         {
             lock (this.srtpDecoder)
             {
@@ -394,7 +394,7 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        public byte[]? ProtectRTP(byte[] packet, int offset, int length)
         {
             lock (this.srtpEncoder)
             {
@@ -418,7 +418,7 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[]? UnprotectRTCP(byte[] packet, int offset, int length)
         {
             lock (this.srtcpDecoder)
             {
@@ -441,7 +441,7 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[]? ProtectRTCP(byte[] packet, int offset, int length)
         {
             lock (this.srtcpEncoder)
             {
@@ -482,15 +482,21 @@ namespace SIPSorcery.Net
             return this._sendLimit;
         }
 
-        public void WriteToRecvStream(byte[] buf)
+        public void WriteToRecvStream(ReadOnlySpan<byte> buf)
         {
             if (!_isClosed)
             {
-                _chunks.Add(buf);
+                _chunks.Add(buf.ToArray());
             }
         }
 
-        private int Read(byte[] buffer, int offset, int count, int timeout)
+        /// <summary>
+        /// Reads a chunk from the internal buffer into the provided span.
+        /// </summary>
+        /// <param name="buffer">The span to copy data into.</param>
+        /// <param name="timeout">Timeout in milliseconds.</param>
+        /// <returns>Number of bytes read, or DTLS_RETRANSMISSION_CODE on timeout/error.</returns>
+        private int Read(Span<byte> buffer, int timeout)
         {
             try
             {
@@ -501,8 +507,9 @@ namespace SIPSorcery.Net
                 }
                 else if (_chunks.TryTake(out var item, timeout))
                 {
-                    Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
-                    return item.Length;
+                    var copyLen = Math.Min(item.Length, buffer.Length);
+                    item.AsSpan(0, copyLen).CopyTo(buffer);
+                    return copyLen;
                 }
             }
             catch (ObjectDisposedException) { }
@@ -511,21 +518,7 @@ namespace SIPSorcery.Net
             return DTLS_RETRANSMISSION_CODE;
         }
 
-#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
         public int Receive(Span<byte> buf, int waitMillis)
-        {
-            // TODO: Improve this.
-            byte[] buffer = new byte[buf.Length];
-            var result = Receive(buffer, 0, buffer.Length, waitMillis);
-
-            Span<byte> bufferSpan = buffer;
-            bufferSpan.CopyTo(buf);
-
-            return result;
-        }
-#endif
-
-        public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
             if (!_handshakeComplete)
             {
@@ -535,7 +528,7 @@ namespace SIPSorcery.Net
                 }
                 // The timeout for the handshake applies from when it started rather than
                 // for each individual receive..
-                int millisecondsRemaining = GetMillisecondsRemaining();
+                var millisecondsRemaining = GetMillisecondsRemaining();
 
                 //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                 //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
@@ -545,13 +538,13 @@ namespace SIPSorcery.Net
 
                 if (millisecondsRemaining <= 0)
                 {
-                    logger.LogWarning("DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {ClientOrServer}.", TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
+                    logger.LogDtlsHandshakeTimedOut(TimeoutMilliseconds, connection.IsClient() ? "server" : "client");
                     throw new TimeoutException();
                 }
                 else
                 {
                     waitMillis = Math.Min(waitMillis, millisecondsRemaining);
-                    var receiveLen = Read(buf, off, len, waitMillis);
+                    var receiveLen = Read(buf, waitMillis);
 
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                     //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
@@ -566,11 +559,10 @@ namespace SIPSorcery.Net
 
                     return receiveLen;
                 }
-                
             }
             else if (!_isClosed)
             {
-                return Read(buf, off, len, waitMillis);
+                return Read(buf, waitMillis);
             }
             else
             {
@@ -579,25 +571,35 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void Send(byte[] buf, int off, int len)
-        {
-            if (len != buf.Length)
-            {
-                // Only create a new buffer and copy bytes if the length is different
-                var tempBuf = new byte[len];
-                Buffer.BlockCopy(buf, off, tempBuf, 0, len);
-                buf = tempBuf;
-            }
+        public int Receive(byte[] buf, int off, int len, int waitMillis)
+            => Receive(new Span<byte>(buf, off, len), waitMillis);
 
-            OnDataReady?.Invoke(buf);
-        }
-#if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+        public void Send(byte[] buf, int off, int len) => Send(new ReadOnlySpan<byte>(buf, off, len));
+
+        /// <summary>
+        /// Sends data from the provided buffer span using ArrayPool for efficient allocation.
+        /// Only sends if the buffer is not empty.
+        /// </summary>
+        /// <param name="buf">The buffer span containing the data to send.</param>
         public void Send(ReadOnlySpan<byte> buf)
         {
-            OnDataReady?.Invoke(buf.ToArray());
-        }
-#endif
+            if (buf.IsEmpty)
+            {
+                return;
+            }
 
+            var pool = System.Buffers.ArrayPool<byte>.Shared;
+            var rented = pool.Rent(buf.Length);
+            try
+            {
+                buf.CopyTo(rented);
+                OnDataReady?.Invoke(rented.AsMemory(0, buf.Length));
+        }
+            finally
+        {
+                pool.Return(rented);
+            }
+        }
 
         public virtual void Close()
         {

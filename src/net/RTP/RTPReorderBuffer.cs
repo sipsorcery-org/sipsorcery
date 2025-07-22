@@ -71,7 +71,7 @@ namespace SIPSorcery.Net
                     return;
                 }
             }
-            
+
             if (IsBeforeWrapAround(Last) && !IsAfterWrapAround(First) && IsAfterWrapAround(current)) // first incoming packet after wraparound
             {
                 _data.AddFirst(current);
@@ -99,7 +99,7 @@ namespace SIPSorcery.Net
                 }
                 if (current.Header.SequenceNumber == node.Value.Header.SequenceNumber)
                 {
-                    logger.LogInformation("Duplicate seq number: {SequenceNumber}", current.Header.SequenceNumber);
+                    logger.LogRtpDuplicateSeqNum(current.Header.SequenceNumber);
                     break;
                 }
 

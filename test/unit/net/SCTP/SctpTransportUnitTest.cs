@@ -13,10 +13,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using TinyJson;
 using Xunit;
 
@@ -38,8 +40,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetInitAckPacket()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var sctpTransport = new MockSctpTransport();
 
@@ -91,5 +93,9 @@ namespace SIPSorcery.Net.UnitTests
 
         public override void Send(string associationID, byte[] buffer, int offset, int length)
         { }
+
+        public override void Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable memoryOwner = null)
+        {
+        }
     }
 }

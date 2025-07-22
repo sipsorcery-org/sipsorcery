@@ -37,7 +37,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void SendText(byte[] sample)
+        public void SendText(ReadOnlySpan<byte> sample)
         {
             if (!sendingFormatFound)
             {
@@ -47,13 +47,13 @@ namespace SIPSorcery.Net
             SendTextFrame(NegotiatedFormat.ID, sample);
         }
 
-        private void SendTextFrame(int payloadTypeID, byte[] buffer)
+        private void SendTextFrame(int payloadTypeID, ReadOnlySpan<byte> buffer)
         {
             if (CheckIfCanSendRtpRaw())
             {
                 if (rtpEventInProgress)
                 {
-                    logger.LogWarning("An RTPEvent is in progress.");
+                    logger.LogRtpEventInProgress();
                     return;
                 }
 
@@ -81,11 +81,8 @@ namespace SIPSorcery.Net
                         // Set the marker bit for the first packet after idle or session start
                         int markerBit = _lastSendTime == DateTime.MinValue ? 1 : 0;
 
-                        byte[] payload = new byte[payloadLength];
-                        Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
-
                         // Send the RTP packet with the updated timestamp
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        SendRtpRaw(buffer.Slice(offset, payloadLength), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                     }
 
                     // Update the last send time
@@ -93,7 +90,7 @@ namespace SIPSorcery.Net
                 }
                 catch (SocketException sockExcp)
                 {
-                    logger.LogError(sockExcp, "SocketException SendT140Frame. {ErrorMessage}", sockExcp.Message);
+                    logger.LogSendT140FrameSocketError(sockExcp.Message, sockExcp);
                 }
             }
         }
