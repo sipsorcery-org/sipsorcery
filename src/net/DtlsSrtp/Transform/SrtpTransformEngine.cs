@@ -20,6 +20,8 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
+using System.Diagnostics;
+
 namespace SIPSorcery.Net
 {
     public class SrtpTransformEngine : ITransformEngine
@@ -28,13 +30,13 @@ namespace SIPSorcery.Net
 	    * The default SRTPCryptoContext, which will be used to derivate other
 	    * contexts.
 	    */
-        private SrtpCryptoContext defaultContext;
+        private SrtpCryptoContext? defaultContext;
 
         /**
          * The default SRTPCryptoContext, which will be used to derive other
          * contexts.
          */
-        private SrtcpCryptoContext defaultContextControl;
+        private SrtcpCryptoContext? defaultContextControl;
 
         /**
          * Construct a SRTPTransformEngine based on given master encryption key,
@@ -63,12 +65,12 @@ namespace SIPSorcery.Net
          */
         public void Close()
         {
-            if (defaultContext != null)
+            if (defaultContext is { })
             {
                 defaultContext.Close();
                 defaultContext = null;
             }
-            if (defaultContextControl != null)
+            if (defaultContextControl is { })
             {
                 defaultContextControl.Close();
                 defaultContextControl = null;
@@ -101,7 +103,7 @@ namespace SIPSorcery.Net
          * 
          * @return the default SRTPCryptoContext
          */
-        public SrtpCryptoContext GetDefaultContext()
+        public SrtpCryptoContext? GetDefaultContext()
         {
             return this.defaultContext;
         }
@@ -111,7 +113,7 @@ namespace SIPSorcery.Net
          * 
          * @return the default SRTPCryptoContext
          */
-        public SrtcpCryptoContext GetDefaultContextControl()
+        public SrtcpCryptoContext? GetDefaultContextControl()
         {
             return this.defaultContextControl;
         }

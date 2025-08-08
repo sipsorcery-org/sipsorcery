@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -71,35 +72,26 @@ namespace SIPSorcery.Net
             PayloadTypeID = payloadTypeID;
         }
 
+        public int GetEventPayloadLength() => DTMF_PACKET_LENGTH;
+
         /// <summary>
         /// Gets the raw buffer for the event.
         /// </summary>
         /// <returns>A raw byte buffer for the event.</returns>
-        public byte[] GetEventPayload()
+        public void WriteEventPayload(Span<byte> destination)
         {
-            byte[] payload = new byte[DTMF_PACKET_LENGTH];
+            destination[0] = EventID;
+            destination[1] = (byte)(EndOfEvent ? 0x80 : 0x00);
+            destination[1] += (byte)(Volume & 0x3F); // Volume uses 6 bits (0-63)
 
-            payload[0] = EventID;
-            payload[1] = (byte)(EndOfEvent ? 0x80 : 0x00);
-            payload[1] += (byte)(Volume & 0xcf); // The Volume field uses 6 bits.
-
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Duration)), 0, payload, 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(Duration), 0, payload, 2, 2);
-            }
-
-            return payload;
+            BinaryPrimitives.WriteUInt16BigEndian(destination.Slice(2, 2), Duration);
         }
 
         /// <summary>
         /// Extract and load an RTP Event from a packet buffer.
         /// </summary>
         /// <param name="packet">The packet buffer containing the RTP Event.</param>
-        public RTPEvent(byte[] packet)
+        public RTPEvent(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < DTMF_PACKET_LENGTH)
             {
@@ -110,14 +102,7 @@ namespace SIPSorcery.Net
             EndOfEvent = (packet[1] & 0x80) > 1;
             Volume = (ushort)(packet[1] & 0xcf);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Duration = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Duration = BitConverter.ToUInt16(packet, 2);
-            }
+            Duration = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
         }
     }
 }

@@ -82,7 +82,9 @@ namespace SIPSorcery.Media.G729Codec
         {
             // need this to initialize freq_prev
             for (var i = 0; i < freq_prev.Length; i++)
+            {
                 freq_prev[i] = new float[Ld8k.M];
+            }
         }
 
         /**
@@ -105,14 +107,18 @@ namespace SIPSorcery.Media.G729Codec
             /* Convert LSPs to LSFs */
 
             for (i = 0; i < M; i++)
+            {
                 lsf[i] = (float)Math.Acos(lsp[i]);
+            }
 
             lsp_qua_cs(lsf, lsf_q, ana);
 
             /* Convert LSFs to LSPs */
 
             for (i = 0; i < M; i++)
+            {
                 lsp_q[i] = (float)Math.Cos(lsf_q[i]);
+            }
         }
 
         /**
@@ -126,7 +132,9 @@ namespace SIPSorcery.Media.G729Codec
 
             int i;
             for (i = 0; i < MA_NP; i++)
+            {
                 Util.copy(FREQ_PREV_RESET, freq_prev[i], M);
+            }
         }
 
         /**
@@ -224,7 +232,9 @@ namespace SIPSorcery.Media.G729Codec
                 tindex1[mode] = index;
 
                 for (j = 0; j < NC; j++)
+                {
                     buf[j] = lspcb1[cand_cur][j] + lspcb2[index][j];
+                }
 
                 Lspgetq.lsp_expand_1(buf, GAP1); /* check */
 
@@ -234,7 +244,10 @@ namespace SIPSorcery.Media.G729Codec
                 tindex2[mode] = index;
 
                 for (j = NC; j < M; j++)
+                {
                     buf[j] = lspcb1[cand_cur][j] + lspcb2[index][j];
+                }
+
                 Lspgetq.lsp_expand_2(buf, GAP1); /* check */
 
                 /* check */
@@ -331,7 +344,9 @@ namespace SIPSorcery.Media.G729Codec
             float dist, dmin, tmp;
 
             for (j = 0; j < NC; j++)
+            {
                 buf[j] = rbuf[j] - lspcb1[j];
+            }
 
             var index = 0; /*output: selected codebook index     */
             dmin = FLT_MAX_G729;
@@ -381,7 +396,9 @@ namespace SIPSorcery.Media.G729Codec
             float dist, dmin, tmp;
 
             for (j = NC; j < M; j++)
+            {
                 buf[j] = rbuf[j] - lspcb1[j];
+            }
 
             var index = 0; /*output: selected codebook index    */
             dmin = FLT_MAX_G729;
@@ -446,7 +463,11 @@ namespace SIPSorcery.Media.G729Codec
         )
         {
             var mode_index = 0; /*output: the selected mode  */
-            if (tdist[1] < tdist[0]) mode_index = 1;
+            if (tdist[1] < tdist[0])
+            {
+                mode_index = 1;
+            }
+
             return mode_index;
         }
 
@@ -470,19 +491,37 @@ namespace SIPSorcery.Media.G729Codec
             float tmp;
 
             tmp = flsp[1] - PI04 - 1.0f;
-            if (tmp > 0.0f) wegt[0] = 1.0f;
-            else wegt[0] = tmp * tmp * 10.0f + 1.0f;
+            if (tmp > 0.0f)
+            {
+                wegt[0] = 1.0f;
+            }
+            else
+            {
+                wegt[0] = tmp * tmp * 10.0f + 1.0f;
+            }
 
             for (i = 1; i < M - 1; i++)
             {
                 tmp = flsp[i + 1] - flsp[i - 1] - 1.0f;
-                if (tmp > 0.0f) wegt[i] = 1.0f;
-                else wegt[i] = tmp * tmp * 10.0f + 1.0f;
+                if (tmp > 0.0f)
+                {
+                    wegt[i] = 1.0f;
+                }
+                else
+                {
+                    wegt[i] = tmp * tmp * 10.0f + 1.0f;
+                }
             }
 
             tmp = PI92 - flsp[M - 2] - 1.0f;
-            if (tmp > 0.0f) wegt[M - 1] = 1.0f;
-            else wegt[M - 1] = tmp * tmp * 10.0f + 1.0f;
+            if (tmp > 0.0f)
+            {
+                wegt[M - 1] = 1.0f;
+            }
+            else
+            {
+                wegt[M - 1] = tmp * tmp * 10.0f + 1.0f;
+            }
 
             wegt[4] *= CONST12;
             wegt[5] *= CONST12;

@@ -86,9 +86,14 @@ namespace SIPSorcery.Media.G729Codec
             var buf = new float[M];
 
             for (j = 0; j < NC; j++)
+            {
                 buf[j] = lspcb1[code0][j] + lspcb2[code1][j];
+            }
+
             for (j = NC; j < M; j++)
+            {
                 buf[j] = lspcb1[code0][j] + lspcb2[code2][j];
+            }
 
             /* check */
             lsp_expand_1_2(buf, GAP1);
@@ -218,7 +223,10 @@ namespace SIPSorcery.Media.G729Codec
             for (j = 0; j < M; j++)
             {
                 lsp[j] = lsp_ele[j] * fg_sum[j];
-                for (k = 0; k < MA_NP; k++) lsp[j] += freq_prev[k][j] * fg[k][j];
+                for (k = 0; k < MA_NP; k++)
+                {
+                    lsp[j] += freq_prev[k][j] * fg[k][j];
+                }
             }
         }
 
@@ -250,7 +258,10 @@ namespace SIPSorcery.Media.G729Codec
             {
                 lsp_ele[j] = lsp[j];
                 for (k = 0; k < MA_NP; k++)
+                {
                     lsp_ele[j] -= freq_prev[k][j] * fg[k][j];
+                }
+
                 lsp_ele[j] *= fg_sum_inv[j];
             }
         }
@@ -273,7 +284,9 @@ namespace SIPSorcery.Media.G729Codec
             int k;
 
             for (k = MA_NP - 1; k > 0; k--)
+            {
                 Util.copy(freq_prev[k - 1], freq_prev[k], M);
+            }
 
             Util.copy(lsp_ele, freq_prev[0], M);
         }
@@ -307,16 +320,23 @@ namespace SIPSorcery.Media.G729Codec
             }
 
             if (buf[0] < L_LIMIT)
+            {
                 buf[0] = L_LIMIT;
+            }
+
             for (j = 0; j < M - 1; j++)
             {
                 diff = buf[j + 1] - buf[j];
                 if (diff < GAP3)
+                {
                     buf[j + 1] = buf[j] + GAP3;
+                }
             }
 
             if (buf[M - 1] > M_LIMIT)
+            {
                 buf[M - 1] = M_LIMIT;
+            }
         }
     }
 }

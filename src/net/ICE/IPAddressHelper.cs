@@ -22,12 +22,12 @@ namespace SIPSorcery.Net
     public static class IPAddressHelper
     {
         // Prefixes used for categorizing IPv6 addresses.
-        static byte[] kV4MappedPrefix = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0 };
-        static byte[] k6To4Prefix = new byte[] { 0x20, 0x02, 0 };
-        static byte[] kTeredoPrefix = new byte[] { 0x20, 0x01, 0x00, 0x00 };
-        static byte[] kV4CompatibilityPrefix = new byte[] { 0 };
-        static byte[] k6BonePrefix = new byte[] { 0x3f, 0xfe, 0 };
-        static byte[] kPrivateNetworkPrefix = new byte[] { 0xFD };
+        private static readonly byte[] kV4MappedPrefix = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0 };
+        private static readonly byte[] k6To4Prefix = new byte[] { 0x20, 0x02, 0 };
+        private static readonly byte[] kTeredoPrefix = new byte[] { 0x20, 0x01, 0x00, 0x00 };
+        private static readonly byte[] kV4CompatibilityPrefix = new byte[] { 0 };
+        private static readonly byte[] k6BonePrefix = new byte[] { 0x3f, 0xfe, 0 };
+        private static readonly byte[] kPrivateNetworkPrefix = new byte[] { 0xFD };
 
         public static uint IPAddressPrecedence(IPAddress ip)
         {
@@ -86,7 +86,7 @@ namespace SIPSorcery.Net
             return 0;
         }
 
-        public static bool IPIsLinkLocalV4(IPAddress ip) 
+        public static bool IPIsLinkLocalV4(IPAddress ip)
         {
             try
             {
@@ -125,7 +125,7 @@ namespace SIPSorcery.Net
             return IPIsHelper(ip, k6To4Prefix, 16);
         }
 
-        static bool IPIsHelper(IPAddress ip, byte[] tomatch, int lengthInBits)
+        private static bool IPIsHelper(IPAddress ip, byte[] tomatch, int lengthInBits)
         {
             try
             {
@@ -134,13 +134,17 @@ namespace SIPSorcery.Net
                 byte[] addr = ip.GetAddressBytes();
                 var bytesToCompare = (lengthInBits >> 3);
 
-                if (addr == null || addr.Length < bytesToCompare || tomatch == null || tomatch.Length < bytesToCompare)
+                if (addr is null || addr.Length < bytesToCompare || tomatch is null || tomatch.Length < bytesToCompare)
+                {
                     return false;
+                }
 
                 for (int i = 0; i < bytesToCompare; i++)
                 {
                     if (addr[i] != tomatch[i])
+                    {
                         return false;
+                    }
                 }
                 return true;
             }

@@ -29,13 +29,11 @@ namespace SIPSorcery.Net.IntegrationTests
 
         private int _listenPort = STUNConstants.DEFAULT_STUN_PORT;
         private IPAddress _listenAddress = IPAddress.Loopback;
-        private Socket _clientSocket;
-        private UdpReceiver _listener;
+        private SocketUdpConnection _listener;
 
         // If acting as a TRUN server and an allocation is requested.
-        private Socket _relaySocket;
         private IPEndPoint _relayEndPoint;
-        private UdpReceiver _relayListener;
+        private SocketUdpConnection _relayListener;
         private IPEndPoint _clientEndPoint;
 
         public IPEndPoint ListeningEndPoint { get; private set; }
@@ -48,21 +46,21 @@ namespace SIPSorcery.Net.IntegrationTests
             _listenAddress = listenAddress;
             _listenPort = port;
 
-            NetServices.CreateRtpSocket(false, _listenAddress, 0, null, out _clientSocket, out _);
+            NetServices.CreateRtpSocket(false, _listenAddress, 0, null, out var clientSocket, out _);
 
-            ListeningEndPoint = _clientSocket.LocalEndPoint as IPEndPoint;
+            ListeningEndPoint = clientSocket.LocalEndPoint as IPEndPoint;
 
             logger.LogDebug("MockTurnServer listening on {ListeningEndPoint}.", ListeningEndPoint);
 
-            _listener = new UdpReceiver(_clientSocket);
+            _listener = new SocketUdpConnection(clientSocket);
             _listener.OnPacketReceived += OnPacketReceived;
             _listener.OnClosed += (reason) => logger.LogDebug("MockTurnServer on {ListeningEndPoint} closed.", ListeningEndPoint);
             _listener.BeginReceiveFrom();
         }
 
-        private void OnPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnPacketReceived(SocketConnection receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> packet)
         {
-            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(packet.Span);
 
             switch (stunMessage.Header.MessageType)
             {
@@ -70,18 +68,18 @@ namespace SIPSorcery.Net.IntegrationTests
 
                     logger.LogDebug("MockTurnServer received Allocate request from {RemoteEndPoint}.", remoteEndPoint);
 
-                    if (_relaySocket == null)
+                    if (_relayListener == null)
                     {
                         _clientEndPoint = remoteEndPoint;
 
                         // Create a new relay socket.
-                        NetServices.CreateRtpSocket(false, _listenAddress, 0, null, out _relaySocket, out _);
+                        NetServices.CreateRtpSocket(false, _listenAddress, 0, null, out var relaySocket, out _);
 
-                        _relayEndPoint = _relaySocket.LocalEndPoint as IPEndPoint;
+                        _relayEndPoint = relaySocket.LocalEndPoint as IPEndPoint;
 
                         logger.LogDebug("MockTurnServer created relay socket on {RelayEndPoint}.", _relayEndPoint);
 
-                        _relayListener = new UdpReceiver(_relaySocket);
+                        _relayListener = new SocketUdpConnection(relaySocket);
                         _relayListener.OnPacketReceived += OnRelayPacketReceived;
                         _relayListener.OnClosed += (reason) => logger.LogDebug("MockTurnServer relay on {RelayEndPoint} closed.", _relayEndPoint);
                         _relayListener.BeginReceiveFrom();
@@ -92,7 +90,7 @@ namespace SIPSorcery.Net.IntegrationTests
                     allocateResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
                     allocateResponse.AddXORAddressAttribute(STUNAttributeTypesEnum.XORRelayedAddress, _relayEndPoint.Address, _relayEndPoint.Port);
 
-                    _clientSocket.SendTo(allocateResponse.ToByteBuffer(null, false), remoteEndPoint);
+                    _listener.SendTo(remoteEndPoint, allocateResponse.ToByteBuffer(null, false).AsMemory(), null);
                     break;
 
                 case STUNMessageTypesEnum.BindingRequest:
@@ -102,7 +100,7 @@ namespace SIPSorcery.Net.IntegrationTests
                     STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
                     stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
                     stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
-                    _clientSocket.SendTo(stunResponse.ToByteBuffer(null, false), remoteEndPoint);
+                    _listener.SendTo(remoteEndPoint, stunResponse.ToByteBuffer(null, false).AsMemory(), null);
                     break;
 
                 case STUNMessageTypesEnum.CreatePermission:
@@ -111,7 +109,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                     STUNMessage permResponse = new STUNMessage(STUNMessageTypesEnum.CreatePermissionSuccessResponse);
                     permResponse.Header.TransactionId = stunMessage.Header.TransactionId;
-                    _clientSocket.SendTo(permResponse.ToByteBuffer(null, false), remoteEndPoint);
+                    _listener.SendTo(remoteEndPoint, permResponse.ToByteBuffer(null, false).AsMemory(), null);
                     break;
 
                 case STUNMessageTypesEnum.SendIndication:
@@ -122,7 +120,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                     logger.LogDebug("MockTurnServer relaying {BufferLength} bytes to {DestinationEndPoint}.", buffer.Length, destEP);
 
-                    _relaySocket.SendTo(buffer, destEP);
+                    _relayListener.SendTo(destEP, buffer, null);
 
                     break;
 
@@ -140,21 +138,19 @@ namespace SIPSorcery.Net.IntegrationTests
         /// <param name="localPort">The port number the packet was received on.</param>
         /// <param name="remoteEndPoint">The end point of the peer sending traffic to the TURN server.</param>
         /// <param name="packet">The byes received from the peer.</param>
-        private void OnRelayPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnRelayPacketReceived(SocketConnection receiver, int localPort, IPEndPoint remoteEndPoint, ReadOnlyMemory<byte> packet)
         {
             STUNMessage dataInd = new STUNMessage(STUNMessageTypesEnum.DataIndication);
             dataInd.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, packet));
             dataInd.AddXORPeerAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
 
-            _clientSocket.SendTo(dataInd.ToByteBuffer(null, false), _clientEndPoint);
+            _listener.SendTo(_clientEndPoint, dataInd.ToByteBuffer(null, false).AsMemory(), null);
         }
 
         public void Dispose()
         {
             _relayListener?.Close("disposed");
-            _relaySocket?.Close();
             _listener?.Close("disposed");
-            _clientSocket?.Close();
         }
     }
 }

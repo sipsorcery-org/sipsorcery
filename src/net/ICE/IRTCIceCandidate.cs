@@ -13,6 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using SIPSorcery.Sys;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -103,10 +107,14 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCIceCandidateInit
     {
-        public string candidate { get; set; }
-        public string sdpMid { get; set; }
+        [JsonPropertyName("candidate")]
+        public string? candidate { get; set; }
+        [JsonPropertyName("sdpMid")]
+        public string? sdpMid { get; set; }
+        [JsonPropertyName("sdpMLineIndex")]
         public ushort sdpMLineIndex { get; set; }
-        public string usernameFragment { get; set; }
+        [JsonPropertyName("usernameFragment")]
+        public string? usernameFragment { get; set; }
 
         public string toJSON()
         {
@@ -117,13 +125,11 @@ namespace SIPSorcery.Net
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
-            return TinyJson.JSONWriter.ToJson(this);
+            return JsonSerializer.Serialize(this, SipSorceryJsonSerializerContext.Default.RTCIceCandidateInit);
         }
 
-        public static bool TryParse(string json, out RTCIceCandidateInit init)
+        public static bool TryParse(string json, out RTCIceCandidateInit? init)
         {
-            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
-
             init = null;
 
             if (string.IsNullOrWhiteSpace(json))
@@ -132,12 +138,12 @@ namespace SIPSorcery.Net
             }
             else
             {
-                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
+                init = JsonSerializer.Deserialize<RTCIceCandidateInit>(json, SipSorceryJsonSerializerContext.Default.RTCIceCandidateInit);
 
                 // To qualify as parsed all required fields must be set.
-                return init != null &&
-                init.candidate != null &&
-                init.sdpMid != null;
+                return init is { } &&
+                init.candidate is { } &&
+                init.sdpMid is { };
             }
         }
     }
@@ -236,19 +242,19 @@ namespace SIPSorcery.Net
     {
         //constructor(optional RTCIceCandidateInit candidateInitDict = { });
         string candidate { get; }
-        string sdpMid { get; }
+        string? sdpMid { get; }
         ushort sdpMLineIndex { get; }
-        string foundation { get; }
+        string? foundation { get; }
         RTCIceComponent component { get; }
         uint priority { get; }
-        string address { get; }
+        string? address { get; }
         RTCIceProtocol protocol { get; }
         ushort port { get; }
         RTCIceCandidateType type { get; }
         RTCIceTcpCandidateType tcpType { get; }
-        string relatedAddress { get; }
+        string? relatedAddress { get; }
         ushort relatedPort { get; }
-        string usernameFragment { get; }
+        string? usernameFragment { get; }
         //RTCIceCandidateInit toJSON();
         string toJSON();
     }

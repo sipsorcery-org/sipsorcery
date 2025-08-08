@@ -19,6 +19,7 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace SIPSorcery.Net
@@ -32,7 +33,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SrtcpTransformer : IPacketTransformer
     {
-        private int _isLocked = 0;
+        private int _isLocked;
         private RawPacket packet;
 
         private SrtpTransformEngine forwardEngine;
@@ -59,12 +60,12 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="pkt">plain SRTCP packet to be encrypted.</param>
         /// <returns>encrypted SRTCP packet.</returns>
-        public byte[] Transform(byte[] pkt)
+        public byte[]? Transform(byte[] pkt)
         {
             return Transform(pkt, 0, pkt.Length);
         }
 
-        public byte[] Transform(byte[] pkt, int offset, int length)
+        public byte[]? Transform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
             try
@@ -75,19 +76,20 @@ namespace SIPSorcery.Net
 
                 // Associate the packet with its encryption context
                 long ssrc = packet.GetRTCPSSRC();
-                SrtcpCryptoContext context = null;
-                contexts.TryGetValue(ssrc, out context);
+                contexts.TryGetValue(ssrc, out var context);
 
-                if (context == null)
+                if (context is null)
                 {
-                    context = forwardEngine.GetDefaultContextControl().DeriveContext(ssrc);
+                    var srtcpCryptoContext = forwardEngine.GetDefaultContextControl();
+                    Debug.Assert(srtcpCryptoContext is { });
+                    context = srtcpCryptoContext.DeriveContext(ssrc);
                     context.DeriveSrtcpKeys();
                     contexts.AddOrUpdate(ssrc, context, (a, b) => context);
                 }
 
                 // Secure packet into SRTCP format
                 context.TransformPacket(packet);
-                byte[] result = packet.GetData();
+                var result = packet.GetData();
 
                 return result;
             }
@@ -95,16 +97,18 @@ namespace SIPSorcery.Net
             {
                 //Unlock
                 if (!isLocked)
+                {
                     Interlocked.CompareExchange(ref _isLocked, 0, 1);
+                }
             }
         }
 
-        public byte[] ReverseTransform(byte[] pkt)
+        public byte[]? ReverseTransform(byte[] pkt)
         {
             return ReverseTransform(pkt, 0, pkt.Length);
         }
 
-        public byte[] ReverseTransform(byte[] pkt, int offset, int length)
+        public byte[]? ReverseTransform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
             try
@@ -115,19 +119,20 @@ namespace SIPSorcery.Net
 
                 // Associate the packet with its encryption context
                 long ssrc = packet.GetRTCPSSRC();
-                SrtcpCryptoContext context = null;
-                contexts.TryGetValue(ssrc, out context);
+                contexts.TryGetValue(ssrc, out var context);
 
-                if (context == null)
+                if (context is null)
                 {
-                    context = reverseEngine.GetDefaultContextControl().DeriveContext(ssrc);
+                    var srtcpCryptoContext = reverseEngine.GetDefaultContextControl();
+                    Debug.Assert(srtcpCryptoContext is { });
+                    context = srtcpCryptoContext.DeriveContext(ssrc);
                     context.DeriveSrtcpKeys();
                     contexts.AddOrUpdate(ssrc, context, (a, b) => context);
                 }
 
                 // Decode packet to RTCP format
-                byte[] result = null;
-                bool reversed = context.ReverseTransformPacket(packet);
+                byte[]? result = null;
+                var reversed = context.ReverseTransformPacket(packet);
                 if (reversed)
                 {
                     result = packet.GetData();
@@ -138,7 +143,9 @@ namespace SIPSorcery.Net
             {
                 //Unlock
                 if (!isLocked)
+                {
                     Interlocked.CompareExchange(ref _isLocked, 0, 1);
+                }
             }
         }
 

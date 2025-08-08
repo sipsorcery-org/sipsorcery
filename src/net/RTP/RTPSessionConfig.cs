@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
         /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
         /// causing connection issues.
         /// </summary>
-        public IPAddress BindAddress { get; set; }
+        public IPAddress? BindAddress { get; set; }
         
         /// <summary>
         /// Optional. If specified a single attempt will be made to bind the RTP socket
@@ -76,7 +76,7 @@ namespace SIPSorcery.Net
         /// Optional. If specified, overwrites BindPort and calls the PortRange whenever an RTP-Port
         /// should be created.
         /// </summary>
-        public PortRange RtpPortRange { get; set; }
+        public PortRange? RtpPortRange { get; set; }
 
         public bool IsSecure { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp; }
 

@@ -11,6 +11,7 @@
 
 using System;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -28,8 +29,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ReverseUInt16SampleTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             ushort testNum = 45677;
             byte[] testNumBytes = BitConverter.GetBytes(testNum);
@@ -63,8 +64,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ReverseUInt32SampleTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint testNum = 123124;
             byte[] testNumBytes = BitConverter.GetBytes(testNum);
@@ -98,8 +99,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ReverseUInt64SampleTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             ulong testNum = 1231265499856464;
             byte[] testNumBytes = BitConverter.GetBytes(testNum);
@@ -142,11 +143,11 @@ namespace SIPSorcery.Sys.UnitTests
             Assert.Equal(-1, NetConvert.DoReverseEndian(-1));
             Assert.Equal(-2, NetConvert.DoReverseEndian(-16777217));
             Assert.Equal(568848895, NetConvert.DoReverseEndian(-923871));
-            Assert.Equal(128, NetConvert.DoReverseEndian(Int32.MinValue));
+            Assert.Equal(128, NetConvert.DoReverseEndian(int.MinValue));
             Assert.Equal(1, NetConvert.DoReverseEndian(16777216));
             Assert.Equal(2, NetConvert.DoReverseEndian(33554432));
             Assert.Equal(4564522, NetConvert.DoReverseEndian(715539712));
-            Assert.Equal(-129, NetConvert.DoReverseEndian(Int32.MaxValue));
+            Assert.Equal(-129, NetConvert.DoReverseEndian(int.MaxValue));
             Assert.Equal(0x0d0c0b0a, NetConvert.DoReverseEndian(0x0a0b0c0d));
         }
     }
