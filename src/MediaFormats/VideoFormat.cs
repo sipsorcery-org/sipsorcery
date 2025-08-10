@@ -111,7 +111,7 @@ public struct VideoFormat
         Parameters = parameters;
         _isNonEmpty = true;
 
-        if (Enum.TryParse<VideoCodecsEnum>(FormatName, out var videoCodec))
+        if (Enum.TryParse<VideoCodecsEnum>(FormatName, true, out var videoCodec))
         {
             Codec = videoCodec;
         }

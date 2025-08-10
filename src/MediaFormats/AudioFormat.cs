@@ -171,7 +171,7 @@ public struct AudioFormat
         Parameters = parameters;
         _isNonEmpty = true;
 
-        if (Enum.TryParse<AudioCodecsEnum>(FormatName.ToUpper(), out var audioCodec))
+        if (Enum.TryParse<AudioCodecsEnum>(FormatName, true, out var audioCodec))
         {
             Codec = audioCodec;
         }
