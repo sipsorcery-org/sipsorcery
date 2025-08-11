@@ -2280,6 +2280,8 @@ namespace SIPSorcery.Net
         /// <param name="sample">The audio sample to set as the RTP packet payload.</param>
         public void SendAudio(uint durationRtpUnits, byte[] sample)
         {
+            //logger.LogTrace("SendAudio: durationRtpUnits={DurationRtpUnits}, sample size={Sample}", durationRtpUnits, sample?.Length);
+
             AudioStream?.SendAudio(durationRtpUnits, sample);
         }
 

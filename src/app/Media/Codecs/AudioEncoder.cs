@@ -75,6 +75,7 @@ namespace SIPSorcery.Media
 
             // Need more testing before adding OPUS by default. 24 Dec 2024 AC.
             //new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1")
+            // AudioCommonlyUsedFormats.OpusWebRTC
         };
 
         public List<AudioFormat> SupportedFormats
@@ -97,7 +98,7 @@ namespace SIPSorcery.Media
 
             if(includeOpus)
             {
-                _supportedFormats.Add(new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1"));
+                _supportedFormats.Add(AudioCommonlyUsedFormats.OpusWebRTC);
             }
         }
 
