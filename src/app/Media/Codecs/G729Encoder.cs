@@ -43,8 +43,12 @@ Sherbrooke.  All rights reserved.
  */
 
 using System;
-using System.IO;
+using System.Buffers;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using SIPSorcery.Media.G729Codec;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Media
 {
@@ -55,7 +59,7 @@ namespace SIPSorcery.Media
          * Initialization of the coder.
          */
 
-        private byte[] _leftover = new byte[0];
+        private readonly PooledSegmentedBuffer<byte> _leftover = new();
 
         /**
          * Init the Ld8k Coder
@@ -78,25 +82,37 @@ namespace SIPSorcery.Media
             codLd8k.init_coder_ld8k(); /* Initialize the coder             */
         }
 
-        private static void Fill<T>(T[] array, int start, int end, T value)
+        /// <summary>
+        /// Fills a span with a specified value from start to end index.
+        /// </summary>
+        private static void Fill<T>(Span<T> span, int start, int end, T value)
         {
             for (var i = start; i < end; i++)
-                array[i] = value;
+            {
+                span[i] = value;
+            }
         }
 
-        private void packetize(short[] serial, byte[] outFrame, int outFrameOffset)
+        /// <summary>
+        /// Writes the encoded serial bits to the output packet using spans.
+        /// </summary>
+        /// <param name="serial">Input serial bits as Span.</param>
+        /// <param name="outFrame">Output packet as Span.</param>
+        private void packetize(ReadOnlySpan<short> serial, Span<byte> outFrame)
         {
-            Fill(outFrame, outFrameOffset, outFrameOffset + L_FRAME / 8, (byte)0);
+            Fill(outFrame, 0, L_FRAME / 8, (byte)0);
 
             for (var s = 0; s < L_FRAME; s++)
+            {
                 if (BIT_1 == serial[2 + s])
                 {
-                    var o = outFrameOffset + s / 8;
+                    var o = s / 8;
                     int out_ = outFrame[o];
 
                     out_ |= 1 << (7 - s % 8);
                     outFrame[o] = (byte)(out_ & 0xFF);
                 }
+            }
         }
 
         /**
@@ -105,47 +121,55 @@ namespace SIPSorcery.Media
          * @param sp16      input : speach short array
          * @param serial    output : serial array encoded in bits_ld8k
          */
-        private void ProcessPacket(short[] sp16, short[] serial)
+        private void ProcessPacket(ReadOnlySpan<short> sp16, Span<short> serial)
         {
             var new_speech = codLd8k.new_speech; /* Pointer to new speech data   */
+            Debug.Assert(new_speech is { });
             var new_speech_offset = codLd8k.new_speech_offset;
 
             for (var i = 0; i < L_FRAME; i++)
+            {
                 new_speech[new_speech_offset + i] = sp16[i];
+            }
 
-            preProc.pre_process(new_speech, new_speech_offset, L_FRAME);
+            preProc.pre_process(new_speech.AsSpan(), new_speech_offset, L_FRAME);
 
             codLd8k.coder_ld8k(prm);
 
             Bits.prm2bits_ld8k(prm, serial);
-
         }
 
-        /**
-         * Usage : coder  speech_file  bitstream_file
-         *
-         * Format for speech_file:
-         *  Speech is read form a binary file of 16 bits data.
-         *
-         * Format for bitstream_file:
-         *   One word (2-bytes) to indicate erasure.
-         *   One word (2 bytes) to indicate bit rate
-         *   80 words (2-bytes) containing 80 bits.
-         *
-         * @param args speech_file  bitstream_file
-         * @throws java.io.IOException
-         */
-        public byte[] Process(byte[] speech)
+        /// <summary>
+        /// Processes speech data using spans and writes output to an <see cref="IBufferWriter{T}"/> of <see langword="byte"/>.
+        /// </summary>
+        /// <param name="speech">Input speech data as <see cref="ReadOnlySpan{T}"/> of <see langword="byte"/>.</param>
+        /// <param name="output">Output buffer writer for encoded bytes.</param>
+        /// <remarks>
+        /// Format for speech_file:
+        ///  Speech is read form a binary file of 16 bits data.
+        ///
+        /// Format for bitstream_file:
+        ///   One word (2-bytes) to indicate erasure.
+        ///   One word (2 bytes) to indicate bit rate
+        ///   80 words (2-bytes) containing 80 bits.
+        /// </remarks>
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public void Process(ReadOnlySpan<byte> speech, IBufferWriter<byte> output)
         {
-            var sp16 = new short[L_FRAME]; /* Buffer to read 16 bits speech */
-            var serial = new short[SERIAL_SIZE]; /* Output bit stream buffer      */
-            var packet = new byte[L_FRAME / 8];
-            var output = new MemoryStream();
-            var buffer = new MemoryStream();
+            const int frameSizeInBytes = L_FRAME * 2;
+            Span<byte> frameBytes = stackalloc byte[frameSizeInBytes];
+            Span<short> serial = stackalloc short[SERIAL_SIZE];
+            const int packetLength = L_FRAME / 8;
+            Span<byte> packet = stackalloc byte[packetLength];
 
-            buffer.Write(_leftover, 0, _leftover.Length);
-            buffer.Write(speech, 0, speech.Length);
-            var input = buffer.ToArray();
+            // Combine leftover and new speech
+            _leftover.Write(speech);
+            var totalLength = (int)_leftover.Length;
+            var framesToProcess = totalLength / frameSizeInBytes;
+            var processedBytes = 0;
+            var reader = new SequenceReader<byte>(_leftover.GetReadOnlySequence());
 
             /*-------------------------------------------------------------------------*
              * Loop for every analysis/transmission frame.                             *
@@ -157,49 +181,63 @@ namespace SIPSorcery.Media
              *-------------------------------------------------------------------------*
              */
 
-            var frame = 0;
-            try
+            for (var frame = 0; frame < framesToProcess; frame++)
             {
-                // Iterate over each frame 
-                int i;
-                for (i = 0; i <= input.Length - L_FRAME * 2 /* must have a complete frame left */; i += L_FRAME * 2)
+                if (!reader.TryCopyTo(frameBytes))
                 {
-                    frame++;
-                    Buffer.BlockCopy(input, i, sp16, 0, L_FRAME * 2);
-                    ProcessPacket(sp16, serial);
-                    packetize(serial, packet, 0);
-                    output.Write(packet, 0, packet.Length);
+                    break;
                 }
+                reader.Advance(frameSizeInBytes);
+                processedBytes += frameSizeInBytes;
 
-                _leftover = new byte[input.Length - i];
-                Array.Copy(input, i, _leftover, 0, _leftover.Length);
-            }
-            catch (Exception)
-            {
-                // No logging as we could get huge log files if any issues arises decoding
+                var sp16 = MemoryMarshal.Cast<byte, short>(frameBytes);
+
+
+                ProcessPacket(sp16, serial);
+                packet.Clear();
+                packetize(serial, packet);
+                output.GetSpan(packetLength).Slice(0, packetLength).CopyTo(packet);
+                output.Advance(packetLength);
             }
 
-            return output.ToArray();
+            // Slice leftover to only keep unprocessed bytes
+            _leftover.Slice(processedBytes, totalLength - processedBytes);
         }
 
-        // TODO: pad out _leftover with silence, and return one last frame
-        public byte[] Flush()
+        /// <summary>
+        /// Flushes any remaining buffered audio, encoding and writing to the provided output buffer.
+        /// </summary>
+        /// <param name="output">Output buffer writer for encoded bytes.</param>
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public void Flush(IBufferWriter<byte> output)
         {
-            var output = new MemoryStream();
             if (_leftover.Length > 0)
             {
-                var sp16 = new short[L_FRAME]; /* Buffer to read 16 bits speech */
-                var serial = new short[SERIAL_SIZE]; /* Output bit stream buffer      */
-                var packet = new byte[L_FRAME / 8];
-
-                Buffer.BlockCopy(_leftover, 0, sp16, 0, _leftover.Length);
-                Fill(sp16, _leftover.Length / 2, sp16.Length, (short)0);
+                const int frameSizeInBytes = L_FRAME * 2;
+                Span<byte> frameBytes = stackalloc byte[frameSizeInBytes];
+                var leftoverSeq = _leftover.GetReadOnlySequence();
+                var leftoverLength = (int)_leftover.Length;
+                Debug.Assert(leftoverLength <= frameSizeInBytes);
+                // Copy leftover bytes into frameBytes
+                leftoverSeq.Slice(0, leftoverLength).CopyTo(frameBytes.Slice(0, leftoverLength));
+                // Zero-fill any missing bytes
+                if (leftoverLength < frameSizeInBytes)
+                {
+                    frameBytes.Slice(leftoverLength, frameSizeInBytes - leftoverLength).Clear();
+                }
+                var sp16 = MemoryMarshal.Cast<byte, short>(frameBytes);
+                Span<short> serial = stackalloc short[SERIAL_SIZE];
+                Span<byte> packet = stackalloc byte[L_FRAME / 8];
                 ProcessPacket(sp16, serial);
-                packetize(serial, packet, 0);
-                output.Write(packet, 0, packet.Length);
-            }
+                packet.Clear();
+                packetize(serial, packet);
+                output.GetSpan(packet.Length).Slice(0, packet.Length).CopyTo(packet);
+                output.Advance(packet.Length);
 
-            return output.ToArray();
+                _leftover.Clear();
+            }
         }
     }
 }

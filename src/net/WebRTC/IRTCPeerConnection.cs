@@ -21,7 +21,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
+using System.Net.Security;
+using System.Runtime.Serialization;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
@@ -30,9 +33,13 @@ namespace SIPSorcery.Net
 {
     public enum RTCSdpType
     {
+        [EnumMember(Value = "answer")]
         answer = 0,
+        [EnumMember(Value = "offer")]
         offer = 1,
+        [EnumMember(Value = "pranswer")]
         pranswer = 2,
+        [EnumMember(Value = "rollback")]
         rollback = 3
     }
 
@@ -71,7 +78,7 @@ namespace SIPSorcery.Net
     public class RTCSessionDescription
     {
         public RTCSdpType type;
-        public SDP sdp;
+        public SDP? sdp;
     }
 
     /// <summary>
@@ -93,10 +100,11 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCIceServer
     {
-        public string urls;
-        public string username;
+        public string? urls;
+        public string? username;
         public RTCIceCredentialType credentialType;
-        public string credential;
+        public string? credential;
+        public SslClientAuthenticationOptions? SslClientAuthenticationOptions;
     }
 
     /// <summary>
@@ -145,16 +153,17 @@ namespace SIPSorcery.Net
         /// <summary>
         /// One of the hash function algorithms defined in the 'Hash function Textual Names' registry.
         /// </summary>
-        public string algorithm;
+        public string? algorithm;
 
         /// <summary>
         /// The value of the certificate fingerprint in lower-case hex string as expressed utilising 
         /// the syntax of 'fingerprint' in [RFC4572] Section 5.
         /// </summary>
-        public string value;
+        public string? value;
 
         public override string ToString()
         {
+            Debug.Assert(value is { });
             // FireFox wasn't happy unless the fingerprint hash was in upper case.
             return $"{algorithm} {value.ToUpper()}";
         }
@@ -165,41 +174,37 @@ namespace SIPSorcery.Net
         /// <param name="str">The string to parse from.</param>
         /// <param name="fingerprint">If successful a fingerprint object.</param>
         /// <returns>True if a fingerprint was successfully parsed. False if not.</returns>
-        public static bool TryParse(string str, out RTCDtlsFingerprint fingerprint)
+        public static bool TryParse(string str, out RTCDtlsFingerprint? fingerprint)
         {
             fingerprint = null;
 
-            if (string.IsNullOrEmpty(str))
+            if (string.IsNullOrWhiteSpace(str))
             {
                 return false;
             }
-            else
-            {
-                int spaceIndex = str.IndexOf(' ');
-                if (spaceIndex == -1)
-                {
-                    return false;
-                }
-                else
-                {
-                    string algStr = str.Substring(0, spaceIndex);
-                    string val = str.Substring(spaceIndex + 1);
 
-                    if (!DtlsUtils.IsHashSupported(algStr))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        fingerprint = new RTCDtlsFingerprint
-                        {
-                            algorithm = algStr,
-                            value = val
-                        };
-                        return true;
-                    }
-                }
+            var strSpan = str.AsSpan().Trim();
+            var spaceIndex = strSpan.IndexOf(' ');
+            if (spaceIndex == -1)
+            {
+                return false;
             }
+
+            var algorithm = strSpan.Slice(0, spaceIndex);
+            var value = strSpan.Slice(spaceIndex + 1);
+
+            if (!DtlsUtils.IsHashSupported(algorithm))
+            {
+                return false;
+            }
+
+            fingerprint = new RTCDtlsFingerprint
+            {
+                algorithm = algorithm.ToLowerString(),
+                value = value.ToLowerString()
+            };
+
+            return true;
         }
     }
 
@@ -223,7 +228,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (Certificate == null)
+                if (Certificate is null)
                 {
                     return 0;
                 }
@@ -234,7 +239,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public X509Certificate2 Certificate;
+        public X509Certificate2? Certificate;
 
         public List<RTCDtlsFingerprint> getFingerprints()
         {
@@ -261,7 +266,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (Certificate == null)
+                if (Certificate is null)
                 {
                     return 0;
                 }
@@ -272,12 +277,13 @@ namespace SIPSorcery.Net
             }
         }
 
-        public Org.BouncyCastle.X509.X509Certificate Certificate;
+        public Org.BouncyCastle.X509.X509Certificate? Certificate;
 
-        public Org.BouncyCastle.Crypto.AsymmetricKeyParameter PrivateKey;
+        public Org.BouncyCastle.Crypto.AsymmetricKeyParameter? PrivateKey;
 
         public List<RTCDtlsFingerprint> getFingerprints()
         {
+            Debug.Assert(Certificate is { });
             return new List<RTCDtlsFingerprint> { DtlsUtils.Fingerprint(Certificate) };
         }
     }
@@ -290,11 +296,11 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCConfiguration
     {
-        public List<RTCIceServer> iceServers;
+        public List<RTCIceServer>? iceServers;
         public RTCIceTransportPolicy iceTransportPolicy;
         public RTCBundlePolicy bundlePolicy;
         public RTCRtcpMuxPolicy rtcpMuxPolicy;
-        public List<RTCCertificate2> certificates2;
+        public List<RTCCertificate2>? certificates2;
 
         /// <summary>
         /// The Bouncy Castle DTLS logic enforces the use of Extended Master 
@@ -315,7 +321,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Size of the pre-fetched ICE pool. Defaults to 0.
         /// </summary>
-        public int iceCandidatePoolSize = 0;
+        public int iceCandidatePoolSize;
 
         /// <summary>
         /// Optional. If specified this address will be used as the bind address for any RTP
@@ -323,7 +329,7 @@ namespace SIPSorcery.Net
         /// is to bind to [::] or 0.0.0.0, depending on system support, which minimises network routing
         /// causing connection issues.
         /// </summary>
-        public IPAddress X_BindAddress;
+        public IPAddress? X_BindAddress;
 
         /// <summary>
         /// Optional. If set to true the feedback profile set in the SDP offers and answers will be
@@ -395,17 +401,17 @@ namespace SIPSorcery.Net
     public interface IRTCPeerConnection
     {
         //IRTCPeerConnection(RTCConfiguration configuration = null);
-        RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null);
-        RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options = null);
+        RTCSessionDescriptionInit createOffer(RTCOfferOptions? options = null);
+        RTCSessionDescriptionInit? createAnswer(RTCAnswerOptions? options = null);
         Task setLocalDescription(RTCSessionDescriptionInit description);
-        RTCSessionDescription localDescription { get; }
-        RTCSessionDescription currentLocalDescription { get; }
-        RTCSessionDescription pendingLocalDescription { get; }
+        RTCSessionDescription? localDescription { get; }
+        RTCSessionDescription? currentLocalDescription { get; }
+        RTCSessionDescription? pendingLocalDescription { get; }
         SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit description);
-        RTCSessionDescription remoteDescription { get; }
-        RTCSessionDescription currentRemoteDescription { get; }
-        RTCSessionDescription pendingRemoteDescription { get; }
-        void addIceCandidate(RTCIceCandidateInit candidate = null);
+        RTCSessionDescription? remoteDescription { get; }
+        RTCSessionDescription? currentRemoteDescription { get; }
+        RTCSessionDescription? pendingRemoteDescription { get; }
+        void addIceCandidate(RTCIceCandidateInit candidate);
         RTCSignalingState signalingState { get; }
         RTCIceGatheringState iceGatheringState { get; }
         RTCIceConnectionState iceConnectionState { get; }
@@ -413,15 +419,15 @@ namespace SIPSorcery.Net
         bool canTrickleIceCandidates { get; }
         void restartIce();
         RTCConfiguration getConfiguration();
-        void setConfiguration(RTCConfiguration configuration = null);
+        void setConfiguration(RTCConfiguration? configuration = null);
         void close();
-        event Action onnegotiationneeded;
+        event Action? onnegotiationneeded;
         event Action<RTCIceCandidate> onicecandidate;
-        event Action<RTCIceCandidate, string> onicecandidateerror;
-        event Action onsignalingstatechange;
-        event Action<RTCIceConnectionState> oniceconnectionstatechange;
-        event Action<RTCIceGatheringState> onicegatheringstatechange;
-        event Action<RTCPeerConnectionState> onconnectionstatechange;
+        event Action<RTCIceCandidate?, string>? onicecandidateerror;
+        event Action? onsignalingstatechange;
+        event Action<RTCIceConnectionState>? oniceconnectionstatechange;
+        event Action<RTCIceGatheringState>? onicegatheringstatechange;
+        event Action<RTCPeerConnectionState>? onconnectionstatechange;
 
         // TODO: Extensions for the RTCMediaAPI
         // https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface-extensions.

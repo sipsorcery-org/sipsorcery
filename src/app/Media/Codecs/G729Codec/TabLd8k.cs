@@ -27,14 +27,14 @@ namespace SIPSorcery.Media.G729Codec
     public class TabLd8k
     {
 
-        public static float[ /* 3 */] a100 =
+        public static readonly float[ /* 3 */] a100 =
         {
             1.00000000E+00f,
             0.19330735E+01f,
             -0.93589199E+00f
         };
 
-        public static float[ /* 3 */] a140 =
+        public static readonly float[ /* 3 */] a140 =
         {
             1.00000000E+00f,
             0.19059465E+01f,
@@ -43,7 +43,7 @@ namespace SIPSorcery.Media.G729Codec
 
         /* filter coefficients (fc = 100 Hz ) */
 
-        public static float[ /* 3 */] b100 =
+        public static readonly float[ /* 3 */] b100 =
         {
             0.93980581E+00f,
             -0.18795834E+01f,
@@ -52,14 +52,14 @@ namespace SIPSorcery.Media.G729Codec
 
         /* filter coefficients (fc = 140 Hz)  */
 
-        public static float[ /* 3 */] b140 =
+        public static readonly float[ /* 3 */] b140 =
         {
             0.92727435E+00f,
             -0.18544941E+01f,
             0.92727435E+00f
         };
 
-        public static int[ /* PRM_SIZE */] bitsno =
+        public static readonly int[ /* PRM_SIZE */] bitsno =
         {
             1 + Ld8k.NC0_B, /* MA + 1st stage */
             Ld8k.NC1_B * 2, /* 2nd stage */
@@ -74,7 +74,7 @@ namespace SIPSorcery.Media.G729Codec
             7
         }; /* second subframe */
 
-        public static float[ /* 2 */][ /* 2 */] coef =
+        public static readonly float[ /* 2 */][ /* 2 */] coef =
         {
             new[]
             {
@@ -91,7 +91,7 @@ namespace SIPSorcery.Media.G729Codec
 
         /*MA prediction coef.  */
 
-        public static float[ /* MODE */][ /* MA_NP */][ /* M */] fg =
+        public static readonly float[ /* MODE */][ /* MA_NP */][ /* M */] fg =
         {
             new[]
             {
@@ -215,7 +215,7 @@ namespace SIPSorcery.Media.G729Codec
 
         /*present MA prediction coef.*/
 
-        public static float[ /* MODE */][ /* M */] fg_sum =
+        public static readonly float[ /* MODE */][ /* M */] fg_sum =
         {
             new[]
             {
@@ -248,7 +248,7 @@ namespace SIPSorcery.Media.G729Codec
 
         /*inverse coef. */
 
-        public static float[ /* MODE */][ /* M */] fg_sum_inv =
+        public static readonly float[ /* MODE */][ /* M */] fg_sum_inv =
         {
             new[]
             {
@@ -279,7 +279,7 @@ namespace SIPSorcery.Media.G729Codec
             }
         };
 
-        public static float[ /* NCODE1 */][ /* 2 */] gbk1 =
+        public static readonly float[ /* NCODE1 */][ /* 2 */] gbk1 =
         {
             new[]
             {
@@ -330,7 +330,7 @@ namespace SIPSorcery.Media.G729Codec
             }
         };
 
-        public static float[ /* NCODE2*/][ /* 2 */] gbk2 =
+        public static readonly float[ /* NCODE2*/][ /* 2 */] gbk2 =
         {
             new[]
             {
@@ -429,7 +429,7 @@ namespace SIPSorcery.Media.G729Codec
             }
         };
 
-        public static float[ /* GRID_POINTS+1 */] grid =
+        public static readonly float[ /* GRID_POINTS+1 */] grid =
         {
             0.9997559f,
             0.9986295f,
@@ -542,7 +542,7 @@ u----------------------------------------------------------------------
  (not for G.729A)
 */
 
-        public static float[ /* L_WINDOW */] hamwindow =
+        public static readonly float[ /* L_WINDOW */] hamwindow =
         {
             0.08000000f,
             0.08005703f,
@@ -786,7 +786,7 @@ u----------------------------------------------------------------------
             0.02963307f
         };
 
-        public static int[ /* NCODE1 */] imap1 =
+        public static readonly int[ /* NCODE1 */] imap1 =
         {
             5,
             1,
@@ -798,7 +798,7 @@ u----------------------------------------------------------------------
             3
         };
 
-        public static int[ /* NCODE2 */] imap2 =
+        public static readonly int[ /* NCODE2 */] imap2 =
         {
             2,
             14,
@@ -818,7 +818,7 @@ u----------------------------------------------------------------------
             8
         };
 
-        public static float[ /* FIR_SIZE_ANA */] inter_3 =
+        public static readonly float[ /* FIR_SIZE_ANA */] inter_3 =
         {
             0.900839f,
             0.760084f,
@@ -835,7 +835,7 @@ u----------------------------------------------------------------------
             0.000000f
         };
 
-        public static float[ /* FIR_SIZE_SYN */] inter_3l =
+        public static readonly float[ /* FIR_SIZE_SYN */] inter_3l =
         {
             0.898517f,
             0.769271f,
@@ -871,7 +871,7 @@ u----------------------------------------------------------------------
         };
 
         /*First Stage Codebook */
-        public static float[ /* NC0 */][ /* M */] lspcb1 =
+        public static readonly float[ /* NC0 */][ /* M */] lspcb1 =
         {
             new[]
             {
@@ -2668,7 +2668,7 @@ u----------------------------------------------------------------------
 
         /*Second Stage Codebook*/
 
-        public static float[ /* NC1 */][ /* M */] lspcb2 =
+        public static readonly float[ /* NC1 */][ /* M */] lspcb2 =
         {
             new[]
             {
@@ -3119,7 +3119,7 @@ u----------------------------------------------------------------------
             }
         };
 
-        public static float[ /* M */] lwindow =
+        public static readonly float[ /* M */] lwindow =
         {
             0.99879038f,
             0.99546894f,
@@ -3133,7 +3133,7 @@ u----------------------------------------------------------------------
             0.89481964f
         };
 
-        public static int[ /* NCODE1 */] map1 =
+        public static readonly int[ /* NCODE1 */] map1 =
         {
             5,
             1,
@@ -3145,7 +3145,7 @@ u----------------------------------------------------------------------
             2
         };
 
-        public static int[ /* NCODE2 */] map2 =
+        public static readonly int[ /* NCODE2 */] map2 =
         {
             4,
             6,
@@ -3165,7 +3165,7 @@ u----------------------------------------------------------------------
             5
         };
 
-        public static float[ /* 4 */] pred =
+        public static readonly float[ /* 4 */] pred =
         {
             0.68f,
             0.58f,
@@ -3173,7 +3173,7 @@ u----------------------------------------------------------------------
             0.19f
         };
 
-        public static float[ /* SIZ_TAB_HUP_L */] tab_hup_l =
+        public static readonly float[ /* SIZ_TAB_HUP_L */] tab_hup_l =
         {
             -0.001246f,
             0.002200f,
@@ -3289,7 +3289,7 @@ u----------------------------------------------------------------------
             -0.001246f
         };
 
-        public static float[ /* SIZ_TAB_HUP_S */] tab_hup_s =
+        public static readonly float[ /* SIZ_TAB_HUP_S */] tab_hup_s =
         {
             -0.005772f,
             0.087669f,
@@ -3321,7 +3321,7 @@ u----------------------------------------------------------------------
             -0.005772f
         };
 
-        public static float[ /* NCODE1-NCAN1 */] thr1 =
+        public static readonly float[ /* NCODE1-NCAN1 */] thr1 =
         {
             0.659681f,
             0.755274f,
@@ -3329,7 +3329,7 @@ u----------------------------------------------------------------------
             1.987740f
         };
 
-        public static float[ /* NCODE2-NCAN2 */] thr2 =
+        public static readonly float[ /* NCODE2-NCAN2 */] thr2 =
         {
             0.429912f,
             0.494045f,

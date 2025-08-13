@@ -9,7 +9,7 @@ namespace SIPSorcery.Net
     //  - https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc#134
     //  - https://chromium.googlesource.com/external/webrtc/+/e2a017725570ead5946a4ca8235af27470ca0df9/webrtc/modules/rtp_rtcp/include/rtp_cvo.h
 
-    public class CVOExtension: RTPHeaderExtension
+    public class CVOExtension : RTPHeaderExtension
     {
         public class CVO
         {
@@ -67,7 +67,7 @@ namespace SIPSorcery.Net
         /// To set video rotation
         /// </summary>
         /// <param name="value">A <see cref="CVO"/> object is expected here</param>
-        public override void Set(Object value)
+        public override void Set(object? value)
         {
             if (value is CVO cvo)
             {
@@ -85,7 +85,7 @@ namespace SIPSorcery.Net
             };
         }
 
-        public override Object Unmarshal(RTPHeader header, byte[] data)
+        public override object Unmarshal(RTPHeader header, byte[] data)
         {
             if (data?.Length == ExtensionSize)
             {
@@ -110,14 +110,14 @@ namespace SIPSorcery.Net
             CW_270 = 270
         };
 
-        static byte ConvertCVOToCVOByte(CVO cvo)
+        private static byte ConvertCVOToCVOByte(CVO cvo)
         {
-            return (byte) ( (cvo.CameraBackFacing ? 0x8 : 0x0)
-                            + (cvo.HorizontalFlip ? 0x4 : 0x0) 
+            return (byte)((cvo.CameraBackFacing ? 0x8 : 0x0)
+                            + (cvo.HorizontalFlip ? 0x4 : 0x0)
                             + ConvertVideoRotationToCVOByte(cvo.VideoRotation));
         }
 
-        static byte ConvertVideoRotationToCVOByte(VideoRotation rotation)
+        private static byte ConvertVideoRotationToCVOByte(VideoRotation rotation)
         {
             switch (rotation)
             {
@@ -134,7 +134,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        static VideoRotation ConvertCVOByteToVideoRotation(byte cvo_byte)
+        private static VideoRotation ConvertCVOByteToVideoRotation(byte cvo_byte)
         {
             /* CVO byte: |0 0 0 0 C F R1 R0|
                 With the following definitions: 

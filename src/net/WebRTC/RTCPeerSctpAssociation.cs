@@ -24,6 +24,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -51,18 +52,18 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event notifications for user data on an SCTP stream representing a data channel.
         /// </summary>
-        public event Action<SctpDataFrame> OnDataChannelData;
+        public event Action<SctpDataFrame>? OnDataChannelData;
 
         /// <summary>
         /// Event notifications for the request to open a data channel being confirmed. This
         /// event corresponds to the DCEP ACK message for a DCEP OPEN message by this peer.
         /// </summary>
-        public event OnRTCDataChannelOpened OnDataChannelOpened;
+        public event OnRTCDataChannelOpened? OnDataChannelOpened;
 
         /// <summary>
         /// Event notification for a new data channel open request from the remote peer.
         /// </summary>
-        public event OnNewRTCDataChannel OnNewDataChannel;
+        public event OnNewRTCDataChannel? OnNewDataChannel;
 
         /// <summary>
         /// Creates a new SCTP association with the remote peer.
@@ -77,7 +78,7 @@ namespace SIPSorcery.Net
             : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
         {
             _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug("SCTP creating DTLS based association, is DTLS client {IsDtlsClient}, ID {ID}.", _rtcSctpTransport.IsDtlsClient, ID);
+            logger.LogSctpAssociationCreating(_rtcSctpTransport.IsDtlsClient, ID);
 
             OnData += OnDataFrameReceived;
         }
@@ -93,25 +94,25 @@ namespace SIPSorcery.Net
             switch (dataFrame)
             {
                 case var frame when frame.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
+                    Debug.Assert(frame.UserData is { Length: > 0 });
                     switch (frame.UserData[0])
                     {
                         case (byte)DataChannelMessageTypes.ACK:
                             OnDataChannelOpened?.Invoke(frame.StreamID);
                             break;
                         case (byte)DataChannelMessageTypes.OPEN:
-                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
+                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData);
 
-                            logger.LogDebug("DCEP OPEN channel type {ChannelType}, priority {Priority}, reliability {Reliability}, label {Label}, protocol {Protocol}.",
-                                dcepOpen.ChannelType, dcepOpen.Priority, dcepOpen.Reliability, dcepOpen.Label, dcepOpen.Protocol);
+                            logger.LogWebRtcDcepOpen(dcepOpen.ChannelType, dcepOpen.Priority, dcepOpen.Reliability, dcepOpen.Label, dcepOpen.Protocol);
 
                             DataChannelTypes channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
-                            if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
+                            if (DataChannelTypesExtensions.IsDefined((DataChannelTypes)dcepOpen.ChannelType))
                             {
                                 channelType = (DataChannelTypes)dcepOpen.ChannelType;
                             }
                             else
                             {
-                                logger.LogWarning("DECP OPEN channel type of {ChannelType} not recognised, defaulting to {DefaultChannelType}.", dcepOpen.ChannelType, channelType);
+                                logger.LogWebRtcDcepUnknownChannelType(dcepOpen.ChannelType, channelType);
                             }
 
                             OnNewDataChannel?.Invoke(
@@ -124,7 +125,7 @@ namespace SIPSorcery.Net
 
                             break;
                         default:
-                            logger.LogWarning("DCEP message type {MessageType} not recognised, ignoring.", frame.UserData[0]);
+                            logger.LogWebRtcDcepUnrecognized(frame.UserData[0]);
                             break;
                     }
                     break;

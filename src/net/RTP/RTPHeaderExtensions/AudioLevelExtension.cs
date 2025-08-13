@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace SIPSorcery.Net
 {
@@ -23,7 +24,7 @@ namespace SIPSorcery.Net
 
             public AudioLevel(byte[] data)
             {
-                if ((data == null) || (data.Length != AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE))
+                if ((data is null) || (data.Length != AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE))
                 {
                     throw new ArgumentException(nameof(data));
                 }
@@ -51,9 +52,9 @@ namespace SIPSorcery.Net
         /// To set Audio Level
         /// </summary>
         /// <param name="value">An <see cref="AudioLevel"/> object is expected here</param>
-        public override void Set(Object value) 
-        { 
-            if (value is AudioLevel audioLevel) 
+        public override void Set(object? value)
+        {
+            if (value is AudioLevel audioLevel)
             {
                 _audioLevel = audioLevel;
             }
@@ -74,11 +75,13 @@ namespace SIPSorcery.Net
             };
         }
 
-        public override Object Unmarshal(RTPHeader header, byte[] data)
+        public override object Unmarshal(RTPHeader header, byte[] data)
         {
+            Debug.Assert(data is { });
+
             try
             {
-                if ((data == null) || (data.Length != AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE))
+                if (data.Length != AudioLevelExtension.RTP_HEADER_EXTENSION_SIZE)
                 {
                     _audioLevel = new AudioLevel(data);
                 }

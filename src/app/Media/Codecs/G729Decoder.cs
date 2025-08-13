@@ -43,7 +43,7 @@ Sherbrooke.  All rights reserved.
  */
 
 using System;
-using System.IO;
+using System.Buffers;
 using SIPSorcery.Media.G729Codec;
 
 namespace SIPSorcery.Media
@@ -119,30 +119,41 @@ namespace SIPSorcery.Media
         }
 
         /**
-         * Converts floats array into shorts array.
+         * Converts floats array into shorts span.
          *
          * @param floats
          * @param shorts
          */
-        private static void floats2shorts(float[] floats, short[] shorts)
+        private static void floats2shorts(ReadOnlySpan<float> floats, Span<short> shorts)
         {
-            for (var i = 0; i < floats.Length; i++)
+            for (var i = 0; i < floats.Length && i < shorts.Length; i++)
             {
                 /* round and convert to int */
                 var f = floats[i];
                 if (f >= 0.0f)
+                {
                     f += 0.5f;
+                }
                 else
+                {
                     f -= 0.5f;
+                }
+
                 if (f > 32767.0f)
+                {
                     f = 32767.0f;
+                }
+
                 if (f < -32768.0f)
+                {
                     f = -32768.0f;
+                }
+
                 shorts[i] = (short)f;
             }
         }
 
-        private void depacketize(byte[] inFrame, int inFrameOffset, short[] serial)
+        private void depacketize(ReadOnlySpan<byte> inFrame, int inFrameOffset, Span<short> serial)
         {
             serial[0] = SYNC_WORD;
             serial[1] = SIZE_WORD;
@@ -156,12 +167,12 @@ namespace SIPSorcery.Media
         }
 
         /**
-         * Process <code>SERIAL_SIZE</code> short of speech.
+         * Process <code>SERIAL_SIZE</code> short of speech using spans.
          *
          * @param serial    input : serial array encoded in bits_ld8k
-         * @param sp16      output : speech short array
+         * @param sp16      output : speech short span
          */
-        private void ProcessPacket(short[] serial, short[] sp16)
+        private void ProcessPacket(ReadOnlySpan<short> serial, Span<short> sp16)
         {
             Bits.bits2prm_ld8k(serial, 2, parm, 1);
 
@@ -170,8 +181,12 @@ namespace SIPSorcery.Media
              */
             parm[0] = 0; /* No frame erasure */
             for (var i = 2; i < SERIAL_SIZE; i++)
+            {
                 if (serial[i] == 0)
+                {
                     parm[0] = 1; /* frame erased     */
+                }
+            }
 
             /* check parity and put 1 in parm[4] if parity error */
 
@@ -191,7 +206,9 @@ namespace SIPSorcery.Media
 
                 sf_voic = postfil.post(t0_first, synth, synth_offset + i, ptr_Az, ptr_Az_offset, pst_out, i);
                 if (sf_voic != 0)
+                {
                     voicing = sf_voic;
+                }
                 ptr_Az_offset += MP1;
             }
 
@@ -202,44 +219,50 @@ namespace SIPSorcery.Media
             floats2shorts(pst_out, sp16);
         }
 
-        /**
-         * Main decoder routine
-         * Usage :Decoder bitstream_file  outputspeech_file
-         *
-         * Format for bitstream_file:
-         * One (2-byte) synchronization word
-         *   One (2-byte) size word,
-         *   80 words (2-byte) containing 80 bits.
-         *
-         * Format for outputspeech_file:
-         *   Synthesis is written to a binary file of 16 bits data.
-         *
-         * @param args bitstream_file  outputspeech_file
-         * @throws java.io.IOException
-         */
-        public byte[] Process(byte[] source)
+        /// <summary>
+        /// Decodes G729 audio using spans and IBufferWriter for efficient memory usage.
+        /// </summary>
+        /// <param name="source">Input encoded data</param>
+        /// <param name="destination">IBufferWriter to receive decoded PCM samples</param>
+        /// <returns>Number of samples written</returns>
+        /// <remarks>
+        /// Main decoder routine
+        /// Usage :Decoder bitstream_file  outputspeech_file
+        ///
+        /// Format for bitstream_file:
+        /// One(2-byte) synchronization word
+        ///   One(2-byte) size word,
+        ///   80 words(2-byte) containing 80 bits.
+        ///
+        /// Format for outputspeech_file:
+        ///   Synthesis is written to a binary file of 16 bits data.
+        ///
+        /// @param args bitstream_file outputspeech_file
+        /// @throws java.io.IOException
+        /// </remarks>
+        public int Process(ReadOnlySpan<byte> source, IBufferWriter<short> destination)
         {
-            var serial = new short[SERIAL_SIZE]; /* Serial stream              */
-            var sp16 = new short[L_FRAME]; /* Buffer to write 16 bits speech */
-            var speech = new byte[L_FRAME * 2];
-            var output = new MemoryStream();
+            // Use stackalloc for the serial buffer since it's very small (82 shorts = 164 bytes)
+            Span<short> serial = stackalloc short[SERIAL_SIZE];
+            var samplesWritten = 0;
 
             /*-----------------------------------------------------------------*
              *            Loop for each "L_FRAME" speech data                  *
              *-----------------------------------------------------------------*/
 
-            var frame = 0;
             try
             {
                 // Iterate over each frame 
                 int i;
                 for (i = 0; i <= source.Length - L_FRAME / 8 /* must have a complete frame left */; i += L_FRAME / 8)
                 {
-                    frame++;
                     depacketize(source, i, serial);
-                    ProcessPacket(serial, sp16);
-                    Buffer.BlockCopy(sp16, 0, speech, 0, speech.Length);
-                    output.Write(speech, 0, speech.Length);
+
+                    // Get span for this frame's output
+                    var outputSpan = destination.GetSpan(L_FRAME);
+                    ProcessPacket(serial, outputSpan);
+                    destination.Advance(L_FRAME);
+                    samplesWritten += L_FRAME;
                 }
             }
             catch (Exception)
@@ -247,7 +270,7 @@ namespace SIPSorcery.Media
                 // No logging as we could get huge log files if any issues arises decoding
             }
 
-            return output.ToArray();
+            return samplesWritten;
         }
     }
 }
