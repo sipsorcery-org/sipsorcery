@@ -1164,7 +1164,7 @@ namespace SIPSorcery.Net
                     {
                         // Successfully set up the ICE server. Do nothing.
                     }
-                    // If the ICE server hasn't yet been resolved skip and retyr again when teh next ICE server checnk runs.
+                    // If the ICE server hasn't yet been resolved skip and retry again when thr next ICE server checnk runs.
                     if (_activeIceServer.ServerEndPoint == null &&
                         DateTime.Now.Subtract(_activeIceServer.DnsLookupSentAt).TotalSeconds < IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)
                     {
@@ -1292,7 +1292,7 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            // This methd is called in a fire and forget fashion so any exceptions need to be handled here.
+            // This method is called in a fire and forget fashion so any exceptions need to be handled here.
             try
             {
                 // Attempt to resolve the remote candidate address.

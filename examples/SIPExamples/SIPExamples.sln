@@ -49,6 +49,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPCloudCallServer", "SIPCl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAgentCloudClient", "UserAgentCloudClient\UserAgentCloudClient.csproj", "{BE8055DA-94F4-CA3C-B250-A0DB7BC1B686}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAgentServerTurn", "UserAgentServerTurn\UserAgentServerTurn.csproj", "{739168D1-8938-265C-C170-C8D078C4BB62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -335,6 +337,18 @@ Global
 		{BE8055DA-94F4-CA3C-B250-A0DB7BC1B686}.Release|x64.Build.0 = Release|Any CPU
 		{BE8055DA-94F4-CA3C-B250-A0DB7BC1B686}.Release|x86.ActiveCfg = Release|Any CPU
 		{BE8055DA-94F4-CA3C-B250-A0DB7BC1B686}.Release|x86.Build.0 = Release|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Debug|x64.Build.0 = Debug|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Debug|x86.Build.0 = Debug|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Release|x64.ActiveCfg = Release|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Release|x64.Build.0 = Release|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Release|x86.ActiveCfg = Release|Any CPU
+		{739168D1-8938-265C-C170-C8D078C4BB62}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

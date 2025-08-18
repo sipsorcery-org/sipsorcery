@@ -19,7 +19,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Bcpg;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net;
