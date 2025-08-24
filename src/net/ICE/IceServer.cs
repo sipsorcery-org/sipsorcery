@@ -181,6 +181,8 @@ namespace SIPSorcery.Net
 
         public ProtocolType Protocol { get { return _uri.Protocol; } }
 
+        public STUNUri Uri { get { return _uri; } }
+
         /// <summary>
         /// Task that completes when this server is done (resolved or timed out).
         /// </summary>
@@ -236,7 +238,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentException("ICE server string cannot be empty.", nameof(iceServer));
             }
 
-            var fields = iceServer.Split(new[] { ';' }, StringSplitOptions.None);
+            var fields = iceServer.Split([';'], StringSplitOptions.None);
 
             string Unquote(string s)
             {
@@ -266,7 +268,7 @@ namespace SIPSorcery.Net
 
             // If multiple URLs are provided, take the first non-empty candidate.
             // Split on comma or whitespace.
-            var urlCandidates = urlsFieldRaw.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            var urlCandidates = urlsFieldRaw.Split([ ',', ' '], StringSplitOptions.RemoveEmptyEntries)
                                             .Select(u => u.Trim())
                                             .ToArray();
 
