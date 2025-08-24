@@ -44,7 +44,7 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
-        private static IceServer _turnServer;
+        private static IceServerResolver _iceServerResolver = new IceServerResolver();
 
         static void Main(string[] args)
         {
@@ -56,8 +56,10 @@ namespace SIPSorcery
             var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
             if (!string.IsNullOrWhiteSpace(turnServerUrl))
             {
-                _turnServer = IceServer.ParseIceServer(turnServerUrl);
-                Log.LogInformation($"Using TURN server {_turnServer.Uri}");
+                var turnServer = IceServer.ParseIceServer(turnServerUrl);
+                Log.LogInformation($"Using TURN server {turnServer.Uri}");
+
+                _iceServerResolver.InitialiseIceServers([RTCIceServer.Parse(turnServerUrl)], RTCIceTransportPolicy.all);
             }
 
             // Set up a default SIP transport.
@@ -65,7 +67,7 @@ namespace SIPSorcery
 
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
-            sipTransport.EnableTraceLogs();
+            //sipTransport.EnableTraceLogs();
 
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
@@ -109,9 +111,10 @@ namespace SIPSorcery
                         rtpCts?.Cancel();
                         rtpCts = new CancellationTokenSource();
 
-                        if (_turnServer != null)
+                        if (_iceServerResolver.IceServers.Any())
                         {
-                            var turnClient = new TurnClient(_turnServer, rtpSession.AudioStream.GetRTPChannel());
+                            var turnClient = new TurnClient(_iceServerResolver.IceServers.Values.First(), rtpSession.AudioStream.GetRTPChannel());
+                            await turnClient.GetRelayEndPoint(2000, rtpCts.Token);
                         }
 
                         var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);

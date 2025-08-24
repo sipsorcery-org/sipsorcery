@@ -60,7 +60,7 @@ public class IceServerResolver
 
         foreach (var cfg in iceServers)
         {
-            foreach (var rawUrl in cfg.urls.Split(new[] { ',' }, IceServer.MAXIMUM_ICE_SERVER_ID + 1, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var rawUrl in cfg.urls.Split([ ',' ], IceServer.MAXIMUM_ICE_SERVER_ID + 1, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (!STUNUri.TryParse(rawUrl.Trim(), out var stunUri))
                 {

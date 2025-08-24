@@ -97,6 +97,19 @@ namespace SIPSorcery.Net
         public string username;
         public RTCIceCredentialType credentialType;
         public string credential;
+
+        public static RTCIceServer Parse(string iceServer)
+        {
+            var fields = iceServer.Split(';');
+
+            return new RTCIceServer
+            {
+                urls = fields[0],
+                username = fields.Length > 1 ? fields[1] : null,
+                credential = fields.Length > 2 ? fields[2] : null,
+                credentialType = RTCIceCredentialType.password
+            };
+        }
     }
 
     /// <summary>

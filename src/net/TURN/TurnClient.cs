@@ -21,6 +21,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Digests;
@@ -43,6 +44,9 @@ public class TurnClient
     public Dictionary<STUNUri, Socket> RtpTcpSocketByUri { get; private set; } = new Dictionary<STUNUri, Socket>();
 
     private Dictionary<STUNUri, IceTcpReceiver> m_rtpTcpReceiverByUri = new Dictionary<STUNUri, IceTcpReceiver>();
+
+    private bool _allocateRequestSent = false;
+    private int _allocateRetries = 0;
 
     //private bool m_tcpRtpReceiverStarted = false;
 
@@ -74,64 +78,54 @@ public class TurnClient
         _rtpChannel.OnRTPDataReceived += OnRTPPacketReceived;
     }
 
-    public async Task GetRelayEndPoint()
+    /// <summary>
+    /// Allocates (or returns cached) TURN relayed endpoint.
+    /// </summary>
+    public async Task<IPEndPoint> GetRelayEndPoint(int timeoutMs = 5000, CancellationToken cancellationToken = default)
     {
-        if(_iceServer.RelayEndPoint != null)
+        if (_iceServer.RelayEndPoint != null)
         {
             return _iceServer.RelayEndPoint;
         }
 
-        // Run a state machine on the active ICE server.
-
-
-        else if ((_activeIceServer._uri.Scheme == STUNSchemesEnum.turn && _activeIceServer.RelayEndPoint != null) ||
-            (_activeIceServer._uri.Scheme == STUNSchemesEnum.stun && _activeIceServer.ServerReflexiveEndPoint != null))
+        // DNS resolution if required.
+        if (_iceServer.ServerEndPoint == null)
         {
-            // Successfully set up the ICE server. Do nothing.
-        }
-        // If the ICE server hasn't yet been resolved skip and retry again when thr next ICE server checnk runs.
-        if (_activeIceServer.ServerEndPoint == null &&
-            DateTime.Now.Subtract(_activeIceServer.DnsLookupSentAt).TotalSeconds < IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)
-        {
-            // Do nothing.
-        }
-        // DNS lookup for ICE server host has timed out.
-        else if (_activeIceServer.ServerEndPoint == null)
-        {
-            logger.LogWarning("ICE server DNS resolution failed for {Uri}.", _activeIceServer._uri);
-            _activeIceServer.Error = SocketError.TimedOut;
-        }
-        // Maximum number of requests have been sent to the ICE server without a response.
-        else if (_activeIceServer.OutstandingRequestsSent >= IceServer.MAX_REQUESTS && _activeIceServer.LastResponseReceivedAt == DateTime.MinValue)
-        {
-            logger.LogWarning("Connection attempt to ICE server {Uri} timed out after {RequestsSent} requests.", _activeIceServer._uri, _activeIceServer.OutstandingRequestsSent);
-            _activeIceServer.Error = SocketError.TimedOut;
-        }
-        // Maximum number of error response have been received for the requests sent to this ICE server.
-        else if (_activeIceServer.ErrorResponseCount >= IceServer.MAX_ERRORS)
-        {
-            logger.LogWarning("Connection attempt to ICE server {Uri} cancelled after {ErrorResponseCount} error responses.", _activeIceServer._uri, _activeIceServer.ErrorResponseCount);
-            _activeIceServer.Error = SocketError.TimedOut;
-        }
-        // Send STUN binding request.
-        else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
-        {
-            logger.LogDebug("Sending STUN binding request to ICE server {Uri} with address {EndPoint}.", _activeIceServer._uri, _activeIceServer.ServerEndPoint);
-            _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
-        }
-        // Send TURN binding request.
-        else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.turn)
-        {
-            logger.LogDebug("Sending TURN allocate request to ICE server {Uri} with address {EndPoint}.", _activeIceServer._uri, _activeIceServer.ServerEndPoint);
-            _activeIceServer.Error = SendTurnAllocateRequest(_activeIceServer);
-        }
-        else
-        {
-            logger.LogWarning("The active ICE server reached an unexpected state {Uri}.", _activeIceServer._uri);
+            logger.LogWarning("The TURN server end point was not available for {uri}. Has the IceServerResolver been triggered?", _iceServer.Uri);
+            return null;
         }
 
-        logger.LogDebug("ICE RTP channel sending TURN permissions request {TurnPermissionsRequestSent} to server {IceServerUri} for peer {RemoteCandidate} (TxID: {RequestTransactionID}).", candidatePair.TurnPermissionsRequestSent, candidatePair.LocalCandidate.IceServer._uri, candidatePair.RemoteCandidate.DestinationEndPoint, candidatePair.RequestTransactionID);
-        SendTurnCreatePermissionsRequest(candidatePair.RequestTransactionID, candidatePair.LocalCandidate.IceServer, candidatePair.RemoteCandidate.DestinationEndPoint);
+        var start = DateTime.Now;
+        while (_iceServer.RelayEndPoint == null && !cancellationToken.IsCancellationRequested)
+        {
+            if ((int)DateTime.Now.Subtract(start).TotalMilliseconds > timeoutMs)
+            {
+                logger.LogWarning("TURN allocate timed out.");
+                break;
+            }
+
+            if (!_allocateRequestSent ||
+                (DateTime.Now.Subtract(_iceServer.LastRequestSentAt).TotalMilliseconds > 500 &&
+                 _iceServer.LastResponseReceivedAt < _iceServer.LastRequestSentAt))
+            {
+                if (_allocateRetries >= IceServer.MAX_REQUESTS)
+                {
+                    logger.LogWarning("TURN allocate max retries reached.");
+                    break;
+                }
+                var sendRes = SendTurnAllocateRequest(_iceServer);
+                _allocateRequestSent = true;
+                _allocateRetries++;
+                if (sendRes != SocketError.Success)
+                {
+                    logger.LogWarning("TURN allocate send error {Result}.", sendRes);
+                }
+            }
+
+            await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+        }
+
+        return _iceServer.RelayEndPoint;
     }
 
     /// <summary>
