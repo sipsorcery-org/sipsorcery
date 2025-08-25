@@ -23,6 +23,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Digests;
 using SIPSorcery.Sys;
@@ -139,11 +140,11 @@ public class TurnClient
     {
         if (packet?.Length > 0)
         {
-            bool wasRelayed = false;
+            //bool wasRelayed = false;
 
             if (packet[0] == 0x00 && packet[1] == 0x17)
             {
-                wasRelayed = true;
+                //wasRelayed = true;
 
                 // TURN data indication. Extract the data payload and adjust the end point.
                 var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
@@ -159,8 +160,9 @@ public class TurnClient
             if (packet[0] == 0x00 || packet[0] == 0x01)
             {
                 // STUN packet.
+                logger.LogDebug("STUN packet received from {RemoteEndPoint}.", remoteEndPoint);
                 var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                _ = ProcessStunMessage(stunMessage, remoteEndPoint, wasRelayed);
+                GotStunResponse(stunMessage, remoteEndPoint);
             }
             else
             {
@@ -171,92 +173,170 @@ public class TurnClient
     }
 
     /// <summary>
-    /// Processes a received STUN request or response.
+    /// Handler for a STUN response received in response to an ICE server connectivity check.
+    /// Note that no STUN requests are expected to be received from an ICE server during the initial
+    /// connection to an ICE server. Requests will only arrive if a TURN relay is used and data
+    /// indications arrive but this will be at a later stage.
     /// </summary>
-    /// <remarks>
-    /// Actions to take on a successful STUN response https://tools.ietf.org/html/rfc8445#section-7.2.5.3
-    /// - Discover peer reflexive remote candidates as per https://tools.ietf.org/html/rfc8445#section-7.2.5.3.1.
-    /// - Construct a valid pair which means match a candidate pair in the check list and mark it as valid (since a successful STUN exchange 
-    ///   has now taken place on it). A new entry may need to be created for this pair for a peer reflexive candidate.
-    /// - Update state of candidate pair that generated the check to Succeeded.
-    /// - If the controlling candidate set the USE_CANDIDATE attribute then the ICE agent that receives the successful response sets the nominated
-    ///   flag of the pair to true. Once the nominated flag is set it concludes the ICE processing for that component.
-    /// </remarks>
-    /// <param name="stunMessage">The STUN message received.</param>
-    /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
-    private async Task ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
+    /// <param name="stunResponse">The STUN response received.</param>
+    /// <param name="remoteEndPoint">The remote end point the STUN response was received from.</param>
+    /// <returns>True if the STUN response resulted in new ICE candidates being available (which
+    /// will be either a "server reflexive" or "relay" candidate.</returns>
+    private void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
     {
-        remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
+        string txID = Encoding.ASCII.GetString(stunResponse.Header.TransactionId);
 
-        //OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
+        // Ignore responses to old requests on the assumption they are retransmits.
+        if (_iceServer.TransactionID == txID)
+        {
+            // The STUN response is for a check sent to an ICE server.
+            _iceServer.LastResponseReceivedAt = DateTime.Now;
+            _iceServer.OutstandingRequestsSent = 0;
 
-        // Check if the  STUN message is for an ICE server check.
-        //var iceServer = GetIceServerForTransactionID(stunMessage.Header.TransactionId);
-        //if (iceServer != null)
-        //{
-        //    bool candidatesAvailable = iceServer.GotStunResponse(stunMessage, remoteEndPoint);
-        //    if (candidatesAvailable)
-        //    {
-        //        // Safe to wait here as the candidates from an ICE server will always be IP addresses only,
-        //        // no DNS lookups required.
-        //        await AddCandidatesForIceServer(iceServer).ConfigureAwait(false);
-        //    }
-        //}
-        //else
-        //{
-        //    // If the STUN message isn't for an ICE server then it needs to be matched against a remote
-        //    // candidate and a checklist entry and if no match a "peer reflexive" candidate may need to
-        //    // be created.
-        //    if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingRequest)
-        //    {
-        //        GotStunBindingRequest(stunMessage, remoteEndPoint, wasRelayed);
-        //    }
-        //    else if (stunMessage.Header.MessageClass == STUNClassTypesEnum.ErrorResponse ||
-        //             stunMessage.Header.MessageClass == STUNClassTypesEnum.SuccessResponse)
-        //    {
-        //        // Correlate with request using transaction ID as per https://tools.ietf.org/html/rfc8445#section-7.2.5.
-        //        var matchingChecklistEntry = GetChecklistEntryForStunResponse(stunMessage.Header.TransactionId);
+            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
+            {
+                logger.LogWarning("TURN client received a success response for an Allocate request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
 
-        //        if (matchingChecklistEntry == null)
-        //        {
-        //            if (IceConnectionState != RTCIceConnectionState.connected)
-        //            {
-        //                // If the channel is connected a mismatched txid can result if the connection is very busy, i.e. streaming 1080p video,
-        //                // it's likely to only be transient and does not impact the connection state.
-        //                logger.LogWarning("ICE RTP channel received a STUN {MessageType} with a transaction ID that did not match a checklist entry.", stunMessage.Header.MessageType);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
+                _iceServer.ErrorResponseCount = 0;
 
-        //            if (_checklistState == ChecklistState.Running &&
-        //                stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
-        //            {
-        //                if (matchingChecklistEntry.Nominated)
-        //                {
-        //                    logger.LogDebug("ICE RTP channel remote peer nominated entry from binding response {RemoteCandidate}", matchingChecklistEntry.RemoteCandidate.ToShortString());
+                // If the relay end point is set then this connection check has already been completed.
+                //if (RelayEndPoint == null)
+                //{
+                //    logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _uri);
 
-        //                    // This is the response to a connectivity check that had the "UseCandidate" attribute set.
-        //                    SetNominatedEntry(matchingChecklistEntry);
-        //                }
-        //                else if (IsController)
-        //                {
-        //                    logger.LogDebug("ICE RTP channel binding response state {State} as Controller for {RemoteCandidate}", matchingChecklistEntry.State, matchingChecklistEntry.RemoteCandidate.ToShortString());
-        //                    ProcessNominateLogicAsController(matchingChecklistEntry);
-        //                }
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        logger.LogWarning("ICE RTP channel received an unexpected STUN message {MessageType} from {RemoteEndPoint}.\nJson: {StunMessage}", stunMessage.Header.MessageType, remoteEndPoint, stunMessage);
-        //    }
-        //}
+                //    var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
 
-        await Task.Delay(0);
+                //    if (mappedAddrAttr != null)
+                //    {
+                //        ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                //    }
 
-        logger.LogWarning("ICE RTP channel received an unexpected STUN message {MessageType} from {RemoteEndPoint}.\nJson: {StunMessage}", stunMessage.Header.MessageType, remoteEndPoint, stunMessage);
+                //    var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
+
+                //    if (mappedRelayAddrAttr != null)
+                //    {
+                //        RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                //    }
+
+                //    var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+
+                //    if (lifetime != null)
+                //    {
+                //        TurnTimeToExpiry = DateTime.Now +
+                //                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                //    }
+                //    else
+                //    {
+                //        TurnTimeToExpiry = DateTime.Now +
+                //                           TimeSpan.FromSeconds(3600);
+                //    }
+                //}
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
+            {
+                logger.LogWarning("TURN client received an error response for an Allocate request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+
+                _iceServer.ErrorResponseCount++;
+
+                if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                {
+                    STUNErrorCodeAttribute errCodeAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                    STUNAddressAttribute alternateServerAttribute = alternateServerAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.AlternateServer) as STUNAddressAttribute;
+
+                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    {
+                        logger.LogWarning("TURN client error response code {errorCode} for an Allocate request to {Uri} from {remoteEP}.", errCodeAttribute.ErrorCode, _iceServer.Uri, remoteEndPoint);
+
+                        // Set the authentication properties authenticate.
+                        SetAuthenticationFields(stunResponse);
+
+                        // Set a new transaction ID.
+                        _iceServer.GenerateNewTransactionID();
+
+                        _iceServer.ErrorResponseCount = 1;
+                    }
+                    else if (alternateServerAttribute != null)
+                    {
+                        _iceServer.ServerEndPoint = new IPEndPoint(alternateServerAttribute.Address, alternateServerAttribute.Port);
+
+                        logger.LogWarning("TURN client received an alternate respose for an Allocate request to {Uri}, changed server url to {ServerEndPoint}.", _iceServer.Uri, _iceServer.ServerEndPoint);
+
+                        // Set a new transaction ID.
+                        _iceServer.GenerateNewTransactionID();
+
+                        _iceServer.ErrorResponseCount = 1;
+                    }
+                    else
+                    {
+                        logger.LogWarning("TURN client received an error response for an Allocate request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _iceServer.Uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("TURN client received an error response for an Allocate request to {Uri}.", _iceServer.Uri);
+                }
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
+            {
+                //_iceServer.ErrorResponseCount = 0;
+
+                //logger.LogDebug("STUN binding success response received for ICE server check to {Uri}.", _uri);
+
+                //var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+
+                //if (lifetime != null)
+                //{
+                //    TurnTimeToExpiry = DateTime.Now +
+                //                       TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                //}
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
+            {
+                //_iceServer.ErrorResponseCount++;
+
+                //if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                //{
+                //    var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+
+                //    if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
+                //    {
+                //        SetAuthenticationFields(stunResponse);
+
+                //        // Set a new transaction ID.
+                //        GenerateNewTransactionID();
+                //    }
+                //    else
+                //    {
+                //        logger.LogWarning("ICE session received an error response for a Refresh request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                //    }
+                //}
+                //else
+                //{
+                //    logger.LogWarning("STUN binding error response received for ICE server check to {Uri}.", _uri);
+                //    // The STUN response is for a check sent to an ICE server.
+                //    _iceServer.Error = SocketError.ConnectionRefused;
+                //}
+            }
+            else
+            {
+                logger.LogWarning("An unrecognised STUN {MessageType} response for an ICE server check was received from {RemoteEndPoint}.", stunResponse.Header.MessageType, remoteEndPoint);
+                _iceServer.ErrorResponseCount++;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extracts the fields required for authentication from a STUN error response.
+    /// </summary>
+    /// <param name="stunResponse">The STUN authentication required error response.</param>
+    internal void SetAuthenticationFields(STUNMessage stunResponse)
+    {
+        // Set the authentication properties authenticate.
+        //var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
+        //Nonce = nonceAttribute?.Value;
+
+        //var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
+        //Realm = realmAttribute?.Value;
     }
 
     /// <summary>

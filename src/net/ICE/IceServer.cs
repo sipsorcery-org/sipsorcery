@@ -441,6 +441,8 @@ namespace SIPSorcery.Net
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
                 {
+                    logger.LogWarning("ICE session received an error response for an Allocate request to {Uri} from {remoteEP}.", _uri, remoteEndPoint);
+
                     ErrorResponseCount++;
 
                     if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
