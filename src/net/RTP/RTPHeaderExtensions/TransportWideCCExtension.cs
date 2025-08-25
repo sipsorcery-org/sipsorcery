@@ -56,7 +56,7 @@ namespace SIPSorcery.Net
         /// Generic setter override. Expects a ushort representing the sequence number.
         /// </summary>
         /// <param name="value">The TWCC sequence number as an object (ushort).</param>
-        public override void Set(object value)
+        public override void Set(object? value)
         {
             if (value is ushort seq)
             {

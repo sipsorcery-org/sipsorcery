@@ -69,14 +69,14 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// Specification https://www.w3.org/TR/webrtc/#webidl-1143016005
     /// </remarks>
-    interface IRTCDataChannel
+    internal interface IRTCDataChannel
     {
         /// <summary>
         /// The label attribute represents a label that can be used to distinguish this RTCDataChannel 
         /// object from other RTCDataChannel objects. Scripts are allowed to create multiple RTCDataChannel 
         /// objects with the same label. On getting, the attribute MUST return the value of the [[DataChannelLabel]] slot.
         /// </summary>
-        string label { get; }
+        string? label { get; }
 
         /// <summary>
         /// The ordered attribute returns true if the RTCDataChannel is ordered, and false if out of order delivery 
@@ -101,7 +101,7 @@ namespace SIPSorcery.Net
         /// The protocol attribute returns the name of the sub-protocol used with this RTCDataChannel. On getting, the 
         /// attribute MUST return the value of the [[DataChannelProtocol]] slot.
         /// </summary>
-        string protocol { get; }
+        string? protocol { get; }
 
         /// <summary>
         /// he negotiated attribute returns true if this RTCDataChannel was negotiated by the application, or false otherwise. 
@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
         /// </summary>
         event OnDataChannelMessageDelegate onmessage;
 
-        string binaryType { get; set; }
+        string? binaryType { get; set; }
         void send(string data);
         void send(byte[] data);
     };
@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
         public bool? ordered { get; set; }
         public ushort? maxPacketLifeTime { get; set; }
         public ushort? maxRetransmits { get; set; }
-        public string protocol { get; set; }
+        public string? protocol { get; set; }
         public bool? negotiated { get; set; }
         public ushort? id { get; set; }
     };

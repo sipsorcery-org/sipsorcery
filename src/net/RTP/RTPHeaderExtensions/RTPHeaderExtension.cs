@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.Net
 {
@@ -14,9 +13,9 @@ namespace SIPSorcery.Net
         /// <param name="id">extmap value</param>
         /// <param name="uri">URI of the extension - for example: "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" or "urn:3gpp:video-orientation" </param>
         /// <returns>A Specific RTPHeaderExtension</returns>
-        public static RTPHeaderExtension GetRTPHeaderExtension(int id, string uri, SDPMediaTypesEnum media)
+        public static RTPHeaderExtension? GetRTPHeaderExtension(int id, string uri, SDPMediaTypesEnum media)
         {
-            RTPHeaderExtension result = null;
+            RTPHeaderExtension? result = null;
             switch (uri)
             {
                 case AbsSendTimeExtension.RTP_HEADER_EXTENSION_URI:
@@ -32,12 +31,12 @@ namespace SIPSorcery.Net
                     break;
 
                 case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI:
-                //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
+                    //case TransportWideCCExtension.RTP_HEADER_EXTENSION_URI_ALT:
                     result = new TransportWideCCExtension(id);
                     break;
             }
 
-            if ( (result != null) &&  result.IsMediaSupported(media) )
+            if ((result is { }) && result.IsMediaSupported(media))
             {
                 return result;
             }
@@ -49,19 +48,19 @@ namespace SIPSorcery.Net
         /// To create a RTP Header Extension
         /// </summary>
         /// <param name="id"><see cref="int"/> Id / extmap</param>
-        /// <param name="uri"><see cref="String"/>uri</param>
+        /// <param name="uri"><see langword="string"/>uri</param>
         /// <param name="type"><see cref="RTPHeaderExtension"/>type (one or two bytes)</param>
         /// <param name="medias"><see cref="SDPMediaTypesEnum"/>media(s) supported by this extension - set null/empty if all medias are supported</param>
-        public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias )
+        public RTPHeaderExtension(int id, string uri, int extensionSize, RTPHeaderExtensionType type, params SDPMediaTypesEnum[] medias)
         {
             Id = id;
             Uri = uri;
             ExtensionSize = extensionSize;
             Type = type;
 
-            if (medias != null)
+            if (medias is { })
             {
-                Medias = medias.ToList();
+                Medias =new List<SDPMediaTypesEnum>( medias);
             }
             else
             {
@@ -78,7 +77,7 @@ namespace SIPSorcery.Net
         public int ExtensionSize { get; }
 
         // Medias supported by this extension - if null/empty all medias are supported
-        public List<SDPMediaTypesEnum> Medias { get;}
+        public List<SDPMediaTypesEnum> Medias { get; }
 
         // Type (one or two bytes)
         public RTPHeaderExtensionType Type { get; }
@@ -94,13 +93,13 @@ namespace SIPSorcery.Net
         }
 
         // Function to call to set a new value to this extension
-        public abstract void Set(Object obj);
+        public abstract void Set(object obj);
 
         // Function to call to get the payload when writting the RTP header
         public abstract byte[] Marshal();
 
         // Function to call when reading the RTP header
-        public abstract Object Unmarshal(RTPHeader header, byte[] data);
+        public abstract object Unmarshal(RTPHeader header, byte[] data);
     }
 
     public enum RTPHeaderExtensionType

@@ -58,7 +58,10 @@ namespace SIPSorcery.Media.G729Codec
         public void init_exc_err()
         {
             int i;
-            for (i = 0; i < 4; i++) exc_err[i] = 1.0f;
+            for (i = 0; i < 4; i++)
+            {
+                exc_err[i] = 1.0f;
+            }
         }
 
         /**
@@ -86,7 +89,11 @@ namespace SIPSorcery.Media.G729Codec
             t1 = t0_frac > 0 ? t0 + 1 : t0;
 
             i = t1 - L_SUBFR - L_INTER10;
-            if (i < 0) i = 0;
+            if (i < 0)
+            {
+                i = 0;
+            }
+
             zone1 = (int)(i * INV_L_SUBFR);
 
             i = t1 + L_INTER10 - 2;
@@ -95,10 +102,18 @@ namespace SIPSorcery.Media.G729Codec
             maxloc = -1.0f;
             flag = 0;
             for (i = zone2; i >= zone1; i--)
+            {
                 if (exc_err[i] > maxloc)
+                {
                     maxloc = exc_err[i];
+                }
+            }
+
             if (maxloc > THRESH_ERR)
+            {
                 flag = 1;
+            }
+
             return flag;
         }
 
@@ -128,9 +143,16 @@ namespace SIPSorcery.Media.G729Codec
             if (n < 0)
             {
                 temp = 1.0f + gain_pit * exc_err[0];
-                if (temp > worst) worst = temp;
+                if (temp > worst)
+                {
+                    worst = temp;
+                }
+
                 temp = 1.0f + gain_pit * temp;
-                if (temp > worst) worst = temp;
+                if (temp > worst)
+                {
+                    worst = temp;
+                }
             }
 
             else
@@ -143,11 +165,18 @@ namespace SIPSorcery.Media.G729Codec
                 for (i = zone1; i <= zone2; i++)
                 {
                     temp = 1.0f + gain_pit * exc_err[i];
-                    if (temp > worst) worst = temp;
+                    if (temp > worst)
+                    {
+                        worst = temp;
+                    }
                 }
             }
 
-            for (i = 3; i >= 1; i--) exc_err[i] = exc_err[i - 1];
+            for (i = 3; i >= 1; i--)
+            {
+                exc_err[i] = exc_err[i - 1];
+            }
+
             exc_err[0] = worst;
         }
     }

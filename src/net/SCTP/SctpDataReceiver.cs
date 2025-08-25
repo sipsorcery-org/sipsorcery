@@ -15,29 +15,28 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
     public struct SctpDataFrame
     {
-        public static SctpDataFrame Empty = new SctpDataFrame();
+        public static SctpDataFrame Empty;
 
         public bool Unordered;
         public ushort StreamID;
         public ushort StreamSeqNum;
         public uint PPID;
-        public byte[] UserData;
+        public byte[]? UserData;
 
         /// <param name="streamID">The stream ID of the chunk.</param>
         /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
         /// <param name="ppid">The payload protocol ID for the chunk.</param>
         /// <param name="userData">The chunk data.</param>
-        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[] userData)
+        public SctpDataFrame(bool unordered, ushort streamID, ushort streamSeqNum, uint ppid, byte[]? userData)
         {
             Unordered = unordered;
             StreamID = streamID;
@@ -48,7 +47,7 @@ namespace SIPSorcery.Net
 
         public bool IsEmpty()
         {
-            return UserData == null;
+            return UserData is null;
         }
     }
 
@@ -182,7 +181,7 @@ namespace SIPSorcery.Net
             _windowSize = (ushort)(_receiveWindow / mtu);
             _windowSize = (_windowSize < WINDOW_SIZE_MINIMUM) ? WINDOW_SIZE_MINIMUM : _windowSize;
 
-            logger.LogDebug("SCTP windows size for data receiver set at {WindowSize}.", _windowSize);
+            logger.LogSctpWindowSizeSet(_windowSize);
         }
 
         /// <summary>
@@ -211,23 +210,23 @@ namespace SIPSorcery.Net
             if (_inOrderReceiveCount == 0 &&
                 GetDistance(_initialTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning("SCTP data receiver received a data chunk with a TSN {TSN} when the initial TSN was {InitialTSN} and a window size of {WindowSize}, ignoring.", dataChunk.TSN, _initialTSN, _windowSize);
+                logger.LogSctpDataReceiverDistantInitialTsn(dataChunk.TSN, _initialTSN, _windowSize);
             }
             else if (_inOrderReceiveCount > 0 &&
                 GetDistance(_lastInOrderTSN, dataChunk.TSN) > _windowSize)
             {
-                logger.LogWarning("SCTP data receiver received a data chunk with a TSN {TSN} when the expected TSN was {ExpectedTSN} and a window size of {WindowSize}, ignoring.", dataChunk.TSN, _lastInOrderTSN + 1, _windowSize);
+                logger.LogSctpDataReceiverDistantLastInOrderTsn(dataChunk.TSN, _lastInOrderTSN + 1, _windowSize);
             }
             else if (_inOrderReceiveCount > 0 &&
                 !IsNewer(_lastInOrderTSN, dataChunk.TSN))
             {
-                logger.LogWarning("SCTP data receiver received an old data chunk with TSN {TSN} when the expected TSN was {ExpectedTSN}, ignoring.", dataChunk.TSN, _lastInOrderTSN + 1);
+                logger.LogSctpDataReceiverOldChunkTsn(dataChunk.TSN, _lastInOrderTSN + 1);
             }
             else if (!_forwardTSN.ContainsKey(dataChunk.TSN))
             {
-                logger.LogTrace("SCTP receiver got data chunk with TSN {TSN}, last in order TSN {LastInOrderTSN}, in order receive count {InOrderReceiveCount}.", dataChunk.TSN, _lastInOrderTSN, _inOrderReceiveCount);
+                logger.LogReceivedChunk(dataChunk.TSN, _lastInOrderTSN, _inOrderReceiveCount);
 
-                bool processFrame = true;
+                var processFrame = true;
 
                 // Relying on unsigned integer wrapping.
                 unchecked
@@ -257,7 +256,7 @@ namespace SIPSorcery.Net
                             outOfOrder.Count >= MAXIMUM_OUTOFORDER_FRAMES)
                         {
                             // Stream is nearing capacity, only chunks that advance _lastInOrderTSN can be accepted. 
-                            logger.LogWarning("Stream {StreamID} is at buffer capacity. Rejected out-of-order data chunk TSN {TSN}.", dataChunk.StreamID, dataChunk.TSN);
+                            logger.LogSctpStreamBufferAtCapacity(dataChunk.StreamID, dataChunk.TSN);
                             processFrame = false;
                         }
                         else
@@ -273,6 +272,7 @@ namespace SIPSorcery.Net
                     if (dataChunk.Begining && dataChunk.Ending)
                     {
                         // Single packet chunk.
+                        Debug.Assert(dataChunk is { });
                         frame = new SctpDataFrame(
                             dataChunk.Unordered,
                             dataChunk.StreamID,
@@ -286,7 +286,7 @@ namespace SIPSorcery.Net
                         _fragmentedChunks.Add(dataChunk.TSN, dataChunk);
                         (var begin, var end) = GetChunkBeginAndEnd(_fragmentedChunks, dataChunk.TSN);
 
-                        if (begin != null && end != null)
+                        if (begin is { } && end is { })
                         {
                             frame = GetFragmentedChunk(_fragmentedChunks, begin.Value, end.Value);
                         }
@@ -295,7 +295,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogTrace("SCTP duplicate TSN received for {TSN}.", dataChunk.TSN);
+                logger.LogSctpDuplicateTsnReceived(dataChunk.TSN);
                 if (!_duplicateTSN.ContainsKey(dataChunk.TSN))
                 {
                     _duplicateTSN.Add(dataChunk.TSN, 1);
@@ -326,12 +326,12 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <returns>A SACK chunk that can be sent to the remote peer to update the ACK TSN and
         /// request a retransmit of any missing DATA chunks.</returns>
-        public SctpSackChunk GetSackChunk()
+        public SctpSackChunk? GetSackChunk()
         {
             // Can't create a SACK until the initial DATA chunk has been received.
             if (_inOrderReceiveCount > 0)
             {
-                SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
+                var sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
                 sack.GapAckBlocks = GetForwardTSNGaps();
                 sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
                 return sack;
@@ -350,12 +350,12 @@ namespace SIPSorcery.Net
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
         internal List<SctpTsnGapBlock> GetForwardTSNGaps()
         {
-            List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
+            var gaps = new List<SctpTsnGapBlock>();
 
             // Can't create gap reports until the initial DATA chunk has been received.
             if (_inOrderReceiveCount > 0)
             {
-                uint tsnAck = _lastInOrderTSN;
+                var tsnAck = _lastInOrderTSN;
 
                 if (_forwardTSN.Count > 0)
                 {
@@ -364,15 +364,16 @@ namespace SIPSorcery.Net
 
                     foreach (var tsn in _forwardTSN.Keys)
                     {
-                        if (start == null)
+                        if (start is null)
                         {
                             start = (ushort)(tsn - tsnAck);
                             prev = tsn;
                         }
                         else if (tsn != prev + 1)
                         {
-                            ushort end = (ushort)(prev - tsnAck);
-                            gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = end });
+                            var end = (ushort)(prev - tsnAck);
+                            Debug.Assert(start.HasValue);
+                            gaps.Add(new SctpTsnGapBlock { Start = start.GetValueOrDefault(), End = end });
                             start = (ushort)(tsn - tsnAck);
                             prev = tsn;
                         }
@@ -382,7 +383,8 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = (ushort)(prev - tsnAck) });
+                    Debug.Assert(start.HasValue);
+                    gaps.Add(new SctpTsnGapBlock { Start = start.GetValueOrDefault(), End = (ushort)(prev - tsnAck) });
                 }
             }
 
@@ -422,7 +424,7 @@ namespace SIPSorcery.Net
                     {
                         var outOfOrder = _streamOutOfOrderFrames[frame.StreamID];
 
-                        ushort nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
+                        var nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
                         while (outOfOrder.ContainsKey(nextSeqnum) &&
                             outOfOrder.TryGetValue(nextSeqnum, out var nextFrame))
                         {
@@ -460,11 +462,11 @@ namespace SIPSorcery.Net
         {
             unchecked
             {
-                uint? beginTSN = fragments[tsn].Begining ? (uint?)tsn : null;
-                uint? endTSN = fragments[tsn].Ending ? (uint?)tsn : null;
+                var beginTSN = fragments[tsn].Begining ? (uint?)tsn : null;
+                var endTSN = fragments[tsn].Ending ? (uint?)tsn : null;
 
-                uint revTSN = tsn - 1;
-                while (beginTSN == null && fragments.ContainsKey(revTSN))
+                var revTSN = tsn - 1;
+                while (beginTSN is null && fragments.ContainsKey(revTSN))
                 {
                     if (fragments[revTSN].Begining)
                     {
@@ -476,10 +478,10 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (beginTSN != null)
+                if (beginTSN is { })
                 {
-                    uint fwdTSN = tsn + 1;
-                    while (endTSN == null && fragments.ContainsKey(fwdTSN))
+                    var fwdTSN = tsn + 1;
+                    while (endTSN is null && fragments.ContainsKey(fwdTSN))
                     {
                         if (fragments[fwdTSN].Ending)
                         {
@@ -506,24 +508,25 @@ namespace SIPSorcery.Net
         {
             unchecked
             {
-                byte[] full = new byte[MAX_FRAME_SIZE];
-                int posn = 0;
+                var full = new byte[MAX_FRAME_SIZE];
+                var posn = 0;
                 var beginChunk = fragments[beginTSN];
                 var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
 
-                uint afterEndTSN = endTSN + 1;
-                uint tsn = beginTSN;
+                var afterEndTSN = endTSN + 1;
+                var tsn = beginTSN;
 
                 while (tsn != afterEndTSN)
                 {
                     var fragment = fragments[tsn].UserData;
+                    Debug.Assert(fragment is { });
                     Buffer.BlockCopy(fragment, 0, full, posn, fragment.Length);
                     posn += fragment.Length;
                     fragments.Remove(tsn);
                     tsn++;
                 }
 
-                frame.UserData = frame.UserData.Take(posn).ToArray();
+                frame.UserData = frame.UserData.AsSpan(0, posn).ToArray();
 
                 return frame;
             }
@@ -568,8 +571,8 @@ namespace SIPSorcery.Net
         /// <returns>The shortest distance between the two unsigned integers.</returns>
         public static uint GetDistance(uint start, uint end)
         {
-            uint fwdDistance = end - start;
-            uint backDistance = start - end;
+            var fwdDistance = end - start;
+            var backDistance = start - end;
 
             return (fwdDistance < backDistance) ? fwdDistance : backDistance;
         }

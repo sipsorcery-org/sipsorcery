@@ -91,7 +91,10 @@ namespace SIPSorcery.Media.G729Codec
 
             /* find the algebraic codeword */
 
-            for (i = 0; i < L_SUBFR; i++) cod[i] = 0;
+            for (i = 0; i < L_SUBFR; i++)
+            {
+                cod[i] = 0;
+            }
 
             /* decode the signs of 4 pulses */
 
@@ -102,9 +105,13 @@ namespace SIPSorcery.Media.G729Codec
                 sign >>= 1;
 
                 if (i != 0)
+                {
                     cod[pos[j]] = 1.0f;
+                }
                 else
+                {
                     cod[pos[j]] = -1.0f;
+                }
             }
         }
     }

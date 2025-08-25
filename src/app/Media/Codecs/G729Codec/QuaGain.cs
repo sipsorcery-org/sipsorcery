@@ -124,11 +124,15 @@ namespace SIPSorcery.Media.G729Codec
             best_gain[1] = (2.0f * g_coeff[0] * g_coeff[3] - g_coeff[1] * g_coeff[4]) * tmp;
 
             if (tameflag == 1)
+            {
                 if (best_gain[0] > GPCLIP2)
+                {
                     best_gain[0] = GPCLIP2;
+                }
+            }
             /*----------------------------------------------*
-   *   - presearch for gain codebook -            *
-   *----------------------------------------------*/
+*   - presearch for gain codebook -            *
+*----------------------------------------------*/
 
             var cand1Ref = new IntReference();
             var cand2Ref = new IntReference();
@@ -139,8 +143,10 @@ namespace SIPSorcery.Media.G729Codec
             /*-- selection --*/
             dist_min = FLT_MAX_G729;
             if (tameflag == 1)
+            {
                 for (i = 0; i < NCAN1; i++)
-                for (j = 0; j < NCAN2; j++)
+                {
+                    for (j = 0; j < NCAN2; j++)
                 {
                     g_pitch = gbk1[cand1 + i][0] + gbk2[cand2 + j][0];
                     if (g_pitch < GP0999)
@@ -159,9 +165,13 @@ namespace SIPSorcery.Media.G729Codec
                         }
                     }
                 }
+                }
+            }
             else
+            {
                 for (i = 0; i < NCAN1; i++)
-                for (j = 0; j < NCAN2; j++)
+                {
+                    for (j = 0; j < NCAN2; j++)
                 {
                     g_pitch = gbk1[cand1 + i][0] + gbk2[cand2 + j][0];
                     g_code = gcode0 * (gbk1[cand1 + i][1] + gbk2[cand2 + j][1]);
@@ -177,6 +187,8 @@ namespace SIPSorcery.Media.G729Codec
                         index2 = cand2 + j;
                     }
                 }
+                }
+            }
 
             gain_pit.value = gbk1[index1][0] + gbk2[index2][0];
             g_code = gbk1[index1][1] + gbk2[index2][1];
@@ -228,8 +240,14 @@ namespace SIPSorcery.Media.G729Codec
                 _cand1 = 0;
                 do
                 {
-                    if (y > thr1[_cand1] * gcode0) _cand1++;
-                    else break;
+                    if (y > thr1[_cand1] * gcode0)
+                    {
+                        _cand1++;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 while (_cand1 < NCODE1 - NCAN1);
 
@@ -237,8 +255,14 @@ namespace SIPSorcery.Media.G729Codec
                 _cand2 = 0;
                 do
                 {
-                    if (x > thr2[_cand2] * gcode0) _cand2++;
-                    else break;
+                    if (x > thr2[_cand2] * gcode0)
+                    {
+                        _cand2++;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 while (_cand2 < NCODE2 - NCAN2);
             }
@@ -248,8 +272,14 @@ namespace SIPSorcery.Media.G729Codec
                 _cand1 = 0;
                 do
                 {
-                    if (y < thr1[_cand1] * gcode0) _cand1++;
-                    else break;
+                    if (y < thr1[_cand1] * gcode0)
+                    {
+                        _cand1++;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 while (_cand1 < NCODE1 - NCAN1);
 
@@ -257,8 +287,14 @@ namespace SIPSorcery.Media.G729Codec
                 _cand2 = 0;
                 do
                 {
-                    if (x < thr2[_cand2] * gcode0) _cand2++;
-                    else break;
+                    if (x < thr2[_cand2] * gcode0)
+                    {
+                        _cand2++;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 while (_cand2 < NCODE2 - NCAN2);
             }

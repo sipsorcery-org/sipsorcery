@@ -16,7 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
+using System.Buffers;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP.Packetisation;
 using SIPSorcery.Sys;
@@ -31,14 +32,14 @@ namespace SIPSorcery.Net
         private VideoCodecsEnum _codec;
         private int _maxFrameSize;
         private byte[] _currVideoFrame;
-        private int _currVideoFramePosn = 0;
-        private H264Depacketiser _h264Depacketiser;
-        private H265Depacketiser _h265Depacketiser;
-        private MJPEGDepacketiser _mJPEGDepacketiser;
+        private int _currVideoFramePosn;
+        private H264Depacketiser? _h264Depacketiser;
+        private H265Depacketiser? _h265Depacketiser;
+        private MJPEGDepacketiser? _mJPEGDepacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
-            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.H265 || codec == VideoCodecsEnum.JPEG))
+            if (codec is not (VideoCodecsEnum.VP8 or VideoCodecsEnum.H264 or VideoCodecsEnum.H265 or VideoCodecsEnum.JPEG))
             {
                 throw new NotSupportedException("The RTP video framer currently only understands H264, VP8 and JPEG encoded frames.");
             }
@@ -46,94 +47,99 @@ namespace SIPSorcery.Net
             _codec = codec;
             _maxFrameSize = maxFrameSize;
             _currVideoFrame = new byte[maxFrameSize];
-            
+
             if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
             }
-            else if(_codec == VideoCodecsEnum.JPEG)
+            else if (_codec == VideoCodecsEnum.JPEG)
             {
                 _mJPEGDepacketiser = new MJPEGDepacketiser();
             }
-            else if(_codec == VideoCodecsEnum.H265)
+            else if (_codec == VideoCodecsEnum.H265)
             {
                 _h265Depacketiser = new H265Depacketiser();
             }
         }
 
-        public byte[] GotRtpPacket(RTPPacket rtpPacket)
+        public bool GotRtpPacket(IBufferWriter<byte> bufferWriter, RTPPacket rtpPacket)
         {
-            var payload = rtpPacket.GetPayloadBytes();
-
+            var payload = rtpPacket.Payload.Span;
             var hdr = rtpPacket.Header;
 
-            if (_codec == VideoCodecsEnum.VP8)
+            switch (_codec)
             {
-                //logger.LogDebug("rtp VP8 video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
-
-                if (_currVideoFramePosn + payload.Length >= _maxFrameSize)
-                {
-                    // Something has gone very wrong. Clear the buffer.
-                    _currVideoFramePosn = 0;
-                }
-
-                // New frames must have the VP8 Payload Descriptor Start bit set.
-                // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
-                // as per https://tools.ietf.org/html/rfc7741#section-4.4.
-                if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
-                {
-                    RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(payload);
-
-                    Buffer.BlockCopy(payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, payload.Length - vp8Header.Length);
-                    _currVideoFramePosn += payload.Length - vp8Header.Length;
-
-                    if (rtpPacket.Header.MarkerBit > 0)
+                case VideoCodecsEnum.VP8:
                     {
-                        var frame = _currVideoFrame.Take(_currVideoFramePosn).ToArray();
+                        //logger.LogDebug("rtp VP8 video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
 
-                        _currVideoFramePosn = 0;
+                        if (_currVideoFramePosn + payload.Length >= _maxFrameSize)
+                        {
+                            // Something has gone very wrong. Clear the buffer.
+                            _currVideoFramePosn = 0;
+                        }
 
-                        return frame;
+                        // New frames must have the VP8 Payload Descriptor Start bit set.
+                        // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
+                        // as per https://tools.ietf.org/html/rfc7741#section-4.4.
+                        if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
+                        {
+                            var vp8Header = RtpVP8Header.GetVP8Header(payload);
+
+                            payload.Slice(vp8Header.Length, payload.Length - vp8Header.Length).CopyTo(_currVideoFrame.AsSpan(_currVideoFramePosn));
+                            _currVideoFramePosn += payload.Length - vp8Header.Length;
+
+                            if (rtpPacket.Header.MarkerBit > 0)
+                            {
+                                var frameSpan = _currVideoFrame.AsSpan(0, _currVideoFramePosn);
+                                bufferWriter.Write(frameSpan);
+                                _currVideoFramePosn = 0;
+                                return true;
+                            }
+                        }
+                        else
+                        {
+                            logger.LogRtpVideoFramerError();
+                        }
                     }
-                }
-                else
-                {
-                    logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
-                    //logger.LogWarning("rtp video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
-                }
-            }
-            else if (_codec == VideoCodecsEnum.H264)
-            {
-                var frameStream = _h264Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
 
-                if (frameStream != null)
-                {
-                    return frameStream.ToArray();
-                }
-            }
-            else if (_codec == VideoCodecsEnum.H265)
-            {
-                var frameStream = _h265Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+                    break;
+                case VideoCodecsEnum.H264:
+                    {
+                        Debug.Assert(_h264Depacketiser is { });
+                        if (_h264Depacketiser.ProcessRTPPayload(bufferWriter, payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out var isKeyFrame))
+                        {
+                            return true;
+                        }
+                    }
 
-                if (frameStream != null)
-                {
-                    return frameStream.ToArray();
-                }
-            }
-            else if(_codec == VideoCodecsEnum.JPEG)
-            {
-                var frameStream = _mJPEGDepacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
-                if (frameStream != null)
-                {
-                    return frameStream.ToArray();
-                }
-            }
-            else
-            {
-                logger.LogWarning("rtp unknown video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
+                    break;
+                case VideoCodecsEnum.H265:
+                    {
+                        Debug.Assert(_h265Depacketiser is { });
+                        if (_h265Depacketiser.ProcessRTPPayload(bufferWriter, payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out var isKeyFrame))
+                        {
+                            return true;
+                        }
+                    }
+
+                    break;
+                case VideoCodecsEnum.JPEG:
+                    {
+                        Debug.Assert(_mJPEGDepacketiser is { });
+                        if (_mJPEGDepacketiser.ProcessRTPPayload(bufferWriter, payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out var isKeyFrame))
+                        {
+                            return true;
+                        }
+                    }
+
+                    break;
+                default:
+                    logger.LogRtpUnknownVideo(hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
+                    break;
             }
 
-            return null;
+            return false;
         }
 
         /// <summary>
@@ -149,44 +155,46 @@ namespace SIPSorcery.Net
         /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         /// </code>
         /// </summary>
+        /// <param name="destination"></param>
         /// <param name="fragmentOffset"></param>
         /// <param name="quality"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        /// <returns></returns>
-        public static byte[] CreateLowQualityRtpJpegHeader(uint fragmentOffset, int quality, int width, int height)
+        /// <seealso href="https://www.rfc-editor.org/rfc/rfc2435"/>
+        public static void WriteLowQualityRtpJpegHeader(Span<byte> destination, uint fragmentOffset, int quality, int width, int height)
         {
-            byte[] rtpJpegHeader = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
-
-            // Byte 0: Type specific
-            //http://tools.ietf.org/search/rfc2435#section-3.1.1
-
-            // Bytes 1 to 3: Three byte fragment offset
-            //http://tools.ietf.org/search/rfc2435#section-3.1.2
-
-            if (BitConverter.IsLittleEndian)
+            if (destination.Length < 8)
             {
-                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
+                throw new ArgumentException("Destination span must be at least 8 bytes long.", nameof(destination));
             }
 
-            byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
-            rtpJpegHeader[1] = offsetBytes[2];
-            rtpJpegHeader[2] = offsetBytes[1];
-            rtpJpegHeader[3] = offsetBytes[0];
+            // Byte 0: Type-specific (always 0)
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.1
+            destination[0] = 0x00;
 
-            // Byte 4: JPEG Type.
-            //http://tools.ietf.org/search/rfc2435#section-3.1.3
+            // Bytes 1-3: 24-bit fragment offset in big-endian order
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.2
+            var offset = fragmentOffset;
+            destination[1] = (byte)((offset >> 16) & 0xFF);
+            destination[2] = (byte)((offset >> 8) & 0xFF);
+            destination[3] = (byte)(offset & 0xFF);
 
-            //Byte 5: http://tools.ietf.org/search/rfc2435#section-3.1.4 (Q)
-            rtpJpegHeader[5] = (byte)quality;
+            // Byte 4: JPEG Type (always 1 for low quality)
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.3
+            destination[4] = 0x01;
 
-            // Byte 6: http://tools.ietf.org/search/rfc2435#section-3.1.5 (Width)
-            rtpJpegHeader[6] = (byte)(width / 8);
+            // Byte 5: Quality factor (Q)
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.4
+            destination[5] = (byte)quality;
 
-            // Byte 7: http://tools.ietf.org/search/rfc2435#section-3.1.6 (Height)
-            rtpJpegHeader[7] = (byte)(height / 8);
+            // Byte 6: Width in 8-pixel blocks
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.5
+            destination[6] = (byte)(width / 8);
 
-            return rtpJpegHeader;
+            // Byte 7: Height in 8-pixel blocks
+            // https://www.rfc-editor.org/rfc/rfc2435#section-3.1.6
+            destination[7] = (byte)(height / 8);
         }
+
     }
 }

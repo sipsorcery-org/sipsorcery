@@ -16,6 +16,7 @@
 // ============================================================================
 
 using System;
+using System.Diagnostics;
 using System.Net;
 
 namespace SIPSorcery.Sys
@@ -33,7 +34,7 @@ namespace SIPSorcery.Sys
     /// </summary>
     public class PortRange
     {
-        private readonly Random m_random;
+        private readonly Random? m_random;
         private readonly bool m_shuffle;
         public readonly int StartPort;
         public readonly int EndPort;
@@ -49,11 +50,11 @@ namespace SIPSorcery.Sys
         /// <exception cref="ArgumentException"></exception>
         public PortRange(int startPort, int endPort, bool shuffle = false, int? randomSeed = null)
         {
-            if (startPort <= 0 || startPort > IPEndPoint.MaxPort)
+            if (startPort is <= 0 or > IPEndPoint.MaxPort)
             {
                 throw new ArgumentException($"startPort must be greater than 0 and less than or equal {IPEndPoint.MaxPort}");
             }
-            if (endPort <= 0 || endPort > IPEndPoint.MaxPort)
+            if (endPort is <= 0 or > IPEndPoint.MaxPort)
             {
                 throw new ArgumentException($"endPort must be greater than 0 and less than or equal {IPEndPoint.MaxPort}");
             }
@@ -100,6 +101,7 @@ namespace SIPSorcery.Sys
                 var res = m_nextPort;
                 if (m_shuffle)
                 {
+                    Debug.Assert(m_random is { });
                     m_nextPort = m_random.Next(StartPort, EndPort + 1) // The + 1 is needed to get an even distribution because Random.Next(start, end) is inclusive start but exclusive the end
                         & 0x0000_FFFE; // AND with IPEndPoint.MaxPort but last bit is set to zero to always have an even port
                 }
