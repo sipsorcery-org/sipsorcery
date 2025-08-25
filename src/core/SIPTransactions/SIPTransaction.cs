@@ -265,8 +265,8 @@ namespace SIPSorcery.SIP
                 m_sentBy = transactionRequest.Header.Vias.TopViaHeader.ContactAddress;
                 OutboundProxy = outboundProxy;
 
-                if (transactionRequest.Header.RequiredExtensions.Contains(SIPExtensions.Prack) ||
-                    transactionRequest.Header.SupportedExtensions.Contains(SIPExtensions.Prack))
+                if (transactionRequest.Header.RequiredExtensions.HasFlag(SIPExtensions.Prack) ||
+                    transactionRequest.Header.SupportedExtensions.HasFlag(SIPExtensions.Prack))
                 {
                     PrackSupported = true;
                 }
