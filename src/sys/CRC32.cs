@@ -1,6 +1,7 @@
 ﻿// from http://damieng.com/blog/2006/08/08/Calculating_CRC32_in_C_and_NET
 
 using System;
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 
 namespace SIPSorcery.Sys
@@ -36,7 +37,18 @@ namespace SIPSorcery.Sys
 
         protected override void HashCore(byte[] buffer, int start, int length)
         {
-            hash = CalculateHash(table, hash, buffer, start, length);
+            hash = CalculateHash(table, hash, buffer.AsSpan(start, length));
+        }
+
+        protected
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER || NET5_0_OR_GREATER
+            override
+#else
+            virtual
+#endif
+            void HashCore(ReadOnlySpan<byte> buffer)
+        {
+            hash = CalculateHash(table, hash, buffer);
         }
 
         protected override byte[] HashFinal()
@@ -53,17 +65,32 @@ namespace SIPSorcery.Sys
 
         public static UInt32 Compute(byte[] buffer)
         {
-            return ~CalculateHash(InitializeTable(DefaultPolynomial), DefaultSeed, buffer, 0, buffer.Length);
+            return Compute(buffer.AsSpan(0, buffer.Length));
         }
 
         public static UInt32 Compute(UInt32 seed, byte[] buffer)
         {
-            return ~CalculateHash(InitializeTable(DefaultPolynomial), seed, buffer, 0, buffer.Length);
+            return Compute(seed, buffer.AsSpan());
         }
 
         public static UInt32 Compute(UInt32 polynomial, UInt32 seed, byte[] buffer)
         {
-            return ~CalculateHash(InitializeTable(polynomial), seed, buffer, 0, buffer.Length);
+            return Compute(polynomial, seed, buffer.AsSpan());
+        }
+
+        public static uint Compute(ReadOnlySpan<byte> buffer)
+        {
+            return ~CalculateHash(InitializeTable(DefaultPolynomial), DefaultSeed, buffer);
+        }
+
+        public static uint Compute(uint seed, ReadOnlySpan<byte> buffer)
+        {
+            return ~CalculateHash(InitializeTable(DefaultPolynomial), seed, buffer);
+        }
+
+        public static uint Compute(uint polynomial, uint seed, ReadOnlySpan<byte> buffer)
+        {
+            return ~CalculateHash(InitializeTable(polynomial), seed, buffer);
         }
 
         private static UInt32[] InitializeTable(UInt32 polynomial)
@@ -99,27 +126,31 @@ namespace SIPSorcery.Sys
             return createTable;
         }
 
-        private static UInt32 CalculateHash(UInt32[] table, UInt32 seed, byte[] buffer, int start, int size)
+        private static UInt32 CalculateHash(ReadOnlySpan<uint> table, uint seed, ReadOnlySpan<byte> buffer)
         {
-            UInt32 crc = seed;
-            for (int i = start; i < size; i++)
+            /*
+            if (Sse42.IsSupported)
+            {
+                uint crc = Sse42.Crc32(seed, value);
+            }
+            */
+
+            var crc = seed;
+            for (int i = 0; i < buffer.Length; i++)
             {
                 unchecked
                 {
-                    crc = (crc >> 8) ^ table[buffer[i] ^ crc & 0xff];
+                    crc = (crc >> 8) ^ table[buffer[i] ^ (byte)(crc & 0xff)];
                 }
             }
             return crc;
         }
 
-        private byte[] UInt32ToBigEndianBytes(UInt32 x)
+        private byte[] UInt32ToBigEndianBytes(uint x)
         {
-            return new byte[] {
-                (byte)((x >> 24) & 0xff),
-                (byte)((x >> 16) & 0xff),
-                (byte)((x >> 8) & 0xff),
-                (byte)(x & 0xff)
-            };
+            var result = new byte[sizeof(uint)];
+            BinaryPrimitives.WriteUInt32BigEndian(result, x);
+            return result;
         }
     }
 }
