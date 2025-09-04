@@ -114,6 +114,12 @@ namespace SIPSorcery.Net
         public bool AcceptRtpFromAny { get; set; } = false;
 
         /// <summary>
+        /// If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
+        /// All traffic for the session should then be sent to/from the relay and not updated.
+        /// </summary>
+        public bool IsUsingRelayEndPoint { get; private set; } = false;
+
+        /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
         /// be restarted.
         /// </summary>
@@ -689,7 +695,7 @@ namespace SIPSorcery.Net
             }
 
             // Set the remote track SSRC so that RTCP reports can match the media type.
-            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
+            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null && !IsUsingRelayEndPoint)
             {
                 bool isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
 
@@ -916,10 +922,13 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
         /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
-        public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+        /// <param name="isRelayEndPoint">If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
+        /// All traffic for the session should then be sent to/from the relay and not updated.</param>
+        public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint, bool isRelayEndPoint = false)
         {
             DestinationEndPoint = rtpEndPoint;
             ControlDestinationEndPoint = rtcpEndPoint;
+            IsUsingRelayEndPoint = isRelayEndPoint;
         }
 
         /// <summary>

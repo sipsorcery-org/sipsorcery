@@ -594,6 +594,11 @@ namespace SIPSorcery.Net
             }
         }
 
+        public void InvokeRTPDataReceived(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        {
+            OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+        }
+
         /// <summary>
         /// Event handler for packets received on the control UDP socket.
         /// </summary>

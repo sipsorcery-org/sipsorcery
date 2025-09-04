@@ -111,10 +111,12 @@ namespace SIPSorcery
                         rtpCts?.Cancel();
                         rtpCts = new CancellationTokenSource();
 
+                        IPEndPoint relayEndPoint = null;
+
                         if (_iceServerResolver.IceServers.Any())
                         {
                             var turnClient = new TurnClient(_iceServerResolver.IceServers.Values.First(), rtpSession.AudioStream.GetRTPChannel());
-                            await turnClient.GetRelayEndPoint(2000, rtpCts.Token);
+                            relayEndPoint = await turnClient.GetRelayEndPoint(15000, rtpCts.Token);
                         }
 
                         var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);

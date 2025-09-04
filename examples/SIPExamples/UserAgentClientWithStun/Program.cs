@@ -5,8 +5,9 @@
 // core library to place a SIP call. The example program depends on one audio 
 // input and one audio output being available.
 //
-// This example is based on teh UserAgentClient example but has been tuned
-// to work with the SIPCloudCallServer example deployed in a Kubernetes cluster.
+// This example is based on the UserAgentClient example but has been modified
+// to use a STUN server to set the RTP IP address to the reflex public address.
+// This example was orignially developed to deploy in a Kubernetes cluster.
 //
 // Author(s):
 // Aaron Clauson  (aaron@sipsorcery.com)
@@ -250,7 +251,7 @@ class Program
 
         var iceServers = _iceServerResolver.IceServers;
 
-        // Use first availab STUN server to get the public IP address.
+        // Use first available STUN server to get the public IP address.
         if (iceServers.Count == 0 || iceServers.All(x => x.Value.ServerEndPoint == null))
         {
             Log.LogWarning("No ICE servers available to get public IP address.");

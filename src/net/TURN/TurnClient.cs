@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: TurnClient.cs
 //
-// Description: TURN client implementation. Initial use case is to allocate a socket
-// on a TURN server.
+// Description: TURN client implementation. Initial use case is to allocate a relay
+// socket on a TURN server for use on a SIP call.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -23,7 +23,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Digests;
 using SIPSorcery.Sys;
@@ -97,6 +96,7 @@ public class TurnClient
         }
 
         var start = DateTime.Now;
+
         while (_iceServer.RelayEndPoint == null && !cancellationToken.IsCancellationRequested)
         {
             if ((int)DateTime.Now.Subtract(start).TotalMilliseconds > timeoutMs)
@@ -123,10 +123,15 @@ public class TurnClient
                 }
             }
 
-            await Task.Delay(50, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
         }
 
         return _iceServer.RelayEndPoint;
+    }
+
+    public SocketError CreatePermission(IPEndPoint remoteEndPoint)
+    {
+        return SendTurnCreatePermissionsRequest(_iceServer.TransactionID, _iceServer, remoteEndPoint);
     }
 
     /// <summary>
@@ -152,7 +157,10 @@ public class TurnClient
                 packet = dataAttribute?.Value;
 
                 var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
-                remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+                //remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+
+                logger.LogDebug("TURN data indication RTP data packet received from {RemoteEndPoint}.", remoteEndPoint);
+                _rtpChannel.InvokeRTPDataReceived(localPort, remoteEndPoint, packet);
             }
 
             //base.LastRtpDestination = remoteEndPoint;
@@ -167,7 +175,6 @@ public class TurnClient
             else
             {
                 // If not STUN or TURN ignore. The default RTP channel handler will deal with.
-                //OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
             }
         }
     }
@@ -195,42 +202,45 @@ public class TurnClient
 
             if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
             {
-                logger.LogWarning("TURN client received a success response for an Allocate request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+                logger.LogInformation("TURN client received a success response for an Allocate request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
 
                 _iceServer.ErrorResponseCount = 0;
 
                 // If the relay end point is set then this connection check has already been completed.
                 //if (RelayEndPoint == null)
                 //{
-                //    logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _uri);
+                    logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _iceServer.Uri);
 
-                //    var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
+                    var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
 
-                //    if (mappedAddrAttr != null)
-                //    {
-                //        ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                //    }
+                    if (mappedAddrAttr != null)
+                    {
+                        _iceServer.ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                    }
 
-                //    var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
+                    var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
 
-                //    if (mappedRelayAddrAttr != null)
-                //    {
-                //        RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                //    }
+                    if (mappedRelayAddrAttr != null)
+                    {
+                        _iceServer.RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                    }
 
-                //    var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+                    var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
 
-                //    if (lifetime != null)
-                //    {
-                //        TurnTimeToExpiry = DateTime.Now +
-                //                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
-                //    }
-                //    else
-                //    {
-                //        TurnTimeToExpiry = DateTime.Now +
-                //                           TimeSpan.FromSeconds(3600);
-                //    }
-                //}
+                    if (lifetime != null)
+                    {
+                        _iceServer.TurnTimeToExpiry = DateTime.Now +
+                                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                    }
+                    else
+                    {
+                        _iceServer.TurnTimeToExpiry = DateTime.Now +
+                                           TimeSpan.FromSeconds(3600);
+                    }
+
+                    logger.LogInformation("TURN client allocated relay {RelayEndPoint} for {Uri}, allocation expires at {Expiry}.",
+                        _iceServer.RelayEndPoint, _iceServer.Uri, _iceServer.TurnTimeToExpiry.ToLocalTime());
+            //}
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
             {
@@ -254,6 +264,8 @@ public class TurnClient
                         _iceServer.GenerateNewTransactionID();
 
                         _iceServer.ErrorResponseCount = 1;
+
+                        SendTurnAllocateRequest(_iceServer);
                     }
                     else if (alternateServerAttribute != null)
                     {
@@ -317,6 +329,10 @@ public class TurnClient
                 //    _iceServer.Error = SocketError.ConnectionRefused;
                 //}
             }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
+            {
+                logger.LogInformation("TURN client received a success response for a CreatePermission request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+            }
             else
             {
                 logger.LogWarning("An unrecognised STUN {MessageType} response for an ICE server check was received from {RemoteEndPoint}.", stunResponse.Header.MessageType, remoteEndPoint);
@@ -332,11 +348,11 @@ public class TurnClient
     internal void SetAuthenticationFields(STUNMessage stunResponse)
     {
         // Set the authentication properties authenticate.
-        //var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
-        //Nonce = nonceAttribute?.Value;
+        var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
+        _iceServer.Nonce = nonceAttribute?.Value;
 
-        //var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
-        //Realm = realmAttribute?.Value;
+        var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
+        _iceServer.Realm = realmAttribute?.Value;
     }
 
     /// <summary>

@@ -2376,6 +2376,8 @@ namespace SIPSorcery.Net
 
         protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
+            logger.LogDebug("RTP Session OnReceive from {RemoteEndPoint} {length} bytes buffer[0]={zeroByte}.", remoteEndPoint, buffer.Length, buffer[0]);
+
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
                 // Required for matching existing RTP end points (typically set from SDP) and
@@ -2416,6 +2418,7 @@ namespace SIPSorcery.Net
         private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             //logger.LogDebug("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
+
             #region RTCP packet.
 
             // Get the SSRC in order to be able to figure out which media type 
@@ -2511,6 +2514,8 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
+            logger.LogDebug("RTPSession OnReceiveRTPPacket received from {RemoteEndPoint} {length} bytes.", remoteEndPoint, buffer.Length);
+
             if (!IsClosed)
             {
                 var hdr = new RTPHeader(buffer);
