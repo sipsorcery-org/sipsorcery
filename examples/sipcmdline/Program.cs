@@ -59,7 +59,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -82,6 +81,8 @@ namespace SIPSorcery
     class Program
     {
         private const int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
+
+        private const string DEFAULT_DESTINATION = "music@iptel.org";
 
         /// <summary>
         /// If a task times out give it this many milliseconds to clean up. A clean up could
@@ -146,7 +147,7 @@ namespace SIPSorcery
                 get
                 {
                     return new List<Example>() {
-                        new Example("Send an OPTIONS request to a SIP server", new Options { Destination = "sipsorcery.cloud" })
+                        new Example("Send an OPTIONS request to a SIP server", new Options { Destination = DEFAULT_DESTINATION })
                     };
                 }
             }
@@ -177,7 +178,7 @@ namespace SIPSorcery
                 SIPSorcery.LogFactory.Set(factory);
                 logger = factory.CreateLogger<Program>();
 
-                logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
+                logger.LogDebug($"RunCommand X scenario {options.Scenario}, destination {options.Destination}");
 
                 if(options.Verbose)
                 {

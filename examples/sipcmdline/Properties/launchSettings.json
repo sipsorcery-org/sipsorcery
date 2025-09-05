@@ -2,7 +2,7 @@
   "profiles": {
     "sipcmdline": {
       "commandName": "Project",
-      "commandLineArgs": "-d 100@sipsorcery.cloud -s uac -v -u user --password password"
+      "commandLineArgs": "-d music@iptel.org -s uac -v -u user --password password"
     },
     "Docker": {
       "commandName": "Docker"

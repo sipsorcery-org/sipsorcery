@@ -97,7 +97,8 @@ namespace demo
             var audioSession = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true));
             //var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
             //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
-            audioSession.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.AudioCodecsEnum.OPUS);
+            //audioSession.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.AudioCodecsEnum.OPUS);
+            audioSession.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.AudioCodecsEnum.PCMU);
             var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
             SDP offerSDP = null;
