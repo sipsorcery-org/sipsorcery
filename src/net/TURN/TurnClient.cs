@@ -177,7 +177,7 @@ public class TurnClient
                 var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
                 //remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
 
-                logger.LogDebug("TURN data indication RTP data packet received from {RemoteEndPoint}.", remoteEndPoint);
+                //logger.LogDebug("TURN data indication RTP data packet received from {RemoteEndPoint}.", remoteEndPoint);
                 _rtpChannel.InvokeRTPDataReceived(localPort, remoteEndPoint, packet);
             }
 

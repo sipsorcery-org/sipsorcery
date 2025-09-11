@@ -55,6 +55,7 @@ namespace demo
             ManualResetEvent exitMre = new ManualResetEvent(false);
             bool isCallHungup = false;
             bool hasCallFailed = false;
+            bool rtpReceived = false;
 
             Log = AddConsoleLogger(LogEventLevel.Verbose);
 
@@ -104,8 +105,13 @@ namespace demo
 
             rtpSession.OnRtpPacketReceived += (ep, mt, pkt) =>
             {
-                // This is where incoming RTP packets are received.
-                Log.LogDebug($"UserAgentClient RTP packet received from {ep}.");
+                if (!rtpReceived)
+                {
+                    rtpReceived = true;
+
+                    // This is where incoming RTP packets are received.
+                    Log.LogDebug($"UserAgentClient RTP packet received from {ep}.");
+                }
             };
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
