@@ -2,10 +2,7 @@
   "profiles": {
     "sipcmdline": {
       "commandName": "Project",
-      "commandLineArgs": "-d music@iptel.org -s uac -v -u user --password password"
-    },
-    "Docker": {
-      "commandName": "Docker"
+      "commandLineArgs": "-d music@iptel.org -s uac -v --turn \"turn:108.129.196.159;nfxnuser;CNJaCwNK_fo94qRKtNRW3AAxhNi39P@K\""
     }
   }
 }

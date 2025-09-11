@@ -54,11 +54,18 @@
 // 18 May 2020:
 // dotnet run -- -d 127.0.0.1 -c 10000 -x 25 -s uac -b true
 // [19:17:03 INF] => Command completed task count 10000 success count 10000 duration 189.21
+//
+// Usage Exmaple:
+// Check RTP connectivity:
+// dotnet run -- --s uac -d music@iptel.org -v
+// If succsesful a count of the RTP packets will be displayed:
+// RTP packet received from 212.79.111.155:13818, ssrc 314111075, seqnum 23320, count 48
 //-----------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -71,6 +78,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -91,6 +99,8 @@ namespace SIPSorcery
         private const int TIMEOUT_CLEANUP_MILLISECONDS = 500;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
+
+        private static int _rtpPacketCount;
 
         public enum Scenarios
         {
@@ -141,6 +151,10 @@ namespace SIPSorcery
                 HelpText = "An optional password to use to authenticate a SIP request e.g. -password pass.")]
             public string Password { get; set; }
 
+            [Option("turn", Required = false,
+                HelpText = "An optional TURN server URL to set a relay end point on the User Agent Client scenarios e.g. -turn turn:<hostname of ip address>;<user>>;<password>.")]
+            public string TurnServerUrl { get; set; }
+
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
             {
@@ -169,8 +183,8 @@ namespace SIPSorcery
             {
                 var seriLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(options.Verbose ? 
-                    Serilog.Events.LogEventLevel.Verbose : 
+                .MinimumLevel.Is(options.Verbose ?
+                    Serilog.Events.LogEventLevel.Verbose :
                     Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console(theme: AnsiConsoleTheme.Code)
                 .CreateLogger();
@@ -180,7 +194,7 @@ namespace SIPSorcery
 
                 logger.LogDebug($"RunCommand X scenario {options.Scenario}, destination {options.Destination}");
 
-                if(options.Verbose)
+                if (options.Verbose)
                 {
                     logger.LogTrace("Verbose logging enabled.");
                 }
@@ -212,7 +226,7 @@ namespace SIPSorcery
                                 cts.Cancel();
                                 break;
                             }
-                            
+
                             if (success && options.Period > 0)
                             {
                                 await Task.Delay(options.Period * 1000);
@@ -253,7 +267,7 @@ namespace SIPSorcery
             SIPTransport sipTransport = new SIPTransport();
             sipTransport.PreferIPv6NameResolution = options.PreferIPv6;
 
-            if(options.Verbose)
+            if (options.Verbose)
             {
                 sipTransport.EnableTraceLogs();
             }
@@ -266,7 +280,7 @@ namespace SIPSorcery
 
                 logger.LogDebug($"Destination SIP URI {dstUri}");
 
-                if(options.SourcePort != 0)
+                if (options.SourcePort != 0)
                 {
                     var sipChannel = sipTransport.CreateChannel(dstUri.Protocol,
                         options.PreferIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork,
@@ -442,17 +456,35 @@ namespace SIPSorcery
                 //};
 
                 var ua = new SIPUserAgent(sipTransport, null);
-                ua.ClientCallTrying += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-                ua.ClientCallRinging += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-                ua.ClientCallFailed += (uac, err, resp) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
-                ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallTrying += (uac, resp) => logger.LogInformation($"{dst} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallRinging += (uac, resp) => logger.LogInformation($"{dst} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallFailed += (uac, err, resp) => logger.LogWarning($"{dst} Failed: {err}");
+                ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{dst} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-                var audioExtrasSource = new AudioExtrasSource(new AudioEncoder(), audioOptions);
-                audioExtrasSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.PCMU);
-                var voipMediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioExtrasSource });
+                var echoMediaSession = new EchoMediaSession();
+                echoMediaSession.addTrack(new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMU, SDPWellKnownMediaFormatsEnum.PCMA));
 
-                var result = await ua.Call(dst.ToString(), options.Username, options.Password, voipMediaSession, timeout);
+                if (!string.IsNullOrEmpty(options.TurnServerUrl))
+                {
+                    logger.LogDebug($"Setting TURN server {options.TurnServerUrl} on the user agent client.");
+                    var turnClient = new TurnClient(options.TurnServerUrl);
+
+                    var relayEndPoint = await echoMediaSession.AudioStream.TrySetRelayEndPoint(turnClient, options.Timeout);
+
+                    if (relayEndPoint != null)
+                    {
+                        echoMediaSession.OnRemoteDescriptionChanged += (sdp) =>
+                        {
+                            var createPermissionResult = turnClient.CreatePermission(echoMediaSession.AudioStream.DestinationEndPoint);
+
+                            logger.LogInformation($"TURN create permission result for {echoMediaSession.AudioStream.DestinationEndPoint}: {createPermissionResult}.");
+                        };
+                    }
+                }
+
+                echoMediaSession.OnRtpPacketReceived += RtpMediaPacketReceived;
+
+                var result = await ua.Call(dst.ToString(), options.Username, options.Password, echoMediaSession, timeout);
 
                 if (scenario == Scenarios.uacw)
                 {
@@ -483,6 +515,17 @@ namespace SIPSorcery
                 logger.LogError($"Exception InitiateCallTaskAsync. {excp.Message}");
                 return false;
             }
+        }
+
+        private static void RtpMediaPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        {
+            var count = Interlocked.Increment(ref _rtpPacketCount);
+
+            var hdr = rtpPacket.Header;
+            bool marker = rtpPacket.Header.MarkerBit > 0;
+
+            Console.Write('\r');
+            Console.Write($"RTP packet received from {remoteEndPoint}, ssrc {hdr.SyncSource}, seqnum {hdr.SequenceNumber}, count {_rtpPacketCount}.");
         }
 
         /// <summary>

@@ -405,6 +405,7 @@ namespace SIPSorcery.Net
         /// Set if the session has been bound to a specific IP address.
         /// Normally not required but some esoteric call or network set ups may need.
         /// </summary>
+        [Obsolete("The RtpBindAddress property is obsolete, set RelayDestinationEndPoint on the primary media stream instead. This property will be removed in a future release.", false)]
         public IPAddress RtpBindAddress => rtpSessionConfig.BindAddress;
 
         /// <summary>
@@ -586,6 +587,8 @@ namespace SIPSorcery.Net
         /// source should stop generating samples.
         /// </summary>
         public event Action OnClosed;
+
+        public event Action<SDP> OnRemoteDescriptionChanged;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -884,7 +887,7 @@ namespace SIPSorcery.Net
         /// for Internet access. Any and IPv6Any are special cases. If they are set the respective
         /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A task that when complete contains the SDP offer.</returns>
-        public virtual SDP CreateOffer(IPAddress connectionAddress)
+        public virtual SDP CreateOffer(IPAddress connectionAddress = null)
         {
             if (((AudioStream == null) || (AudioStream.LocalTrack == null)) && ((VideoStream == null) || (VideoStream.LocalTrack == null)) && ((TextStream == null) || (TextStream.LocalTrack == null)))
             {
@@ -1294,6 +1297,8 @@ namespace SIPSorcery.Net
                 // Set the remote description and end points.
                 RequireRenegotiation = false;
                 RemoteDescription = sessionDescription;
+
+                OnRemoteDescriptionChanged?.Invoke(RemoteDescription);
 
                 return SetDescriptionResultEnum.OK;
             }
@@ -1911,16 +1916,23 @@ namespace SIPSorcery.Net
                     localAddress = null;
                     foreach (var audioStream in AudioStreamList)
                     {
-                        if (audioStream.DestinationEndPoint != null && audioStream.DestinationEndPoint.Address != null)
+                        if(audioStream?.RelayDestinationEndPoint != null)
+                        {
+                            localAddress = audioStream.RelayDestinationEndPoint.Address;
+                            break;
+                        }
+                        else if (audioStream.DestinationEndPoint != null && audioStream.DestinationEndPoint.Address != null)
                         {
                             if (IPAddress.Any.Equals(audioStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(audioStream.DestinationEndPoint.Address))
                             {
                                 // If the remote party has set an inactive media stream via the connection address then we do the same.
                                 localAddress = audioStream.DestinationEndPoint.Address;
+                                break;
                             }
                             else
                             {
                                 localAddress = NetServices.GetLocalAddressForRemote(audioStream.DestinationEndPoint.Address);
+                                break;
                             }
                         }
                     }
@@ -1929,16 +1941,23 @@ namespace SIPSorcery.Net
                     {
                         foreach (var videoStream in VideoStreamList)
                         {
-                            if (videoStream.DestinationEndPoint != null && videoStream.DestinationEndPoint.Address != null)
+                            if (videoStream?.RelayDestinationEndPoint != null)
+                            {
+                                localAddress = videoStream.RelayDestinationEndPoint.Address;
+                                break;
+                            }
+                            else if (videoStream.DestinationEndPoint != null && videoStream.DestinationEndPoint.Address != null)
                             {
                                 if (IPAddress.Any.Equals(videoStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(videoStream.DestinationEndPoint.Address))
                                 {
                                     // If the remote party has set an inactive media stream via the connection address then we do the same.
                                     localAddress = videoStream.DestinationEndPoint.Address;
+                                    break;
                                 }
                                 else
                                 {
                                     localAddress = NetServices.GetLocalAddressForRemote(videoStream.DestinationEndPoint.Address);
+                                    break;
                                 }
                             }
                         }
@@ -1948,16 +1967,23 @@ namespace SIPSorcery.Net
                     {
                         foreach (var textStream in TextStreamList)
                         {
-                            if (textStream.DestinationEndPoint != null && textStream.DestinationEndPoint.Address != null)
+                            if (textStream?.RelayDestinationEndPoint != null)
+                            {
+                                localAddress = textStream.RelayDestinationEndPoint.Address;
+                                break;
+                            }
+                            else if (textStream.DestinationEndPoint != null && textStream.DestinationEndPoint.Address != null)
                             {
                                 if (IPAddress.Any.Equals(textStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(textStream.DestinationEndPoint.Address))
                                 {
                                     // If the remote party has set an inactive media stream via the connection address then we do the same.
                                     localAddress = textStream.DestinationEndPoint.Address;
+                                    break;
                                 }
                                 else
                                 {
                                     localAddress = NetServices.GetLocalAddressForRemote(textStream.DestinationEndPoint.Address);
+                                    break;
                                 }
                             }
                         }
@@ -2024,7 +2050,9 @@ namespace SIPSorcery.Net
                 {
                     if (rtpSessionConfig.IsMediaMultiplexed)
                     {
-                        rtpPort = m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
+                        rtpPort =
+                            m_primaryStream.IsUsingRelayEndPoint ? m_primaryStream.RelayDestinationEndPoint.Port :
+                            m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
                             m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : m_primaryStream.GetRTPChannel().RTPPort;
                     }
                     else
@@ -2032,8 +2060,10 @@ namespace SIPSorcery.Net
                         // If media stream does not have a Rtp channel it means this media type is not supported and rtpPort will remain zero.
                         if (mediaStream.HasRtpChannel())
                         {
-                            rtpPort = mediaStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                                 mediaStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : mediaStream.GetRTPChannel().RTPPort;
+                            rtpPort =
+                                mediaStream.IsUsingRelayEndPoint ? mediaStream.RelayDestinationEndPoint.Port :
+                                mediaStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
+                                mediaStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : mediaStream.GetRTPChannel().RTPPort;
                         }
                     }
                 }
@@ -2376,7 +2406,7 @@ namespace SIPSorcery.Net
 
         protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            logger.LogDebug("RTP Session OnReceive from {RemoteEndPoint} {length} bytes buffer[0]={zeroByte}.", remoteEndPoint, buffer.Length, buffer[0]);
+            //logger.LogDebug("RTP Session OnReceive from {RemoteEndPoint} {length} bytes buffer[0]={zeroByte}.", remoteEndPoint, buffer.Length, buffer[0]);
 
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
@@ -2514,7 +2544,7 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            logger.LogDebug("RTPSession OnReceiveRTPPacket received from {RemoteEndPoint} {length} bytes.", remoteEndPoint, buffer.Length);
+            //logger.LogDebug("RTPSession OnReceiveRTPPacket received from {RemoteEndPoint} {length} bytes.", remoteEndPoint, buffer.Length);
 
             if (!IsClosed)
             {

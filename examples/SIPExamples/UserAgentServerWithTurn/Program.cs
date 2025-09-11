@@ -113,11 +113,11 @@ namespace SIPSorcery
 
                         IPEndPoint relayEndPoint = null;
 
-                        if (_iceServerResolver.IceServers.Any())
-                        {
-                            var turnClient = new TurnClient(_iceServerResolver.IceServers.Values.First(), rtpSession.AudioStream.GetRTPChannel());
-                            relayEndPoint = await turnClient.GetRelayEndPoint(15000, rtpCts.Token);
-                        }
+                        //if (_iceServerResolver.IceServers.Any())
+                        //{
+                        //    var turnClient = new TurnClient(_iceServerResolver.IceServers.Values.First(), rtpSession.AudioStream.GetRTPChannel());
+                        //    relayEndPoint = await turnClient.GetRelayEndPoint(15000, rtpCts.Token);
+                        //}
 
                         var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
 

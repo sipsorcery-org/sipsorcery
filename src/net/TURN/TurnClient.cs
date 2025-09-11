@@ -38,8 +38,10 @@ public class TurnClient
 
     private static readonly ILogger logger = Log.Logger;
 
-    private readonly IceServer _iceServer;
-    private readonly RTPChannel _rtpChannel;
+    private readonly IceServerResolver _iceServerResolver = new IceServerResolver();
+
+    private IceServer _iceServer;
+    private RTPChannel _rtpChannel;
 
     public Dictionary<STUNUri, Socket> RtpTcpSocketByUri { get; private set; } = new Dictionary<STUNUri, Socket>();
 
@@ -70,9 +72,13 @@ public class TurnClient
     /// </summary>
     public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageSent;
 
-    public TurnClient(IceServer iceServer, RTPChannel rtpChannel)
+    public TurnClient(string turnServerUrl)
     {
-        _iceServer = iceServer;
+        _iceServerResolver.InitialiseIceServers([RTCIceServer.Parse(turnServerUrl)], RTCIceTransportPolicy.all);
+    }
+
+    public void SetRtpChannel(RTPChannel rtpChannel)
+    {
         _rtpChannel = rtpChannel;
 
         _rtpChannel.OnRTPDataReceived += OnRTPPacketReceived;
@@ -81,17 +87,29 @@ public class TurnClient
     /// <summary>
     /// Allocates (or returns cached) TURN relayed endpoint.
     /// </summary>
-    public async Task<IPEndPoint> GetRelayEndPoint(int timeoutMs = 5000, CancellationToken cancellationToken = default)
+    public async Task<IPEndPoint> GetRelayEndPoint(int timeoutMilliseconds = 5000, CancellationToken cancellationToken = default)
     {
-        if (_iceServer.RelayEndPoint != null)
+        if (_iceServer?.RelayEndPoint != null)
         {
+            // Already resolved and allocated.
             return _iceServer.RelayEndPoint;
         }
 
-        // DNS resolution if required.
-        if (_iceServer.ServerEndPoint == null)
+        if (_iceServer == null)
         {
-            logger.LogWarning("The TURN server end point was not available for {uri}. Has the IceServerResolver been triggered?", _iceServer.Uri);
+            await _iceServerResolver.WaitForAllIceServersAsync(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+
+            _iceServer = _iceServerResolver.IceServers.Select(x => x.Value).FirstOrDefault();
+        }
+
+        if(_iceServer == null)
+        {
+            logger.LogWarning("No TURN server was available to allocate a relay endpoint.");
+            return null;
+        }
+        else if (_iceServer.ServerEndPoint == null)
+        {
+            logger.LogWarning("The TURN server end point was not available for {uri}.", _iceServer?.Uri);
             return null;
         }
 
@@ -99,7 +117,7 @@ public class TurnClient
 
         while (_iceServer.RelayEndPoint == null && !cancellationToken.IsCancellationRequested)
         {
-            if ((int)DateTime.Now.Subtract(start).TotalMilliseconds > timeoutMs)
+            if ((int)DateTime.Now.Subtract(start).TotalMilliseconds > timeoutMilliseconds)
             {
                 logger.LogWarning("TURN allocate timed out.");
                 break;
@@ -126,7 +144,7 @@ public class TurnClient
             await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
         }
 
-        return _iceServer.RelayEndPoint;
+        return _iceServer?.RelayEndPoint;
     }
 
     public SocketError CreatePermission(IPEndPoint remoteEndPoint)
@@ -209,38 +227,38 @@ public class TurnClient
                 // If the relay end point is set then this connection check has already been completed.
                 //if (RelayEndPoint == null)
                 //{
-                    logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _iceServer.Uri);
+                logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _iceServer.Uri);
 
-                    var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
+                var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
 
-                    if (mappedAddrAttr != null)
-                    {
-                        _iceServer.ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                    }
+                if (mappedAddrAttr != null)
+                {
+                    _iceServer.ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                }
 
-                    var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
+                var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
 
-                    if (mappedRelayAddrAttr != null)
-                    {
-                        _iceServer.RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                    }
+                if (mappedRelayAddrAttr != null)
+                {
+                    _iceServer.RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                }
 
-                    var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
+                var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
 
-                    if (lifetime != null)
-                    {
-                        _iceServer.TurnTimeToExpiry = DateTime.Now +
-                                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
-                    }
-                    else
-                    {
-                        _iceServer.TurnTimeToExpiry = DateTime.Now +
-                                           TimeSpan.FromSeconds(3600);
-                    }
+                if (lifetime != null)
+                {
+                    _iceServer.TurnTimeToExpiry = DateTime.Now +
+                                       TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                }
+                else
+                {
+                    _iceServer.TurnTimeToExpiry = DateTime.Now +
+                                       TimeSpan.FromSeconds(3600);
+                }
 
-                    logger.LogInformation("TURN client allocated relay {RelayEndPoint} for {Uri}, allocation expires at {Expiry}.",
-                        _iceServer.RelayEndPoint, _iceServer.Uri, _iceServer.TurnTimeToExpiry.ToLocalTime());
-            //}
+                logger.LogInformation("TURN client allocated relay {RelayEndPoint} for {Uri}, allocation expires at {Expiry}.",
+                    _iceServer.RelayEndPoint, _iceServer.Uri, _iceServer.TurnTimeToExpiry.ToLocalTime());
+                //}
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
             {

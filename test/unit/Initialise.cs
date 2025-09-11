@@ -146,6 +146,8 @@ namespace SIPSorcery.UnitTests
         public bool HasText => false;
         public IPAddress RtpBindAddress => null;
 
+        public IPAddress RtpAdvertisedAddress { get; set; }
+
 #pragma warning disable 67
         public event Action<string> OnRtpClosed;
         public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;

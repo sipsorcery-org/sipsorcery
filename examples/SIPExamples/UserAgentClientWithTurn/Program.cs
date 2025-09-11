@@ -8,6 +8,9 @@
 // This example is similar to UserAgentClient but adds the ability to use a
 // TURN server to overcome NAT traversal issues on the RTP media network path.
 //
+// Usage:
+// set TURN_URL=turn:192.168.0.100;user;password
+//
 // Author(s):
 // Aaron Clauson  (aaron@sipsorcery.com)
 // 
@@ -19,7 +22,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,10 +42,9 @@ namespace demo
     {
         private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
         private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:music@iptel.org";
+        private const int TURN_ALLOCATION_TIMEOUT_SECONDS = 5;
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
-
-        private static IceServerResolver _iceServerResolver = new IceServerResolver();
 
         static async Task Main(string[] args)
         {
@@ -52,20 +53,15 @@ namespace demo
 
             // Plumbing code to facilitate a graceful exit.
             ManualResetEvent exitMre = new ManualResetEvent(false);
-            bool preferIPv6 = false;
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
             Log = AddConsoleLogger(LogEventLevel.Verbose);
 
             var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
-            if (!string.IsNullOrWhiteSpace(turnServerUrl))
-            {
-                var turnServer = IceServer.ParseIceServer(turnServerUrl);
-                Log.LogInformation($"Using TURN server {turnServer.Uri}");
 
-                _iceServerResolver.InitialiseIceServers([RTCIceServer.Parse(turnServerUrl)], RTCIceTransportPolicy.all);
-            }
+            TurnClient turnClient = !string.IsNullOrWhiteSpace(turnServerUrl) ?
+                new TurnClient(turnServerUrl) : null;
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
             if (args?.Length > 0)
@@ -75,68 +71,36 @@ namespace demo
                     Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
                 }
             }
-            if (args?.Length > 1 && args[1] == "ipv6")
-            {
-                preferIPv6 = true;
-            }
 
-            if (preferIPv6)
-            {
-                Log.LogInformation($"Call destination {callUri}, preferencing IPv6.");
-            }
-            else
-            {
-                Log.LogInformation($"Call destination {callUri}.");
-            }
+            Log.LogInformation($"Call destination {callUri}.");
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            sipTransport.PreferIPv6NameResolution = preferIPv6;
             sipTransport.EnableTraceLogs();
 
-            var audioSession = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true));
+            var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true));
             //var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
             //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA || x.Codec == AudioCodecsEnum.PCMU);
             //audioSession.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.AudioCodecsEnum.OPUS);
-            audioSession.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.AudioCodecsEnum.PCMU);
-            var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
+            audioEndPoint.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.AudioCodecsEnum.PCMU);
+            var rtpSession = new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
 
-            SDP offerSDP = null;
-
-            var turnCt = new CancellationTokenSource();
-
-            TurnClient turnClient = null;
-            IPEndPoint relayEndPoint = null;
-
-            if (_iceServerResolver.IceServers.Any())
+            if (turnClient != null)
             {
-                turnClient = new TurnClient(_iceServerResolver.IceServers.Values.First(), rtpSession.AudioStream.GetRTPChannel());
-                relayEndPoint = await turnClient.GetRelayEndPoint(15000, turnCt.Token);
+                var relayEndPoint = await rtpSession.AudioStream.TrySetRelayEndPoint(turnClient, TURN_ALLOCATION_TIMEOUT_SECONDS);
+
                 if (relayEndPoint != null)
                 {
-                    Log.LogInformation($"TURN relay address {relayEndPoint}.");
+                    rtpSession.OnRemoteDescriptionChanged += (sdp) =>
+                    {
+                        var createPermissionResult = turnClient.CreatePermission(rtpSession.AudioStream.DestinationEndPoint);
 
-                    var audioRtpChannel = rtpSession.AudioStream.GetRTPChannel();
-
-                    // Set the dynamic RTP endpoint. This variable will get used in the SDP offer/answer.
-                    audioRtpChannel.RTPDynamicNATEndPoint = relayEndPoint;
-
-                    // We set the RTP stream destination to the relay address. This is where we will send RTP & RTCP packets.
-                    rtpSession.AudioStream.SetDestination(relayEndPoint, new IPEndPoint(relayEndPoint.Address, relayEndPoint.Port + 1), true);
-
-                    offerSDP = rtpSession.CreateOffer(relayEndPoint.Address);
-                }
-                else
-                {
-                    Log.LogWarning($"No TURN relay address could be obtained.");
-
-                    offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);
+                        Log.LogInformation($"TURN create permission result for {rtpSession.AudioStream.DestinationEndPoint}: {createPermissionResult}.");
+                    };
                 }
             }
-            else
-            {
-                offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);
-            }
+
+            SDP offerSDP = rtpSession.CreateOffer(IPAddress.Any);
 
             rtpSession.OnRtpPacketReceived += (ep, mt, pkt) =>
             {
@@ -179,16 +143,6 @@ namespace demo
                         var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
                         if (result == SetDescriptionResultEnum.OK)
                         {
-                            if (turnClient != null && relayEndPoint != null)
-                            {
-                                var createPermissionResult = turnClient.CreatePermission(rtpSession.AudioStream.DestinationEndPoint);
-
-                                Log.LogInformation($"TURN create permission result for {rtpSession.AudioStream.DestinationEndPoint}: {createPermissionResult}.");
-
-                                // We set the RTP stream destination to the relay address. This is where we will send RTP & RTCP packets.
-                                rtpSession.AudioStream.SetDestination(relayEndPoint, new IPEndPoint(relayEndPoint.Address, relayEndPoint.Port + 1), true);
-                            }
-
                             await rtpSession.Start();
                         }
                         else

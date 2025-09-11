@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -112,12 +114,6 @@ namespace SIPSorcery.Net
         public event Action<bool> OnIsClosedStateChanged;
 
         public bool AcceptRtpFromAny { get; set; } = false;
-
-        /// <summary>
-        /// If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
-        /// All traffic for the session should then be sent to/from the relay and not updated.
-        /// </summary>
-        public bool IsUsingRelayEndPoint { get; private set; } = false;
 
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
@@ -218,6 +214,24 @@ namespace SIPSorcery.Net
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
         /// <summary>
+        /// This endpoint is used when a relay server (TURN) is being used for the RTP session. All RTP packets
+        /// will be sent to the relay end point instead of the DestinationEndPoint.
+        /// </summary>
+        public IPEndPoint RelayDestinationEndPoint { get; set; }
+
+        /// <summary>
+        /// This endpoint is used when a relay server (TURN) is being used for the RTCP session. All RTCP packets
+        /// will be sent to the relay end point instead of the ControlDestinationEndPoint.
+        /// </summary>
+        public IPEndPoint RelayControlDestinationEndPoint { get; set; }
+
+        /// <summary>
+        /// If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
+        /// All traffic for the session should then be sent to/from the relay and not updated.
+        /// </summary>
+        public bool IsUsingRelayEndPoint => RelayDestinationEndPoint != null;
+
+        /// <summary>
         /// Default RTP event format that we support.
         /// </summary>
         public static SDPAudioVideoMediaFormat DefaultRTPEventFormat
@@ -234,10 +248,34 @@ namespace SIPSorcery.Net
             }
         }
 
+        public TurnClient TurnClient { get; private set; }
+
         public MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
             this.Index = index;
+        }
+
+        public async Task<IPEndPoint> TrySetRelayEndPoint(TurnClient turnClient, int timeoutSeconds)
+        {
+            TurnClient = turnClient;
+            TurnClient.SetRtpChannel(rtpChannel);
+
+            var turnCt = new CancellationTokenSource();
+
+            var relayEndPoint = await turnClient.GetRelayEndPoint(timeoutSeconds * 1000, turnCt.Token);
+
+            if(relayEndPoint != null)
+            {
+                logger.LogInformation("TURN relay address successfully acquired for {relayEndPoint}.", relayEndPoint);
+
+                RelayDestinationEndPoint = relayEndPoint;
+                // TODO: Need to handle RTCP allocation as well
+
+                return relayEndPoint;
+            }
+
+            return null;
         }
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
@@ -465,7 +503,12 @@ namespace SIPSorcery.Net
 
                 if (protectRtpPacket == null)
                 {
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
+                    //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
+                    //        MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
+                    //        rtpPacket.Header.MarkerBit, rtpBuffer.Length,
+                    //        IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
+
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint, rtpBuffer);
                 }
                 else
                 {
@@ -476,7 +519,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
                     }
                 }
 
@@ -922,13 +965,22 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
         /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
-        /// <param name="isRelayEndPoint">If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
-        /// All traffic for the session should then be sent to/from the relay and not updated.</param>
-        public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint, bool isRelayEndPoint = false)
+        public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
         {
             DestinationEndPoint = rtpEndPoint;
             ControlDestinationEndPoint = rtcpEndPoint;
-            IsUsingRelayEndPoint = isRelayEndPoint;
+        }
+
+        /// <summary>
+        /// Sets the the RTP and RTCP sockets for a relay server (TURN). When a relay end point is specified it will
+        /// overrule the standard destination end points that typically get set in the SDP exchange.
+        /// </summary>
+        /// <param name="relayRtpEndPoint">The RTP relay end point.</param>
+        /// <param name="relayRtcpEndPoint">The RTCP relay endpoint.</param>
+        public void SetRelayDestination(IPEndPoint relayRtpEndPoint, IPEndPoint relayRtcpEndPoint)
+        {
+            RelayDestinationEndPoint = relayRtpEndPoint;
+            RelayControlDestinationEndPoint = relayRtcpEndPoint;
         }
 
         /// <summary>
