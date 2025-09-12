@@ -97,11 +97,21 @@ namespace SIPSorcery.Sys
         /// A lookup collection to cache the local IP address for a destination address. The collection will cache results of
         /// asking the Operating System which local address to use for a destination address. The cache saves a relatively 
         /// expensive call to create a socket and ask the OS for a route lookup.
-        /// 
-        /// TODO:  Clear this cache if the state of the local network interfaces change.
         /// </summary>
         private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable =
             new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
+
+        static NetServices()
+        {
+            NetworkChange.NetworkAddressChanged += (_, _) =>
+            {
+                // Clear cached addresses if the state of the local network interfaces change.
+                m_localAddressTable.Clear();
+                _localIPAddresses = null;
+                _internetDefaultAddress = null;
+                _internetDefaultIPv6Address = null;
+            };
+        }
 
         /// <summary>
         /// The list of IP addresses that this machine can use.
@@ -110,7 +120,6 @@ namespace SIPSorcery.Sys
         {
             get
             {
-                // TODO: Reset if the local network interfaces change.
                 if (_localIPAddresses == null)
                 {
                     _localIPAddresses = NetServices.GetAllLocalIPAddresses();
@@ -133,7 +142,6 @@ namespace SIPSorcery.Sys
         {
             get
             {
-                // TODO: Reset if the local network interfaces change.
                 if (_internetDefaultAddress == null)
                 {
                     _internetDefaultAddress = GetLocalAddressForInternet();
@@ -151,7 +159,6 @@ namespace SIPSorcery.Sys
         {
             get
             {
-                // TODO: Reset if the local network interfaces change.
                 if (_internetDefaultIPv6Address == null)
                 {
                     _internetDefaultIPv6Address = GetLocalIPv6AddressForInternet();
