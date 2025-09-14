@@ -149,7 +149,8 @@ namespace demo
                         var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
                         if (result == SetDescriptionResultEnum.OK)
                         {
-                            await rtpSession.Start();
+                            await audioEndPoint.Start();
+                            //await rtpSession.Start();
                         }
                         else
                         {

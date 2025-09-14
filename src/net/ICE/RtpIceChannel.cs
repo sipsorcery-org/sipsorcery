@@ -434,7 +434,15 @@ namespace SIPSorcery.Net
 
         internal IceServerResolver _iceServerResolver = new IceServerResolver();
 
-        //internal ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
+        /// <summary>
+        /// This event gets fired when a STUN message is received by this channel.
+        /// The event is for diagnostic purposes only.
+        /// Parameters:
+        ///  - STUNMessage: The received STUN message.
+        ///  - IPEndPoint: The remote end point the STUN message was received from.
+        ///  - bool: True if the message was received via a TURN server relay.
+        /// </summary>
+        //public new event Action<STUNMessage, IPEndPoint, bool> OnStunMessageReceived;
 
         private IceServer _activeIceServer;
 
@@ -555,16 +563,6 @@ namespace SIPSorcery.Net
         public event Action<RTCIceCandidate, string> OnIceCandidateError;
 
         /// <summary>
-        /// This event gets fired when a STUN message is received by this channel.
-        /// The event is for diagnostic purposes only.
-        /// Parameters:
-        ///  - STUNMessage: The received STUN message.
-        ///  - IPEndPoint: The remote end point the STUN message was received from.
-        ///  - bool: True if the message was received via a TURN server relay.
-        /// </summary>
-        public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageReceived;
-
-        /// <summary>
         /// This event gets fired when a STUN message is sent by this channel.
         /// The event is for diagnostic purposes only.
         /// Parameters:
@@ -573,8 +571,6 @@ namespace SIPSorcery.Net
         ///  - bool: True if the message was sent via a TURN server relay.
         /// </summary>
         public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageSent;
-
-        public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
 
         /// <summary>
         /// An optional callback function to resolve remote ICE candidates with MDNS hostnames.
@@ -645,6 +641,11 @@ namespace SIPSorcery.Net
 
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
+
+            base.OnStunMessageReceived += (stunMessage, remoteEndPoint, wasRelayed) =>
+            {
+                _ = ProcessStunMessage(stunMessage, remoteEndPoint, wasRelayed);
+            };
 
             _localChecklistCandidate = new RTCIceCandidate(new RTCIceCandidateInit
             {
@@ -1855,7 +1856,7 @@ namespace SIPSorcery.Net
 
             remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
 
-            OnStunMessageReceived?.Invoke(stunMessage, remoteEndPoint, wasRelayed);
+            base.InvokeOnStunMessageReceived(stunMessage, remoteEndPoint, wasRelayed);
 
             // Check if the  STUN message is for an ICE server check.
             var iceServer = GetIceServerForTransactionID(stunMessage.Header.TransactionId);
@@ -2499,48 +2500,6 @@ namespace SIPSorcery.Net
             md5Digest.DoFinal(hash, 0);
 
             return stunRequest.ToByteBuffer(hash, true);
-        }
-
-        /// <summary>
-        /// Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
-        /// and extract STUN messages to deal with ICE connectivity checks and TURN relays.
-        /// </summary>
-        /// <param name="receiver">The UDP receiver the packet was received on.</param>
-        /// <param name="localPort">The local port it was received on.</param>
-        /// <param name="remoteEndPoint">The remote end point of the sender.</param>
-        /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
-        {
-            if (packet?.Length > 0)
-            {
-                bool wasRelayed = false;
-
-                if (packet[0] == 0x00 && packet[1] == 0x17)
-                {
-                    wasRelayed = true;
-
-                    // TURN data indication. Extract the data payload and adjust the end point.
-                    var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                    var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
-                    packet = dataAttribute?.Value;
-
-                    var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
-                    remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
-                }
-
-                base.LastRtpDestination = remoteEndPoint;
-
-                if (packet[0] == 0x00 || packet[0] == 0x01)
-                {
-                    // STUN packet.
-                    var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                    _ = ProcessStunMessage(stunMessage, remoteEndPoint, wasRelayed);
-                }
-                else
-                {
-                    OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
-                }
-            }
         }
 
         /// <summary>

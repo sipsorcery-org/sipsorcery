@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAgentServerWithTurn", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAgentClientWithTurn", "UserAgentClientWithTurn\UserAgentClientWithTurn.csproj", "{2853A377-980C-A0D1-12D6-02D9E992E81B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAgentServerWithStun", "UserAgentServerWithStun\UserAgentServerWithStun.csproj", "{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -363,6 +365,18 @@ Global
 		{2853A377-980C-A0D1-12D6-02D9E992E81B}.Release|x64.Build.0 = Release|Any CPU
 		{2853A377-980C-A0D1-12D6-02D9E992E81B}.Release|x86.ActiveCfg = Release|Any CPU
 		{2853A377-980C-A0D1-12D6-02D9E992E81B}.Release|x86.Build.0 = Release|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Debug|x64.Build.0 = Debug|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Debug|x86.Build.0 = Debug|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Release|x64.ActiveCfg = Release|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Release|x64.Build.0 = Release|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Release|x86.ActiveCfg = Release|Any CPU
+		{C130FDC0-A4DA-57DC-0E96-C9A4E36DDFCB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

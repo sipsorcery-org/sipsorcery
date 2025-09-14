@@ -70,6 +70,7 @@ class Program
                 Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
             }
         }
+
         if(args?.Length > 1 && args[1] == "ipv6")
         {
             preferIPv6 = true;

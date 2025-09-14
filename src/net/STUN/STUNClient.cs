@@ -141,40 +141,36 @@ public class STUNClient
     {
         var tcs = new TaskCompletionSource<IPEndPoint>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        void OnRtpDataReceived(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        void OnStunMessageReceived(STUNMessage stunResponse, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
             try
             {
-                if (packet?.Length > 0)
+                logger.LogDebug("STUNClient response received from {StunResponseEndPoint}.", remoteEndPoint);
+
+                IPEndPoint result = null;
+
+                foreach (var attr in stunResponse.Attributes)
                 {
-                    logger.LogDebug("STUNClient response received from {StunResponseEndPoint}.", remoteEndPoint);
-
-                    var stunResponse = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                    IPEndPoint result = null;
-
-                    foreach (var attr in stunResponse.Attributes)
+                    if (attr.AttributeType == STUNAttributeTypesEnum.MappedAddress &&
+                        attr is STUNAddressAttribute mapped)
                     {
-                        if (attr.AttributeType == STUNAttributeTypesEnum.MappedAddress &&
-                            attr is STUNAddressAttribute mapped)
-                        {
-                            result = new IPEndPoint(mapped.Address, mapped.Port);
-                            break;
-                        }
-                        else if (attr.AttributeType == STUNAttributeTypesEnum.XORMappedAddress &&
-                            attr is STUNXORAddressAttribute xorMapped)
-                        {
-                            result = new IPEndPoint(xorMapped.Address, xorMapped.Port);
-                            break;
-                        }
+                        result = new IPEndPoint(mapped.Address, mapped.Port);
+                        break;
                     }
-
-                    if (result != null)
+                    else if (attr.AttributeType == STUNAttributeTypesEnum.XORMappedAddress &&
+                        attr is STUNXORAddressAttribute xorMapped)
                     {
-                        logger.LogDebug("STUNClient public IP={PublicAddress} Port={PublicPort}.", result.Address, result.Port);
+                        result = new IPEndPoint(xorMapped.Address, xorMapped.Port);
+                        break;
                     }
-
-                    tcs.TrySetResult(result);
                 }
+
+                if (result != null)
+                {
+                    logger.LogDebug("STUNClient public IP={PublicAddress} Port={PublicPort}.", result.Address, result.Port);
+                }
+
+                tcs.TrySetResult(result);
             }
             catch (Exception ex)
             {
@@ -182,7 +178,7 @@ public class STUNClient
             }
         }
 
-        rtpChannel.OnRTPDataReceived += OnRtpDataReceived;
+        rtpChannel.OnStunMessageReceived += OnStunMessageReceived;
 
         try
         {
@@ -212,7 +208,7 @@ public class STUNClient
         }
         finally
         {
-            rtpChannel.OnRTPDataReceived -= OnRtpDataReceived;
+            rtpChannel.OnStunMessageReceived -= OnStunMessageReceived;
         }
     }
 }

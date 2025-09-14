@@ -231,6 +231,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool IsUsingRelayEndPoint => RelayDestinationEndPoint != null;
 
+        public IceServer _iceServer = null;
+
         /// <summary>
         /// Default RTP event format that we support.
         /// </summary>
@@ -270,7 +272,10 @@ namespace SIPSorcery.Net
                 logger.LogInformation("TURN relay address successfully acquired for {relayEndPoint}.", relayEndPoint);
 
                 RelayDestinationEndPoint = relayEndPoint;
+
                 // TODO: Need to handle RTCP allocation as well
+
+                _iceServer = turnClient.IceServer;
 
                 return relayEndPoint;
             }
@@ -501,26 +506,32 @@ namespace SIPSorcery.Net
 
                 var rtpBuffer = rtpPacket.GetBytes();
 
-                if (protectRtpPacket == null)
-                {
-                    //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
-                    //        MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
-                    //        rtpPacket.Header.MarkerBit, rtpBuffer.Length,
-                    //        IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
-
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint, rtpBuffer);
-                }
-                else
+                if (protectRtpPacket != null)
                 {
                     int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
+                        return;
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpBuffer = rtpBuffer.Take(outBufLen).ToArray();
                     }
+                }
+
+                logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
+                    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
+                    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
+                    IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
+
+                if (IsUsingRelayEndPoint)
+                {
+                    rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, _iceServer.ServerEndPoint);
+                }
+                else
+                {
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                 }
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);

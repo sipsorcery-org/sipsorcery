@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+﻿  //-----------------------------------------------------------------------------
 // Filename: TurnClient.cs
 //
 // Description: TURN client implementation. Initial use case is to allocate a relay
@@ -16,7 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -43,26 +42,12 @@ public class TurnClient
     private readonly IceServerResolver _iceServerResolver = new IceServerResolver();
 
     private IceServer _iceServer;
+    public IceServer IceServer => _iceServer;
+
     private RTPChannel _rtpChannel;
-
-    public Dictionary<STUNUri, Socket> RtpTcpSocketByUri { get; private set; } = new Dictionary<STUNUri, Socket>();
-
-    private Dictionary<STUNUri, IceTcpReceiver> m_rtpTcpReceiverByUri = new Dictionary<STUNUri, IceTcpReceiver>();
 
     private bool _allocateRequestSent = false;
     private int _allocateRetries = 0;
-
-    //private bool m_tcpRtpReceiverStarted = false;
-
-    /// <summary>
-    /// This event gets fired when a STUN message is received by this channel.
-    /// The event is for diagnostic purposes only.
-    /// Parameters:
-    ///  - STUNMessage: The received STUN message.
-    ///  - IPEndPoint: The remote end point the STUN message was received from.
-    ///  - bool: True if the message was received via a TURN server relay.
-    /// </summary>
-    //public event Action<STUNMessage, IPEndPoint, bool> OnStunMessageReceived;
 
     /// <summary>
     /// This event gets fired when a STUN message is sent by this channel.
@@ -83,7 +68,7 @@ public class TurnClient
     {
         _rtpChannel = rtpChannel;
 
-        _rtpChannel.OnRTPDataReceived += OnRTPPacketReceived;
+        _rtpChannel.OnStunMessageReceived += GotStunResponse;
     }
 
     /// <summary>
@@ -158,51 +143,6 @@ public class TurnClient
     }
 
     /// <summary>
-    /// Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
-    /// and extract STUN messages to deal with ICE connectivity checks and TURN relays.
-    /// </summary>
-    /// <param name="localPort">The local port it was received on.</param>
-    /// <param name="remoteEndPoint">The remote end point of the sender.</param>
-    /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-    private void OnRTPPacketReceived(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
-    {
-        if (packet?.Length > 0)
-        {
-            //bool wasRelayed = false;
-
-            if (packet[0] == 0x00 && packet[1] == 0x17)
-            {
-                //wasRelayed = true;
-
-                // TURN data indication. Extract the data payload and adjust the end point.
-                var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
-                packet = dataAttribute?.Value;
-
-                var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
-                //remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
-
-                //logger.LogDebug("TURN data indication RTP data packet received from {RemoteEndPoint}.", remoteEndPoint);
-                _rtpChannel.InvokeRTPDataReceived(localPort, remoteEndPoint, packet);
-            }
-
-            //base.LastRtpDestination = remoteEndPoint;
-
-            if (packet[0] == 0x00 || packet[0] == 0x01)
-            {
-                // STUN packet.
-                logger.LogDebug("STUN packet received from {RemoteEndPoint}.", remoteEndPoint);
-                var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                GotStunResponse(stunMessage, remoteEndPoint);
-            }
-            else
-            {
-                // If not STUN or TURN ignore. The default RTP channel handler will deal with.
-            }
-        }
-    }
-
-    /// <summary>
     /// Handler for a STUN response received in response to an ICE server connectivity check.
     /// Note that no STUN requests are expected to be received from an ICE server during the initial
     /// connection to an ICE server. Requests will only arrive if a TURN relay is used and data
@@ -212,7 +152,7 @@ public class TurnClient
     /// <param name="remoteEndPoint">The remote end point the STUN response was received from.</param>
     /// <returns>True if the STUN response resulted in new ICE candidates being available (which
     /// will be either a "server reflexive" or "relay" candidate.</returns>
-    private void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
+    private void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint, bool wasRelayed)
     {
         string txID = Encoding.ASCII.GetString(stunResponse.Header.TransactionId);
 
@@ -407,9 +347,7 @@ public class TurnClient
             allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
         }
 
-        var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                            SendOverTCP(iceServer, allocateReqBytes) :
-                            _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
+        var sendResult = _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
         if (sendResult != SocketError.Success)
         {
@@ -455,9 +393,7 @@ public class TurnClient
             createPermissionReqBytes = permissionsRequest.ToByteBuffer(null, false);
         }
 
-        var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                            SendOverTCP(iceServer, createPermissionReqBytes) :
-                            _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
+        var sendResult = _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
 
         if (sendResult != SocketError.Success)
         {
@@ -507,9 +443,7 @@ public class TurnClient
             allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
         }
 
-        var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                            SendOverTCP(iceServer, allocateReqBytes) :
-                            _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
+        var sendResult = _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
         if (sendResult != SocketError.Success)
         {
@@ -519,36 +453,6 @@ public class TurnClient
         else
         {
             OnStunMessageSent?.Invoke(allocateRequest, iceServer.ServerEndPoint, false);
-        }
-
-        return sendResult;
-    }
-
-    /// <summary>
-    /// Sends a packet via a TURN relay server.
-    /// </summary>
-    /// <param name="dstEndPoint">The peer destination end point.</param>
-    /// <param name="buffer">The data to send to the peer.</param>
-    /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
-    /// <returns></returns>
-    private SocketError SendRelay(ProtocolType protocol, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint, IceServer iceServer)
-    {
-        STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
-        sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
-        sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer));
-
-        var request = sendReq.ToByteBuffer(null, false);
-        var sendResult = protocol == ProtocolType.Tcp ?
-            SendOverTCP(iceServer, request) :
-            _rtpChannel.Send(RTPChannelSocketsEnum.RTP, relayEndPoint, request);
-
-        if (sendResult != SocketError.Success)
-        {
-            logger.LogWarning("Error sending TURN relay request to TURN server at {RelayEndPoint}. {SendResult}.", relayEndPoint, sendResult);
-        }
-        else
-        {
-            OnStunMessageSent?.Invoke(sendReq, relayEndPoint, true);
         }
 
         return sendResult;
@@ -574,109 +478,6 @@ public class TurnClient
         md5Digest.DoFinal(hash, 0);
 
         return stunRequest.ToByteBuffer(hash, true);
-    }
-
-    private SocketError SendOverTCP(IceServer iceServer, byte[] buffer)
-    {
-        IPEndPoint dstEndPoint = iceServer?.ServerEndPoint;
-
-        if (dstEndPoint == null)
-        {
-            throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
-        }
-        else if (buffer == null || buffer.Length == 0)
-        {
-            throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
-        }
-        else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
-        {
-            logger.LogWarning("The destination address for Send in RTPChannel cannot be {Address}.", dstEndPoint.Address);
-            return SocketError.DestinationAddressRequired;
-        }
-        else
-        {
-            try
-            {
-                //Connect to destination
-                RtpTcpSocketByUri.TryGetValue(iceServer?._uri, out Socket sendSocket);
-                //LastRtpDestination = dstEndPoint;
-
-                if (sendSocket == null)
-                {
-                    return SocketError.Fault;
-                }
-
-                //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-                if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-                {
-                    dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-                }
-
-                Func<IPEndPoint, IPEndPoint, bool> equals = (IPEndPoint e1, IPEndPoint e2) =>
-                {
-                    return e1.Port == e2.Port && e1.Address.Equals(e2.Address);
-                };
-
-                if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint) || !equals(sendSocket.RemoteEndPoint as IPEndPoint, dstEndPoint))
-                {
-                    if (sendSocket.Connected)
-                    {
-                        logger.LogDebug("SendOverTCP request disconnect.");
-                        sendSocket.Disconnect(true);
-                    }
-                    sendSocket.Connect(dstEndPoint);
-
-                    logger.LogDebug("SendOverTCP status: {Status} endpoint: {EndPoint}", sendSocket.Connected, dstEndPoint);
-                }
-
-                //Fix ReceiveFrom logic if any previous exception happens
-                m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
-                if (rtpTcpReceiver != null && !rtpTcpReceiver.IsRunningReceive && !rtpTcpReceiver.IsClosed)
-                {
-                    rtpTcpReceiver.BeginReceiveFrom();
-                }
-
-                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendToTCP, sendSocket);
-                return SocketError.Success;
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            {
-                return SocketError.Disconnecting;
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError(excp, "Exception RTPIceChannel.SendOverTCP. {ErrorMessage}", excp.Message);
-                return SocketError.Fault;
-            }
-        }
-    }
-
-    private void EndSendToTCP(IAsyncResult ar)
-    {
-        try
-        {
-            Socket sendSocket = (Socket)ar.AsyncState;
-            int bytesSent = sendSocket.EndSendTo(ar);
-        }
-        catch (SocketException sockExcp)
-        {
-            // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-            // normal RTP operation. For example:
-            // - the RTP connection may start sending before the remote socket starts listening,
-            // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-            //   or new socket during the transition.
-            logger.LogWarning(sockExcp, "SocketException RTPIceChannel EndSendToTCP ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
-        }
-        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-        { }
-        catch (Exception excp)
-        {
-            logger.LogError(excp, "Exception RTPIceChannel EndSendToTCP. {ErrorMessage}", excp.Message);
-        }
     }
 
     private void RefreshTurn(Object state)
