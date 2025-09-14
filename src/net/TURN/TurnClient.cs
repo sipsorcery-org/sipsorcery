@@ -31,10 +31,12 @@ namespace SIPSorcery.Net;
 
 public class TurnClient
 {
+    private static int MAX_ALLOCATE_ATTEMPTS = 5;
+
     /// <summary>
     /// The lifetime value used in refresh request.
     /// </summary>
-    public static uint ALLOCATION_TIME_TO_EXPIRY_VALUE = 600;
+    private static uint ALLOCATION_TIME_TO_EXPIRY_VALUE = 600;
 
     private static readonly ILogger logger = Log.Logger;
 
@@ -127,14 +129,17 @@ public class TurnClient
                 (DateTime.Now.Subtract(_iceServer.LastRequestSentAt).TotalMilliseconds > 500 &&
                  _iceServer.LastResponseReceivedAt < _iceServer.LastRequestSentAt))
             {
-                if (_allocateRetries >= IceServer.MAX_REQUESTS)
+                if (_allocateRetries >= MAX_ALLOCATE_ATTEMPTS)
                 {
                     logger.LogWarning("TURN allocate max retries reached.");
                     break;
                 }
+
                 var sendRes = SendTurnAllocateRequest(_iceServer);
+
                 _allocateRequestSent = true;
                 _allocateRetries++;
+
                 if (sendRes != SocketError.Success)
                 {
                     logger.LogWarning("TURN allocate send error {Result}.", sendRes);
