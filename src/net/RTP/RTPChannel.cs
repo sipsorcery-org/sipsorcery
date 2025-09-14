@@ -381,7 +381,7 @@ public class RTPChannel : IDisposable
     {
         if (packet?.Length > 0)
         {
-            logger.LogDebug("RTPChannel received {Length} bytes from {RemoteEndPoint}.", packet.Length, remoteEndPoint);
+            //logger.LogDebug("RTPChannel received {Length} bytes from {RemoteEndPoint}.", packet.Length, remoteEndPoint);
 
             bool wasRelayed = false;
 

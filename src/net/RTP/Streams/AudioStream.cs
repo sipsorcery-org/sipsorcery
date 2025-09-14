@@ -297,7 +297,7 @@ namespace SIPSorcery.Net
 
         protected override void ProcessRtpPacket(IPEndPoint remoteEndPoint, RTPPacket rtpPacket, SDPAudioVideoMediaFormat format)
         {
-            logger.LogDebug("AudioStream ProcessRtpPacket from {ep}, ssrc {ssrc}, seqnum {seqnum}.", remoteEndPoint, rtpPacket.Header.SyncSource, rtpPacket.Header.SequenceNumber);
+            //logger.LogDebug("AudioStream ProcessRtpPacket from {ep}, ssrc {ssrc}, seqnum {seqnum}.", remoteEndPoint, rtpPacket.Header.SyncSource, rtpPacket.Header.SequenceNumber);
 
             var audioFormat = format.ToAudioFormat();
 

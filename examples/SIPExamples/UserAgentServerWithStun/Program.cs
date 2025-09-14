@@ -2,48 +2,17 @@
 // Filename: Program.cs
 //
 // Description: An example program of how to use the SIPSorcery core library to 
-// act as the server for a SIP call.
+// act as the server for a SIP call. This version adds a STUN client to determine
+// the public IP address of the server and use that in the SDP answer to the UAC.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 09 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
-// 26 Feb 2020  Aaron Clauson   Switched RTP to use RtpAVSession.
+// 14 Sep 2025	Aaron Clauson	Created, based on UserAgentServer exmaple.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// This example can be used with the automated SIP test tool [SIPp] (https://github.com/SIPp/sipp)
-// and its inbuilt User Agent Client scenario.
-// Note: SIPp doesn't support IPv6.
-//
-// To install on WSL:
-// $ sudo apt install sip-tester
-//
-// Running tests (press the '+' key while test is running to increase the call rate):
-// For UDP testing: sipp -sn uac 127.0.0.1
-// For TCP testing: sipp -sn uac localhost -t t1
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Media files:
-// The "Simplicity" audio used in this example is from an artist called MACROFORM
-// and can be downloaded directly from: https://www.jamendo.com/track/579315/simplicity?language=en
-// The use of the audio is licensed under the Creative Commons 
-// https://creativecommons.org/licenses/by-nd/2.0/
-// The audio is free for personal use but a license may be required for commercial use.
-// If it sounds familiar this particular file is also included as part of Asterisk's 
-// (asterisk.org) music on hold.
-//
-// ffmpeg can be used to convert the mp3 file into the required format for placing directly 
-// into the RTP packets. Currently this example supports two audio formats: G711.ULAW (or PCMU)
-// and G722.
-//
-// ffmpeg -i Macroform_-_Simplicity.mp3 -ac 1 -ar 8k -ab 64k -f mulaw Macroform_-_Simplicity.ulaw
-// ffmpeg -i Macroform_-_Simplicity.mp3 -ar 16k -acodec g722 Macroform_-_Simplicity.g722
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -135,6 +104,7 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
+            sipTransport.EnableTraceLogs();
 
             var localhostCertificate = new X509Certificate2(SIPS_CERTIFICATE_PATH);
 
@@ -151,8 +121,6 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
             //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
             //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
-
-            EnableTraceLogs(sipTransport);
 
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
@@ -302,7 +270,7 @@ namespace SIPSorcery
                             Console.WriteLine();
                             Console.WriteLine("Welcome requested by user...");
 
-                            if (rtpSession?.IsStarted == true &&
+                            if (rtpSession?.IsAudioStarted == true &&
                                 rtpSession?.IsClosed == false)
                             {
                                 await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
@@ -314,7 +282,7 @@ namespace SIPSorcery
                             Console.WriteLine();
                             Console.WriteLine("Hangup requested by user...");
 
-                            if (rtpSession?.IsStarted == true &&
+                            if (rtpSession?.IsAudioStarted == true &&
                                 rtpSession?.IsClosed == false)
                             {
                                 await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
@@ -393,53 +361,13 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-        }
-
-        /// <summary>
         /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {
             var serilogLogger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Verbose)
                 .WriteTo.Console()
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(serilogLogger);

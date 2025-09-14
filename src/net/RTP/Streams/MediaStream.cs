@@ -520,10 +520,10 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
-                    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
-                    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
-                    IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
+                //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
+                //    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
+                //    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
+                //    IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
 
                 if (IsUsingRelayEndPoint)
                 {

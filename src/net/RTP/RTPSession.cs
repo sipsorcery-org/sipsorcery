@@ -2406,7 +2406,7 @@ namespace SIPSorcery.Net
 
         protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            logger.LogDebug("RTP Session OnReceive from {RemoteEndPoint} {length} bytes buffer[0]={zeroByte}.", remoteEndPoint, buffer.Length, buffer[0]);
+            //logger.LogDebug("RTP Session OnReceive from {RemoteEndPoint} {length} bytes buffer[0]={zeroByte}.", remoteEndPoint, buffer.Length, buffer[0]);
 
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
@@ -2544,7 +2544,7 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            logger.LogDebug("RTPSession OnReceiveRTPPacket received from {RemoteEndPoint} {length} bytes.", remoteEndPoint, buffer.Length);
+            //logger.LogDebug("RTPSession OnReceiveRTPPacket received from {RemoteEndPoint} {length} bytes.", remoteEndPoint, buffer.Length);
 
             if (!IsClosed)
             {
