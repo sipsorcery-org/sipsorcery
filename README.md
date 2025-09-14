@@ -10,7 +10,7 @@
 >
 > **Key points of the BDS restriction:**  
 > - **No use inside Israel or the Occupied Territories** until the 1967 occupation ends, equality for Arab-Palestinians is enshrined, and the right of return for Palestinian refugees is honored.  
-> - **Everywhere else**, the BSD 3-Clause terms apply, provided that any redistribution retains this BDS restriction and complies with Attribution-NonCommercial-ShareAlike.  
+> - **Everywhere else**, the BSD 3-Clause terms apply, provided that any redistribution retains this BDS restriction.  
 > - In case of conflict, the BDS terms in Section 2 take precedence over Section 1.  
 >
 > Read the full text in [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file#section-2).
@@ -258,3 +258,4 @@ Create an HTML file, paste the contents below into it, open it in a browser that
 If successful the browser should display a test pattern image.
 
 The [examples folder](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples) contains sample code to demonstrate other common WebRTC cases.
+
