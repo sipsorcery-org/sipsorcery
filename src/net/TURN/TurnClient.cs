@@ -41,6 +41,10 @@ public class TurnClient
 
     private const int ALLOCATE_DEFAULT_TIMEOUT_MILLISECONDS = 5000;
 
+    private const int ALLOCATE_DEFAULT_LIFETIME_SECONDS = 600;
+
+    private const int PERMISSION_DEFAULT_LIFETIME_SECONDS = 300;
+
     private const int GRACE_RENEWAL_SECONDS = 10;
 
     private static readonly ILogger logger = Log.Logger;
@@ -201,25 +205,7 @@ public class TurnClient
 
                 var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
 
-                if (lifetime != null)
-                {
-                    _iceServer.TurnTimeToExpiry = DateTime.Now +
-                                       TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
-                }
-                else
-                {
-                    _iceServer.TurnTimeToExpiry = DateTime.Now +
-                                       TimeSpan.FromSeconds(3600);
-                }
-
-                logger.LogInformation("Scheduling TURN client allocated refresh for server {RelayEndPoint} at {Uri}, allocation expires at {Expiry}.",
-                    _iceServer.RelayEndPoint, _iceServer.Uri, _iceServer.TurnTimeToExpiry.ToLocalTime());
-
-                _allocateRenewalTimer = new Timer((e) =>
-                {
-                    _iceServer.GenerateNewTransactionID();
-                    SendTurnRefreshRequest(_iceServer);
-                }, null, Convert.ToInt32(_iceServer.TurnTimeToExpiry.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS)).TotalMilliseconds), -1);
+                ScheduleAllocateRefresh(lifetime);
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
             {
@@ -272,21 +258,35 @@ public class TurnClient
                 logger.LogInformation("TURN client received a success response for a CreatePermission request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
 
                 var permissionLifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
-                TimeSpan permissionDuration = TimeSpan.FromSeconds(300);
+                TimeSpan permissionDuration = TimeSpan.FromSeconds(PERMISSION_DEFAULT_LIFETIME_SECONDS);
 
                 if (permissionLifetime != null)
                 {
                     permissionDuration = TimeSpan.FromSeconds(BitConverter.ToUInt32(permissionLifetime.Value.Reverse().ToArray(), 0));
+
+                    logger.LogDebug("TURN permission lifetime attribute value {lifetimeSeconds}s.", permissionDuration.TotalSeconds);
+                }
+                else
+                {
+                    logger.LogDebug("TURN permission using default lifetime of {lifetimeSeconds}s.", PERMISSION_DEFAULT_LIFETIME_SECONDS);
                 }
 
-                logger.LogInformation("Scheduling TURN create permission refresh for server {RelayEndPoint} and peer {peer}, allocation expires in {Expiry}s.",
-                    _iceServer.RelayEndPoint, _peerEndPoint, permissionDuration.TotalSeconds);
+                var renewalTime = DateTime.Now.Add(permissionDuration).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS));
+                var renewalMilliseconds = Convert.ToInt32(renewalTime.Subtract(DateTime.Now).TotalMilliseconds);
+
+                logger.LogInformation("Scheduling TURN create permission refresh for server {RelayEndPoint} and peer {peer}, allocation expires in {renewalMilliseconds}ms, renew at {renewalTime}.", _iceServer.RelayEndPoint, _peerEndPoint, renewalMilliseconds, renewalTime.ToString("o"));
 
                 _permissionsRenewalTimer = new Timer((e) =>
                 {
                     _iceServer.GenerateNewTransactionID();
                     SendTurnCreatePermissionsRequest(_iceServer.TransactionID, _iceServer, _peerEndPoint);
-                }, null, Convert.ToInt32(_iceServer.TurnTimeToExpiry.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS)).TotalMilliseconds), -1);
+                }, null, renewalMilliseconds, -1);
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
+            {
+                logger.LogInformation("TURN client received a success response for a Refresh request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+
+                ScheduleAllocateRefresh(stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime));
             }
             else
             {
@@ -296,11 +296,44 @@ public class TurnClient
         }
     }
 
+    private void ScheduleAllocateRefresh(STUNAttribute lifetimeAttribute)
+    {
+        if(_rtpChannel == null || _rtpChannel.IsClosed)
+        {
+            logger.LogWarning("RTP channel is not set or closed, cannot schedule TURN Allocate refresh.");
+            return;
+        }
+
+        if (lifetimeAttribute != null)
+        {
+            var lifetimeSpan = TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetimeAttribute.Value.Reverse().ToArray(), 0));
+
+            logger.LogDebug("TURN allocate lifetime attribute value {lifetimeSeconds}s.", lifetimeSpan.TotalSeconds);
+
+            _iceServer.TurnTimeToExpiry = DateTime.Now + lifetimeSpan;
+        }
+        else
+        {
+            logger.LogDebug("TURN allocate using default lifetime of {lifetimeSeconds}s.", ALLOCATE_DEFAULT_LIFETIME_SECONDS);
+
+            _iceServer.TurnTimeToExpiry = DateTime.Now + TimeSpan.FromSeconds(ALLOCATE_DEFAULT_LIFETIME_SECONDS);
+        }
+
+        logger.LogInformation("Scheduling TURN client allocated refresh for server {RelayEndPoint} at {Uri}, allocation expires at {Expiry}.",
+            _iceServer.RelayEndPoint, _iceServer.Uri, _iceServer.TurnTimeToExpiry.ToString("o"));
+
+        _allocateRenewalTimer = new Timer((e) =>
+        {
+            _iceServer.GenerateNewTransactionID();
+            SendTurnRefreshRequest(_iceServer);
+        }, null, Convert.ToInt32(_iceServer.TurnTimeToExpiry.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS)).TotalMilliseconds), -1);
+    }
+
     /// <summary>
     /// Extracts the fields required for authentication from a STUN error response.
     /// </summary>
     /// <param name="stunResponse">The STUN authentication required error response.</param>
-    internal void SetAuthenticationFields(STUNMessage stunResponse)
+    private void SetAuthenticationFields(STUNMessage stunResponse)
     {
         // Set the authentication properties authenticate.
         var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
@@ -317,6 +350,12 @@ public class TurnClient
     /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
     private SocketError SendTurnAllocateRequest(IceServer iceServer)
     {
+        if (_rtpChannel == null || _rtpChannel.IsClosed)
+        {
+            logger.LogWarning("RTP channel is not set or closed, cannot send TURN Allocate request.");
+            return SocketError.NotConnected;
+        }
+
         iceServer.OutstandingRequestsSent += 1;
         iceServer.LastRequestSentAt = DateTime.Now;
 
@@ -370,6 +409,12 @@ public class TurnClient
     /// </remarks>
     private SocketError SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
     {
+        if(_rtpChannel == null || _rtpChannel.IsClosed)
+        {
+            logger.LogWarning("RTP channel is not set or closed, cannot send TURN Create Permissions request.");
+            return SocketError.NotConnected;
+        }
+
         STUNMessage permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
         permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
         permissionsRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address, permissionsRequest.Header.TransactionId));

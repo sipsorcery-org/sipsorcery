@@ -77,7 +77,7 @@ namespace demo
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            sipTransport.EnableTraceLogs();
+            //sipTransport.EnableTraceLogs();
 
             var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(includeOpus: true));
             //var audioSession = new WindowsAudioEndPoint(new AudioEncoder());
