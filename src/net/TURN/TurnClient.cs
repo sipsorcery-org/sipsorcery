@@ -35,7 +35,7 @@ public class TurnClient
     /// <summary>
     /// The lifetime value used in refresh request.
     /// </summary>
-    private const uint ALLOCATION_TIME_TO_EXPIRY_VALUE = 600;
+    private const uint ALLOCATION_TIME_TO_EXPIRY_SECONDS = 600;
 
     private const int ALLOCATE_RETRY_PERIOD_MILLISECONDS = 1000;
 
@@ -157,7 +157,7 @@ public class TurnClient
     {
         _peerEndPoint = remoteEndPoint;
 
-        return SendTurnCreatePermissionsRequest(_iceServer.TransactionID, _iceServer, remoteEndPoint);
+        return SendTurnCreatePermissionsRequest(_iceServer, remoteEndPoint);
     }
 
     /// <summary>
@@ -279,8 +279,42 @@ public class TurnClient
                 _permissionsRenewalTimer = new Timer((e) =>
                 {
                     _iceServer.GenerateNewTransactionID();
-                    SendTurnCreatePermissionsRequest(_iceServer.TransactionID, _iceServer, _peerEndPoint);
+                    SendTurnCreatePermissionsRequest(_iceServer, _peerEndPoint);
                 }, null, renewalMilliseconds, -1);
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
+            {
+                logger.LogWarning("TURN client received an error response for a Create Permission request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+
+                _iceServer.ErrorResponseCount++;
+
+                if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                {
+                    STUNErrorCodeAttribute errCodeAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+
+                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    {
+                        logger.LogWarning("TURN client error response code {errorCode} for a Create Permission request to {Uri} from {remoteEP}.", errCodeAttribute.ErrorCode, _iceServer.Uri, remoteEndPoint);
+
+                        // Set the authentication properties authenticate.
+                        SetAuthenticationFields(stunResponse);
+
+                        // Set a new transaction ID.
+                        _iceServer.GenerateNewTransactionID();
+
+                        _iceServer.ErrorResponseCount = 1;
+
+                        SendTurnCreatePermissionsRequest(_iceServer, _peerEndPoint);
+                    }
+                    else
+                    {
+                        logger.LogWarning("TURN client received an error response for a Create Permission request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _iceServer.Uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("TURN client received an error response for a Create Permission request to {Uri}.", _iceServer.Uri);
+                }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
             {
@@ -319,14 +353,17 @@ public class TurnClient
             _iceServer.TurnTimeToExpiry = DateTime.Now + TimeSpan.FromSeconds(ALLOCATE_DEFAULT_LIFETIME_SECONDS);
         }
 
+        var renewalMilliseconds = Convert.ToInt32(_iceServer.TurnTimeToExpiry.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS)).TotalMilliseconds);
+        var renewalTime = _iceServer.TurnTimeToExpiry;
+
         logger.LogInformation("Scheduling TURN client allocated refresh for server {RelayEndPoint} at {Uri}, allocation expires at {Expiry}.",
-            _iceServer.RelayEndPoint, _iceServer.Uri, _iceServer.TurnTimeToExpiry.ToString("o"));
+            _iceServer.RelayEndPoint, _iceServer.Uri, renewalTime.ToString("o"));
 
         _allocateRenewalTimer = new Timer((e) =>
         {
             _iceServer.GenerateNewTransactionID();
             SendTurnRefreshRequest(_iceServer);
-        }, null, Convert.ToInt32(_iceServer.TurnTimeToExpiry.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS)).TotalMilliseconds), -1);
+        }, null, renewalMilliseconds, -1);
     }
 
     /// <summary>
@@ -396,8 +433,6 @@ public class TurnClient
     /// <summary>
     /// Sends a create permissions request to a TURN server for a peer end point.
     /// </summary>
-    /// <param name="transactionID">The transaction ID to set on the request. This
-    /// gets used to match responses back to the sender.</param>
     /// <param name="iceServer">The ICE server to send the request to.</param>
     /// <param name="peerEndPoint">The peer end point to request the channel bind for.</param>
     /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
@@ -407,7 +442,7 @@ public class TurnClient
     /// for each peer IP you include, and will only relay traffic to/from those peers; packets from any other
     /// IPs are silently dropped. This prevents the relay from being abused to send data to arbitrary hosts.
     /// </remarks>
-    private SocketError SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
+    private SocketError SendTurnCreatePermissionsRequest(IceServer iceServer, IPEndPoint peerEndPoint)
     {
         if(_rtpChannel == null || _rtpChannel.IsClosed)
         {
@@ -416,7 +451,7 @@ public class TurnClient
         }
 
         STUNMessage permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
-        permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
+        permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
         permissionsRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address, permissionsRequest.Header.TransactionId));
 
         byte[] createPermissionReqBytes = null;
@@ -451,8 +486,8 @@ public class TurnClient
     /// <param name="iceServer">The TURN server to send the request to.</param>
     /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
     /// <remarks>
-    /// A TURN Refresh request is how a client keeps an existing allocation alive—or deletes it. In short,
-    /// it updates the allocation’s time-to-expiry, or, if you set LIFETIME=0, it tears the allocation down immediately.
+    /// A TURN Refresh request is how a client keeps an existing allocation alive—or deletes it.
+    /// It updates the allocation’s time-to-expiry, or, if you set LIFETIME=0, it tears the allocation down immediately.
     /// </remarks>
     private SocketError SendTurnRefreshRequest(IceServer iceServer)
     {
@@ -461,7 +496,7 @@ public class TurnClient
 
         STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Refresh);
         allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
-        allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_VALUE));
+        allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, ALLOCATION_TIME_TO_EXPIRY_SECONDS));
 
         allocateRequest.Attributes.Add(
             new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
