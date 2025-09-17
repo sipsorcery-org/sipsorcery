@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -212,6 +214,26 @@ namespace SIPSorcery.Net
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
         /// <summary>
+        /// This endpoint is used when a relay server (TURN) is being used for the RTP session. All RTP packets
+        /// will be sent to the relay end point instead of the DestinationEndPoint.
+        /// </summary>
+        public IPEndPoint RelayDestinationEndPoint { get; set; }
+
+        /// <summary>
+        /// This endpoint is used when a relay server (TURN) is being used for the RTCP session. All RTCP packets
+        /// will be sent to the relay end point instead of the ControlDestinationEndPoint.
+        /// </summary>
+        public IPEndPoint RelayControlDestinationEndPoint { get; set; }
+
+        /// <summary>
+        /// If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
+        /// All traffic for the session should then be sent to/from the relay and not updated.
+        /// </summary>
+        public bool IsUsingRelayEndPoint => RelayDestinationEndPoint != null;
+
+        public IceServer _iceServer = null;
+
+        /// <summary>
         /// Default RTP event format that we support.
         /// </summary>
         public static SDPAudioVideoMediaFormat DefaultRTPEventFormat
@@ -228,10 +250,37 @@ namespace SIPSorcery.Net
             }
         }
 
+        public TurnClient TurnClient { get; private set; }
+
         public MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
             this.Index = index;
+        }
+
+        public async Task<IPEndPoint> TrySetRelayEndPoint(TurnClient turnClient, int timeoutSeconds)
+        {
+            TurnClient = turnClient;
+            TurnClient.SetRtpChannel(rtpChannel);
+
+            var turnCt = new CancellationTokenSource();
+
+            var relayEndPoint = await turnClient.GetRelayEndPoint(timeoutSeconds * 1000, turnCt.Token);
+
+            if(relayEndPoint != null)
+            {
+                logger.LogInformation("TURN relay address successfully acquired for {relayEndPoint}.", relayEndPoint);
+
+                RelayDestinationEndPoint = relayEndPoint;
+
+                // TODO: Need to handle RTCP allocation as well
+
+                _iceServer = turnClient.IceServer;
+
+                return relayEndPoint;
+            }
+
+            return null;
         }
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
@@ -457,21 +506,32 @@ namespace SIPSorcery.Net
 
                 var rtpBuffer = rtpPacket.GetBytes();
 
-                if (protectRtpPacket == null)
-                {
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                }
-                else
+                if (protectRtpPacket != null)
                 {
                     int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
+                        return;
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpBuffer = rtpBuffer.Take(outBufLen).ToArray();
                     }
+                }
+
+                //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
+                //    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
+                //    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
+                //    IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
+
+                if (IsUsingRelayEndPoint)
+                {
+                    rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, _iceServer.ServerEndPoint);
+                }
+                else
+                {
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                 }
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
@@ -689,7 +749,7 @@ namespace SIPSorcery.Net
             }
 
             // Set the remote track SSRC so that RTCP reports can match the media type.
-            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
+            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null && !IsUsingRelayEndPoint)
             {
                 bool isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
 
@@ -920,6 +980,18 @@ namespace SIPSorcery.Net
         {
             DestinationEndPoint = rtpEndPoint;
             ControlDestinationEndPoint = rtcpEndPoint;
+        }
+
+        /// <summary>
+        /// Sets the the RTP and RTCP sockets for a relay server (TURN). When a relay end point is specified it will
+        /// overrule the standard destination end points that typically get set in the SDP exchange.
+        /// </summary>
+        /// <param name="relayRtpEndPoint">The RTP relay end point.</param>
+        /// <param name="relayRtcpEndPoint">The RTCP relay endpoint.</param>
+        public void SetRelayDestination(IPEndPoint relayRtpEndPoint, IPEndPoint relayRtcpEndPoint)
+        {
+            RelayDestinationEndPoint = relayRtpEndPoint;
+            RelayControlDestinationEndPoint = relayRtcpEndPoint;
         }
 
         /// <summary>

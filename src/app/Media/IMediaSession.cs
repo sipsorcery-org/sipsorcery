@@ -70,6 +70,7 @@ namespace SIPSorcery.SIP.App
         /// Set if the session has been bound to a specific IP address.
         /// Normally not required but some esoteric call or network set ups may need.
         /// </summary>
+        [Obsolete("The RtpBindAddress property is obsolete, use the RtpAdvertisedAddress property instead. This property will be removed in a future release.", false)]
         IPAddress RtpBindAddress { get; }
 
         /// <summary>
@@ -98,7 +99,7 @@ namespace SIPSorcery.SIP.App
         /// as the Connection address in the SDP offer. If not set an attempt will be 
         /// made to determine the best matching address.</param>
         /// <returns>A new SDP offer representing the session's local media tracks.</returns>
-        SDP CreateOffer(IPAddress connectionAddress);
+        SDP CreateOffer(IPAddress connectionAddress = null);
 
         /// <summary>
         /// Sets the remote description. Calling this method can result in the local
@@ -122,7 +123,7 @@ namespace SIPSorcery.SIP.App
         /// from the remote offer.</param>
         /// <returns>An SDP answer matching the offer and the local media tracks contained
         /// in the session.</returns>
-        SDP CreateAnswer(IPAddress connectionAddress);
+        SDP CreateAnswer(IPAddress connectionAddress = null);
 
         /// <summary>
         /// Needs to be called prior to sending media. Performs any set up tasks such as 
