@@ -615,56 +615,57 @@ namespace SIPSorcery.Sys
 
             if (m_localAddressTable.TryGetValue(destination, out var cachedAddress))
             {
-                if (DateTime.Now.Subtract(cachedAddress.Item2).TotalSeconds >= LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS)
+                if (DateTime.Now.Subtract(cachedAddress.Item2).TotalSeconds < LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS)
                 {
-                    m_localAddressTable.TryRemove(destination, out _);
-                }
-
-                return cachedAddress.Item1;
-            }
-            else
-            {
-                IPAddress localAddress = null;
-
-                if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
-                {
-                    using (UdpClient udpClient = new UdpClient())
-                    {
-                        try
-                        {
-                            udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
-                            localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
-                        }
-                        catch (SocketException)
-                        {
-                            // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
-                        }
-                    }
+                    // Cached item is valid, return the value
+                    return cachedAddress.Item1;
                 }
                 else
                 {
-                    using (UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6))
-                    {
-                        try
-                        {
-                            udpClient.Connect(destination, NETWORK_TEST_PORT);
-                            localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
-                        }
-                        catch (SocketException)
-                        {
-                            // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
-                        }
-                    }
-
+                    m_localAddressTable.TryRemove(destination, out _);
                 }
-
-                if (localAddress != null)
-                {
-                    m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
-                }
-
-                return localAddress;
             }
+
+            IPAddress localAddress = null;
+
+            if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
+            {
+                using (UdpClient udpClient = new UdpClient())
+                {
+                    try
+                    {
+                        udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
+                }
+            }
+            else
+            {
+                using (UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6))
+                {
+                    try
+                    {
+                        udpClient.Connect(destination, NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
+                }
+
+            }
+
+            if (localAddress != null)
+            {
+                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
+            }
+
+            return localAddress;
         }
 
         /// <summary>
