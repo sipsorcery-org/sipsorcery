@@ -405,7 +405,6 @@ namespace SIPSorcery.Net
         /// Set if the session has been bound to a specific IP address.
         /// Normally not required but some esoteric call or network set ups may need.
         /// </summary>
-        [Obsolete("The RtpBindAddress property is obsolete, set RelayDestinationEndPoint on the primary media stream instead. This property will be removed in a future release.", false)]
         public IPAddress RtpBindAddress => rtpSessionConfig.BindAddress;
 
         /// <summary>

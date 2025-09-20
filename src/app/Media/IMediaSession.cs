@@ -70,7 +70,6 @@ namespace SIPSorcery.SIP.App
         /// Set if the session has been bound to a specific IP address.
         /// Normally not required but some esoteric call or network set ups may need.
         /// </summary>
-        [Obsolete("The RtpBindAddress property is obsolete, use the RtpAdvertisedAddress property instead. This property will be removed in a future release.", false)]
         IPAddress RtpBindAddress { get; }
 
         /// <summary>
