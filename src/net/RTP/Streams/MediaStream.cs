@@ -18,8 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -217,7 +215,7 @@ namespace SIPSorcery.Net
         /// This endpoint is used when a relay server (TURN) is being used for the RTP session. All RTP packets
         /// will be sent to the relay end point instead of the DestinationEndPoint.
         /// </summary>
-        public IPEndPoint RelayDestinationEndPoint { get; set; }
+        public TurnRelayEndPoint RtpRelayEndPoint { get; set; }
 
         /// <summary>
         /// This endpoint is used when a relay server (TURN) is being used for the RTCP session. All RTCP packets
@@ -229,9 +227,7 @@ namespace SIPSorcery.Net
         /// If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
         /// All traffic for the session should then be sent to/from the relay and not updated.
         /// </summary>
-        public bool IsUsingRelayEndPoint => RelayDestinationEndPoint != null;
-
-        public IceServer _iceServer = null;
+        public bool IsUsingRelayEndPoint => RtpRelayEndPoint != null;
 
         /// <summary>
         /// Default RTP event format that we support.
@@ -256,31 +252,6 @@ namespace SIPSorcery.Net
         {
             RtpSessionConfig = config;
             this.Index = index;
-        }
-
-        public async Task<IPEndPoint> TrySetRelayEndPoint(TurnClient turnClient, int timeoutSeconds)
-        {
-            TurnClient = turnClient;
-            TurnClient.SetRtpChannel(rtpChannel);
-
-            var turnCt = new CancellationTokenSource();
-
-            var relayEndPoint = await turnClient.GetRelayEndPoint(timeoutSeconds * 1000, turnCt.Token);
-
-            if(relayEndPoint != null)
-            {
-                logger.LogInformation("TURN relay address successfully acquired for {relayEndPoint}.", relayEndPoint);
-
-                RelayDestinationEndPoint = relayEndPoint;
-
-                // TODO: Need to handle RTCP allocation as well
-
-                _iceServer = turnClient.IceServer;
-
-                return relayEndPoint;
-            }
-
-            return null;
         }
 
         public void AddBuffer(TimeSpan dropPacketTimeout)
@@ -523,11 +494,11 @@ namespace SIPSorcery.Net
                 //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
                 //    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
                 //    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
-                //    IsUsingRelayEndPoint ? RelayDestinationEndPoint : DestinationEndPoint);
+                //    IsUsingRelayEndPoint ? RtpRelayEndPoint.RelayServerEndPoint : DestinationEndPoint);
 
                 if (IsUsingRelayEndPoint)
                 {
-                    rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, _iceServer.ServerEndPoint);
+                    rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, RtpRelayEndPoint.RelayServerEndPoint);
                 }
                 else
                 {
@@ -983,18 +954,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sets the the RTP and RTCP sockets for a relay server (TURN). When a relay end point is specified it will
-        /// overrule the standard destination end points that typically get set in the SDP exchange.
-        /// </summary>
-        /// <param name="relayRtpEndPoint">The RTP relay end point.</param>
-        /// <param name="relayRtcpEndPoint">The RTCP relay endpoint.</param>
-        public void SetRelayDestination(IPEndPoint relayRtpEndPoint, IPEndPoint relayRtcpEndPoint)
-        {
-            RelayDestinationEndPoint = relayRtpEndPoint;
-            RelayControlDestinationEndPoint = relayRtcpEndPoint;
-        }
-
-        /// <summary>
         /// Attempts to get the highest priority sending format for the remote call party.
         /// </summary>
         /// <returns>The first compatible media format found for the specified media type.</returns>
@@ -1049,6 +1008,24 @@ namespace SIPSorcery.Net
                     OnRtpHeaderReceivedByIndex?.Invoke(Index, remoteEndPoint, MediaType, rtpHeaderExtension.Uri, value);
                 }
             });
+        }
+
+        /// <summary>
+        /// Gets the RTP port to use in the SDP offer or answer.
+        /// </summary>
+        public int GetRtpPortForSessionDescription()
+        {
+            if (IsUsingRelayEndPoint)
+            {
+                return RtpRelayEndPoint.RemotePeerRelayEndPoint.Port;
+            }
+
+            return rtpChannel switch
+            {
+                null => 0,
+                _ when rtpChannel.RTPDynamicNATEndPoint != null => rtpChannel.RTPDynamicNATEndPoint.Port,
+                _ => rtpChannel.RTPPort
+            };
         }
     }
 }

@@ -889,7 +889,11 @@ namespace SIPSorcery.Net
         /// <returns>A task that when complete contains the SDP offer.</returns>
         public virtual SDP CreateOffer(IPAddress connectionAddress = null)
         {
-            if (((AudioStream == null) || (AudioStream.LocalTrack == null)) && ((VideoStream == null) || (VideoStream.LocalTrack == null)) && ((TextStream == null) || (TextStream.LocalTrack == null)))
+            if (
+                (AudioStream == null || AudioStream.LocalTrack == null) &&
+                (VideoStream == null || VideoStream.LocalTrack == null) &&
+                (TextStream == null || TextStream.LocalTrack == null)
+                )
             {
                 logger.LogWarning("No local media tracks available for create offer.");
                 return null;
@@ -908,6 +912,15 @@ namespace SIPSorcery.Net
                 }
 
                 RequireRenegotiation = true;
+
+                // If a relay endpoint has been set on any of this session's media streams it takes precedence and
+                // will be sued in the SDP offers and answers.
+                var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
+                if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint != null)
+                {
+                    connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
+                }
+
                 return GetSessionDescription(mediaStreams, connectionAddress);
             }
         }
@@ -970,16 +983,25 @@ namespace SIPSorcery.Net
 
                 if (connectionAddress == null)
                 {
-                    // No specific connection address supplied. Lookup the local address to connect to the offer address.
-                    var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
+                    var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
 
-                    if (offerConnectionAddress == null || offerConnectionAddress == IPAddress.Any || offerConnectionAddress == IPAddress.IPv6Any)
+                    if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint?.Address != null)
                     {
-                        connectionAddress = NetServices.InternetDefaultAddress;
+                        connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
                     }
                     else
                     {
-                        connectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
+                        // No specific connection address supplied. Lookup the local address to connect to the offer address.
+                        var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
+
+                        if (offerConnectionAddress == null || offerConnectionAddress == IPAddress.Any || offerConnectionAddress == IPAddress.IPv6Any)
+                        {
+                            connectionAddress = NetServices.InternetDefaultAddress;
+                        }
+                        else
+                        {
+                            connectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
+                        }
                     }
                 }
 
@@ -1893,6 +1915,18 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Attempts to get the first relay end point from any of the media streams. A media stream will have a relay end point
+        /// set if is using TURN.
+        /// </summary>
+        private TurnRelayEndPoint GetFirstRelayEndPointFromMediaStreams()
+        {
+            return
+                AudioStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint ??
+                VideoStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint ??
+                TextStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint;
+        }
+
+        /// <summary>
         /// Generates a session description from the provided list of MediaStream.
         /// </summary>
         /// <param name="mediaStreamList">The list of tracks to generate the session description for.</param>
@@ -1916,12 +1950,7 @@ namespace SIPSorcery.Net
                     localAddress = null;
                     foreach (var audioStream in AudioStreamList)
                     {
-                        if(audioStream?.RelayDestinationEndPoint != null)
-                        {
-                            localAddress = audioStream.RelayDestinationEndPoint.Address;
-                            break;
-                        }
-                        else if (audioStream.DestinationEndPoint != null && audioStream.DestinationEndPoint.Address != null)
+                        if (audioStream.DestinationEndPoint != null && audioStream.DestinationEndPoint.Address != null)
                         {
                             if (IPAddress.Any.Equals(audioStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(audioStream.DestinationEndPoint.Address))
                             {
@@ -1941,12 +1970,7 @@ namespace SIPSorcery.Net
                     {
                         foreach (var videoStream in VideoStreamList)
                         {
-                            if (videoStream?.RelayDestinationEndPoint != null)
-                            {
-                                localAddress = videoStream.RelayDestinationEndPoint.Address;
-                                break;
-                            }
-                            else if (videoStream.DestinationEndPoint != null && videoStream.DestinationEndPoint.Address != null)
+                            if (videoStream.DestinationEndPoint != null && videoStream.DestinationEndPoint.Address != null)
                             {
                                 if (IPAddress.Any.Equals(videoStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(videoStream.DestinationEndPoint.Address))
                                 {
@@ -1967,12 +1991,7 @@ namespace SIPSorcery.Net
                     {
                         foreach (var textStream in TextStreamList)
                         {
-                            if (textStream?.RelayDestinationEndPoint != null)
-                            {
-                                localAddress = textStream.RelayDestinationEndPoint.Address;
-                                break;
-                            }
-                            else if (textStream.DestinationEndPoint != null && textStream.DestinationEndPoint.Address != null)
+                            if (textStream.DestinationEndPoint != null && textStream.DestinationEndPoint.Address != null)
                             {
                                 if (IPAddress.Any.Equals(textStream.DestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(textStream.DestinationEndPoint.Address))
                                 {
@@ -2050,21 +2069,12 @@ namespace SIPSorcery.Net
                 {
                     if (rtpSessionConfig.IsMediaMultiplexed)
                     {
-                        rtpPort =
-                            m_primaryStream.IsUsingRelayEndPoint ? m_primaryStream.RelayDestinationEndPoint.Port :
-                            m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                            m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : m_primaryStream.GetRTPChannel().RTPPort;
+                        rtpPort = m_primaryStream.GetRtpPortForSessionDescription();
                     }
-                    else
+                    else if (mediaStream.HasRtpChannel())
                     {
                         // If media stream does not have a Rtp channel it means this media type is not supported and rtpPort will remain zero.
-                        if (mediaStream.HasRtpChannel())
-                        {
-                            rtpPort =
-                                mediaStream.IsUsingRelayEndPoint ? mediaStream.RelayDestinationEndPoint.Port :
-                                mediaStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                                mediaStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : mediaStream.GetRTPChannel().RTPPort;
-                        }
+                        rtpPort = mediaStream.GetRtpPortForSessionDescription();
                     }
                 }
 

@@ -9,6 +9,9 @@
 // to use a STUN server to set the RTP IP address to the reflex public address.
 // This example was orignially developed to deploy in a Kubernetes cluster.
 //
+// Usage:
+// set STUN_URL=stun:stun.l.google.com:19302
+//
 // Author(s):
 // Aaron Clauson  (aaron@sipsorcery.com)
 // 
@@ -60,7 +63,7 @@ class Program
         bool isCallHungup = false;
         bool hasCallFailed = false;
 
-        Log = AddConsoleLogger(LogEventLevel.Debug);
+        Log = AddConsoleLogger(LogEventLevel.Verbose);
 
         SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
         if (args?.Length > 0)

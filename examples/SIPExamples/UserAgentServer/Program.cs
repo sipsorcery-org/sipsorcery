@@ -46,9 +46,14 @@
 // ffmpeg -i Macroform_-_Simplicity.mp3 -ar 16k -acodec g722 Macroform_-_Simplicity.g722
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Usage:
+// To use with a TURN server:
+// set TURN_URL=turn:your.turn.server;user;password
+//-----------------------------------------------------------------------------
+
 using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
@@ -68,6 +73,8 @@ namespace SIPSorcery
 {
     class Program
     {
+        private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
+
         private static int SIP_LISTEN_PORT = 5080;
         private static int SIPS_LISTEN_PORT = 5061;
         //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
@@ -79,12 +86,21 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
 
+        private static string _turnServerUrl;
+
         static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery user agent server example.");
             Console.WriteLine("Press h to hangup a call or ctrl-c to exit.");
 
             Log = AddConsoleLogger();
+
+            var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
+            if (!string.IsNullOrWhiteSpace(turnServerUrl))
+            {
+                _turnServerUrl = turnServerUrl.Trim();
+                Log.LogInformation($"Using TURN server {_turnServerUrl}");
+            }
 
             IPAddress listenAddress = IPAddress.Any;
             IPAddress listenIPv6Address = IPAddress.IPv6Any;
@@ -136,6 +152,7 @@ namespace SIPSorcery
             SIPServerUserAgent uas = null;
             CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
             VoIPMediaSession rtpSession = null;
+            bool isCallActive = false;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -144,49 +161,61 @@ namespace SIPSorcery
                 {
                     if (sipRequest.Method == SIPMethodsEnum.INVITE)
                     {
-                        Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
-
-                        // Check there's a codec we support in the INVITE offer.
-                        var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                        IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-
-                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaFormats.Any(x => x.Key == (int)SDPWellKnownMediaFormatsEnum.PCMU)))
+                        if (isCallActive)
                         {
-                            Log.LogDebug($"Client offer contained PCMU audio codec.");
+                            Log.LogWarning($"Already in a call, rejecting incoming call from {remoteEndPoint}.");
+                            SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                            await sipTransport.SendResponseAsync(busyResponse);
+                        }
+                        else
+                        {
+                            isCallActive = true;
+
+                            Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
+
+                            UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
+                            uas = new SIPServerUserAgent(sipTransport, null, uasTransaction, null);
+                            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+
+                            // Check there's a codec we support in the INVITE offer.
+                            var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+
                             //AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
                             //rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
                             rtpSession = new VoIPMediaSession();
-                            rtpSession.AcceptRtpFromAny = true;
+
+                            if (_turnServerUrl != null)
+                            {
+                                TurnClient turnClient = new TurnClient(_turnServerUrl);
+                                await rtpSession.AudioStream.UseTurn(rtpSession, turnClient, default);
+                            }
+                            else
+                            {
+                                rtpSession.AcceptRtpFromAny = true;
+                            }
 
                             var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
 
                             if (setResult != SetDescriptionResultEnum.OK)
                             {
                                 // Didn't get a match on the codecs we support.
-                                SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, setResult.ToString());
-                                await sipTransport.SendResponseAsync(noMatchingCodecResponse);
+                                Log.LogWarning($"SDP offer not acceptable, rejecting incoming call from {remoteEndPoint}.");
+                                uas.Reject(SIPResponseStatusCodesEnum.NotAcceptableHere, null, null);
+                                isCallActive = false;
                             }
                             else
                             {
-                                // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
-                                // means this example can be kept simpler.
-                                if (uas?.IsHungup == false)
-                                {
-                                    uas?.Hangup(false);
-                                }
                                 rtpCts?.Cancel();
                                 rtpCts = new CancellationTokenSource();
 
-                                UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
-                                uas = new SIPServerUserAgent(sipTransport, null, uasTransaction, null);
-                                uas.CallCancelled += (uasAgent, canelReq) =>
+                                uas.CallCancelled += (uasAgent, cancelReq) =>
                                 {
                                     rtpCts?.Cancel();
                                     rtpSession.Close(null);
+                                    isCallActive = false;
                                 };
                                 rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
-                                uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
-                                await Task.Delay(100);
                                 uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
                                 await Task.Delay(100);
 
@@ -199,6 +228,7 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
+                        isCallActive = false;
                         Log.LogInformation("Call hungup.");
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         await sipTransport.SendResponseAsync(byeResponse);
@@ -208,15 +238,15 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
-                        SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                        await sipTransport.SendResponseAsync(notAllowededResponse);
+                        SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                        await sipTransport.SendResponseAsync(notAllowedResponse);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         await sipTransport.SendResponseAsync(optionsResponse);
                     }
-                    }
+                }
                 catch (Exception reqExcp)
                 {
                     Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
@@ -259,7 +289,7 @@ namespace SIPSorcery
                             Console.WriteLine();
                             Console.WriteLine("Welcome requested by user...");
 
-                            if(rtpSession?.IsStarted == true &&
+                            if (rtpSession?.IsAudioStarted == true &&
                                 rtpSession?.IsClosed == false)
                             {
                                 await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
@@ -271,7 +301,7 @@ namespace SIPSorcery
                             Console.WriteLine();
                             Console.WriteLine("Hangup requested by user...");
 
-                            if (rtpSession?.IsStarted == true &&
+                            if (rtpSession?.IsAudioStarted == true &&
                                 rtpSession?.IsClosed == false)
                             {
                                 await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
