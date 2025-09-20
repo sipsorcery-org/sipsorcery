@@ -913,7 +913,7 @@ namespace SIPSorcery.Net
                 RequireRenegotiation = true;
 
                 // If a relay endpoint has been set on any of this session's media streams it takes precedence and
-                // will be sued in the SDP offers and answers.
+                // will be used in the SDP offers and answers.
                 var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
                 if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint != null)
                 {
@@ -980,27 +980,26 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (connectionAddress == null)
-                {
-                    var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
+                // If a relay endpoint has been set on any of this session's media streams it takes precedence and
+                // will be used in the SDP offers and answers.
+                var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
 
-                    if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint?.Address != null)
+                if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint?.Address != null)
+                {
+                    connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
+                }
+                else if (connectionAddress == null)
+                {
+                    // No specific connection address supplied. Lookup the local address to connect to the offer address.
+                    var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
+
+                    if (offerConnectionAddress == null || offerConnectionAddress == IPAddress.Any || offerConnectionAddress == IPAddress.IPv6Any)
                     {
-                        connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
+                        connectionAddress = NetServices.InternetDefaultAddress;
                     }
                     else
                     {
-                        // No specific connection address supplied. Lookup the local address to connect to the offer address.
-                        var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
-
-                        if (offerConnectionAddress == null || offerConnectionAddress == IPAddress.Any || offerConnectionAddress == IPAddress.IPv6Any)
-                        {
-                            connectionAddress = NetServices.InternetDefaultAddress;
-                        }
-                        else
-                        {
-                            connectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
-                        }
+                        connectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
                     }
                 }
 

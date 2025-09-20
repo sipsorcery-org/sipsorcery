@@ -434,16 +434,6 @@ namespace SIPSorcery.Net
 
         internal IceServerResolver _iceServerResolver = new IceServerResolver();
 
-        /// <summary>
-        /// This event gets fired when a STUN message is received by this channel.
-        /// The event is for diagnostic purposes only.
-        /// Parameters:
-        ///  - STUNMessage: The received STUN message.
-        ///  - IPEndPoint: The remote end point the STUN message was received from.
-        ///  - bool: True if the message was received via a TURN server relay.
-        /// </summary>
-        //public new event Action<STUNMessage, IPEndPoint, bool> OnStunMessageReceived;
-
         private IceServer _activeIceServer;
 
         public RTCIceComponent Component { get; private set; }
@@ -1165,7 +1155,7 @@ namespace SIPSorcery.Net
                     {
                         // Successfully set up the ICE server. Do nothing.
                     }
-                    // If the ICE server hasn't yet been resolved skip and retry again when thr next ICE server checnk runs.
+                    // If the ICE server hasn't yet been resolved skip and retry again when the next ICE server check runs.
                     if (_activeIceServer.ServerEndPoint == null &&
                         DateTime.Now.Subtract(_activeIceServer.DnsLookupSentAt).TotalSeconds < IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)
                     {
