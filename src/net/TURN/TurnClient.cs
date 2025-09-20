@@ -150,6 +150,15 @@ public class TurnClient
             await Task.Delay(ALLOCATE_RETRY_PERIOD_MILLISECONDS, cancellationToken).ConfigureAwait(false);
         }
 
+        if(_iceServer.RelayEndPoint == null)
+        {
+            logger.LogWarning("TURN allocate failed to get a relay endpoint.");
+        }
+        else
+        {
+            logger.LogInformation("TURN allocate succeeded, relay endpoint is {relayEndPoint}.", _iceServer.RelayEndPoint);
+        }
+
         return _iceServer?.RelayEndPoint;
     }
 

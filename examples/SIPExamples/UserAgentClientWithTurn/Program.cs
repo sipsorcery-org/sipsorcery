@@ -88,17 +88,7 @@ namespace demo
 
             if (turnClient != null)
             {
-                var relayEndPoint = await rtpSession.AudioStream.TrySetRelayEndPoint(turnClient, TURN_ALLOCATION_TIMEOUT_SECONDS);
-
-                if (relayEndPoint != null)
-                {
-                    rtpSession.OnRemoteDescriptionChanged += (sdp) =>
-                    {
-                        var createPermissionResult = turnClient.CreatePermission(rtpSession.AudioStream.DestinationEndPoint);
-
-                        Log.LogInformation($"TURN create permission result for {rtpSession.AudioStream.DestinationEndPoint}: {createPermissionResult}.");
-                    };
-                }
+                await rtpSession.AudioStream.UseTurn(turnClient, CancellationToken.None, TURN_ALLOCATION_TIMEOUT_SECONDS);
             }
 
             SDP offerSDP = rtpSession.CreateOffer(IPAddress.Any);
