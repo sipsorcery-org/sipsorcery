@@ -2,7 +2,7 @@
 // Filename: EchoMediaSession.cs
 //
 // Description:  A media session that can be used for diagnostics and testing.
-// It is not intended to connect to any phyical devices. It is typiicaly used to
+// It is not intended to connect to any physical devices. It is typically used to
 // check RTP packet flows. It will echo back any RTP it receives.
 //
 // Author(s):
@@ -28,7 +28,7 @@ namespace SIPSorcery.Media;
 
 /// <summary>
 /// A media session that can be used for diagnostics and testing. It is not intended to connect
-/// to any phyical devices. It is typiicaly used to check RTP packet flows. It will echo back
+/// to any physical devices. It is typically used to check RTP packet flows. It will echo back
 /// any RTP it receives.
 /// </summary>
 public class EchoMediaSession : RTPSession, IMediaSession
