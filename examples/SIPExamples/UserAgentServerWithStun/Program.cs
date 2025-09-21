@@ -9,7 +9,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 Sep 2025	Aaron Clauson	Created, based on UserAgentServer exmaple.
+// 14 Sep 2025	Aaron Clauson	Created, based on UserAgentServer example.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
