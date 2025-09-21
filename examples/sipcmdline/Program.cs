@@ -60,6 +60,9 @@
 // dotnet run -- --s uac -d music@iptel.org -v
 // If successful a count of the RTP packets will be displayed:
 // RTP packet received from 212.79.111.155:13818, ssrc 314111075, seqnum 23320, count 48
+//
+// Check RTP connectivity via a TURN server:
+// dotnet run -- -d music@iptel.org -s uac -v --turn "turn:yourserver;username;password"
 //-----------------------------------------------------------------------------
 
 using System;
@@ -468,18 +471,7 @@ namespace SIPSorcery
                 {
                     logger.LogDebug($"Setting TURN server {options.TurnServerUrl} on the user agent client.");
                     var turnClient = new TurnClient(options.TurnServerUrl);
-
-                    var relayEndPoint = await echoMediaSession.AudioStream.TrySetRelayEndPoint(turnClient, options.Timeout);
-
-                    if (relayEndPoint != null)
-                    {
-                        echoMediaSession.OnRemoteDescriptionChanged += (sdp) =>
-                        {
-                            var createPermissionResult = turnClient.CreatePermission(echoMediaSession.AudioStream.DestinationEndPoint);
-
-                            logger.LogInformation($"TURN create permission result for {echoMediaSession.AudioStream.DestinationEndPoint}: {createPermissionResult}.");
-                        };
-                    }
+                    await echoMediaSession.AudioStream.UseTurn(echoMediaSession, turnClient, default, options.Timeout);
                 }
 
                 echoMediaSession.OnRtpPacketReceived += RtpMediaPacketReceived;
