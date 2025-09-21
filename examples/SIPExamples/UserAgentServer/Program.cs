@@ -69,349 +69,381 @@ using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery
+namespace demo;
+
+class Program
 {
-    class Program
+    private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
+    private const string STUN_SERVER_URL_ENV_VAR = "STUN_URL";
+
+    private static int SIP_LISTEN_PORT = 5080;
+    private static int SIPS_LISTEN_PORT = 5061;
+    //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
+    //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
+    private static string SIPS_CERTIFICATE_PATH = "localhost.pfx";
+
+    private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+    private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
+
+    private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
+
+    private static string _turnServerUrl;
+    private static string _stunServerUrl;
+
+    static void Main(string[] args)
     {
-        private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
+        Console.WriteLine("SIPSorcery user agent server example.");
+        Console.WriteLine("Press h to hangup a call or ctrl-c to exit.");
 
-        private static int SIP_LISTEN_PORT = 5080;
-        private static int SIPS_LISTEN_PORT = 5061;
-        //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
-        //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
-        private static string SIPS_CERTIFICATE_PATH = "localhost.pfx";
+        Log = AddConsoleLogger();
 
-        private const string WELCOME_8K = "Sounds/hellowelcome8k.raw";
-        private const string GOODBYE_16K = "Sounds/goodbye16k.raw";
-
-        private static Microsoft.Extensions.Logging.ILogger Log = NullLogger.Instance;
-
-        private static string _turnServerUrl;
-
-        static void Main(string[] args)
+        var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
+        if (!string.IsNullOrWhiteSpace(turnServerUrl))
         {
-            Console.WriteLine("SIPSorcery user agent server example.");
-            Console.WriteLine("Press h to hangup a call or ctrl-c to exit.");
-
-            Log = AddConsoleLogger();
-
-            var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
-            if (!string.IsNullOrWhiteSpace(turnServerUrl))
+            var turnServer = IceServer.ParseIceServer(turnServerUrl.Trim());
+            if (turnServer != null)
             {
+                Log.LogInformation("Using TURN server {uri}.", turnServer.Uri);
+
                 _turnServerUrl = turnServerUrl.Trim();
-                Log.LogInformation($"Using TURN server {_turnServerUrl}");
             }
-
-            IPAddress listenAddress = IPAddress.Any;
-            IPAddress listenIPv6Address = IPAddress.IPv6Any;
-            if (args != null && args.Length > 0)
+            else
             {
-                if (!IPAddress.TryParse(args[0], out var customListenAddress))
-                {
-                    Log.LogWarning($"Command line argument could not be parsed as an IP address \"{args[0]}\"");
-                    listenAddress = IPAddress.Any;
-                }
-                else
-                {
-                    if (customListenAddress.AddressFamily == AddressFamily.InterNetwork)
-                    {
-                        listenAddress = customListenAddress;
-                    }
-                    if (customListenAddress.AddressFamily == AddressFamily.InterNetworkV6)
-                    {
-                        listenIPv6Address = customListenAddress;
-                    }
-                }
+                Log.LogWarning($"The TURN server URL provided in the {TURN_SERVER_URL_ENV_VAR} environment variable could not be parsed as a valid ICE server URL.");
             }
-
-            // Set up a default SIP transport.
-            var sipTransport = new SIPTransport();
-
-            var localhostCertificate = new X509Certificate2(SIPS_CERTIFICATE_PATH);
-
-            // IPv4 channels.
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
-
-            // IPv6 channels.
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
-
-            EnableTraceLogs(sipTransport);
-
-            string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
-            // acts as a singleton
-            SIPServerUserAgent uas = null;
-            CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
-            VoIPMediaSession rtpSession = null;
-            bool isCallActive = false;
-
-            // Because this is a server user agent the SIP transport must start listening for client user agents.
-            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
-            {
-                try
-                {
-                    if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                    {
-                        if (isCallActive)
-                        {
-                            Log.LogWarning($"Already in a call, rejecting incoming call from {remoteEndPoint}.");
-                            SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                            await sipTransport.SendResponseAsync(busyResponse);
-                        }
-                        else
-                        {
-                            isCallActive = true;
-
-                            Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
-
-                            UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
-                            uas = new SIPServerUserAgent(sipTransport, null, uasTransaction, null);
-                            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
-
-                            // Check there's a codec we support in the INVITE offer.
-                            var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-
-                            //AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-                            //rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
-                            rtpSession = new VoIPMediaSession();
-
-                            if (_turnServerUrl != null)
-                            {
-                                TurnClient turnClient = new TurnClient(_turnServerUrl);
-                                await rtpSession.AudioStream.UseTurn(rtpSession, turnClient, default);
-                            }
-                            else
-                            {
-                                rtpSession.AcceptRtpFromAny = true;
-                            }
-
-                            var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
-
-                            if (setResult != SetDescriptionResultEnum.OK)
-                            {
-                                // Didn't get a match on the codecs we support.
-                                Log.LogWarning($"SDP offer not acceptable, rejecting incoming call from {remoteEndPoint}.");
-                                uas.Reject(SIPResponseStatusCodesEnum.NotAcceptableHere, null, null);
-                                isCallActive = false;
-                            }
-                            else
-                            {
-                                rtpCts?.Cancel();
-                                rtpCts = new CancellationTokenSource();
-
-                                uas.CallCancelled += (uasAgent, cancelReq) =>
-                                {
-                                    rtpCts?.Cancel();
-                                    rtpSession.Close(null);
-                                    isCallActive = false;
-                                };
-                                rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
-                                uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
-                                await Task.Delay(100);
-
-                                var answerSdp = rtpSession.CreateAnswer(null);
-                                uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
-
-                                await rtpSession.Start();
-                            }
-                        }
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.BYE)
-                    {
-                        isCallActive = false;
-                        Log.LogInformation("Call hungup.");
-                        SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        await sipTransport.SendResponseAsync(byeResponse);
-                        uas?.Hangup(true);
-                        rtpSession?.Close(null);
-                        rtpCts?.Cancel();
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
-                    {
-                        SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                        await sipTransport.SendResponseAsync(notAllowedResponse);
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
-                    {
-                        SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        await sipTransport.SendResponseAsync(optionsResponse);
-                    }
-                }
-                catch (Exception reqExcp)
-                {
-                    Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
-                }
-            };
-
-            ManualResetEvent exitMre = new ManualResetEvent(false);
-
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-
-                Log.LogInformation("Exiting...");
-
-                Hangup(uas).Wait();
-
-                rtpSession?.Close(null);
-                rtpCts?.Cancel();
-
-                if (sipTransport != null)
-                {
-                    Log.LogInformation("Shutting down SIP transport...");
-                    sipTransport.Shutdown();
-                }
-
-                exitMre.Set();
-            };
-
-            // Task to handle user key presses.
-            Task.Run(async () =>
-            {
-                try
-                {
-                    while (!exitMre.WaitOne(0))
-                    {
-                        var keyProps = Console.ReadKey();
-
-                        if (keyProps.KeyChar == 'w')
-                        {
-                            Console.WriteLine();
-                            Console.WriteLine("Welcome requested by user...");
-
-                            if (rtpSession?.IsAudioStarted == true &&
-                                rtpSession?.IsClosed == false)
-                            {
-                                await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
-                            }
-                        }
-
-                        if (keyProps.KeyChar == 'h' || keyProps.KeyChar == 'q')
-                        {
-                            Console.WriteLine();
-                            Console.WriteLine("Hangup requested by user...");
-
-                            if (rtpSession?.IsAudioStarted == true &&
-                                rtpSession?.IsClosed == false)
-                            {
-                                await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
-                            }
-
-                            Hangup(uas).Wait();
-
-                            rtpSession?.Close(null);
-                            rtpCts?.Cancel();
-                        }
-
-                        if (keyProps.KeyChar == 'q')
-                        {
-                            Log.LogInformation("Quitting...");
-
-                            if (sipTransport != null)
-                            {
-                                Log.LogInformation("Shutting down SIP transport...");
-                                sipTransport.Shutdown();
-                            }
-
-                            exitMre.Set();
-                        }
-                    }
-                }
-                catch (Exception excp)
-                {
-                    Log.LogError($"Exception Key Press listener. {excp.Message}.");
-                }
-            });
-
-            exitMre.WaitOne();
         }
 
-        /// <summary>
-        /// Hangs up the current call.
-        /// </summary>
-        /// <param name="uas">The user agent server to hangup the call on.</param>
-        private static async Task Hangup(SIPServerUserAgent uas)
+        var stunServerUrl = Environment.GetEnvironmentVariable(STUN_SERVER_URL_ENV_VAR);
+        if (!string.IsNullOrWhiteSpace(stunServerUrl))
+        {
+            var stunServer = IceServer.ParseIceServer(stunServerUrl.Trim());
+            if (stunServer != null)
+            {
+                Log.LogInformation("Using STUN server {uri}.", stunServer.Uri);
+
+                _stunServerUrl = stunServerUrl.Trim();
+            }
+            else
+            {
+                Log.LogWarning($"The STUN server URL provided in the {STUN_SERVER_URL_ENV_VAR} environment variable could not be parsed as a valid ICE server URL.");
+            }
+        }
+
+        IPAddress listenAddress = IPAddress.Any;
+        IPAddress listenIPv6Address = IPAddress.IPv6Any;
+        if (args != null && args.Length > 0)
+        {
+            if (!IPAddress.TryParse(args[0], out var customListenAddress))
+            {
+                Log.LogWarning($"Command line argument could not be parsed as an IP address \"{args[0]}\"");
+                listenAddress = IPAddress.Any;
+            }
+            else
+            {
+                if (customListenAddress.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    listenAddress = customListenAddress;
+                }
+                if (customListenAddress.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    listenIPv6Address = customListenAddress;
+                }
+            }
+        }
+
+        // Set up a default SIP transport.
+        var sipTransport = new SIPTransport();
+
+        var localhostCertificate = new X509Certificate2(SIPS_CERTIFICATE_PATH);
+
+        // IPv4 channels.
+        sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+        sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+        sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
+        //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
+        //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+
+        // IPv6 channels.
+        sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
+        sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
+        sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
+        //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
+        //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+
+        EnableTraceLogs(sipTransport);
+
+        string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+        // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
+        // acts as a singleton
+        SIPServerUserAgent uas = null;
+        CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
+        VoIPMediaSession rtpSession = null;
+        bool isCallActive = false;
+
+        // Because this is a server user agent the SIP transport must start listening for client user agents.
+        sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
         {
             try
             {
-                if (uas?.IsHungup == false)
+                if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
-                    uas?.Hangup(false);
+                    if (isCallActive)
+                    {
+                        Log.LogWarning($"Already in a call, rejecting incoming call from {remoteEndPoint}.");
+                        SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                        await sipTransport.SendResponseAsync(busyResponse);
+                    }
+                    else
+                    {
+                        isCallActive = true;
 
-                    // Give the BYE or CANCEL request time to be transmitted.
-                    Log.LogInformation("Waiting 1s for call to hangup...");
-                    await Task.Delay(1000);
+                        Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
+
+                        UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
+                        uas = new SIPServerUserAgent(sipTransport, null, uasTransaction, null);
+                        uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+
+                        // Check there's a codec we support in the INVITE offer.
+                        var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                        IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+
+                        //AudioExtrasSource extrasSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+                        //rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
+                        rtpSession = new VoIPMediaSession();
+
+                        if (_turnServerUrl != null)
+                        {
+                            TurnClient turnClient = new TurnClient(_turnServerUrl);
+                            await rtpSession.AudioStream.UseTurn(rtpSession, turnClient, default);
+                        }
+                        else if (_stunServerUrl != null)
+                        {
+                            STUNClient stunClient = new STUNClient(_stunServerUrl);
+                            await rtpSession.AudioStream.UseStun(stunClient, default, Log);
+                            rtpSession.AcceptRtpFromAny = true;
+                        }
+                        else
+                        {
+                            rtpSession.AcceptRtpFromAny = true;
+                        }
+
+                        var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
+
+                        if (setResult != SetDescriptionResultEnum.OK)
+                        {
+                            // Didn't get a match on the codecs we support.
+                            Log.LogWarning($"SDP offer not acceptable, rejecting incoming call from {remoteEndPoint}.");
+                            uas.Reject(SIPResponseStatusCodesEnum.NotAcceptableHere, null, null);
+                            isCallActive = false;
+                        }
+                        else
+                        {
+                            rtpCts?.Cancel();
+                            rtpCts = new CancellationTokenSource();
+
+                            uas.CallCancelled += (uasAgent, cancelReq) =>
+                            {
+                                rtpCts?.Cancel();
+                                rtpSession.Close(null);
+                                isCallActive = false;
+                            };
+                            rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
+                            uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+                            await Task.Delay(100);
+
+                            var answerSdp = rtpSession.CreateAnswer(null);
+                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+
+                            await rtpSession.Start();
+                        }
+                    }
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.BYE)
+                {
+                    isCallActive = false;
+                    Log.LogInformation("Call hungup.");
+                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await sipTransport.SendResponseAsync(byeResponse);
+                    uas?.Hangup(true);
+                    rtpSession?.Close(null);
+                    rtpCts?.Cancel();
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
+                {
+                    SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                    await sipTransport.SendResponseAsync(notAllowedResponse);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
+                {
+                    SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await sipTransport.SendResponseAsync(optionsResponse);
+                }
+            }
+            catch (Exception reqExcp)
+            {
+                Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
+            }
+        };
+
+        ManualResetEvent exitMre = new ManualResetEvent(false);
+
+        Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+
+            Log.LogInformation("Exiting...");
+
+            Hangup(uas).Wait();
+
+            rtpSession?.Close(null);
+            rtpCts?.Cancel();
+
+            if (sipTransport != null)
+            {
+                Log.LogInformation("Shutting down SIP transport...");
+                sipTransport.Shutdown();
+            }
+
+            exitMre.Set();
+        };
+
+        // Task to handle user key presses.
+        Task.Run(async () =>
+        {
+            try
+            {
+                while (!exitMre.WaitOne(0))
+                {
+                    var keyProps = Console.ReadKey();
+
+                    if (keyProps.KeyChar == 'w')
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("Welcome requested by user...");
+
+                        if (rtpSession?.IsAudioStarted == true &&
+                            rtpSession?.IsClosed == false)
+                        {
+                            await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(WELCOME_8K, FileMode.Open), AudioSamplingRatesEnum.Rate8KHz);
+                        }
+                    }
+
+                    if (keyProps.KeyChar == 'h' || keyProps.KeyChar == 'q')
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("Hangup requested by user...");
+
+                        if (rtpSession?.IsAudioStarted == true &&
+                            rtpSession?.IsClosed == false)
+                        {
+                            await rtpSession.AudioExtrasSource.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.Rate16KHz);
+                        }
+
+                        Hangup(uas).Wait();
+
+                        rtpSession?.Close(null);
+                        rtpCts?.Cancel();
+                    }
+
+                    if (keyProps.KeyChar == 'q')
+                    {
+                        Log.LogInformation("Quitting...");
+
+                        if (sipTransport != null)
+                        {
+                            Log.LogInformation("Shutting down SIP transport...");
+                            sipTransport.Shutdown();
+                        }
+
+                        exitMre.Set();
+                    }
                 }
             }
             catch (Exception excp)
             {
-                Log.LogError($"Exception Hangup. {excp.Message}");
+                Log.LogError($"Exception Key Press listener. {excp.Message}.");
+            }
+        });
+
+        exitMre.WaitOne();
+    }
+
+    /// <summary>
+    /// Hangs up the current call.
+    /// </summary>
+    /// <param name="uas">The user agent server to hangup the call on.</param>
+    private static async Task Hangup(SIPServerUserAgent uas)
+    {
+        try
+        {
+            if (uas?.IsHungup == false)
+            {
+                uas?.Hangup(false);
+
+                // Give the BYE or CANCEL request time to be transmitted.
+                Log.LogInformation("Waiting 1s for call to hangup...");
+                await Task.Delay(1000);
             }
         }
-
-        /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
+        catch (Exception excp)
         {
-            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-            };
-
-            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-            };
-
-            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
-
-            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
-            };
+            Log.LogError($"Exception Hangup. {excp.Message}");
         }
+    }
 
-        /// <summary>
-        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+    /// <summary>
+    /// Enable detailed SIP log messages.
+    /// </summary>
+    private static void EnableTraceLogs(SIPTransport sipTransport)
+    {
+        sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
         {
-            var serilogLogger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            var factory = new SerilogLoggerFactory(serilogLogger);
-            SIPSorcery.LogFactory.Set(factory);
-            return factory.CreateLogger<Program>();
-        }
+            Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
+            Log.LogDebug(req.ToString());
+        };
+
+        sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+        {
+            Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
+            Log.LogDebug(req.ToString());
+        };
+
+        sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+        {
+            Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
+            Log.LogDebug(resp.ToString());
+        };
+
+        sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+        {
+            Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
+            Log.LogDebug(resp.ToString());
+        };
+
+        sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
+        {
+            Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+        };
+
+        sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
+        {
+            Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+        };
+    }
+
+    /// <summary>
+    /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+    /// </summary>
+    private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+    {
+        var serilogLogger = new LoggerConfiguration()
+            .Enrich.FromLogContext()
+            .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+            .WriteTo.Console()
+            .CreateLogger();
+        var factory = new SerilogLoggerFactory(serilogLogger);
+        SIPSorcery.LogFactory.Set(factory);
+        return factory.CreateLogger<Program>();
     }
 }

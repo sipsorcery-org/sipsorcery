@@ -1023,7 +1023,7 @@ namespace SIPSorcery.Net
             return rtpChannel switch
             {
                 null => 0,
-                _ when rtpChannel.RTPDynamicNATEndPoint != null => rtpChannel.RTPDynamicNATEndPoint.Port,
+                _ when rtpChannel.RTPSrflxEndPoint != null => rtpChannel.RTPSrflxEndPoint.Port,
                 _ => rtpChannel.RTPPort
             };
         }

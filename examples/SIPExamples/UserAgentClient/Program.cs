@@ -13,6 +13,7 @@
 //
 // Usage Examples:
 // set TURN_URL=turn:your.turn.server;user;password
+// set STUN_URL=stun:stun.l.google.com:19302
 // dotnet run -- 127.0.0.1:5080
 //
 // Author(s):
@@ -46,6 +47,7 @@ namespace demo;
 class Program
 {
     private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
+    private const string STUN_SERVER_URL_ENV_VAR = "STUN_URL";
     private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:music@iptel.org";
     private const int TURN_ALLOCATION_TIMEOUT_SECONDS = 5;
 
@@ -65,9 +67,12 @@ class Program
         Log = AddConsoleLogger(LogEventLevel.Debug);
 
         var turnServerUrl = Environment.GetEnvironmentVariable(TURN_SERVER_URL_ENV_VAR);
-
         TurnClient turnClient = !string.IsNullOrWhiteSpace(turnServerUrl) ?
             new TurnClient(turnServerUrl) : null;
+
+        var stunServerUrl = Environment.GetEnvironmentVariable(STUN_SERVER_URL_ENV_VAR);
+        STUNClient stunClient = !string.IsNullOrWhiteSpace(stunServerUrl) ?
+            new STUNClient(stunServerUrl) : null;
 
         SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
         if (args?.Length > 0)
@@ -104,6 +109,10 @@ class Program
         if (turnClient != null)
         {
             await rtpSession.AudioStream.UseTurn(rtpSession, turnClient, default, TURN_ALLOCATION_TIMEOUT_SECONDS);
+        }
+        else if (stunClient != null)
+        {
+            await rtpSession.AudioStream.UseStun(stunClient, default, Log);
         }
 
         var offerSDP = rtpSession.CreateOffer(preferIPv6 ? IPAddress.IPv6Any : IPAddress.Any);

@@ -912,15 +912,9 @@ namespace SIPSorcery.Net
 
                 RequireRenegotiation = true;
 
-                // If a relay endpoint has been set on any of this session's media streams it takes precedence and
-                // will be used in the SDP offers and answers.
-                var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
-                if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint != null)
-                {
-                    connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
-                }
+                var sdpConnectionAddress = GetSdpConnectionAddress(connectionAddress, null);
 
-                return GetSessionDescription(mediaStreams, connectionAddress);
+                return GetSessionDescription(mediaStreams, sdpConnectionAddress);
             }
         }
 
@@ -980,31 +974,52 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                // If a relay endpoint has been set on any of this session's media streams it takes precedence and
-                // will be used in the SDP offers and answers.
-                var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
+                var sdpConnectionAddress = GetSdpConnectionAddress(
+                    connectionAddress,
+                    offer.Connection?.ConnectionAddress != null ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null);
 
-                if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint?.Address != null)
-                {
-                    connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
-                }
-                else if (connectionAddress == null)
-                {
-                    // No specific connection address supplied. Lookup the local address to connect to the offer address.
-                    var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
-
-                    if (offerConnectionAddress == null || offerConnectionAddress == IPAddress.Any || offerConnectionAddress == IPAddress.IPv6Any)
-                    {
-                        connectionAddress = NetServices.InternetDefaultAddress;
-                    }
-                    else
-                    {
-                        connectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
-                    }
-                }
-
-                return GetSessionDescription(mediaStreams, connectionAddress);
+                return GetSessionDescription(mediaStreams, sdpConnectionAddress);
             }
+        }
+
+        /// <summary>
+        /// Attempts to get the IP address to use in the SDP offer or answer.
+        /// </summary>
+        /// <param name="connectionAddress">An optional connection address supplied by the calling application to use as a fallback.</param>
+        /// <param name="offerConnectionAddress">If the address was triggered by an SDP offer this is the connection address of the remote peer.</param>
+        /// <returns>THe IP address to use in the SDP.</returns>
+        private IPAddress GetSdpConnectionAddress(IPAddress connectionAddress, IPAddress offerConnectionAddress)
+        {
+            IPAddress sdpConnectionAddress = null;
+
+            // If a relay endpoint has been set on any of this session's media streams it takes precedence and
+            // will be used in the SDP offers and answers.
+            var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
+            if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint != null)
+            {
+                sdpConnectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
+            }
+
+            // IF a STUN server has been used to get the RTP channel's server reflexive address use that.
+            if (sdpConnectionAddress == null)
+            {
+                var rtpSrflxEndPoint = GetFirstRTPSrflxEndPointFromMediaStreams();
+                if (rtpSrflxEndPoint != null)
+                {
+                    sdpConnectionAddress = rtpSrflxEndPoint.Address;
+                }
+            }
+
+            if (sdpConnectionAddress == null)
+            {
+                // No specific connection address supplied. Lookup the local address to connect to the offer address.
+                if (offerConnectionAddress != null && offerConnectionAddress != IPAddress.Any && offerConnectionAddress != IPAddress.IPv6Any)
+                {
+                    sdpConnectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
+                }
+            }
+
+            return sdpConnectionAddress ?? connectionAddress;
         }
 
         protected virtual AudioStream GetOrCreateAudioStream(int index)
@@ -1922,6 +1937,18 @@ namespace SIPSorcery.Net
                 AudioStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint ??
                 VideoStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint ??
                 TextStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint;
+        }
+
+        /// <summary>
+        /// Attempts to get the first RTP STUN server reflexive end point from any of the media streams. A media stream will only have a STUN reflexive end point
+        /// set if a STUN client has been used to determine it.
+        /// </summary>
+        private IPEndPoint GetFirstRTPSrflxEndPointFromMediaStreams()
+        {
+            return
+                AudioStreamList.Where(x => x.GetRTPChannel()?.RTPSrflxEndPoint != null).FirstOrDefault()?.GetRTPChannel()?.RTPSrflxEndPoint ??
+                VideoStreamList.Where(x => x.GetRTPChannel()?.RTPSrflxEndPoint != null).FirstOrDefault()?.GetRTPChannel()?.RTPSrflxEndPoint ??
+                TextStreamList.Where(x => x.GetRTPChannel()?.RTPSrflxEndPoint != null).FirstOrDefault()?.GetRTPChannel()?.RTPSrflxEndPoint;
         }
 
         /// <summary>
