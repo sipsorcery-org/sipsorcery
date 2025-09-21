@@ -987,7 +987,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="connectionAddress">An optional connection address supplied by the calling application to use as a fallback.</param>
         /// <param name="offerConnectionAddress">If the address was triggered by an SDP offer this is the connection address of the remote peer.</param>
-        /// <returns>THe IP address to use in the SDP.</returns>
+        /// <returns>The IP address to use in the SDP.</returns>
         private IPAddress GetSdpConnectionAddress(IPAddress connectionAddress, IPAddress offerConnectionAddress)
         {
             IPAddress sdpConnectionAddress = null;
