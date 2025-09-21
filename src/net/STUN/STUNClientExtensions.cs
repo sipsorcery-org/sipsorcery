@@ -39,7 +39,7 @@ public static class STUNClientExtensions
         ILogger logger,
         int timeoutSeconds = DEFAULT_STUN_RESOLVE_TIMEOUT_SECONDS)
     {
-        var iceServer = await stunClient.ResolveStunServer();
+        var iceServer = await stunClient.ResolveStunServer(timeoutSeconds * 1000);
 
         if (iceServer == null)
         {
