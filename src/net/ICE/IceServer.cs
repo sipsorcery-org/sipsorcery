@@ -180,6 +180,8 @@ namespace SIPSorcery.Net
 
         public ProtocolType Protocol { get { return _uri.Protocol; } }
 
+        public STUNUri Uri { get { return _uri; } }
+
         /// <summary>
         /// Task that completes when this server is done (resolved or timed out).
         /// </summary>
@@ -201,6 +203,116 @@ namespace SIPSorcery.Net
             _username = username;
             _password = password;
             GenerateNewTransactionID();
+        }
+
+        /// <summary>
+        /// Parses a semicolon-delimited ICE server string into an RTCIceServer instance.
+        /// Expected format:
+        /// urls[;username[;credential]]
+        /// Examples:
+        /// "stun:stun.example.com:3478"
+        /// "turn:turn.example.com?transport=tcp;user1;pass1"
+        /// "stun:stun1.example.com,stun:stun2.example.com"
+        /// Notes:
+        /// - Whitespace is trimmed.
+        /// - Surrounding quotes are removed from fields.
+        /// - If multiple URLs are provided in the first field (comma or whitespace separated),
+        ///   the first non-empty URL is used.
+        /// - If the URL lacks a scheme (e.g. "example.com:3478"), a stun: scheme will be assumed.
+        /// </summary>
+        /// <param name="iceServer">The ICE server string to parse. Format: "urls[;username[;credential]]".</param>
+        /// <returns>An IceServer configured with the parsed values.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if iceServer is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if iceServer is empty or the URL is invalid.</exception>
+        public static IceServer ParseIceServer(string iceServer)
+        {
+            if (iceServer == null)
+            {
+                throw new ArgumentNullException(nameof(iceServer));
+            }
+
+            iceServer = iceServer.Trim();
+            if (iceServer.Length == 0)
+            {
+                throw new ArgumentException("ICE server string cannot be empty.", nameof(iceServer));
+            }
+
+            var fields = iceServer.Split([';'], StringSplitOptions.None);
+
+            string Unquote(string s)
+            {
+                if (string.IsNullOrEmpty(s))
+                {
+                    return s;
+                }
+
+                s = s.Trim();
+                if (s.Length >= 2)
+                {
+                    if ((s[0] == '"' && s[s.Length - 1] == '"') ||
+                        (s[0] == '\'' && s[s.Length - 1] == '\''))
+                    {
+                        return s.Substring(1, s.Length - 2);
+                    }
+                }
+                return s;
+            }
+
+            // urls (required)
+            string urlsFieldRaw = fields.Length > 0 ? Unquote(fields[0]) : null;
+            if (string.IsNullOrWhiteSpace(urlsFieldRaw))
+            {
+                throw new ArgumentException("ICE server value must include a STUN/TURN URL in the first field.", nameof(iceServer));
+            }
+
+            // If multiple URLs are provided, take the first non-empty candidate.
+            // Split on comma or whitespace.
+            var urlCandidates = urlsFieldRaw.Split([ ',', ' '], StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(u => u.Trim())
+                                            .ToArray();
+
+            string selectedUrl = urlCandidates.Length > 0 ? urlCandidates[0] : urlsFieldRaw.Trim();
+
+            // Try validate; if it fails, try auto-prefixing stun:
+            bool isValid = STUNUri.TryParse(selectedUrl, out var stunUri);
+            if (!isValid)
+            {
+                var withScheme = $"stun:{selectedUrl}";
+                if (STUNUri.TryParse(withScheme, out var _))
+                {
+                    selectedUrl = withScheme;
+                    isValid = true;
+                }
+            }
+
+            if (!isValid)
+            {
+                throw new ArgumentException(
+                    $"Invalid ICE server URL: '{selectedUrl}'. Expected a STUN/TURN URI such as 'stun:example.org:3478' or 'turn:example.org?transport=tcp'.",
+                    nameof(iceServer));
+            }
+
+            // username (optional)
+            string username = fields.Length > 1 ? Unquote(fields[1]) : null;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = null;
+            }
+
+            // credential (optional)
+            string credential = fields.Length > 2 ? Unquote(fields[2]) : null;
+            if (string.IsNullOrWhiteSpace(credential))
+            {
+                credential = null;
+            }
+
+            return new IceServer
+            (
+                stunUri,
+                0,
+                username,
+                credential
+            );
         }
 
         /// <summary>
@@ -329,6 +441,8 @@ namespace SIPSorcery.Net
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
                 {
+                    logger.LogWarning("ICE session received an error response for an Allocate request to {Uri} from {remoteEP}.", _uri, remoteEndPoint);
+
                     ErrorResponseCount++;
 
                     if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))

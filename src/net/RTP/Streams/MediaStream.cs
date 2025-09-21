@@ -212,6 +212,24 @@ namespace SIPSorcery.Net
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
         /// <summary>
+        /// This endpoint is used when a relay server (TURN) is being used for the RTP session. All RTP packets
+        /// will be sent to the relay end point instead of the DestinationEndPoint.
+        /// </summary>
+        public TurnRelayEndPoint RtpRelayEndPoint { get; set; }
+
+        /// <summary>
+        /// This endpoint is used when a relay server (TURN) is being used for the RTCP session. All RTCP packets
+        /// will be sent to the relay end point instead of the ControlDestinationEndPoint.
+        /// </summary>
+        public IPEndPoint RelayControlDestinationEndPoint { get; set; }
+
+        /// <summary>
+        /// If set to true indicates the RTP and RTCP sockets are for a relay server (TURN).
+        /// All traffic for the session should then be sent to/from the relay and not updated.
+        /// </summary>
+        public bool IsUsingRelayEndPoint => RtpRelayEndPoint != null;
+
+        /// <summary>
         /// Default RTP event format that we support.
         /// </summary>
         public static SDPAudioVideoMediaFormat DefaultRTPEventFormat
@@ -227,6 +245,8 @@ namespace SIPSorcery.Net
                                 "0-16");
             }
         }
+
+        public TurnClient TurnClient { get; private set; }
 
         public MediaStream(RtpSessionConfig config, int index)
         {
@@ -457,21 +477,32 @@ namespace SIPSorcery.Net
 
                 var rtpBuffer = rtpPacket.GetBytes();
 
-                if (protectRtpPacket == null)
-                {
-                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                }
-                else
+                if (protectRtpPacket != null)
                 {
                     int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
+                        return;
                     }
                     else
                     {
-                        rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        rtpBuffer = rtpBuffer.Take(outBufLen).ToArray();
                     }
+                }
+
+                //logger.LogDebug("Sending key {MediaType} RTP packet {SeqNum} TS {Timestamp} PT {PayloadType} MB {MarkerBit} size {Size} to {EndPoint}.",
+                //    MediaType, rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, rtpPacket.Header.PayloadType,
+                //    rtpPacket.Header.MarkerBit, rtpBuffer.Length,
+                //    IsUsingRelayEndPoint ? RtpRelayEndPoint.RelayServerEndPoint : DestinationEndPoint);
+
+                if (IsUsingRelayEndPoint)
+                {
+                    rtpChannel.SendRelay(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer, RtpRelayEndPoint.RelayServerEndPoint);
+                }
+                else
+                {
+                    rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                 }
 
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
@@ -689,7 +720,7 @@ namespace SIPSorcery.Net
             }
 
             // Set the remote track SSRC so that RTCP reports can match the media type.
-            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
+            if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null && !IsUsingRelayEndPoint)
             {
                 bool isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
 
@@ -977,6 +1008,24 @@ namespace SIPSorcery.Net
                     OnRtpHeaderReceivedByIndex?.Invoke(Index, remoteEndPoint, MediaType, rtpHeaderExtension.Uri, value);
                 }
             });
+        }
+
+        /// <summary>
+        /// Gets the RTP port to use in the SDP offer or answer.
+        /// </summary>
+        public int GetRtpPortForSessionDescription()
+        {
+            if (IsUsingRelayEndPoint)
+            {
+                return RtpRelayEndPoint.RemotePeerRelayEndPoint.Port;
+            }
+
+            return rtpChannel switch
+            {
+                null => 0,
+                _ when rtpChannel.RTPDynamicNATEndPoint != null => rtpChannel.RTPDynamicNATEndPoint.Port,
+                _ => rtpChannel.RTPPort
+            };
         }
     }
 }

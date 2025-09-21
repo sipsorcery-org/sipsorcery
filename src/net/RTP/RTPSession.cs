@@ -587,6 +587,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action OnClosed;
 
+        public event Action<SDP> OnRemoteDescriptionChanged;
+
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
@@ -884,9 +886,13 @@ namespace SIPSorcery.Net
         /// for Internet access. Any and IPv6Any are special cases. If they are set the respective
         /// Internet facing IPv4 or IPv6 address will be used.</param>
         /// <returns>A task that when complete contains the SDP offer.</returns>
-        public virtual SDP CreateOffer(IPAddress connectionAddress)
+        public virtual SDP CreateOffer(IPAddress connectionAddress = null)
         {
-            if (((AudioStream == null) || (AudioStream.LocalTrack == null)) && ((VideoStream == null) || (VideoStream.LocalTrack == null)) && ((TextStream == null) || (TextStream.LocalTrack == null)))
+            if (
+                (AudioStream == null || AudioStream.LocalTrack == null) &&
+                (VideoStream == null || VideoStream.LocalTrack == null) &&
+                (TextStream == null || TextStream.LocalTrack == null)
+                )
             {
                 logger.LogWarning("No local media tracks available for create offer.");
                 return null;
@@ -905,6 +911,15 @@ namespace SIPSorcery.Net
                 }
 
                 RequireRenegotiation = true;
+
+                // If a relay endpoint has been set on any of this session's media streams it takes precedence and
+                // will be used in the SDP offers and answers.
+                var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
+                if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint != null)
+                {
+                    connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
+                }
+
                 return GetSessionDescription(mediaStreams, connectionAddress);
             }
         }
@@ -965,7 +980,15 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                if (connectionAddress == null)
+                // If a relay endpoint has been set on any of this session's media streams it takes precedence and
+                // will be used in the SDP offers and answers.
+                var relayEndPoint = GetFirstRelayEndPointFromMediaStreams();
+
+                if (relayEndPoint != null && relayEndPoint.RemotePeerRelayEndPoint?.Address != null)
+                {
+                    connectionAddress = relayEndPoint.RemotePeerRelayEndPoint.Address;
+                }
+                else if (connectionAddress == null)
                 {
                     // No specific connection address supplied. Lookup the local address to connect to the offer address.
                     var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
@@ -1294,6 +1317,8 @@ namespace SIPSorcery.Net
                 // Set the remote description and end points.
                 RequireRenegotiation = false;
                 RemoteDescription = sessionDescription;
+
+                OnRemoteDescriptionChanged?.Invoke(RemoteDescription);
 
                 return SetDescriptionResultEnum.OK;
             }
@@ -1888,6 +1913,18 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Attempts to get the first relay end point from any of the media streams. A media stream will have a relay end point
+        /// set if is using TURN.
+        /// </summary>
+        private TurnRelayEndPoint GetFirstRelayEndPointFromMediaStreams()
+        {
+            return
+                AudioStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint ??
+                VideoStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint ??
+                TextStreamList.FirstOrDefault(x => x.IsUsingRelayEndPoint)?.RtpRelayEndPoint;
+        }
+
+        /// <summary>
         /// Generates a session description from the provided list of MediaStream.
         /// </summary>
         /// <param name="mediaStreamList">The list of tracks to generate the session description for.</param>
@@ -1917,10 +1954,12 @@ namespace SIPSorcery.Net
                             {
                                 // If the remote party has set an inactive media stream via the connection address then we do the same.
                                 localAddress = audioStream.DestinationEndPoint.Address;
+                                break;
                             }
                             else
                             {
                                 localAddress = NetServices.GetLocalAddressForRemote(audioStream.DestinationEndPoint.Address);
+                                break;
                             }
                         }
                     }
@@ -1935,10 +1974,12 @@ namespace SIPSorcery.Net
                                 {
                                     // If the remote party has set an inactive media stream via the connection address then we do the same.
                                     localAddress = videoStream.DestinationEndPoint.Address;
+                                    break;
                                 }
                                 else
                                 {
                                     localAddress = NetServices.GetLocalAddressForRemote(videoStream.DestinationEndPoint.Address);
+                                    break;
                                 }
                             }
                         }
@@ -1954,10 +1995,12 @@ namespace SIPSorcery.Net
                                 {
                                     // If the remote party has set an inactive media stream via the connection address then we do the same.
                                     localAddress = textStream.DestinationEndPoint.Address;
+                                    break;
                                 }
                                 else
                                 {
                                     localAddress = NetServices.GetLocalAddressForRemote(textStream.DestinationEndPoint.Address);
+                                    break;
                                 }
                             }
                         }
@@ -2024,17 +2067,12 @@ namespace SIPSorcery.Net
                 {
                     if (rtpSessionConfig.IsMediaMultiplexed)
                     {
-                        rtpPort = m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                            m_primaryStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : m_primaryStream.GetRTPChannel().RTPPort;
+                        rtpPort = m_primaryStream.GetRtpPortForSessionDescription();
                     }
-                    else
+                    else if (mediaStream.HasRtpChannel())
                     {
                         // If media stream does not have a Rtp channel it means this media type is not supported and rtpPort will remain zero.
-                        if (mediaStream.HasRtpChannel())
-                        {
-                            rtpPort = mediaStream.GetRTPChannel().RTPDynamicNATEndPoint != null ?
-                                 mediaStream.GetRTPChannel().RTPDynamicNATEndPoint.Port : mediaStream.GetRTPChannel().RTPPort;
-                        }
+                        rtpPort = mediaStream.GetRtpPortForSessionDescription();
                     }
                 }
 
@@ -2376,6 +2414,8 @@ namespace SIPSorcery.Net
 
         protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
+            //logger.LogDebug("RTP Session OnReceive from {RemoteEndPoint} {length} bytes buffer[0]={zeroByte}.", remoteEndPoint, buffer.Length, buffer[0]);
+
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
                 // Required for matching existing RTP end points (typically set from SDP) and
@@ -2415,7 +2455,8 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            //logger.LogDebug("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
+            logger.LogDebug("RTCP packet received from {RemoteEndPoint} {Buffer}", remoteEndPoint, buffer.HexStr());
+
             #region RTCP packet.
 
             // Get the SSRC in order to be able to figure out which media type 
@@ -2511,6 +2552,8 @@ namespace SIPSorcery.Net
 
         private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
+            //logger.LogDebug("RTPSession OnReceiveRTPPacket received from {RemoteEndPoint} {length} bytes.", remoteEndPoint, buffer.Length);
+
             if (!IsClosed)
             {
                 var hdr = new RTPHeader(buffer);

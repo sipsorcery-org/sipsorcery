@@ -539,11 +539,12 @@ namespace SIPSorcery.SIP.App
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
                 MediaSession.OnTimeout += OnRtpTimeout;
 
-                var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
+                //var sdpAnnounceAddress = mediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
                 if (string.IsNullOrEmpty(sipCallDescriptor.Content))
                 {
-                    var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                    //var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
+                    var sdp = mediaSession.CreateOffer();
                     if (sdp == null)
                     {
                         ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.", null);
@@ -745,8 +746,9 @@ namespace SIPSorcery.SIP.App
                 else
                 {
                     // No SDP offer was included in the INVITE request need to wait for the ACK.
-                    var sdpAnnounceAddress = MediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
-                    var sdpOffer = MediaSession.CreateOffer(sdpAnnounceAddress);
+                    //var sdpAnnounceAddress = MediaSession.RtpBindAddress ?? NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
+                    //var sdpOffer = MediaSession.CreateOffer(sdpAnnounceAddress);
+                    var sdpOffer = MediaSession.CreateOffer();
                     sdp = sdpOffer.ToString();
                 }
 
@@ -1911,7 +1913,7 @@ namespace SIPSorcery.SIP.App
         {
             if (m_callDescriptor != null)
             {
-                if (m_callDescriptor.CallId.Equals(callId, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(callId) && m_callDescriptor.CallId.Equals(callId, StringComparison.OrdinalIgnoreCase))
                 {
                     m_uac = null;
                     m_callDescriptor = null;

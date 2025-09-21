@@ -5,8 +5,12 @@
 // core library to place a SIP call. The example program depends on one audio 
 // input and one audio output being available.
 //
-// This example is based on teh UserAgentClient example but has been tuned
-// to work with the SIPCloudCallServer example deployed in a Kubernetes cluster.
+// This example is based on the UserAgentClient example but has been modified
+// to use a STUN server to set the RTP IP address to the reflex public address.
+// This example was originally developed to deploy in a Kubernetes cluster.
+//
+// Usage:
+// set STUN_URL=stun:stun.l.google.com:19302
 //
 // Author(s):
 // Aaron Clauson  (aaron@sipsorcery.com)
@@ -59,7 +63,7 @@ class Program
         bool isCallHungup = false;
         bool hasCallFailed = false;
 
-        Log = AddConsoleLogger(LogEventLevel.Debug);
+        Log = AddConsoleLogger(LogEventLevel.Verbose);
 
         SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
         if (args?.Length > 0)
@@ -69,6 +73,7 @@ class Program
                 Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
             }
         }
+
         if(args?.Length > 1 && args[1] == "ipv6")
         {
             preferIPv6 = true;
@@ -250,7 +255,7 @@ class Program
 
         var iceServers = _iceServerResolver.IceServers;
 
-        // Use first availab STUN server to get the public IP address.
+        // Use first available STUN server to get the public IP address.
         if (iceServers.Count == 0 || iceServers.All(x => x.Value.ServerEndPoint == null))
         {
             Log.LogWarning("No ICE servers available to get public IP address.");
