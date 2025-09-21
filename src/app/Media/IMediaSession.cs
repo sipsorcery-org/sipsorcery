@@ -41,7 +41,7 @@ namespace SIPSorcery.SIP.App
     public interface IMediaSession
     {
         /// <summary>
-        /// Indicates wheter the session supports real time text. 
+        /// Indicates whether the session supports real time text. 
         /// </summary>
         bool HasText { get; }
 

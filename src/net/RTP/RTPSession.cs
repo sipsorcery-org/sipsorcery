@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
     public class RTPSession : IMediaSession, IDisposable
     {
         /// <summary>
-        /// Reduced to be smaller than MTU (1400) becaase header will add extra 2 bytes that will fail to deliver to linux
+        /// Reduced to be smaller than MTU (1400) because header will add extra 2 bytes that will fail to deliver to linux
         /// as the real size of the package will be 1402.
         /// </summary>
         protected internal const int RTP_MAX_PAYLOAD = 1200;
