@@ -23,7 +23,7 @@ public class TurnRelayEndPoint
     /// <summary>
     /// This is the socket on the TURN server that the client is using for setting up an allocation AND
     /// for sending and receiving data to/from the TURN server. The RTP channel needs to use this end
-    /// point when it wans to send TRUN relay packets that will be forwarded to the remote peer.
+    /// point when it wants to send TURN relay packets that will be forwarded to the remote peer.
     /// </summary>
     public IPEndPoint RelayServerEndPoint { get; set; }
 
