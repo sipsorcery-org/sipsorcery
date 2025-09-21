@@ -23,11 +23,11 @@ namespace SIPSorcery.Net;
 
 public class IceTcpReceiver : UdpReceiver
 {
-    protected const int REVEIVE_TCP_BUFFER_SIZE = RECEIVE_BUFFER_SIZE * 2;
+    protected const int RECEIVE_TCP_BUFFER_SIZE = RECEIVE_BUFFER_SIZE * 2;
 
     protected int m_recvOffset;
 
-    public IceTcpReceiver(Socket socket, int mtu = REVEIVE_TCP_BUFFER_SIZE) : base(socket, mtu)
+    public IceTcpReceiver(Socket socket, int mtu = RECEIVE_TCP_BUFFER_SIZE) : base(socket, mtu)
     {
         m_recvOffset = 0;
     }
