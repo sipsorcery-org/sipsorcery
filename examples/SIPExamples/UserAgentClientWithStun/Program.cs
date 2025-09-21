@@ -7,7 +7,7 @@
 //
 // This example is based on the UserAgentClient example but has been modified
 // to use a STUN server to set the RTP IP address to the reflex public address.
-// This example was orignially developed to deploy in a Kubernetes cluster.
+// This example was originally developed to deploy in a Kubernetes cluster.
 //
 // Usage:
 // set STUN_URL=stun:stun.l.google.com:19302
