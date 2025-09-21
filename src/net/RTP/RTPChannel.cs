@@ -71,15 +71,26 @@ public class RTPChannel : IDisposable
     /// </summary>
     public IPEndPoint RTPLocalEndPoint { get; private set; }
 
+    [Obsolete("This property has been renamed to RTPSrflxEndPoint, it will be removed in a future release.", false)]
+    public IPEndPoint RTPDynamicNATEndPoint
+    {
+        get => RTPSrflxEndPoint;
+        set => RTPSrflxEndPoint = value;
+    }
+
     /// <summary>
-    /// This end point can be set by the application if it is able to determine the external endoint of the RTP socket
+    /// tl;dr Allows the setting of the RTP channel's public endpoint for SDP offers and answers. By itself it's
+    /// typically not enough to deal with NAT
+    /// 
+    /// This end point can be set by the application if it is able to determine the external endpoint of the RTP socket
     /// in a NAT environment. This end point will be used when sending SDP offers and answers to indicate the RTP socket's
-    /// public end point. This end point will be used when setting the conenction information in the SDP for VoIP scenarios,
+    /// public end point. This end point will be used when setting the connection information in the SDP for VoIP scenarios,
     /// it's not used for WebRTC scenarios since the ICE negotiation does a much better job of determining the public end point.
-    /// Gerenally this property should not be set and it's only provided for some specialist cases and diagnostic purposes. If
-    /// the RTP channel is behind anythng but a full cone NAT then setting this property is likely to cause more harm than good.
+    /// If the RTP channel is behind anything any type of NAT, except a full cone NAT, then setting this property is not guaranteed 
+    /// to be enough by itself. The remote party will also need some way to take advantage of knowing the public IP address such
+    /// as by using it with a TURN relay allocation to set the permissions for this endpoint address.
     /// </summary>
-    public IPEndPoint RTPDynamicNATEndPoint { get; set; }
+    public IPEndPoint RTPSrflxEndPoint { get; set; }
 
     /// <summary>
     /// The local port we are listening for RTCP packets on.

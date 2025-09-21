@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -30,8 +31,36 @@ public class STUNClient
 {
     public const int DEFAULT_STUN_PORT = 3478;
     private const int STUN_SERVER_RESPONSE_TIMEOUT = 3;
+    private const int STUN_SERVER_RESOLUTION_DEFAULT_TIMEOUT_MILLISECONDS = 5000;
 
     private static readonly ILogger logger = Log.Logger;
+
+    private readonly IceServerResolver _iceServerResolver = new IceServerResolver();
+
+    public STUNClient(string stunServerUrl)
+    {
+        _iceServerResolver.InitialiseIceServers([RTCIceServer.Parse(stunServerUrl)], RTCIceTransportPolicy.all);
+    }
+
+    public async Task<IceServer> ResolveStunServer(int timeoutMilliseconds = STUN_SERVER_RESOLUTION_DEFAULT_TIMEOUT_MILLISECONDS)
+    {
+        await _iceServerResolver.WaitForAllIceServersAsync(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+
+        var iceServer = _iceServerResolver.IceServers.Select(x => x.Value).FirstOrDefault();
+
+        if (iceServer == null)
+        {
+            logger.LogWarning("No STUN server was available to do a public IP address lookup.");
+            return null;
+        }
+        else if (iceServer.ServerEndPoint == null)
+        {
+            logger.LogWarning("The STUN server end point was not available for {uri}.", iceServer?.Uri);
+            return null;
+        }
+
+        return iceServer;
+    }
 
     /// <summary>
     /// Used to get the public IP address of the client as seen by the STUN server.
