@@ -29,7 +29,7 @@ public static class TurnClientExtensions
     /// </summary>
     /// <param name="mediaStream">The media stream to attempt to use a TURN relay server end point for.</param>
     /// <param name="rtpSession">The RTP session the media stream belongs to.</param>
-    /// <param name="turnClient">THe TURN client to use to establish and maintain a session with the TURN server.</param>
+    /// <param name="turnClient">The TURN client to use to establish and maintain a session with the TURN server.</param>
     /// <param name="ct">A cancellation token that can be used to abort the attempt or session.</param>
     /// <param name="timeoutSeconds">The maximum number of seconds to wait when attempting to establish a
     /// new connection.</param>
