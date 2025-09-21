@@ -58,7 +58,7 @@
 // Usage Exmaple:
 // Check RTP connectivity:
 // dotnet run -- --s uac -d music@iptel.org -v
-// If succsesful a count of the RTP packets will be displayed:
+// If successful a count of the RTP packets will be displayed:
 // RTP packet received from 212.79.111.155:13818, ssrc 314111075, seqnum 23320, count 48
 //-----------------------------------------------------------------------------
 
