@@ -48,7 +48,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
     {
         // IMPTORTANT NOTE: The audio sink format cannot be set here as it is not known until the first RTP packet
         // is received from the remote party. All we know at this stage is which audio formats are supported but NOT
-        // which one the remote party has chosen to use. Generally it seems the sending and reciving formats should be the same but
+        // which one the remote party has chosen to use. Generally it seems the sending and receiving formats should be the same but
         // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
         var audioFormat = audoFormats.First();
@@ -73,7 +73,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
     {
         // IMPTORTANT NOTE: The video sink format cannot be set here as it is not known until the first RTP packet
         // is received from the remote party. All we know at this stage is which audio formats are supported but NOT
-        // which one the remote party has chosen to use. Generally it seems the sending and reciving formats should be the same but
+        // which one the remote party has chosen to use. Generally it seems the sending and receiving formats should be the same but
         // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
         var videoFormat = videoFormats.First();
