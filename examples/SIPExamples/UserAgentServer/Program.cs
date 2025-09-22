@@ -62,7 +62,7 @@
 // set the REMOTE_PEER_IP to the same TURN server IP).
 //
 // STUN:
-// Currently the STUN client is wired up and if a SUN server URL is provided the SDP offer
+// Currently the STUN client is wired up and if a STUN server URL is provided the SDP offer
 // connection IP address will be set to the agent's server reflexive address from the STUN server.
 // This is typically not very useful and will almost always cause more problems than it solves.
 //-----------------------------------------------------------------------------
