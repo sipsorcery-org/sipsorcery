@@ -5,15 +5,28 @@
 // core library to place a SIP call. The example program depends on one audio 
 // input and one audio output being available.
 //
-// Options:
-// TURN - RTP Relay Server
-// If the TURN_URL environment variable is set to a valid TURN server URL the
-// program will attempt to allocate a relay end point and use it for the RTP
-// media stream.
-//
 // Usage Examples:
+// 22 Sep 2025  Aaron Clauson
+//
+// TURN:
+// Note in order for the TURN client to be activated the REMOTE_PEER_IP must be set.
+// This is so the TURN client can create a permission for the remote peer.
+// If running locally with the UserAgentServer demo get your IP using: curl ifconfig.me
+// and set that as the REMOTE_PEER_IP.
+// BUT
+// If both user agents are using a TURN relay the create permission needs to be for each
+// other's relay end point. This means the REMOTE_PEER_IP needs to be the IP address of
+// the TURN server (both agents can use the same TURN server in which case both should
+// set the REMOTE_PEER_IP to the same TURN server IP).
+//
+// STUN:
+// Currently the STUN client is wired up and if a SUN server URL is provided the SDP offer
+// connection IP address will be set to the agent's server reflexive address from the STUN server.
+// This is typically not very useful and will almost always cause more problems than it solves.
+//
 // set TURN_URL=turn:your.turn.server;user;password
-// set STUN_URL=stun:stun.l.google.com:19302
+// set REMOTE_PEER_IP=1.1.1.1
+// set STUN_URL=stun:stun.l.google.com:19302 
 // dotnet run -- 127.0.0.1:5080
 //
 // Author(s):
@@ -48,6 +61,8 @@ class Program
 {
     private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
     private const string STUN_SERVER_URL_ENV_VAR = "STUN_URL";
+    private const string REMOTE_PEER_IP_ENV_VAR = "REMOTE_PEER_IP";
+
     private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:music@iptel.org";
     private const int TURN_ALLOCATION_TIMEOUT_SECONDS = 5;
 
@@ -63,6 +78,7 @@ class Program
         bool preferIPv6 = false;
         bool isCallHungup = false;
         bool hasCallFailed = false;
+        IPAddress remotePeerIPAddress = IPAddress.None;
 
         Log = AddConsoleLogger(LogEventLevel.Debug);
 
@@ -74,6 +90,20 @@ class Program
         STUNClient stunClient = !string.IsNullOrWhiteSpace(stunServerUrl) ?
             new STUNClient(stunServerUrl) : null;
 
+        var remoteIP = Environment.GetEnvironmentVariable(REMOTE_PEER_IP_ENV_VAR);
+        if (!string.IsNullOrWhiteSpace(remoteIP))
+        {
+            if (IPAddress.TryParse(remoteIP.Trim(), out var parsedIP))
+            {
+                remotePeerIPAddress = parsedIP;
+                Log.LogInformation("Using remote peer IP address {ip}.", remotePeerIPAddress);
+            }
+            else
+            {
+                Log.LogWarning($"The remote peer IP address provided in the {REMOTE_PEER_IP_ENV_VAR} environment variable could not be parsed as a valid IP address.");
+            }
+        }
+
         SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
         if (args?.Length > 0)
         {
@@ -82,7 +112,7 @@ class Program
                 Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
             }
         }
-        if(args?.Length > 1 && args[1] == "ipv6")
+        if (args?.Length > 1 && args[1] == "ipv6")
         {
             preferIPv6 = true;
         }
@@ -106,9 +136,9 @@ class Program
         //audioSession.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMA);
         var rtpSession = new VoIPMediaSession(audioSession.ToMediaEndPoints());
 
-        if (turnClient != null)
+        if (turnClient != null && remotePeerIPAddress != IPAddress.None)
         {
-            await rtpSession.AudioStream.UseTurn(rtpSession, turnClient, default, TURN_ALLOCATION_TIMEOUT_SECONDS);
+            await rtpSession.AudioStream.UseTurn(turnClient, remotePeerIPAddress, default, TURN_ALLOCATION_TIMEOUT_SECONDS);
         }
         else if (stunClient != null)
         {
@@ -160,7 +190,7 @@ class Program
                         uac.Hangup();
                     }
                 }
-                else if(!rtpSession.IsAudioStarted)
+                else if (!rtpSession.IsAudioStarted)
                 {
                     Log.LogWarning($"Failed to set get remote description in session progress or final response.");
                     uac.Hangup();
