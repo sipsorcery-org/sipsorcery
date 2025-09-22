@@ -61,8 +61,8 @@
 // If successful a count of the RTP packets will be displayed:
 // RTP packet received from 212.79.111.155:13818, ssrc 314111075, seqnum 23320, count 48
 //
-// Check RTP connectivity via a TURN server:
-// dotnet run -- -d music@iptel.org -s uac -v --turn "turn:yourserver;username;password"
+// Check RTP connectivity via a TURN server. Contrived exmaple to force a TURN relay RTP path:
+// dotnet run -- -d music@iptel.org -s uac -v --turn "turn:yourserver;username;password" --turnremotepeerip "212.79.111.155"
 //-----------------------------------------------------------------------------
 
 using System;
@@ -155,8 +155,12 @@ namespace SIPSorcery
             public string Password { get; set; }
 
             [Option("turn", Required = false,
-                HelpText = "An optional TURN server URL to set a relay end point on the User Agent Client scenarios e.g. -turn turn:<hostname of ip address>;<user>>;<password>.")]
+                HelpText = "An optional TURN server URL to set a relay end point on the User Agent Client scenarios e.g. -turn turn:<hostname of ip address>;<user>;<password>.")]
             public string TurnServerUrl { get; set; }
+
+            [Option("turnremotepeerip", Required = false,
+                HelpText = "Mandatory if the TURN server URLis set. This is the IP address the TURN client will send a create permissions request for the relay endpoint.")]
+            public string TurnRemotePeerIPAddress { get; set; }
 
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
@@ -469,9 +473,15 @@ namespace SIPSorcery
 
                 if (!string.IsNullOrEmpty(options.TurnServerUrl))
                 {
-                    logger.LogDebug($"Setting TURN server {options.TurnServerUrl} on the user agent client.");
+                    if(!IPAddress.TryParse(options.TurnRemotePeerIPAddress, out var turnRemotePeerIp))
+                    {
+                        logger.LogError($"Invalid TURN remote peer IP address {options.TurnRemotePeerIPAddress}.");
+                        return false;
+                    }
+
+                    logger.LogDebug($"Setting TURN server {options.TurnServerUrl} with remote peer IP address {turnRemotePeerIp} on the user agent client.");
                     var turnClient = new TurnClient(options.TurnServerUrl);
-                    await echoMediaSession.AudioStream.UseTurn(echoMediaSession, turnClient, default, options.Timeout);
+                    await echoMediaSession.AudioStream.UseTurn(turnClient, turnRemotePeerIp, default, options.Timeout);
                 }
 
                 echoMediaSession.OnRtpPacketReceived += RtpMediaPacketReceived;
