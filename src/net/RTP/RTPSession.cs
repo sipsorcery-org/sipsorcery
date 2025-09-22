@@ -1254,13 +1254,13 @@ namespace SIPSorcery.Net
                         IPEndPoint remoteRtcpEP = null;
                         if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                         {
-                            remoteRtcpEP = (rtpSessionConfig.IsRtcpMultiplexed) ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1);
+                            remoteRtcpEP = rtpSessionConfig.IsRtcpMultiplexed ? remoteRtpEP : new IPEndPoint(remoteRtpEP.Address, remoteRtpEP.Port + 1);
                         }
 
                         currentMediaStream.DestinationEndPoint = (remoteRtpEP != null && remoteRtpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtpEP : currentMediaStream.DestinationEndPoint;
                         currentMediaStream.ControlDestinationEndPoint = (remoteRtcpEP != null && remoteRtcpEP.Port != SDP.IGNORE_RTP_PORT_NUMBER) ? remoteRtcpEP : currentMediaStream.ControlDestinationEndPoint;
 
-                        logger.LogDebug("Setting remote {SdpMediaType} track with destination {DestinationEndPoint} and control destination {ControlDestinationEndPoint}.", currentMediaStream.MediaType, currentMediaStream.DestinationEndPoint, currentMediaStream.ControlDestinationEndPoint);
+                        logger.LogDebug("Setting remote {SdpMediaType} track with sdp destination {DestinationEndPoint} and control destination {ControlDestinationEndPoint}.", currentMediaStream.MediaType, currentMediaStream.DestinationEndPoint, currentMediaStream.ControlDestinationEndPoint);
                     }
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)

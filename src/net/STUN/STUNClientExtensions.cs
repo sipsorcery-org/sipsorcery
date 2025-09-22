@@ -28,6 +28,12 @@ public static class STUNClientExtensions
     /// An extension method for <see cref="MediaStream"/> that attempts to use a STUN server to set the 
     /// reflexive (typically public) IP address for media stream's RTP channel.
     /// </summary>
+    /// <remarks>
+    /// Using this approach is NOT recommended. It typically causes more problems than it solves to mess with
+    /// SDP connection IP address. If one end of a SIP call is on a public IP address it will be able to deal
+    /// with private SDP IP addresses. Setting a public connection IP address can result in the NAT handling
+    /// mechanisms being skipped on the assumption the generating agent is also on a public IP address.
+    /// </remarks>
     /// <param name="mediaStream">The media stream to attempt to set the IP address for.</param>
     /// <param name="stunClient">The STUN client to use to determine the RTP socket's reflexive IP address.</param>
     /// <param name="ct">A cancellation token that can be used to abort the attempt or session.</param>

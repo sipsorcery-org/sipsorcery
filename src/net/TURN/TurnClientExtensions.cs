@@ -14,6 +14,7 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,15 +29,15 @@ public static class TurnClientExtensions
     /// for the media stream's RTP channel.
     /// </summary>
     /// <param name="mediaStream">The media stream to attempt to use a TURN relay server end point for.</param>
-    /// <param name="rtpSession">The RTP session the media stream belongs to.</param>
     /// <param name="turnClient">The TURN client to use to establish and maintain a session with the TURN server.</param>
+    /// <param name="remotePeerIPAddress">The IP address of the remote peer that the relay end point is being established for.</param>
     /// <param name="ct">A cancellation token that can be used to abort the attempt or session.</param>
     /// <param name="timeoutSeconds">The maximum number of seconds to wait when attempting to establish a
     /// new connection.</param>
     /// <returns>A reference to the media stream.</returns>
     public static async Task<MediaStream> UseTurn(this MediaStream mediaStream,
-        RTPSession rtpSession,
         TurnClient turnClient,
+        IPAddress remotePeerIPAddress,
         CancellationToken ct,
         int timeoutSeconds = DEFAULT_TURN_ALLOCATION_TIMEOUT_SECONDS)
     {
@@ -52,10 +53,7 @@ public static class TurnClientExtensions
                 RemotePeerRelayEndPoint = relayDestinationEndPoint
             };
 
-            rtpSession.OnRemoteDescriptionChanged += (sdp) =>
-            {
-                var createPermissionResult = turnClient.CreatePermission(rtpSession.AudioStream.DestinationEndPoint);
-            };
+            var createPermissionResult = turnClient.CreatePermission(new IPEndPoint(remotePeerIPAddress, 0));
         }
 
         return mediaStream;

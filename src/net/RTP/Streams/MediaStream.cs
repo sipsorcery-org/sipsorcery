@@ -246,8 +246,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public TurnClient TurnClient { get; private set; }
-
         public MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
@@ -640,6 +638,9 @@ namespace SIPSorcery.Net
 
                 if (protectRtcpPacket == null)
                 {
+                    logger.LogDebug("Sending key {MediaType} RTCP packet size {Size} to {EndPoint}.",
+                        MediaType, reportBuffer.Length, ControlDestinationEndPoint);
+
                     rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, reportBuffer);
                 }
                 else
@@ -650,10 +651,14 @@ namespace SIPSorcery.Net
                     int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out int outBufLen);
                     if (rtperr != 0)
                     {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result {RtpError}.", rtperr);
+                        //logger.LogWarning("SRTP RTCP packet protection failed, result {RtpError}.", rtperr);
                     }
                     else
                     {
+
+                        //logger.LogDebug("Sending key {MediaType} RTCP packet size {Size} to {EndPoint}.",
+                        //    MediaType, outBufLen, ControlDestinationEndPoint);
+
                         rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
                     }
                 }

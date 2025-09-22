@@ -48,8 +48,23 @@
 
 //-----------------------------------------------------------------------------
 // Usage:
-// To use with a TURN server:
-// set TURN_URL=turn:your.turn.server;user;password
+// 22 Sep 2025  Aaron Clauson
+//
+// TURN:
+// Note in order for the TURN client to be activated the REMOTE_PEER_IP must be set.
+// This is so the TURN client can create a permission for the remote peer.
+// If running locally with the UserAgentServer demo get your IP using: curl ifconfig.me
+// and set that as the REMOTE_PEER_IP.
+// BUT
+// If both user agents are using a TURN relay the create permission needs to be for each
+// other's relay end point. This means the REMOTE_PEER_IP needs to be the IP address of
+// the TURN server (both agents can use the same TURN server in which case both should
+// set the REMOTE_PEER_IP to the same TURN server IP).
+//
+// STUN:
+// Currently the STUN client is wired up and if a STUN server URL is provided the SDP offer
+// connection IP address will be set to the agent's server reflexive address from the STUN server.
+// This is typically not very useful and will almost always cause more problems than it solves.
 //-----------------------------------------------------------------------------
 
 using System;
@@ -75,6 +90,7 @@ class Program
 {
     private const string TURN_SERVER_URL_ENV_VAR = "TURN_URL";
     private const string STUN_SERVER_URL_ENV_VAR = "STUN_URL";
+    private const string REMOTE_PEER_IP_ENV_VAR = "REMOTE_PEER_IP";
 
     private static int SIP_LISTEN_PORT = 5080;
     private static int SIPS_LISTEN_PORT = 5061;
@@ -89,6 +105,7 @@ class Program
 
     private static string _turnServerUrl;
     private static string _stunServerUrl;
+    private static IPAddress _remotePeerIPAddress = IPAddress.None;
 
     static void Main(string[] args)
     {
@@ -126,6 +143,20 @@ class Program
             else
             {
                 Log.LogWarning($"The STUN server URL provided in the {STUN_SERVER_URL_ENV_VAR} environment variable could not be parsed as a valid ICE server URL.");
+            }
+        }
+
+        var remoteIP = Environment.GetEnvironmentVariable(REMOTE_PEER_IP_ENV_VAR);
+        if(!string.IsNullOrWhiteSpace(remoteIP))
+        {
+            if (IPAddress.TryParse(remoteIP.Trim(), out var parsedIP))
+            {
+                _remotePeerIPAddress = parsedIP;
+                Log.LogInformation("Using remote peer IP address {ip}.", _remotePeerIPAddress);
+            }
+            else
+            {
+                Log.LogWarning($"The remote peer IP address provided in the {REMOTE_PEER_IP_ENV_VAR} environment variable could not be parsed as a valid IP address.");
             }
         }
 
@@ -212,10 +243,10 @@ class Program
                         //rtpSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = extrasSource });
                         rtpSession = new VoIPMediaSession();
 
-                        if (_turnServerUrl != null)
+                        if (_turnServerUrl != null && _remotePeerIPAddress != IPAddress.None)
                         {
                             TurnClient turnClient = new TurnClient(_turnServerUrl);
-                            await rtpSession.AudioStream.UseTurn(rtpSession, turnClient, default);
+                            await rtpSession.AudioStream.UseTurn(turnClient, _remotePeerIPAddress, default);
                         }
                         else if (_stunServerUrl != null)
                         {
