@@ -163,16 +163,14 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else if (value.ToLower() == "cancelled" || value.ToLower() == "error" || value.ToLower() == "local-bye" ||
-                value.ToLower() == "rejected" || value.ToLower() == "replaced" || value.ToLower() == "remote-bye" ||
-                value.ToLower() == "timeout")
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+
+            return value.Equals("cancelled", StringComparison.OrdinalIgnoreCase)  ||
+                   value.Equals("error", StringComparison.OrdinalIgnoreCase)      ||
+                   value.Equals("local-bye", StringComparison.OrdinalIgnoreCase)  ||
+                   value.Equals("rejected", StringComparison.OrdinalIgnoreCase)   ||
+                   value.Equals("replaced", StringComparison.OrdinalIgnoreCase)   ||
+                   value.Equals("remote-bye", StringComparison.OrdinalIgnoreCase) ||
+                   value.Equals("timeout", StringComparison.OrdinalIgnoreCase);
         }
 
         public static SIPEventDialogStateEvent Parse(string value)
