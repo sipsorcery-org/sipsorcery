@@ -185,7 +185,7 @@ namespace SIPSorcery.Net
                         {
                             ServiceHostEntry srvResult = null;
                             // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
-                            var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower()).ConfigureAwait(false);
+                            var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToLowerString()).ConfigureAwait(false);
                             if (result == null || result.Count() == 0)
                             {
                                 //logger.LogDebug("STUNDns SRV lookup returned no results for {uri}.", uri);
