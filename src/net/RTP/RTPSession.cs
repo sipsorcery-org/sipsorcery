@@ -1272,14 +1272,14 @@ namespace SIPSorcery.Net
                     }
                     else if (currentMediaStream.MediaType == SDPMediaTypesEnum.text)
                     {
-                        if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
+                        if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
                         {
                             return SetDescriptionResultEnum.TextIncompatible;
                         }
                     }
                     else if (currentMediaStream.MediaType == SDPMediaTypesEnum.video)
                     {
-                        if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
+                        if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
                         {
                             return SetDescriptionResultEnum.VideoIncompatible;
                         }
