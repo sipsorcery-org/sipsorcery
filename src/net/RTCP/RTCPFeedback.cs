@@ -103,7 +103,21 @@ namespace SIPSorcery.Net
         public byte NumSsrcs = 0;
         public byte BitrateExp = 0; // Bitrate Expoent
         public uint BitrateMantissa = 0; //Bits per Second
-        public uint[] FeedbackSSRC; // Packet Sender
+        public uint FeedbackSSRC
+        {
+            get => FeedbackSSRCs==null || FeedbackSSRCs.Length == 0 ? 0 : FeedbackSSRCs[0];
+            // Packet Sender
+            set
+            {
+                if(FeedbackSSRCs==null || FeedbackSSRCs?.Length==0)
+                {
+                    FeedbackSSRCs = new uint[NumSsrcs];
+                }
+                FeedbackSSRCs[0] = value;
+            }
+        }
+
+        public uint[] FeedbackSSRCs; // Packet Senders
         
 
         public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
@@ -227,17 +241,17 @@ namespace SIPSorcery.Net
                         }
                         
                         currentCounter += 3;
-                        FeedbackSSRC=new uint[NumSsrcs];
+                        FeedbackSSRCs=new uint[NumSsrcs];
                         for (int i = 0; i < NumSsrcs; i++)
                         {
                             if (BitConverter.IsLittleEndian)
                             {
-                                FeedbackSSRC[i] =
+                                FeedbackSSRCs[i] =
                                     NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, currentCounter));
                             }
                             else
                             {
-                                FeedbackSSRC[i] = BitConverter.ToUInt32(packet, currentCounter);
+                                FeedbackSSRCs[i] = BitConverter.ToUInt32(packet, currentCounter);
                             }
 
                             currentCounter += 4;
@@ -356,15 +370,15 @@ namespace SIPSorcery.Net
 
                         currentCounter += 3;
                         
-                        for (int i = 0; i < FeedbackSSRC.Length; i++)
+                        for (int i = 0; i < FeedbackSSRCs.Length; i++)
                         {
                             if (BitConverter.IsLittleEndian)
                             {
-                                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRC[i])), 0, buffer, currentCounter, 4);
+                                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRCs[i])), 0, buffer, currentCounter, 4);
                             }
                             else
                             {
-                                Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRC[i]), 0, buffer, currentCounter, 4);
+                                Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRCs[i]), 0, buffer, currentCounter, 4);
                             }
 
                             currentCounter += 4;
