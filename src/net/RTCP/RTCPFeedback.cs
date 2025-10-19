@@ -103,21 +103,21 @@ namespace SIPSorcery.Net
         public byte NumSsrcs = 0;
         public byte BitrateExp = 0; // Bitrate Expoent
         public uint BitrateMantissa = 0; //Bits per Second
-        public uint FeedbackSSRC
+        public uint FeedbackSSRC //Packet sender
         {
             get => FeedbackSSRCs==null || FeedbackSSRCs.Length == 0 ? 0 : FeedbackSSRCs[0];
-            // Packet Sender
+            
             set
             {
                 if(FeedbackSSRCs==null || FeedbackSSRCs?.Length==0)
                 {
-                    FeedbackSSRCs = new uint[NumSsrcs];
+                    FeedbackSSRCs = new uint[Math.Max((int)NumSsrcs,1)];
                 }
                 FeedbackSSRCs[0] = value;
             }
         }
 
-        public uint[] FeedbackSSRCs; // Packet Senders
+        public uint[] FeedbackSSRCs=[0]; // Packet Senders
         
 
         public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
