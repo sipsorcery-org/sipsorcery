@@ -96,7 +96,7 @@ namespace SIPSorcery.Net.UnitTests
         }
         
         /// <summary>
-        /// Tests that an RTCPFeedback for REMB payload can
+        /// Tests that an RTCPFeedback for REMB payload with multiple SSRCs can
         /// be correctly serialised and deserialised.
         /// </summary>
         [Fact]
