@@ -103,7 +103,22 @@ namespace SIPSorcery.Net
         public byte NumSsrcs = 0;
         public byte BitrateExp = 0; // Bitrate Expoent
         public uint BitrateMantissa = 0; //Bits per Second
-        public uint FeedbackSSRC; // Packet Sender
+        public uint FeedbackSSRC //Packet sender
+        {
+            get => FeedbackSSRCs==null || FeedbackSSRCs.Length == 0 ? 0 : FeedbackSSRCs[0];
+            
+            set
+            {
+                if(FeedbackSSRCs==null || FeedbackSSRCs?.Length==0)
+                {
+                    FeedbackSSRCs = new uint[Math.Max((int)NumSsrcs,1)];
+                }
+                FeedbackSSRCs[0] = value;
+            }
+        }
+
+        public uint[] FeedbackSSRCs=[0]; // Packet Senders
+        
 
         public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
         {
@@ -226,15 +241,28 @@ namespace SIPSorcery.Net
                         }
                         
                         currentCounter += 3;
+                        FeedbackSSRCs=new uint[NumSsrcs];
+                        for (int i = 0; i < NumSsrcs; i++)
+                        {
+                            if (BitConverter.IsLittleEndian)
+                            {
+                                FeedbackSSRCs[i] =
+                                    NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, currentCounter));
+                            }
+                            else
+                            {
+                                FeedbackSSRCs[i] = BitConverter.ToUInt32(packet, currentCounter);
+                            }
 
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            FeedbackSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, currentCounter));
+                            if (i < FeedbackSSRCs.Length - 1)
+                            {
+                                currentCounter += 4;
+                            }
                         }
-                        else
-                        {
-                            FeedbackSSRC = BitConverter.ToUInt32(packet, currentCounter);
-                        }
+
+                        //var additionalFeedbacksIgnored = NumSsrcs - 1;
+                        //currentCounter += additionalFeedbacksIgnored * 4;
+                        SENDER_PAYLOAD_SIZE = currentCounter;
                     }
 
                     break;
@@ -344,15 +372,24 @@ namespace SIPSorcery.Net
                         buffer[currentCounter + 2] = remaininMantissaBytes[3];
 
                         currentCounter += 3;
+                        
+                        for (int i = 0; i < FeedbackSSRCs.Length; i++)
+                        {
+                            if (BitConverter.IsLittleEndian)
+                            {
+                                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRCs[i])), 0, buffer, currentCounter, 4);
+                            }
+                            else
+                            {
+                                Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRCs[i]), 0, buffer, currentCounter, 4);
+                            }
 
-                        if (BitConverter.IsLittleEndian)
-                        {
-                            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(FeedbackSSRC)), 0, buffer, currentCounter, 4);
+                            if (i < FeedbackSSRCs.Length - 1)
+                            {
+                                currentCounter += 4;
+                            }
                         }
-                        else
-                        {
-                            Buffer.BlockCopy(BitConverter.GetBytes(FeedbackSSRC), 0, buffer, currentCounter, 4);
-                        }
+                       
                     }
 
                     break;
