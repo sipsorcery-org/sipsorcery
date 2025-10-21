@@ -111,5 +111,21 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(cp);
         }
+        
+        [Fact]
+        public void ParseChromeRtcpPacketWith6SSRCsUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var buffer = TypeExtensions.ParseHexStr("81C9000700000001497EB0250000000000009CA200000A0500000000000000008FCE000A000000010000000052454D42060B29711CAB48A626A3FADE2EE30A21497EB0255C6A292A604EEAC8");
+
+            RTCPCompoundPacket cp = new RTCPCompoundPacket(buffer);
+            Assert.Equal(6, cp.Feedback.NumSsrcs);
+            Assert.Equal(6, cp.Feedback.FeedbackSSRCs.Length);
+            Assert.Equal( 8 + 12 + (5*4),  cp.Feedback.SENDER_PAYLOAD_SIZE);//// 8 bytes from (SenderSSRC + MediaSSRC) + extra 12 bytes from REMB Definition +5x extra 4 bytes for SSRCs
+            Assert.NotNull(cp);
+        }
+
     }
 }
