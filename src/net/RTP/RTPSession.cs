@@ -2698,11 +2698,19 @@ namespace SIPSorcery.Net
             }
             else if (rtcpPkt.ReceiverReport != null)
             {
-                return GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
+                var mediaStream=GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
+                if (mediaStream != null)
+                {
+                    return mediaStream;
+                }
             }
             else if (rtcpPkt.Feedback != null)
             {
-                return GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
+                var mediaStream= GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
+                if (mediaStream != null)
+                {
+                    return mediaStream;
+                }
             }
             else if (rtcpPkt.TWCCFeedback != null)
             {
