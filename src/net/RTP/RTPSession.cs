@@ -2696,18 +2696,16 @@ namespace SIPSorcery.Net
             {
                 return GetMediaStream(rtcpPkt.SenderReport.SSRC);
             }
-            else if (rtcpPkt.ReceiverReport != null)
+            else if (rtcpPkt.ReceiverReport is { } receiverReport)
             {
-                var mediaStream=GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
-                if (mediaStream != null)
+                if (GetMediaStream(receiverReport.SSRC) is { } mediaStream)
                 {
                     return mediaStream;
                 }
             }
-            else if (rtcpPkt.Feedback != null)
+            else if (rtcpPkt.Feedback is { } feedback)
             {
-                var mediaStream= GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
-                if (mediaStream != null)
+                if (GetMediaStream(feedback.SenderSSRC) is { } mediaStream)
                 {
                     return mediaStream;
                 }
