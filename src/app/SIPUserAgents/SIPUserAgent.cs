@@ -987,7 +987,7 @@ namespace SIPSorcery.SIP.App
             {
                 TaskCompletionSource<bool> transferAccepted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
+                SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(m_transport, referRequest, m_outboundProxy);
 
                 SIPTransactionResponseReceivedDelegate referTxStatusHandler = (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
@@ -999,7 +999,7 @@ namespace SIPSorcery.SIP.App
                     else if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired && username != null && password != null)
                     {
                         var newRequest = referRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, username, password);
-                        referTx = new SIPNonInviteTransaction(m_transport, newRequest, null);
+                        referTx = new SIPNonInviteTransaction(m_transport, newRequest, m_outboundProxy);
                         SIPTransactionResponseReceivedDelegate referTxStatusHandlerAuthRequest = (localSIPEndPointAuthRequest, remoteEndPointAuthRequest, sipTransactionAuthRequest, sipResponseAuthRequest) =>
                         {
                             if (sipResponseAuthRequest.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponseAuthRequest.Status == SIPResponseStatusCodesEnum.Accepted)
@@ -1232,7 +1232,7 @@ namespace SIPSorcery.SIP.App
         private void ProcessTransferRequest(SIPRequest referRequest)
         {
             // We use a reliable response to make sure that duplicate REFER requests are ignored.
-            SIPNonInviteTransaction referResponseTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
+            SIPNonInviteTransaction referResponseTx = new SIPNonInviteTransaction(m_transport, referRequest, m_outboundProxy);
 
             if (referRequest.Header.ReferTo.IsNullOrBlank())
             {
