@@ -122,11 +122,12 @@ namespace SIPSorcery.Net
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_IPV4_LENGTH;
         }
 
-        public override string ToString()
+        private protected override void ValueToString(ref ValueStringBuilder sb)
         {
-            string attrDescrStr = "STUN Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
-
-            return attrDescrStr;
+            sb.Append("Address=");
+            sb.Append(Address.ToString());
+            sb.Append(", Port=");
+            sb.Append(Port);
         }
     }
 }
