@@ -74,7 +74,7 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var dateTime = new DateTime(2025, 2, 12, 23, 39, 0);
+            var dateTime = new DateTime(2025, 2, 12, 23, 39, 0, DateTimeKind.Utc);
             var unixTime = dateTime.ToUnixTime();
 
             logger.LogDebug("Unix time: {unixTime}.", unixTime);
@@ -88,7 +88,7 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var dateTime = new DateTime(2060, 2, 13, 22, 54, 54);
+            var dateTime = new DateTime(2060, 2, 13, 22, 54, 54, DateTimeKind.Utc);
             var unixTime = dateTime.ToUnixTime();
 
             logger.LogDebug("Unix time: {unixTime}.", unixTime);

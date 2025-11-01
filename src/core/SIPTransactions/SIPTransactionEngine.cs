@@ -427,7 +427,7 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("InviteServer Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogWarning("InviteClient Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
