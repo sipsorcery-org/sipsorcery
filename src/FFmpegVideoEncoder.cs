@@ -21,8 +21,8 @@ namespace SIPSorceryMedia.FFmpeg
         private readonly Dictionary<string, string> _codecOptions;
         private Dictionary<string, Dictionary<string, string>>? _codecOptionsByName;
 
-        private Stopwatch _frameTimer;
-        public event EventHandler<VideoEncoderStatistics> OnVideoEncoderStatistics;
+        private Stopwatch? _frameTimer;
+        public event EventHandler<VideoEncoderStatistics>? OnVideoEncoderStatistics;
 
         private AVCodecContext* _encoderContext;
         private AVCodecContext* _decoderContext;
@@ -402,8 +402,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _isDecoderInitialised = true;
                 _codecID = codecID;
 
-                //var codec = GetCodec(codecID, isEncoder: false); // not ready for decoder
-                var codec = ffmpeg.avcodec_find_decoder(codecID);
+                var codec = GetCodec(codecID, isEncoder: false);
                 var decOpts = GetCodecOptions(GetNameString(codec->name));
 
                 if (codec == null)
@@ -765,7 +764,6 @@ namespace SIPSorceryMedia.FFmpeg
 
                 while (recvRes == 0)
                 {
-
                     AVFrame* decodedFrame = _frame;
                     if (_decoderContext->hw_device_ctx != null)
                     {
