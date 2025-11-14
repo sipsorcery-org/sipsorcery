@@ -428,7 +428,7 @@ namespace SIPSorcery.Net
                         if (lifetime != null)
                         {
                             TurnTimeToExpiry = DateTime.Now +
-                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.FluentReverse().ToArray(), 0));
                         }
                         else
                         {
@@ -536,7 +536,7 @@ namespace SIPSorcery.Net
                     if (lifetime != null)
                     {
                         TurnTimeToExpiry = DateTime.Now +
-                                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.FluentReverse().ToArray(), 0));
                     }
 
                 }

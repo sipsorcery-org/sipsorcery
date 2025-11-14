@@ -59,7 +59,7 @@ namespace SIPSorcery.Net
             if (BitConverter.IsLittleEndian)
             {
                 Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                address = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE).Reverse().ToArray();
+                address = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE).FluentReverse().ToArray();
             }
             else
             {

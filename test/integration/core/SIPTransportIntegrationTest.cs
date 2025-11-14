@@ -351,7 +351,13 @@ namespace SIPSorcery.SIP.IntegrationTests
 
                 Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
+#if NET9_0_OR_GREATER
+                var serverCertificate = X509CertificateLoader.LoadPkcs12FromFile(@"certs/localhost.pfx", "");
+#else
+#pragma warning disable SYSLIB0057 // X509Certificate2 constructor is obsolete in NET9+
                 var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
+#pragma warning restore SYSLIB0057
+#endif
                 var verifyCert = serverCertificate.Verify();
                 logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
@@ -416,7 +422,13 @@ namespace SIPSorcery.SIP.IntegrationTests
 
                 Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
+#if NET9_0_OR_GREATER
+                var serverCertificate = X509CertificateLoader.LoadPkcs12FromFile(@"certs/localhost.pfx", "");
+#else
+#pragma warning disable SYSLIB0057 // X509Certificate2 constructor is obsolete in NET9+
                 var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
+#pragma warning restore SYSLIB0057
+#endif
                 var verifyCert = serverCertificate.Verify();
                 logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
@@ -686,7 +698,13 @@ namespace SIPSorcery.SIP.IntegrationTests
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+#if NET9_0_OR_GREATER
+            var serverCertificate = X509CertificateLoader.LoadPkcs12FromFile(@"certs/localhost.pfx", "");
+#else
+#pragma warning disable SYSLIB0057 // X509Certificate2 constructor is obsolete in NET9+
             var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
+#pragma warning restore SYSLIB0057
+#endif
             serverCertificate.Verify();
 
             var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);

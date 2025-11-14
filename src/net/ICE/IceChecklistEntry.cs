@@ -310,7 +310,7 @@ namespace SIPSorcery.Net
                 if (lifetime != null)
                 {
                     LocalCandidate.IceServer.TurnTimeToExpiry = DateTime.Now +
-                                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
+                                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.FluentReverse().ToArray(), 0));
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)

@@ -355,7 +355,15 @@ namespace SIPSorcery.SIP
 
         private void DisplaySecurityLevel(SslStream stream)
         {
-            logger.LogDebug("Cipher: {CipherAlgorithm} strength {CipherStrength}, Hash: {HashAlgorithm} strength {HashStrength}, Key exchange: {KeyExchangeAlgorithm} strength {KeyExchangeStrength}, Protocol: {SslProtocol}", stream.CipherAlgorithm, stream.CipherStrength, stream.HashAlgorithm, stream.HashStrength, stream.KeyExchangeAlgorithm, stream.KeyExchangeStrength, stream.SslProtocol);
+#if NET5_0_OR_GREATER
+            // Use the negotiated cipher suite property available in .NET 5+.
+            var cipherSuite = stream.NegotiatedCipherSuite;
+            logger.LogDebug("Negotiated cipher suite: {CipherSuite}, Protocol: {SslProtocol}", cipherSuite, stream.SslProtocol);
+#else
+            logger.LogDebug("Cipher: {CipherAlgorithm} strength {CipherStrength}, Hash: {HashAlgorithm} strength {HashStrength}, Key exchange: {KeyExchangeAlgorithm} strength {KeyExchangeStrength}, Protocol: {SslProtocol}",
+                stream.CipherAlgorithm, stream.CipherStrength, stream.HashAlgorithm, stream.HashStrength, stream.KeyExchangeAlgorithm, stream.KeyExchangeStrength, stream.SslProtocol
+                );
+#endif
         }
 
         private void DisplaySecurityServices(SslStream stream)
@@ -399,6 +407,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        #endregion
+#endregion
     }
 }
