@@ -208,11 +208,13 @@ namespace SIPSorcery.Net
             {
                 if (_inRetransmitMode.TryTurnOff())
                 {
-                    logger.LogDebug("SCTP sender exiting retransmit mode.");
+                    logger.LogDebug("SCTP sender exiting retransmit mode, cwnd {Cwnd} ssthresh {Ssthresh} outstanding {Outstanding}.",
+                        _congestionWindow, _slowStartThreshold, _outstandingBytes);
                 }
 
                 unchecked
                 {
+                    uint outstandingBytesBeforeSackProcessing = (uint)_outstandingBytes;
                     uint maxTSNDistance = SctpDataReceiver.GetDistance(_cumulativeAckTSN, TSN);
                     bool processGapReports = true;
                     uint cumAckTSNBeforeSackProcessing = _cumulativeAckTSN;
@@ -294,15 +296,21 @@ namespace SIPSorcery.Net
 
                     // rfc4960 6.2.1 D iv
                     // If the Cumulative TSN Ack matches or exceeds the Fast Recovery exitpoint(Section 7.2.4), Fast Recovery is exited.
-                    if (SctpDataReceiver.IsNewerOrEqual(_fastRecoveryExitPoint, _cumulativeAckTSN) && _inFastRecoveryMode.TryTurnOff())
+                    if (SctpDataReceiver.IsNewerOrEqual(_cumulativeAckTSN, _fastRecoveryExitPoint) && _inFastRecoveryMode.TryTurnOff())
                     {
-                        logger.LogTrace("SCTP sender exiting fast recovery at TSN {TSN}", _fastRecoveryExitPoint);
+                        logger.LogTrace("SCTP sender exiting fast recovery at TSN {TSN} cwnd {Cwnd} ssthresh {Ssthresh} outstanding {Outstanding}.",
+                            _fastRecoveryExitPoint, _congestionWindow, _slowStartThreshold, _outstandingBytes);
                     }
-                }
 
-                var outstandingBytes = _outstandingBytes;
-                _receiverWindow = CalculateReceiverWindow(sack.ARwnd, outstandingBytes: (uint)outstandingBytes);
-                _congestionWindow = CalculateCongestionWindow(InterlockedEx.Read(ref _lastAckedDataChunkSize), outstandingBytes: (uint)outstandingBytes);
+                    var outstandingBytesAfterSackProcessing = (uint)_outstandingBytes;
+                    _receiverWindow = CalculateReceiverWindow(sack.ARwnd, outstandingBytes: outstandingBytesAfterSackProcessing);
+                    _congestionWindow = CalculateCongestionWindow(InterlockedEx.Read(ref _lastAckedDataChunkSize), outstandingBytes: outstandingBytesBeforeSackProcessing);
+
+                    logger.LogTrace(
+                        "SCTP sender SACK updated cwnd {Cwnd} rwnd {Rwnd} outstandingBefore {OutstandingBefore} outstandingAfter {OutstandingAfter} retransmitMode {Retransmit} fastRecoveryMode {FastRecovery}.",
+                        _congestionWindow, _receiverWindow, outstandingBytesBeforeSackProcessing, outstandingBytesAfterSackProcessing,
+                        _inRetransmitMode.IsOn(), _inFastRecoveryMode.IsOn());
+                }
 
                 // SACK's will normally allow more data to be sent.
                 _senderMre.Set();
@@ -511,7 +519,8 @@ namespace SIPSorcery.Net
                                         var last = SctpTsnGapBlock.Read(sackGapBlocks.Slice(sackGapBlocks.Length - SctpSackChunk.GAP_REPORT_LENGTH));
                                         _fastRecoveryExitPoint = _cumulativeAckTSN + last.End;
 
-                                        logger.LogDebug($"SCTP sender entering fast recovery mode due to missing TSN {missingTSN}. Fast recovery exit point {_fastRecoveryExitPoint}.");
+                                        logger.LogDebug("SCTP sender entering fast recovery mode due to missing TSN {MissingTSN}. ExitPoint {ExitPoint} cwnd {Cwnd} ssthresh {Ssthresh} outstanding {Outstanding}.",
+                                            missingTSN, _fastRecoveryExitPoint, _congestionWindow, _slowStartThreshold, _outstandingBytes);
                                         // RFC4960 7.2.3
                                         _slowStartThreshold = (uint)Math.Max(_congestionWindow / 2, 4 * _defaultMTU);
                                         _congestionWindow = _slowStartThreshold;
@@ -577,11 +586,12 @@ namespace SIPSorcery.Net
             while (!_closed.HasOccurred)
             {
                 var outstandingBytes = (uint)_outstandingBytes;
+                var allowedWindow = Math.Min(_congestionWindow, _receiverWindow);
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
                 var now = SctpDataChunk.Timestamp.Now;
 
-                int burstSize = (_inRetransmitMode.IsOn() || _inFastRecoveryMode.IsOn() || _congestionWindow < outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
+                int burstSize = (_inRetransmitMode.IsOn() || _inFastRecoveryMode.IsOn() || allowedWindow <= outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
                 int chunksSent = 0;
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
@@ -643,7 +653,8 @@ namespace SIPSorcery.Net
 
                         if (_inRetransmitMode.TryTurnOn())
                         {
-                            logger.LogDebug("SCTP sender entering retransmit mode.");
+                            logger.LogDebug("SCTP sender entering retransmit mode, cwnd {Cwnd} ssthresh {Ssthresh} outstanding {Outstanding}.",
+                                _congestionWindow, _slowStartThreshold, _outstandingBytes);
 
                             // When the T3-rtx timer expires on an address, SCTP should perform slow start.
                             // RFC4960 7.2.3
@@ -665,7 +676,7 @@ namespace SIPSorcery.Net
                 // if it has cwnd or more bytes of data outstanding to that transport address.
 
                 // Send any new data chunks that have not yet been sent.
-                if (chunksSent < burstSize && !_sendQueue.IsEmpty && _congestionWindow > outstandingBytes)
+                if (chunksSent < burstSize && !_sendQueue.IsEmpty && allowedWindow > outstandingBytes)
                 {
                     while (chunksSent < burstSize && _sendQueue.TryDequeue(out var dataChunk))
                     {
@@ -712,7 +723,9 @@ namespace SIPSorcery.Net
         {
             if (!_sendQueue.IsEmpty || !_missingChunks.IsEmpty)
             {
-                if (_receiverWindow > 0 && _congestionWindow > (uint)_outstandingBytes)
+                var allowedWindow = Math.Min(_congestionWindow, _receiverWindow);
+
+                if (_receiverWindow > 0 && allowedWindow > (uint)_outstandingBytes)
                 {
                     return _burstPeriodMilliseconds;
                 }
