@@ -157,7 +157,7 @@ namespace SIPSorcery.Net
                         {
                             EndReceiveFrom(excp);
                         }
-                    });
+                    }).Forget(logger);
                 }
 #else
                 m_socket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, endReceiveFrom, null);
@@ -620,6 +620,7 @@ namespace SIPSorcery.Net
                     }
                     if (send.IsCompleted)
                     {
+                        ArrayPool<byte>.Shared.Return(tmp);
                         try
                         {
                             send.GetAwaiter().GetResult();
@@ -627,10 +628,6 @@ namespace SIPSorcery.Net
                         catch (Exception excp)
                         {
                             EndSendTo(excp, dstEndPoint, sendSocket, onFailure);
-                        }
-                        finally
-                        {
-                            ArrayPool<byte>.Shared.Return(tmp);
                         }
                     }
                     else
@@ -642,7 +639,7 @@ namespace SIPSorcery.Net
                             {
                                 EndSendTo(t.Exception, dstEndPoint, sendSocket, onFailure);
                             }
-                        });
+                        }).Forget(logger);
                     }
 
 #else
