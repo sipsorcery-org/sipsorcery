@@ -196,6 +196,7 @@ namespace SIPSorcery.Net
         public void SetReceiverWindow(uint remoteARwnd)
         {
             _initialRemoteARwnd = remoteARwnd;
+            _receiverWindow = remoteARwnd;
         }
 
         /// <summary>
