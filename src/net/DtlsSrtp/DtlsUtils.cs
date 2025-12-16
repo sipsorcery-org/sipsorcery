@@ -435,7 +435,11 @@ namespace SIPSorcery.Net
             {
                 pkcs12Store.Save(pfxStream, new char[] { }, new SecureRandom());
                 pfxStream.Seek(0, SeekOrigin.Begin);
+#if NET9_0_OR_GREATER
+                keyedCert = X509CertificateLoader.LoadPkcs12(pfxStream.ToArray(), string.Empty, X509KeyStorageFlags.Exportable);
+#else
                 keyedCert = new X509Certificate2(pfxStream.ToArray(), string.Empty, X509KeyStorageFlags.Exportable);
+#endif
             }
 
             return keyedCert;

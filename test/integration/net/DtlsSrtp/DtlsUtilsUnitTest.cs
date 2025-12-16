@@ -90,7 +90,13 @@ namespace SIPSorcery.Net.IntegrationTests
                 return;
             }
 #endif
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadPkcs12FromFile("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
+#else
+#pragma warning disable SYSLIB0057 // X509Certificate2 constructor is obsolete in NET9+
             var cert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
+#pragma warning restore SYSLIB0057
+#endif
             Assert.NotNull(cert);
             var key = DtlsUtils.LoadPrivateKeyResource(cert);
             Assert.NotNull(key);
@@ -114,7 +120,13 @@ namespace SIPSorcery.Net.IntegrationTests
             }
 #endif
 
+#if NET9_0_OR_GREATER
+            var coreFxCert = X509CertificateLoader.LoadPkcs12FromFile("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
+#else
+#pragma warning disable SYSLIB0057 // X509Certificate2 constructor is obsolete in NET9+
             var coreFxCert = new X509Certificate2("certs/localhost.pfx", string.Empty, X509KeyStorageFlags.Exportable);
+#pragma warning restore SYSLIB0057
+#endif
             Assert.NotNull(coreFxCert);
             Assert.NotNull(coreFxCert.PrivateKey);
 
