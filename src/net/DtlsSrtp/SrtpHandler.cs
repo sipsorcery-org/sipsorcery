@@ -9,6 +9,11 @@ namespace SIPSorcery.Net
         public bool IsNegotiationComplete { get; internal set; }
         public SDPSecurityDescription LocalSecurityDescription { get; internal set; }
 
+        public SrtpHandler()
+        {
+            throw new NotSupportedException();
+        }
+
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
             throw new NotImplementedException();

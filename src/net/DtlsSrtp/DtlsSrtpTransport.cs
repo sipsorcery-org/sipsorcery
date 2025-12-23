@@ -52,8 +52,6 @@ namespace SIPSorcery.net.DtlsSrtp
                 Transport = serverProtocol.Accept(server, this);
 
                 // policy
-                // shared secrets
-
                 var keys = server.Keys;
 
                 this.ClientRtpContext = new SrtpContext(keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, true);
@@ -78,7 +76,7 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public int ProtectRTP(byte[] payload, int length, out int outputBufferLength)
         {
-            var context = ClientRtpContext;
+            var context = ServerRtpContext;
 
             uint ssrc = SrtpKeyGenerator.RtpReadSsrc(payload);
             ushort sequenceNumber = SrtpKeyGenerator.RtpReadSequenceNumber(payload);
@@ -86,18 +84,21 @@ namespace SIPSorcery.net.DtlsSrtp
 
             uint roc = context.Roc;
             ulong index = ((ulong)roc << 16) | sequenceNumber;
-            SrtpKeyGenerator.EncryptAESCTR(payload, offset, length, context.K_e, context.K_s, ssrc, index);
+
+            byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
+            SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length, iv);
 
             payload[length + 0] = (byte)(roc >> 24);
             payload[length + 1] = (byte)(roc >> 16);
             payload[length + 2] = (byte)(roc >> 8);
             payload[length + 3] = (byte)roc;
 
-            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.K_a, payload, 0, length + 4);
-            System.Buffer.BlockCopy(auth, 0, payload, length + 4, auth.Length);
-            outputBufferLength = length + 4 + auth.Length;
+            const int authLen = 10;
+            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
+            System.Buffer.BlockCopy(auth, 0, payload, length, authLen); // we don't append ROC in SRTP
+            outputBufferLength = length + authLen;
 
-            if(sequenceNumber == 0xFFFF)
+            if (sequenceNumber == 0xFFFF)
             {
                 context.Roc++;
             }
@@ -112,22 +113,24 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            var context = ClientRtcpContext;
+            var context = ServerRtcpContext;
 
             uint ssrc = SrtpKeyGenerator.RtcpReadSsrc(payload);
-            uint index = context.S_l | E_FLAG;
-
             int offset = SrtpKeyGenerator.RtcpReadHeaderLen(payload);
-            SrtpKeyGenerator.EncryptAESCTR(payload, offset, length, context.K_e, context.K_s, ssrc, index);
 
+            byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, context.S_l);
+            SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length, iv);
+
+            uint index = context.S_l | E_FLAG;
             payload[length + 0] = (byte)(index >> 24);
             payload[length + 1] = (byte)(index >> 16);
             payload[length + 2] = (byte)(index >> 8);
             payload[length + 3] = (byte)index;
 
-            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.K_a, payload, 0, length + 4);
-            System.Buffer.BlockCopy(auth, 0, payload, length + 4, auth.Length);
-            outputBufferLength = length + 4 + auth.Length;
+            const int authLen = 10;
+            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
+            System.Buffer.BlockCopy(auth, 0, payload, length + 4, authLen);
+            outputBufferLength = length + 4 + authLen;
 
             context.S_l = (context.S_l + 1) % 0x80000000;
 
