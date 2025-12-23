@@ -21,6 +21,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls;
+using SIPSorcery.net.DtlsSrtp;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -279,7 +280,7 @@ namespace SIPSorcery.Net
                 {
                     int bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
 
-                    if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
+                    if (bytesRead == -1)
                     {
                         // Timed out waiting for a packet, this is by design and the receive attempt should
                         // be retired.

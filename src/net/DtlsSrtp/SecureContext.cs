@@ -1,38 +1,22 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: RtpSecureContextCollection.cs
-//
-// Description: Represents a secure context for Rtp Sessions
-//
-// Author(s):
-// Jean-Philippe Fournier
-//
-// History:
-// 5 January 2022 : Jean-Philippe Fournier, created Montréal, QC, Canada
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
+﻿using System;
+using SIPSorcery.Net;
 
-using SIPSorcery.Sys;
-using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
-
-namespace SIPSorcery.Net
+namespace SIPSorcery.net.DtlsSrtp
 {
     public class SecureContext
     {
-        public ProtectRtpPacket ProtectRtpPacket { get; private set; }
-        public ProtectRtpPacket ProtectRtcpPacket { get; private set; }
-
-        public ProtectRtpPacket UnprotectRtpPacket { get; private set; }
-        public ProtectRtpPacket UnprotectRtcpPacket { get; private set;}
-
-        public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
+        public SecureContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
-            ProtectRtpPacket = protectRtpPacket;
-            ProtectRtcpPacket = protectRtcpPacket;
-            UnprotectRtpPacket = unprotectRtpPacket;
-            UnprotectRtcpPacket = unprotectRtcpPacket;
+            this.ProtectRtpPacket = protectRtp;
+            this.UnprotectRtpPacket = unprotectRtp;
+            this.ProtectRtcpPacket = protectRtcp;
+            this.UnprotectRtcpPacket = unprotectRtcp;
         }
+
+        public ProtectRtpPacket ProtectRtpPacket { get; internal set; }
+        public ProtectRtpPacket ProtectRtcpPacket { get; internal set; }
+
+        public ProtectRtpPacket UnprotectRtpPacket { get; internal set; }
+        public ProtectRtpPacket UnprotectRtcpPacket { get; internal set; }
     }
 }

@@ -45,6 +45,8 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
+using SIPSorcery.net.DtlsSrtp;
+using System.Diagnostics;
 
 namespace SIPSorcery.Net
 {
@@ -360,10 +362,11 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto, useRsa: configuration?.X_UseRsaForDtlsCertificate ?? false);
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto, useRsa: configuration?.X_UseRsaForDtlsCertificate ?? true);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
+            Debug.WriteLine($"DTLS fingerprint for instance {this.GetHashCode()}: {DtlsCertificateFingerprint.value}");
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
@@ -455,13 +458,11 @@ namespace SIPSorcery.Net
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
 
-
-
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
                                 new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey)
+                                new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
@@ -1786,7 +1787,7 @@ namespace SIPSorcery.Net
         /// <param name="alertDescription">An optional description for the alert.</param>
         private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
         {
-            if (alertType == AlertTypesEnum.close_notify)
+            if (alertType == AlertTypesEnum.CloseNotify)
             {
                 logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
 
