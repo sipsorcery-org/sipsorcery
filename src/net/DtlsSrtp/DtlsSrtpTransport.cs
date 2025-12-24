@@ -108,12 +108,88 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public int UnprotectRTP(byte[] payload, int length, out int outputBufferLength)
         {
-            throw new NotImplementedException();
+            var context = ClientRtpContext;
+
+            const int authLen = 10;
+
+            uint ssrc = SrtpKeyGenerator.RtpReadSsrc(payload);
+            ushort sequenceNumber = SrtpKeyGenerator.RtpReadSequenceNumber(payload);
+
+            if (!context.S_l_set)
+            {
+                SetS_l(sequenceNumber);
+            }
+
+            int offset = SrtpKeyGenerator.RtpReadHeaderLen(payload);
+
+            uint roc = context.Roc;
+            ulong index = DetermineIndex(context.S_l, sequenceNumber, roc);
+
+            byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
+            SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - authLen, iv);
+
+            // TODO: validate tag
+
+            outputBufferLength = length - authLen;
+
+            return 0;
+        }
+
+        private static ulong DetermineIndex(uint s_l, ushort SEQ, uint ROC)
+        {
+            // taken from RFC3711 Appendix A
+            uint v;
+            if (s_l < 32768)
+            {
+                if ((SEQ - s_l) > 32768)
+                {
+                    v = (ROC - 1) % (uint)Math.Pow(2,32);
+                }
+                else
+                {
+                    v = ROC;
+                }
+            }
+            else
+            {
+                if ((s_l - 32768) > SEQ)
+                {
+                    v = (ROC + 1) % (uint)Math.Pow(2,32);
+                }
+                else
+                {
+                    v = ROC;
+                }
+            }
+            return SEQ + v * 65536;
+        }
+
+        /// <summary>
+        /// S_l can be set by signaling. RFC 3711 3.3.1. 
+        /// </summary>
+        /// <param name="sequenceNumber"></param>
+        public void SetS_l(ushort sequenceNumber)
+        {
+            var context = ClientRtpContext;
+            context.S_l = sequenceNumber;
+            context.S_l_set = true;
+        }
+
+        /// <summary>
+        /// ROC can be set by signaling. RFC 3711 3.3.1. 
+        /// </summary>
+        /// <param name="roc"></param>
+        public void SetROC(ushort roc)
+        {
+            var context = ClientRtpContext;
+            context.Roc = roc;
         }
 
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
             var context = ServerRtcpContext;
+
+            const int authLen = 10;
 
             uint ssrc = SrtpKeyGenerator.RtcpReadSsrc(payload);
             int offset = SrtpKeyGenerator.RtcpReadHeaderLen(payload);
@@ -127,7 +203,6 @@ namespace SIPSorcery.net.DtlsSrtp
             payload[length + 2] = (byte)(index >> 8);
             payload[length + 3] = (byte)index;
 
-            const int authLen = 10;
             byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
             System.Buffer.BlockCopy(auth, 0, payload, length + 4, authLen);
             outputBufferLength = length + 4 + authLen;
@@ -139,7 +214,28 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public int UnprotectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            throw new NotImplementedException();
+            var context = ClientRtcpContext;
+
+            const int authLen = 10;
+
+            uint ssrc = SrtpKeyGenerator.RtcpReadSsrc(payload);
+            int offset = SrtpKeyGenerator.RtcpReadHeaderLen(payload);
+            uint index = SrtpKeyGenerator.SrtcpReadIndex(payload, authLen);
+            if((index & E_FLAG) == E_FLAG)
+            {
+                index = index & ~E_FLAG;
+
+                context.S_l = index;
+
+                byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, context.S_l);
+                SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - 4 - authLen, iv);
+
+                // TODO: validate tag
+            }
+
+            outputBufferLength = length - 4 - authLen;
+
+            return 0;
         }
 
         public Certificate GetRemoteCertificate()
@@ -147,11 +243,9 @@ namespace SIPSorcery.net.DtlsSrtp
             var server = (DtlsSrtpServer)connection;
             return server.ClientCertificate;
         }
-
         
         public int GetReceiveLimit() => MTU;
         public int GetSendLimit() => MTU;
-
 
         public void WriteToRecvStream(byte[] buffer)
         {
