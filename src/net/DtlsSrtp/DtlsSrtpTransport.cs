@@ -83,7 +83,7 @@ namespace SIPSorcery.net.DtlsSrtp
             int offset = SrtpKeyGenerator.RtpReadHeaderLen(payload);
 
             uint roc = context.Roc;
-            ulong index = ((ulong)roc << 16) | sequenceNumber;
+            ulong index = SrtpKeyGenerator.GenerateRTPIndex(roc, sequenceNumber);
 
             byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
             SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length, iv);
@@ -137,13 +137,13 @@ namespace SIPSorcery.net.DtlsSrtp
 
             if (!context.S_l_set)
             {
-                SetS_l(sequenceNumber);
+                SetSequenceNumber(sequenceNumber);
             }
 
             int offset = SrtpKeyGenerator.RtpReadHeaderLen(payload);
 
             uint roc = context.Roc;
-            ulong index = SrtpKeyGenerator.DetermineIndex(context.S_l, sequenceNumber, roc);
+            ulong index = SrtpKeyGenerator.DetermineRTPIndex(context.S_l, sequenceNumber, roc);
 
             byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
             SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - authLen, iv);
@@ -155,9 +155,15 @@ namespace SIPSorcery.net.DtlsSrtp
         /// S_l can be set by signaling. RFC 3711 3.3.1. 
         /// </summary>
         /// <param name="sequenceNumber"></param>
-        public void SetS_l(ushort sequenceNumber)
+        public void SetSequenceNumber(ushort sequenceNumber)
         {
             var context = ClientRtpContext;
+
+            if (context.S_l_set)
+            {
+                throw new InvalidOperationException("S_l already set!");
+            }
+
             context.S_l = sequenceNumber;
             context.S_l_set = true;
         }
