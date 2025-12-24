@@ -111,9 +111,29 @@ namespace SIPSorcery.net.DtlsSrtp
             var context = ClientRtpContext;
 
             const int authLen = 10;
+            outputBufferLength = length - authLen;
 
             uint ssrc = SrtpKeyGenerator.RtpReadSsrc(payload);
             ushort sequenceNumber = SrtpKeyGenerator.RtpReadSequenceNumber(payload);
+
+            // TODO: optimize memory allocation - we could preallocate 4 byte array and add another GenerateAuthTag overload that processes 2 blocks
+            byte[] msgAuth = new byte[length + 4];
+            Buffer.BlockCopy(payload, 0, msgAuth, 0, length);
+            msgAuth[length + 0] = (byte)(context.Roc >> 24);
+            msgAuth[length + 1] = (byte)(context.Roc >> 16);
+            msgAuth[length + 2] = (byte)(context.Roc >> 8);
+            msgAuth[length + 3] = (byte)(context.Roc);
+
+            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, msgAuth, 0, length - authLen + 4);
+            for (int i = 0; i < authLen; i++)
+            {
+                if (payload[length - authLen + i] != auth[i])
+                {
+                    return -1;
+                }
+            }
+
+            msgAuth = null;
 
             if (!context.S_l_set)
             {
@@ -127,10 +147,6 @@ namespace SIPSorcery.net.DtlsSrtp
 
             byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
             SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - authLen, iv);
-
-            // TODO: validate tag
-
-            outputBufferLength = length - authLen;
 
             return 0;
         }
@@ -217,23 +233,29 @@ namespace SIPSorcery.net.DtlsSrtp
             var context = ClientRtcpContext;
 
             const int authLen = 10;
+            outputBufferLength = length - 4 - authLen;
 
             uint ssrc = SrtpKeyGenerator.RtcpReadSsrc(payload);
             int offset = SrtpKeyGenerator.RtcpReadHeaderLen(payload);
             uint index = SrtpKeyGenerator.SrtcpReadIndex(payload, authLen);
-            if((index & E_FLAG) == E_FLAG)
+
+            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length - authLen);
+            for (int i = 0; i < authLen; i++)
+            {
+                if (payload[length - authLen + i] != auth[i])
+                {
+                    return -1;
+                }
+            }
+
+            if ((index & E_FLAG) == E_FLAG)
             {
                 index = index & ~E_FLAG;
-
                 context.S_l = index;
 
                 byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, context.S_l);
                 SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - 4 - authLen, iv);
-
-                // TODO: validate tag
-            }
-
-            outputBufferLength = length - 4 - authLen;
+            }          
 
             return 0;
         }
