@@ -143,42 +143,13 @@ namespace SIPSorcery.net.DtlsSrtp
             int offset = SrtpKeyGenerator.RtpReadHeaderLen(payload);
 
             uint roc = context.Roc;
-            ulong index = DetermineIndex(context.S_l, sequenceNumber, roc);
+            ulong index = SrtpKeyGenerator.DetermineIndex(context.S_l, sequenceNumber, roc);
 
             byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
             SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - authLen, iv);
 
             return 0;
-        }
-
-        private static ulong DetermineIndex(uint s_l, ushort SEQ, uint ROC)
-        {
-            // taken from RFC3711 Appendix A
-            uint v;
-            if (s_l < 32768)
-            {
-                if ((SEQ - s_l) > 32768)
-                {
-                    v = (ROC - 1) % (uint)Math.Pow(2,32);
-                }
-                else
-                {
-                    v = ROC;
-                }
-            }
-            else
-            {
-                if ((s_l - 32768) > SEQ)
-                {
-                    v = (ROC + 1) % (uint)Math.Pow(2,32);
-                }
-                else
-                {
-                    v = ROC;
-                }
-            }
-            return SEQ + v * 65536;
-        }
+        }        
 
         /// <summary>
         /// S_l can be set by signaling. RFC 3711 3.3.1. 
