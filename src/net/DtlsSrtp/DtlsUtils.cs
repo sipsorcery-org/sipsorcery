@@ -20,11 +20,11 @@ namespace SIPSorcery.Net
 
             if (useRsa)
             {
-                clientCertificate = DtlsCertificateUtils.GenerateRSAServerCertificate(name, notBefore, notAfter);
+                clientCertificate = DTLSCertificateUtils.GenerateRSAServerCertificate(name, notBefore, notAfter);
             }
             else
             {
-                clientCertificate = DtlsCertificateUtils.GenerateECDSAServerCertificate(name, notBefore, notAfter);
+                clientCertificate = DTLSCertificateUtils.GenerateECDSAServerCertificate(name, notBefore, notAfter);
             }
 
             return (clientCertificate.certificate, clientCertificate.key);
@@ -43,7 +43,7 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(X509Certificate x509Certificate)
         {
-            string fingerprint = DtlsCertificateUtils.Fingerprint(x509Certificate.CertificateStructure);
+            string fingerprint = DTLSCertificateUtils.Fingerprint(x509Certificate.CertificateStructure);
             return new RTCDtlsFingerprint
             {
                 algorithm = "sha-256",

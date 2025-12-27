@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Linq;
 using Org.BouncyCastle.Tls;
 using SharpSRTP.SRTP;
+using SharpSRTP.SRTP.Authentication;
+using SharpSRTP.SRTP.Encryption;
 
 namespace SIPSorcery.net.DtlsSrtp
 {
@@ -101,9 +103,9 @@ namespace SIPSorcery.net.DtlsSrtp
             int offset = RTPReader.ReadHeaderLen(payload);
 
             uint roc = context.Roc;
-            ulong index = SRTPProtocol.GenerateRTPIndex(roc, sequenceNumber);
+            ulong index = SRTProtocol.GenerateRTPIndex(roc, sequenceNumber);
 
-            byte[] iv = SRTPProtocol.GenerateMessageIV(context.K_s, ssrc, index);
+            byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, index);
             AESCTR.Encrypt(context.AES, payload, offset, length, iv);
 
             payload[length + 0] = (byte)(roc >> 24);
@@ -111,7 +113,7 @@ namespace SIPSorcery.net.DtlsSrtp
             payload[length + 2] = (byte)(roc >> 8);
             payload[length + 3] = (byte)roc;
 
-            byte[] auth = SRTPProtocol.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
+            byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
             System.Buffer.BlockCopy(auth, 0, payload, length, context.N_tag); // we don't append ROC in SRTP
             outputBufferLength = length + context.N_tag;
 
@@ -139,7 +141,7 @@ namespace SIPSorcery.net.DtlsSrtp
             msgAuth[length + 2] = (byte)(context.Roc >> 8);
             msgAuth[length + 3] = (byte)(context.Roc);
 
-            byte[] auth = SRTPProtocol.GenerateAuthTag(context.HMAC, msgAuth, 0, length - context.N_tag + 4);
+            byte[] auth = HMAC.GenerateAuthTag(context.HMAC, msgAuth, 0, length - context.N_tag + 4);
             for (int i = 0; i < context.N_tag; i++)
             {
                 if (payload[length - context.N_tag + i] != auth[i])
@@ -158,14 +160,14 @@ namespace SIPSorcery.net.DtlsSrtp
             int offset = RTPReader.ReadHeaderLen(payload);
 
             uint roc = context.Roc;
-            uint index = SRTPProtocol.DetermineRTPIndex(context.S_l, sequenceNumber, roc);
+            uint index = SRTProtocol.DetermineRTPIndex(context.S_l, sequenceNumber, roc);
 
-            if(!context.CheckandUpdateReplayWindow(index))
+            if(!context.CheckAndUpdateReplayWindow(index))
             {
                 return -1;
             }
 
-            byte[] iv = SRTPProtocol.GenerateMessageIV(context.K_s, ssrc, index);
+            byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, index);
             AESCTR.Encrypt(context.AES, payload, offset, length - context.N_tag, iv);
 
             return 0;
@@ -205,7 +207,7 @@ namespace SIPSorcery.net.DtlsSrtp
             uint ssrc = RTCPReader.ReadSsrc(payload);
             int offset = RTCPReader.GetHeaderLen();
 
-            byte[] iv = SRTPProtocol.GenerateMessageIV(context.K_s, ssrc, context.S_l);
+            byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, context.S_l);
             AESCTR.Encrypt(context.AES, payload, offset, length, iv);
 
             uint index = context.S_l | E_FLAG;
@@ -214,7 +216,7 @@ namespace SIPSorcery.net.DtlsSrtp
             payload[length + 2] = (byte)(index >> 8);
             payload[length + 3] = (byte)index;
 
-            byte[] auth = SRTPProtocol.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
+            byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
             System.Buffer.BlockCopy(auth, 0, payload, length + 4, context.N_tag);
             outputBufferLength = length + 4 + context.N_tag;
 
@@ -237,7 +239,7 @@ namespace SIPSorcery.net.DtlsSrtp
             {
                 index = index & ~E_FLAG;
 
-                byte[] auth = SRTPProtocol.GenerateAuthTag(context.HMAC, payload, 0, length - context.N_tag);
+                byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length - context.N_tag);
                 for (int i = 0; i < context.N_tag; i++)
                 {
                     if (payload[length - context.N_tag + i] != auth[i])
@@ -246,12 +248,12 @@ namespace SIPSorcery.net.DtlsSrtp
                     }
                 }
 
-                if (!context.CheckandUpdateReplayWindow(index))
+                if (!context.CheckAndUpdateReplayWindow(index))
                 {
                     return -1;
                 }
 
-                byte[] iv = SRTPProtocol.GenerateMessageIV(context.K_s, ssrc, context.S_l);
+                byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, context.S_l);
                 AESCTR.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, iv);
 
                 return 0;

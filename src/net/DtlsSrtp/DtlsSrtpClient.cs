@@ -6,14 +6,13 @@ using SharpSRTP.SRTP;
 
 namespace SIPSorcery.net.DtlsSrtp
 {
-    public class DtlsSrtpClient : SharpSRTP.DTLS.DtlsClient, IDtlsSrtpPeer
+    public class DtlsSrtpClient : SharpSRTP.SRTP.DTLSSRTPClient, IDtlsSrtpPeer
     {
         public event OnDtlsAlertEvent OnAlert;
 
-        public DtlsSrtpClient(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey) : base(crypto)
+        public DtlsSrtpClient(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey, short preferredSignatureAlgorithm = SignatureAlgorithm.rsa) : base(crypto)
         {
-            base._myCert = dtlsCertificate;
-            this._myCertKey = dtlsPrivateKey;
+            SetCertificate(dtlsCertificate, dtlsPrivateKey, preferredSignatureAlgorithm);
         }
 
         public override void NotifyAlertReceived(short level, short alertDescription)
@@ -36,7 +35,7 @@ namespace SIPSorcery.net.DtlsSrtp
         public override void NotifyHandshakeComplete()
         {
             var securityParameters = m_context.SecurityParameters;
-            this.Keys = SRTPProtocol.GenerateMasterKeys(base._clientSrtpData.ProtectionProfiles[0], securityParameters);
+            this.Keys = SRTProtocol.GenerateMasterKeys(base._clientSrtpData.ProtectionProfiles[0], securityParameters);
         }
 
         public bool ForceUseExtendedMasterSecret { get; set; }
