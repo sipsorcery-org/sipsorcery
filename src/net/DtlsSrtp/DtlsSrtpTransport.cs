@@ -26,7 +26,7 @@ namespace SIPSorcery.net.DtlsSrtp
         {
             this.connection = connection;
 
-            ((DtlsSrtpServer)connection).OnAlert += DtlsSrtpTransport_OnAlert;
+            connection.OnAlert += DtlsSrtpTransport_OnAlert;
         }
 
         private void DtlsSrtpTransport_OnAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
@@ -45,27 +45,34 @@ namespace SIPSorcery.net.DtlsSrtp
             handshakeError = null;
 
             DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
-            try
+
+            if (connection is DtlsSrtpServer server)
             {
-                var server = (DtlsSrtpServer)connection;
+                try
+                {
+                    Transport = serverProtocol.Accept(server, this);
 
-                Transport = serverProtocol.Accept(server, this);
+                    // policy
+                    var keys = server.Keys;
 
-                // policy
-                var keys = server.Keys;
+                    this.ClientRtpContext = new SrtpContext(keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, true);
+                    this.ClientRtcpContext = new SrtpContext(keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, false);
 
-                this.ClientRtpContext = new SrtpContext(keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, true);
-                this.ClientRtcpContext = new SrtpContext(keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, false);
+                    this.ServerRtpContext = new SrtpContext(keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, true);
+                    this.ServerRtcpContext = new SrtpContext(keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, false);
 
-                this.ServerRtpContext = new SrtpContext(keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, true);
-                this.ServerRtcpContext = new SrtpContext(keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, false);
-
-                return true;
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    handshakeError = ex;
+                    return false;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                handshakeError = ex;
-                return false;
+                // TODO client
+                throw new NotImplementedException();
             }
         }
 
@@ -244,8 +251,7 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public Certificate GetRemoteCertificate()
         {
-            var server = (DtlsSrtpServer)connection;
-            return server.ClientCertificate;
+            return connection.PeerCertificate;
         }
         
         public int GetReceiveLimit() => MTU;

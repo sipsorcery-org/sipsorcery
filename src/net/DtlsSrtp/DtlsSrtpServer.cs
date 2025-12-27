@@ -42,5 +42,7 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public bool ForceUseExtendedMasterSecret { get; set; }
         public SrtpKeys Keys { get; private set; }
+
+        public Certificate PeerCertificate => ClientCertificate;
     }
 }
