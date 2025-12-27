@@ -15,249 +15,285 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public sealed class SrtpHandler
 {
-    public sealed class SrtpHandler
+    public List<SDPSecurityDescription>? m_localSecurityDescriptions;
+    public List<SDPSecurityDescription>? m_remoteSecurityDescriptions;
+
+    public SDPSecurityDescription? LocalSecurityDescription { get; private set; }
+    public SDPSecurityDescription? RemoteSecurityDescription { get; private set; }
+
+    public IPacketTransformer? SrtpDecoder { get; private set; }
+    public IPacketTransformer? SrtpEncoder { get; private set; }
+    public IPacketTransformer? SrtcpDecoder { get; private set; }
+    public IPacketTransformer? SrtcpEncoder { get; private set; }
+
+    public bool IsNegotiationComplete { get; private set; }
+
+
+    public SrtpHandler()
     {
-        private static readonly ILogger logger = Log.Logger;
+    }
 
-        public List<SDPSecurityDescription> m_localSecurityDescriptions;
-        public List<SDPSecurityDescription> m_remoteSecurityDescriptions;
-
-        public SDPSecurityDescription LocalSecurityDescription { get; private set; }
-        public SDPSecurityDescription RemoteSecurityDescription { get; private set; }
-
-        public IPacketTransformer SrtpDecoder { get; private set; }
-        public IPacketTransformer SrtpEncoder { get; private set; }
-        public IPacketTransformer SrtcpDecoder { get; private set; }
-        public IPacketTransformer SrtcpEncoder { get; private set; }
-
-        public bool IsNegotiationComplete { get; private set; } = false;
-
-
-        public SrtpHandler()
+    public bool RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription> securityDescriptions)
+    {
+        if (RemoteSecurityDescription is null || LocalSecurityDescription is null)
         {
-        }
-
-        public bool RemoteSecurityDescriptionUnchanged(List<SDPSecurityDescription> securityDescriptions)
-        {
-            if (RemoteSecurityDescription == null || LocalSecurityDescription == null)
-            {
-                return false;
-            }
-
-            var rsec = securityDescriptions.FirstOrDefault(x => x.CryptoSuite == LocalSecurityDescription.CryptoSuite);
-            return rsec.ToString() == RemoteSecurityDescription.ToString();
-        }
-
-        public bool SetupLocal(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
-        {
-            m_localSecurityDescriptions = securityDescription;
-
-            if (sdpType == SdpType.offer)
-            {
-               IsNegotiationComplete = false;
-               return true;
-            }
-
-            if (m_remoteSecurityDescriptions.Count==0)
-            {
-               throw new ApplicationException("Setup local crypto failed. No cryto attribute in offer.");
-            }
-
-            if (m_localSecurityDescriptions.Count==0)
-            {
-                throw new ApplicationException("Setup local crypto failed. No crypto attribute in answer.");
-            }
-
-            var lsec = LocalSecurityDescription = m_localSecurityDescriptions[0];
-            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
-
-            if (rsec != null && rsec.Tag == lsec.Tag)
-            {
-               IsNegotiationComplete = true;
-               SrtpEncoder = GenerateRtpEncoder(lsec);
-               SrtpDecoder = GenerateRtpDecoder(rsec);
-               SrtcpEncoder = GenerateRtcpEncoder(lsec);
-               SrtcpDecoder = GenerateRtcpDecoder(rsec);
-               return true;
-            }
-
             return false;
         }
 
-        public bool SetupRemote(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
+        var rsec = FindSecurityDescriptionByCryptoSuite(securityDescriptions, LocalSecurityDescription.CryptoSuite);
+
+        if (rsec is null)
         {
-            m_remoteSecurityDescriptions = securityDescription;
-
-            if (sdpType == SdpType.offer)
-            {
-                IsNegotiationComplete = false;
-                return true;
-            }
-
-            if (m_localSecurityDescriptions.Count==0)
-            {
-                throw new ApplicationException("Setup remote crypto failed. No cryto attribute in offer.");
-            }
-
-            if (m_remoteSecurityDescriptions.Count==0)
-            {
-                throw new ApplicationException("Setup remote crypto failed. No cryto attribute in answer.");
-            }
-
-            var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions[0];
-            var lsec = LocalSecurityDescription = m_localSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == rsec.CryptoSuite);
-
-            if (lsec != null && lsec.Tag == rsec.Tag)
-            {
-                IsNegotiationComplete = true;
-                SrtpEncoder = GenerateRtpEncoder(lsec);
-                SrtpDecoder = GenerateRtpDecoder(rsec);
-                SrtcpEncoder = GenerateRtcpEncoder(lsec);
-                SrtcpDecoder = GenerateRtcpDecoder(rsec);
-                return true;
-            }
-            
             return false;
         }
 
-        private IPacketTransformer GenerateRtpEncoder(SDPSecurityDescription securityDescription)
+        return rsec.Equals(RemoteSecurityDescription);
+
+        // Local method for finding security description by crypto suite
+        static SDPSecurityDescription? FindSecurityDescriptionByCryptoSuite(List<SDPSecurityDescription> descriptions, SDPSecurityDescription.CryptoSuites cryptoSuite)
         {
-            return GenerateTransformer(securityDescription, true);
-        }
-
-        private IPacketTransformer GenerateRtpDecoder(SDPSecurityDescription securityDescription)
-        {
-            return GenerateTransformer(securityDescription, true);
-        }
-
-        private IPacketTransformer GenerateRtcpEncoder(SDPSecurityDescription securityDescription)
-        {
-            return GenerateTransformer(securityDescription, false);
-        }
-
-        private IPacketTransformer GenerateRtcpDecoder(SDPSecurityDescription securityDescription)
-        {
-            return GenerateTransformer(securityDescription, false);
-        }
-
-        private IPacketTransformer GenerateTransformer(SDPSecurityDescription securityDescription, bool isRtp)
-        {
-            var srtpParams = SrtpParameters.GetSrtpParametersForProfile((int)securityDescription.CryptoSuite);
-
-            var engine = new SrtpTransformEngine(securityDescription.KeyParams[0].Key,
-                                                 securityDescription.KeyParams[0].Salt,
-                                                 srtpParams.GetSrtpPolicy(), 
-                                                 srtpParams.GetSrtcpPolicy() );
-
-            if (isRtp)
+            foreach (var description in descriptions)
             {
-                return engine.GetRTPTransformer();
+                if (description.CryptoSuite == cryptoSuite)
+                {
+                    return description;
+                }
             }
-            else
-            {
-                return engine.GetRTCPTransformer();
-            }
+            return null;
         }
+    }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+    public bool SetupLocal(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
+    {
+        m_localSecurityDescriptions = securityDescription;
+
+        if (sdpType == SdpType.offer)
         {
-            lock (SrtpDecoder)
-            {
-                return SrtpDecoder.ReverseTransform(packet, offset, length);
-            }
+            IsNegotiationComplete = false;
+            return true;
         }
 
-        public int UnprotectRTP(byte[] payload, int length, out int outLength)
+        Debug.Assert(m_remoteSecurityDescriptions is { });
+
+        if (m_remoteSecurityDescriptions.Count == 0)
         {
-            var result = UnprotectRTP(payload, 0, length);
-
-            if (result == null)
-            {
-                outLength = 0;
-                return -1;
-            }
-
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-            outLength = result.Length;
-
-            return 0; //No Errors
+            throw new ApplicationException("Setup local crypto failed. No crypto attribute in offer.");
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        if (m_localSecurityDescriptions.Count == 0)
         {
-            lock (SrtpEncoder)
-            {
-                return SrtpEncoder.Transform(packet, offset, length);
-            }
+            throw new ApplicationException("Setup local crypto failed. No crypto attribute in answer.");
         }
 
-        public int ProtectRTP(byte[] payload, int length, out int outLength)
+        var lsec = LocalSecurityDescription = m_localSecurityDescriptions[0];
+        var rsec = RemoteSecurityDescription = GetFirstMatchingSecurityDescription(lsec);
+
+        if (rsec is { } && rsec.Tag == lsec.Tag)
         {
-            var result = ProtectRTP(payload, 0, length);
-
-            if (result == null)
-            {
-                outLength = 0;
-                return -1;
-            }
-
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-            outLength = result.Length;
-
-            return 0; //No Errors
+            IsNegotiationComplete = true;
+            SrtpEncoder = GenerateRtpEncoder(lsec);
+            SrtpDecoder = GenerateRtpDecoder(rsec);
+            SrtcpEncoder = GenerateRtcpEncoder(lsec);
+            SrtcpDecoder = GenerateRtcpDecoder(rsec);
+            return true;
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        return false;
+    }
+
+    public bool SetupRemote(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
+    {
+        m_remoteSecurityDescriptions = securityDescription;
+
+        if (sdpType == SdpType.offer)
         {
-            lock (SrtcpDecoder)
-            {
-                return SrtcpDecoder.ReverseTransform(packet, offset, length);
-            }
+            IsNegotiationComplete = false;
+            return true;
         }
 
-        public int UnprotectRTCP(byte[] payload, int length, out int outLength)
+        Debug.Assert(m_localSecurityDescriptions is { });
+
+        if (m_localSecurityDescriptions.Count == 0)
         {
-            var result = UnprotectRTCP(payload, 0, length);
-            if (result == null)
-            {
-                outLength = 0;
-                return -1;
-            }
-
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-            outLength = result.Length;
-
-            return 0; //No Errors
+            throw new ApplicationException("Setup remote crypto failed. No crypto attribute in offer.");
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        if (m_remoteSecurityDescriptions.Count == 0)
         {
-            lock (SrtcpEncoder)
-            {
-                return SrtcpEncoder.Transform(packet, offset, length);
-            }
+            throw new ApplicationException("Setup remote crypto failed. No crypto attribute in answer.");
         }
 
-        public int ProtectRTCP(byte[] payload, int length, out int outLength)
+        var rsec = RemoteSecurityDescription = m_remoteSecurityDescriptions[0];
+        var lsec = LocalSecurityDescription = GetFirstMatchingSecurityDescription(rsec);
+
+        if (lsec is { } && lsec.Tag == rsec.Tag)
         {
-            var result = ProtectRTCP(payload, 0, length);
-            if (result == null)
-            {
-                outLength = 0;
-                return -1;
-            }
-
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-            outLength = result.Length;
-
-            return 0; //No Errors
+            IsNegotiationComplete = true;
+            SrtpEncoder = GenerateRtpEncoder(lsec);
+            SrtpDecoder = GenerateRtpDecoder(rsec);
+            SrtcpEncoder = GenerateRtcpEncoder(lsec);
+            SrtcpDecoder = GenerateRtcpDecoder(rsec);
+            return true;
         }
+
+        return false;
+    }
+
+    private IPacketTransformer GenerateRtpEncoder(SDPSecurityDescription securityDescription)
+    {
+        return GenerateTransformer(securityDescription, true);
+    }
+
+    private IPacketTransformer GenerateRtpDecoder(SDPSecurityDescription securityDescription)
+    {
+        return GenerateTransformer(securityDescription, true);
+    }
+
+    private IPacketTransformer GenerateRtcpEncoder(SDPSecurityDescription securityDescription)
+    {
+        return GenerateTransformer(securityDescription, false);
+    }
+
+    private IPacketTransformer GenerateRtcpDecoder(SDPSecurityDescription securityDescription)
+    {
+        return GenerateTransformer(securityDescription, false);
+    }
+
+    private IPacketTransformer GenerateTransformer(SDPSecurityDescription securityDescription, bool isRtp)
+    {
+        var srtpParams = SrtpParameters.GetSrtpParametersForProfile((int)securityDescription.CryptoSuite);
+
+        var engine = new SrtpTransformEngine(securityDescription.KeyParams[0].Key,
+                                             securityDescription.KeyParams[0].Salt,
+                                             srtpParams.GetSrtpPolicy(),
+                                             srtpParams.GetSrtcpPolicy());
+
+        if (isRtp)
+        {
+            return engine.GetRTPTransformer();
+        }
+        else
+        {
+            return engine.GetRTCPTransformer();
+        }
+    }
+
+    public byte[]? UnprotectRTP(byte[] packet, int offset, int length)
+    {
+        Debug.Assert(SrtpDecoder is { });
+        lock (SrtpDecoder)
+        {
+            return SrtpDecoder.ReverseTransform(packet, offset, length);
+        }
+    }
+
+    public int UnprotectRTP(byte[] payload, int length, out int outLength)
+    {
+        var result = UnprotectRTP(payload, 0, length);
+
+        if (result is null)
+        {
+            outLength = 0;
+            return -1;
+        }
+
+        System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+        outLength = result.Length;
+
+        return 0; //No Errors
+    }
+
+    public byte[]? ProtectRTP(byte[] packet, int offset, int length)
+    {
+        Debug.Assert(SrtpEncoder is { });
+        lock (SrtpEncoder)
+        {
+            return SrtpEncoder.Transform(packet, offset, length);
+        }
+    }
+
+    public int ProtectRTP(byte[] payload, int length, out int outLength)
+    {
+        var result = ProtectRTP(payload, 0, length);
+
+        if (result is null)
+        {
+            outLength = 0;
+            return -1;
+        }
+
+        System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+        outLength = result.Length;
+
+        return 0; //No Errors
+    }
+
+    public byte[]? UnprotectRTCP(byte[] packet, int offset, int length)
+    {
+        Debug.Assert(SrtcpDecoder is { });
+        lock (SrtcpDecoder)
+        {
+            return SrtcpDecoder.ReverseTransform(packet, offset, length);
+        }
+    }
+
+    public int UnprotectRTCP(byte[] payload, int length, out int outLength)
+    {
+        var result = UnprotectRTCP(payload, 0, length);
+        if (result is null)
+        {
+            outLength = 0;
+            return -1;
+        }
+
+        System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+        outLength = result.Length;
+
+        return 0; //No Errors
+    }
+
+    public byte[]? ProtectRTCP(byte[] packet, int offset, int length)
+    {
+        Debug.Assert(SrtcpEncoder is { });
+        lock (SrtcpEncoder)
+        {
+            return SrtcpEncoder.Transform(packet, offset, length);
+        }
+    }
+
+    public int ProtectRTCP(byte[] payload, int length, out int outLength)
+    {
+        var result = ProtectRTCP(payload, 0, length);
+        if (result is null)
+        {
+            outLength = 0;
+            return -1;
+        }
+
+        System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+        outLength = result.Length;
+
+        return 0; //No Errors
+    }
+
+    private SDPSecurityDescription? GetFirstMatchingSecurityDescription(SDPSecurityDescription other)
+    {
+        Debug.Assert(m_remoteSecurityDescriptions is { });
+        foreach (var desc in m_remoteSecurityDescriptions)
+        {
+            if (desc.CryptoSuite == other.CryptoSuite)
+            {
+                return desc;
+            }
+        }
+
+        return null;
     }
 }

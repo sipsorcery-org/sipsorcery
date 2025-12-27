@@ -41,150 +41,152 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public class SrtpTransformer : IPacketTransformer
 {
-    public class SrtpTransformer : IPacketTransformer
+    private int _isLocked;
+    private RawPacket rawPacket;
+
+    private SrtpTransformEngine forwardEngine;
+    private SrtpTransformEngine reverseEngine;
+
+    /**
+     * All the known SSRC's corresponding SRTPCryptoContexts
+     */
+    private ConcurrentDictionary<long, SrtpCryptoContext> contexts;
+
+    public SrtpTransformer(SrtpTransformEngine engine) : this(engine, engine)
     {
-        private int _isLocked = 0;
-        private RawPacket rawPacket;
+    }
 
-        private SrtpTransformEngine forwardEngine;
-        private SrtpTransformEngine reverseEngine;
+    public SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
+    {
+        this.forwardEngine = forwardEngine;
+        this.reverseEngine = reverseEngine;
+        this.contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
+        this.rawPacket = new RawPacket();
+    }
 
-        /**
-	     * All the known SSRC's corresponding SRTPCryptoContexts
-	     */
-        private ConcurrentDictionary<long, SrtpCryptoContext> contexts;
+    public byte[]? Transform(byte[] pkt)
+    {
+        return Transform(pkt, 0, pkt.Length);
+    }
 
-        public SrtpTransformer(SrtpTransformEngine engine) : this(engine, engine)
+    public byte[]? Transform(byte[] pkt, int offset, int length)
+    {
+        var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
+
+        try
         {
-        }
+            // Updates the contents of raw packet with new incoming packet 
+            var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+            rawPacket.Wrap(pkt, offset, length);
 
-        public SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
-        {
-            this.forwardEngine = forwardEngine;
-            this.reverseEngine = reverseEngine;
-            this.contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
-            this.rawPacket = new RawPacket();
-        }
+            // Associate packet to a crypto context
+            long ssrc = rawPacket.GetSSRC();
+            contexts.TryGetValue(ssrc, out var context);
 
-        public byte[] Transform(byte[] pkt)
-        {
-            return Transform(pkt, 0, pkt.Length);
-        }
-
-        public byte[] Transform(byte[] pkt, int offset, int length)
-        {
-            var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
-
-            try
+            if (context is null)
             {
-                // Updates the contents of raw packet with new incoming packet 
-                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
-                rawPacket.Wrap(pkt, offset, length);
-
-                // Associate packet to a crypto context
-                long ssrc = rawPacket.GetSSRC();
-                SrtpCryptoContext context = null;
-                contexts.TryGetValue(ssrc, out context);
-
-                if (context == null)
-                {
-                    context = forwardEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
-                    context.DeriveSrtpKeys(0);
-                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
-                }
-
-                // Transform RTP packet into SRTP
-                context.TransformPacket(rawPacket);
-                byte[] result = rawPacket.GetData();
-
-                return result;
-            }
-            finally
-            {
-                //Unlock
-                if (!isLocked)
-                    Interlocked.CompareExchange(ref _isLocked, 0, 1);
-            }
-        }
-
-        /**
-         * Reverse-transforms a specific packet (i.e. transforms a transformed
-         * packet back).
-         * 
-         * @param pkt
-         *            the transformed packet to be restored
-         * @return the restored packet
-         */
-        public byte[] ReverseTransform(byte[] pkt)
-        {
-            return ReverseTransform(pkt, 0, pkt.Length);
-        }
-
-        public byte[] ReverseTransform(byte[] pkt, int offset, int length)
-        {
-            var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
-            try
-            {
-                // Wrap data into the raw packet for readable format
-                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
-                rawPacket.Wrap(pkt, offset, length);
-
-                // Associate packet to a crypto context
-                long ssrc = rawPacket.GetSSRC();
-                SrtpCryptoContext context = null;
-                this.contexts.TryGetValue(ssrc, out context);
-                if (context == null)
-                {
-                    context = this.reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
-                    context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
-                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
-                }
-
-                byte[] result = null;
-                bool reversed = context.ReverseTransformPacket(rawPacket);
-                if (reversed)
-                {
-                    result = rawPacket.GetData();
-                }
-
-                return result;
-            }
-            finally
-            {
-                //Unlock
-                if (!isLocked)
-                    Interlocked.CompareExchange(ref _isLocked, 0, 1);
-            }
-        }
-
-        /**
-         * Close the transformer and underlying transform engine.
-         * 
-         * The close functions closes all stored crypto contexts. This deletes key
-         * data and forces a cleanup of the crypto contexts.
-         */
-        public void Close()
-        {
-            forwardEngine.Close();
-            if (forwardEngine != reverseEngine)
-            {
-                reverseEngine.Close();
+                var srtpCryptoContext = forwardEngine.GetDefaultContext();
+                Debug.Assert(srtpCryptoContext is { });
+                context = srtpCryptoContext.deriveContext(ssrc, 0, 0);
+                context.DeriveSrtpKeys(0);
+                contexts.AddOrUpdate(ssrc, context, (a, b) => context);
             }
 
-            var keys = new List<long>(contexts.Keys);
-            foreach (var ssrc in keys)
+            // Transform RTP packet into SRTP
+            context.TransformPacket(rawPacket);
+            var result = rawPacket.GetData();
+
+            return result;
+        }
+        finally
+        {
+            //Unlock
+            if (!isLocked)
             {
-                SrtpCryptoContext context;
-                contexts.TryRemove(ssrc, out context);
-                if (context != null)
-                {
-                    context.Close();
-                }
+                Interlocked.CompareExchange(ref _isLocked, 0, 1);
             }
+        }
+    }
+
+    /**
+     * Reverse-transforms a specific packet (i.e. transforms a transformed
+     * packet back).
+     * 
+     * @param pkt
+     *            the transformed packet to be restored
+     * @return the restored packet
+     */
+    public byte[]? ReverseTransform(byte[] pkt)
+    {
+        return ReverseTransform(pkt, 0, pkt.Length);
+    }
+
+    public byte[]? ReverseTransform(byte[] pkt, int offset, int length)
+    {
+        var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
+        try
+        {
+            // Wrap data into the raw packet for readable format
+            var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+            rawPacket.Wrap(pkt, offset, length);
+
+            // Associate packet to a crypto context
+            long ssrc = rawPacket.GetSSRC();
+            this.contexts.TryGetValue(ssrc, out var context);
+            if (context is null)
+            {
+                var srtpCryptoContext = this.reverseEngine.GetDefaultContext();
+                Debug.Assert(srtpCryptoContext is { });
+                context = srtpCryptoContext.deriveContext(ssrc, 0, 0);
+                context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
+                contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+            }
+
+            byte[]? result = null;
+            var reversed = context.ReverseTransformPacket(rawPacket);
+            if (reversed)
+            {
+                result = rawPacket.GetData();
+            }
+
+            return result;
+        }
+        finally
+        {
+            //Unlock
+            if (!isLocked)
+            {
+                Interlocked.CompareExchange(ref _isLocked, 0, 1);
+            }
+        }
+    }
+
+    /**
+     * Close the transformer and underlying transform engine.
+     * 
+     * The close functions closes all stored crypto contexts. This deletes key
+     * data and forces a cleanup of the crypto contexts.
+     */
+    public void Close()
+    {
+        forwardEngine.Close();
+        if (forwardEngine != reverseEngine)
+        {
+            reverseEngine.Close();
+        }
+
+        var keys = new List<long>(contexts.Keys);
+        foreach (var ssrc in keys)
+        {
+            contexts.TryRemove(ssrc, out var context);
+            context?.Close();
         }
     }
 }

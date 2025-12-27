@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -29,7 +31,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.UnitTests
 {
-    public class TestLogHelper
+    public static class TestLogHelper
     {
         public static Microsoft.Extensions.Logging.ILogger InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
         {
@@ -51,87 +53,9 @@ namespace SIPSorcery.UnitTests
         }
     }
 
-    internal class MockSIPChannel : SIPChannel
+    public static class TestHelper
     {
-        public MockSIPChannel(IPEndPoint channelEndPoint)
-        {
-            ListeningIPAddress = channelEndPoint.Address;
-            Port = channelEndPoint.Port;
-            SIPProtocol = SIPProtocolsEnum.udp;
-            ID = Crypto.GetRandomInt(5).ToString();
-
-            SIPMessageSent = new AutoResetEvent(false);
-        }
-
-        public string LastSIPMessageSent { get; private set; }
-
-        public AutoResetEvent SIPMessageSent { get; }
-
-        public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, bool canInitiateConnection, string connectionIDHint)
-        {
-            LastSIPMessageSent = System.Text.Encoding.UTF8.GetString(buffer);
-            SIPMessageSent.Set();
-            return Task.FromResult(SocketError.Success);
-        }
-
-        public override Task<SocketError> SendSecureAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, bool canInitiateConnection, string connectionIDHint)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Close()
-        { }
-
-        public override void Dispose()
-        { }
-
-        public override bool HasConnection(string connectionID)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool HasConnection(SIPEndPoint remoteEndPoint)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool HasConnection(Uri serverUri)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool IsAddressFamilySupported(AddressFamily addresFamily)
-        {
-            return true;
-        }
-
-        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// Use to cause a mock message to be passed through to the SIP Transport class monitoring this mock channel.
-        /// </summary>
-        public void FireMessageReceived(SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] sipMsgBuffer)
-        {
-            SIPMessageReceived.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
-        }
-    }
-
-    public class MockSIPUriResolver
-    {
-        public static Task<SIPEndPoint> ResolveSIPUri(SIPURI uri, bool preferIPv6)
-        {
-            if (IPSocket.TryParseIPEndPoint(uri.Host, out var ipEndPoint))
-            {
-                return Task.FromResult(new SIPEndPoint(uri.Protocol, ipEndPoint));
-            }
-            else
-            {
-                return Task.FromResult<SIPEndPoint>(null);
-            }
-        }
+        public static string GetCurrentMethodName([CallerMemberName] string methodName = default) => methodName;
     }
 
     public class MockMediaSession : IMediaSession
