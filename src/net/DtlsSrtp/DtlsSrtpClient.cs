@@ -3,7 +3,6 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using SharpSRTP.SRTP;
-using static SIPSorcery.net.DtlsSrtp.DtlsSrtpTransport;
 
 namespace SIPSorcery.net.DtlsSrtp
 {
@@ -37,11 +36,11 @@ namespace SIPSorcery.net.DtlsSrtp
         public override void NotifyHandshakeComplete()
         {
             var securityParameters = m_context.SecurityParameters;
-            this.Keys = SrtpKeyGenerator.GenerateMasterKeys(base._clientSrtpData.ProtectionProfiles[0], securityParameters);
+            this.Keys = SRTPProtocol.GenerateMasterKeys(base._clientSrtpData.ProtectionProfiles[0], securityParameters);
         }
 
         public bool ForceUseExtendedMasterSecret { get; set; }
-        public SrtpKeys Keys { get; private set; }
+        public SRTPKeys Keys { get; private set; }
 
         public Certificate PeerCertificate => ServerCertificate?.Certificate;
     }
