@@ -93,10 +93,9 @@ namespace SIPSorcery.net.DtlsSrtp
             payload[length + 2] = (byte)(roc >> 8);
             payload[length + 3] = (byte)roc;
 
-            const int authLen = 10;
             byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
-            System.Buffer.BlockCopy(auth, 0, payload, length, authLen); // we don't append ROC in SRTP
-            outputBufferLength = length + authLen;
+            System.Buffer.BlockCopy(auth, 0, payload, length, context.N_tag); // we don't append ROC in SRTP
+            outputBufferLength = length + context.N_tag;
 
             if (sequenceNumber == 0xFFFF)
             {
@@ -109,9 +108,7 @@ namespace SIPSorcery.net.DtlsSrtp
         public int UnprotectRTP(byte[] payload, int length, out int outputBufferLength)
         {
             var context = ClientRtpContext;
-
-            const int authLen = 10;
-            outputBufferLength = length - authLen;
+            outputBufferLength = length - context.N_tag;
 
             uint ssrc = SrtpKeyGenerator.RtpReadSsrc(payload);
             ushort sequenceNumber = SrtpKeyGenerator.RtpReadSequenceNumber(payload);
@@ -124,10 +121,10 @@ namespace SIPSorcery.net.DtlsSrtp
             msgAuth[length + 2] = (byte)(context.Roc >> 8);
             msgAuth[length + 3] = (byte)(context.Roc);
 
-            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, msgAuth, 0, length - authLen + 4);
-            for (int i = 0; i < authLen; i++)
+            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, msgAuth, 0, length - context.N_tag + 4);
+            for (int i = 0; i < context.N_tag; i++)
             {
-                if (payload[length - authLen + i] != auth[i])
+                if (payload[length - context.N_tag + i] != auth[i])
                 {
                     return -1;
                 }
@@ -143,10 +140,15 @@ namespace SIPSorcery.net.DtlsSrtp
             int offset = SrtpKeyGenerator.RtpReadHeaderLen(payload);
 
             uint roc = context.Roc;
-            ulong index = SrtpKeyGenerator.DetermineRTPIndex(context.S_l, sequenceNumber, roc);
+            uint index = SrtpKeyGenerator.DetermineRTPIndex(context.S_l, sequenceNumber, roc);
+
+            if(!context.CheckandUpdateReplayWindow(index))
+            {
+                return -1;
+            }
 
             byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, index);
-            SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - authLen, iv);
+            SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - context.N_tag, iv);
 
             return 0;
         }        
@@ -182,8 +184,6 @@ namespace SIPSorcery.net.DtlsSrtp
         {
             var context = ServerRtcpContext;
 
-            const int authLen = 10;
-
             uint ssrc = SrtpKeyGenerator.RtcpReadSsrc(payload);
             int offset = SrtpKeyGenerator.RtcpReadHeaderLen(payload);
 
@@ -197,8 +197,8 @@ namespace SIPSorcery.net.DtlsSrtp
             payload[length + 3] = (byte)index;
 
             byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
-            System.Buffer.BlockCopy(auth, 0, payload, length + 4, authLen);
-            outputBufferLength = length + 4 + authLen;
+            System.Buffer.BlockCopy(auth, 0, payload, length + 4, context.N_tag);
+            outputBufferLength = length + 4 + context.N_tag;
 
             context.S_l = (context.S_l + 1) % 0x80000000;
 
@@ -209,32 +209,37 @@ namespace SIPSorcery.net.DtlsSrtp
         {
             var context = ClientRtcpContext;
 
-            const int authLen = 10;
-            outputBufferLength = length - 4 - authLen;
+            outputBufferLength = length - 4 - context.N_tag;
 
             uint ssrc = SrtpKeyGenerator.RtcpReadSsrc(payload);
             int offset = SrtpKeyGenerator.RtcpReadHeaderLen(payload);
-            uint index = SrtpKeyGenerator.SrtcpReadIndex(payload, authLen);
-
-            byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length - authLen);
-            for (int i = 0; i < authLen; i++)
-            {
-                if (payload[length - authLen + i] != auth[i])
-                {
-                    return -1;
-                }
-            }
+            uint index = SrtpKeyGenerator.SrtcpReadIndex(payload, context.N_tag);
 
             if ((index & E_FLAG) == E_FLAG)
             {
                 index = index & ~E_FLAG;
-                context.S_l = index;
+
+                byte[] auth = SrtpKeyGenerator.GenerateAuthTag(context.HMAC, payload, 0, length - context.N_tag);
+                for (int i = 0; i < context.N_tag; i++)
+                {
+                    if (payload[length - context.N_tag + i] != auth[i])
+                    {
+                        return -1;
+                    }
+                }
+
+                if (!context.CheckandUpdateReplayWindow(index))
+                {
+                    return -1;
+                }
 
                 byte[] iv = SrtpKeyGenerator.GenerateMessageIV(context.K_s, ssrc, context.S_l);
-                SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - 4 - authLen, iv);
-            }          
+                SrtpKeyGenerator.EncryptAESCTR(context.AES, payload, offset, length - 4 - context.N_tag, iv);
 
-            return 0;
+                return 0;
+            }
+
+            return -1;
         }
 
         public Certificate GetRemoteCertificate()
@@ -253,7 +258,12 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public void Close()
         {
-            
+            var transport = Transport;
+            if (transport != null)
+            {
+                Transport = null;
+                transport.Close();
+            }
         }
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
@@ -268,8 +278,8 @@ namespace SIPSorcery.net.DtlsSrtp
                 }
                 else
                 {
-                    System.Threading.Thread.Sleep(10);
-                    t += 10;
+                    System.Threading.Thread.Sleep(25);
+                    t += 25;
                     if (t > waitMillis)
                     {
                         return -1;

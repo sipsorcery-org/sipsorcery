@@ -37,7 +37,7 @@ namespace SIPSorcery.net.DtlsSrtp
         public override void NotifyHandshakeComplete()
         {
             var securityParameters = m_context.SecurityParameters;
-            this.Keys = SrtpKeyGenerator.GenerateMasterKeys(Org.BouncyCastle.Tls.SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80, securityParameters);
+            this.Keys = SrtpKeyGenerator.GenerateMasterKeys(base._serverSrtpData.ProtectionProfiles[0], securityParameters);
         }
 
         public bool ForceUseExtendedMasterSecret { get; set; }
