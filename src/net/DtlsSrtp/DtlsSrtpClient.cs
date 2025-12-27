@@ -7,15 +7,10 @@ namespace SIPSorcery.net.DtlsSrtp
 {
     public class DtlsSrtpClient : SharpSRTP.DTLS.DtlsClient, IDtlsSrtpPeer
     {
-        private BcTlsCrypto crypto;
-        private Certificate dtlsCertificate;
-        private AsymmetricKeyParameter dtlsPrivateKey;
-
-        public DtlsSrtpClient(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey) : base(null)
+        public DtlsSrtpClient(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey) : base(crypto)
         {
-            this.crypto = crypto;
-            this.dtlsCertificate = dtlsCertificate;
-            this.dtlsPrivateKey = dtlsPrivateKey;
+            base._myCert = dtlsCertificate;
+            this._myCertKey = dtlsPrivateKey;
         }
 
         public bool ForceUseExtendedMasterSecret { get; set; }        
