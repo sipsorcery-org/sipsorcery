@@ -96,6 +96,7 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public int ProtectRTP(byte[] payload, int length, out int outputBufferLength)
         {
+            outputBufferLength = length;
             var context = ServerRtpContext;
 
             uint ssrc = RTPReader.ReadSsrc(payload);
@@ -105,17 +106,48 @@ namespace SIPSorcery.net.DtlsSrtp
             uint roc = context.Roc;
             ulong index = SRTProtocol.GenerateRTPIndex(roc, sequenceNumber);
 
-            byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, index);
-            AESCTR.Encrypt(context.AES, payload, offset, length, iv);
+            switch (context.Cipher)
+            {
+                case SRTPCiphers.NULL:
+                    {
+                        NULL.Encrypt(context.AES, payload, offset, length, null);
+                    }
+                    break;
 
-            payload[length + 0] = (byte)(roc >> 24);
-            payload[length + 1] = (byte)(roc >> 16);
-            payload[length + 2] = (byte)(roc >> 8);
-            payload[length + 3] = (byte)roc;
+                case SRTPCiphers.AES_128_CM:
+                case SRTPCiphers.AES_256_CM:
+                    {
+                        byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        AESCTR.Encrypt(context.AES, payload, offset, length, iv);
+                    }
+                    break;
 
-            byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
-            System.Buffer.BlockCopy(auth, 0, payload, length, context.N_tag); // we don't append ROC in SRTP
-            outputBufferLength = length + context.N_tag;
+                case SRTPCiphers.AEAD_AES_128_GCM:
+                case SRTPCiphers.AEAD_AES_256_GCM:
+                    {
+                        byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        byte[] associatedData = payload.Take(offset).ToArray();
+                        AESGCM.Encrypt(context.AESGCM, payload, offset, length, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                        length += context.N_tag;
+                        outputBufferLength += context.N_tag;
+                    }
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
+            if (context.Auth != SRTPAuth.NONE)
+            {
+                payload[length + 0] = (byte)(roc >> 24);
+                payload[length + 1] = (byte)(roc >> 16);
+                payload[length + 2] = (byte)(roc >> 8);
+                payload[length + 3] = (byte)roc;
+
+                byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
+                System.Buffer.BlockCopy(auth, 0, payload, length, context.N_tag); // we don't append ROC in SRTP
+                outputBufferLength += context.N_tag;
+            }
 
             if (sequenceNumber == 0xFFFF)
             {
@@ -123,7 +155,7 @@ namespace SIPSorcery.net.DtlsSrtp
             }
 
             return 0;
-        }        
+        }
 
         public int UnprotectRTP(byte[] payload, int length, out int outputBufferLength)
         {
@@ -133,24 +165,27 @@ namespace SIPSorcery.net.DtlsSrtp
             uint ssrc = RTPReader.ReadSsrc(payload);
             ushort sequenceNumber = RTPReader.ReadSequenceNumber(payload);
 
-            // TODO: optimize memory allocation - we could preallocate 4 byte array and add another GenerateAuthTag overload that processes 2 blocks
-            byte[] msgAuth = new byte[length + 4];
-            Buffer.BlockCopy(payload, 0, msgAuth, 0, length);
-            msgAuth[length + 0] = (byte)(context.Roc >> 24);
-            msgAuth[length + 1] = (byte)(context.Roc >> 16);
-            msgAuth[length + 2] = (byte)(context.Roc >> 8);
-            msgAuth[length + 3] = (byte)(context.Roc);
-
-            byte[] auth = HMAC.GenerateAuthTag(context.HMAC, msgAuth, 0, length - context.N_tag + 4);
-            for (int i = 0; i < context.N_tag; i++)
+            if (context.Auth != SRTPAuth.NONE)
             {
-                if (payload[length - context.N_tag + i] != auth[i])
+                // TODO: optimize memory allocation - we could preallocate 4 byte array and add another GenerateAuthTag overload that processes 2 blocks
+                byte[] msgAuth = new byte[length + 4];
+                Buffer.BlockCopy(payload, 0, msgAuth, 0, length);
+                msgAuth[length + 0] = (byte)(context.Roc >> 24);
+                msgAuth[length + 1] = (byte)(context.Roc >> 16);
+                msgAuth[length + 2] = (byte)(context.Roc >> 8);
+                msgAuth[length + 3] = (byte)(context.Roc);
+            
+                byte[] auth = HMAC.GenerateAuthTag(context.HMAC, msgAuth, 0, length - context.N_tag + 4);
+                for (int i = 0; i < context.N_tag; i++)
                 {
-                    return -1;
+                    if (payload[length - context.N_tag + i] != auth[i])
+                    {
+                        return -1;
+                    }
                 }
-            }
 
-            msgAuth = null;
+                msgAuth = null;
+            }
 
             if (!context.S_l_set)
             {
@@ -158,17 +193,42 @@ namespace SIPSorcery.net.DtlsSrtp
             }
 
             int offset = RTPReader.ReadHeaderLen(payload);
-
             uint roc = context.Roc;
             uint index = SRTProtocol.DetermineRTPIndex(context.S_l, sequenceNumber, roc);
 
-            if(!context.CheckAndUpdateReplayWindow(index))
+            if (!context.CheckAndUpdateReplayWindow(index))
             {
                 return -1;
             }
 
-            byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, index);
-            AESCTR.Encrypt(context.AES, payload, offset, length - context.N_tag, iv);
+            switch (context.Cipher)
+            {
+                case SRTPCiphers.NULL:
+                    {
+                        NULL.Encrypt(context.AES, payload, offset, length - context.N_tag, null);
+                    }
+                    break;
+
+                case SRTPCiphers.AES_128_CM:
+                case SRTPCiphers.AES_256_CM:
+                    {
+                        byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        AESCTR.Encrypt(context.AES, payload, offset, length - context.N_tag, iv);
+                    }
+                    break;
+
+                case SRTPCiphers.AEAD_AES_128_GCM:
+                case SRTPCiphers.AEAD_AES_256_GCM:
+                    {
+                        byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        byte[] associatedData = payload.Take(offset).ToArray();
+                        AESGCM.Encrypt(context.AESGCM, payload, offset, length - context.N_tag, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                    }
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
 
             return 0;
         }        
@@ -203,22 +263,55 @@ namespace SIPSorcery.net.DtlsSrtp
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
             var context = ServerRtcpContext;
+            outputBufferLength = length;
 
             uint ssrc = RTCPReader.ReadSsrc(payload);
             int offset = RTCPReader.GetHeaderLen();
-
-            byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, context.S_l);
-            AESCTR.Encrypt(context.AES, payload, offset, length, iv);
-
             uint index = context.S_l | E_FLAG;
+
+            switch (context.Cipher)
+            {
+                case SRTPCiphers.NULL:
+                    {
+                        NULL.Encrypt(context.AES, payload, offset, length, null);
+                    }
+                    break;
+
+                case SRTPCiphers.AES_128_CM:
+                case SRTPCiphers.AES_256_CM:
+                    {
+                        byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        AESCTR.Encrypt(context.AES, payload, offset, length, iv);
+                    }
+                    break;
+
+                case SRTPCiphers.AEAD_AES_128_GCM:
+                case SRTPCiphers.AEAD_AES_256_GCM:
+                    {
+                        byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray(); // associatedData include also index
+                        AESGCM.Encrypt(context.AESGCM, payload, offset, length, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                        length += context.N_tag;
+                        outputBufferLength += context.N_tag;
+                    }
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
             payload[length + 0] = (byte)(index >> 24);
             payload[length + 1] = (byte)(index >> 16);
             payload[length + 2] = (byte)(index >> 8);
             payload[length + 3] = (byte)index;
+            outputBufferLength += 4;
 
-            byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
-            System.Buffer.BlockCopy(auth, 0, payload, length + 4, context.N_tag);
-            outputBufferLength = length + 4 + context.N_tag;
+            if (context.Auth != SRTPAuth.NONE)
+            {
+                byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length + 4);
+                System.Buffer.BlockCopy(auth, 0, payload, length + 4, context.N_tag);
+                outputBufferLength += context.N_tag;
+            }
 
             context.S_l = (context.S_l + 1) % 0x80000000;
 
@@ -233,7 +326,7 @@ namespace SIPSorcery.net.DtlsSrtp
 
             uint ssrc = RTCPReader.ReadSsrc(payload);
             int offset = RTCPReader.GetHeaderLen();
-            uint index = RTCPReader.SRTCPReadIndex(payload, context.N_tag);
+            uint index = RTCPReader.SRTCPReadIndex(payload, context.N_a > 0 ? context.N_tag : 0);
 
             if ((index & E_FLAG) == E_FLAG)
             {
@@ -252,9 +345,35 @@ namespace SIPSorcery.net.DtlsSrtp
                 {
                     return -1;
                 }
+                                
+                switch (context.Cipher)
+                {
+                    case SRTPCiphers.NULL:
+                        {
+                            NULL.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, null);
+                        }
+                        break;
 
-                byte[] iv = SRTProtocol.GenerateMessageIV(context.K_s, ssrc, context.S_l);
-                AESCTR.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, iv);
+                    case SRTPCiphers.AES_128_CM:
+                    case SRTPCiphers.AES_256_CM:
+                        {
+                            byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            AESCTR.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, iv);
+                        }
+                        break;
+
+                    case SRTPCiphers.AEAD_AES_128_GCM:
+                    case SRTPCiphers.AEAD_AES_256_GCM:
+                        {
+                            byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
+                            AESGCM.Encrypt(context.AESGCM, payload, offset, length - 4 - context.N_tag, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                        }
+                        break;
+
+                    default:
+                        throw new NotSupportedException();
+                }
 
                 return 0;
             }
