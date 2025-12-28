@@ -332,12 +332,15 @@ namespace SIPSorcery.net.DtlsSrtp
             {
                 index = index & ~E_FLAG;
 
-                byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length - context.N_tag);
-                for (int i = 0; i < context.N_tag; i++)
+                if (context.Auth != SRTPAuth.NONE)
                 {
-                    if (payload[length - context.N_tag + i] != auth[i])
+                    byte[] auth = HMAC.GenerateAuthTag(context.HMAC, payload, 0, length - context.N_tag);
+                    for (int i = 0; i < context.N_tag; i++)
                     {
-                        return -1;
+                        if (payload[length - context.N_tag + i] != auth[i])
+                        {
+                            return -1;
+                        }
                     }
                 }
 
