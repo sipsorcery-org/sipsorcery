@@ -79,10 +79,10 @@ namespace SIPSorcery.net.DtlsSrtp
             handshakeError = null;
 
             // derive SRTP keys
-            this.ClientRtpContext = new SRTPContext(keys.ProtectionProfile, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SRTPContextType.RTP);
-            this.ClientRtcpContext = new SRTPContext(keys.ProtectionProfile, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SRTPContextType.RTCP);
-            this.ServerRtpContext = new SRTPContext(keys.ProtectionProfile, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SRTPContextType.RTP);
-            this.ServerRtcpContext = new SRTPContext(keys.ProtectionProfile, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SRTPContextType.RTCP);
+            this.ClientRtpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SRTPContextType.RTP);
+            this.ClientRtcpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SRTPContextType.RTCP);
+            this.ServerRtpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SRTPContextType.RTP);
+            this.ServerRtcpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SRTPContextType.RTCP);
 
             return true;
         }
