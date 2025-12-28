@@ -38,7 +38,7 @@ namespace SIPSorcery.net.DtlsSrtp
         public override void NotifyHandshakeComplete()
         {
             var securityParameters = m_context.SecurityParameters;
-            this.Keys = SRTProtocol.GenerateMasterKeys(base.ClientSrtpData.ProtectionProfiles[0], base.ClientSrtpData.Mki, securityParameters);
+            this.Keys = SRTProtocol.GenerateMasterKeys(base.SrtpData.ProtectionProfiles[0], base.SrtpData.Mki, securityParameters);
         }
     }
 }
