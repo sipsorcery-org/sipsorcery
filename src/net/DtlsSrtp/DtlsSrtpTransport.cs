@@ -104,7 +104,7 @@ namespace SIPSorcery.net.DtlsSrtp
 
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            return ServerRtcpContext.ProtectRTP(payload, length, out outputBufferLength);
+            return ServerRtcpContext.ProtectRTCP(payload, length, out outputBufferLength);
         }
 
         public int UnprotectRTCP(byte[] payload, int length, out int outputBufferLength)
