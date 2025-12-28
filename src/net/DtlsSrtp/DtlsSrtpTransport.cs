@@ -117,8 +117,8 @@ namespace SIPSorcery.net.DtlsSrtp
                 case SRTPCiphers.AES_128_CM:
                 case SRTPCiphers.AES_256_CM:
                     {
-                        byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, index);
-                        AESCTR.Encrypt(context.AES, payload, offset, length, iv);
+                        byte[] iv = AESCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        AESCM.Encrypt(context.AES, payload, offset, length, iv);
                     }
                     break;
 
@@ -127,7 +127,26 @@ namespace SIPSorcery.net.DtlsSrtp
                     {
                         byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
                         byte[] associatedData = payload.Take(offset).ToArray();
-                        AESGCM.Encrypt(context.AESGCM, payload, offset, length, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                        AESGCM.Encrypt(context.AESGCM, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
+                        length += context.N_tag;
+                        outputBufferLength += context.N_tag;
+                    }
+                    break;
+
+                case SRTPCiphers.ARIA_128_CTR:
+                case SRTPCiphers.ARIA_256_CTR:
+                    {
+                        byte[] iv = ARIACTR.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        ARIACTR.Encrypt(context.ARIA, payload, offset, length, iv);
+                    }
+                    break;
+
+                case SRTPCiphers.AEAD_ARIA_128_GCM:
+                case SRTPCiphers.AEAD_ARIA_256_GCM:
+                    {
+                        byte[] iv = ARIAGCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        byte[] associatedData = payload.Take(offset).ToArray();
+                        ARIAGCM.Encrypt(context.ARIAGCM, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
                         length += context.N_tag;
                         outputBufferLength += context.N_tag;
                     }
@@ -212,8 +231,8 @@ namespace SIPSorcery.net.DtlsSrtp
                 case SRTPCiphers.AES_128_CM:
                 case SRTPCiphers.AES_256_CM:
                     {
-                        byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, index);
-                        AESCTR.Encrypt(context.AES, payload, offset, length - context.N_tag, iv);
+                        byte[] iv = AESCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        AESCM.Encrypt(context.AES, payload, offset, length - context.N_tag, iv);
                     }
                     break;
 
@@ -222,7 +241,24 @@ namespace SIPSorcery.net.DtlsSrtp
                     {
                         byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
                         byte[] associatedData = payload.Take(offset).ToArray();
-                        AESGCM.Encrypt(context.AESGCM, payload, offset, length - context.N_tag, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                        AESGCM.Encrypt(context.AESGCM, payload, offset, length - context.N_tag, iv, context.K_e, context.N_tag, associatedData);
+                    }
+                    break;
+
+                case SRTPCiphers.ARIA_128_CTR:
+                case SRTPCiphers.ARIA_256_CTR:
+                    {
+                        byte[] iv = ARIACTR.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        ARIACTR.Encrypt(context.ARIA, payload, offset, length - context.N_tag, iv);
+                    }
+                    break;
+
+                case SRTPCiphers.AEAD_ARIA_128_GCM:
+                case SRTPCiphers.AEAD_ARIA_256_GCM:
+                    {
+                        byte[] iv = ARIAGCM.GenerateMessageKeyIV(context.K_s, ssrc, index);
+                        byte[] associatedData = payload.Take(offset).ToArray();
+                        ARIAGCM.Encrypt(context.ARIAGCM, payload, offset, length - context.N_tag, iv, context.K_e, context.N_tag, associatedData);
                     }
                     break;
 
@@ -280,8 +316,8 @@ namespace SIPSorcery.net.DtlsSrtp
                 case SRTPCiphers.AES_128_CM:
                 case SRTPCiphers.AES_256_CM:
                     {
-                        byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
-                        AESCTR.Encrypt(context.AES, payload, offset, length, iv);
+                        byte[] iv = AESCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        AESCM.Encrypt(context.AES, payload, offset, length, iv);
                     }
                     break;
 
@@ -290,7 +326,26 @@ namespace SIPSorcery.net.DtlsSrtp
                     {
                         byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
                         byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray(); // associatedData include also index
-                        AESGCM.Encrypt(context.AESGCM, payload, offset, length, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                        AESGCM.Encrypt(context.AESGCM, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
+                        length += context.N_tag;
+                        outputBufferLength += context.N_tag;
+                    }
+                    break;
+
+                case SRTPCiphers.ARIA_128_CTR:
+                case SRTPCiphers.ARIA_256_CTR:
+                    {
+                        byte[] iv = ARIACTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        ARIACTR.Encrypt(context.ARIA, payload, offset, length, iv);
+                    }
+                    break;
+
+                case SRTPCiphers.AEAD_ARIA_128_GCM:
+                case SRTPCiphers.AEAD_ARIA_256_GCM:
+                    {
+                        byte[] iv = ARIAGCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray(); // associatedData include also index
+                        ARIAGCM.Encrypt(context.ARIAGCM, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
                         length += context.N_tag;
                         outputBufferLength += context.N_tag;
                     }
@@ -360,8 +415,8 @@ namespace SIPSorcery.net.DtlsSrtp
                     case SRTPCiphers.AES_128_CM:
                     case SRTPCiphers.AES_256_CM:
                         {
-                            byte[] iv = AESCTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
-                            AESCTR.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, iv);
+                            byte[] iv = AESCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            AESCM.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, iv);
                         }
                         break;
 
@@ -370,7 +425,24 @@ namespace SIPSorcery.net.DtlsSrtp
                         {
                             byte[] iv = AESGCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
                             byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
-                            AESGCM.Encrypt(context.AESGCM, payload, offset, length - 4 - context.N_tag, iv, context.K_e, context.N_tag, context.K_s, associatedData);
+                            AESGCM.Encrypt(context.AESGCM, payload, offset, length - 4 - context.N_tag, iv, context.K_e, context.N_tag, associatedData);
+                        }
+                        break;
+
+                    case SRTPCiphers.ARIA_128_CTR:
+                    case SRTPCiphers.ARIA_256_CTR:
+                        {
+                            byte[] iv = ARIACTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            ARIACTR.Encrypt(context.ARIA, payload, offset, length - 4 - context.N_tag, iv);
+                        }
+                        break;
+
+                    case SRTPCiphers.AEAD_ARIA_128_GCM:
+                    case SRTPCiphers.AEAD_ARIA_256_GCM:
+                        {
+                            byte[] iv = ARIAGCM.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
+                            ARIAGCM.Encrypt(context.ARIAGCM, payload, offset, length - 4 - context.N_tag, iv, context.K_e, context.N_tag, associatedData);
                         }
                         break;
 
