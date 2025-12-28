@@ -114,6 +114,13 @@ namespace SIPSorcery.net.DtlsSrtp
                     }
                     break;
 
+                case SRTPCiphers.AES_128_F8:
+                    {
+                        byte[] iv = AESF8.GenerateRTPMessageKeyIV(context.AESF8, context.K_e, context.K_s, payload, roc);
+                        AESF8.Encrypt(context.AES, payload, offset, length, iv);
+                    }
+                    break;
+
                 case SRTPCiphers.AES_128_CM:
                 case SRTPCiphers.AES_256_CM:
                     {
@@ -228,6 +235,13 @@ namespace SIPSorcery.net.DtlsSrtp
                     }
                     break;
 
+                case SRTPCiphers.AES_128_F8:
+                    {
+                        byte[] iv = AESF8.GenerateRTPMessageKeyIV(context.AESF8, context.K_e, context.K_s, payload, roc);
+                        AESF8.Encrypt(context.AES, payload, offset, length - context.N_tag, iv);
+                    }
+                    break;
+
                 case SRTPCiphers.AES_128_CM:
                 case SRTPCiphers.AES_256_CM:
                     {
@@ -310,6 +324,13 @@ namespace SIPSorcery.net.DtlsSrtp
                 case SRTPCiphers.NULL:
                     {
                         NULL.Encrypt(context.AES, payload, offset, length, null);
+                    }
+                    break;
+
+                case SRTPCiphers.AES_128_F8:
+                    {
+                        byte[] iv = AESF8.GenerateRTCPMessageKeyIV(context.AESF8, context.K_e, context.K_s, payload, index);
+                        AESF8.Encrypt(context.AES, payload, offset, length, iv);
                     }
                     break;
 
@@ -409,6 +430,13 @@ namespace SIPSorcery.net.DtlsSrtp
                     case SRTPCiphers.NULL:
                         {
                             NULL.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, null);
+                        }
+                        break;
+
+                    case SRTPCiphers.AES_128_F8:
+                        {
+                            byte[] iv = AESF8.GenerateRTCPMessageKeyIV(context.AESF8, context.K_e, context.K_s, payload, index);
+                            AESF8.Encrypt(context.AES, payload, offset, length - 4 - context.N_tag, iv);
                         }
                         break;
 
