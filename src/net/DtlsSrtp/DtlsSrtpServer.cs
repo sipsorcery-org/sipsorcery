@@ -6,8 +6,11 @@ using SharpSRTP.SRTP;
 
 namespace SIPSorcery.net.DtlsSrtp
 {
-    public class DtlsSrtpServer : SharpSRTP.SRTP.DTLSSRTPServer, IDtlsSrtpPeer
+    public class DtlsSrtpServer : DTLSSRTPServer, IDtlsSrtpPeer
     {
+        public SRTPKeys Keys { get; private set; }
+        public Certificate PeerCertificate => ClientCertificate;
+
         public event OnDtlsAlertEvent OnAlert;
 
         public DtlsSrtpServer(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey, short signatureAlgorithm = SignatureAlgorithm.rsa) : base(crypto)
@@ -37,10 +40,5 @@ namespace SIPSorcery.net.DtlsSrtp
             var securityParameters = m_context.SecurityParameters;
             this.Keys = SRTProtocol.GenerateMasterKeys(base._serverSrtpData.ProtectionProfiles[0], securityParameters);
         }
-
-        public bool ForceUseExtendedMasterSecret { get; set; }
-        public SRTPKeys Keys { get; private set; }
-
-        public Certificate PeerCertificate => ClientCertificate;
     }
 }
