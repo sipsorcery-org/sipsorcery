@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
-using System.Text;
 using Org.BouncyCastle.Tls;
 using SharpSRTP.DTLS;
 using SharpSRTP.SRTP;
@@ -15,7 +14,7 @@ namespace SIPSorcery.Net
 
     public class DtlsSrtpTransport : DatagramTransport
     {
-        private IDtlsPeer _connection;
+        private IDtlsSrtpPeer _connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
         private IPEndPoint _remoteEndPoint;
@@ -32,7 +31,7 @@ namespace SIPSorcery.Net
 
         public event OnDtlsAlertEvent OnAlert;
 
-        public DtlsSrtpTransport(IDtlsPeer connection)
+        public DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this._connection = connection;
             connection.OnAlert += DtlsSrtpTransport_OnAlert;
@@ -45,52 +44,11 @@ namespace SIPSorcery.Net
 
         public bool DoHandshake(out string handshakeError)
         {
-            SrtpKeys keys;
-            DtlsTransport transport = null;
+            DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, () => _remoteEndPoint);
+            SrtpKeys keys = _connection.Keys;
 
             if (_connection is DtlsSrtpServer server)
             {
-                try
-                {
-                    DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
-
-                    // Use DtlsVerifier to require a HelloVerifyRequest cookie exchange before accepting
-                    DtlsVerifier verifier = new DtlsVerifier(server.Crypto);
-                    int receiveLimit = GetReceiveLimit();
-                    byte[] buf = new byte[receiveLimit];
-                    DtlsRequest request = null;
-                    int receiveAttemptCounter = 0;
-
-                    do
-                    {
-                        int length = Receive(buf, 0, receiveLimit, 100);
-                        if (length > 0)
-                        {
-                            byte[] clientID = Encoding.UTF8.GetBytes(_remoteEndPoint.ToString());
-                            request = verifier.VerifyRequest(clientID, buf, 0, length, this);
-                        }
-                        else
-                        {
-                            receiveAttemptCounter++;
-
-                            if(receiveAttemptCounter > 300) // 30 seconds so that we don't wait forever
-                            {
-                                handshakeError = "HelloVerifyRequest cookie exchange could not be verified due to a timeout";
-                                return false;
-                            }
-                        }
-                    }
-                    while (request == null);
-
-                    transport = serverProtocol.Accept(server, this, request);
-                    keys = server.Keys;
-                }
-                catch (Exception ex)
-                {
-                    handshakeError = ex.Message;
-                    return false;
-                }
-
                 this.EncodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTP);
                 this.EncodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTCP);
                 this.DecodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTP);
@@ -98,18 +56,6 @@ namespace SIPSorcery.Net
             }
             else if (_connection is DtlsSrtpClient client)
             {
-                try
-                {
-                    DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
-                    transport = clientProtocol.Connect(client, this);
-                    keys = client.Keys;
-                }
-                catch (Exception ex)
-                {
-                    handshakeError = ex.Message;
-                    return false;
-                }
-
                 this.EncodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTP);
                 this.EncodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTCP);
                 this.DecodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTP);
@@ -121,10 +67,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            handshakeError = null;
-
             Transport = transport;
-
             return true;
         }
 
