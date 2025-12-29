@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using Org.BouncyCastle.Tls;
+using SharpSRTP.DTLS;
 using SharpSRTP.SRTP;
 
 namespace SIPSorcery.Net
@@ -20,10 +21,10 @@ namespace SIPSorcery.Net
         public DatagramTransport Transport { get; internal set; }
         public bool IsClient { get; internal set; }
 
-        public SRTPContext ClientRtpContext { get; private set; }
-        public SRTPContext ClientRtcpContext { get; private set; }
-        public SRTPContext ServerRtpContext { get; private set; }
-        public SRTPContext ServerRtcpContext { get; private set; }
+        public SrtpContext ClientRtpContext { get; private set; }
+        public SrtpContext ClientRtcpContext { get; private set; }
+        public SrtpContext ServerRtpContext { get; private set; }
+        public SrtpContext ServerRtcpContext { get; private set; }
 
         public event OnDataReadyEvent OnDataReady;
 
@@ -42,7 +43,7 @@ namespace SIPSorcery.Net
 
         public bool DoHandshake(out string handshakeError)
         {
-            SRTPKeys keys;
+            SrtpKeys keys;
 
             if (connection is DtlsSrtpServer server)
             {
@@ -81,10 +82,10 @@ namespace SIPSorcery.Net
             handshakeError = null;
 
             // derive SRTP keys
-            this.ClientRtpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SRTPContextType.RTP);
-            this.ClientRtcpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SRTPContextType.RTCP);
-            this.ServerRtpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SRTPContextType.RTP);
-            this.ServerRtcpContext = new SRTPContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SRTPContextType.RTCP);
+            this.ClientRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTP);
+            this.ClientRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTCP);
+            this.ServerRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTP);
+            this.ServerRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTCP);
 
             return true;
         }

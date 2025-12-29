@@ -46,6 +46,8 @@ using SIPSorcery.Sys;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using System.Diagnostics;
+using SharpSRTP.DTLS;
+using SharpSRTP.SRTP;
 
 namespace SIPSorcery.Net
 {
@@ -459,7 +461,7 @@ namespace SIPSorcery.Net
 
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                                new DtlsSrtpClient(_crypto, null, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
                                 new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
