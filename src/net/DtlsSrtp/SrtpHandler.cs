@@ -124,19 +124,10 @@ namespace SIPSorcery.Net
         private SrtpSessionContext CreateSessionContext(SDPSecurityDescription localSecurityDescription, SDPSecurityDescription remoteSecurityDescription, byte[] mki = null)
         {
             // TODO: not tested
-            var securityDescription = localSecurityDescription;
-            int protectionProfile = (int)securityDescription.CryptoSuite;
-
-            var keys = new SrtpKeys(protectionProfile, mki);
-            Buffer.BlockCopy(localSecurityDescription.KeyParams[0].Key, 0, keys.ClientWriteMasterKey, 0, keys.ClientWriteMasterKey.Length);
-            Buffer.BlockCopy(localSecurityDescription.KeyParams[0].Salt, 0, keys.ClientWriteMasterSalt, 0, keys.ClientWriteMasterSalt.Length);
-            Buffer.BlockCopy(remoteSecurityDescription.KeyParams[0].Key, 0, keys.ServerWriteMasterKey, 0, keys.ServerWriteMasterKey.Length);
-            Buffer.BlockCopy(remoteSecurityDescription.KeyParams[0].Salt, 0, keys.ServerWriteMasterSalt, 0, keys.ServerWriteMasterSalt.Length);
-
-            var encodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTP);
-            var encodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTCP);
-            var decodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTP);
-            var decodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTCP);
+            var encodeRtpContext = new SrtpContext((int)localSecurityDescription.CryptoSuite, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
+            var encodeRtcpContext = new SrtpContext((int)localSecurityDescription.CryptoSuite, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
+            var decodeRtpContext = new SrtpContext((int)remoteSecurityDescription.CryptoSuite, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
+            var decodeRtcpContext = new SrtpContext((int)remoteSecurityDescription.CryptoSuite, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
 
             return new SrtpSessionContext(encodeRtpContext, decodeRtpContext, encodeRtcpContext, decodeRtcpContext);
         }
