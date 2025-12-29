@@ -1325,7 +1325,7 @@ namespace SIPSorcery.Net
                         if (_dtlsHandle != null)
                         {
                             //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                            _dtlsHandle.WriteToRecvStream(buffer);
+                            _dtlsHandle.WriteToRecvStream(buffer, remoteEP);
                         }
                         else
                         {

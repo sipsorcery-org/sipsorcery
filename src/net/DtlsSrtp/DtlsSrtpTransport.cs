@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Net;
+using System.Text;
 using Org.BouncyCastle.Tls;
 using SharpSRTP.DTLS;
 using SharpSRTP.SRTP;
@@ -16,6 +18,7 @@ namespace SIPSorcery.Net
         private IDtlsPeer _connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
+        private IPEndPoint _remoteEndPoint;
 
         public DatagramTransport Transport { get; internal set; }
         public bool IsClient { get { return _connection is DtlsSrtpClient; } }
@@ -50,7 +53,36 @@ namespace SIPSorcery.Net
                 try
                 {
                     DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
-                    transport = serverProtocol.Accept(server, this);
+
+                    // Use DtlsVerifier to require a HelloVerifyRequest cookie exchange before accepting
+                    DtlsVerifier verifier = new DtlsVerifier(server.Crypto);
+                    int receiveLimit = GetReceiveLimit();
+                    byte[] buf = new byte[receiveLimit];
+                    DtlsRequest request = null;
+                    int receiveAttemptCounter = 0;
+
+                    do
+                    {
+                        int length = Receive(buf, 0, receiveLimit, 100);
+                        if (length > 0)
+                        {
+                            byte[] clientID = Encoding.UTF8.GetBytes(_remoteEndPoint.ToString());
+                            request = verifier.VerifyRequest(clientID, buf, 0, length, this);
+                        }
+                        else
+                        {
+                            receiveAttemptCounter++;
+
+                            if(receiveAttemptCounter > 300) // 30 seconds so that we don't wait forever
+                            {
+                                handshakeError = "HelloVerifyRequest cookie exchange could not be verified due to a timeout";
+                                return false;
+                            }
+                        }
+                    }
+                    while (request == null);
+
+                    transport = serverProtocol.Accept(server, this, request);
                     keys = server.Keys;
                 }
                 catch (Exception ex)
@@ -130,8 +162,9 @@ namespace SIPSorcery.Net
 
         public int GetSendLimit() => UdpDatagramTransport.MTU;
 
-        public void WriteToRecvStream(byte[] buffer)
+        public void WriteToRecvStream(byte[] buffer, IPEndPoint remoteEndPoint)
         {
+            _remoteEndPoint = remoteEndPoint;
             _data.Enqueue(buffer);
         }
 
