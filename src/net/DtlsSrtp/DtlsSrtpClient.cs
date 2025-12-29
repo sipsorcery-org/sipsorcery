@@ -20,6 +20,8 @@ namespace SIPSorcery.Net
 
         public override void NotifyAlertReceived(short level, short alertDescription)
         {
+            base.NotifyAlertReceived(level, alertDescription);
+
             AlertTypesEnum alertType = AlertTypesEnum.Unknown;
             if (Enum.IsDefined(typeof(AlertTypesEnum), (int)alertDescription))
             {
@@ -37,8 +39,10 @@ namespace SIPSorcery.Net
 
         public override void NotifyHandshakeComplete()
         {
+            base.NotifyHandshakeComplete();
+
             var securityParameters = m_context.SecurityParameters;
-            this.Keys = SRTProtocol.GenerateMasterKeys(base.SrtpData.ProtectionProfiles[0], base.SrtpData.Mki, securityParameters);
+            this.Keys = SRTProtocol.GenerateMasterKeys(base.SrtpData.ProtectionProfiles[0], base.SrtpData.Mki, securityParameters, ForceUseExtendedMasterSecret);
         }
     }
 }
