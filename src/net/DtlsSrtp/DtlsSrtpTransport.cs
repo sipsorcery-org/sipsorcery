@@ -13,7 +13,7 @@ namespace SIPSorcery.Net
 
     public class DtlsSrtpTransport : DatagramTransport
     {
-        private IDtlsSrtpPeer _connection;
+        private IDtlsPeer _connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
 
@@ -29,7 +29,7 @@ namespace SIPSorcery.Net
 
         public event OnDtlsAlertEvent OnAlert;
 
-        public DtlsSrtpTransport(IDtlsSrtpPeer connection)
+        public DtlsSrtpTransport(IDtlsPeer connection)
         {
             this._connection = connection;
             connection.OnAlert += DtlsSrtpTransport_OnAlert;

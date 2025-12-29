@@ -46,8 +46,8 @@ using SIPSorcery.Sys;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using System.Diagnostics;
-using SharpSRTP.DTLS;
 using SharpSRTP.SRTP;
+using SharpSRTP.DTLS;
 
 namespace SIPSorcery.Net
 {
