@@ -13,9 +13,9 @@ namespace SIPSorcery.Net
 
         public event OnDtlsAlertEvent OnAlert;
 
-        public DtlsSrtpServer(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey, short signatureAlgorithm = SignatureAlgorithm.rsa) : base(crypto)
+        public DtlsSrtpServer(BcTlsCrypto crypto, Certificate dtlsCertificate, AsymmetricKeyParameter dtlsPrivateKey, short certificateSignatureAlgorithm = SignatureAlgorithm.rsa, short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
         {
-            SetCertificate(dtlsCertificate, dtlsPrivateKey, signatureAlgorithm);
+            SetCertificate(dtlsCertificate, dtlsPrivateKey, certificateSignatureAlgorithm, certificateHashAlgorithm);
         }
 
         public override void NotifyAlertReceived(short level, short alertDescription)
