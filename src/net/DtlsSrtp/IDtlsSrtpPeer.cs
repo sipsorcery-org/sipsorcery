@@ -1,6 +1,6 @@
 ﻿using Org.BouncyCastle.Tls;
 
-namespace SIPSorcery.net.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public delegate void OnDtlsAlertEvent(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription);
 

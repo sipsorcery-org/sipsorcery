@@ -4,24 +4,27 @@ using System.Linq;
 using Org.BouncyCastle.Tls;
 using SharpSRTP.SRTP;
 
-namespace SIPSorcery.net.DtlsSrtp
+namespace SIPSorcery.Net
 {
+    public delegate void OnDataReadyEvent(byte[] data);
+
     public class DtlsSrtpTransport : DatagramTransport
     {
         private const int MTU = 1472;
 
-        public DatagramTransport Transport { get; internal set; }
-        public bool IsClient { get; internal set; }
+
         private IDtlsSrtpPeer connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
+
+        public DatagramTransport Transport { get; internal set; }
+        public bool IsClient { get; internal set; }
 
         public SRTPContext ClientRtpContext { get; private set; }
         public SRTPContext ClientRtcpContext { get; private set; }
         public SRTPContext ServerRtpContext { get; private set; }
         public SRTPContext ServerRtcpContext { get; private set; }
 
-        public delegate void OnDataReadyEvent(byte[] data);
         public event OnDataReadyEvent OnDataReady;
 
         public event OnDtlsAlertEvent OnAlert;
@@ -29,7 +32,6 @@ namespace SIPSorcery.net.DtlsSrtp
         public DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this.connection = connection;
-
             connection.OnAlert += DtlsSrtpTransport_OnAlert;
         }
 
@@ -118,6 +120,7 @@ namespace SIPSorcery.net.DtlsSrtp
         }
         
         public int GetReceiveLimit() => MTU;
+
         public int GetSendLimit() => MTU;
 
         public void WriteToRecvStream(byte[] buffer)

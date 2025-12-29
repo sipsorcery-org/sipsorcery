@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.net.DtlsSrtp
+﻿namespace SIPSorcery.Net
 {
     public enum AlertTypesEnum
     {

@@ -21,7 +21,6 @@ using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls;
-using SIPSorcery.net.DtlsSrtp;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net

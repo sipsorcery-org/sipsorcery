@@ -4,7 +4,7 @@ using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using SharpSRTP.SRTP;
 
-namespace SIPSorcery.net.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public class DtlsSrtpClient : DTLSSRTPClient, IDtlsSrtpPeer
     {

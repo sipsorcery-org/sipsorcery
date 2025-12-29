@@ -45,7 +45,6 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
-using SIPSorcery.net.DtlsSrtp;
 using System.Diagnostics;
 
 namespace SIPSorcery.Net

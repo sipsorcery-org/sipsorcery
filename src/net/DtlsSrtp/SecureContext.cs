@@ -1,7 +1,4 @@
-﻿using System;
-using SIPSorcery.Net;
-
-namespace SIPSorcery.net.DtlsSrtp
+﻿namespace SIPSorcery.Net
 {
     public class SecureContext
     {

@@ -12,22 +12,10 @@ namespace SIPSorcery.Net
     {
         public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(BcTlsCrypto crypto, bool useRsa)
         {
-            (Certificate certificate, AsymmetricKeyParameter key) clientCertificate;
-
             const string name = "WebRTC";
             DateTime notBefore = DateTime.UtcNow.AddDays(-1);
             DateTime notAfter = DateTime.UtcNow.AddDays(30);
-
-            if (useRsa)
-            {
-                clientCertificate = DTLSCertificateUtils.GenerateRSAServerCertificate(name, notBefore, notAfter);
-            }
-            else
-            {
-                clientCertificate = DTLSCertificateUtils.GenerateECDSAServerCertificate(name, notBefore, notAfter);
-            }
-
-            return (clientCertificate.certificate, clientCertificate.key);
+            return DTLSCertificateUtils.GenerateServerCertificate(name, notBefore, notAfter, useRsa);
         }
 
         public static RTCDtlsFingerprint Fingerprint(string algorithm, TlsCertificate value)
@@ -37,13 +25,12 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(Certificate certificate)
         {
-            TlsCertificate cert = certificate.GetCertificateAt(0);
-            return Fingerprint(new X509Certificate(cert.GetEncoded()));
+            return Fingerprint(new X509Certificate(certificate.GetCertificateAt(0).GetEncoded()));
         }
 
         public static RTCDtlsFingerprint Fingerprint(X509Certificate x509Certificate)
         {
-            string fingerprint = DTLSCertificateUtils.Fingerprint(x509Certificate.CertificateStructure);
+            string fingerprint = DTLSCertificateUtils.Fingerprint(x509Certificate.CertificateStructure, "SHA256");
             return new RTCDtlsFingerprint
             {
                 algorithm = "sha-256",
@@ -53,7 +40,7 @@ namespace SIPSorcery.Net
 
         public static bool IsHashSupported(string algStr)
         {
-            return algStr == "sha-256";
+            return DTLSCertificateUtils.IsHashSupported(algStr);
         }
     }
 }
