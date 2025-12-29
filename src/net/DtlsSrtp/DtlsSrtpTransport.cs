@@ -18,14 +18,13 @@ namespace SIPSorcery.Net
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
         private IPEndPoint _remoteEndPoint;
+        private Certificate _peerCertificate;
 
         public DatagramTransport Transport { get; internal set; }
         public bool IsClient { get { return _connection is DtlsSrtpClient; } }
+        public SrtpKeys Keys { get; private set; }
 
-        public SrtpContext DecodeRtpContext { get; private set; }
-        public SrtpContext DecodeRtcpContext { get; private set; }
-        public SrtpContext EncodeRtpContext { get; private set; }
-        public SrtpContext EncodeRtcpContext { get; private set; }
+        public SrtpSessionContext Context { get; private set; }
 
         public event OnDataReadyEvent OnDataReady;
 
@@ -34,7 +33,16 @@ namespace SIPSorcery.Net
         public DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this._connection = connection;
-            connection.OnAlert += DtlsSrtpTransport_OnAlert;
+            this._connection.OnHandshakeCompleted += DtlsSrtpTransport_OnHandshakeCompleted;
+            this._connection.OnAlert += DtlsSrtpTransport_OnAlert;
+        }
+
+        private void DtlsSrtpTransport_OnHandshakeCompleted(object sender, DtlsHandshakeCompletedEventArgs e)
+        {
+            this._peerCertificate = e.SecurityParameters.PeerCertificate;
+
+            // derive SRTP/SRTCP master keys and contexts
+            this.Context = _connection.CreateSessionContext(e.SecurityParameters);
         }
 
         private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)
@@ -45,28 +53,6 @@ namespace SIPSorcery.Net
         public bool DoHandshake(out string handshakeError)
         {
             DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, () => _remoteEndPoint);
-            SrtpKeys keys = _connection.Keys;
-
-            if (_connection is DtlsSrtpServer server)
-            {
-                this.EncodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTP);
-                this.EncodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTCP);
-                this.DecodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTP);
-                this.DecodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTCP);
-            }
-            else if (_connection is DtlsSrtpClient client)
-            {
-                this.EncodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTP);
-                this.EncodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ClientWriteMasterKey, keys.ClientWriteMasterSalt, SrtpContextType.RTCP);
-                this.DecodeRtpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTP);
-                this.DecodeRtcpContext = new SrtpContext(keys.ProtectionProfile, keys.Mki, keys.ServerWriteMasterKey, keys.ServerWriteMasterSalt, SrtpContextType.RTCP);
-            }
-            else
-            {
-                handshakeError = "Unsupported connection type";
-                return false;
-            }
-
             Transport = transport;
             return true;
         }
@@ -78,27 +64,27 @@ namespace SIPSorcery.Net
 
         public int ProtectRTP(byte[] payload, int length, out int outputBufferLength)
         {
-            return EncodeRtpContext.ProtectRtp(payload, length, out outputBufferLength);
+            return Context.EncodeRtpContext.ProtectRtp(payload, length, out outputBufferLength);
         }
 
         public int UnprotectRTP(byte[] payload, int length, out int outputBufferLength)
         {
-            return DecodeRtpContext.UnprotectRtp(payload, length, out outputBufferLength);
+            return Context.DecodeRtpContext.UnprotectRtp(payload, length, out outputBufferLength);
         }        
 
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            return EncodeRtcpContext.ProtectRtcp(payload, length, out outputBufferLength);
+            return Context.EncodeRtcpContext.ProtectRtcp(payload, length, out outputBufferLength);
         }
 
         public int UnprotectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            return DecodeRtcpContext.UnprotectRtcp(payload, length, out outputBufferLength);
+            return Context.DecodeRtcpContext.UnprotectRtcp(payload, length, out outputBufferLength);
         }
 
         public Certificate GetRemoteCertificate()
         {
-            return _connection.PeerCertificate;
+            return _peerCertificate;
         }
         
         public int GetReceiveLimit() => UdpDatagramTransport.MTU;
