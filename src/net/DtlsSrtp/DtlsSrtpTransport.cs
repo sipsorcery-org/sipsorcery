@@ -34,7 +34,7 @@ namespace SIPSorcery.Net
             connection.OnAlert += DtlsSrtpTransport_OnAlert;
         }
 
-        private void DtlsSrtpTransport_OnAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
+        private void DtlsSrtpTransport_OnAlert(TlsAlertLevelsEnum alertLevel, TlsAlertTypesEnum alertType, string alertDescription)
         {
             OnAlert?.Invoke(alertLevel, alertType, alertDescription);
         }
