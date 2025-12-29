@@ -9,6 +9,7 @@ using SharpSRTP.UDP;
 namespace SIPSorcery.Net
 {
     public delegate void OnDataReadyEvent(byte[] data);
+    public delegate void OnDtlsAlertEvent(TlsAlertLevelsEnum alertLevel, TlsAlertTypesEnum alertType, string alertDescription);
 
     public class DtlsSrtpTransport : DatagramTransport
     {
@@ -34,9 +35,9 @@ namespace SIPSorcery.Net
             connection.OnAlert += DtlsSrtpTransport_OnAlert;
         }
 
-        private void DtlsSrtpTransport_OnAlert(TlsAlertLevelsEnum alertLevel, TlsAlertTypesEnum alertType, string alertDescription)
+        private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)
         {
-            OnAlert?.Invoke(alertLevel, alertType, alertDescription);
+            OnAlert?.Invoke(args.Level, args.AlertType, args.Description);
         }
 
         public bool DoHandshake(out string handshakeError)
