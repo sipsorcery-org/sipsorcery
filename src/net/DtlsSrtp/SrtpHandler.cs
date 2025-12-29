@@ -1,4 +1,20 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: SrtpHandler.cs
+//
+// Description: This class represents the SRTP handling for SIP calls
+//
+// Author(s):
+// Kurt Kießling 
+//
+// History:
+// 20 Jul 2021	Kurt Kießling	Created.
+// 30 Dec 2025  Lukas Volf      New DTLS/SRTP impl
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using SharpSRTP.SRTP;
