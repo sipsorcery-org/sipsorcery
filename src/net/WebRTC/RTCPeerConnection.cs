@@ -361,7 +361,7 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto, useRsa: configuration?.X_UseRsaForDtlsCertificate ?? true);
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto, useRsa: _configuration.X_UseRsaForDtlsCertificate);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
@@ -459,9 +459,9 @@ namespace SIPSorcery.Net
 
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey)
+                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey)
+                                new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
