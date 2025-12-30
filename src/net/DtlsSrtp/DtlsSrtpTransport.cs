@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Net;
 using Org.BouncyCastle.Tls;
 using SharpSRTP.DTLS;
 using SharpSRTP.SRTP;
@@ -17,7 +16,7 @@ namespace SIPSorcery.Net
         private IDtlsSrtpPeer _connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
-        private IPEndPoint _remoteEndPoint;
+        private string _remoteEndPoint;
         private Certificate _peerCertificate;
 
         public DatagramTransport Transport { get; internal set; }
@@ -25,6 +24,8 @@ namespace SIPSorcery.Net
         public SrtpKeys Keys { get; private set; }
 
         public SrtpSessionContext Context { get; private set; }
+
+        public int TimeoutMilliseconds { get { return _connection.TimeoutMilliseconds; } set { _connection.TimeoutMilliseconds = value; } }
 
         public event OnDataReadyEvent OnDataReady;
 
@@ -54,7 +55,7 @@ namespace SIPSorcery.Net
         {
             DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, () => _remoteEndPoint);
             Transport = transport;
-            return true;
+            return string.IsNullOrEmpty(handshakeError);
         }
 
         public bool IsHandshakeComplete()
@@ -91,7 +92,7 @@ namespace SIPSorcery.Net
 
         public int GetSendLimit() => UdpDatagramTransport.MTU;
 
-        public void WriteToRecvStream(byte[] buffer, IPEndPoint remoteEndPoint)
+        public void WriteToRecvStream(byte[] buffer, string remoteEndPoint) // remoteEndPoint = "127.0.0.1:80"
         {
             _remoteEndPoint = remoteEndPoint;
             _data.Enqueue(buffer);

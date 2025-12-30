@@ -461,7 +461,7 @@ namespace SIPSorcery.Net
 
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_crypto, null, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
                                 new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
@@ -1325,7 +1325,7 @@ namespace SIPSorcery.Net
                         if (_dtlsHandle != null)
                         {
                             //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                            _dtlsHandle.WriteToRecvStream(buffer, remoteEP);
+                            _dtlsHandle.WriteToRecvStream(buffer, remoteEP.ToString());
                         }
                         else
                         {

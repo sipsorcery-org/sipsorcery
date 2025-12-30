@@ -10,12 +10,9 @@ namespace SIPSorcery.Net
 {
     public class DtlsUtils
     {
-        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(BcTlsCrypto crypto, bool useRsa)
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(BcTlsCrypto crypto, bool useRsa = false)
         {
-            const string name = "WebRTC";
-            DateTime notBefore = DateTime.UtcNow.AddDays(-1);
-            DateTime notAfter = DateTime.UtcNow.AddDays(30);
-            return DtlsCertificateUtils.GenerateServerCertificate(name, notBefore, notAfter, useRsa);
+            return DtlsCertificateUtils.GenerateServerCertificate("WebRTC", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), useRsa);
         }
 
         public static RTCDtlsFingerprint Fingerprint(string algorithm, TlsCertificate value)
@@ -30,12 +27,7 @@ namespace SIPSorcery.Net
 
         public static RTCDtlsFingerprint Fingerprint(X509Certificate x509Certificate, string algorithm = "sha-256")
         {
-            string fingerprint = DtlsCertificateUtils.Fingerprint(x509Certificate.CertificateStructure, algorithm);
-            return new RTCDtlsFingerprint
-            {
-                algorithm = algorithm,
-                value = fingerprint
-            };
+            return new RTCDtlsFingerprint { algorithm = algorithm, value = DtlsCertificateUtils.Fingerprint(x509Certificate.CertificateStructure, algorithm) };
         }
 
         public static bool IsHashSupported(string algStr)
