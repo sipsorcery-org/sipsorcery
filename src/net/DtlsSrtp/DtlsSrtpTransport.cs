@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using Org.BouncyCastle.Tls;
 using SharpSRTP.DTLS;
+using SharpSRTP.DTLSSRTP;
 using SharpSRTP.SRTP;
 using SharpSRTP.UDP;
 
