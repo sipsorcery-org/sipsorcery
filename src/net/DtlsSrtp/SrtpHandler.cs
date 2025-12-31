@@ -140,10 +140,13 @@ namespace SIPSorcery.Net
         private SrtpSessionContext CreateSessionContext(SDPSecurityDescription localSecurityDescription, SDPSecurityDescription remoteSecurityDescription, byte[] mki = null)
         {
             // TODO: not tested
-            var encodeRtpContext = new SrtpContext((int)localSecurityDescription.CryptoSuite, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
-            var encodeRtcpContext = new SrtpContext((int)localSecurityDescription.CryptoSuite, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
-            var decodeRtpContext = new SrtpContext((int)remoteSecurityDescription.CryptoSuite, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
-            var decodeRtcpContext = new SrtpContext((int)remoteSecurityDescription.CryptoSuite, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
+            var localProtectionProfile = SrtpProtocol.SrtpCryptoSuites[localSecurityDescription.CryptoSuite.ToString()];
+            var remoteProtectionProfile = SrtpProtocol.SrtpCryptoSuites[remoteSecurityDescription.CryptoSuite.ToString()];
+
+            var encodeRtpContext = new SrtpContext(localProtectionProfile, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
+            var encodeRtcpContext = new SrtpContext(localProtectionProfile, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
+            var decodeRtpContext = new SrtpContext(remoteProtectionProfile, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
+            var decodeRtcpContext = new SrtpContext(remoteProtectionProfile, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
 
             return new SrtpSessionContext(encodeRtpContext, decodeRtpContext, encodeRtcpContext, decodeRtcpContext);
         }
