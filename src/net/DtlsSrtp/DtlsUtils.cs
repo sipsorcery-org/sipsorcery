@@ -12,7 +12,7 @@ namespace SIPSorcery.Net
     {
         public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(BcTlsCrypto crypto, bool useRsa = false)
         {
-            return DtlsCertificateUtils.GenerateServerCertificate("WebRTC", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), useRsa);
+            return DtlsCertificateUtils.GenerateCertificate("WebRTC", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), useRsa);
         }
 
         public static RTCDtlsFingerprint Fingerprint(string algorithm, TlsCertificate value)
