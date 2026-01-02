@@ -35,16 +35,14 @@ namespace SIPSorcery.Net
         public DtlsSrtpTransport(IDtlsSrtpPeer connection)
         {
             this._connection = connection;
-            this._connection.OnHandshakeCompleted += DtlsSrtpTransport_OnHandshakeCompleted;
+            this._connection.OnSessionStarted += DtlsSrtpTransport_OnSessionStarted;
             this._connection.OnAlert += DtlsSrtpTransport_OnAlert;
         }
 
-        private void DtlsSrtpTransport_OnHandshakeCompleted(object sender, DtlsHandshakeCompletedEventArgs e)
+        private void DtlsSrtpTransport_OnSessionStarted(object sender, DtlsSessionStartedEventArgs e)
         {
-            this._peerCertificate = e.SecurityParameters.PeerCertificate;
-
-            // derive SRTP/SRTCP master keys and contexts
-            this.Context = _connection.CreateSessionContext(e.SecurityParameters);
+            this._peerCertificate = e.PeerCertificate;
+            this.Context = e.Context;
         }
 
         private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)
