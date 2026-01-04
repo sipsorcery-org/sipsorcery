@@ -74,10 +74,11 @@ namespace SIPSorcery.Net.IntegrationTests
             var dtlsClient = new DtlsSrtpClient(new BcTlsCrypto());
             var dtlsServer = new DtlsSrtpServer(new BcTlsCrypto());
 
+            int timeout = 5000;
             DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(dtlsClient);
-            dtlsClientTransport.TimeoutMilliseconds = 5000;
+            dtlsClientTransport.TimeoutMilliseconds = timeout;
             DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(dtlsServer);
-            dtlsServerTransport.TimeoutMilliseconds = 5000;
+            dtlsServerTransport.TimeoutMilliseconds = timeout;
 
             dtlsClientTransport.OnDataReady += (buf) =>
             {
@@ -90,15 +91,17 @@ namespace SIPSorcery.Net.IntegrationTests
                 dtlsClientTransport.WriteToRecvStream(buf, "127.0.0.1:1234");
             };
 
-            var serverTask = Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
-            var clientTask = Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
+            var serverTask = Task.Run<bool>(() =>
+                    dtlsServerTransport.DoHandshake(out _));
+            var clientTask = Task.Run<bool>(() =>
+                    dtlsClientTransport.DoHandshake(out _));
 
-            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(5000));
+            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(timeout));
             var winner = await Task.WhenAny(serverTask, clientTask, timeoutTask);
 
             if (winner == timeoutTask)
             {
-                Assert.Fail($"Test timed out after 5000ms.");
+                Assert.Fail($"Test timed out after {timeout}ms.");
             }
 
             Assert.True(await serverTask);
