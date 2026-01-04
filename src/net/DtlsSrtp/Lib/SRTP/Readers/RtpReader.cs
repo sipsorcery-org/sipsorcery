@@ -21,7 +21,7 @@
 
 using System.Linq;
 
-namespace SIPSorcery.Net.SRTP.Readers
+namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
 {
     public static class RtpReader
     {

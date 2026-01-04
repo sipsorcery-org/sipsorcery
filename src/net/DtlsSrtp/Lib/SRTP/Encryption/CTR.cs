@@ -22,7 +22,7 @@
 using Org.BouncyCastle.Crypto;
 using System;
 
-namespace SIPSorcery.Net.SRTP.Encryption
+namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
     public static class CTR
     {

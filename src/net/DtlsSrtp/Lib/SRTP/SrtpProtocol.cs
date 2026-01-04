@@ -24,7 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace SIPSorcery.Net.SRTP
+namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
     /// <summary>
     /// Currently registered SRTP Crypto Suites https://www.iana.org/assignments/sdp-security-descriptions/sdp-security-descriptions.xhtml

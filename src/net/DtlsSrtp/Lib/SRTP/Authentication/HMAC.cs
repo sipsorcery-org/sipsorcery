@@ -21,7 +21,7 @@
 
 using Org.BouncyCastle.Crypto.Macs;
 
-namespace SIPSorcery.Net.SRTP.Authentication
+namespace SIPSorcery.Net.SharpSRTP.SRTP.Authentication
 {
     public static class HMAC
     {

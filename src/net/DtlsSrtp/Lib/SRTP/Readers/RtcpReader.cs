@@ -19,7 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
-namespace SIPSorcery.Net.SRTP.Readers
+namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
 {
     public static class RtcpReader
     {

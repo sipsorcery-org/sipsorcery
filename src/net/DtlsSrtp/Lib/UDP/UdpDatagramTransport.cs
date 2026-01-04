@@ -27,7 +27,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 
-namespace SIPSorcery.Net.SRTP.UDP
+namespace SIPSorcery.Net.SharpSRTP.UDP
 {
     public class UdpDatagramTransport : DatagramTransport
     {

@@ -23,7 +23,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
 using System;
 
-namespace SIPSorcery.Net.SRTP.DTLS
+namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
     public enum TlsAlertLevelsEnum
     {

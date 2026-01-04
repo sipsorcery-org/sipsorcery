@@ -2,10 +2,10 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using Org.BouncyCastle.Tls;
-using SIPSorcery.Net.SRTP.DTLS;
-using SIPSorcery.Net.SRTP.DTLSSRTP;
-using SIPSorcery.Net.SRTP;
-using SIPSorcery.Net.SRTP.UDP;
+using SIPSorcery.Net.SharpSRTP.DTLS;
+using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
+using SIPSorcery.Net.SharpSRTP.SRTP;
+using SIPSorcery.Net.SharpSRTP.UDP;
 
 namespace SIPSorcery.Net
 {

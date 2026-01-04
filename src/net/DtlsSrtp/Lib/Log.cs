@@ -22,7 +22,7 @@
 using System;
 using Microsoft.Extensions.Logging;
 
-namespace SIPSorcery.Net.SRTP
+namespace SIPSorcery.Net.SharpSRTP
 {
     public static class Log
     {

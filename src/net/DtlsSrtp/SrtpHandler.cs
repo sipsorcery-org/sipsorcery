@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SIPSorcery.Net.SRTP;
+using SIPSorcery.Net.SharpSRTP.SRTP;
 using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.Net

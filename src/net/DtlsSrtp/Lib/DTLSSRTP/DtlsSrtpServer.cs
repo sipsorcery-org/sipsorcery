@@ -23,12 +23,13 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
-using SIPSorcery.Net.SRTP.DTLS;
+using SIPSorcery.Net.SharpSRTP.DTLS;
+using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SIPSorcery.Net.SRTP.DTLSSRTP
+namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
     // Useful link for troubleshooting WebRTC in Chrome/Edge: https://learn.microsoft.com/en-us/azure/communication-services/resources/troubleshooting/voice-video-calling/references/how-to-collect-browser-verbose-log
     public class DtlsSrtpServer : DtlsServer, IDtlsSrtpPeer

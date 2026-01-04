@@ -23,7 +23,7 @@ using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using System;
 
-namespace SIPSorcery.Net.SRTP.Encryption
+namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
     public static class AEAD
     {

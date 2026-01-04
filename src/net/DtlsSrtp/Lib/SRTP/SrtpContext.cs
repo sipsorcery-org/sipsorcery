@@ -25,12 +25,12 @@ using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Macs;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
-using SIPSorcery.Net.SRTP.Readers;
+using SIPSorcery.Net.SharpSRTP.SRTP.Readers;
 using System;
 using System.Linq;
 using System.Threading;
 
-namespace SIPSorcery.Net.SRTP
+namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
     public enum SrtpContextType
     {

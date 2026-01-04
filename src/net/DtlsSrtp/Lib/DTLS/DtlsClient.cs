@@ -29,7 +29,7 @@ using Org.BouncyCastle.Utilities.Encoders;
 using System;
 using System.Collections.Generic;
 
-namespace SIPSorcery.Net.SRTP.DTLS
+namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
     public class DtlsClient : DefaultTlsClient, IDtlsPeer
     {

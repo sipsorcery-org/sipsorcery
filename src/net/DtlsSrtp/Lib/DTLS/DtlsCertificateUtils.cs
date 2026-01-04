@@ -37,7 +37,7 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 
-namespace SIPSorcery.Net.SRTP.DTLS
+namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
     public class DtlsCertificateUtils
     {

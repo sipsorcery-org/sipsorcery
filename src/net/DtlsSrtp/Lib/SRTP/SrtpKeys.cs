@@ -22,7 +22,7 @@
 using System;
 using System.Linq;
 
-namespace SIPSorcery.Net.SRTP
+namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
     public class SrtpKeys
     {

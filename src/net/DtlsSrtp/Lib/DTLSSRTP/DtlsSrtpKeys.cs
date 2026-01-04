@@ -20,8 +20,9 @@
 // SOFTWARE.
 
 using System;
+using SIPSorcery.Net.SharpSRTP.SRTP;
 
-namespace SIPSorcery.Net.SRTP.DTLSSRTP
+namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
     public class DtlsSrtpKeys
     {

@@ -20,10 +20,11 @@
 // SOFTWARE.
 
 using Org.BouncyCastle.Tls;
-using SIPSorcery.Net.SRTP.DTLS;
+using SIPSorcery.Net.SharpSRTP.DTLS;
+using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 
-namespace SIPSorcery.Net.SRTP.DTLSSRTP
+namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
     public class DtlsSessionStartedEventArgs : EventArgs
     {
