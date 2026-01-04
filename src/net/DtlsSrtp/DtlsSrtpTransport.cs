@@ -64,22 +64,22 @@ namespace SIPSorcery.Net
 
         public int ProtectRTP(byte[] payload, int length, out int outputBufferLength)
         {
-            return Context.EncodeRtpContext.ProtectRtp(payload, length, out outputBufferLength);
+            return Context.ProtectRtp(payload, length, out outputBufferLength);
         }
 
         public int UnprotectRTP(byte[] payload, int length, out int outputBufferLength)
         {
-            return Context.DecodeRtpContext.UnprotectRtp(payload, length, out outputBufferLength);
+            return Context.UnprotectRtp(payload, length, out outputBufferLength);
         }        
 
         public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            return Context.EncodeRtcpContext.ProtectRtcp(payload, length, out outputBufferLength);
+            return Context.ProtectRtcp(payload, length, out outputBufferLength);
         }
 
         public int UnprotectRTCP(byte[] payload, int length, out int outputBufferLength)
         {
-            return Context.DecodeRtcpContext.UnprotectRtcp(payload, length, out outputBufferLength);
+            return Context.UnprotectRtcp(payload, length, out outputBufferLength);
         }
 
         public Certificate GetRemoteCertificate()
