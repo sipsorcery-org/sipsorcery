@@ -16,7 +16,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
-using SharpSRTP.SRTP;
+using SIPSorcery.Net.SRTP.DTLSSRTP;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
