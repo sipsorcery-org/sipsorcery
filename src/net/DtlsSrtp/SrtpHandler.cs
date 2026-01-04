@@ -143,10 +143,10 @@ namespace SIPSorcery.Net
             var localProtectionProfile = SrtpProtocol.SrtpCryptoSuites[localSecurityDescription.CryptoSuite.ToString()];
             var remoteProtectionProfile = SrtpProtocol.SrtpCryptoSuites[remoteSecurityDescription.CryptoSuite.ToString()];
 
-            var encodeRtpContext = new SrtpContext(localProtectionProfile, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
-            var encodeRtcpContext = new SrtpContext(localProtectionProfile, mki, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
-            var decodeRtpContext = new SrtpContext(remoteProtectionProfile, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTP);
-            var decodeRtcpContext = new SrtpContext(remoteProtectionProfile, mki, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, SrtpContextType.RTCP);
+            var encodeRtpContext = new SrtpContext(SrtpContextType.RTP, localProtectionProfile, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, mki);
+            var encodeRtcpContext = new SrtpContext(SrtpContextType.RTCP, localProtectionProfile, localSecurityDescription.KeyParams[0].Key, localSecurityDescription.KeyParams[0].Salt, mki);
+            var decodeRtpContext = new SrtpContext(SrtpContextType.RTP, remoteProtectionProfile, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, mki);
+            var decodeRtcpContext = new SrtpContext(SrtpContextType.RTCP, remoteProtectionProfile, remoteSecurityDescription.KeyParams[0].Key, remoteSecurityDescription.KeyParams[0].Salt, mki);
 
             return new SrtpSessionContext(encodeRtpContext, decodeRtpContext, encodeRtcpContext, decodeRtcpContext);
         }
