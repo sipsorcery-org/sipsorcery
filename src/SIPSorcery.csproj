@@ -35,10 +35,6 @@
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
   </ItemGroup>
   
-  <ItemGroup>
-    <ProjectReference Include="..\..\SharpSRTP\src\SharpSRTP\SharpSRTP.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net462;net5.0;net6.0;net8.0</TargetFrameworks>
     <LangVersion>12.0</LangVersion>

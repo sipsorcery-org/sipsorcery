@@ -4,7 +4,7 @@ using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Tls.Crypto;
-using SharpSRTP.DTLS;
+using SIPSorcery.Net.SRTP.DTLS;
 
 namespace SIPSorcery.Net
 {
