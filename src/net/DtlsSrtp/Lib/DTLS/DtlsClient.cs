@@ -33,6 +33,8 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
     public class DtlsClient : DefaultTlsClient, IDtlsPeer
     {
+        protected DatagramTransport _clientDatagramTransport; // valid only for the current session
+
         private TlsSession _session;
 
         public bool AutogenerateCertificate { get; set; } = true;
@@ -50,11 +52,11 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
         public event EventHandler<DtlsHandshakeCompletedEventArgs> OnHandshakeCompleted;
         public event EventHandler<DtlsAlertEventArgs> OnAlert;
 
-        public DtlsClient(TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.rsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
+        public DtlsClient(TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
             : this(new BcTlsCrypto(), session, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
         { }
 
-        public DtlsClient(TlsCrypto crypto, TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.rsa, short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
+        public DtlsClient(TlsCrypto crypto, TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
         {
             this._session = session;
             SetCertificate(certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm);
@@ -141,7 +143,10 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
             try
             {
                 DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
+
+                _clientDatagramTransport = datagramTransport;
                 transport = clientProtocol.Connect(this, datagramTransport);
+                _clientDatagramTransport = null;
             }
             catch (Exception ex)
             {

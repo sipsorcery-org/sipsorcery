@@ -57,7 +57,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
         {
             SrtpSessionContext context = CreateSessionContext(e.SecurityParameters);
             Certificate peerCertificate = e.SecurityParameters.PeerCertificate;
-            OnSessionStarted?.Invoke(this, new DtlsSessionStartedEventArgs(context, peerCertificate));
+            OnSessionStarted?.Invoke(this, new DtlsSessionStartedEventArgs(context, peerCertificate, base._clientDatagramTransport));
         }
        
         public void SetMKI(byte[] mki)

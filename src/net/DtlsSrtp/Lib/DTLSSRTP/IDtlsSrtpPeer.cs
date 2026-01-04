@@ -30,11 +30,13 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
     {
         public SrtpSessionContext Context { get; private set; }
         public Certificate PeerCertificate { get; private set;  }
+        public DatagramTransport ClientDatagramTransport { get; private set; }
 
-        public DtlsSessionStartedEventArgs(SrtpSessionContext context, Certificate peerCertificate)
+        public DtlsSessionStartedEventArgs(SrtpSessionContext context, Certificate peerCertificate, DatagramTransport clientDatagramTransport)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.PeerCertificate = peerCertificate ?? throw new ArgumentNullException(nameof(peerCertificate));
+            this.ClientDatagramTransport = clientDatagramTransport ?? throw new ArgumentNullException(nameof(clientDatagramTransport));
         }
     }
 

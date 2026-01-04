@@ -33,6 +33,8 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
     public class DtlsServer : DefaultTlsServer, IDtlsPeer
     {
+        protected DatagramTransport _clientDatagramTransport; // valid only for the current session
+
         public int TimeoutMilliseconds { get; set; } = 20000;
 
         public Certificate Certificate { get; private set; }
@@ -187,7 +189,14 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                 }
 
                 var clientDatagramTransport = createClientDatagramTransport(remoteEndpoint);
+
+                // store the current client datagram transport for this session
+                _clientDatagramTransport = clientDatagramTransport;
+
                 transport = serverProtocol.Accept(this, clientDatagramTransport, request);
+
+                // clear the reference to the transport after handshake is done
+                _clientDatagramTransport = null;
             }
             catch (Exception ex)
             {
