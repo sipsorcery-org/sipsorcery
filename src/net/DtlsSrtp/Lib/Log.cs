@@ -26,6 +26,7 @@ namespace SIPSorcery.Net.SharpSRTP
 {
     public static class Log
     {
+        // wire up the sipsorcery's logger
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         public static bool WarnEnabled { get; set; } = true;
