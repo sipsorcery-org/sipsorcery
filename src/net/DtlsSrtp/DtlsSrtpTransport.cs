@@ -1,4 +1,23 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: DtlsSrtpTransport.cs
+//
+// Description: This class represents the DTLS SRTP transport connection to use 
+// as Client or Server.
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+// 02 Jul 2020  Aaron Clauson   Switched underlying transport from socket to
+//                              piped memory stream.
+// 30 Dec 2025  Lukas Volf      New DTLS/SRTP impl
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using Org.BouncyCastle.Tls;
