@@ -367,7 +367,6 @@ namespace SIPSorcery.Net
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
-            Debug.WriteLine($"DTLS fingerprint for instance {this.GetHashCode()}: {DtlsCertificateFingerprint.value}");
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
