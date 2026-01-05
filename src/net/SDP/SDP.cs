@@ -170,7 +170,6 @@ namespace SIPSorcery.Net
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
         public IceRolesEnum? IceRole = null;
         public string DtlsFingerprint;              // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
-
         public List<string> IceCandidates;
 
         /// <summary>
