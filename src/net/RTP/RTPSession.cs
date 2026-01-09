@@ -2594,6 +2594,11 @@ namespace SIPSorcery.Net
 
                 if (mediaStream == null)
                 {
+                    mediaStream = GetMediaStreamByRTPPort(localPort);
+                }
+
+                if (mediaStream == null)
+                {
                     logger.LogWarning("An RTP packet with SSRC {SyncSource} and payload ID {PayloadType} was received that could not be matched to an audio or video stream.", hdr.SyncSource, hdr.PayloadType);
                     return;
                 }
@@ -2636,6 +2641,35 @@ namespace SIPSorcery.Net
                     return textStream;
                 }
                 else if (textStream.LocalTrack != null && textStream.LocalTrack.IsPayloadIDMatch(payloadId))
+                {
+                    return textStream;
+                }
+            }
+
+            return null;
+        }
+
+        private MediaStream GetMediaStreamByRTPPort(int port)
+        {
+            foreach (var audioStream in AudioStreamList)
+            {
+                if (audioStream?.GetRTPChannel()?.RTPPort == port)
+                {
+                    return audioStream;
+                }
+            }
+
+            foreach (var videoStream in VideoStreamList)
+            {
+                if (videoStream?.GetRTPChannel()?.RTPPort == port)
+                {
+                    return videoStream;
+                }
+            }
+
+            foreach (var textStream in TextStreamList)
+            {
+                if (textStream?.GetRTPChannel()?.RTPPort == port)
                 {
                     return textStream;
                 }
