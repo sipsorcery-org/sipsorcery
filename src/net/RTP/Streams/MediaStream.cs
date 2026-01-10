@@ -298,7 +298,22 @@ namespace SIPSorcery.Net
         {
             if (SecureContext != null)
             {
-                int res = SecureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                var unprotectRtpPacket = SecureContext.UnprotectRtpPacket;
+
+                int res = 0;
+                int outBufLen = 0;
+
+                if (RtpSessionConfig.IsMediaMultiplexed)
+                {
+                    lock (rtpChannel)
+                    {
+                        res = unprotectRtpPacket(buffer, buffer.Length, out outBufLen);
+                    }
+                }
+                else
+                {
+                    res = unprotectRtpPacket(buffer, buffer.Length, out outBufLen);
+                }
 
                 if (res == 0)
                 {
@@ -477,7 +492,23 @@ namespace SIPSorcery.Net
 
                 if (protectRtpPacket != null)
                 {
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out int outBufLen);
+                    int rtperr = 0;
+                    int outBufLen = 0;
+
+                    if (RtpSessionConfig.IsMediaMultiplexed)
+                    {
+                        // Multiplexing means that a single rtpChannel is used by multiple MediaStreams from multiple threads. We have
+                        //  to ensure that ProtectRtp is being called only from a single thread, otherwise encryption will fail.
+                        lock (rtpChannel)
+                        {
+                            rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                        }
+                    }
+                    else
+                    {
+                        rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                    }                        
+
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result {RtpError}.", rtperr);
@@ -648,7 +679,21 @@ namespace SIPSorcery.Net
                     byte[] sendBuffer = new byte[reportBuffer.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH];
                     Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
 
-                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out int outBufLen);
+                    int rtperr = 0;
+                    int outBufLen = 0;
+
+                    if (RtpSessionConfig.IsMediaMultiplexed && RtpSessionConfig.IsRtcpMultiplexed)
+                    {
+                        lock (rtpChannel)
+                        {
+                            rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
+                        }
+                    }
+                    else
+                    {
+                        rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
+                    }
+
                     if (rtperr != 0)
                     {
                         //logger.LogWarning("SRTP RTCP packet protection failed, result {RtpError}.", rtperr);
