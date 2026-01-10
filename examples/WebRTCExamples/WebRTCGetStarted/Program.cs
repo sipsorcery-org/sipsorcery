@@ -65,7 +65,7 @@ namespace demo
             exitMre.WaitOne();
         }
 
-        private static Task<RTCPeerConnection> CreatePeerConnection()
+        private static async Task<RTCPeerConnection> CreatePeerConnection()
         {
             RTCConfiguration config = new RTCConfiguration
             {
@@ -123,6 +123,14 @@ namespace demo
                 }
             };
 
+            // Verify a data channel can be set up.
+            var dc = await pc.createDataChannel("test", null);
+            dc.onopen += () =>
+            {
+                logger.LogDebug($"Data channel {dc.label} opened.");
+                dc.send("Hello from SIPSorcery!");
+            };
+
             // Diagnostics.
             pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
             pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
@@ -141,7 +149,7 @@ namespace demo
             //    pc.Close("normal");
             //});
 
-            return Task.FromResult(pc);
+            return pc;
         }
 
         /// <summary>
