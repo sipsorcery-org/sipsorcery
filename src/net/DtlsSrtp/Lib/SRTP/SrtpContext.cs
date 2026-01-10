@@ -27,6 +27,7 @@ using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using SIPSorcery.Net.SharpSRTP.SRTP.Readers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -38,11 +39,86 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         RTCP
     }
 
+    public class SsrcSrtpContext
+    {
+        public const int REPLAY_WINDOW_SIZE = 64; // Minumum is 64 according to the RFC, our current implmentation is using a bit mask, so it won't allow more than 64.
+
+        public ulong Bitmap { get; private set; } = 0;
+        public bool LastSeqSet { get; private set; } = false;
+
+        /// <summary>
+        /// Receiver only - highest sequence number received.
+        /// </summary>
+        public uint S_l { get; private set; }
+        public bool S_l_set { get; private set; } = false;
+
+        /// <summary>
+        /// Checks and updates the replay window for the given sequence number.
+        /// </summary>
+        /// <param name="sequenceNumber">RTP/RTCP sequence number.</param>
+        /// <returns>true if the replay check passed, false when the packed was replayed.</returns>
+        /// <remarks>https://datatracker.ietf.org/doc/html/rfc2401 Appendix C</remarks>
+        public bool CheckAndUpdateReplayWindow(uint sequenceNumber)
+        {
+            int diff;
+
+            if (sequenceNumber == 0)
+            {
+                return false; /* first == 0 or wrapped */
+            }
+            if (sequenceNumber > S_l)
+            {
+                /* new larger sequence number */
+                diff = (int)(sequenceNumber - S_l);
+                if (diff < REPLAY_WINDOW_SIZE)
+                {
+                    /* In window */
+                    Bitmap = Bitmap << diff;
+                    Bitmap |= 1; /* set bit for this packet */
+                }
+                else
+                {
+                    Bitmap = 1; /* This packet has a "way larger" */
+                }
+                S_l = sequenceNumber;
+                return true; /* larger is good */
+            }
+            diff = (int)(S_l - sequenceNumber);
+            if (diff >= REPLAY_WINDOW_SIZE)
+            {
+                return false; /* too old or wrapped */
+            }
+            if ((Bitmap & ((ulong)1 << diff)) == ((ulong)1 << diff))
+            {
+                return false; /* already seen */
+            }
+            Bitmap |= ((ulong)1 << diff); /* mark as seen */
+            return true; /* out of order but good */
+        }
+
+        public void SetInitialSequence(uint sequenceNumber)
+        {
+            if (!S_l_set)
+            {
+                S_l = sequenceNumber;
+                S_l_set = true;
+            }
+        }
+
+        public void SetSequence(uint sequenceNumber)
+        {
+            S_l = sequenceNumber;
+            S_l_set = true;
+        }
+    }
+
     /// <summary>
     /// SRTP context used for protecting/unprotecting RTP/RTCP packets as defined in RFC 3711.
     /// </summary>
     public class SrtpContext : ISrtpContext
     {
+        public Dictionary<uint, SsrcSrtpContext> ReplayProtection { get; } = new Dictionary<uint, SsrcSrtpContext>();
+
         public const int ERROR_GENERIC = -1;
         public const int ERROR_UNSUPPORTED_CIPHER = -2;
         public const int ERROR_HMAC_CHECK_FAILED = -3;
@@ -51,10 +127,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public const int ERROR_MKI_CHECK_FAILED = -6;
 
         public const uint E_FLAG = 0x80000000;
-        public const int REPLAY_WINDOW_SIZE = 64; // Minumum is 64 according to the RFC, our current implmentation is using a bit mask, so it won't allow more than 64.
-
-        private ulong _bitmap = 0; /* session state - must be 32 bits */
-        private uint _lastSeq = 0; /* session state */
         
         private readonly SrtpContextType _contextType;
         public SrtpContextType ContextType { get { return _contextType; } }
@@ -68,12 +140,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
         public IBlockCipher HeaderCTR { get; private set; }
         public IBlockCipher HeaderF8 { get; private set; }
-
-        /// <summary>
-        /// Receiver only - highest sequence number received.
-        /// </summary>
-        public uint S_l { get { return _lastSeq; } set { _lastSeq = value; } }
-        public bool S_l_set { get; set; } = false;
 
         public SrtpProtectionProfileConfiguration ProtectionProfile { get; set; }
         public SrtpCiphers Cipher { get; set; }
@@ -669,17 +735,20 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 msgAuth = null;
             }
 
-            if (!context.S_l_set)
+            SsrcSrtpContext ssrcContext;
+            if (context.ReplayProtection.TryGetValue(ssrc, out ssrcContext) == false)
             {
-                context.S_l = sequenceNumber;
-                context.S_l_set = true;
+                ssrcContext = new SsrcSrtpContext();
+                context.ReplayProtection.Add(ssrc, ssrcContext);
             }
+
+            ssrcContext.SetInitialSequence(sequenceNumber);
 
             int offset = RtpReader.ReadHeaderLen(payload);
             uint roc = context.Roc;
-            uint index = SrtpContext.DetermineRtpIndex(context.S_l, sequenceNumber, roc);
+            uint index = SrtpContext.DetermineRtpIndex(ssrcContext.S_l, sequenceNumber, roc);
 
-            if (!context.CheckAndUpdateReplayWindow(index))
+            if (!ssrcContext.CheckAndUpdateReplayWindow(index))
             {
                 outputBufferLength = 0;
                 return ERROR_REPLAY_CHECK_FAILED;
@@ -784,7 +853,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
                         uint innerSsrc = RtpReader.ReadSsrc(syntheticRtpPacket);
                         ushort innerSequenceNumber = RtpReader.ReadSequenceNumber(syntheticRtpPacket);
-                        uint innerIndex = SrtpContext.DetermineRtpIndex(context.S_l, sequenceNumber, roc);
+                        uint innerIndex = SrtpContext.DetermineRtpIndex(ssrcContext.S_l, sequenceNumber, roc);
 
                         // apply inner cryptographic algorithm
                         byte[] innerK_e = context.K_e.Take(context.K_e.Length / 2).ToArray();
@@ -865,7 +934,15 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
             uint ssrc = RtcpReader.ReadSsrc(payload);
             int offset = RtcpReader.GetHeaderLen();
-            uint index = context.S_l | E_FLAG;
+
+            SsrcSrtpContext ssrcContext;
+            if (context.ReplayProtection.TryGetValue(ssrc, out ssrcContext) == false)
+            {
+                ssrcContext = new SsrcSrtpContext();
+                context.ReplayProtection.Add(ssrc, ssrcContext);
+            }
+
+            uint index = ssrcContext.S_l | E_FLAG;
 
             switch (context.Cipher)
             {
@@ -886,7 +963,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 case SrtpCiphers.ARIA_256_CTR:
                 case SrtpCiphers.SEED_128_CTR:
                     {
-                        byte[] iv = SRTP.Encryption.CTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        byte[] iv = SRTP.Encryption.CTR.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l);
                         SRTP.Encryption.CTR.Encrypt(context.PayloadCTR, payload, offset, length, iv);
                     }
                     break;
@@ -898,7 +975,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 case SrtpCiphers.SEED_128_CCM:
                 case SrtpCiphers.SEED_128_GCM:
                     {
-                        byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                        byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l);
                         byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray(); // associatedData include also index
                         SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
                         length += context.N_tag;
@@ -911,7 +988,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         // RTCP under Double AEAD is protected only with the outer layer
                         byte[] outerK_e = context.K_e.Skip(context.K_e.Length / 2).ToArray();
                         byte[] outerK_s = context.K_s.Skip(context.K_s.Length / 2).ToArray();
-                        byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, context.S_l);
+                        byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, ssrcContext.S_l);
                         byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray();
                         SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length, outerIv, outerK_e, context.N_tag / 2, associatedData);
                         length += context.N_tag / 2;
@@ -945,7 +1022,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 length += context.N_tag;
             }
 
-            context.S_l = (context.S_l + 1) % 0x80000000;
+            ssrcContext.SetSequence((ushort)((ssrcContext.S_l + 1) % 0x80000000));
             outputBufferLength = length;
 
             return 0;
@@ -979,6 +1056,14 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
             uint ssrc = RtcpReader.ReadSsrc(payload);
             int offset = RtcpReader.GetHeaderLen();
+
+            SsrcSrtpContext ssrcContext;
+            if (context.ReplayProtection.TryGetValue(ssrc, out ssrcContext) == false)
+            {
+                ssrcContext = new SsrcSrtpContext();
+                context.ReplayProtection.Add(ssrc, ssrcContext);
+            }
+
             uint index = RtcpReader.SrtcpReadIndex(payload, context.N_a > 0 ? (context.N_tag + mki.Length) : 0);
             bool isEncrypted = false;
 
@@ -1001,7 +1086,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 }
             }
 
-            if (!context.CheckAndUpdateReplayWindow(index))
+            if (!ssrcContext.CheckAndUpdateReplayWindow(index))
             {
                 outputBufferLength = 0;
                 return ERROR_REPLAY_CHECK_FAILED;
@@ -1032,7 +1117,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                     case SrtpCiphers.ARIA_256_CTR:
                     case SrtpCiphers.SEED_128_CTR:
                         {
-                            byte[] iv = SRTP.Encryption.CTR.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            byte[] iv = SRTP.Encryption.CTR.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l);
                             SRTP.Encryption.CTR.Encrypt(context.PayloadCTR, payload, offset, length - 4 - context.N_tag - mki.Length, iv);
                             outputBufferLength = length - 4 - context.N_tag - mki.Length;
                         }
@@ -1045,7 +1130,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                     case SrtpCiphers.SEED_128_CCM:
                     case SrtpCiphers.SEED_128_GCM:
                         {
-                            byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, context.S_l);
+                            byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l);
                             byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
                             SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length - 4 - context.N_tag - mki.Length, iv, context.K_e, context.N_tag, associatedData);
                             outputBufferLength = length - 4 - context.N_tag - mki.Length;
@@ -1058,7 +1143,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                             // RTCP under Double AEAD is protected only with the outer layer
                             byte[] outerK_e = context.K_e.Skip(context.K_e.Length / 2).ToArray();
                             byte[] outerK_s = context.K_s.Skip(context.K_s.Length / 2).ToArray();
-                            byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, context.S_l);
+                            byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, ssrcContext.S_l);
                             byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
                             SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length - 4 - context.N_tag / 2 - mki.Length, outerIv, outerK_e, context.N_tag / 2, associatedData);
                             outputBufferLength = length - 4 - context.N_tag / 2 - mki.Length;
@@ -1114,50 +1199,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             // RFC 3711 - 3.3.1
             // i = 2 ^ 16 * ROC + SEQ
             return ((ulong)ROC << 16) | SEQ;
-        }
-
-        /// <summary>
-        /// Checks and updates the replay window for the given sequence number.
-        /// </summary>
-        /// <param name="sequenceNumber">RTP/RTCP sequence number.</param>
-        /// <returns>true if the replay check passed, false when the packed was replayed.</returns>
-        /// <remarks>https://datatracker.ietf.org/doc/html/rfc2401 Appendix C</remarks>
-        public virtual bool CheckAndUpdateReplayWindow(uint sequenceNumber)
-        {
-            int diff;
-
-            if (sequenceNumber == 0)
-            {
-                return false; /* first == 0 or wrapped */
-            }
-            if (sequenceNumber > _lastSeq)
-            {
-                /* new larger sequence number */
-                diff = (int)(sequenceNumber - _lastSeq);
-                if (diff < REPLAY_WINDOW_SIZE)
-                {
-                    /* In window */
-                    _bitmap = _bitmap << diff;
-                    _bitmap |= 1; /* set bit for this packet */
-                }
-                else
-                {
-                    _bitmap = 1; /* This packet has a "way larger" */
-                }
-                _lastSeq = sequenceNumber;
-                return true; /* larger is good */
-            }
-            diff = (int)(_lastSeq - sequenceNumber);
-            if (diff >= REPLAY_WINDOW_SIZE)
-            {
-                return false; /* too old or wrapped */
-            }
-            if ((_bitmap & ((ulong)1 << diff)) == ((ulong)1 << diff))
-            {
-                return false; /* already seen */
-            }
-            _bitmap |= ((ulong)1 << diff); /* mark as seen */
-            return true; /* out of order but good */
         }
 
         /// <summary>
