@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.12" />
   </ItemGroup>
 
   <ItemGroup>
