@@ -127,7 +127,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public const int ERROR_MKI_CHECK_FAILED = -6;
 
         public const uint E_FLAG = 0x80000000;
-        
+
         private readonly SrtpContextType _contextType;
         public SrtpContextType ContextType { get { return _contextType; } }
 
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         {
             int labelBaseValue = _contextType == SrtpContextType.RTP ? 0 : 3;
 
-            switch(Cipher)
+            switch (Cipher)
             {
                 case SrtpCiphers.NULL:
                 case SrtpCiphers.AES_128_F8:
@@ -303,7 +303,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                             this.PayloadF8 = new AesEngine();
                             this.HeaderF8 = new AesEngine();
                         }
-                        else if (Cipher == SrtpCiphers.AEAD_AES_128_GCM || Cipher == SrtpCiphers.AEAD_AES_256_GCM) 
+                        else if (Cipher == SrtpCiphers.AEAD_AES_128_GCM || Cipher == SrtpCiphers.AEAD_AES_256_GCM)
                         {
                             this.PayloadAEAD = new GcmBlockCipher(new AesEngine());
                         }
@@ -364,7 +364,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         {
                             this.PayloadAEAD = new CcmBlockCipher(new SeedEngine());
                         }
-                        else if(Cipher == SrtpCiphers.SEED_128_GCM)
+                        else if (Cipher == SrtpCiphers.SEED_128_GCM)
                         {
                             this.PayloadAEAD = new GcmBlockCipher(new SeedEngine());
                         }
@@ -376,7 +376,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
             }
 
-            switch(Auth)
+            switch (Auth)
             {
                 case SrtpAuth.NONE:
                     break;
@@ -441,7 +441,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 default:
                     throw new NotSupportedException($"Unsupported cipher {cipher.ToString()}!");
             }
-            
+
             return key;
         }
 
@@ -532,7 +532,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                     {
                         byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, index);
                         byte[] associatedData = payload.Take(offset).ToArray();
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, true, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
                         length += context.N_tag;
                     }
                     break;
@@ -555,11 +555,11 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         Buffer.BlockCopy(payload, offset, syntheticRtpPacket, rtpHeaderLength, length - offset);
 
                         // apply inner cryptographic algorithm
-                        byte[] innerK_e = context.K_e.Take(context.K_e.Length / 2).ToArray();    
-                        byte[] innerK_s = context.K_s.Take(context.K_s.Length / 2).ToArray();    
+                        byte[] innerK_e = context.K_e.Take(context.K_e.Length / 2).ToArray();
+                        byte[] innerK_s = context.K_s.Take(context.K_s.Length / 2).ToArray();
                         byte[] innerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(innerK_s, ssrc, index);
                         byte[] innerAssociatedData = syntheticRtpPacket.Take(rtpHeaderLength).ToArray();
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, syntheticRtpPacket, rtpHeaderLength, length - rtpExtensionsLength, innerIv, innerK_e, context.N_tag / 2, innerAssociatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, true, syntheticRtpPacket, rtpHeaderLength, length - rtpExtensionsLength, innerIv, innerK_e, context.N_tag / 2, innerAssociatedData);
 
                         // copy the protected payload back to the original payload buffer
                         Buffer.BlockCopy(syntheticRtpPacket, rtpHeaderLength, payload, offset, syntheticRtpPacket.Length - rtpHeaderLength);
@@ -576,7 +576,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, index);
                         byte[] outerAssociatedData = payload.Take(offset).ToArray();
 
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length, outerIv, outerK_e, context.N_tag / 2, outerAssociatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, true, payload, offset, length, outerIv, outerK_e, context.N_tag / 2, outerAssociatedData);
                         length += context.N_tag / 2;
                     }
                     break;
@@ -587,7 +587,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         return ERROR_UNSUPPORTED_CIPHER;
                     }
             }
-                        
+
             byte[] auth = null;
             if (context.Auth != SrtpAuth.NONE)
             {
@@ -792,7 +792,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                     {
                         byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, index);
                         byte[] associatedData = payload.Take(offset).ToArray();
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length - mki.Length - context.N_tag, iv, context.K_e, context.N_tag, associatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, false, payload, offset, length - mki.Length, iv, context.K_e, context.N_tag, associatedData);
                         outputBufferLength = length - mki.Length - context.N_tag;
                     }
                     break;
@@ -805,17 +805,17 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         byte[] outerK_s = context.K_s.Skip(context.K_s.Length / 2).ToArray();
                         byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, index);
                         byte[] outerAssociatedData = payload.Take(offset).ToArray();
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length - mki.Length - context.N_tag / 2, outerIv, outerK_e, context.N_tag / 2, outerAssociatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, false, payload, offset, length - mki.Length, outerIv, outerK_e, context.N_tag / 2, outerAssociatedData);
 
                         // calculate OHB size - it can now be larger than 1 byte if it was modified
                         int lastOhbByteIndex = length - mki.Length - context.N_tag / 2 - 1;
                         byte ohbConfig = payload[lastOhbByteIndex];
                         int ohbLength = 1;
-                        if((ohbConfig & 0x01) == 0x01)
+                        if ((ohbConfig & 0x01) == 0x01)
                         {
                             ohbLength += 2;
                         }
-                        if((ohbConfig & 0x02) == 0x02)
+                        if ((ohbConfig & 0x02) == 0x02)
                         {
                             ohbLength += 1;
                         }
@@ -860,7 +860,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         byte[] innerK_s = context.K_s.Take(context.K_s.Length / 2).ToArray();
                         byte[] innerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(innerK_s, innerSsrc, innerIndex);
                         byte[] innerAssociatedData = syntheticRtpPacket.Take(rtpHeaderLength).ToArray();
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, syntheticRtpPacket, rtpHeaderLength, syntheticRtpPacket.Length - context.N_tag / 2, innerIv, innerK_e, context.N_tag / 2, innerAssociatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, false, syntheticRtpPacket, rtpHeaderLength, syntheticRtpPacket.Length, innerIv, innerK_e, context.N_tag / 2, innerAssociatedData);
 
                         // copy the unprotected payload back to the original payload buffer
                         Buffer.BlockCopy(syntheticRtpPacket, rtpHeaderLength, payload, offset, syntheticRtpPacket.Length - rtpHeaderLength - context.N_tag / 2);
@@ -915,13 +915,13 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public int ProtectRtcp(byte[] payload, int length, out int outputBufferLength)
         {
             var context = this;
-            
-            if(payload == null)
+
+            if (payload == null)
             {
                 throw new ArgumentNullException(nameof(payload));
             }
 
-            if(payload.Length < CalculateRequiredSrtcpPayloadLength(length))
+            if (payload.Length < CalculateRequiredSrtcpPayloadLength(length))
             {
                 throw new ArgumentOutOfRangeException($"{nameof(ProtectRtcp)} failed, {nameof(payload)} buffer is too small!");
             }
@@ -977,7 +977,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                     {
                         byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l);
                         byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray(); // associatedData include also index
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, true, payload, offset, length, iv, context.K_e, context.N_tag, associatedData);
                         length += context.N_tag;
                     }
                     break;
@@ -990,7 +990,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         byte[] outerK_s = context.K_s.Skip(context.K_s.Length / 2).ToArray();
                         byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, ssrcContext.S_l);
                         byte[] associatedData = payload.Take(offset).Concat(new byte[] { (byte)(index >> 24), (byte)(index >> 16), (byte)(index >> 8), (byte)index }).ToArray();
-                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length, outerIv, outerK_e, context.N_tag / 2, associatedData);
+                        SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, true, payload, offset, length, outerIv, outerK_e, context.N_tag / 2, associatedData);
                         length += context.N_tag / 2;
                     }
                     break;
@@ -1132,7 +1132,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         {
                             byte[] iv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l);
                             byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
-                            SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length - 4 - context.N_tag - mki.Length, iv, context.K_e, context.N_tag, associatedData);
+                            SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, false, payload, offset, length - 4 - mki.Length, iv, context.K_e, context.N_tag, associatedData);
                             outputBufferLength = length - 4 - context.N_tag - mki.Length;
                         }
                         break;
@@ -1145,7 +1145,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                             byte[] outerK_s = context.K_s.Skip(context.K_s.Length / 2).ToArray();
                             byte[] outerIv = SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, ssrcContext.S_l);
                             byte[] associatedData = payload.Take(offset).Concat(payload.Skip(length - 4).Take(4)).ToArray(); // associatedData include also index
-                            SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, payload, offset, length - 4 - context.N_tag / 2 - mki.Length, outerIv, outerK_e, context.N_tag / 2, associatedData);
+                            SRTP.Encryption.AEAD.Encrypt(context.PayloadAEAD, false, payload, offset, length - 4 - mki.Length, outerIv, outerK_e, context.N_tag / 2, associatedData);
                             outputBufferLength = length - 4 - context.N_tag / 2 - mki.Length;
                         }
                         break;
