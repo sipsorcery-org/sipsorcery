@@ -63,7 +63,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v10.0.0: Support for .NET 10.0 added.
+    <PackageReleaseNotes>-v10.0.1: Support for .NET 10.0 added.
 -v8.0.23: Bug fixes.
 -v8.0.22: Stable release.
 -v8.0.21-pre: Improvements to OPUS encoder wiring.
@@ -82,9 +82,9 @@
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.0</Version>
-    <AssemblyVersion>10.0.0</AssemblyVersion>
-    <FileVersion>10.0.0</FileVersion>
+    <Version>10.0.1</Version>
+    <AssemblyVersion>10.0.1</AssemblyVersion>
+    <FileVersion>10.0.1</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
