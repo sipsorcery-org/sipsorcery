@@ -156,7 +156,12 @@ namespace SIPSorcery.Examples
                             pc.close();
                         }
                     }, null, pcTimeout * 1000, Timeout.Infinite);
-                    pc.OnClosed += timeout.Dispose;
+
+                    pc.OnClosed += () =>
+                    {
+                        timeout.Dispose();
+                        logger.LogInformation("Echo test completed successfully.");
+                    };
                 }
             }
         }
@@ -244,6 +249,7 @@ namespace SIPSorcery.Examples
                 {
                     logger.LogInformation($"Data channel got message: {Encoding.UTF8.GetString(data)}");
                     rdc.send(Encoding.UTF8.GetString(data));
+                    pc.Close("test successfully completed");
                 };
             };
 

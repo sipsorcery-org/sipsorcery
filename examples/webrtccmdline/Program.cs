@@ -358,6 +358,41 @@ namespace SIPSorcery.Examples
                         {
                             Console.WriteLine($"Set remote description failed {setAnswerResult}.");
                         }
+                        else
+                        {
+                            Console.WriteLine("WebRTC echo server connection established.");
+
+                            var dc = pc.DataChannels.FirstOrDefault();
+
+                            if (dc != null)
+                            {
+                                var pseudo = Crypto.GetRandomString(5);
+
+                                dc.onopen += () =>
+                                {
+                                    logger.LogInformation($"Data channel {dc.label}, stream ID {dc.id} opened.");
+                                    dc.send(pseudo);
+                                };
+
+                                dc.onmessage += async (dc, proto, data) =>
+                                {
+                                    string echoMsg = Encoding.UTF8.GetString(data);
+                                    logger.LogDebug($"data channel onmessage {proto}: {echoMsg}.");
+
+                                    if (echoMsg == pseudo)
+                                    {
+                                        logger.LogInformation($"Data channel echo test success.");
+                                        pc.Close("test success");
+                                        await Task.Delay(500);
+                                        exitCts.Cancel();
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning($"Data channel echo test failed, echoed message of {echoMsg} did not match original of {pseudo}.");
+                                    }
+                                };
+                            }
+                        }
                     }
                     else
                     {
