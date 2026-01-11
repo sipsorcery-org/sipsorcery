@@ -191,8 +191,25 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 
         public static bool IsHashSupported(string algStr)
         {
-            string algName = algStr.ToUpperInvariant();
-            return algName == "SHA-256" || algName == "SHA256";
+            if (string.IsNullOrEmpty(algStr))
+            {
+                throw new ArgumentNullException(nameof(algStr));
+            }
+
+            IDigest digest = null;
+
+            try
+            {
+                // It looks like currently there is no better way to check if a digest is supported by BouncyCastle.
+                // This method has an unfortunate consequence of actually creating the digest, so the call is expensive.
+                digest = DigestUtilities.GetDigest(algStr.ToUpperInvariant());
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+
+            return digest != null;
         }
     }
 }
