@@ -41,7 +41,17 @@ This option was written to be able to test with the [Pion Data Channels Example]
 
  - The connection log messages should be displayed and a data channel established.
 
-## Echo Test
+## Echo Server
+
+  - Server
+
+    `dotnet run --echoserver`
+
+  - Client
+
+    `dotnet run --echoclient http://localhost:8080/offer`
+
+## Echo Server Test with Docker
 
   - Server
    

@@ -10,7 +10,7 @@
 // 1. Establish a WebRTC peer connection with a remote peer with a receive only
 // audio stream and a send only video stream.
 // 2. Receive audio packets from the remote peer and process them with the OpenGL
-// program to generate a visual representation of teh received audio samples.
+// program to generate a visual representation of the received audio samples.
 // 3. Send the visual representation back to the remote peer as a video stream.
 //
 // Author(s):
