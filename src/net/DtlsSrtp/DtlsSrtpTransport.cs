@@ -71,7 +71,7 @@ namespace SIPSorcery.Net
 
         public bool DoHandshake(out string handshakeError)
         {
-            DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, () => _remoteEndPoint, (remoteEndpoint) => this);
+            DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, null, (remoteEndpoint) => this);
             Transport = transport;
             return string.IsNullOrEmpty(handshakeError);
         }
