@@ -24,7 +24,6 @@ using Org.BouncyCastle.Tls;
 using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
 using SIPSorcery.Net.SharpSRTP.SRTP;
-using SIPSorcery.Net.SharpSRTP.UDP;
 
 namespace SIPSorcery.Net
 {
@@ -33,6 +32,8 @@ namespace SIPSorcery.Net
 
     public class DtlsSrtpTransport : DatagramTransport
     {
+        public const int MAXIMUM_MTU = 1472; // 1500 - 20 (IP) - 8 (UDP)
+
         private IDtlsSrtpPeer _connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
@@ -105,10 +106,10 @@ namespace SIPSorcery.Net
         {
             return _peerCertificate;
         }
-        
-        public int GetReceiveLimit() => UdpDatagramTransport.MTU;
 
-        public int GetSendLimit() => UdpDatagramTransport.MTU;
+        public int GetReceiveLimit() => MAXIMUM_MTU;
+
+        public int GetSendLimit() => MAXIMUM_MTU;
 
         public void WriteToRecvStream(byte[] buffer, string remoteEndPoint) // remoteEndPoint = "127.0.0.1:80"
         {
