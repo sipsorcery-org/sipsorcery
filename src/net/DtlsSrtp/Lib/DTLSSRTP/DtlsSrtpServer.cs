@@ -69,21 +69,20 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
             {
                 ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
                 ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
-
                 ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
-                
                 ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
+                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
                 ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
                 ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
+                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
                 ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
+                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
+                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,                
                 ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
 
-                ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32,
+                // do not offer NULL profiles to make sure these do not get selected by accident
+                //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80,
+                //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32,
             };
         }
 

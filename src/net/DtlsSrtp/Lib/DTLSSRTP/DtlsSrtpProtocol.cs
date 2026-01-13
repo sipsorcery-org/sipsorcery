@@ -81,8 +81,10 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
                 // https://datatracker.ietf.org/doc/html/rfc5764#section-9
                 { ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80, new SrtpProtectionProfileConfiguration(SrtpCiphers.AES_128_CM, 128, 112, int.MaxValue, SrtpAuth.HMAC_SHA1, 160, 80) },
                 { ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32, new SrtpProtectionProfileConfiguration(SrtpCiphers.AES_128_CM, 128, 112, int.MaxValue, SrtpAuth.HMAC_SHA1, 160, 32) },
-                { ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80, new SrtpProtectionProfileConfiguration(SrtpCiphers.NULL, 0, 0, int.MaxValue, SrtpAuth.HMAC_SHA1, 160, 80) },
-                { ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32, new SrtpProtectionProfileConfiguration(SrtpCiphers.NULL, 0, 0, int.MaxValue, SrtpAuth.HMAC_SHA1, 160, 32) },
+
+                // for NULL we still need the keys (K_a) for auth, so we use the same key lengths as AES128 CM in order to derive non-zero master keys
+                { ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80, new SrtpProtectionProfileConfiguration(SrtpCiphers.NULL, 128, 112, int.MaxValue, SrtpAuth.HMAC_SHA1, 160, 80) },
+                { ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32, new SrtpProtectionProfileConfiguration(SrtpCiphers.NULL, 128, 112, int.MaxValue, SrtpAuth.HMAC_SHA1, 160, 32) },
             };
         }
 
