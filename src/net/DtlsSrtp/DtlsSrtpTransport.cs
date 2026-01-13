@@ -33,6 +33,7 @@ namespace SIPSorcery.Net
     public class DtlsSrtpTransport : DatagramTransport
     {
         public const int MAXIMUM_MTU = 1472; // 1500 - 20 (IP) - 8 (UDP)
+        public const int DTLS_RETRANSMISSION_CODE = -1;
 
         private IDtlsSrtpPeer _connection;
 

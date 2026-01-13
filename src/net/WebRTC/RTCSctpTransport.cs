@@ -279,7 +279,7 @@ namespace SIPSorcery.Net
                 {
                     int bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
 
-                    if (bytesRead == -1)
+                    if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
                     {
                         // Timed out waiting for a packet, this is by design and the receive attempt should
                         // be retired.
