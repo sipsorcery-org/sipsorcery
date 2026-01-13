@@ -34,6 +34,14 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
     // Useful link for troubleshooting WebRTC in Chrome/Edge: https://learn.microsoft.com/en-us/azure/communication-services/resources/troubleshooting/voice-video-calling/references/how-to-collect-browser-verbose-log
     public class DtlsSrtpServer : DtlsServer, IDtlsSrtpPeer
     {
+        /// <summary>
+        /// Used in WebRTC to tell the server to not use MKI even if the client requested it.
+        /// </summary>
+        /// <remarks>
+        /// RFC 8827 states: An SRTP Master Key Identifier (MKI) MUST NOT be used.
+        /// </remarks>
+        public bool ForceDisableMKI { get; set; } = false;
+
         private UseSrtpData _srtpData;
 
         public event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
@@ -98,7 +106,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
             }
 
             int selectedProfile = mutuallySupportedProfiles.OrderBy(x => Array.IndexOf(serverSupportedProfiles, x)).First(); // Choose the highest priority profile supported by the server
-            _srtpData = new UseSrtpData(new int[] { selectedProfile }, clientSrtpExtension.Mki); // Server must return only a single selected profile
+            _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? new byte[0] : clientSrtpExtension.Mki); // Server must return only a single selected profile
         }
 
         public override IDictionary<int, byte[]> GetServerExtensions()

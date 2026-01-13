@@ -462,7 +462,7 @@ namespace SIPSorcery.Net
                                 new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
                                 new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
-                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
+                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret, ForceDisableMKI = true }
                                 );
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
