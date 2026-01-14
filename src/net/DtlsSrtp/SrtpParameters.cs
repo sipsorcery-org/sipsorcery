@@ -32,9 +32,6 @@ namespace SIPSorcery.Net
         // hrosa - converted lengths to work with bytes, not bits (1 byte = 8 bits)
         public static readonly SrtpParameters SRTP_AES128_CM_HMAC_SHA1_80 = new SrtpParameters(SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80, SrtpPolicy.AESCM_ENCRYPTION, 16, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 10, 10, 14);
         public static readonly SrtpParameters SRTP_AES128_CM_HMAC_SHA1_32 = new SrtpParameters(SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32, SrtpPolicy.AESCM_ENCRYPTION, 16, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 4, 10, 14);
-        public static readonly SrtpParameters SRTP_NULL_HMAC_SHA1_80 = new SrtpParameters(SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80, SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 10, 10, 0);
-        public static readonly SrtpParameters SRTP_NULL_HMAC_SHA1_32 = new SrtpParameters(SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32, SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 4, 10, 0);
-
 
         private int profile;
         private int encType;
@@ -80,10 +77,6 @@ namespace SIPSorcery.Net
                     return SRTP_AES128_CM_HMAC_SHA1_80;
                 case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32:
                     return SRTP_AES128_CM_HMAC_SHA1_32;
-                case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80:
-                    return SRTP_NULL_HMAC_SHA1_80;
-                case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32:
-                    return SRTP_NULL_HMAC_SHA1_32;
                 default:
                     throw new Exception($"SRTP Protection Profile value {profileValue} is not allowed for DTLS SRTP. See http://tools.ietf.org/html/rfc5764#section-4.1.2 for valid values.");
             }

@@ -10,13 +10,13 @@
 # To run a local container:
 # docker run -it --rm -p 8081:8081 -p 60042:60042/udp webrtccmdline --ws --stun stun:stun.l.google.com:19302
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
 WORKDIR /src/examples/webrtccmdline
 RUN dotnet publish "webrtccmdline.csproj" -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS final
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
 WORKDIR /app
 EXPOSE 8080-8081
 EXPOSE 60042
