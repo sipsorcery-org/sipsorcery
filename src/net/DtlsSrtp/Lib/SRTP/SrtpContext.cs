@@ -64,6 +64,11 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
             if (sequenceNumber == 0)
             {
+                if(!S_l_set)
+                {
+                    S_l_set = true;
+                    return true; /* first is good */
+                }
                 return false; /* first == 0 or wrapped */
             }
             if (sequenceNumber > S_l)
