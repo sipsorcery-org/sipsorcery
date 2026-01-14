@@ -21,4 +21,5 @@ WORKDIR /app
 EXPOSE 8080-8081
 EXPOSE 60042
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "webrtccmdline.dll", "--port", "60042", "--ws", "--stun", "stun:stun.l.google.com:19302"]
+#ENTRYPOINT ["dotnet", "webrtccmdline.dll", "--port", "60042", "--ws", "--stun", "stun:stun.l.google.com:19302"]
+ENTRYPOINT ["dotnet", "webrtccmdline.dll"]
