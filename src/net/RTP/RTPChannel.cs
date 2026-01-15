@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
             {
                 m_isRunningReceive = true;
                 EndPoint recvEndPoint = m_addressFamily == AddressFamily.InterNetwork ? IPv4AnyEndPoint : IPv6AnyEndPoint;
-#if FALSE // NET6_0_OR_GREATER bandwidth test falters at some point if this is enabled
+#if NET8_0_OR_GREATER // NET6_0_OR_GREATER bandwidth test falters at some point if this is enabled
                 var recive = m_socket.ReceiveFromAsync(m_recvBuffer.AsMemory(), SocketFlags.None, recvEndPoint);
                 if (recive.IsCompleted)
                 {
