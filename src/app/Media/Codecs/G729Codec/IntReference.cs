@@ -17,10 +17,9 @@
 /**
  * @author Lubomir Marinov
  */
-namespace SIPSorcery.Media.G729Codec
+namespace SIPSorcery.Media.G729Codec;
+
+internal sealed class IntReference
 {
-    internal class IntReference
-    {
-        public int value;
-    }
+    public int value;
 }

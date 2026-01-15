@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNChangeRequestAttribute.cs
 //
 // Description: Implements STUN change request attribute as defined in RFC5389.
@@ -14,48 +14,51 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public partial class STUNChangeRequestAttribute : STUNAttribute
 {
-    public class STUNChangeRequestAttribute : STUNAttribute
+    public const ushort CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
+
+    public bool ChangeAddress;
+    public bool ChangePort;
+
+    public override ushort PaddedLength
     {
-        public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
+        get { return CHANGEREQUEST_ATTRIBUTE_LENGTH; }
+    }
 
-        public bool ChangeAddress = false;
-        public bool ChangePort = false;
+    private byte m_changeRequestByte;
 
-        public override UInt16 PaddedLength
+    public STUNChangeRequestAttribute(byte[] attributeValue)
+        : base(STUNAttributeTypesEnum.ChangeRequest, attributeValue)
+    {
+        m_changeRequestByte = attributeValue[3];
+
+        if (m_changeRequestByte == 0x02)
         {
-            get { return CHANGEREQUEST_ATTRIBUTE_LENGTH; }
+            ChangePort = true;
         }
-
-        private byte m_changeRequestByte;
-
-        public STUNChangeRequestAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.ChangeRequest, attributeValue)
+        else if (m_changeRequestByte == 0x04)
         {
-            m_changeRequestByte = attributeValue[3];
-
-            if (m_changeRequestByte == 0x02)
-            {
-                ChangePort = true;
-            }
-            else if (m_changeRequestByte == 0x04)
-            {
-                ChangeAddress = true;
-            }
-            else if (m_changeRequestByte == 0x06)
-            {
-                ChangePort = true;
-                ChangeAddress = true;
-            }
+            ChangeAddress = true;
         }
-
-        public override string ToString()
+        else if (m_changeRequestByte == 0x06)
         {
-            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
-
-            return attrDescrStr;
+            ChangePort = true;
+            ChangeAddress = true;
         }
+    }
+
+    private protected override void ValueToString(ref ValueStringBuilder sb)
+    {
+        sb.Append("key byte=");
+        sb.Append(m_changeRequestByte, "X");
+        sb.Append(", change address=");
+        sb.Append(ChangeAddress);
+        sb.Append(", change port=");
+        sb.Append(ChangePort);
     }
 }

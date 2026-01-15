@@ -19,22 +19,21 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
-namespace SIPSorcery.Net
-{
-    public interface ITransformEngine
-    {
-        /**
-         * Gets the <tt>PacketTransformer</tt> for RTP packets.
-         *
-         * @return the <tt>PacketTransformer</tt> for RTP packets
-         */
-        IPacketTransformer GetRTPTransformer();
+namespace SIPSorcery.Net;
 
-        /**
-         * Gets the <tt>PacketTransformer</tt> for RTCP packets.
-         *
-         * @return the <tt>PacketTransformer</tt> for RTCP packets
-         */
-        IPacketTransformer GetRTCPTransformer();
-    }
+public interface ITransformEngine
+{
+    /**
+     * Gets the <tt>PacketTransformer</tt> for RTP packets.
+     *
+     * @return the <tt>PacketTransformer</tt> for RTP packets
+     */
+    IPacketTransformer GetRTPTransformer();
+
+    /**
+     * Gets the <tt>PacketTransformer</tt> for RTCP packets.
+     *
+     * @return the <tt>PacketTransformer</tt> for RTCP packets
+     */
+    IPacketTransformer GetRTCPTransformer();
 }

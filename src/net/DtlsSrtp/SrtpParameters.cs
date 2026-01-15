@@ -20,12 +20,12 @@
 using System;
 using Org.BouncyCastle.Tls;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public struct SrtpParameters
 {
-    public struct SrtpParameters
-    {
-        // DTLS derived key and salt lengths for SRTP 
-        // http://tools.ietf.org/html/rfc5764#section-4.1.2
+    // DTLS derived key and salt lengths for SRTP 
+    // http://tools.ietf.org/html/rfc5764#section-4.1.2
 
         //	SRTP_AES128_CM_HMAC_SHA1_80 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 80, 80, 112),
         //	SRTP_AES128_CM_HMAC_SHA1_32 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 32, 80, 112),
@@ -42,32 +42,32 @@ namespace SIPSorcery.Net
         private int rtcpAuthTagLength;
         private int saltLength;
 
-        private SrtpParameters(int newProfile, int newEncType, int newEncKeyLength, int newAuthType, int newAuthKeyLength, int newAuthTagLength, int newRtcpAuthTagLength, int newSaltLength)
-        {
-            this.profile = newProfile;
-            this.encType = newEncType;
-            this.encKeyLength = newEncKeyLength;
-            this.authType = newAuthType;
-            this.authKeyLength = newAuthKeyLength;
-            this.authTagLength = newAuthTagLength;
-            this.rtcpAuthTagLength = newRtcpAuthTagLength;
-            this.saltLength = newSaltLength;
-        }
+    private SrtpParameters(int newProfile, int newEncType, int newEncKeyLength, int newAuthType, int newAuthKeyLength, int newAuthTagLength, int newRtcpAuthTagLength, int newSaltLength)
+    {
+        this.profile = newProfile;
+        this.encType = newEncType;
+        this.encKeyLength = newEncKeyLength;
+        this.authType = newAuthType;
+        this.authKeyLength = newAuthKeyLength;
+        this.authTagLength = newAuthTagLength;
+        this.rtcpAuthTagLength = newRtcpAuthTagLength;
+        this.saltLength = newSaltLength;
+    }
 
-        public int GetProfile()
-        {
-            return profile;
-        }
+    public int GetProfile()
+    {
+        return profile;
+    }
 
-        public int GetCipherKeyLength()
-        {
-            return encKeyLength;
-        }
+    public int GetCipherKeyLength()
+    {
+        return encKeyLength;
+    }
 
-        public int GetCipherSaltLength()
-        {
-            return saltLength;
-        }
+    public int GetCipherSaltLength()
+    {
+        return saltLength;
+    }
 
         public static SrtpParameters GetSrtpParametersForProfile(int profileValue)
         {
@@ -82,17 +82,16 @@ namespace SIPSorcery.Net
             }
         }
 
-        public SrtpPolicy GetSrtpPolicy()
-        {
-            SrtpPolicy sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, authTagLength, saltLength);
-            return sp;
-        }
-
-        public SrtpPolicy GetSrtcpPolicy()
-        {
-            SrtpPolicy sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, rtcpAuthTagLength, saltLength);
-            return sp;
-        }
-
+    public SrtpPolicy GetSrtpPolicy()
+    {
+        SrtpPolicy sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, authTagLength, saltLength);
+        return sp;
     }
+
+    public SrtpPolicy GetSrtcpPolicy()
+    {
+        SrtpPolicy sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, rtcpAuthTagLength, saltLength);
+        return sp;
+    }
+
 }

@@ -15,12 +15,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -31,12 +31,12 @@ public class IceServerResolver
 {
     private static readonly ILogger logger = Log.Logger;
 
-    private ConcurrentDictionary<STUNUri, IceServer> _iceServers = new();
+    private FrozenDictionary<STUNUri, IceServer> _iceServers = FrozenDictionary<STUNUri, IceServer>.Empty;
 
-    public IReadOnlyDictionary<STUNUri, IceServer> IceServers => new ReadOnlyDictionary<STUNUri, IceServer>(_iceServers);
+    public FrozenDictionary<STUNUri, IceServer> IceServers => Volatile.Read(ref _iceServers);
 
     public IceServerResolver()
-    {  }
+    { }
 
     /// <summary>
     /// Initialises the ICE servers if any were provided in the initial configuration.
@@ -46,65 +46,81 @@ public class IceServerResolver
     /// </summary>
     /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.2</remarks>
     public void InitialiseIceServers(
-        List<RTCIceServer> iceServers,
+        IEnumerable<RTCIceServer> iceServers,
         RTCIceTransportPolicy policy)
     {
-        if(iceServers == null || iceServers.Count == 0)
+        if (iceServers is { })
         {
-            logger.LogDebug("{caller} no ICE servers provided.", nameof(IceServerResolver));
-            return;
-        }
+            var iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
 
-        int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
-        _iceServers.Clear();
+            var iceServersDictionary = new Dictionary<STUNUri, IceServer>();
 
-        foreach (var cfg in iceServers)
-        {
-            foreach (var rawUrl in cfg.urls.Split([ ',' ], IceServer.MAXIMUM_ICE_SERVER_ID + 1, StringSplitOptions.RemoveEmptyEntries))
+            Span<Range> ranges = stackalloc Range[IceServer.MAXIMUM_ICE_SERVER_ID + 1];
+
+            foreach (var cfg in iceServers)
             {
-                if (!STUNUri.TryParse(rawUrl.Trim(), out var stunUri))
+                var urls = cfg.urls.AsSpan();
+                var rangesCount = urls.Split(ranges, ',', StringSplitOptions.RemoveEmptyEntries);
+
+                for (var r = 0; r < rangesCount && iceServerID <= IceServer.MAXIMUM_ICE_SERVER_ID; r++)
                 {
-                    logger.LogWarning("{caller} could not parse ICE server URL {url}", nameof(IceServerResolver), rawUrl);
-                    continue;
-                }
+                    var rawUrl = urls[ranges[r]].Trim();
 
-                // Filter out TLS or policy excluded entries
-                if (stunUri.Scheme is STUNSchemesEnum.stuns or STUNSchemesEnum.turns ||
-                    (policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun))
-                {
-                    logger.LogWarning("{caller} ignoring ICE server {stunUri} (scheme {scheme})", nameof(IceServerResolver), stunUri, stunUri.Scheme);
-                    continue;
-                }
+                    if (!STUNUri.TryParse(rawUrl, out var stunUri))
+                    {
+                        logger.LogIceServerUrlParseError(rawUrl.ToString());
+                        continue;
+                    }
 
-                // Avoid deplicates.
-                if (_iceServers.ContainsKey(stunUri))
-                {
-                    continue;
-                }
+                    // Filter out TLS or policy excluded entries
+                    if (stunUri.Scheme is STUNSchemesEnum.stuns ||
+                        (stunUri.Scheme is STUNSchemesEnum.turns && stunUri.Transport == STUNProtocolsEnum.udp) ||
+                        (policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun))
+                    {
+                        logger.LogIcePolicyStunWarning(stunUri);
+                        continue;
+                    }
 
-                var server = new IceServer(stunUri, iceServerID++, cfg.username, cfg.credential);
+                    // Avoid deplicates.
+                    if (iceServersDictionary.ContainsKey(stunUri))
+                    {
+                        continue;
+                    }
 
-                // immediate bind if it’s already an IP
-                if (IPAddress.TryParse(stunUri.Host, out var ip))
-                {
-                    server.ServerEndPoint = new IPEndPoint(ip, stunUri.Port);
-                    logger.LogDebug("{caller} bound {Uri} -> {EndPoint}", nameof(IceServerResolver), stunUri, server.ServerEndPoint);
-                }
+                    var server = new IceServer(stunUri, iceServerID++, cfg.username, cfg.credential)
+                    {
+                        SslClientAuthenticationOptions = cfg.SslClientAuthenticationOptions,
+                    };
 
-                _iceServers[stunUri] = server;
+                    // immediate bind if it’s already an IP
+                    if (IPAddress.TryParse(stunUri.Host, out var ip))
+                    {
+                        server.ServerEndPoint = new IPEndPoint(ip, stunUri.Port);
+                        logger.LogIceServerEndPointSet(stunUri, server.ServerEndPoint);
+                    }
 
-                if (server.ServerEndPoint == null)
-                {
-                    // Kick off DNS in background, passing the key so we can update the map.
-                    ScheduleDnsLookup(stunUri, server);
-                }
+                    iceServersDictionary[stunUri] = server;
 
-                if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
-                {
-                    logger.LogWarning("{caller} reached max ICE server count", nameof(IceServerResolver));
-                    break;
+                    if (server.ServerEndPoint is null)
+                    {
+                        // Kick off DNS in background, passing the key so we can update the map.
+                        ScheduleDnsLookup(stunUri, server);
+                    }
+
+                    if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
+                    {
+                        logger.LogMaxServers();
+                        break;
+                    }
                 }
             }
+
+            _iceServers = iceServersDictionary.ToFrozenDictionary();
+        }
+
+        if (_iceServers.Count == 0)
+        {
+            logger.LogIceServerNotAcquired();
         }
     }
 
@@ -115,64 +131,73 @@ public class IceServerResolver
             return;
         }
 
-        if (_iceServers.ContainsKey(key))
+        if (_iceServers.TryGetValue(key, out var iceServer))
         {
-            _iceServers[key].DnsLookupSentAt = DateTime.UtcNow;
+            iceServer.DnsLookupSentAt = DateTime.UtcNow;
         }
 
-        logger.LogDebug("{caller} starting DNS lookup for ICE server {Uri}", nameof(IceServerResolver), key);
+        logger.LogIceServerDnsLookup(key);
 
         server.DnsResolutionTask = Task.Run(async () =>
         {
             try
             {
-                var resolveTask = STUNDns.Resolve(key);
-                var timeout = Task.Delay(TimeSpan.FromSeconds(IceServer.DNS_LOOKUP_TIMEOUT_SECONDS));
-                var winner = await Task.WhenAny(resolveTask, timeout).ConfigureAwait(false);
+                var ep = await STUNDns.Resolve(key).WaitAsync(TimeSpan.FromSeconds(IceServer.DNS_LOOKUP_TIMEOUT_SECONDS)).ConfigureAwait(false);
 
-                if (winner == resolveTask)
-                {
-                    var ep = await resolveTask.ConfigureAwait(false);
-                    server.ServerEndPoint = ep;
-                    logger.LogDebug("{caller} resolved {Uri} -> {EndPoint}", nameof(IceServerResolver), key, ep);
-                }
-                else
-                {
-                    server.Error = SocketError.TimedOut;
-                    logger.LogWarning("{caller} DNS lookup timed out for {Uri}", nameof(IceServerResolver), key);
-                }
+                Debug.Assert(ep is { });
+                server.ServerEndPoint = ep;
+                logger.LogIceServerResolved(key, ep);
+            }
+            catch (TimeoutException)
+            {
+                server.Error = SocketError.TimedOut;
+                logger.LogIceServerConnectionTimeout(key, 0); // RequestsSent not tracked here
             }
             catch (Exception ex)
             {
                 server.Error = SocketError.HostNotFound;
-                logger.LogWarning(ex, "{caller} DNS resolution failed for {Uri}", nameof(IceServerResolver), key);
+                logger.LogIceServerResolutionFailed(key, ex);
             }
 
-            _iceServers[key] = server;
+            var iceServers = Volatile.Read(ref _iceServers);
+            var iceServersDictionary = iceServers.Count > 1 ? new Dictionary<STUNUri, IceServer>(_iceServers) : new Dictionary<STUNUri, IceServer>(_iceServers);
+            iceServersDictionary[key] = server;
+            Volatile.Write(ref _iceServers, iceServersDictionary.ToFrozenDictionary());
         });
     }
 
     /// <summary>
     /// Wait until all ICE servers have resolved or timed out. Optional timeout.
     /// </summary>
-    public async Task WaitForAllIceServersAsync(TimeSpan? timeout = null)
+    public Task WaitForAllIceServersAsync(TimeSpan? timeout = null)
     {
-        var tasks = _iceServers.Values
-            .Select(s => s.DnsResolutionTask ?? Task.CompletedTask)
-            .ToArray();
-
-        var all = Task.WhenAll(tasks);
-        if (timeout.HasValue)
+        var iceServers = Volatile.Read(ref _iceServers);
+        var dnsResolutionTasks = new List<Task>(iceServers.Count);
+        foreach (var server in iceServers.Values)
         {
-            if (await Task.WhenAny(all, Task.Delay(timeout.Value)).ConfigureAwait(false) != all)
+            if (server.DnsResolutionTask is { })
             {
-                throw new TimeoutException(
-                  $"Timed out waiting {timeout.Value} for ICE server DNS resolutions");
+                dnsResolutionTasks.Add(server.DnsResolutionTask);
             }
         }
 
-        // propagate any resolution exception
-        await all.ConfigureAwait(false);
+        return dnsResolutionTasks.Count == 0
+            ? Task.CompletedTask
+            : WaitForAllIceServersCoreAsync(dnsResolutionTasks.ToArray(), timeout);
+
+        static async Task WaitForAllIceServersCoreAsync(Task[] dnsResolutionTasks, TimeSpan? timeout)
+        {
+            // propagate any resolution exception
+            try
+            {
+                await Task.WhenAny(dnsResolutionTasks).WaitAsync(timeout).ConfigureAwait(false);
+            }
+            catch (TimeoutException ex)
+            {
+                throw new TimeoutException(
+                    $"Timed out waiting {timeout.GetValueOrDefault()} for ICE server DNS resolutions", ex);
+            }
+        }
     }
 }
 

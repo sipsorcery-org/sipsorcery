@@ -15,57 +15,68 @@
 
 using System;
 using System.Text;
+using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public partial class STUNErrorCodeAttribute : STUNAttribute
 {
-    public class STUNErrorCodeAttribute : STUNAttribute
+    public byte ErrorClass;             // The hundreds value of the error code must be between 3 and 6.
+    public byte ErrorNumber;            // The units value of the error code must be between 0 and 99.
+    public string ReasonPhrase;
+
+    public int ErrorCode
     {
-        public byte ErrorClass;             // The hundreds value of the error code must be between 3 and 6.
-        public byte ErrorNumber;            // The units value of the error code must be between 0 and 99.
-        public string ReasonPhrase;
-
-        public int ErrorCode
+        get
         {
-            get
-            {
-                return ErrorClass * 100 + ErrorNumber;
-            }
+            return ErrorClass * 100 + ErrorNumber;
         }
+    }
 
-        public STUNErrorCodeAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.ErrorCode, attributeValue)
-        {
-            ErrorClass = attributeValue[2];
-            ErrorNumber = attributeValue[3];
-            ReasonPhrase = Encoding.UTF8.GetString(attributeValue, 4, attributeValue.Length - 4);
-        }
+    public STUNErrorCodeAttribute(byte[] attributeValue)
+        : base(STUNAttributeTypesEnum.ErrorCode, attributeValue)
+    {
+        ErrorClass = attributeValue[2];
+        ErrorNumber = attributeValue[3];
+        ReasonPhrase = Encoding.UTF8.GetString(attributeValue, 4, attributeValue.Length - 4);
+    }
 
-        public STUNErrorCodeAttribute(int errorCode, string reasonPhrase)
-            : base(STUNAttributeTypesEnum.ErrorCode, null)
-        {
-            ErrorClass = errorCode < 700 ? Convert.ToByte(ErrorCode / 100) : (byte)0x00;
-            ErrorNumber = Convert.ToByte(errorCode % 100);
-            ReasonPhrase = reasonPhrase;
-        }
+    public STUNErrorCodeAttribute(int errorCode, string reasonPhrase)
+        : base(STUNAttributeTypesEnum.ErrorCode, null)
+    {
+        ErrorClass = errorCode < 700 ? Convert.ToByte(ErrorCode / 100) : (byte)0x00;
+        ErrorNumber = Convert.ToByte(errorCode % 100);
+        ReasonPhrase = reasonPhrase;
+    }
 
-        public override int ToByteBuffer(byte[] buffer, int startIndex)
-        {
-            buffer[startIndex] = 0x00;
-            buffer[startIndex + 1] = 0x00;
-            buffer[startIndex + 2] = ErrorClass;
-            buffer[startIndex + 3] = ErrorNumber;
+    /// <inheritdoc/>
+    public override int GetByteCount()
+    {
+        var reasonBytesLen = string.IsNullOrEmpty(ReasonPhrase) ? 0 : Encoding.UTF8.GetByteCount(ReasonPhrase);
+        var valueLen = 4 + reasonBytesLen; // 2 reserved + class + number + reason
+        var paddedValueLen = (valueLen % 4 == 0) ? valueLen : valueLen + (4 - (valueLen % 4));
+        return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + paddedValueLen;
+    }
 
-            byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
-            Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
+    /// <inheritdoc/>
+    public override int WriteBytes(Span<byte> buffer)
+    {
+        buffer[0] = 0x00;
+        buffer[1] = 0x00;
+        buffer[2] = ErrorClass;
+        buffer[3] = ErrorNumber;
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
-        }
+        var reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
+        reasonPhraseBytes.CopyTo(buffer.Slice(4, reasonPhraseBytes.Length));
 
-        public override string ToString()
-        {
-            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
+        return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
+    }
 
-            return attrDescrStr;
-        }
+    private protected override void ValueToString(ref ValueStringBuilder sb)
+    {
+        sb.Append("error code=");
+        sb.Append(ErrorCode);
+        sb.Append(", reason phrase=");
+        sb.Append(ReasonPhrase);
     }
 }

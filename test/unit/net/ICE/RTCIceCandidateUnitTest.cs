@@ -10,8 +10,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -27,13 +29,225 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// Tests that TryParse successfully parses a valid host candidate.
+        /// </summary>
+        [Fact]
+        public void TryParse_ValidHostCandidate_ReturnsTrue()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0", out var candidate);
+
+            Assert.True(result);
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.host, candidate.type);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+            Assert.Equal("192.168.11.50", candidate.address);
+            Assert.Equal((ushort)61680, candidate.port);
+        }
+
+        /// <summary>
+        /// Tests that TryParse successfully parses a valid server reflexive candidate.
+        /// </summary>
+        [Fact]
+        public void TryParse_ValidSrflxCandidate_ReturnsTrue()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.100 rport 54321 generation 0", out var candidate);
+
+            Assert.True(result);
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.srflx, candidate.type);
+            Assert.Equal("8.8.8.8", candidate.address);
+            Assert.Equal((ushort)12767, candidate.port);
+            Assert.Equal("192.168.1.100", candidate.relatedAddress);
+            Assert.Equal((ushort)54321, candidate.relatedPort);
+        }
+
+        /// <summary>
+        /// Tests that TryParse successfully parses a valid TCP candidate.
+        /// </summary>
+        [Fact]
+        public void TryParse_ValidTcpCandidate_ReturnsTrue()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("1390596646 1 tcp 1880747346 192.168.11.50 9 typ host tcptype active generation 0", out var candidate);
+
+            Assert.True(result);
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceProtocol.tcp, candidate.protocol);
+            Assert.Equal(RTCIceTcpCandidateType.active, candidate.tcpType);
+        }
+
+        /// <summary>
+        /// Tests that TryParse successfully parses a candidate with candidate: prefix.
+        /// </summary>
+        [Fact]
+        public void TryParse_CandidateWithPrefix_ReturnsTrue()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("candidate:1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0", out var candidate);
+
+            Assert.True(result);
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.host, candidate.type);
+        }
+
+        /// <summary>
+        /// Tests that TryParse successfully parses an IPv6 candidate.
+        /// </summary>
+        [Fact]
+        public void TryParse_IPv6Candidate_ReturnsTrue()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("1390596646 1 udp 1880747346 [::1] 61680 typ host generation 0", out var candidate);
+
+            Assert.True(result);
+            Assert.NotNull(candidate);
+            Assert.Equal(IPAddress.IPv6Loopback, IPAddress.Parse(candidate.address));
+        }
+
+        /// <summary>
+        /// Tests that TryParse returns false for an empty candidate string.
+        /// </summary>
+        [Fact]
+        public void TryParse_EmptyString_ReturnsFalse()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("", out var candidate);
+
+            Assert.False(result);
+            Assert.Null(candidate);
+        }
+
+        /// <summary>
+        /// Tests that TryParse returns false for a whitespace-only string.
+        /// </summary>
+        [Fact]
+        public void TryParse_WhitespaceOnlyString_ReturnsFalse()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("   ", out var candidate);
+
+            Assert.False(result);
+            Assert.Null(candidate);
+        }
+
+        /// <summary>
+        /// Tests that TryParse returns false for a candidate line with too few fields.
+        /// </summary>
+        [Fact]
+        public void TryParse_TooFewFields_ReturnsFalse()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("1390596646 1 udp 1880747346", out var candidate);
+
+            Assert.False(result);
+            Assert.Null(candidate);
+        }
+
+        /// <summary>
+        /// Tests that TryParse returns false for an invalid port number.
+        /// </summary>
+        [Fact]
+        public void TryParse_InvalidPort_ReturnsFalse()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("1390596646 1 udp 1880747346 192.168.11.50 notaport typ host generation 0", out var candidate);
+
+            Assert.False(result);
+            Assert.Null(candidate);
+        }
+
+        /// <summary>
+        /// Tests that TryParse returns false for an invalid related port number.
+        /// </summary>
+        [Fact]
+        public void TryParse_InvalidRelatedPort_ReturnsFalse()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.100 rport notaport generation 0", out var candidate);
+
+            Assert.False(result);
+            Assert.Null(candidate);
+        }
+
+        /// <summary>
+        /// Tests that TryParse handles candidates with extra attributes.
+        /// </summary>
+        [Fact]
+        public void TryParse_CandidateWithExtraAttributes_ReturnsTrue()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = RTCIceCandidate.TryParse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.100 rport 54321 generation 0 network-cost 999", out var candidate);
+
+            Assert.True(result);
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.srflx, candidate.type);
+        }
+
+        /// <summary>
+        /// Tests that Parse throws FormatException when TryParse would return false.
+        /// </summary>
+        [Fact]
+        public void Parse_InvalidCandidate_ThrowsFormatException()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var ex = Assert.Throws<FormatException>(() => RTCIceCandidate.Parse("invalid candidate"));
+
+            Assert.Equal("The ICE candidate line was not in the correct format.", ex.Message);
+        }
+
+        /// <summary>
+        /// Tests that Parse and TryParse produce equivalent results for valid input.
+        /// </summary>
+        [Fact]
+        public void Parse_And_TryParse_ProduceEquivalentResults()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string candidateString = "842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 192.168.1.100 rport 54321 generation 0";
+
+            var parsedCandidate = RTCIceCandidate.Parse(candidateString);
+            bool tryParseResult = RTCIceCandidate.TryParse(candidateString, out var tryParsedCandidate);
+
+            Assert.True(tryParseResult);
+            Assert.NotNull(tryParsedCandidate);
+            Assert.Equal(parsedCandidate, tryParsedCandidate);
+        }
+
+        /// <summary>
         /// Tests that parsing a host candidate works correctly.
         /// </summary>
         [Fact]
         public void ParseHostCandidateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
 
@@ -50,8 +264,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void Parse_IPv6_Host_Candidate_UnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 [::1] 61680 typ host generation 0");
 
@@ -69,8 +283,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void Parse_IPv6_Host_NoBrackets_Candidate_UnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 ::1 61680 typ host generation 0");
 
@@ -88,8 +302,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseSvrRflxCandidateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0 network-cost 999");
 
@@ -106,8 +320,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void EquivalentCandidateFoundationUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCIceCandidateInit initA = new RTCIceCandidateInit { usernameFragment = "abcd" };
             var candidateA = new RTCIceCandidate(initA);
@@ -130,8 +344,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void NonEquivalentCandidateFoundationUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCIceCandidateInit initA = new RTCIceCandidateInit { usernameFragment = "abcd" };
             var candidateA = new RTCIceCandidate(initA);
@@ -155,8 +369,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ToJsonUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var candidate = RTCIceCandidate.Parse("1390596646 1 udp 1880747346 192.168.11.50 61680 typ host generation 0");
 
