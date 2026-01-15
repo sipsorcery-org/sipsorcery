@@ -16,6 +16,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
@@ -193,16 +194,20 @@ namespace SIPSorcery.Net
             int chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
             clientSrtpData = TlsSrtpUtilities.GetUseSrtpExtension(serverExtensions);
 
-            foreach (int profile in clientSrtpData.ProtectionProfiles)
+            if (clientSrtpData?.ProtectionProfiles == null)
             {
-                switch (profile)
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            if (!clientSrtpData.ProtectionProfiles.Contains(SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80))
+            {
+                if (clientSrtpData.ProtectionProfiles.Contains(SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32))
                 {
-                    case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32:
-                    case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80:
-                    case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32:
-                    case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80:
-                        chosenProfile = profile;
-                        break;
+                    chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32;
+                }
+                else
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
             }
 
