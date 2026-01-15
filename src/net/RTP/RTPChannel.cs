@@ -221,12 +221,18 @@ namespace SIPSorcery.Net
         {
             try
             {
+                EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? IPv4AnyEndPoint : IPv6AnyEndPoint;
                 // When socket is closed the object will be disposed of in the middle of a receive.
                 if (!m_isClosed)
                 {
-                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? IPv4AnyEndPoint : IPv6AnyEndPoint;
+                    
                     int bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
                     OnBytesRead(remoteEP, bytesRead);
+                }
+                else
+                {
+                    m_socket.EndReceiveFromClosed(ar, ref remoteEP);
+                    return;
                 }
 
                 Drain();

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUDPChannel.cs
 //
 // Description: SIP transport for UDP.
@@ -160,6 +160,10 @@ namespace SIPSorcery.SIP
                         Buffer.BlockCopy(m_recvBuffer, 0, sipMsgBuffer, 0, bytesRead);
                         SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
                     }
+                }
+                else
+                {
+                    m_udpSocket.EndReceiveFromClosed(ar, ref remoteEP);
                 }
             }
             catch (SocketException sockExcp)

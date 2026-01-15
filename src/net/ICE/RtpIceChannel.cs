@@ -196,16 +196,20 @@ namespace SIPSorcery.Net
             {
                 try
                 {
+                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                     // When socket is closed the object will be disposed of in the middle of a receive.
                     if (!m_isClosed)
                     {
-                        EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                         int bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
 
                         if (bytesRead > 0)
                         {
                             ProcessRawBuffer(bytesRead + m_recvOffset, remoteEP as IPEndPoint);
                         }
+                    }
+                    else
+                    {
+                        m_socket.EndReceiveFromClosed(ar, ref remoteEP);
                     }
 
                     // If there is still data available it should be read now. This is more efficient than calling
@@ -217,7 +221,7 @@ namespace SIPSorcery.Net
                     {
                         while (!m_isClosed && m_socket.Available > 0)
                         {
-                            EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                            remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                             var recvLength = m_recvBuffer.Length - m_recvOffset;
                             //Discard fragmentation buffer as seems that we will have an incorrect result based in cached values
                             if (recvLength <= 0 || m_recvOffset < 0)
