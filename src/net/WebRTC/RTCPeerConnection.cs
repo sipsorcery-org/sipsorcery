@@ -45,6 +45,8 @@ using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
+using SIPSorcery.Net.SharpSRTP.DTLS;
+using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
 
 namespace SIPSorcery.Net
 {
@@ -360,7 +362,7 @@ namespace SIPSorcery.Net
             if (_dtlsCertificate == null)
             {
                 // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto, useRsa: configuration?.X_UseRsaForDtlsCertificate ?? false);
+                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert(_crypto, useRsa: _configuration.X_UseRsaForDtlsCertificate);
             }
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
@@ -455,14 +457,12 @@ namespace SIPSorcery.Net
 
                     bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
 
-
-
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey)
+                                new DtlsSrtpClient(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey)
-                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
+                                new DtlsSrtpServer(_crypto, _dtlsCertificate, _dtlsPrivateKey, _configuration.X_UseRsaForDtlsCertificate ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa)
+                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret, ForceDisableMKI = true }
                                 );
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
@@ -1323,7 +1323,7 @@ namespace SIPSorcery.Net
                         if (_dtlsHandle != null)
                         {
                             //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                            _dtlsHandle.WriteToRecvStream(buffer);
+                            _dtlsHandle.WriteToRecvStream(buffer, remoteEP.ToString());
                         }
                         else
                         {
@@ -1784,9 +1784,9 @@ namespace SIPSorcery.Net
         /// <param name="alertLevel">The level of the alert: warning or critical.</param>
         /// <param name="alertType">The type of the alert.</param>
         /// <param name="alertDescription">An optional description for the alert.</param>
-        private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
+        private void OnDtlsAlert(TlsAlertLevelsEnum alertLevel, TlsAlertTypesEnum alertType, string alertDescription)
         {
-            if (alertType == AlertTypesEnum.close_notify)
+            if (alertType == TlsAlertTypesEnum.CloseNotify)
             {
                 logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
 

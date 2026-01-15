@@ -16,6 +16,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
+using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
@@ -73,43 +74,46 @@ namespace SIPSorcery.Net.IntegrationTests
             var dtlsClient = new DtlsSrtpClient(new BcTlsCrypto());
             var dtlsServer = new DtlsSrtpServer(new BcTlsCrypto());
 
+            int timeout = 5000;
             DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(dtlsClient);
-            dtlsClientTransport.TimeoutMilliseconds = 5000;
+            dtlsClientTransport.TimeoutMilliseconds = timeout;
             DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(dtlsServer);
-            dtlsServerTransport.TimeoutMilliseconds = 5000;
+            dtlsServerTransport.TimeoutMilliseconds = timeout;
 
             dtlsClientTransport.OnDataReady += (buf) =>
             {
-                logger.LogDebug("DTLS client transport sending {BufferLength} bytes to server.", buf.Length);
-                dtlsServerTransport.WriteToRecvStream(buf);
+                //logger.LogDebug("DTLS client transport sending {BufferLength} bytes to server.", buf.Length);
+                dtlsServerTransport.WriteToRecvStream(buf, "127.0.0.1:1234");
             };
             dtlsServerTransport.OnDataReady += (buf) =>
             {
-                logger.LogDebug("DTLS server transport sending {BufferLength} bytes to client.", buf.Length);
-                dtlsClientTransport.WriteToRecvStream(buf);
+                //logger.LogDebug("DTLS server transport sending {BufferLength} bytes to client.", buf.Length);
+                dtlsClientTransport.WriteToRecvStream(buf, "127.0.0.1:1234");
             };
 
-            var serverTask = Task.Run<bool>(() => dtlsServerTransport.DoHandshake(out _));
-            var clientTask = Task.Run<bool>(() => dtlsClientTransport.DoHandshake(out _));
+            var serverTask = Task.Run<bool>(() =>
+                    dtlsServerTransport.DoHandshake(out _));
+            var clientTask = Task.Run<bool>(() =>
+                    dtlsClientTransport.DoHandshake(out _));
 
-            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(5000));
+            var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(timeout));
             var winner = await Task.WhenAny(serverTask, clientTask, timeoutTask);
 
             if (winner == timeoutTask)
             {
-                Assert.Fail($"Test timed out after 5000ms.");
+                Assert.Fail($"Test timed out after {timeout}ms.");
             }
 
             Assert.True(await serverTask);
             Assert.True(await clientTask);
 
-            logger.LogDebug("DTLS client fingerprint       : {Fingerprint}", dtlsServer.Fingerprint);
+            logger.LogDebug("DTLS client fingerprint       : {Fingerprint}", DtlsUtils.Fingerprint(dtlsClient.Certificate));
             //logger.LogDebug($"DTLS client server fingerprint: {dtlsClient.ServerFingerprint}.");
-            logger.LogDebug("DTLS server fingerprint       : {Fingerprint}", dtlsServer.Fingerprint);
+            logger.LogDebug("DTLS server fingerprint       : {Fingerprint}", DtlsUtils.Fingerprint(dtlsServer.Certificate));
             //logger.LogDebug($"DTLS server client fingerprint: {dtlsServer.ClientFingerprint}.");
 
-            Assert.NotNull(dtlsClient.GetRemoteCertificate());
-            Assert.NotNull(dtlsServer.GetRemoteCertificate());
+            Assert.NotNull(dtlsClientTransport.GetRemoteCertificate());
+            Assert.NotNull(dtlsServerTransport.GetRemoteCertificate());
             //Assert.Equal(dtlsServer.Fingerprint.algorithm, dtlsClient.ServerFingerprint.algorithm);
             //Assert.Equal(dtlsServer.Fingerprint.value, dtlsClient.ServerFingerprint.value);
             //Assert.Equal(dtlsClient.Fingerprint.algorithm, dtlsServer.ClientFingerprint.algorithm);

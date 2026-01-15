@@ -14,6 +14,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Xunit;
 
@@ -98,7 +99,7 @@ namespace SIPSorcery.Net.IntegrationTests
 #pragma warning restore SYSLIB0057
 #endif
             Assert.NotNull(cert);
-            var key = DtlsUtils.LoadPrivateKeyResource(cert);
+            var key = DotNetUtilities.GetKeyPair(cert.PrivateKey).Private;
             Assert.NotNull(key);
         }
 
@@ -130,7 +131,8 @@ namespace SIPSorcery.Net.IntegrationTests
             Assert.NotNull(coreFxCert);
             Assert.NotNull(coreFxCert.PrivateKey);
 
-            string coreFxFingerprint = DtlsUtils.Fingerprint(crypto, coreFxCert).ToString();
+            var bouncyCertificate = DotNetUtilities.FromX509Certificate(coreFxCert);
+            string coreFxFingerprint = DtlsUtils.Fingerprint("sha-256", new BcTlsCertificate(crypto, Org.BouncyCastle.Asn1.X509.X509CertificateStructure.GetInstance(bouncyCertificate.GetEncoded()))).ToString();
             logger.LogDebug("Core FX certificate fingerprint {CoreFxFingerprint}.", coreFxFingerprint);
 
             var bcCert = Org.BouncyCastle.Security.DotNetUtilities.FromX509Certificate(coreFxCert);
