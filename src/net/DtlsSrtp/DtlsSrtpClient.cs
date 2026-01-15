@@ -121,7 +121,6 @@ namespace SIPSorcery.Net
 
             if (clientSrtpData == null)
             {
-                SecureRandom random = new SecureRandom();
                 int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
 
                 // Note: the WebRTC spec states Master Key Identifier (MKI) is not used, see https://datatracker.ietf.org/doc/html/rfc8827#name-communications-security.
