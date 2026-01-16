@@ -1,44 +1,29 @@
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  width="40"
-  height="28"
-  viewBox="0 0 40 28"
-  aria-label="Use prohibited in Israel"
-  role="img"
->
-  <!-- Vertical alignment fix -->
-  <g transform="translate(0 2)">
-    <!-- Flag background -->
-    <rect width="40" height="28" rx="3" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="40" height="28"
+     viewBox="0 -2 40 30"
+     aria-label="Use prohibited in Israel"
+     role="img">
 
-    <!-- Blue stripes -->
-    <rect y="3" width="40" height="4" fill="#0038b8"/>
-    <rect y="21" width="40" height="4" fill="#0038b8"/>
+  <!-- Flag background (starts lower; top padding remains transparent) -->
+  <rect x="0" y="2" width="40" height="26" rx="3" fill="#ffffff"/>
 
-    <!-- Star of David -->
-    <g transform="translate(20 14) scale(0.8)">
-      <polygon points="0,-6 5,3 -5,3" fill="none" stroke="#0038b8" stroke-width="1.6"/>
-      <polygon points="0,6 5,-3 -5,-3" fill="none" stroke="#0038b8" stroke-width="1.6"/>
-    </g>
+  <!-- Blue stripes -->
+  <rect x="0" y="6" width="40" height="4" fill="#0038b8"/>
+  <rect x="0" y="22" width="40" height="4" fill="#0038b8"/>
 
-    <!-- Prohibition circle -->
-    <circle
-      cx="20"
-      cy="14"
-      r="11"
-      fill="none"
-      stroke="#d32f2f"
-      stroke-width="3"
-    />
-
-    <!-- Prohibition slash -->
-    <line
-      x1="11"
-      y1="23"
-      x2="29"
-      y2="5"
-      stroke="#d32f2f"
-      stroke-width="3"
-    />
+  <!-- Star of David -->
+  <g transform="translate(20 15) scale(0.8)">
+    <polygon points="0,-6 5,3 -5,3"
+             fill="none" stroke="#0038b8" stroke-width="1.6"/>
+    <polygon points="0,6 5,-3 -5,-3"
+             fill="none" stroke="#0038b8" stroke-width="1.6"/>
   </g>
+
+  <!-- Prohibition circle -->
+  <circle cx="20" cy="15" r="11"
+          fill="none" stroke="#d32f2f" stroke-width="3"/>
+
+  <!-- Prohibition slash -->
+  <line x1="11" y1="24" x2="29" y2="6"
+        stroke="#d32f2f" stroke-width="3"/>
 </svg>
