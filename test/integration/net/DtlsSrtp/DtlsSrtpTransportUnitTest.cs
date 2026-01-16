@@ -83,12 +83,12 @@ namespace SIPSorcery.Net.IntegrationTests
             dtlsClientTransport.OnDataReady += (buf) =>
             {
                 //logger.LogDebug("DTLS client transport sending {BufferLength} bytes to server.", buf.Length);
-                dtlsServerTransport.WriteToRecvStream(buf, "127.0.0.1:1234");
+                dtlsServerTransport.WriteToRecvStream(buf);
             };
             dtlsServerTransport.OnDataReady += (buf) =>
             {
                 //logger.LogDebug("DTLS server transport sending {BufferLength} bytes to client.", buf.Length);
-                dtlsClientTransport.WriteToRecvStream(buf, "127.0.0.1:1234");
+                dtlsClientTransport.WriteToRecvStream(buf);
             };
 
             var serverTask = Task.Run<bool>(() =>
