@@ -149,7 +149,11 @@ namespace SIPSorcery.Net
 
         public void Send(byte[] buf, int off, int len)
         {
-            OnDataReady?.Invoke(buf.AsSpan(off, len).ToArray());
+            if (off != 0 || len < buf.Length)
+            {
+                buf = buf.AsSpan(off, len).ToArray();
+            }
+            OnDataReady?.Invoke(buf);
         }
 
 #if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
