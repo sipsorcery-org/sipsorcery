@@ -7,7 +7,7 @@
   role="img"
 >
   <!-- Vertical alignment fix -->
-  <g transform="translate(0 1.5)">
+  <g transform="translate(0 2)">
     <!-- Flag background -->
     <rect width="40" height="28" rx="3" fill="#ffffff"/>
 
