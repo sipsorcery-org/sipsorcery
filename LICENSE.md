@@ -30,25 +30,3 @@ For all other geographic regions **outside** of Israel and the Occupied Territor
 This restriction is **not** intended to limit the rights of Israelis or any other people residing outside of Israel and the Occupied Territories.
 
 In any instance where the BSD 3-Clause License conflicts with the above restriction, the above restriction shall be interpreted as superior, and all other non-conflicting provisions of the BSD 3-Clause license shall remain in effect.
-
----
-## 3. DTLS & SRTP Implementation Notice
-
-Portions of the DTLS/SRTP implementation are derived from:
-
-- **Jitsi SRTP Library**  
-  (https://github.com/jitsi/jitsi-srtp) licensed under Apache License 2.0  
-- **Minisip Project**  
-  (https://github.com/csd/minisip) licensed under LGPL  
-- **RestComm Media-Core**  
-  (https://github.com/RestComm/media-core/tree/master) licensed under AGPL-3.0
-
-Because of these dependencies, users should assume GPL-style obligations apply (e.g. making source code available on request).  
-
-If you wish to avoid GPL obligations, you may remove the `src/net/DtlsSrtp` directory. This will disable WebRTC’s DTLS/SRTP support (but leave core SIP functionality intact unless SRTP is explicitly required).
-
-As an alternative, you could integrate Cisco’s non-GPL [libsrtp](https://github.com/cisco/libsrtp), which many upstream projects originally forked from.
-
-*Caveat: This notice is provided for informational purposes only and does not constitute legal advice.*
-
-

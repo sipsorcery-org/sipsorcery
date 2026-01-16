@@ -3,18 +3,18 @@
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg)
 
+## License update
+
+> ⚠️ **License Update (16 Jan 2026)**  
+> Thanks to the excellent DTLS & SRTP implementation by @jimm98y, the AGPL-licensed classes have been removed and this library is now free of GPL/AGPL constraints.
+
 ## License
 
-> ⚠️ **License Update (May 18, 2025)**  
-> This project is now dual-licensed under the BSD 3-Clause “New” or “Revised” License **and** the additional BDS BY-NC-SA restriction (see [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file#section-2) § 2).  
->
-> **Key points of the BDS restriction:**  
-> - **No use inside Israel or the Occupied Territories** until the 1967 occupation ends, equality for Arab-Palestinians is enshrined, and the right of return for Palestinian refugees is honored.  
-> - **Everywhere else**, the BSD 3-Clause terms apply, provided that any redistribution retains this BDS restriction.  
-> - In case of conflict, the BDS terms in Section 2 take precedence over Section 1.  
->
-> Read the full text in [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file#section-2).
+![License](https://img.shields.io/badge/license-BSD%203--Clause%20%2B%20BDS-red) ![Use prohibited in Israel](img/israel-ban.svg)
 
+**BSD 3-Clause License with an explicit prohibition on use by entities contributing to Israeli occupation or genocide.**
+
+For full license see [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file).
 
 ## What Is It?
 
@@ -46,7 +46,7 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 ## Installation
 
-The library is should work with .NET Framework >= 4.6.1 and all .NET Core and .NET versions. The demo applications initially targetted .NET Core 3.1 and are updated to later .NET versions as time and interest permit. The library is available via NuGet.
+The library should work with .NET Framework >= 4.6.1 and all .NET Core and .NET versions. The demo applications initially targetted .NET Core 3.1 and are updated to later .NET versions as time and interest permit. The library is available via NuGet.
 
 ````bash
 dotnet add package SIPSorcery
@@ -67,7 +67,7 @@ Class reference documentation and articles explaining common usage are available
 The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET audio device support on non-Windows platforms).
 
 ````bash
-dotnet new console --name SIPGetStarted --framework net8.0 --target-framework-override net8.0-windows10.0.17763.0
+dotnet new console --name SIPGetStarted --framework net10.0 --target-framework-override net10.0-windows10.0.17763.0
 cd SIPGetStarted
 dotnet add package SIPSorcery
 dotnet add package SIPSorceryMedia.Windows
