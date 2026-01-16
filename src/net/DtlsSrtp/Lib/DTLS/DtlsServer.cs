@@ -263,6 +263,11 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
             return serverVersion;
         }
 
+        public override int GetHandshakeTimeoutMillis()
+        {
+            return TimeoutMilliseconds;
+        }
+
         public override CertificateRequest GetCertificateRequest()
         {
             short[] certificateTypes = new short[]{ ClientCertificateType.ecdsa_sign, ClientCertificateType.rsa_sign };
