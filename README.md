@@ -6,7 +6,7 @@
 ## License update
 
 > ⚠️ **License Update (16 Jan 2026)**  
-> Thanks to the excellent DTLS & SRTP implementation by @jimm98y, the AGPL-licensed classes have been removed and this library is now free of GPL/AGPL constraints.
+> **Thanks to the excellent DTLS & SRTP implementation by @jimm98y, the AGPL-licensed classes have been removed and this library is now free of GPL/AGPL constraints.**
 
 ## License
 
