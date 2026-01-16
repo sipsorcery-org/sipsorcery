@@ -159,7 +159,13 @@ namespace SIPSorcery.Net
 #if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
         public int Receive(Span<byte> buffer, int waitMillis)
         {
-            return Receive(buffer.ToArray(), 0, buffer.Length, waitMillis);
+            byte[] buff = buffer.ToArray();
+            int len = Receive(buff, 0, buff.Length, waitMillis);
+            if (len > 0)
+            {
+                buff.AsSpan(0, len).CopyTo(buffer);
+            }
+            return len;
         }
 
         public void Send(ReadOnlySpan<byte> buffer)
