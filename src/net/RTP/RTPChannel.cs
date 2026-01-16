@@ -258,6 +258,9 @@ namespace SIPSorcery.Net
             case SocketException resetSockExcp when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset):
                 // Thrown when close is called on a socket from this end. Safe to ignore.
                 break;
+            case SocketException { SocketErrorCode: SocketError.OperationAborted } when m_isClosed:
+                // Thrown when socket is closed. Can be safely ignored.
+                break;
             case SocketException sockExcp:
                 // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
                 // normal RTP operation. For example:
