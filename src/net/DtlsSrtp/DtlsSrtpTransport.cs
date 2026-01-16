@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using Org.BouncyCastle.Tls;
 using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
@@ -38,7 +37,6 @@ namespace SIPSorcery.Net
         private IDtlsSrtpPeer _connection;
 
         private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
-        private string _remoteEndPoint;
         private Certificate _peerCertificate;
 
         public DatagramTransport Transport { get; internal set; }
@@ -112,9 +110,8 @@ namespace SIPSorcery.Net
 
         public int GetSendLimit() => MAXIMUM_MTU;
 
-        public void WriteToRecvStream(byte[] buffer, string remoteEndPoint) // remoteEndPoint = "127.0.0.1:80"
+        public void WriteToRecvStream(byte[] buffer)
         {
-            _remoteEndPoint = remoteEndPoint;
             _data.Enqueue(buffer);
         }
 
@@ -135,7 +132,7 @@ namespace SIPSorcery.Net
             {
                 if (_data.TryDequeue(out var data))
                 {
-                    Buffer.BlockCopy(data, 0, buf, 0, data.Length);
+                    Buffer.BlockCopy(data, 0, buf, off, data.Length);
                     return data.Length;
                 }
                 else
@@ -152,7 +149,7 @@ namespace SIPSorcery.Net
 
         public void Send(byte[] buf, int off, int len)
         {
-            OnDataReady?.Invoke(buf.ToArray());
+            OnDataReady?.Invoke(buf.AsSpan(off, len).ToArray());
         }
 
 #if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
