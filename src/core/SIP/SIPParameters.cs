@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -55,7 +56,7 @@ namespace SIPSorcery.SIP
         public char TagDelimiter = DEFAULT_PARAMETER_DELIMITER;
 
         //[DataMember]
-        private Dictionary<string, string> m_dictionary;
+        private ConcurrentDictionary<string, string> m_dictionary;
 
         [IgnoreDataMember]
         public int Count
@@ -65,7 +66,7 @@ namespace SIPSorcery.SIP
 
         internal SIPParameters()
         {
-            m_dictionary = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
+            m_dictionary = new ConcurrentDictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
@@ -186,7 +187,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void AddKeyValuePair(string keyValuePair, Dictionary<string, string> dictionary)
+        private void AddKeyValuePair(string keyValuePair, ConcurrentDictionary<string, string> dictionary)
         {
             if (keyValuePair != null && keyValuePair.Trim().Length > 0)
             {
@@ -198,7 +199,7 @@ namespace SIPSorcery.SIP
                     // If this is not the parameter that is being removed put it back on.
                     if (!dictionary.ContainsKey(keyName))
                     {
-                        dictionary.Add(keyName, keyValuePair.Substring(seperatorPosn + 1).Trim());
+                        dictionary.TryAdd(keyName, keyValuePair.Substring(seperatorPosn + 1).Trim());
                     }
                 }
                 else
@@ -206,7 +207,7 @@ namespace SIPSorcery.SIP
                     // Keys with no values are valid in SIP so they get added to the collection with a null value.
                     if (!dictionary.ContainsKey(keyValuePair))
                     {
-                        dictionary.Add(keyValuePair, null);
+                        dictionary.TryAdd(keyValuePair, null);
                     }
                 }
             }
@@ -220,7 +221,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                m_dictionary.Add(name, value);
+                m_dictionary.TryAdd(name, value);
             }
         }
 
@@ -259,13 +260,13 @@ namespace SIPSorcery.SIP
         {
             if (name != null)
             {
-                m_dictionary.Remove(name);
+                m_dictionary.TryRemove(name, out string ignore);
             }
         }
 
         public void RemoveAll()
         {
-            m_dictionary = new Dictionary<string, string>();
+            m_dictionary = new ConcurrentDictionary<string, string>();
         }
 
         public string[] GetKeys()
@@ -318,7 +319,7 @@ namespace SIPSorcery.SIP
         {
             SIPParameters copy = new SIPParameters();
             copy.TagDelimiter = this.TagDelimiter;
-            copy.m_dictionary = (this.m_dictionary != null) ? new Dictionary<string, string>(this.m_dictionary) : new Dictionary<string, string>();
+            copy.m_dictionary = (this.m_dictionary != null) ? new ConcurrentDictionary<string, string>(this.m_dictionary) : new ConcurrentDictionary<string, string>();
             return copy;
         }
 
