@@ -1516,9 +1516,9 @@ namespace SIPSorcery.SIP
 
         public List<string> UnknownHeaders = new List<string>();    // Holds any unrecognised headers.
 
-        public List<SIPExtensions> RequiredExtensions = new List<SIPExtensions>();
+        public SIPExtensions RequiredExtensions = 0;
+        public SIPExtensions SupportedExtensions = 0;
         public string UnknownRequireExtension = null;
-        public List<SIPExtensions> SupportedExtensions = new List<SIPExtensions>();
 
         public bool HasAuthenticationHeader => AuthenticationHeaders.Count > 0;
 
