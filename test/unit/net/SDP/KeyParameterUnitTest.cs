@@ -64,17 +64,17 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SDPSecurityDescription.KeyParameter keyParameter = KeyParameterFactory.Create("ĀĀ\0\0\0\0\0\0\0\0\0\0\0\0\0\0", "ĀĀĀ\0\0\0\0\0\0\0\0\0\0\0");
-            Assert.Throws<ArgumentNullException>(() => keyParameter.LifeTimeString = null);
-            Assert.Throws<ArgumentNullException>(() => keyParameter.LifeTimeString = "");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = null);
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "");
             Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "ĀĀ\0\0\0\0");
-            Assert.Throws<FormatException>(() => keyParameter.LifeTimeString = "2^");
-            Assert.Throws<OverflowException>(() => keyParameter.LifeTimeString = "2^-1");
-            Assert.Throws<FormatException>(() => keyParameter.LifeTimeString = "2^0.");
-            Assert.Throws<ArgumentOutOfRangeException>(() => keyParameter.LifeTimeString = "2^0");
-            Assert.Throws<FormatException>(() => keyParameter.LifeTimeString = "2^1.3");
-            Assert.Throws<FormatException>(() => keyParameter.LifeTimeString = "2^1afg6");
-            Assert.Throws<FormatException>(() => keyParameter.LifeTimeString = "2^\06");
-            Assert.Throws<FormatException>(() => keyParameter.LifeTimeString = "2^6.0");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^-1");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^0.");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^0");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^1.3");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^1afg6");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^\06");
+            Assert.Throws<ArgumentException>(() => keyParameter.LifeTimeString = "2^6.0");
 
             keyParameter.LifeTimeString = "2^1";
             Assert.Equal(2uL, keyParameter.LifeTime);

@@ -9,7 +9,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace SIPSorcery.Net
@@ -42,7 +41,7 @@ namespace SIPSorcery.Net
     public class SDPSecurityDescription
     {
         public const string CRYPTO_ATTRIBUE_PREFIX = "a=crypto:";
-        private readonly char[] WHITE_SPACES = new char[] { ' ', '\t' };
+        private static readonly char[] WHITE_SPACES = new char[] { ' ', '\t' };
         private const char SEMI_COLON = ';';
         private const string COLON = ":";
         private const string WHITE_SPACE = " ";
@@ -64,6 +63,20 @@ namespace SIPSorcery.Net
             AES_CM_256_HMAC_SHA1_80, //https://tools.ietf.org/html/rfc6188
             AES_CM_256_HMAC_SHA1_32 //https://tools.ietf.org/html/rfc6188
         }
+        private static readonly Dictionary<string, CryptoSuites> s_cryptoSuiteLookup = CreateCryptoSuiteLookup();
+        private static Dictionary<string, CryptoSuites> CreateCryptoSuiteLookup()
+        {
+            var values = Enum.GetValues(typeof(CryptoSuites));
+            var lookup = new Dictionary<string, CryptoSuites>(values.Length - 1, StringComparer.Ordinal);
+            foreach (CryptoSuites cs in values)
+            {
+                if (cs != CryptoSuites.unknown)
+                {
+                    lookup[cs.ToString()] = cs;
+                }
+            }
+            return lookup;
+        }
         public class KeyParameter
         {
             private const string COLON = ":";
@@ -82,14 +95,11 @@ namespace SIPSorcery.Net
                 }
                 set
                 {
-                    if (value == null)
+                    if (!IsValidKey(value))
                     {
-                        throw new ArgumentNullException("Key", "Key must have a value");
-                    }
-
-                    if (value.Length < 16)
-                    {
-                        throw new ArgumentOutOfRangeException("Key", "Key must be at least 16 characters long");
+                        throw value == null
+                            ? new ArgumentNullException("Key", "Key must have a value")
+                            : new ArgumentOutOfRangeException("Key", "Key must be at least 16 characters long");
                     }
 
                     this.m_key = value;
@@ -108,14 +118,11 @@ namespace SIPSorcery.Net
                 }
                 set
                 {
-                    if (value == null)
+                    if (!IsValidSalt(value))
                     {
-                        throw new ArgumentNullException("Salt", "Salt must have a value");
-                    }
-
-                    if (value.Length < 12)
-                    {
-                        throw new ArgumentOutOfRangeException("Salt", "Salt must be at least 12 characters long");
+                        throw value == null
+                            ? new ArgumentNullException("Salt", "Salt must have a value")
+                            : new ArgumentOutOfRangeException("Salt", "Salt must be at least 12 characters long");
                     }
 
                     this.m_salt = value;
@@ -144,41 +151,21 @@ namespace SIPSorcery.Net
                 }
                 set
                 {
-                    if (value < 1)
+                    if (!IsValidLifeTime(value))
                     {
-                        throw new ArgumentOutOfRangeException("LifeTime", "LifeTime value must be power of 2");
+                        throw new ArgumentOutOfRangeException("LifeTime", "LifeTime value must be power of 2 (excluding 2^0)");
                     }
 
-                    ulong ul = value;
                     int i = 0;
-                    for (; i < 64; i++)
+                    ulong temp = value;
+                    while (temp > 1)
                     {
-                        if ((ul & 0x1) == 0x1)
-                        {
-                            if (i == 0)//2^0 wollen wir nicht
-                            {
-                                throw new ArgumentOutOfRangeException("LifeTime", "LifeTime value must be power of 2");
-                            }
-                            else
-                            {
-                                ul = ul >> 1;
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            ul = ul >> 1;
-                        }
+                        temp >>= 1;
+                        i++;
                     }
-                    if (ul == 0)
-                    {
-                        this.m_lifeTime = value;
-                        this.m_sLifeTime = $"2^{i}";
-                    }
-                    else
-                    {
-                        throw new ArgumentOutOfRangeException("LifeTime", "LifeTime value must be power of 2");
-                    }
+
+                    this.m_lifeTime = value;
+                    this.m_sLifeTime = $"2^{i}";
                 }
             }
             private string m_sLifeTime = null;
@@ -190,24 +177,13 @@ namespace SIPSorcery.Net
                 }
                 set
                 {
-                    if (string.IsNullOrWhiteSpace(value))
+                    if (!TryParseLifeTimeString(value, out ulong lifeTime))
                     {
-                        throw new ArgumentNullException("LifeTimeString", "LifeTimeString value must be power of 2 string");
+                        throw new ArgumentException("LifeTimeString must be in format '2^n' where n is a positive integer", "LifeTimeString");
                     }
 
-                    if (!value.StartsWith("2^"))
-                    {
-                        throw new ArgumentException("LifeTimeString must begin with 2^", "LifeTimeString");
-                    }
-
-                    double d = ulong.Parse(value.Substring(2)); //let .net throw an exception if given value is not a number
-                    if (d < 1)
-                    {
-                        throw new ArgumentOutOfRangeException("LifeTimeString", "LifeTimeString value must be power of 2");
-                    }
-
-                    this.m_lifeTime = (ulong)Math.Pow(2, d);
-                    this.m_sLifeTime = $"2^{(ulong)d}";
+                    this.m_lifeTime = lifeTime;
+                    this.m_sLifeTime = value;
                 }
             }
             public uint MkiValue
@@ -273,128 +249,11 @@ namespace SIPSorcery.Net
 
             public static KeyParameter Parse(string keyParamString, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
             {
-                if (!string.IsNullOrWhiteSpace(keyParamString))
+                if (!TryParse(keyParamString, out var keyParam, cryptoSuite))
                 {
-                    string p = keyParamString.Trim();
-                    try
-                    {
-                        if (p.StartsWith(KEY_METHOD))
-                        {
-                            string sKeyMethod = KEY_METHOD;
-                            int poscln = p.IndexOf(COLON);
-                            if (poscln == sKeyMethod.Length)
-                            {
-                                string sKeyInfo = p.Substring(poscln + 1);
-                                if (!sKeyInfo.Contains(";"))
-                                {
-                                    string sMkiVal, sMkiLen, sLifeTime, sBase64KeySalt;
-                                    checkValidKeyInfoCharacters(keyParamString, sKeyInfo);
-                                    parseKeyInfo(keyParamString, sKeyInfo, out sMkiVal, out sMkiLen, out sLifeTime, out sBase64KeySalt);
-                                    if (!string.IsNullOrWhiteSpace(sBase64KeySalt))
-                                    {
-                                        byte[] bKey, bSalt;
-                                        parseKeySaltBase64(cryptoSuite, sBase64KeySalt, out bKey, out bSalt);
-
-                                        KeyParameter kp = new KeyParameter(bKey, bSalt);
-                                        if (!string.IsNullOrWhiteSpace(sMkiVal) && !string.IsNullOrWhiteSpace(sMkiLen))
-                                        {
-                                            kp.MkiValue = uint.Parse(sMkiVal);
-                                            kp.MkiLength = uint.Parse(sMkiLen);
-                                        }
-                                        if (!string.IsNullOrWhiteSpace(sLifeTime))
-                                        {
-                                            if (sLifeTime.Contains('^'))
-                                            {
-                                                kp.LifeTimeString = sLifeTime;
-                                            }
-                                            else
-                                            {
-                                                kp.LifeTime = uint.Parse(sLifeTime);
-                                            }
-                                        }
-                                        return kp;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        //catch all errors and throw own FormatException
-                    }
+                    throw new FormatException($"keyParam '{keyParamString}' is not recognized as a valid KEY_PARAM ");
                 }
-                throw new FormatException($"keyParam '{keyParamString}' is not recognized as a valid KEY_PARAM ");
-            }
-
-            private static void parseKeySaltBase64(CryptoSuites cryptoSuite, string base64KeySalt, out byte[] key, out byte[] salt)
-            {
-                byte[] keysalt = Convert.FromBase64String(base64KeySalt);
-                key = null;
-                switch (cryptoSuite)
-                {
-                    case CryptoSuites.AES_CM_128_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_128_HMAC_SHA1_80:
-                    case CryptoSuites.F8_128_HMAC_SHA1_80:
-                    case CryptoSuites.AEAD_AES_128_GCM:
-                        key = new byte[128 / 8];
-                        Array.Copy(keysalt, 0, key, 0, 128 / 8);
-                        break;
-                    case CryptoSuites.AES_192_CM_HMAC_SHA1_80:
-                    case CryptoSuites.AES_192_CM_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_192_HMAC_SHA1_80:
-                    case CryptoSuites.AES_CM_192_HMAC_SHA1_32:
-                        key = new byte[192 / 8];
-                        Array.Copy(keysalt, 0, key, 0, 192 / 8);
-                        break;
-                    case CryptoSuites.AEAD_AES_256_GCM:
-                    case CryptoSuites.AES_256_CM_HMAC_SHA1_80:
-                    case CryptoSuites.AES_256_CM_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_256_HMAC_SHA1_80:
-                    case CryptoSuites.AES_CM_256_HMAC_SHA1_32:
-                        key = new byte[256 / 8];
-                        Array.Copy(keysalt, 0, key, 0, 256 / 8);
-                        break;
-                }
-                salt = null;
-                switch (cryptoSuite)
-                {
-                    case CryptoSuites.AES_CM_128_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_128_HMAC_SHA1_80:
-                    case CryptoSuites.F8_128_HMAC_SHA1_80:
-                        salt = new byte[112 / 8];
-                        Array.Copy(keysalt, 128 / 8, salt, 0, 112 / 8);
-                        break;
-                    case CryptoSuites.AES_192_CM_HMAC_SHA1_80:
-                    case CryptoSuites.AES_192_CM_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_192_HMAC_SHA1_80:
-                    case CryptoSuites.AES_CM_192_HMAC_SHA1_32:
-                        salt = new byte[112 / 8];
-                        Array.Copy(keysalt, 192 / 8, salt, 0, 112 / 8);
-                        break;
-                    case CryptoSuites.AES_256_CM_HMAC_SHA1_80:
-                    case CryptoSuites.AES_256_CM_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_256_HMAC_SHA1_80:
-                    case CryptoSuites.AES_CM_256_HMAC_SHA1_32:
-                        salt = new byte[256 / 8];
-                        Array.Copy(keysalt, 256 / 8, salt, 0, 112 / 8);
-                        break;
-                    case CryptoSuites.AEAD_AES_256_GCM:
-                    case CryptoSuites.AEAD_AES_128_GCM:
-                        salt = new byte[96 / 8];
-                        Array.Copy(keysalt, 128 / 8, salt, 0, 96 / 8);
-                        break;
-                }
-            }
-
-            private static void checkValidKeyInfoCharacters(string keyParameter, string keyInfo)
-            {
-                foreach (char c in keyInfo.ToCharArray())
-                {
-                    if (c < 0x21 || c > 0x7e)
-                    {
-                        throw new FormatException($"keyParameter '{keyParameter}' is not recognized as a valid KEY_INFO ");
-                    }
-                }
+                return keyParam;
             }
 
             public static bool TryParse(string keyParamString, out KeyParameter keyParam, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
@@ -404,56 +263,201 @@ namespace SIPSorcery.Net
                 if (!string.IsNullOrWhiteSpace(keyParamString))
                 {
                     string p = keyParamString.Trim();
-                    try
+                    if (p.StartsWith(KEY_METHOD))
                     {
-                        if (p.StartsWith(KEY_METHOD))
+                        string sKeyMethod = KEY_METHOD;
+                        int poscln = p.IndexOf(COLON);
+                        if (poscln == sKeyMethod.Length)
                         {
-                            string sKeyMethod = KEY_METHOD;
-                            int poscln = p.IndexOf(COLON);
-                            if (poscln == sKeyMethod.Length)
+                            string sKeyInfo = p.Substring(poscln + 1);
+                            if (!sKeyInfo.Contains(";"))
                             {
-                                string sKeyInfo = p.Substring(poscln + 1);
-                                if (!sKeyInfo.Contains(";"))
+                                if ((!checkValidKeyInfoCharacters(sKeyInfo))
+                                    || (!parseKeyInfo(sKeyInfo, out var sMkiVal, out var sMkiLen, out var sLifeTime, out var sBase64KeySalt)))
                                 {
-                                    checkValidKeyInfoCharacters(keyParamString, sKeyInfo);
-                                    string sMkiVal, sMkiLen, sLifeTime, sBase64KeySalt;
-                                    parseKeyInfo(keyParamString, sKeyInfo, out sMkiVal, out sMkiLen, out sLifeTime, out sBase64KeySalt);
-                                    if (!string.IsNullOrWhiteSpace(sBase64KeySalt))
-                                    {
-                                        byte[] bKey, bSalt;
-                                        parseKeySaltBase64(cryptoSuite, sBase64KeySalt, out bKey, out bSalt);
+                                    return false;
+                                }
 
-                                        keyParam = new KeyParameter(bKey, bSalt);
-                                        if (!string.IsNullOrWhiteSpace(sMkiVal) && !string.IsNullOrWhiteSpace(sMkiLen))
+                                if (!string.IsNullOrWhiteSpace(sBase64KeySalt))
+                                {
+                                    if (!parseKeySaltBase64(cryptoSuite, sBase64KeySalt, out var bKey, out var bSalt)
+                                        || !IsValidKey(bKey)
+                                        || !IsValidSalt(bSalt))
+                                    {
+                                        return false;
+                                    }
+
+                                    keyParam = new KeyParameter(bKey, bSalt);
+                                }
+                                else
+                                {
+                                    keyParam = new KeyParameter();
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(sMkiVal) && !string.IsNullOrWhiteSpace(sMkiLen))
+                                {
+                                    if (!uint.TryParse(sMkiVal, out uint mkiValue)
+                                        || !uint.TryParse(sMkiLen, out uint mkiLen)
+                                        || !(mkiLen > 0 && mkiLen <= 128))
+                                    {
+                                        keyParam = null;
+                                        return false;
+                                    }
+
+                                    keyParam.MkiValue = mkiValue;
+                                    keyParam.MkiLength = mkiLen;
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(sLifeTime))
+                                {
+                                    if (sLifeTime.Contains("^"))
+                                    {
+                                        if (!TryParseLifeTimeString(sLifeTime, out ulong lifeTime))
                                         {
-                                            keyParam.MkiValue = uint.Parse(sMkiVal);
-                                            keyParam.MkiLength = uint.Parse(sMkiLen);
+                                            keyParam = null;
+                                            return false;
                                         }
-                                        if (!string.IsNullOrWhiteSpace(sLifeTime))
+
+                                        keyParam.LifeTime = lifeTime;
+                                    }
+                                    else
+                                    {
+                                        if (!uint.TryParse(sLifeTime, out uint lifeTime)
+                                            || !IsValidLifeTime(lifeTime))
                                         {
-                                            if (sLifeTime.Contains('^'))
-                                            {
-                                                keyParam.LifeTimeString = sLifeTime;
-                                            }
-                                            else
-                                            {
-                                                keyParam.LifeTime = uint.Parse(sLifeTime);
-                                            }
+                                            keyParam = null;
+                                            return false;
                                         }
+
+                                        keyParam.LifeTime = lifeTime;
                                     }
                                 }
+
+                                return true;
                             }
                         }
                     }
-                    catch
-                    {
-                        //catch all errors and throw own FormatException
-                    }
                 }
+
+                keyParam = null;
                 return false;
             }
 
-            private static void parseKeyInfo(string keyParamString, string keyInfo, out string mkiValue, out string mkiLen, out string lifeTimeString, out string base64KeySalt)
+            private static bool parseKeySaltBase64(CryptoSuites cryptoSuite, string base64KeySalt, out byte[] key, out byte[] salt)
+            {
+                key = null;
+                salt = null;
+
+                byte[] keysalt;
+                try
+                {
+                    keysalt = Convert.FromBase64String(base64KeySalt);
+                }
+                catch
+                {
+                    return false;
+                }
+
+                int keyLength = 0;
+                int saltLength = 0;
+                int saltOffset = 0;
+
+                switch (cryptoSuite)
+                {
+                    case CryptoSuites.AES_CM_128_HMAC_SHA1_32:
+                    case CryptoSuites.AES_CM_128_HMAC_SHA1_80:
+                    case CryptoSuites.F8_128_HMAC_SHA1_80:
+                    case CryptoSuites.AEAD_AES_128_GCM:
+                        keyLength = 128 / 8;
+                        saltOffset = 128 / 8;
+                        saltLength = (cryptoSuite == CryptoSuites.AEAD_AES_128_GCM) ? 96 / 8 : 112 / 8;
+                        break;
+                    case CryptoSuites.AES_192_CM_HMAC_SHA1_80:
+                    case CryptoSuites.AES_192_CM_HMAC_SHA1_32:
+                    case CryptoSuites.AES_CM_192_HMAC_SHA1_80:
+                    case CryptoSuites.AES_CM_192_HMAC_SHA1_32:
+                        keyLength = 192 / 8;
+                        saltOffset = 192 / 8;
+                        saltLength = 112 / 8;
+                        break;
+                    case CryptoSuites.AEAD_AES_256_GCM:
+                        keyLength = 256 / 8;
+                        saltOffset = 128 / 8;
+                        saltLength = 96 / 8;
+                        break;
+                    case CryptoSuites.AES_256_CM_HMAC_SHA1_80:
+                    case CryptoSuites.AES_256_CM_HMAC_SHA1_32:
+                    case CryptoSuites.AES_CM_256_HMAC_SHA1_80:
+                    case CryptoSuites.AES_CM_256_HMAC_SHA1_32:
+                        keyLength = 256 / 8;
+                        saltOffset = 256 / 8;
+                        saltLength = 112 / 8;
+                        break;
+                    default:
+                        return false;
+                }
+
+                if (keysalt.Length < keyLength + saltLength)
+                {
+                    return false;
+                }
+
+                key = new byte[keyLength];
+                Array.Copy(keysalt, 0, key, 0, keyLength);
+
+                salt = new byte[saltLength];
+                Array.Copy(keysalt, saltOffset, salt, 0, saltLength);
+
+                return true;
+            }
+
+            private static bool checkValidKeyInfoCharacters(string keyInfo)
+            {
+                foreach (char c in keyInfo)
+                {
+                    if (c < 0x21 || c > 0x7e)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            private static bool IsValidLifeTime(ulong value)
+            {
+                return value >= 2 && (value & (value - 1)) == 0;
+            }
+
+            private static bool IsValidKey(byte[] key)
+            {
+                return key != null && key.Length >= 16;
+            }
+
+            private static bool IsValidSalt(byte[] salt)
+            {
+                return salt != null && salt.Length >= 12;
+            }
+
+            private static bool TryParseLifeTimeString(string lifeTimeString, out ulong lifeTime)
+            {
+                lifeTime = 0;
+
+                if (string.IsNullOrWhiteSpace(lifeTimeString) || !lifeTimeString.StartsWith("2^"))
+                {
+                    return false;
+                }
+
+                string exponentPart = lifeTimeString.Substring(2);
+                if (!ulong.TryParse(exponentPart, out ulong exponent) || exponent < 1)
+                {
+                    return false;
+                }
+
+                lifeTime = (ulong)Math.Pow(2, (double)exponent);
+                return true;
+            }
+
+            private static bool parseKeyInfo(string keyInfo, out string mkiValue, out string mkiLen, out string lifeTimeString, out string base64KeySalt)
             {
                 mkiValue = null;
                 mkiLen = null;
@@ -470,6 +474,7 @@ namespace SIPSorcery.Net
                     //usually lifetime comes before mki, if specified
                     int posclnmki = keyInfo.IndexOf(COLON, pospipe1 + 1);
                     int pospipe2 = keyInfo.IndexOf(PIPE, pospipe1 + 1);
+
                     if (posclnmki > 0 && pospipe2 < 0)
                     {
                         mkiValue = keyInfo.Substring(pospipe1 + 1, posclnmki - pospipe1 - 1);
@@ -493,13 +498,15 @@ namespace SIPSorcery.Net
                     }
                     else if (posclnmki < 0 && pospipe2 > 0)
                     {
-                        throw new FormatException($"keyParameter '{keyParamString}' is not recognized as a valid SRTP_KEY_INFO ");
+                        return false;
                     }
                 }
                 else
                 {
                     base64KeySalt = keyInfo;
                 }
+
+                return true;
             }
 
             public static KeyParameter CreateNew(CryptoSuites cryptoSuite, string key = null, string salt = null)
@@ -603,6 +610,22 @@ namespace SIPSorcery.Net
             public const string FEC_ORDER_PREFIX = "FEC_ORDER=";
             public const string WSH_PREFIX = "WSH=";
             public const string KDR_PREFIX = "KDR=";
+
+            private static readonly Dictionary<string, FecTypes> s_fecTypesLookup = CreateFecTypesLookup();
+            private static Dictionary<string, FecTypes> CreateFecTypesLookup()
+            {
+                var values = Enum.GetValues(typeof(FecTypes));
+                var lookup = new Dictionary<string, FecTypes>(values.Length - 1, StringComparer.Ordinal);
+                foreach (FecTypes ft in values)
+                {
+                    if (ft != FecTypes.unknown)
+                    {
+                        lookup[ft.ToString()] = ft;
+                    }
+                }
+                return lookup;
+            }
+
             private ulong m_kdr = 0;
             public ulong Kdr
             {
@@ -612,31 +635,6 @@ namespace SIPSorcery.Net
                 }
                 set
                 {
-                    /*if(value < 1 || value > Math.Pow(2, 24))
-						throw new ArgumentOutOfRangeException("Kdr", "Kdr must be power of 2 and less than 2^24");
-					ulong ul = value;
-					for(int i = 0; i < 64; i++)
-					{
-						if((ul & 0x1) == 0x1)
-						{
-							if(i == 0)//2^0 wollen wir nicht
-								throw new ArgumentOutOfRangeException("Kdr", "Kdr must be power of 2 and less than 2^24");
-							else
-							{
-								ul = ul >> 1;
-								break;
-							}
-						}
-						else
-						{
-							ul = ul >> 1;
-						}
-					}
-					if(ul == 0)
-						this.m_kdr = value;
-					else
-						throw new ArgumentOutOfRangeException("Kdr", "Kdr must be power of 2 and less than 2^24");
-					*/
                     if (value < 0 || value > 24)
                     {
                         throw new ArgumentOutOfRangeException("Kdr", "Kdr must be between 0 and 24");
@@ -704,73 +702,82 @@ namespace SIPSorcery.Net
 
             public static SessionParameter Parse(string sessionParam, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
             {
+                if (!TryParse(sessionParam, out var result, cryptoSuite))
+                {
+                    throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");
+                }
+
+                return result;
+            }
+
+            public static bool TryParse(string sessionParam, out SessionParameter result, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
+            {
+                result = null;
+
                 if (string.IsNullOrWhiteSpace(sessionParam))
                 {
-                    return null;
+                    return true;
                 }
 
                 string p = sessionParam.Trim();
-                try
+                SessionParameter.SrtpSessionParams paramType = SrtpSessionParams.unknown;
+                if (p.StartsWith(KDR_PREFIX))
                 {
-                    SessionParameter.SrtpSessionParams paramType = SrtpSessionParams.unknown;
-                    if (p.StartsWith(KDR_PREFIX))
+                    string sKdr = p.Substring(KDR_PREFIX.Length);
+                    if (uint.TryParse(sKdr, out uint kdr))
                     {
-                        string sKdr = p.Substring(KDR_PREFIX.Length);
-                        uint kdr = 0;
-                        if (uint.TryParse(sKdr, out kdr))
-                        {
-                            return new SessionParameter(SrtpSessionParams.kdr) { Kdr = kdr };
-                        }
-                    }
-                    else if (p.StartsWith(WSH_PREFIX))
-                    {
-                        string sWsh = p.Substring(WSH_PREFIX.Length);
-                        uint wsh = 0;
-                        if (uint.TryParse(sWsh, out wsh))
-                        {
-                            return new SessionParameter(SrtpSessionParams.wsh) { Wsh = wsh };
-                        }
-                    }
-                    else if (p.StartsWith(FEC_KEY_PREFIX))
-                    {
-                        string sFecKey = p.Substring(FEC_KEY_PREFIX.Length);
-                        KeyParameter fecKey = KeyParameter.Parse(sFecKey, cryptoSuite);
-                        return new SessionParameter(SrtpSessionParams.fec_key) { FecKey = fecKey };
-                    }
-                    else if (p.StartsWith(FEC_ORDER_PREFIX))
-                    {
-                        string sFecOrder = p.Substring(FEC_ORDER_PREFIX.Length);
-                        SessionParameter.FecTypes fecOrder = (from e in Enum.GetNames(typeof(FecTypes)) where e.CompareTo(sFecOrder) == 0 select (FecTypes)Enum.Parse(typeof(FecTypes), e)).FirstOrDefault();
-                        if (fecOrder == FecTypes.unknown)
-                        {
-                            throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");
-                        }
-
-                        return new SessionParameter(SrtpSessionParams.fec_order) { FecOrder = fecOrder };
-                    }
-                    else
-                    {
-                        paramType = (from e in Enum.GetNames(typeof(SrtpSessionParams)) where e.CompareTo(p) == 0 select (SrtpSessionParams)Enum.Parse(typeof(SrtpSessionParams), e)).FirstOrDefault();
-                        if (paramType == SrtpSessionParams.unknown)
-                        {
-                            throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");
-                        }
-
-                        switch (paramType)
-                        {
-                            case SrtpSessionParams.UNAUTHENTICATED_SRTP:
-                            case SrtpSessionParams.UNENCRYPTED_SRTCP:
-                            case SrtpSessionParams.UNENCRYPTED_SRTP:
-                                return new SessionParameter(paramType);
-                        }
+                        result = new SessionParameter(SrtpSessionParams.kdr) { Kdr = kdr };
+                        return true;
                     }
                 }
-                catch
+                else if (p.StartsWith(WSH_PREFIX))
                 {
-                    //catch all errors and throw own FormatException
+                    string sWsh = p.Substring(WSH_PREFIX.Length);
+                    if (uint.TryParse(sWsh, out uint wsh))
+                    {
+                        result = new SessionParameter(SrtpSessionParams.wsh) { Wsh = wsh };
+                        return true;
+                    }
+                }
+                else if (p.StartsWith(FEC_KEY_PREFIX))
+                {
+                    string sFecKey = p.Substring(FEC_KEY_PREFIX.Length);
+                    if (!KeyParameter.TryParse(sFecKey, out var fecKey, cryptoSuite))
+                    {
+                        return false;
+                    }
+                    result = new SessionParameter(SrtpSessionParams.fec_key) { FecKey = fecKey };
+                    return true;
+                }
+                else if (p.StartsWith(FEC_ORDER_PREFIX))
+                {
+                    string sFecOrder = p.Substring(FEC_ORDER_PREFIX.Length);
+                    if (!s_fecTypesLookup.TryGetValue(sFecOrder, out var fecOrder))
+                    {
+                        return false;
+                    }
+
+                    result = new SessionParameter(SrtpSessionParams.fec_order) { FecOrder = fecOrder };
+                    return true;
+                }
+                else
+                {
+                    if (!Enum.TryParse<SrtpSessionParams>(p, out paramType) || paramType.ToString() != p)
+                    {
+                        return false;
+                    }
+
+                    switch (paramType)
+                    {
+                        case SrtpSessionParams.UNAUTHENTICATED_SRTP:
+                        case SrtpSessionParams.UNENCRYPTED_SRTCP:
+                        case SrtpSessionParams.UNENCRYPTED_SRTP:
+                            result = new SessionParameter(paramType);
+                            return true;
+                    }
                 }
 
-                throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");
+                return false;
             }
         }
 
@@ -856,58 +863,12 @@ namespace SIPSorcery.Net
 
         public static SDPSecurityDescription Parse(string cryptoLine)
         {
-            if (string.IsNullOrWhiteSpace(cryptoLine))
-            {
-                return null;
-            }
-
-            if (!cryptoLine.StartsWith(CRYPTO_ATTRIBUE_PREFIX))
+            if (!TryParse(cryptoLine, out var securityDescription))
             {
                 throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
             }
 
-            string sCryptoValue = cryptoLine.Substring(cryptoLine.IndexOf(COLON) + 1);
-
-            SDPSecurityDescription sdpCryptoAttribute = new SDPSecurityDescription();
-            string[] sCryptoParts = sCryptoValue.Split(sdpCryptoAttribute.WHITE_SPACES, StringSplitOptions.RemoveEmptyEntries);
-            if (sCryptoValue.Length < 2)
-            {
-                throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
-            }
-
-            try
-            {
-                sdpCryptoAttribute.Tag = uint.Parse(sCryptoParts[0]);
-                sdpCryptoAttribute.CryptoSuite = (from e in Enum.GetNames(typeof(CryptoSuites)) where e.CompareTo(sCryptoParts[1]) == 0 select (CryptoSuites)Enum.Parse(typeof(CryptoSuites), e)).FirstOrDefault();
-
-                if (sdpCryptoAttribute.CryptoSuite == CryptoSuites.unknown)
-                {
-                    throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
-                }
-
-                string[] sKeyParams = sCryptoParts[2].Split(SEMI_COLON);
-                if (sKeyParams.Length < 1)
-                {
-                    throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
-                }
-
-                foreach (string kp in sKeyParams)
-                {
-                    KeyParameter keyParam = KeyParameter.Parse(kp, sdpCryptoAttribute.CryptoSuite);
-                    sdpCryptoAttribute.KeyParams.Add(keyParam);
-                }
-                if (sCryptoParts.Length > 3)
-                {
-                    sdpCryptoAttribute.SessionParam = SessionParameter.Parse(sCryptoParts[3], sdpCryptoAttribute.CryptoSuite);
-                }
-
-                return sdpCryptoAttribute;
-            }
-            catch
-            {
-                //catch all errors and throw own FormatException
-            }
-            throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
+            return securityDescription;
         }
 
         public static bool TryParse(string cryptoLine, out SDPSecurityDescription securityDescription)
@@ -915,57 +876,66 @@ namespace SIPSorcery.Net
             securityDescription = null;
             if (string.IsNullOrWhiteSpace(cryptoLine))
             {
-                return false;
+                return true;
             }
 
             if (!cryptoLine.StartsWith(CRYPTO_ATTRIBUE_PREFIX))
             {
-                throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
+                return false;
             }
 
             string sCryptoValue = cryptoLine.Substring(cryptoLine.IndexOf(COLON) + 1);
 
             securityDescription = new SDPSecurityDescription();
-            string[] sCryptoParts = sCryptoValue.Split(securityDescription.WHITE_SPACES, StringSplitOptions.RemoveEmptyEntries);
+            string[] sCryptoParts = sCryptoValue.Split(WHITE_SPACES, StringSplitOptions.RemoveEmptyEntries);
             if (sCryptoValue.Length < 2)
             {
-                throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
+                return false;
             }
 
-            try
+            if (!uint.TryParse(sCryptoParts[0], out var tag))
             {
-                securityDescription.Tag = uint.Parse(sCryptoParts[0]);
-                securityDescription.CryptoSuite = (from e in Enum.GetNames(typeof(CryptoSuites)) where e.CompareTo(sCryptoParts[1]) == 0 select (CryptoSuites)Enum.Parse(typeof(CryptoSuites), e)).FirstOrDefault();
+                return false;
+            }
+            securityDescription.Tag = tag;
 
-                if (securityDescription.CryptoSuite == CryptoSuites.unknown)
-                {
-                    //this may not be a reason to return FALSE
-                    //there might be a new crypto key used
-                }
+            if (!s_cryptoSuiteLookup.TryGetValue(sCryptoParts[1], out var cryptoSuite))
+            {
+                return false;
+            }
+            securityDescription.CryptoSuite = cryptoSuite;
 
-                string[] sKeyParams = sCryptoParts[2].Split(SEMI_COLON);
-                if (sKeyParams.Length < 1)
+            if (sCryptoParts.Length < 3)
+            {
+                return false;
+            }
+
+            string[] sKeyParams = sCryptoParts[2].Split(SEMI_COLON);
+            if (sKeyParams.Length < 1)
+            {
+                securityDescription = null;
+                return false;
+            }
+            foreach (string kp in sKeyParams)
+            {
+                if (!KeyParameter.TryParse(kp, out var keyParam, securityDescription.CryptoSuite))
                 {
                     securityDescription = null;
                     return false;
                 }
-                foreach (string kp in sKeyParams)
-                {
-                    KeyParameter keyParam = KeyParameter.Parse(kp, securityDescription.CryptoSuite);
-                    securityDescription.KeyParams.Add(keyParam);
-                }
-                if (sCryptoParts.Length > 3)
-                {
-                    securityDescription.SessionParam = SessionParameter.Parse(sCryptoParts[3], securityDescription.CryptoSuite);
-                }
-
-                return true;
+                securityDescription.KeyParams.Add(keyParam);
             }
-            catch
+            if (sCryptoParts.Length > 3)
             {
-                //catch all errors and throw own FormatException
+                if (!SessionParameter.TryParse(sCryptoParts[3], out var sessionParam, securityDescription.CryptoSuite))
+                {
+                    securityDescription = null;
+                    return false;
+                }
+                securityDescription.SessionParam = sessionParam;
             }
-            return false;
+
+            return true;
         }
     }
 }
