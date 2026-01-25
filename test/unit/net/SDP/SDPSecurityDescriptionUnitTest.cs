@@ -2,6 +2,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -10,7 +11,6 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public partial class SDPSecurityDescriptionUnitTest
     {
-        private static string CRLF = "\r\n";
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SDPSecurityDescriptionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
@@ -21,8 +21,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SDPSecurityDescription c1 = SDPSecurityDescription.Parse("a=crypto:1 AES_CM_128_HMAC_SHA1_80  inline:WVNfX19zZW1jdGwgKCkgewkyMjA7fQp9CnVubGVz|2^20|1:4    FEC_ORDER=FEC_SRTP");
             Assert.Equal("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:WVNfX19zZW1jdGwgKCkgewkyMjA7fQp9CnVubGVz|2^20|1:4 FEC_ORDER=FEC_SRTP", c1.ToString());
@@ -64,6 +64,17 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal("PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR", c3.KeyParams[0].KeySaltBase64);
             Assert.Null(c3.SessionParam);
 
+            Assert.True(c1.Equals(c1));
+            Assert.True(c1.ToString() == c1.ToString());
+            Assert.True(c2.Equals(c2));
+            Assert.True(c2.ToString() == c2.ToString());
+            Assert.True(c3.Equals(c3));
+            Assert.True(c3.ToString() == c3.ToString());
+
+            Assert.True(c1.Equals(c2) == (c1.ToString() == c2.ToString()));
+            Assert.True(c2.Equals(c3) == (c2.ToString() == c3.ToString()));
+            Assert.True(c3.Equals(c1) == (c3.ToString() == c1.ToString()));
+
             Assert.Null(SDPSecurityDescription.Parse(null));
             Assert.Null(SDPSecurityDescription.Parse(""));
 
@@ -78,55 +89,35 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseCryptoSIPMessage()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            string sipMsg =
-            "INVITE sip:33@10.2.0.110:5061;transport=tls SIP/2.0" + CRLF +
-            "Via: SIP/2.0/TLS 10.2.19.102:58179;rport;branch=z9hG4bKPj9893426a070f4c26ab494ceb746836a6" + CRLF +
-            "Max-Forwards: 70" + CRLF +
-            "From: <sip:a@10.2.0.110>;tag=b0d60b9dda9043818dea1f0e8ff9667c" + CRLF +
-            "To: <sip:33@10.2.0.110>" + CRLF +
-            "Contact: <sip:a@10.2.19.102:58179;ob>" + CRLF +
-            "Call-ID: 6410bc5eb6724efd8717831ac2af5c35" + CRLF +
-            "CSeq: 9941 INVITE" + CRLF +
-            "Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS" + CRLF +
-            "Supported: replaces, 100rel, timer, norefersub" + CRLF +
-            "Session-Expires: 1800" + CRLF +
-            "Min-SE: 90" + CRLF +
-            "User-Agent: MicroSIP/3.19.8" + CRLF +
-            "Content-Type: application/sdp" + CRLF +
-            "Content-Length:   720" + CRLF +
-            "" + CRLF +
-            "v=0" + CRLF +
-            "o=- 3784977145 3784977145 IN IP4 10.2.19.102" + CRLF +
-            "s=pjmedia" + CRLF +
-            "b=AS:84" + CRLF +
-            "t=0 0" + CRLF +
-            "a=X-nat:0" + CRLF +
-            "m=audio 4000 RTP/AVP 8 0 101" + CRLF +
-            "c=IN IP4 10.2.19.102" + CRLF +
-            "b=TIAS:64000" + CRLF +
-            "a=rtcp:4001 IN IP4 10.2.19.102" + CRLF +
-            "a=sendrecv" + CRLF +
-            "a=rtpmap:8 PCMA/8000" + CRLF +
-            "a=rtpmap:0 PCMU/8000" + CRLF +
-            "a=rtpmap:101 telephone-event/8000" + CRLF +
-            "a=fmtp:101 0-16" + CRLF +
-            "a=ssrc:370289018 cname:089912e5446c1847" + CRLF +
-            "a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:i/aQZXuTQXF8NcIPG/8ClKLXjzJZiZkFqNerJJaWtX9ShjuamMQgFocXUEkWCQ==" + CRLF +
-            "a=crypto:2 AES_256_CM_HMAC_SHA1_32 inline:WEXYOzOomH16+KpVRc8RKHkGUEW6DdvYHWSFKePVy9RzC5DB2Ciw+4t9huV8KA==" + CRLF +
-            "a=crypto:3 AES_CM_128_HMAC_SHA1_80 inline:6wGxadTFLGO9iKPSC8XfRQsOFDRFgJdmpBfdWp9r" + CRLF +
-            "a=crypto:4 AES_CM_128_HMAC_SHA1_32 inline:SdihJallj5frjwWc5yeXbMZlJSLlS+o2bkH3Jsle"
+            string sdpDescription =
+                """
+                v=0
+                o=- 3784977145 3784977145 IN IP4 10.2.19.102
+                s=pjmedia
+                b=AS:84
+                t=0 0
+                a=X-nat:0
+                m=audio 4000 RTP/AVP 8 0 101
+                c=IN IP4 10.2.19.102
+                b=TIAS:64000
+                a=rtcp:4001 IN IP4 10.2.19.102
+                a=sendrecv
+                a=rtpmap:8 PCMA/8000
+                a=rtpmap:0 PCMU/8000
+                a=rtpmap:101 telephone-event/8000
+                a=fmtp:101 0-16
+                a=ssrc:370289018 cname:089912e5446c1847
+                a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:i/aQZXuTQXF8NcIPG/8ClKLXjzJZiZkFqNerJJaWtX9ShjuamMQgFocXUEkWCQ==
+                a=crypto:2 AES_256_CM_HMAC_SHA1_32 inline:WEXYOzOomH16+KpVRc8RKHkGUEW6DdvYHWSFKePVy9RzC5DB2Ciw+4t9huV8KA==
+                a=crypto:3 AES_CM_128_HMAC_SHA1_80 inline:6wGxadTFLGO9iKPSC8XfRQsOFDRFgJdmpBfdWp9r
+                a=crypto:4 AES_CM_128_HMAC_SHA1_32 inline:SdihJallj5frjwWc5yeXbMZlJSLlS+o2bkH3Jsle
+                """
             ;
 
-            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            Assert.Equal(SIPMethodsEnum.INVITE, sipRequest.Method);
-            Assert.Equal(SIPProtocolsEnum.tls, sipRequest.URI.Protocol);
-
-            SDP sdp = SDP.ParseSDPDescription(sipRequest.Body);
+            SDP sdp = SDP.ParseSDPDescription(sdpDescription);
             Assert.NotNull(sdp);
             //Assert.Equal("10.2.19.102", sdp.Connection.ConnectionAddress);
             Assert.Equal("-", sdp.Username);

@@ -27,7 +27,7 @@ using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 {
@@ -46,12 +46,31 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
         public event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
 
-        public DtlsSrtpServer(Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
-            : this(new BcTlsCrypto(), certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
+        public DtlsSrtpServer(
+            Certificate certificate = null,
+            AsymmetricKeyParameter privateKey = null,
+            short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+            short certificateHashAlgorithm = HashAlgorithm.sha256)
+            : this(
+                  new BcTlsCrypto(),
+                  certificate,
+                  privateKey,
+                  certificateSignatureAlgorithm,
+                  certificateHashAlgorithm)
         { }
 
-        public DtlsSrtpServer(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) 
-            : base(crypto, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
+        public DtlsSrtpServer(
+            TlsCrypto crypto,
+            Certificate certificate = null,
+            AsymmetricKeyParameter privateKey = null,
+            short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+            short certificateHashAlgorithm = HashAlgorithm.sha256)
+            : base(
+                  crypto,
+                  certificate,
+                  privateKey,
+                  certificateSignatureAlgorithm,
+                  certificateHashAlgorithm)
         {
             this.OnHandshakeCompleted += DtlsSrtpServer_OnHandshakeCompleted;
         }
@@ -65,7 +84,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
         protected virtual int[] GetSupportedProtectionProfiles()
         {
-            return new int[] 
+            return new int[]
             {
                 ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
                 ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
@@ -77,7 +96,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
                 ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
                 ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
                 ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,                
+                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
                 ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
 
                 // do not offer NULL profiles to make sure these do not get selected by accident
@@ -97,15 +116,48 @@ namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
 
             UseSrtpData clientSrtpExtension = TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions);
 
-            int[] serverSupportedProfiles = GetSupportedProtectionProfiles();
-            int[] mutuallySupportedProfiles = clientSrtpExtension.ProtectionProfiles.Where(x => serverSupportedProfiles.Contains(x)).ToArray();
-            if (mutuallySupportedProfiles.Length == 0)
+            var serverSupportedProfiles = GetSupportedProtectionProfiles();
+            var mutuallySupportedProfiles = GetMutuallySupportedProfiles(clientSrtpExtension, serverSupportedProfiles);
+            var selectedProfile = GetHighestPriorityProfileSupported(serverSupportedProfiles, mutuallySupportedProfiles);
+
+            _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? new byte[0] : clientSrtpExtension.Mki); // Server must return only a single selected profile
+
+            [StackTraceHidden]
+            static int[] GetMutuallySupportedProfiles(UseSrtpData clientSrtpExtension, int[] serverSupportedProfiles)
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
+                var mutualList = new List<int>(clientSrtpExtension.ProtectionProfiles.Length);
+
+                foreach (var clientProf in clientSrtpExtension.ProtectionProfiles)
+                {
+                    // check presence in serverSupportedProfiles
+                    if (Array.IndexOf(serverSupportedProfiles, clientProf) >= 0)
+                    {
+                        mutualList.Add(clientProf);
+                    }
+                }
+
+                if (mutualList.Count == 0)
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                return mutualList.ToArray();
             }
 
-            int selectedProfile = mutuallySupportedProfiles.OrderBy(x => Array.IndexOf(serverSupportedProfiles, x)).First(); // Choose the highest priority profile supported by the server
-            _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? new byte[0] : clientSrtpExtension.Mki); // Server must return only a single selected profile
+            [StackTraceHidden]
+            static int GetHighestPriorityProfileSupported(int[] serverSupportedProfiles, int[] mutuallySupportedProfiles)
+            {
+                for (var i = 0; i < serverSupportedProfiles.Length; i++)
+                {
+                    var candidate = serverSupportedProfiles[i];
+                    if (Array.IndexOf(mutuallySupportedProfiles, candidate) >= 0)
+                    {
+                        return candidate;
+                    }
+                }
+
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
         }
 
         public override IDictionary<int, byte[]> GetServerExtensions()

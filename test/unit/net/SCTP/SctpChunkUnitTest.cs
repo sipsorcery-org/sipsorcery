@@ -13,9 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -35,8 +37,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundtripHeartBeatChunk()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SctpChunk heartbeatChunk = new SctpChunk(SctpChunkType.HEARTBEAT)
             {
@@ -44,11 +46,11 @@ namespace SIPSorcery.Net.UnitTests
                 ChunkValue = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 }
             };
 
-            byte[] buffer = new byte[heartbeatChunk.GetChunkLength(true)];
+            byte[] buffer = new byte[heartbeatChunk.GetByteCount(true)];
 
-            heartbeatChunk.WriteTo(buffer, 0);
+            heartbeatChunk.WriteBytes(buffer.AsSpan());
 
-            var rndTripChunk = SctpChunk.Parse(buffer, 0);
+            var rndTripChunk = SctpChunk.Parse(buffer.AsSpan());
 
             Assert.Equal(SctpChunkType.HEARTBEAT, rndTripChunk.KnownType);
             Assert.Equal(0, rndTripChunk.ChunkFlags);
@@ -61,9 +63,9 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseSACKChunk()
         {
-            var sackBuffer = BufferUtils.ParseHexStr("13881388E48092946AB2050003000014D19244F60002000000000001A7498379");
+            var sackBuffer = TypeExtensions.ParseHexStr("13881388E48092946AB2050003000014D19244F60002000000000001A7498379");
 
-            var sackPkt = SctpPacket.Parse(sackBuffer, 0, sackBuffer.Length);
+            var sackPkt = SctpPacket.Parse(sackBuffer.AsSpan());
 
             Assert.NotNull(sackPkt);
             Assert.Single(sackPkt.Chunks);

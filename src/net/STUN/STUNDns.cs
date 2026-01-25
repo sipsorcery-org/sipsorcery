@@ -37,6 +37,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -46,239 +47,247 @@ using DnsClient.Protocol;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public static class STUNDns
 {
-    public class STUNDns
+    public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
+    public const int DNS_TIMEOUT_SECONDS = 1;
+    public const int DNS_RETRIES_PER_SERVER = 1;
+
+    private static readonly ILogger logger = Log.Logger;
+
+    private static LookupClient _lookupClient;
+
+    /// <summary>
+    /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
+    /// </summary>
+    private static bool _dnsUseTcpFallback;
+
+    /// <summary>
+    /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
+    /// </summary>
+    public static bool DnsUseTcpFallback
     {
-        public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
-        public const int DNS_TIMEOUT_SECONDS = 1;
-        public const int DNS_RETRIES_PER_SERVER = 1;
-
-        private static readonly ILogger logger = Log.Logger;
-
-        private static LookupClient _lookupClient;
-
-        /// <summary>
-        /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
-        /// </summary>
-        private static bool _dnsUseTcpFallback;
-
-        /// <summary>
-        /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
-        /// </summary>
-        public static bool DnsUseTcpFallback
+        get => _dnsUseTcpFallback;
+        set
         {
-            get => _dnsUseTcpFallback;
-            set
+            if (_dnsUseTcpFallback != value)
             {
-                if (_dnsUseTcpFallback != value)
+                _dnsUseTcpFallback = value;
+                _lookupClient = CreateLookupClient();
+            }
+        }
+    }
+
+    static STUNDns()
+    {
+        _lookupClient = CreateLookupClient();
+    }
+
+    /// <summary>
+    /// Resolve method that can be used to request an AAAA result and fallback to a A
+    /// lookup if none found.
+    /// </summary>
+    /// <param name="uri">The URI to lookup.</param>
+    /// <param name="preferIPv6">True if IPv6 (AAAA record lookup) is preferred.</param>
+    /// <returns>An IPEndPoint or null.</returns>
+    public static Task<IPEndPoint?> Resolve(STUNUri uri, bool preferIPv6 = false)
+    {
+        return Resolve(uri, preferIPv6 ? QueryType.AAAA : QueryType.A);
+    }
+
+    /// <summary>
+    /// Resolve method that performs either an A or AAAA record lookup. If required
+    /// a SRV record lookup will be performed prior to the A or AAAA lookup.
+    /// </summary>
+    /// <param name="uri">The STUN uri to lookup.</param>
+    /// <param name="queryType">Whether the address lookup should be A or AAAA.</param>
+    /// <returns>An IPEndPoint or null.</returns>
+    private static async Task<IPEndPoint?> Resolve(STUNUri uri, QueryType queryType)
+    {
+        ArgumentNullException.ThrowIfNull(uri);
+        ArgumentException.ThrowIfNullOrWhiteSpace(uri.Host);
+
+        if (IPAddress.TryParse(uri.Host, out var ipAddress))
+        {
+            // Target is already an IP address, no DNS lookup required.
+            return new IPEndPoint(ipAddress, uri.Port);
+        }
+        else
+        {
+            var useDnsClient = true;
+
+            if (!uri.Host.Contains('.') || uri.Host.EndsWith(MDNS_TLD) || queryType == QueryType.A || queryType == QueryType.AAAA)
+            {
+                useDnsClient = false;
+                var family = (queryType == QueryType.AAAA)
+                    ? AddressFamily.InterNetworkV6
+                    : AddressFamily.InterNetwork;
+
+                // The lookup is for a local network host. Use the OS DNS logic as the 
+                // main DNS client can be configured to use external DNS servers that won't
+                // be able to lookup this hostname.
+
+                IPHostEntry? hostEntry = null;
+
+                try
                 {
-                    _dnsUseTcpFallback = value;
-                    _lookupClient = CreateLookupClient();
+                    hostEntry = await Dns.GetHostEntryAsync(uri.Host).ConfigureAwait(ConfigureAwaitOptions.None);
+                }
+                catch (SocketException)
+                {
+                    // Socket exception gets thrown for failed lookups,
+                }
+
+                if (hostEntry is { })
+                {
+                    var addressList = hostEntry.AddressList ?? Array.Empty<IPAddress>();
+
+                    if (addressList.Length == 0)
+                    {
+                        logger.LogStunDnsOsLookupFailed(uri.Host);
+                        useDnsClient = true;
+                    }
+                    else
+                    {
+                        for (var i = 0; i < addressList.Length; i++)
+                        {
+                            if (addressList[i].AddressFamily == family)
+                            {
+                                return new IPEndPoint(addressList[i], uri.Port);
+                            }
+                        }
+
+                        // Didn't get a result for the preferred address family so just use the 
+                        // first available result.
+                        return new IPEndPoint(addressList[0], uri.Port);
+                    }
+                }
+                else
+                {
+                    useDnsClient = true;
                 }
             }
-        }
 
-        static STUNDns()
-        {
-            _lookupClient = CreateLookupClient();
-        }
-
-        /// <summary>
-        /// Resolve method that can be used to request an AAAA result and fallback to a A
-        /// lookup if none found.
-        /// </summary>
-        /// <param name="uri">The URI to lookup.</param>
-        /// <param name="preferIPv6">True if IPv6 (AAAA record lookup) is preferred.</param>
-        /// <returns>An IPEndPoint or null.</returns>
-        public static Task<IPEndPoint> Resolve(STUNUri uri, bool preferIPv6 = false)
-        {
-            return Resolve(uri, preferIPv6 ? QueryType.AAAA : QueryType.A);
-        }
-
-        /// <summary>
-        /// Resolve method that performs either an A or AAAA record lookup. If required
-        /// a SRV record lookup will be performed prior to the A or AAAA lookup.
-        /// </summary>
-        /// <param name="uri">The STUN uri to lookup.</param>
-        /// <param name="queryType">Whether the address lookup should be A or AAAA.</param>
-        /// <returns>An IPEndPoint or null.</returns>
-        private static async Task<IPEndPoint> Resolve(STUNUri uri, QueryType queryType)
-        {
-            if (uri == null || String.IsNullOrWhiteSpace(uri.Host))
+            if (useDnsClient)
             {
-                throw new ArgumentNullException("uri", "DNS resolve was supplied an empty input.");
-            }
-
-            if (IPAddress.TryParse(uri.Host, out var ipAddress))
-            {
-                // Target is already an IP address, no DNS lookup required.
-                return new IPEndPoint(ipAddress, uri.Port);
-            }
-            else
-            {
-                bool useDnsClient = true;
-
-                if (!uri.Host.Contains(".") || uri.Host.EndsWith(MDNS_TLD) || queryType == QueryType.A || queryType == QueryType.AAAA)
+                if (uri.ExplicitPort)
                 {
-                    useDnsClient = false;
-                    AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
-                        AddressFamily.InterNetwork;
-
-                    // The lookup is for a local network host. Use the OS DNS logic as the 
-                    // main DNS client can be configured to use external DNS servers that won't
-                    // be able to lookup this hostname.
-
-                    IPHostEntry hostEntry = null;
-
+                    return HostQuery(uri.Host, uri.Port, queryType);
+                }
+                else
+                {
                     try
                     {
-                        hostEntry = Dns.GetHostEntry(uri.Host);
-                    }
-                    catch (SocketException)
-                    {
-                        // Socket exception gets thrown for failed lookups,
-                    }
+                        // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
+                        var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToStringFast(), uri.Protocol.ToLowerString()).ConfigureAwait(false);
+                        Debug.Assert(result is { });
 
-                    if (hostEntry != null)
-                    {
-                        var addressList = hostEntry.AddressList;
+                        string? host;
+                        int port;
 
-                        if (addressList?.Length == 0)
+                        if (result.Length <= 0)
                         {
-                            logger.LogWarning("Operating System DNS lookup failed for {Host}.", uri.Host);
-                            useDnsClient = true;
-                            //return null;
+                            host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
+                            port = uri.Port; // If no SRV results then fallback is to use the default port.
                         }
                         else
                         {
-                            if (addressList.Any(x => x.AddressFamily == family))
+                            // result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
+                            var srvResult = result[0];
+                            for (var i = 1; i < result.Length; i++)
                             {
-                                var addressResult = addressList.First(x => x.AddressFamily == family);
-                                return new IPEndPoint(addressResult, uri.Port);
+                                var entry = result[i];
+                                if (entry.Priority < srvResult.Priority ||
+                                    (entry.Priority == srvResult.Priority && entry.Weight > srvResult.Weight))
+                                {
+                                    srvResult = entry;
+                                }
                             }
-                            else
-                            {
-                                // Didn't get a result for the preferred address family so just use the 
-                                // first available result.
-                                var addressResult = addressList.First();
-                                return new IPEndPoint(addressResult, uri.Port);
-                            }
+
+                            host = srvResult.HostName;
+                            port = srvResult.Port;
                         }
+
+                        return HostQuery(host, port, queryType);
                     }
-                    else
+                    catch (Exception e)
                     {
-                        useDnsClient = true;
-                        //return null;
-                    }
-                }
-
-                if (useDnsClient)
-                {
-                    if (uri.ExplicitPort)
-                    {
-                        return HostQuery(uri.Host, uri.Port, queryType);
-                    }
-                    else
-                    {
-                        try
-                        {
-                            ServiceHostEntry srvResult = null;
-                            // No explicit port so use a SRV -> (A | AAAA -> A) record lookup.
-                            var result = await _lookupClient.ResolveServiceAsync(uri.Host, uri.Scheme.ToString(), uri.Protocol.ToString().ToLower()).ConfigureAwait(false);
-                            if (result == null || result.Count() == 0)
-                            {
-                                //logger.LogDebug("STUNDns SRV lookup returned no results for {uri}.", uri);
-                            }
-                            else
-                            {
-                                srvResult = result.OrderBy(y => y.Priority).ThenByDescending(w => w.Weight).FirstOrDefault();
-                            }
-
-                            string host = uri.Host; // If no SRV results then fallback is to lookup the hostname directly.
-                            int port = uri.Port;    // If no SRV results then fallback is to use the default port.
-
-                            if (srvResult != null)
-                            {
-                                host = srvResult.HostName;
-                                port = srvResult.Port;
-                            }
-
-                            return HostQuery(host, port, queryType);
-                        }
-                        catch (Exception e)
-                        {
-                            logger.LogDebug(e, "STUNDns SRV lookup failure for {uri}. {ErrorMessage}", uri, e.InnerException?.Message);
-                            return null;
-                        }
+                        logger.LogStunDnsSrvLookupFailure(uri, e.InnerException?.Message, e);
+                        return null;
                     }
                 }
             }
-            return null;
         }
+        return null;
+    }
 
-        /// <summary>
-        /// Attempts to resolve a hostname.
-        /// </summary>
-        /// <param name="host">The hostname to resolve.</param>
-        /// <param name="port">The service port to use in the end pint result (not used for the lookup).</param>
-        /// <param name="queryType">The lookup query type, either A or AAAA.</param>
-        /// <returns>If successful an IPEndPoint or null if not.</returns>
-        private static IPEndPoint HostQuery(string host, int port, QueryType queryType)
+    /// <summary>
+    /// Attempts to resolve a hostname.
+    /// </summary>
+    /// <param name="host">The hostname to resolve.</param>
+    /// <param name="port">The service port to use in the end pint result (not used for the lookup).</param>
+    /// <param name="queryType">The lookup query type, either A or AAAA.</param>
+    /// <returns>If successful an IPEndPoint or null if not.</returns>
+    private static IPEndPoint? HostQuery(string host, int port, QueryType queryType)
+    {
+        try
         {
-            try
+            var answers = _lookupClient.Query(host, queryType).Answers;
+            if (answers.Count > 0)
             {
-                var answers = _lookupClient.Query(host, queryType).Answers;
-                if (answers.Count > 0)
-                {
-                    return GetFromLookupResult(answers, port);
-                }
+                return GetFromLookupResult(answers, port);
             }
-            catch (Exception excp)
-            {
-                logger.LogWarning(excp, "STUNDns lookup failure for {Host} and query {QueryType}. {ErrorMessage}", host, queryType, excp.Message);
-            }
-
-            if (queryType == QueryType.AAAA)
-            {
-                return HostQuery(host, port, QueryType.A);
-            }
-
-            return null;
         }
-
-        /// <summary>
-        /// Helper method to extract the appropriate IP address from a DNS lookup result.
-        /// The query may have returned an AAAA or A record. This method checks which 
-        /// and extracts the IP address accordingly.
-        /// </summary>
-        /// <param name="answers">The DNS lookup result.</param>
-        /// <param name="port">The port for the IP end point.</param>
-        /// <returns>An IP end point or null.</returns>
-        private static IPEndPoint GetFromLookupResult(IEnumerable<DnsResourceRecord> answers, int port)
+        catch (Exception excp)
         {
-            var addrRecord = answers.OfType<AddressRecord>().FirstOrDefault();
-            return addrRecord != null
-                ? new IPEndPoint(addrRecord.Address, port)
-                : null;
+            logger.LogStunDnsLookupFailure(host, queryType, excp.Message, excp);
         }
 
-        /// <summary>
-        /// Creates a LookupClient
-        /// </summary>
-        /// <returns>A LookupClient</returns>
-        private static LookupClient CreateLookupClient()
+        if (queryType == QueryType.AAAA)
         {
-            var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
-            LookupClientOptions clientOptions = new LookupClientOptions(nameServers.ToArray())
-            {
-                Retries = DNS_RETRIES_PER_SERVER,
-                Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
-                UseCache = true,
-                UseTcpFallback = DnsUseTcpFallback
-            };
-
-            return new LookupClient(clientOptions);
+            return HostQuery(host, port, QueryType.A);
         }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Helper method to extract the appropriate IP address from a DNS lookup result.
+    /// The query may have returned an AAAA or A record. This method checks which 
+    /// and extracts the IP address accordingly.
+    /// </summary>
+    /// <param name="answers">The DNS lookup result.</param>
+    /// <param name="port">The port for the IP end point.</param>
+    /// <returns>An IP end point or null.</returns>
+    private static IPEndPoint? GetFromLookupResult(IEnumerable<DnsResourceRecord> answers, int port)
+    {
+        foreach (var rr in answers)
+        {
+            if (rr is AddressRecord ar)
+            {
+                return new IPEndPoint(ar.Address, port);
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Creates a LookupClient
+    /// </summary>
+    /// <returns>A LookupClient</returns>
+    private static LookupClient CreateLookupClient()
+    {
+        var nameServers = NameServer.ResolveNameServers(skipIPv6SiteLocal: true, fallbackToGooglePublicDns: true);
+        var clientOptions = new LookupClientOptions(nameServers.ToArray())
+        {
+            Retries = DNS_RETRIES_PER_SERVER,
+            Timeout = TimeSpan.FromSeconds(DNS_TIMEOUT_SECONDS),
+            UseCache = true,
+            UseTcpFallback = DnsUseTcpFallback
+        };
+
+        return new LookupClient(clientOptions);
     }
 }

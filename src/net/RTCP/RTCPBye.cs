@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPBye.cs
 //
 // Description: RTCP Goodbye packet as defined in RFC3550.
@@ -27,138 +27,131 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+/// <summary>
+/// RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates 
+/// that one or more sources are no longer active.
+/// </summary>
+public partial class RTCPBye : IByteSerializable
 {
+    public const int MAX_REASON_BYTES = 255;
+    public const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
+    public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
+
+    public RTCPHeader Header;
+    public uint SSRC { get; private set; }
+    public string? Reason { get; private set; }
+
     /// <summary>
-    /// RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates 
-    /// that one or more sources are no longer active.
+    /// Creates a new RTCP Bye payload.
     /// </summary>
-    public class RTCPBye
+    /// <param name="ssrc">The synchronisation source of the RTP stream being closed.</param>
+    /// <param name="reason">Optional reason for closing. Maximum length is 255 bytes 
+    /// (note bytes not characters).</param>
+    public RTCPBye(uint ssrc, string? reason)
     {
-        public const int MAX_REASON_BYTES = 255;
-        public const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
-        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
+        Header = new RTCPHeader(RTCPReportTypesEnum.BYE, 1);
+        SSRC = ssrc;
 
-        public RTCPHeader Header;
-        public uint SSRC { get; private set; }
-        public string Reason { get; private set; }
-
-        /// <summary>
-        /// Creates a new RTCP Bye payload.
-        /// </summary>
-        /// <param name="ssrc">The synchronisation source of the RTP stream being closed.</param>
-        /// <param name="reason">Optional reason for closing. Maximum length is 255 bytes 
-        /// (note bytes not characters).</param>
-        public RTCPBye(uint ssrc, string reason)
+        if (reason is { })
         {
-            Header = new RTCPHeader(RTCPReportTypesEnum.BYE, 1);
-            SSRC = ssrc;
+            Reason = (reason.Length > MAX_REASON_BYTES) ? reason.Substring(0, MAX_REASON_BYTES) : reason;
 
-            if (reason != null)
+            // Need to take account of multi-byte characters.
+            while (Encoding.UTF8.GetBytes(Reason).Length > MAX_REASON_BYTES)
             {
-                Reason = (reason.Length > MAX_REASON_BYTES) ? reason.Substring(0, MAX_REASON_BYTES) : reason;
-
-                // Need to take account of multi-byte characters.
-                while (Encoding.UTF8.GetBytes(Reason).Length > MAX_REASON_BYTES)
-                {
-                    Reason = Reason.Substring(0, Reason.Length - 1);
-                }
+                Reason = Reason.Substring(0, Reason.Length - 1);
             }
         }
+    }
 
-        /// <summary>
-        /// Create a new RTCP Goodbye packet from a serialised byte array.
-        /// </summary>
-        /// <param name="packet">The byte array holding the Goodbye packet.</param>
-        public RTCPBye(byte[] packet)
+    /// <summary>
+    /// Create a new RTCP Goodbye packet from a serialised byte array.
+    /// </summary>
+    /// <param name="packet">The byte array holding the Goodbye packet.</param>
+    public RTCPBye(ReadOnlySpan<byte> packet)
+    {
+        if (packet.Length < MIN_PACKET_SIZE)
         {
-            if (packet.Length < MIN_PACKET_SIZE)
-            {
-                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP Goodbye packet.");
-            }
-
-            Header = new RTCPHeader(packet);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            }
-            else
-            {
-                SSRC = BitConverter.ToUInt32(packet, 4);
-            }
-
-            if (packet.Length > MIN_PACKET_SIZE)
-            {
-                int reasonLength = packet[8];
-
-                if (packet.Length - MIN_PACKET_SIZE - 1 >= reasonLength)
-                {
-                    Reason = Encoding.UTF8.GetString(packet, 9, reasonLength);
-                }
-            }
+            throw new SipSorceryException("The packet did not contain the minimum number of bytes for an RTCP Goodbye packet.");
         }
 
-        /// <summary>
-        /// Gets the raw bytes for the Goodbye packet.
-        /// </summary>
-        /// <returns>A byte array.</returns>
-        public byte[] GetBytes()
+        Header = new RTCPHeader(packet);
+
+        SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
+
+        if (packet.Length > MIN_PACKET_SIZE)
         {
-            byte[] reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
-            int reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
-            Header.SetLength((ushort)(buffer.Length / 4 - 1));
+            int reasonLength = packet[8];
 
-            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
-
-            if (BitConverter.IsLittleEndian)
+            if (packet.Length - MIN_PACKET_SIZE - 1 >= reasonLength)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
+                Reason = Encoding.UTF8.GetString(packet.Slice(9, reasonLength));
             }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
-            }
+        }
+    }
 
-            if (reasonLength > 0)
-            {
-                buffer[payloadIndex + 4] = (byte)reasonLength;
-                Buffer.BlockCopy(reasonBytes, 0, buffer, payloadIndex + 5, reasonBytes.Length);
-            }
+    /// <inheritdoc/>
+    public int GetByteCount() => RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(((Reason is { }) ? Encoding.UTF8.GetByteCount(Reason) : 0));
 
-            return buffer;
+    /// <inheritdoc/>
+    public int WriteBytes(Span<byte> buffer)
+    {
+        var size = GetByteCount();
+
+        if (buffer.Length < size)
+        {
+            throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
         }
 
-        /// <summary>
-        /// The packet has to finish on a 4 byte boundary. This method calculates the minimum
-        /// packet length for the Goodbye fields to fit within a 4 byte boundary.
-        /// </summary>
-        /// <param name="reasonLength">The length of the optional reason string, can be 0.</param>
-        /// <returns>The minimum length for the full packet to be able to fit within a 4 byte
-        /// boundary.</returns>
-        private int GetPaddedLength(int reasonLength)
+        WriteBytesCore(buffer.Slice(0, size));
+
+        return size;
+    }
+
+    private void WriteBytesCore(Span<byte> buffer)
+    {
+        Header.SetLength((ushort)(buffer.Length / 4 - 1));
+        _ = Header.WriteBytes(buffer);
+
+        BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH), SSRC);
+
+        if (Reason is { })
         {
-            // Plus one is for the reason length field.
-            if (reasonLength > 0)
-            {
-                reasonLength += 1;
-            }
+            buffer[RTCPHeader.HEADER_BYTES_LENGTH + 4] =
+                (byte)Encoding.UTF8.GetBytes(Reason.AsSpan(), buffer.Slice(RTCPHeader.HEADER_BYTES_LENGTH + 5));
+        }
+    }
 
-            int nonPaddedSize = reasonLength + SSRC_SIZE;
+    /// <summary>
+    /// The packet has to finish on a 4 byte boundary. This method calculates the minimum
+    /// packet length for the Goodbye fields to fit within a 4 byte boundary.
+    /// </summary>
+    /// <param name="reasonLength">The length of the optional reason string, can be 0.</param>
+    /// <returns>The minimum length for the full packet to be able to fit within a 4 byte
+    /// boundary.</returns>
+    private int GetPaddedLength(int reasonLength)
+    {
+        // Plus one is for the reason length field.
+        if (reasonLength > 0)
+        {
+            reasonLength += 1;
+        }
 
-            if (nonPaddedSize % 4 == 0)
-            {
-                return nonPaddedSize;
-            }
-            else
-            {
-                return nonPaddedSize + 4 - (nonPaddedSize % 4);
-            }
+        int nonPaddedSize = reasonLength + SSRC_SIZE;
+
+        if (nonPaddedSize % 4 == 0)
+        {
+            return nonPaddedSize;
+        }
+        else
+        {
+            return nonPaddedSize + 4 - (nonPaddedSize % 4);
         }
     }
 }

@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -177,7 +178,7 @@ namespace SIPSorcery.Net.UnitTests
 
             byte[] buffer = new byte[10 * mtu];
             Crypto.GetRandomBytes(buffer);
-            string hash = Crypto.GetSHA256Hash(buffer);
+            string hash = CryptoHelper.GetSHA256Hash(buffer);
 
             logger.LogDebug("Medium buffer hash {Hash}.", hash);
 
@@ -187,7 +188,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.False(frame.IsEmpty());
             Assert.Equal(buffer.Length, frame.UserData.Length);
-            Assert.Equal(hash, Crypto.GetSHA256Hash(frame.UserData));
+            Assert.Equal(hash, CryptoHelper.GetSHA256Hash(frame.UserData));
         }
 
         /// <summary>
@@ -225,7 +226,7 @@ namespace SIPSorcery.Net.UnitTests
 
             byte[] buffer = new byte[RTCSctpTransport.SCTP_DEFAULT_MAX_MESSAGE_SIZE];
             Crypto.GetRandomBytes(buffer);
-            string hash = Crypto.GetSHA256Hash(buffer);
+            string hash = CryptoHelper.GetSHA256Hash(buffer);
 
             logger.LogDebug("Max buffer hash {Hash}.", hash);
 
@@ -235,7 +236,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.False(frame.IsEmpty());
             Assert.Equal(RTCSctpTransport.SCTP_DEFAULT_MAX_MESSAGE_SIZE, (uint)frame.UserData.Length);
-            Assert.Equal(hash, Crypto.GetSHA256Hash(frame.UserData));
+            Assert.Equal(hash, CryptoHelper.GetSHA256Hash(frame.UserData));
         }
 
         /// <summary>
@@ -284,7 +285,7 @@ namespace SIPSorcery.Net.UnitTests
 
             byte[] buffer = new byte[10 * mtu];
             Crypto.GetRandomBytes(buffer);
-            string hash = Crypto.GetSHA256Hash(buffer);
+            string hash = CryptoHelper.GetSHA256Hash(buffer);
 
             logger.LogDebug("Medium buffer hash {Hash}.", hash);
 
@@ -294,7 +295,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.False(frame.IsEmpty());
             Assert.Equal(buffer.Length, frame.UserData.Length);
-            Assert.Equal(hash, Crypto.GetSHA256Hash(frame.UserData));
+            Assert.Equal(hash, CryptoHelper.GetSHA256Hash(frame.UserData));
         }
 
         /// <summary>
@@ -343,7 +344,7 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = new byte[RTCSctpTransport.SCTP_DEFAULT_MAX_MESSAGE_SIZE];
             //byte[] buffer = new byte[2000];
             Crypto.GetRandomBytes(buffer);
-            string hash = Crypto.GetSHA256Hash(buffer);
+            string hash = CryptoHelper.GetSHA256Hash(buffer);
 
             logger.LogDebug("Max buffer hash {Hash}.", hash);
 
@@ -355,7 +356,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.False(frame.IsEmpty());
             Assert.Equal(buffer.Length, frame.UserData.Length);
-            Assert.Equal(hash, Crypto.GetSHA256Hash(frame.UserData));
+            Assert.Equal(hash, CryptoHelper.GetSHA256Hash(frame.UserData));
         }
     }
 }

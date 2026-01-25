@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNHeader.cs
 //
 // Description: Implements STUN header as defined in RFC5389
@@ -72,127 +72,114 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Text;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public enum STUNMessageTypesEnum : ushort
 {
-    public enum STUNMessageTypesEnum : ushort
+    BindingRequest = 0x0001,
+    BindingSuccessResponse = 0x0101,
+    BindingErrorResponse = 0x0111,
+
+    // New methods defined in TURN (RFC5766).
+    Allocate = 0x0003,
+    Refresh = 0x0004,
+    Send = 0x0006,
+    Data = 0x0007,
+    CreatePermission = 0x0008,
+    ChannelBind = 0x0009,
+
+    SendIndication = 0x0016,
+    DataIndication = 0x0017,
+
+    AllocateSuccessResponse = 0x0103,
+    RefreshSuccessResponse = 0x0104,
+    CreatePermissionSuccessResponse = 0x0108,
+    ChannelBindSuccessResponse = 0x0109,
+    AllocateErrorResponse = 0x0113,
+    RefreshErrorResponse = 0x0114,
+    CreatePermissionErrorResponse = 0x0118,
+    ChannelBindErrorResponse = 0x0119,
+
+    // New methods defined in TURN (RFC6062).
+    Connect = 0x000a,
+    ConnectionBind = 0x000b,
+    ConnectionAttempt = 0x000c,
+}
+
+/// <summary>
+/// The class is interpreted from the message type. It does not get explicitly
+/// set in the STUN header.
+/// </summary>
+public enum STUNClassTypesEnum
+{
+    Request = 0,
+    Indication = 1,
+    SuccessResponse = 2,
+    ErrorResponse = 3,
+}
+
+public static class STUNMessageTypes
+{
+    public static STUNMessageTypesEnum GetSTUNMessageTypeForId(int stunMessageTypeId)
     {
-        BindingRequest = 0x0001,
-        BindingSuccessResponse = 0x0101,
-        BindingErrorResponse = 0x0111,
+        return (STUNMessageTypesEnum)Enum.Parse(typeof(STUNMessageTypesEnum), stunMessageTypeId.ToString(), true);
+    }
+}
 
-        // New methods defined in TURN (RFC5766).
-        Allocate = 0x0003,
-        Refresh = 0x0004,
-        Send = 0x0006,
-        Data = 0x0007,
-        CreatePermission = 0x0008,
-        ChannelBind = 0x0009,
+public partial class STUNHeader
+{
+    public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
+    public const ushort STUN_MESSAGE_CLASS_MASK = 0x0110;
+    public const int STUN_HEADER_LENGTH = 20;
+    public const uint MAGIC_COOKIE = 0x2112A442;
+    public const int TRANSACTION_ID_LENGTH = 12;
 
-        SendIndication = 0x0016,
-        DataIndication = 0x0017,
-
-        AllocateSuccessResponse = 0x0103,
-        RefreshSuccessResponse = 0x0104,
-        CreatePermissionSuccessResponse = 0x0108,
-        ChannelBindSuccessResponse = 0x0109,
-        AllocateErrorResponse = 0x0113,
-        RefreshErrorResponse = 0x0114,
-        CreatePermissionErrorResponse = 0x0118,
-        ChannelBindErrorResponse = 0x0119,
-
-        // New methods defined in TURN (RFC6062).
-        Connect = 0x000a,
-        ConnectionBind = 0x000b,
-        ConnectionAttempt = 0x000c,
+    public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
+    public STUNClassTypesEnum MessageClass
+    {
+        get
+        {
+            int @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
+            return (STUNClassTypesEnum)@class;
+        }
     }
 
-    /// <summary>
-    /// The class is interpreted from the message type. It does not get explicitly
-    /// set in the STUN header.
-    /// </summary>
-    public enum STUNClassTypesEnum
+    public ushort MessageLength;
+    public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
+
+    public STUNHeader()
+    { }
+
+    public STUNHeader(STUNMessageTypesEnum messageType)
     {
-        Request = 0,
-        Indication = 1,
-        SuccessResponse = 2,
-        ErrorResponse = 3,
+        MessageType = messageType;
+        TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
     }
 
-    public class STUNMessageTypes
+    public static STUNHeader? ParseSTUNHeader(ReadOnlySpan<byte> bufferSegment)
     {
-        public static STUNMessageTypesEnum GetSTUNMessageTypeForId(int stunMessageTypeId)
+        if ((bufferSegment[0] & STUN_INITIAL_BYTE_MASK) != 0)
         {
-            return (STUNMessageTypesEnum)Enum.Parse(typeof(STUNMessageTypesEnum), stunMessageTypeId.ToString(), true);
-        }
-    }
-
-    public class STUNHeader
-    {
-        public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
-        public const ushort STUN_MESSAGE_CLASS_MASK = 0x0110;
-        public const int STUN_HEADER_LENGTH = 20;
-        public const UInt32 MAGIC_COOKIE = 0x2112A442;
-        public const int TRANSACTION_ID_LENGTH = 12;
-
-        public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
-        public STUNClassTypesEnum MessageClass
-        {
-            get
-            {
-                int @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
-                return (STUNClassTypesEnum)@class;
-            }
+            throw new SipSorceryException("The STUN header did not begin with 0x00.");
         }
 
-        public UInt16 MessageLength;
-        public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
-
-        public STUNHeader()
-        { }
-
-        public STUNHeader(STUNMessageTypesEnum messageType)
+        if (bufferSegment.Length >= STUN_HEADER_LENGTH)
         {
-            MessageType = messageType;
-            TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
+            var stunHeader = new STUNHeader();
+
+            var stunTypeValue = BinaryPrimitives.ReadUInt16BigEndian(bufferSegment);
+            var stunMessageLength = BinaryPrimitives.ReadUInt16BigEndian(bufferSegment.Slice(2));
+
+            stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
+            stunHeader.MessageLength = stunMessageLength;
+            stunHeader.TransactionId = bufferSegment.Slice(8, TRANSACTION_ID_LENGTH).ToArray();
+
+            return stunHeader;
         }
 
-        public static STUNHeader ParseSTUNHeader(byte[] buffer)
-        {
-            return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
-        }
-
-        public static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
-        {
-            var startIndex = bufferSegment.Offset;
-            if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
-            {
-                throw new ApplicationException("The STUN header did not begin with 0x00.");
-            }
-
-            if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
-            {
-                STUNHeader stunHeader = new STUNHeader();
-
-                UInt16 stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
-                UInt16 stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    stunTypeValue = NetConvert.DoReverseEndian(stunTypeValue);
-                    stunMessageLength = NetConvert.DoReverseEndian(stunMessageLength);
-                }
-
-                stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
-                stunHeader.MessageLength = stunMessageLength;
-                Buffer.BlockCopy(bufferSegment.Array, startIndex + 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
-
-                return stunHeader;
-            }
-
-            return null;
-        }
+        return null;
     }
 }

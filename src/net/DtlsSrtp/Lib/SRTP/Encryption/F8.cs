@@ -21,6 +21,7 @@
 
 using Org.BouncyCastle.Crypto;
 using System;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
@@ -28,63 +29,55 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
     {
         public const int BLOCK_SIZE = 16;
 
-        public static byte[] GenerateRtpMessageKeyIV(IBlockCipher engine, byte[] k_e, byte[] k_s, byte[] rtpPacket, uint ROC)
+        public static byte[] GenerateRtpMessageKeyIV(IBlockCipher engine, ReadOnlySpan<byte> k_e, ReadOnlySpan<byte> k_s, ReadOnlySpan<byte> rtpPacket, uint ROC)
         {
-            byte[] iv = GenerateRtpIV(rtpPacket, ROC);            
-            byte[] iv2 = GenerateIV2(engine, k_e, k_s, iv);
+            var iv = GenerateRtpIV(rtpPacket, ROC);
+            var iv2 = GenerateIV2(engine, k_e, k_s, iv);
             return iv2;
         }
 
-        private static byte[] GenerateRtpIV(byte[] rtpPacket, uint ROC)
+        private static byte[] GenerateRtpIV(ReadOnlySpan<byte> rtpPacket, uint ROC)
         {
-            byte[] iv = new byte[BLOCK_SIZE];
+            var iv = GC.AllocateUninitializedArray<byte>(BLOCK_SIZE);
             iv[0] = 0;
 
             // M + PT + SEQ + TS + SSRC
-            Buffer.BlockCopy(rtpPacket, 1, iv, 1, 11);
+            rtpPacket.Slice(1, 11).CopyTo(iv.AsSpan(1));
             
-            // ROC
-            iv[12] = (byte)((ROC >> 24) & 0xFF);
-            iv[13] = (byte)((ROC >> 16) & 0xFF);
-            iv[14] = (byte)((ROC >> 8) & 0xFF);
-            iv[15] = (byte)(ROC & 0xFF);
+            // ROC (big-endian)
+            BinaryPrimitives.WriteUInt32BigEndian(iv.AsSpan(12, 4), ROC);
+
             return iv;
         }
 
-        public static byte[] GenerateRtcpMessageKeyIV(IBlockCipher engine, byte[] k_e, byte[] k_s, byte[] rtcpPacket, uint index)
+        public static byte[] GenerateRtcpMessageKeyIV(IBlockCipher engine, ReadOnlySpan<byte> k_e, ReadOnlySpan<byte> k_s, ReadOnlySpan<byte> rtcpPacket, uint index)
         {
-            byte[] iv = GenerateRtcpIV(rtcpPacket, index);
-            byte[] iv2 = GenerateIV2(engine, k_e, k_s, iv);
+            var iv = GenerateRtcpIV(rtcpPacket, index);
+            var iv2 = GenerateIV2(engine, k_e, k_s, iv);
             return iv2;
         }
 
-        private static byte[] GenerateRtcpIV(byte[] rtcpPacket, uint index)
+        private static byte[] GenerateRtcpIV(ReadOnlySpan<byte> rtcpPacket, uint index)
         {
-            byte[] iv = new byte[BLOCK_SIZE];
+            var iv = GC.AllocateUninitializedArray<byte>(BLOCK_SIZE);
 
             // 0..0
-            iv[0] = 0;
-            iv[1] = 0;
-            iv[2] = 0;
-            iv[3] = 0;
+            iv.AsSpan(0, 4).Clear();
 
-            // E + SRTCP index
-            iv[4] = (byte)((index >> 24) & 0xFF);
-            iv[5] = (byte)((index >> 16) & 0xFF);
-            iv[6] = (byte)((index >> 8) & 0xFF);
-            iv[7] = (byte)(index & 0xFF);
+            // E + SRTCP index (big-endian)
+            BinaryPrimitives.WriteUInt32BigEndian(iv.AsSpan(4, 4), index);
 
             // V + P + RC + PT + L + SSRC
-            Buffer.BlockCopy(rtcpPacket, 0, iv, BLOCK_SIZE - 8, 8);
+            rtcpPacket.Slice(0, 8).CopyTo(iv.AsSpan(BLOCK_SIZE - 8, 8));
             return iv;
         }
 
-        private static byte[] GenerateIV2(IBlockCipher engine, byte[] k_e, byte[] k_s, byte[] iv)
+        private static byte[] GenerateIV2(IBlockCipher engine, ReadOnlySpan<byte> k_e, ReadOnlySpan<byte> k_s, byte[] iv)
         {
-            byte[] iv2 = new byte[BLOCK_SIZE];
+            var iv2 = GC.AllocateUninitializedArray<byte>(BLOCK_SIZE);
             
             // IV' = E(k_e XOR m, IV)
-            Buffer.BlockCopy(k_e, 0, iv2, 0, k_e.Length);
+            k_e.CopyTo(iv2.AsSpan());
 
             // m = k_s || 0x555..5
             for (int i = 0; i < BLOCK_SIZE; i++)
@@ -105,29 +98,31 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
             return iv2;
         }
 
-        public static void Encrypt(IBlockCipher aes, byte[] payload, int offset, int length, byte[] iv)
+        public static void Encrypt(IBlockCipher aes, Span<byte> payload, int offset, int length, ReadOnlySpan<byte> iv)
         {
-            int payloadSize = length - offset;
-            int blockCount = payloadSize / BLOCK_SIZE + payloadSize % BLOCK_SIZE;
-            byte[] cipher = new byte[blockCount * BLOCK_SIZE];
+            var payloadSize = length - offset;
+            var blockCount = payloadSize / BLOCK_SIZE + payloadSize % BLOCK_SIZE;
+            var cipher = GC.AllocateUninitializedArray<byte>(blockCount * BLOCK_SIZE);
 
-            int blockNo = 0;
-            byte[] iv2 = new byte[iv.Length];
-            for (uint j = 0; j < blockCount; j++)
+            var blockNo = 0;
+            var iv2 = GC.AllocateUninitializedArray<byte>(iv.Length);
+            for (var j = 0U; j < blockCount; j++)
             {
-                Buffer.BlockCopy(iv, 0, iv2, 0, iv.Length);
+                iv.CopyTo(iv2.AsSpan());
 
-                // IV' xor j
-                iv2[12] ^= (byte)((j >> 24) & 0xff);
-                iv2[13] ^= (byte)((j >> 16) & 0xff);
-                iv2[14] ^= (byte)((j >> 8) & 0xff);
-                iv2[15] ^= (byte)(j & 0xff);
+                // IV' xor j (big-endian)
+                {
+                    var span = iv2.AsSpan(12, 4);
+                    var value = BinaryPrimitives.ReadUInt32BigEndian(span);
+                    value ^= j;
+                    BinaryPrimitives.WriteUInt32BigEndian(span, value);
+                }
 
                 // IV' xor S(-1) xor j
                 if (blockNo > 0)
                 {
-                    int previousBlockIndex = BLOCK_SIZE * (blockNo - 1);
-                    for (int i = 0; i < BLOCK_SIZE; i++)
+                    var previousBlockIndex = BLOCK_SIZE * (blockNo - 1);
+                    for (var i = 0; i < BLOCK_SIZE; i++)
                     {
                         iv2[i] = (byte)(iv2[i] ^ cipher[previousBlockIndex + i]);
                     }
@@ -137,7 +132,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
                 blockNo++;
             }
 
-            for (int i = 0; i < payloadSize; i++)
+            for (var i = 0; i < payloadSize; i++)
             {
                 payload[offset + i] ^= cipher[i];
             }
