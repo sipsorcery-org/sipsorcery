@@ -716,16 +716,32 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             uint ssrc = RtpReader.ReadSsrc(payload);
             ushort sequenceNumber = RtpReader.ReadSequenceNumber(payload);
 
+            SsrcSrtpContext ssrcContext;
+            if (context.ReplayProtection.TryGetValue(ssrc, out ssrcContext) == false)
+            {
+                ssrcContext = new SsrcSrtpContext();
+                context.ReplayProtection.Add(ssrc, ssrcContext);
+            }
+
+            ssrcContext.SetInitialSequence(sequenceNumber);
+
+            // Derive ROC/index for this packet from the last accepted index.
+            uint lastIndex = ssrcContext.S_l;
+            ushort lastSeq = (ushort)(lastIndex & 0xFFFF);
+            uint lastRoc = lastIndex >> 16;
+            uint index = SrtpContext.DetermineRtpIndex(lastSeq, sequenceNumber, lastRoc);
+            uint roc = index >> 16;
+
             if (context.Auth != SrtpAuth.NONE)
             {
                 // TODO: optimize memory allocation - we could preallocate 4 byte array and add another GenerateAuthTag overload that processes 2 blocks
                 int authenticatedLen = length - mki.Length - context.N_tag;
                 byte[] msgAuth = new byte[authenticatedLen + 4];
                 Buffer.BlockCopy(payload, 0, msgAuth, 0, authenticatedLen);
-                msgAuth[authenticatedLen + 0] = (byte)(context.Roc >> 24);
-                msgAuth[authenticatedLen + 1] = (byte)(context.Roc >> 16);
-                msgAuth[authenticatedLen + 2] = (byte)(context.Roc >> 8);
-                msgAuth[authenticatedLen + 3] = (byte)(context.Roc);
+                msgAuth[authenticatedLen + 0] = (byte)(roc >> 24);
+                msgAuth[authenticatedLen + 1] = (byte)(roc >> 16);
+                msgAuth[authenticatedLen + 2] = (byte)(roc >> 8);
+                msgAuth[authenticatedLen + 3] = (byte)(roc);
 
                 byte[] auth = SRTP.Authentication.HMAC.GenerateAuthTag(context.HMAC, msgAuth, 0, authenticatedLen + 4);
                 for (int i = 0; i < context.N_tag; i++)
@@ -740,18 +756,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 msgAuth = null;
             }
 
-            SsrcSrtpContext ssrcContext;
-            if (context.ReplayProtection.TryGetValue(ssrc, out ssrcContext) == false)
-            {
-                ssrcContext = new SsrcSrtpContext();
-                context.ReplayProtection.Add(ssrc, ssrcContext);
-            }
-
-            ssrcContext.SetInitialSequence(sequenceNumber);
-
             int offset = RtpReader.ReadHeaderLen(payload);
-            uint roc = context.Roc;
-            uint index = SrtpContext.DetermineRtpIndex(ssrcContext.S_l, sequenceNumber, roc);
 
             if (!ssrcContext.CheckAndUpdateReplayWindow(index))
             {
@@ -858,7 +863,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
                         uint innerSsrc = RtpReader.ReadSsrc(syntheticRtpPacket);
                         ushort innerSequenceNumber = RtpReader.ReadSequenceNumber(syntheticRtpPacket);
-                        uint innerIndex = SrtpContext.DetermineRtpIndex(ssrcContext.S_l, sequenceNumber, roc);
+                        uint innerIndex = SrtpContext.DetermineRtpIndex(lastSeq, innerSequenceNumber, lastRoc);
 
                         // apply inner cryptographic algorithm
                         byte[] innerK_e = context.K_e.Take(context.K_e.Length / 2).ToArray();
