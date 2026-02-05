@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace SIPSorcery.Sys
@@ -49,6 +50,11 @@ namespace SIPSorcery.Sys
               -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, };
 
         private static readonly char[] hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
+        public static IEnumerable<T> FluentReverse<T>(this T[] bytes)
+        {
+            return bytes.Reverse();
+        }
 
         public static Span<T> FluentReverse<T>(this Span<T> span)
         {
