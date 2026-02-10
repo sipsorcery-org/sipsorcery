@@ -159,7 +159,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            STUNUri.TryParse("stun.sipsorcery.com:3478", out var stunUri);
+            STUNUri.TryParse("stun.l.google.com:19302", out var stunUri);
             var result = await STUNDns.Resolve(stunUri);
 
             Assert.NotNull(result);
