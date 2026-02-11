@@ -448,12 +448,12 @@ namespace SIPSorcery.Net
                 }
 
                 string exponentPart = lifeTimeString.Substring(2);
-                if (!ulong.TryParse(exponentPart, out ulong exponent) || exponent < 1)
+                if (!ulong.TryParse(exponentPart, out ulong exponent) || exponent < 1 || exponent >= 64)
                 {
                     return false;
                 }
 
-                lifeTime = (ulong)Math.Pow(2, (double)exponent);
+                lifeTime = 1UL << (int)exponent;
                 return true;
             }
 
