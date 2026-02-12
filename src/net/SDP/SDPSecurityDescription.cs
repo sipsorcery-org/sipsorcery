@@ -382,7 +382,7 @@ namespace SIPSorcery.Net
                         break;
                     case CryptoSuites.AEAD_AES_256_GCM:
                         keyLength = 256 / 8;
-                        saltOffset = 128 / 8;
+                        saltOffset = 256 / 8;
                         saltLength = 96 / 8;
                         break;
                     case CryptoSuites.AES_256_CM_HMAC_SHA1_80:
