@@ -996,7 +996,9 @@ namespace SIPSorcery.SIP.App
                         logger.LogInformation("Call transfer was accepted by remote server.");
                         transferAccepted.TrySetResult(true);
                     }
-                    else if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired && username != null && password != null)
+                    else if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && username != null && password != null &&
+                        (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired ||
+                        sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised))
                     {
                         var newRequest = referRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders, username, password);
                         referTx = new SIPNonInviteTransaction(m_transport, newRequest, m_outboundProxy);
