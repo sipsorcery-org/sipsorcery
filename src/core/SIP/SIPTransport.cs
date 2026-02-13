@@ -841,8 +841,11 @@ namespace SIPSorcery.SIP
                     copy.Contact.Single().ContactURI.Host = sendFromEndPoint.ToString();
                 }
 
-                if (header.Contact.Single().ContactURI.Scheme == SIPSchemesEnum.sip && sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp)
+                if (header.Contact.Single().ContactURI.Scheme == SIPSchemesEnum.sip &&
+                    sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp &&
+                    header.CSeqMethod != SIPMethodsEnum.REGISTER)
                 {
+                    // REGISTER requests need the option to overrule the scheme if the caller so chooses.
                     copy = copy ?? header.Copy();
                     copy.Contact.Single().ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
                 }
