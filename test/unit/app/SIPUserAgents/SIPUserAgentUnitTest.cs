@@ -35,45 +35,28 @@ namespace SIPSorcery.SIP.App.UnitTests
         }
 
         /// <summary>
-        /// Tests that a REFER request is properly formatted when initiating a blind transfer.
+        /// Tests that a REFER request can be properly created.
         /// </summary>
         [Fact]
-        public void BlindTransferCreatesReferRequestTest()
+        public void CreateReferRequestTest()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPTransport transport = new SIPTransport();
-            MockSIPChannel channel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
-            transport.AddSIPChannel(channel);
-
-            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
-
-            // Create a simple INVITE request to establish a call
-            var inviteReq = SIPRequest.GetRequest(
-                SIPMethodsEnum.INVITE,
+            // Create a REFER request to test its structure
+            var referRequest = SIPRequest.GetRequest(
+                SIPMethodsEnum.REFER,
                 SIPURI.ParseSIPURI("sip:bob@localhost"),
-                new SIPToHeader(null, SIPURI.ParseSIPURI("sip:bob@localhost"), null),
+                new SIPToHeader(null, SIPURI.ParseSIPURI("sip:bob@localhost"), CallProperties.CreateNewTag()),
                 new SIPFromHeader(null, SIPURI.ParseSIPURI("sip:alice@localhost"), CallProperties.CreateNewTag()));
 
-            inviteReq.Header.CSeq = 1;
-            inviteReq.Header.CallId = CallProperties.CreateNewCallId();
-            inviteReq.Header.Contact = new System.Collections.Generic.List<SIPContactHeader> 
-            { 
-                new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:alice@localhost")) 
-            };
+            referRequest.Header.CSeq = 2;
+            referRequest.Header.CallId = CallProperties.CreateNewCallId();
+            referRequest.Header.ReferTo = "<sip:charlie@localhost>";
 
-            // Simulate an accepted INVITE to establish a dialogue
-            var okResponse = SIPResponse.GetResponse(inviteReq, SIPResponseStatusCodesEnum.Ok, null);
-            okResponse.Header.To.ToTag = CallProperties.CreateNewTag();
-            okResponse.Header.Contact = new System.Collections.Generic.List<SIPContactHeader> 
-            { 
-                new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:bob@localhost")) 
-            };
-
-            // Verify the user agent was created
-            Assert.NotNull(userAgent);
-
-            userAgent.Dispose();
+            // Verify the REFER request was created correctly
+            Assert.Equal(SIPMethodsEnum.REFER, referRequest.Method);
+            Assert.False(string.IsNullOrWhiteSpace(referRequest.Header.ReferTo));
+            Assert.Contains("charlie@localhost", referRequest.Header.ReferTo);
         }
 
         /// <summary>
