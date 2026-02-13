@@ -60,8 +60,9 @@ namespace SIPSorcery.SIP.App.UnitTests
         }
 
         /// <summary>
-        /// Tests that a REFER request without a Refer-To header would be rejected with a bad request.
-        /// This tests the validation logic in ProcessTransferRequest.
+        /// Tests that a REFER request can be created without a Refer-To header.
+        /// The actual rejection of such requests is handled by ProcessTransferRequest in SIPUserAgent,
+        /// which validates the Refer-To header and returns 400 Bad Request if missing.
         /// </summary>
         [Fact]
         public void ReferWithoutReferToHeaderTest()
@@ -83,7 +84,10 @@ namespace SIPSorcery.SIP.App.UnitTests
         }
 
         /// <summary>
-        /// Tests that REFER request processing validates the dialog state.
+        /// Tests that a REFER request can be properly created with required headers.
+        /// In practice, REFER requests must be sent within an established dialog,
+        /// which is validated by SIPUserAgent's ProcessTransferRequest method
+        /// (returns 481 if no dialog exists or dialog is not in Confirmed state).
         /// </summary>
         [Fact]
         public void ReferRequiresEstablishedDialogTest()
