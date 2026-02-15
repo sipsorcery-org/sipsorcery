@@ -108,7 +108,7 @@ namespace SIPSorcery.Net
                     // Check fingerprint.
                     var fingerprintAttribute = stunMessage.Attributes.Last();
 
-                    var input = buffer.Take(buffer.Length - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH).ToArray();
+                    var input = buffer.Take(bufferLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH).ToArray();
 
                     uint crc = Crc32.Compute(input) ^ FINGERPRINT_XOR;
                     byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
