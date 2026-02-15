@@ -58,10 +58,6 @@ namespace SIPSorcery.Net
             return value;
         }
 
-        // ToByteBuffer override removed: the base class serializes correctly from the
-        // Value field (which BuildValue now populates). The previous override was broken —
-        // it wrote value bytes where the attribute type/length header should be.
-
         public override string ToString()
         {
             string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
