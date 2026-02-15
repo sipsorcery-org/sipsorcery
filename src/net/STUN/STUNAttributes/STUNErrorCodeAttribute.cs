@@ -41,24 +41,21 @@ namespace SIPSorcery.Net
         }
 
         public STUNErrorCodeAttribute(int errorCode, string reasonPhrase)
-            : base(STUNAttributeTypesEnum.ErrorCode, null)
+            : base(STUNAttributeTypesEnum.ErrorCode, BuildValue(errorCode, reasonPhrase))
         {
-            ErrorClass = errorCode < 700 ? Convert.ToByte(ErrorCode / 100) : (byte)0x00;
-            ErrorNumber = Convert.ToByte(errorCode % 100);
+            ErrorClass = (byte)(errorCode / 100);
+            ErrorNumber = (byte)(errorCode % 100);
             ReasonPhrase = reasonPhrase;
         }
 
-        public override int ToByteBuffer(byte[] buffer, int startIndex)
+        private static byte[] BuildValue(int errorCode, string reasonPhrase)
         {
-            buffer[startIndex] = 0x00;
-            buffer[startIndex + 1] = 0x00;
-            buffer[startIndex + 2] = ErrorClass;
-            buffer[startIndex + 3] = ErrorNumber;
-
-            byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
-            Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
-
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
+            byte[] reasonBytes = Encoding.UTF8.GetBytes(reasonPhrase ?? string.Empty);
+            byte[] value = new byte[4 + reasonBytes.Length];
+            value[2] = (byte)(errorCode / 100);
+            value[3] = (byte)(errorCode % 100);
+            Buffer.BlockCopy(reasonBytes, 0, value, 4, reasonBytes.Length);
+            return value;
         }
 
         public override string ToString()
