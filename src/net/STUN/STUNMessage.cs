@@ -228,41 +228,65 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="messageIntegrityKey">The message integrity key that was used to generate
         /// the HMAC for the original message.</param>
-        /// <returns>True if the fingerprint and HMAC of the STUN message are valid. False if not.</returns>
+        /// <returns>True if the HMAC of the STUN message is valid. False if not.</returns>
         public bool CheckIntegrity(byte[] messageIntegrityKey)
         {
             bool isHmacValid = false;
 
-            if (isFingerprintValid)
+            // Find the MESSAGE-INTEGRITY attribute. It can be either:
+            // - The last attribute (no FINGERPRINT present)
+            // - The second-to-last attribute (FINGERPRINT is last)
+            STUNAttribute messageIntegrityAttribute = null;
+            bool hasFingerprint = false;
+
+            if (Attributes.Count >= 1 && Attributes[Attributes.Count - 1].AttributeType == STUNAttributeTypesEnum.MessageIntegrity)
             {
-                if (Attributes.Count > 2 && Attributes[Attributes.Count - 2].AttributeType == STUNAttributeTypesEnum.MessageIntegrity)
+                messageIntegrityAttribute = Attributes[Attributes.Count - 1];
+            }
+            else if (Attributes.Count >= 2 && Attributes[Attributes.Count - 1].AttributeType == STUNAttributeTypesEnum.FingerPrint
+                     && Attributes[Attributes.Count - 2].AttributeType == STUNAttributeTypesEnum.MessageIntegrity)
+            {
+                messageIntegrityAttribute = Attributes[Attributes.Count - 2];
+                hasFingerprint = true;
+            }
+
+            if (messageIntegrityAttribute != null && _receivedBuffer != null)
+            {
+                // When FINGERPRINT is present and valid, verify it first.
+                if (hasFingerprint && !isFingerprintValid)
                 {
-                    var messageIntegrityAttribute = Attributes[Attributes.Count - 2];
-
-                    int preImageLength = _receivedBuffer.Length
-                        - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH * 2
-                        - MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH
-                        - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH;
-
-                    // Need to adjust the STUN message length field for to remove the fingerprint.
-                    ushort length = (ushort)(Header.MessageLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH);
-                    if (BitConverter.IsLittleEndian)
-                    {
-                        Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(length)), 0, _receivedBuffer, 2, 2);
-                    }
-                    else
-                    {
-                        Buffer.BlockCopy(BitConverter.GetBytes(length), 0, _receivedBuffer, 2, 2);
-                    }
-
-                    HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
-                    byte[] calculatedHmac = hmacSHA.ComputeHash(_receivedBuffer, 0, preImageLength);
-
-                    //logger.LogDebug($"Received Message integrity HMAC  : {messageIntegrityAttribute.Value.HexStr()}.");
-                    //logger.LogDebug($"Calculated Message integrity HMAC: {calculatedHmac.HexStr()}.");
-
-                    isHmacValid = messageIntegrityAttribute.Value.HexStr() == calculatedHmac.HexStr();
+                    return false;
                 }
+
+                // Calculate the pre-image length: everything before the MESSAGE-INTEGRITY attribute.
+                int fingerprintSize = hasFingerprint
+                    ? STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + FINGERPRINT_ATTRIBUTE_CRC32_LENGTH
+                    : 0;
+
+                int preImageLength = _receivedBuffer.Length
+                    - fingerprintSize
+                    - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH
+                    - MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH;
+
+                // Per RFC 5389 Section 15.4: the message length field must be adjusted to
+                // include MESSAGE-INTEGRITY but exclude FINGERPRINT (if present).
+                ushort length = hasFingerprint
+                    ? (ushort)(Header.MessageLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH)
+                    : Header.MessageLength;
+
+                if (BitConverter.IsLittleEndian)
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(length)), 0, _receivedBuffer, 2, 2);
+                }
+                else
+                {
+                    Buffer.BlockCopy(BitConverter.GetBytes(length), 0, _receivedBuffer, 2, 2);
+                }
+
+                HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
+                byte[] calculatedHmac = hmacSHA.ComputeHash(_receivedBuffer, 0, preImageLength);
+
+                isHmacValid = messageIntegrityAttribute.Value.HexStr() == calculatedHmac.HexStr();
             }
 
             return isHmacValid;
