@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: STUNFingerprintBufferUnitTest.cs
 //
 // Description: Unit tests for ParseSTUNMessage fingerprint validation with
@@ -61,8 +61,9 @@ namespace SIPSorcery.Net.UnitTests
             // with trailing garbage bytes.
             var oversized = new byte[exact.Length + 200];
             Buffer.BlockCopy(exact, 0, oversized, 0, exact.Length);
-            //new Random(42).NextBytes(oversized.AsSpan(exact.Length).ToArray()
-            //    .CopyTo(oversized.AsSpan(exact.Length)));
+            var trailing = new byte[200];
+            new Random(42).NextBytes(trailing);
+            Buffer.BlockCopy(trailing, 0, oversized, exact.Length, trailing.Length);
 
             var parsed = STUNMessage.ParseSTUNMessage(oversized, exact.Length);
 
