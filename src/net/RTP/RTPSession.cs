@@ -1251,6 +1251,22 @@ namespace SIPSorcery.Net
 
                         IPEndPoint remoteRtpEP = GetAnnouncementRTPDestination(announcement, connectionAddress);
                         SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteTrack.StreamStatus, remoteRtpEP);
+
+                        // RFC 3264 Section 8.2: "Removal of a media stream implies that media is
+                        // no longer sent for that stream [...] In the case of RTP, RTCP transmission
+                        // also ceases, as does processing of any received RTCP packets."
+                        // When the remote party rejects a stream (e.g. m=video 0) the local track
+                        // becomes Inactive. Close the RTCP session so its inactivity timer does not
+                        // fire a timeout that tears down the entire call. Closing also sends an RTCP
+                        // BYE per RFC 3550 Section 6.3.7 to allow the remote side to clean up state.
+                        if (currentMediaStream.LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive
+                            && currentMediaStream.RtcpSession != null
+                            && !currentMediaStream.RtcpSession.IsClosed)
+                        {
+                            logger.LogDebug("Closing RTCP session for {MediaType} after remote party set stream to inactive.", currentMediaStream.MediaType);
+                            currentMediaStream.RtcpSession.Close(null);
+                        }
+
                         IPEndPoint remoteRtcpEP = null;
                         if (remoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive && currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                         {
