@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP
         public char TagDelimiter = DEFAULT_PARAMETER_DELIMITER;
 
         //[DataMember]
-        private ConcurrentDictionary<string, string> m_dictionary;
+        private readonly ConcurrentDictionary<string, string> m_dictionary;
 
         [IgnoreDataMember]
         public int Count
@@ -266,7 +266,7 @@ namespace SIPSorcery.SIP
 
         public void RemoveAll()
         {
-            m_dictionary = new ConcurrentDictionary<string, string>();
+            m_dictionary.Clear();
         }
 
         public string[] GetKeys()
@@ -319,7 +319,10 @@ namespace SIPSorcery.SIP
         {
             SIPParameters copy = new SIPParameters();
             copy.TagDelimiter = this.TagDelimiter;
-            copy.m_dictionary = (this.m_dictionary != null) ? new ConcurrentDictionary<string, string>(this.m_dictionary) : new ConcurrentDictionary<string, string>();
+            foreach (var kvp in this.m_dictionary)
+            {
+                copy.m_dictionary.TryAdd(kvp.Key, kvp.Value);
+            }
             return copy;
         }
 

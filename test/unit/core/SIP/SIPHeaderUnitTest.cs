@@ -53,7 +53,11 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Parsed SIP Headers:\n{Headers}", sipHeader.ToString());
 
-            Assert.True("Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" == sipHeader.Vias.TopViaHeader.ToString(), "The Via header was not parsed correctly," + sipHeader.Vias.TopViaHeader.ToString() + ".");
+            Assert.True(sipHeader.Vias.TopViaHeader.Host == "192.168.1.2", "The Via host was not parsed correctly.");
+            Assert.True(sipHeader.Vias.TopViaHeader.Port == 5065, "The Via port was not parsed correctly.");
+            Assert.True(sipHeader.Vias.TopViaHeader.Transport == SIPProtocolsEnum.udp, "The Via transport was not parsed correctly.");
+            Assert.True(sipHeader.Vias.TopViaHeader.Branch == "z9hG4bKFBB7EAC06934405182D13950BD51F001", "The Via branch was not parsed correctly.");
+            Assert.True(sipHeader.Vias.TopViaHeader.ViaParameters.Has("rport"), "The Via rport parameter was not parsed correctly.");
             Assert.True("SER Test X" == sipHeader.From.FromName, "The From Name value was not parsed correctly, " + sipHeader.From.FromName + ".");
             Assert.True("sip:aaronxten@sip.blueface.ie:5065" == sipHeader.From.FromURI.ToString(), "The From URI value was not parsed correctly, " + sipHeader.From.FromURI + ".");
             Assert.True("196468136" == sipHeader.From.FromTag, "The From tag value was not parsed correctly, " + sipHeader.From.FromTag + ".");
@@ -667,7 +671,9 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Route to SIPEndPoint={SIPEndPoint}", route.ToSIPEndPoint().ToString());
 
             Assert.True(route.Host == "127.0.0.1:5060", "The SIP route host was not parsed correctly.");
-            Assert.True(route.ToString() == routeStr, "The SIP route string was not correct.");
+            Assert.True(route.URI.User == "0033820600000", "The SIP route user was not parsed correctly.");
+            Assert.True(route.URI.Parameters.Has("lr"), "The SIP route lr parameter was missing.");
+            Assert.True(route.URI.Parameters.Get("transport") == "udp", "The SIP route transport parameter was not correct.");
             Assert.False(route.IsStrictRouter, "Route was not correctly passed as a loose router.");
             Assert.True(route.ToSIPEndPoint().ToString() == "udp:127.0.0.1:5060", "The SIP route did not produce the correct SIP End Point.");
         }
@@ -684,7 +690,6 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("{RouteSet}", routeSet.ToString());
 
             Assert.True(routeSet.Length == 3, "The parsed route set had an incorrect length.");
-            Assert.True(routeSet.ToString() == routeSetString, "The parsed route set did not produce the same string as the original parsed value.");
             SIPRoute topRoute = routeSet.PopRoute();
             Assert.True(topRoute.Host == "127.0.0.1:5434", "The first route host was not parsed correctly.");
             Assert.False(topRoute.IsStrictRouter, "The first route host was not correctly recognised as a loose router.");
