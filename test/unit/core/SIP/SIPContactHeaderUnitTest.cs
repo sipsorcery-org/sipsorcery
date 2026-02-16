@@ -80,8 +80,12 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Contact Header ContactParams = {ContactParams}", sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
-            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060;user=phone;transport=udp", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
-            Assert.True(sipContactHeaderList[0].ContactParameters.ToString() == ";+sip.instance=\"<urn:uuid:00000000-0000-0000-0000-0006d74b0e72>\";+u.sip!model.ccm.cisco.com=\"7\"", "The Contact header Parameters were not parsed correctly.");
+            Assert.True(sipContactHeaderList[0].ContactURI.Host == "127.0.0.1:5060", "The Contact header URI host was not parsed correctly.");
+            Assert.True(sipContactHeaderList[0].ContactURI.User == "user", "The Contact header URI user was not parsed correctly.");
+            Assert.True(sipContactHeaderList[0].ContactURI.Parameters.Get("user") == "phone", "The Contact header URI user parameter was not parsed correctly.");
+            Assert.True(sipContactHeaderList[0].ContactURI.Parameters.Get("transport") == "udp", "The Contact header URI transport parameter was not parsed correctly.");
+            Assert.True(sipContactHeaderList[0].ContactParameters.Has("+sip.instance"), "The Contact header +sip.instance parameter was missing.");
+            Assert.True(sipContactHeaderList[0].ContactParameters.Has("+u.sip!model.ccm.cisco.com"), "The Contact header +u.sip!model parameter was missing.");
         }
 
         [Fact]

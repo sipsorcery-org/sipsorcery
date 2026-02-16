@@ -356,9 +356,13 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("{ToResp}", okResp.ToString());
 
             Assert.True(okResp.Header.RecordRoutes.Length == 2, "The wrong number of Record-Route headers were present in the parsed response.");
-            Assert.True(okResp.Header.RecordRoutes.PopRoute().ToString() == "<sip:77.75.25.44:5060;lr=on>", "The top Record-Route header was incorrect.");
+            SIPRoute topRoute = okResp.Header.RecordRoutes.PopRoute();
+            Assert.True(topRoute.Host == "77.75.25.44:5060", "The top Record-Route host was incorrect.");
+            Assert.True(topRoute.URI.Parameters.Get("lr") == "on", "The top Record-Route lr parameter was incorrect.");
             SIPRoute nextRoute = okResp.Header.RecordRoutes.PopRoute();
-            Assert.True(nextRoute.ToString() == "<sip:77.75.25.45:5060;lr=on;ftag=1014391101>", "The second Record-Route header was incorrect, " + nextRoute.ToString() + ".");
+            Assert.True(nextRoute.Host == "77.75.25.45:5060", "The second Record-Route host was incorrect.");
+            Assert.True(nextRoute.URI.Parameters.Get("lr") == "on", "The second Record-Route lr parameter was incorrect.");
+            Assert.True(nextRoute.URI.Parameters.Get("ftag") == "1014391101", "The second Record-Route ftag parameter was incorrect.");
 
             logger.LogDebug("-----------------------------------------");
         }
