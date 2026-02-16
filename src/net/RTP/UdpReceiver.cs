@@ -161,10 +161,10 @@ public class UdpReceiver
     {
         try
         {
+            EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
             // When socket is closed the object will be disposed of in the middle of a receive.
             if (!m_isClosed)
             {
-                EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                 int bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
 
                 if (bytesRead > 0)
@@ -183,6 +183,10 @@ public class UdpReceiver
                     CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
                 }
             }
+            else
+            {
+                m_socket.EndReceiveFromClosed(ar, ref remoteEP);
+            }
 
             // If there is still data available it should be read now. This is more efficient than calling
             // BeginReceiveFrom which will incur the overhead of creating the callback and then immediately firing it.
@@ -193,7 +197,7 @@ public class UdpReceiver
             {
                 while (!m_isClosed && m_socket.Available > 0)
                 {
-                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                    remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                     int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
 
                     if (bytesReadSync > 0)
