@@ -23,6 +23,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -45,8 +47,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task MultipleRtpChannelLoopbackUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             const int PACKET_LENGTH = 100;
 
@@ -58,22 +60,20 @@ namespace SIPSorcery.Net.UnitTests
                 {
                     RTPChannel channel1 = new RTPChannel(false, null);
 
-                    bool testResult = false;
-                    ManualResetEventSlim testCompleteEvent = new ManualResetEventSlim(false);
+                    var testCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                     RTPChannel channel2 = new RTPChannel(false, null);
                     channel2.OnRTPDataReceived += (lep, rep, pkt) =>
                     {
                         logger.LogDebug("RTP data receive packet length {PacketLength}.", pkt.Length);
-                        testResult = pkt.Length == PACKET_LENGTH;
-                        testCompleteEvent.Set();
+                        testCompletion.TrySetResult(pkt.Length == PACKET_LENGTH);
                     };
 
                     channel1.Start();
                     channel2.Start();
 
                     // Give the socket receive tasks time to fire up.
-                    await Task.Delay(2000).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(2_000)).ConfigureAwait(false);
 
                     IPAddress channel2Address = (channel2.RTPLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Loopback : IPAddress.Loopback;
                     IPEndPoint channel2Dst = new IPEndPoint(channel2Address, channel2.RTPPort);
@@ -84,7 +84,7 @@ namespace SIPSorcery.Net.UnitTests
 
                     logger.LogDebug("Send result {sendResult}.", sendResult);
 
-                    testCompleteEvent.Wait(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
+                    var testResult = await testCompletion.Task.WaitAsync(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
 
                     Assert.True(testResult);
 

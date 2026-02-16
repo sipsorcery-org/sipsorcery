@@ -1,4 +1,4 @@
-//----------------------------------------------------------------------------
+﻿//----------------------------------------------------------------------------
 // File Name: Log.cs
 // 
 // Description: 
@@ -18,42 +18,30 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace SIPSorcery.Sys
+namespace SIPSorcery.Sys;
+
+internal static class Log
 {
-    internal class Log
+    private const string LOG_CATEGORY = "sipsorcery";
+
+    static Log()
     {
-        private const string LOG_CATEGORY = "sipsorcery";
+        SIPSorcery.LogFactory.Instance.OnFactorySet += Reset;
+    }
 
-        static Log()
-        {
-            SIPSorcery.LogFactory.Instance.OnFactorySet += Reset;
-        }
+    private static ILogger? _logger;
+    internal static ILogger Logger
+    {
+        get => _logger ??= LogFactory.CreateLogger(LOG_CATEGORY);
+        set => _logger = value;
+    }
 
-        private static ILogger _logger;
-        internal static ILogger Logger
-        {
-            get
-            {
-                if (_logger == null)
-                {
-                    _logger = SIPSorcery.LogFactory.CreateLogger(LOG_CATEGORY);
-                }
-
-                return _logger;
-            }
-            set
-            {
-                _logger = value;
-            }
-        }
-
-        /// <summary>
-        /// Intended to be called if the application wide logging configuration changes. Will force
-        /// the singleton logger to be re-created.
-        /// </summary>
-        internal static void Reset()
-        {
-            _logger = null;
-        }
+    /// <summary>
+    /// Intended to be called if the application wide logging configuration changes. Will force
+    /// the singleton logger to be re-created.
+    /// </summary>
+    internal static void Reset()
+    {
+        _logger = null;
     }
 }

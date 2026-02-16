@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpDataReceiverUnitTest.cs
 //
 // Description: Unit tests for the SctpDataReceiver class.

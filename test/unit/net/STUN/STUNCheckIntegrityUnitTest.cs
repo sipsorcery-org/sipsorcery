@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNCheckIntegrityUnitTest.cs
 //
 // Description: Unit tests for STUNMessage.CheckIntegrity with and without
@@ -31,9 +31,10 @@ namespace SIPSorcery.Net.UnitTests
             msg.AddUsernameAttribute("testuser");
 
             // Serialize WITH integrity but WITHOUT fingerprint
-            var buffer = msg.ToByteBufferStringKey(key, false);
+            var buffer = new byte[msg.GetByteBufferSizeStringKey(key, false)];
+            msg.WriteToBufferStringKey(buffer, key, false);
 
-            var parsed = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+            var parsed = STUNMessage.ParseSTUNMessage(buffer);
 
             Assert.False(parsed.isFingerprintValid, "No FINGERPRINT was sent");
             Assert.True(parsed.CheckIntegrity(Encoding.UTF8.GetBytes(key)),
@@ -54,9 +55,10 @@ namespace SIPSorcery.Net.UnitTests
             msg.AddUsernameAttribute("testuser");
 
             // Serialize WITH both integrity and fingerprint
-            var buffer = msg.ToByteBufferStringKey(key, true);
+            var buffer = new byte[msg.GetByteBufferSizeStringKey(key, false)];
+            msg.WriteToBufferStringKey(buffer, key, false);
 
-            var parsed = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+            var parsed = STUNMessage.ParseSTUNMessage(buffer);
 
             Assert.True(parsed.isFingerprintValid);
             Assert.True(parsed.CheckIntegrity(Encoding.UTF8.GetBytes(key)));
@@ -69,12 +71,15 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CheckIntegrityFailsWithWrongKey()
         {
+            string key = "correctkey";
+
             var msg = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             msg.Header.TransactionId = Encoding.ASCII.GetBytes("abcdefghijkl");
             msg.AddUsernameAttribute("testuser");
 
-            var buffer = msg.ToByteBufferStringKey("correctkey", false);
-            var parsed = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+            var buffer = new byte[msg.GetByteBufferSizeStringKey(key, false)];
+            msg.WriteToBufferStringKey(buffer, key, false);
+            var parsed = STUNMessage.ParseSTUNMessage(buffer);
 
             Assert.False(parsed.CheckIntegrity(Encoding.UTF8.GetBytes("wrongkey")));
         }

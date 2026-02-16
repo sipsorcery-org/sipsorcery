@@ -12,6 +12,7 @@
 
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -32,8 +33,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenPacketUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //var dataChanOpen = new DataChannelOpen("label");
             //byte[] pkt = dataChanOpen.getBytes();
@@ -53,8 +54,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenChunkNoPaddingUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DataChunk dcopen = DataChunk.mkDataChannelOpen("1234");
             //int chunkLength = dcopen.getLength();
@@ -83,8 +84,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenChunkOneBytePaddingUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DataChunk dcopen = DataChunk.mkDataChannelOpen("123");
             //int chunkLength = dcopen.getLength();
@@ -114,8 +115,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RoundTripDataChannelOpenChunkThreeBytesPaddingUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DataChunk dcopen = DataChunk.mkDataChannelOpen("12356");
             //int chunkLength = dcopen.getLength();

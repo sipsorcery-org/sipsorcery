@@ -20,7 +20,6 @@
 // SOFTWARE.
 
 using System;
-using System.Linq;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP
 {
@@ -29,8 +28,8 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public SrtpProtectionProfileConfiguration ProtectionProfile { get; }
         public byte[] Mki { get; }
 
-        public byte[] MasterKey { get { return MasterKeySalt.Take(ProtectionProfile.CipherKeyLength >> 3).ToArray(); } }
-        public byte[] MasterSalt { get { return MasterKeySalt.Skip(ProtectionProfile.CipherKeyLength >> 3).ToArray(); } }
+        public byte[] MasterKey { get { return MasterKeySalt.AsSpan(0, ProtectionProfile.CipherKeyLength >> 3).ToArray(); } }
+        public byte[] MasterSalt { get { return MasterKeySalt.AsSpan(ProtectionProfile.CipherKeyLength >> 3).ToArray(); } }
         public byte[] MasterKeySalt { get; }
 
         public SrtpKeys(SrtpProtectionProfileConfiguration protectionProfile, byte[] mki = null)

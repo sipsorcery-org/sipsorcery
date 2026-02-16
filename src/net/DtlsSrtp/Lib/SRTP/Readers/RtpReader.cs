@@ -19,7 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
-using System.Linq;
+
+using System;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
 {
@@ -62,7 +63,13 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
         {
             int length = ReadHeaderLenWithoutExtensions(payload);
             int extLen = ReadExtensionsLength(payload);
-            return payload.Skip(length).Take(extLen).ToArray();
+            if (extLen <= 0)
+            {
+                return Array.Empty<byte>();
+            }
+            var result = GC.AllocateUninitializedArray<byte>(extLen);
+            Buffer.BlockCopy(payload, length, result, 0, extLen);
+            return result;
         }
     }
 }

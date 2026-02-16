@@ -19,8 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
-using Org.BouncyCastle.Crypto;
 using System;
+using Org.BouncyCastle.Crypto;
 
 namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 {
@@ -28,9 +28,9 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
     {
         public const int BLOCK_SIZE = 16;
 
-        public static byte[] GenerateSessionKeyIV(byte[] masterSalt, ulong index, ulong kdr, byte label)
+        public static byte[] GenerateSessionKeyIV(ReadOnlySpan<byte> masterSalt, ulong index, ulong kdr, byte label)
         {
-            byte[] iv = new byte[BLOCK_SIZE];
+            var iv = GC.AllocateUninitializedArray<byte>(BLOCK_SIZE);
 
             // RFC 3711 - 4.3.1
             // Key derivation SHALL be defined as follows in terms of<label>, an
@@ -47,15 +47,20 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
             // *Let x = key_id XOR master_salt, where key_id and master_salt are
             //  aligned so that their least significant bits agree(right-
             //  alignment).
-            Buffer.BlockCopy(masterSalt, 0, iv, 0, masterSalt.Length);
+            masterSalt.CopyTo(iv.AsSpan());
 
-            iv[7] ^= (byte)((keyId >> 48) & 0xFF);
-            iv[8] ^= (byte)((keyId >> 40) & 0xFF);
-            iv[9] ^= (byte)((keyId >> 32) & 0xFF);
-            iv[10] ^= (byte)((keyId >> 24) & 0xFF);
-            iv[11] ^= (byte)((keyId >> 16) & 0xFF);
-            iv[12] ^= (byte)((keyId >> 8) & 0xFF);
-            iv[13] ^= (byte)(keyId & 0xFF);
+            // XOR keyId (56-bit) into iv using big-endian segments
+            var hiSpan = iv.AsSpan(7, 4);
+            var hi = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(hiSpan);
+            hi ^= (uint)(keyId >> 24);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(hiSpan, hi);
+
+            var midSpan = iv.AsSpan(11, 2);
+            var mid = System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(midSpan);
+            mid ^= (ushort)((keyId >> 8) & 0xFFFF);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt16BigEndian(midSpan, mid);
+
+            iv[13] ^= (byte)keyId;
 
             iv[14] = 0;
             iv[15] = 0;
@@ -75,25 +80,29 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
             }
         }
 
-        public static byte[] GenerateMessageKeyIV(byte[] salt, uint ssrc, ulong index)
+        public static byte[] GenerateMessageKeyIV(ReadOnlySpan<byte> salt, uint ssrc, ulong index)
         {
             // RFC 3711 - 4.1.1
             // IV = (k_s * 2 ^ 16) XOR(SSRC * 2 ^ 64) XOR(i * 2 ^ 16)
-            byte[] iv = new byte[16];
+            byte[] iv = GC.AllocateUninitializedArray<byte>(16);
+            salt.Slice(0, 14).CopyTo(iv);
 
-            Buffer.BlockCopy(salt, 0, iv, 0, 14);
+            // XOR SSRC big-endian
+            var ssrcSpan = iv.AsSpan(4, 4);
+            var ssrcVal = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(ssrcSpan);
+            ssrcVal ^= ssrc;
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(ssrcSpan, ssrcVal);
 
-            iv[4] ^= (byte)((ssrc >> 24) & 0xFF);
-            iv[5] ^= (byte)((ssrc >> 16) & 0xFF);
-            iv[6] ^= (byte)((ssrc >> 8) & 0xFF);
-            iv[7] ^= (byte)(ssrc & 0xFF);
+            // XOR index big-endian (48-bit)
+            var hiSpan2 = iv.AsSpan(8, 4);
+            var hi2 = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(hiSpan2);
+            hi2 ^= (uint)(index >> 16);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(hiSpan2, hi2);
 
-            iv[8] ^= (byte)((index >> 40) & 0xFF);
-            iv[9] ^= (byte)((index >> 32) & 0xFF);
-            iv[10] ^= (byte)((index >> 24) & 0xFF);
-            iv[11] ^= (byte)((index >> 16) & 0xFF);
-            iv[12] ^= (byte)((index >> 8) & 0xFF);
-            iv[13] ^= (byte)(index & 0xFF);
+            var loSpan2 = iv.AsSpan(12, 2);
+            var lo2 = System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(loSpan2);
+            lo2 ^= (ushort)(index & 0xFFFF);
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt16BigEndian(loSpan2, lo2);
 
             iv[14] = 0;
             iv[15] = 0;
@@ -101,27 +110,32 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
             return iv;
         }
 
-        public static void Encrypt(IBlockCipher engine, byte[] payload, int offset, int length, byte[] iv)
+        public static void Encrypt(IBlockCipher engine, Span<byte> payload, int offset, int length, Span<byte> iv)
         {
             int payloadSize = length - offset;
-            byte[] cipher = new byte[payloadSize];
+            byte[] cipher = GC.AllocateUninitializedArray<byte>(payloadSize);
+
+            var ivWork = GC.AllocateUninitializedArray<byte>(iv.Length);
+            iv.CopyTo(ivWork);
 
             int blockNo = 0;
-            for (int i = 0; i < payloadSize / BLOCK_SIZE; i++)
+            int fullBlocks = payloadSize / BLOCK_SIZE;
+            for (int i = 0; i < fullBlocks; i++)
             {
-                iv[14] = (byte)((i >> 8) & 0xff);
-                iv[15] = (byte)(i & 0xff);
-                engine.ProcessBlock(iv, 0, cipher, BLOCK_SIZE * blockNo);
+                ivWork[14] = (byte)((i >> 8) & 0xff);
+                ivWork[15] = (byte)(i & 0xff);
+                engine.ProcessBlock(ivWork, 0, cipher, BLOCK_SIZE * blockNo);
                 blockNo++;
             }
 
-            if (payloadSize % BLOCK_SIZE != 0)
+            int remaining = payloadSize % BLOCK_SIZE;
+            if (remaining != 0)
             {
-                iv[14] = (byte)((blockNo >> 8) & 0xff);
-                iv[15] = (byte)(blockNo & 0xff);
-                byte[] lastBlock = new byte[BLOCK_SIZE];
-                engine.ProcessBlock(iv, 0, lastBlock, 0);
-                Buffer.BlockCopy(lastBlock, 0, cipher, BLOCK_SIZE * blockNo, payloadSize % BLOCK_SIZE);
+                ivWork[14] = (byte)((blockNo >> 8) & 0xff);
+                ivWork[15] = (byte)(blockNo & 0xff);
+                byte[] lastBlock = GC.AllocateUninitializedArray<byte>(BLOCK_SIZE);
+                engine.ProcessBlock(ivWork, 0, lastBlock, 0);
+                lastBlock.AsSpan(0, remaining).CopyTo(cipher.AsSpan(BLOCK_SIZE * blockNo));
             }
 
             for (int i = 0; i < payloadSize; i++)

@@ -13,22 +13,25 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace SIPSorcery.Net
+using SIPSorcery.Sys;
+using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
+
+namespace SIPSorcery.Net;
+
+public class SecureContext
 {
-    public class SecureContext
+    public ProtectRtpPacket ProtectRtpPacket { get; private set; }
+    public ProtectRtpPacket ProtectRtcpPacket { get; private set; }
+
+    public ProtectRtpPacket UnprotectRtpPacket { get; private set; }
+    public ProtectRtpPacket UnprotectRtcpPacket { get; private set; }
+
+    public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
     {
-        public ProtectRtpPacket ProtectRtpPacket { get; private set; }
-        public ProtectRtpPacket ProtectRtcpPacket { get; private set; }
-
-        public ProtectRtpPacket UnprotectRtpPacket { get; private set; }
-        public ProtectRtpPacket UnprotectRtcpPacket { get; private set; }
-
-        public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
-        {
-            ProtectRtpPacket = protectRtpPacket;
-            ProtectRtcpPacket = protectRtcpPacket;
-            UnprotectRtpPacket = unprotectRtpPacket;
-            UnprotectRtcpPacket = unprotectRtcpPacket;
-        }
+        ProtectRtpPacket = protectRtpPacket;
+        ProtectRtcpPacket = protectRtcpPacket;
+        UnprotectRtpPacket = unprotectRtpPacket;
+        UnprotectRtcpPacket = unprotectRtcpPacket;
     }
 }

@@ -13,11 +13,13 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-using TinyJson;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -38,8 +40,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetInitAckPacket()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var sctpTransport = new MockSctpTransport();
 
@@ -61,9 +63,9 @@ namespace SIPSorcery.Net.UnitTests
             Assert.NotNull(initAckChunk);
             Assert.NotNull(initAckChunk.StateCookie);
 
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(initAckChunk.StateCookie));
+            var cookie = JsonSerializer.Deserialize<SctpTransportCookie>(initAckChunk.StateCookie, SipSorceryJsonSerializerContext.Default.SctpTransportCookie);
 
-            logger.LogDebug("Cookie: {Cookie}", cookie.ToJson());
+            logger.LogDebug("Cookie: {Cookie}", JsonSerializer.Serialize(cookie, SipSorceryJsonSerializerContext.Default.SctpTransportCookie));
 
             Assert.NotNull(cookie.CreatedAt);
             Assert.NotNull(cookie.HMAC);
@@ -89,7 +91,8 @@ namespace SIPSorcery.Net.UnitTests
             return base.GetCookieHMAC(buffer);
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
-        { }
+        public override void Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable memoryOwner = null)
+        {
+        }
     }
 }

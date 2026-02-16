@@ -12,10 +12,13 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
+using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -43,8 +46,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GenerateLocalOfferUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
             var offer = pc.createOffer(new RTCOfferOptions());
@@ -69,15 +72,15 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GenerateLocalOfferWithAudioTrackUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
             var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
             pc.addTrack(audioTrack);
             var offer = pc.createOffer(new RTCOfferOptions());
 
-            SDP offerSDP = SDP.ParseSDPDescription(offer.sdp);
+            SDP offerSDP = SDP.ParseSDPDescription(offer.sdp.AsSpan());
 
             Assert.NotNull(offer);
             Assert.NotNull(offer.sdp);
@@ -95,8 +98,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CheckAudioVideoMediaIdentifierTagsAreReusedForAnswerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // In this SDP, the audio media identifier's tag is "bar" and the video media identifier's tag is "foo"
             string remoteSdp =
@@ -196,7 +199,7 @@ a=ssrc:4165955869 label:video0";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -229,8 +232,8 @@ a=ssrc:4165955869 label:video0";
         [Fact]
         public void CheckDataChannelMediaIdentifierTagsAreReusedForAnswerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // In this SDP, the datachannel1's media identifier's tag is "application1"
             string remoteSdp =
@@ -254,7 +257,7 @@ a=max-message-size:262144";
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -284,8 +287,8 @@ a=max-message-size:262144";
         [Fact]
         public void CheckDataChannelVideoAndAudioAreWellManagedInAnswerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // In this SDP, the datachannel1's media identifier's tag is "application1"
             string remoteSdp =
@@ -371,7 +374,7 @@ a=ssrc:1091343449 label:5b06be39-0752-497f-80f5-6cf3db665f14";
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -414,8 +417,8 @@ a=ssrc:1091343449 label:5b06be39-0752-497f-80f5-6cf3db665f14";
         [Fact]
         public void CheckMediaIdentifierTagOrderRemainsForAnswerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // In this SDP, the audio media identifier's tag is "zzz" and the video media identifier's tag is "aaa".
             // Such tag are meant to ensure that we do not sort sdp's media tracks by alphabetical order.
@@ -516,7 +519,7 @@ a=ssrc:4165955869 label:video0";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -548,8 +551,8 @@ a=ssrc:4165955869 label:video0";
         [Fact]
         public void SendVideoRtcpFeedbackReportUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
@@ -570,7 +573,7 @@ a=ssrc:4165955869 label:video0";
             var setOfferResult = pcDst.setRemoteDescription(offer);
             Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
 
-            var answer = pcDst.createAnswer(null);
+            var answer = pcDst.createAnswer();
             var setAnswerResult = pcSrc.setRemoteDescription(answer);
             Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
 
@@ -587,8 +590,8 @@ a=ssrc:4165955869 label:video0";
         [Fact]
         public void CheckMediaFormatNegotiationUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // By default offers made by us always put audio first. Create a remote SDP offer 
             // with the video first.
@@ -640,7 +643,7 @@ a=rtpmap:100 VP8/90000";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -668,8 +671,8 @@ a=rtpmap:100 VP8/90000";
         [Fact]
         public void CheckNoAudioNegotiationUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // By default offers made by us always put audio first. Create a remote SDP offer 
             // with the video first.
@@ -716,7 +719,7 @@ a=rtpmap:100 VP8/90000";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -743,8 +746,8 @@ a=rtpmap:100 VP8/90000";
         [Fact]
         public void Check_Inactive_Audio_Negotiation_Test()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // By default offers made by us always put audio first. Create a remote SDP offer 
             // with the video first.
@@ -819,7 +822,7 @@ a=rtpmap:126 telephone-event/8000";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -845,8 +848,8 @@ a=rtpmap:126 telephone-event/8000";
         [Fact]
         public async Task CheckPeerConnectionEstablishment()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var aliceConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var bobConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -887,7 +890,7 @@ a=rtpmap:126 telephone-event/8000";
 
             logger.LogDebug("answer: {BobAnswerSdp}", bobAnswer.sdp);
 
-            await Task.WhenAny(Task.WhenAll(aliceConnected.Task, bobConnected.Task), Task.Delay(2000));
+            await Task.WhenAny(Task.WhenAll(aliceConnected.Task, bobConnected.Task), Task.Delay(TimeSpan.FromMilliseconds(2_000)));
 
             Assert.True(aliceConnected.Task.IsCompleted);
             Assert.True(await aliceConnected.Task);
@@ -904,8 +907,8 @@ a=rtpmap:126 telephone-event/8000";
         [Fact]
         public async Task CheckDataChannelEstablishment()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var aliceDataConnected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var bobDataOpened = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -936,7 +939,7 @@ a=rtpmap:126 telephone-event/8000";
 
             logger.LogDebug("answer: {BobAnswerSdp}", bobAnswer.sdp);
 
-            await Task.WhenAny(Task.WhenAll(aliceDataConnected.Task, bobDataOpened.Task), Task.Delay(2000));
+            await Task.WhenAll(aliceDataConnected.Task, bobDataOpened.Task).WaitAsync(TimeSpan.FromMilliseconds(2_000));
 
             Assert.True(aliceDataConnected.Task.IsCompleted);
             Assert.True(await aliceDataConnected.Task);
@@ -955,8 +958,8 @@ a=rtpmap:126 telephone-event/8000";
         [Fact]
         public void CheckAnswerForGStreamerOfferUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Remote offer from GStreamer, see https://github.com/sipsorcery-org/sipsorcery/issues/596.
             string remoteSdp =
@@ -997,7 +1000,7 @@ a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:A
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 100, "H264", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -1024,8 +1027,8 @@ a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:A
         [Fact]
         public void AnswerShouldNotContainAbsSendTimeIfOfferDidNot()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string offerSdp =
                 @"v=0
@@ -1144,7 +1147,7 @@ a=max-message-size:1073741823";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) }, headerExtensions: videoExtensions);
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(offerSdp);
+            var offer = SDP.ParseSDPDescription(offerSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 

@@ -18,6 +18,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
@@ -38,8 +39,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupLocalhostTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("localhost", out var stunUri);
             var result = await STUNDns.Resolve(stunUri);
@@ -56,8 +57,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupLocalhostIPv6TestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("localhost", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
@@ -86,8 +87,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupPrivateNetworkHostTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string localHostname = Dns.GetHostName();
 
@@ -114,8 +115,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupPrivateNetworkHostIPv6TestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string localHostname = Dns.GetHostName();
 
@@ -156,10 +157,10 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupHostWithExplicitPortTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            STUNUri.TryParse("stun.l.google.com:19302", out var stunUri);
+            STUNUri.TryParse("stun.sipsorcery.com:3478", out var stunUri);
             var result = await STUNDns.Resolve(stunUri);
 
             Assert.NotNull(result);
@@ -173,8 +174,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupHostPreferIPv6TestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("www.google.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
@@ -194,8 +195,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupHostPreferIPv6FallbackTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("www.sipsorcery.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
@@ -212,8 +213,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupWithSRVTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("sipsorcery.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri);
@@ -229,8 +230,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupWithSRVTestPreferIPv6Method()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("sipsorcery.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
@@ -249,8 +250,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupNonExistentHostTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("idontexist", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
@@ -266,8 +267,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupNonExistentCanoncialHostTestMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNUri.TryParse("somehost.fsdfergerw.com", out var stunUri);
             var result = await STUNDns.Resolve(stunUri, true);
