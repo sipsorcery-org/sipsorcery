@@ -224,7 +224,7 @@ public class UdpReceiver
             // In all cases the local socket is still perfectly usable — the error relates to a
             // single outbound send, not to the health of the receive path. The receive loop must
             // continue so that packets arriving from the (possibly new) remote endpoint are not lost.
-            logger.LogWarning(resetSockExcp, "SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
+            logger.LogWarning("SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
         }
         catch (SocketException sockExcp)
         {
@@ -232,7 +232,7 @@ public class UdpReceiver
             // for a UDP receive path. The same transient scenarios described above apply: the RTP
             // connection may start sending before the remote socket starts listening, or an endpoint
             // change during hold/transfer can briefly produce errors from the old or new socket.
-            logger.LogWarning(sockExcp, "SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
+            logger.LogWarning("SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
