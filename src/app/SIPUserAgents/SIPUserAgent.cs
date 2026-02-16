@@ -1452,29 +1452,24 @@ namespace SIPSorcery.SIP.App
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE && !string.IsNullOrWhiteSpace(sipRequest.Header.Replaces))
                 {
-                    // This is a special case of receiving an INVITE request that is part of an attended transfer and
-                    // that if successful will replace the existing dialog.
-                    //UASInviteTransaction uasTx = new UASInviteTransaction(m_transport, sipRequest, null);
-                    var uas = AcceptCall(sipRequest);
-
-                    // An attended transfer INVITE should only be accepted if the dialog parameters in the Replaces header 
-                    // match the current dialog. But... to be more accepting with only a small increase in risk we only 
-                    // require a match on the Call-ID (only small increase in risk as if a malicious party can get 1
-                    // of the three required headers they can almost certainly get all 3).
+                    // This is a special case of receiving an INVITE request that is part of an attended
+                    // transfer. Check whether the Replaces header targets this dialog BEFORE creating a
+                    // UAS transaction. When multiple SIPUserAgent instances share the same SIPTransport,
+                    // each one receives the INVITE. Only the agent whose dialog matches should act on it;
+                    // the others must silently ignore it. Rejecting with 400 would race against the
+                    // correct agent's acceptance (see #1459).
                     SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
-
-                    logger.LogDebug("INVITE for attended transfer received, Replaces CallID {ReplacesCallID}, our dialog Call-ID {DialogCallID}.", replaces.CallID, m_sipDialogue.CallId);
 
                     if (replaces == null || replaces.CallID != m_sipDialogue.CallId)
                     {
-                        logger.LogDebug("The attended transfer INVITE's Replaces header did not match the current dialog, rejecting.");
-                        uas.Reject(SIPResponseStatusCodesEnum.BadRequest, null);
+                        logger.LogDebug("Attended transfer INVITE ignored, Replaces CallID {ReplacesCallID} does not match our dialog Call-ID {DialogCallID}.", replaces?.CallID, m_sipDialogue.CallId);
+                        return;
                     }
-                    else
-                    {
-                        logger.LogDebug("Proceeding with attended transfer INVITE received from {RemoteEndPoint}.", remoteEndPoint);
-                        await AcceptAttendedTransfer(uas).ConfigureAwait(false);
-                    }
+
+                    logger.LogDebug("INVITE for attended transfer received, Replaces CallID {ReplacesCallID} matches our dialog Call-ID {DialogCallID}.", replaces.CallID, m_sipDialogue.CallId);
+                    var uas = AcceptCall(sipRequest);
+                    logger.LogDebug("Proceeding with attended transfer INVITE received from {RemoteEndPoint}.", remoteEndPoint);
+                    await AcceptAttendedTransfer(uas).ConfigureAwait(false);
                 }
             }
             else if (!_isClosed && sipRequest.Method == SIPMethodsEnum.INVITE)
