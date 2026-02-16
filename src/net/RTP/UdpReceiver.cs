@@ -50,7 +50,7 @@ public class UdpReceiver
 
     protected readonly Socket m_socket;
     protected byte[] m_recvBuffer;
-    protected bool m_isClosed, m_isClosing;
+    protected bool m_isClosed;
     protected bool m_isRunningReceive;
     protected IPEndPoint m_localEndPoint;
     protected AddressFamily m_addressFamily;
@@ -116,7 +116,7 @@ public class UdpReceiver
         {
             m_isRunningReceive = false;
         }
-        if (m_isRunningReceive || m_isClosed || m_isClosing)
+        if (m_isRunningReceive || m_isClosed)
         {
             return;
         }
@@ -134,13 +134,13 @@ public class UdpReceiver
         }
         catch (SocketException sockExcp)
         {
-            // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
-            // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
-            // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
-
+            // A SocketException here (including ConnectionReset / ICMP port unreachable) typically
+            // reflects a transient condition on the remote side — for example the remote RTP socket
+            // has not been opened yet, or an endpoint change during hold/transfer left a stale route.
+            // The local socket remains usable, so we log and allow the next BeginReceiveFrom attempt
+            // from the EndReceiveFrom finally block rather than tearing down the receive loop.
             m_isRunningReceive = false;
             logger.LogWarning("Socket error {SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {Message}", sockExcp.SocketErrorCode, sockExcp.Message);
-            //Close(sockExcp.Message);
         }
         catch (Exception excp)
         {
@@ -216,20 +216,22 @@ public class UdpReceiver
         }
         catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
         {
-            // Thrown when close is called on a socket
-            m_isClosing = true;
+            // ConnectionReset is raised when the OS receives an ICMP "port unreachable" message.
+            // On a UDP socket this commonly occurs when:
+            //  - The remote party has not yet opened its RTP socket (e.g. during call setup),
+            //  - The remote endpoint changed (hold, transfer) and the old port is no longer listening,
+            //  - The remote process terminated and the OS rejected a subsequent outgoing packet.
+            // In all cases the local socket is still perfectly usable — the error relates to a
+            // single outbound send, not to the health of the receive path. The receive loop must
+            // continue so that packets arriving from the (possibly new) remote endpoint are not lost.
+            logger.LogWarning(resetSockExcp, "SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
         }
         catch (SocketException sockExcp)
         {
-            // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-            // normal RTP operation. For example:
-            // - the RTP connection may start sending before the remote socket starts listening,
-            // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-            //   or new socket during the transition.
-            // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
-            // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
-            // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
-            // error since the remote party may not have initialised their socket yet.
+            // Other socket errors (e.g. buffer overruns, general network failures) are also non-fatal
+            // for a UDP receive path. The same transient scenarios described above apply: the RTP
+            // connection may start sending before the remote socket starts listening, or an endpoint
+            // change during hold/transfer can briefly produce errors from the old or new socket.
             logger.LogWarning(sockExcp, "SocketException UdpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
