@@ -161,6 +161,10 @@ namespace SIPSorcery.SIP
                         SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
                     }
                 }
+                else
+                {
+                    m_udpSocket.EndReceiveFromClosed(ar, ref remoteEP);
+                }
             }
             catch (SocketException sockExcp)
             {
