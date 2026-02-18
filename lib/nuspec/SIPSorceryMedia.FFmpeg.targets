@@ -1,0 +1,10 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\..\build\x86\*.dll" Condition="'$(Platform)' == 'x86'" />
+    <NativeLibs Include="$(MSBuildThisFileDirectory)\..\build\x64\*.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'AnyCPU'" />
+    <ContentWithTargetPath Include="@(NativeLibs)">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+</Project>

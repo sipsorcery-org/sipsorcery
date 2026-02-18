@@ -9,11 +9,19 @@
     <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
     <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
     <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
+    <Project Path="test/FFmpegConsoleApp/FFmpegConsoleApp.csproj" />
+    <Project Path="test/FFmpegEncodingTest/FFmpegEncodingTest.csproj" />
+    <Project Path="test/FFmpegFileAndDevicesTest/FFmpegFileAndDevicesTest.csproj" />
+    <Project Path="test/FFmpegManagedTranscodeTest/FFmpegManagedTranscodeTest.csproj" />
+    <Project Path="test/FFmpegMp4Test/FFmpegMp4Test.csproj" />
+    <Project Path="test/FFmpegTranscodeTest/FFmpegTranscodeTest.csproj" />
+    <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
     <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
     <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
+    <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
   </Folder>
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">
     <Property Name="CategoryFile" Value="SIPSorcery-Core.vsmdi" />
