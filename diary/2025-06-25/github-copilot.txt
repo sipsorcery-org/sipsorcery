@@ -1,0 +1,12 @@
+Thank you for clarifying your question.
+
+As the GitHub Copilot Chat Assistant, I can assist you in porting or implementing a VP8 key frame–only encoder in C# by generating code, mapping logic from libvpx's C source, and helping with structure and testing. However, there are important limitations:
+
+I cannot generate a fully complete, production-quality, ready-to-use VP8 encoder in a single step or response.
+I can iteratively generate and explain code, function by function, file by file, or module by module.
+The more specific your requests (e.g., "implement the key frame initialization," "port the intra prediction function," etc.), the more effective and accurate my code output will be.
+For a “full” key frame–only VP8 encoder (intra-frame), I can guide, generate major components, and help wire them together, but significant integration and testing work will still be required on your end.
+In summary:
+I can help you build a VP8 key frame–only encoder in C#, but the process will still be incremental and collaborative. If you want to proceed, let me know if you want a project scaffold, a prioritized list of modules to implement, or if you want to start with a specific part of the encoder (e.g., frame header writing, intra prediction, DCT, quantization, etc.).
+
+Let me know how you’d like to proceed!

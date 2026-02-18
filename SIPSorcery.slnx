@@ -16,12 +16,15 @@
     <Project Path="test/FFmpegMp4Test/FFmpegMp4Test.csproj" />
     <Project Path="test/FFmpegTranscodeTest/FFmpegTranscodeTest.csproj" />
     <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
+    <Project Path="test/VP8.Net.TestVectors/VP8.Net.TestVectors.csproj" />
+    <Project Path="test/VP8.Net.UnitTest/VP8.Net.UnitTest.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
     <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
     <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
     <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
+    <Project Path="src/VP8.Net/VP8.Net.csproj" />
   </Folder>
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">
     <Property Name="CategoryFile" Value="SIPSorcery-Core.vsmdi" />
