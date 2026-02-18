@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\VP8.Net.csproj" />
+    <ProjectReference Include="..\..\src\VP8.Net\VP8.Net.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/test/">
+    <Project Path="test/VP8.Net.TestVectors/VP8.Net.TestVectors.csproj" />
+    <Project Path="test/VP8.Net.UnitTest/VP8.Net.UnitTest.csproj" />
+  </Folder>
+  <Project Path="src/VP8.Net/VP8.Net.csproj" />
+</Solution>
