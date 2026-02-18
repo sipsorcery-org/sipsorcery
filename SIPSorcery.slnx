@@ -8,10 +8,12 @@
     <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
     <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
     <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
+    <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
   </Folder>
   <Folder Name="/src/">
-  <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
-  <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
+    <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
+    <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
+    <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
   </Folder>
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">
     <Property Name="CategoryFile" Value="SIPSorcery-Core.vsmdi" />
