@@ -1,0 +1,11 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+    "examples/SIPScenarios/LoadTestScenario/LoadClient/LoadClient.csproj",
+    "examples/SIPScenarios/LoadTestScenario/LoadServer/LoadServer.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

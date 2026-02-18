@@ -1,0 +1,11 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+    "examples/SIPScenarios/OnHoldScenario/Callee/Callee.csproj",
+    "examples/SIPScenarios/OnHoldScenario/Caller/Caller.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+﻿{
+  "solution": {
+    "path": "../../SIPSorcery.slnx",
+    "projects": [
+    "examples/StunServer/StunServer.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

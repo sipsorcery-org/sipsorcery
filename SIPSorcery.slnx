@@ -5,10 +5,6 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/Test/">
-    <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
-    <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
-    <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
-    <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
     <Project Path="test/FFmpegConsoleApp/FFmpegConsoleApp.csproj" />
     <Project Path="test/FFmpegEncodingTest/FFmpegEncodingTest.csproj" />
     <Project Path="test/FFmpegFileAndDevicesTest/FFmpegFileAndDevicesTest.csproj" />
@@ -16,14 +12,124 @@
     <Project Path="test/FFmpegMp4Test/FFmpegMp4Test.csproj" />
     <Project Path="test/FFmpegTranscodeTest/FFmpegTranscodeTest.csproj" />
     <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
+    <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
+    <Project Path="test/PixelConvertTest/PixelConvertTest.csproj" />
+    <Project Path="test/PixelConvertTestFramework/PixelConvertTestFramework.csproj" Id="bf8ea326-7052-494e-a12a-fa746ded6437" />
+    <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
+    <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
+    <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
     <Project Path="test/VP8.Net.TestVectors/VP8.Net.TestVectors.csproj" />
     <Project Path="test/VP8.Net.UnitTest/VP8.Net.UnitTest.csproj" />
+  </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/sipcmdline/sipcmdline.csproj" />
+    <Project Path="examples/StunServer/StunServer.csproj" />
+    <Project Path="examples/TurnServerExample/TurnServerExample.csproj" />
+    <Project Path="examples/webrtccmdline/webrtccmdline.csproj" />
+  </Folder>
+  <Folder Name="/examples/AzureExamples/">
+    <Project Path="examples/AzureExamples/TextToPcm/TextToPcm.csproj" />
+  </Folder>
+  <Folder Name="/examples/Miscellaneous/">
+    <Project Path="examples/Miscellaneous/SctpClientTestConsole/SctpClientTestConsole.csproj" />
+  </Folder>
+  <Folder Name="/examples/SIPExamples/">
+    <Project Path="examples/SIPExamples/AndroidSIPGetStarted/AndroidSIPGetStarted.csproj" />
+    <Project Path="examples/SIPExamples/AsteriskIce/AsteriskIce.csproj" />
+    <Project Path="examples/SIPExamples/AttendedTransfer/AttendedTransfer.csproj" />
+    <Project Path="examples/SIPExamples/CallHoldAndTransfer/CallHoldAndTransfer.csproj" />
+    <Project Path="examples/SIPExamples/CustomAudioCodec/CustomAudioCodec.csproj" />
+    <Project Path="examples/SIPExamples/GetStarted/GetStarted.csproj" />
+    <Project Path="examples/SIPExamples/GetStartedNetFramework/GetStartedNetFramework.csproj" Id="203b98e3-ed46-469e-bcb4-61be9ab6b66e" />
+    <Project Path="examples/SIPExamples/GetStartedVideo/GetStartedVideo.csproj" />
+    <Project Path="examples/SIPExamples/GetStartedWebSocket/GetStartedWebSocket.csproj" />
+    <Project Path="examples/SIPExamples/NotifierClient/NotifierClient.csproj" />
+    <Project Path="examples/SIPExamples/PlaySounds/PlaySounds.csproj" />
+    <Project Path="examples/SIPExamples/ReceiveDtmf/ReceiveDtmf.csproj" />
+    <Project Path="examples/SIPExamples/RecordCall/RecordCall.csproj" />
+    <Project Path="examples/SIPExamples/RecordIncomingCall/RecordIncomingCall.csproj" />
+    <Project Path="examples/SIPExamples/SendDtmf/SendDtmf.csproj" />
+    <Project Path="examples/SIPExamples/SendMusic/SendMusic.csproj" />
+    <Project Path="examples/SIPExamples/SIPCallResampleAudio/SIPCallResampleAudio.csproj" />
+    <Project Path="examples/SIPExamples/SIPCallServer/SIPCallServer.csproj" />
+    <Project Path="examples/SIPExamples/SIPCloudCallServer/SIPCloudCallServer.csproj" />
+    <Project Path="examples/SIPExamples/SIPProxy/SIPProxy.csproj" />
+    <Project Path="examples/SIPExamples/UserAgentClient/UserAgentClient.csproj" />
+    <Project Path="examples/SIPExamples/UserAgentRegister/UserAgentRegister.csproj" />
+    <Project Path="examples/SIPExamples/UserAgentServer/UserAgentServer.csproj" />
+    <Project Path="examples/SIPExamples/VideoPhoneCmdLine/VideoPhoneCmdLine.csproj" />
+  </Folder>
+  <Folder Name="/examples/SIPExamples/GetStartedPortAudio/">
+    <Project Path="examples/SIPExamples/GetStartedPortAudio/GetStartedPortAudio/GetStartedPortAudio.csproj" />
+    <Project Path="examples/SIPExamples/GetStartedPortAudio/ProjectCeilidh.PortAudio/ProjectCeilidh.PortAudio.csproj" />
+  </Folder>
+  <Folder Name="/examples/SIPScenarios/" />
+  <Folder Name="/examples/SIPScenarios/AttendedTransferScenario/">
+    <Project Path="examples/SIPScenarios/AttendedTransferScenario/Target/Target.csproj" />
+    <Project Path="examples/SIPScenarios/AttendedTransferScenario/Transferee/Transferee.csproj" />
+    <Project Path="examples/SIPScenarios/AttendedTransferScenario/Transferor/Transferor.csproj" />
+  </Folder>
+  <Folder Name="/examples/SIPScenarios/BlindTransferScenario/">
+    <Project Path="examples/SIPScenarios/BlindTransferScenario/Target/Target.csproj" />
+    <Project Path="examples/SIPScenarios/BlindTransferScenario/Transferee/Transferee.csproj" />
+    <Project Path="examples/SIPScenarios/BlindTransferScenario/Transferor/Transferor.csproj" />
+  </Folder>
+  <Folder Name="/examples/SIPScenarios/LoadTestScenario/">
+    <Project Path="examples/SIPScenarios/LoadTestScenario/LoadClient/LoadClient.csproj" />
+    <Project Path="examples/SIPScenarios/LoadTestScenario/LoadServer/LoadServer.csproj" />
+  </Folder>
+  <Folder Name="/examples/SIPScenarios/OnHoldScenario/">
+    <Project Path="examples/SIPScenarios/OnHoldScenario/Callee/Callee.csproj" />
+    <Project Path="examples/SIPScenarios/OnHoldScenario/Caller/Caller.csproj" />
+  </Folder>
+  <Folder Name="/examples/Softphone/">
+    <Project Path="examples/Softphone/SIPSorcery.SoftPhone.csproj" />
+  </Folder>
+  <Folder Name="/examples/WebRTCExamples/">
+    <Project Path="examples/WebRTCExamples/FfmpegToWebRTC/FfmpegToWebRTC.csproj" />
+    <Project Path="examples/WebRTCExamples/JanusWebRTCStream/JanusWebRTCStream.csproj" />
+    <Project Path="examples/WebRTCExamples/RtspToWebRTCAudioAndVideo/RtspToWebRTCAudioAndVideo.csproj" />
+    <Project Path="examples/WebRTCExamples/SIPToWebRtcBridge/SIPToWebRtcBridge.csproj" />
+    <Project Path="examples/WebRTCExamples/SIPToWebRtcBridgeVideo/SIPToWebRtcBridgeVideo.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCClient/WebRTCClient.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCClientVP8Net/WebRTCClientVP8Net.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCDaemon/WebRTCDaemon.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCEchoClient/WebRTCEchoClient.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCEchoServer/WebRTCEchoServer.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCFFmpegGetStarted/WebRTCFFmpegGetStarted.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGetStarted/WebRTCGetStarted.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGetStartedDataChannel/WebRTCGetStartedDataChannel.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGetStartedVP8Net/WebRTCGetStartedVP8Net.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCNoSignalling/WebRTCNoSignalling.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCOpenGL/WebRTCOpenGL.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCOpenGLSource/WebRTCOpenGLSource.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCReceiveAudio/WebRTCReceiveAudio.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCReceiver/WebRTCReceiver.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCSendAudio/WebRTCSendAudio.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCTestPatternRest/WebRTCTestPatternRest.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCTestPatternServer/WebRTCTestPatternServer.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCtoFfplay/WebRTCtoFfplay.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCWebcamServer/WebRTCWebcamServer.csproj" />
+  </Folder>
+  <Folder Name="/examples/WebRTCExamples/sipjs/">
+    <Project Path="examples/WebRTCExamples/sipjs/SipJs.csproj" />
+  </Folder>
+  <Folder Name="/examples/WebRTCExamples/WebRTCAspNetMvc/">
+    <Project Path="examples/WebRTCExamples/WebRTCAspNetMvc/WebRTCAspNet.csproj" />
+  </Folder>
+  <Folder Name="/examples/WebRTCLightningExamples/">
+    <Project Path="examples/WebRTCLightningExamples/WebRTCLightningGetStarted/WebRTCLightningGetStarted.csproj" />
+  </Folder>
+  <Folder Name="/examples/WebRTCScenarios/">
+    <Project Path="examples/WebRTCScenarios/DataChannelBandwidth/DataChannelBandwidth.csproj" />
+    <Project Path="examples/WebRTCScenarios/DataChannelStressTest/DataChannelStressTest.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
     <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
-    <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
     <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
+    <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
     <Project Path="src/VP8.Net/VP8.Net.csproj" />
   </Folder>
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">

@@ -1,0 +1,11 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+    "examples/SIPExamples/GetStartedNetFramework/GetStartedNetFramework.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj",
+    "src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj"
+    ]
+  }
+}

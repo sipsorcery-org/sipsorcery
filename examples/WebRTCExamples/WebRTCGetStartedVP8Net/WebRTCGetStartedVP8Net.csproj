@@ -18,7 +18,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
-        <ProjectReference Include="..\..\..\..\VP8.Net\src\VP8.Net.csproj" />
     </ItemGroup>
 
 </Project>

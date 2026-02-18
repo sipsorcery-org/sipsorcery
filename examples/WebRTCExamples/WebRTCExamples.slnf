@@ -1,0 +1,35 @@
+﻿{
+  "solution": {
+    "path": "../../SIPSorcery.slnx",
+    "projects": [
+    "examples/WebRTCExamples/FfmpegToWebRTC/FfmpegToWebRTC.csproj",
+    "examples/WebRTCExamples/JanusWebRTCStream/JanusWebRTCStream.csproj",
+    "examples/WebRTCExamples/RtspToWebRTCAudioAndVideo/RtspToWebRTCAudioAndVideo.csproj",
+    "examples/WebRTCExamples/SIPToWebRtcBridge/SIPToWebRtcBridge.csproj",
+    "examples/WebRTCExamples/SIPToWebRtcBridgeVideo/SIPToWebRtcBridgeVideo.csproj",
+    "examples/WebRTCExamples/WebRTCAspNetMvc/WebRTCAspNet.csproj",
+    "examples/WebRTCExamples/WebRTCClient/WebRTCClient.csproj",
+    "examples/WebRTCExamples/WebRTCDaemon/WebRTCDaemon.csproj",
+    "examples/WebRTCExamples/WebRTCEchoClient/WebRTCEchoClient.csproj",
+    "examples/WebRTCExamples/WebRTCEchoServer/WebRTCEchoServer.csproj",
+    "examples/WebRTCExamples/WebRTCFFmpegGetStarted/WebRTCFFmpegGetStarted.csproj",
+    "examples/WebRTCExamples/WebRTCGetStarted/WebRTCGetStarted.csproj",
+    "examples/WebRTCExamples/WebRTCGetStartedDataChannel/WebRTCGetStartedDataChannel.csproj",
+    "examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj",
+    "examples/WebRTCExamples/WebRTCNoSignalling/WebRTCNoSignalling.csproj",
+    "examples/WebRTCExamples/WebRTCOpenGL/WebRTCOpenGL.csproj",
+    "examples/WebRTCExamples/WebRTCOpenGLSource/WebRTCOpenGLSource.csproj",
+    "examples/WebRTCExamples/WebRTCReceiveAudio/WebRTCReceiveAudio.csproj",
+    "examples/WebRTCExamples/WebRTCReceiver/WebRTCReceiver.csproj",
+    "examples/WebRTCExamples/WebRTCSendAudio/WebRTCSendAudio.csproj",
+    "examples/WebRTCExamples/WebRTCTestPatternRest/WebRTCTestPatternRest.csproj",
+    "examples/WebRTCExamples/WebRTCTestPatternServer/WebRTCTestPatternServer.csproj",
+    "examples/WebRTCExamples/WebRTCtoFfplay/WebRTCtoFfplay.csproj",
+    "examples/WebRTCExamples/WebRTCWebcamServer/WebRTCWebcamServer.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj",
+    "src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj",
+    "src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj"
+    ]
+  }
+}

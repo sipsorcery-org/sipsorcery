@@ -68,8 +68,14 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
-    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
+    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj">
+      <Project>{9E3A105D-C9CC-579C-EAD1-B56BB4591F14}</Project>
+      <Name>SIPSorcery</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj">
+      <Project>{F8F7C918-5ABF-2E42-87C7-7043BA503A9E}</Project>
+      <Name>SIPSorceryMedia.Windows</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

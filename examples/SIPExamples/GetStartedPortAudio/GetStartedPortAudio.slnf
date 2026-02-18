@@ -1,0 +1,9 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+    "examples/SIPExamples/GetStartedPortAudio/GetStartedPortAudio/GetStartedPortAudio.csproj",
+    "examples/SIPExamples/GetStartedPortAudio/ProjectCeilidh.PortAudio/ProjectCeilidh.PortAudio.csproj"
+    ]
+  }
+}

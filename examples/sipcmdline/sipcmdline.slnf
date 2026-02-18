@@ -1,0 +1,10 @@
+﻿{
+  "solution": {
+    "path": "../../SIPSorcery.slnx",
+    "projects": [
+    "examples/sipcmdline/sipcmdline.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

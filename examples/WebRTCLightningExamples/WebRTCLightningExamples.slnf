@@ -1,0 +1,11 @@
+﻿{
+  "solution": {
+    "path": "../../SIPSorcery.slnx",
+    "projects": [
+    "examples/WebRTCLightningExamples/WebRTCLightningGetStarted/WebRTCLightningGetStarted.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj",
+    "src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj"
+    ]
+  }
+}

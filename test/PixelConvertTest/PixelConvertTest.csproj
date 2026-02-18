@@ -11,10 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\SIPSorceryMedia.Encoders.csproj" />
+    <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
   </ItemGroup>
 
   <ItemGroup>

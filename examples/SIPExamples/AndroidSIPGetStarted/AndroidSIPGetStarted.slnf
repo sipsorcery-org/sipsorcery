@@ -1,0 +1,10 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+      "examples/SIPExamples/AndroidSIPGetStarted/AndroidSIPGetStarted.csproj",
+      "src/SIPSorcery/SIPSorcery.csproj",
+      "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

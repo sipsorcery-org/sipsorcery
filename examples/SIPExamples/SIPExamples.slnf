@@ -1,0 +1,32 @@
+﻿{
+  "solution": {
+    "path": "../../SIPSorcery.slnx",
+    "projects": [
+    "examples/SIPExamples/AsteriskIce/AsteriskIce.csproj",
+    "examples/SIPExamples/AttendedTransfer/AttendedTransfer.csproj",
+    "examples/SIPExamples/CallHoldAndTransfer/CallHoldAndTransfer.csproj",
+    "examples/SIPExamples/CustomAudioCodec/CustomAudioCodec.csproj",
+    "examples/SIPExamples/GetStarted/GetStarted.csproj",
+    "examples/SIPExamples/GetStartedVideo/GetStartedVideo.csproj",
+    "examples/SIPExamples/GetStartedWebSocket/GetStartedWebSocket.csproj",
+    "examples/SIPExamples/NotifierClient/NotifierClient.csproj",
+    "examples/SIPExamples/PlaySounds/PlaySounds.csproj",
+    "examples/SIPExamples/ReceiveDtmf/ReceiveDtmf.csproj",
+    "examples/SIPExamples/RecordCall/RecordCall.csproj",
+    "examples/SIPExamples/RecordIncomingCall/RecordIncomingCall.csproj",
+    "examples/SIPExamples/SendDtmf/SendDtmf.csproj",
+    "examples/SIPExamples/SIPCallResampleAudio/SIPCallResampleAudio.csproj",
+    "examples/SIPExamples/SIPCallServer/SIPCallServer.csproj",
+    "examples/SIPExamples/SIPCloudCallServer/SIPCloudCallServer.csproj",
+    "examples/SIPExamples/SIPProxy/SIPProxy.csproj",
+    "examples/SIPExamples/UserAgentClient/UserAgentClient.csproj",
+    "examples/SIPExamples/UserAgentRegister/UserAgentRegister.csproj",
+    "examples/SIPExamples/UserAgentServer/UserAgentServer.csproj",
+    "examples/SIPExamples/VideoPhoneCmdLine/VideoPhoneCmdLine.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj",
+    "src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj",
+    "src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj"
+    ]
+  }
+}

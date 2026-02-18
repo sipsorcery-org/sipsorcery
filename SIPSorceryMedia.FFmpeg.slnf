@@ -1,0 +1,15 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorceryMedia.FFmpeg\\SIPSorceryMedia.FFmpeg.csproj",
+      "test\\FFmpegConsoleApp\\FFmpegConsoleApp.csproj",
+      "test\\FFmpegEncodingTest\\FFmpegEncodingTest.csproj",
+      "test\\FFmpegFileAndDevicesTest\\FFmpegFileAndDevicesTest.csproj",
+      "test\\FFmpegManagedTranscodeTest\\FFmpegManagedTranscodeTest.csproj",
+      "test\\FFmpegMp4Test\\FFmpegMp4Test.csproj",
+      "test\\FFmpegTranscodeTest\\FFmpegTranscodeTest.csproj",
+      "test\\FFmpegWebRtcReceiver\\FFmpegWebRTCReceiver.csproj"
+    ]
+  }
+}
