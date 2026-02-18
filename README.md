@@ -1,7 +1,45 @@
+# SIPSorcery
+
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-win.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-ubuntu.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg)
+
+## Repository Overview
+
+This repository is the home of the **SIPSorcery** project - a comprehensive real-time communications library for .NET that enables developers to add VoIP and WebRTC capabilities to their applications. The project consists of multiple packages and extensive examples to help you get started quickly.
+
+### Core Packages
+
+| Package | Version | Downloads | Description | README |
+|---------|---------|-----------|-------------|---------|
+| **SIPSorcery** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | Core library with SIP, WebRTC, RTP, ICE, STUN, and SDP support | [README](src/) |
+| **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](SIPSorceryMedia.Abstractions/) |
+| **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback | [README](SIPSorceryMedia.Windows/) |
+| **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](SIPSorceryMedia.FFmpeg/) |
+| **VP8.Net** | [![NuGet](https://img.shields.io/nuget/v/VP8.Net.svg)](https://www.nuget.org/packages/VP8.Net) | [![NuGet](https://img.shields.io/nuget/dt/VP8.Net.svg)](https://www.nuget.org/packages/VP8.Net) | Experimental pure C# VP8 codec implementation | [README](VP8.Net/) |
+
+### Related Repositories
+
+The SIPSorcery ecosystem includes several companion projects hosted in separate repositories:
+
+- **[SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders)** - Windows-specific wrappers for VP8 and other video codecs [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Encoders.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Encoders)
+- **[SIPSorceryMedia.SDL2](https://github.com/sipsorcery-org/SIPSorceryMedia.SDL2)** - Cross-platform audio/video using SDL2 
+- **[signalrtc](https://github.com/sipsorcery-org/signalrtc)** - Real-time signaling server for WebRTC
+- **[SIPSorcery.OpenAI.WebRTC](https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC)** - OpenAI real-time API integration for WebRTC
+- **[SIPSorcery.OpenAI.SIP](https://github.com/sipsorcery-org/SIPSorcery.OpenAI.SIP)** - OpenAI real-time API integration for SIP
+
+### Examples
+
+This repository includes **[70+ example projects](examples/)** demonstrating various SIP and WebRTC scenarios:
+
+- **[SIP Examples](examples/SIPExamples/)** - Basic calling, transfers, DTMF, registration, and more ([README](examples/SIPExamples/README.md))
+- **[WebRTC Examples](examples/WebRTCExamples/)** - Video streaming, data channels, signaling patterns ([README](examples/WebRTCExamples/README.md))
+- **[SIP Scenarios](examples/SIPScenarios/)** - Call transfers, load testing, complex call flows ([README](examples/SIPScenarios/README.md))
+- **[WebRTC Scenarios](examples/WebRTCScenarios/)** - Advanced WebRTC use cases ([README](examples/WebRTCScenarios/README.md))
+- **[Softphone](examples/Softphone/)** - Full-featured Windows Forms softphone application ([README](examples/Softphone/README.md))
+
+---
 
 ## License update
 
@@ -39,10 +77,10 @@ The diagram below is a high level overview of a Real-time audio and video call b
  - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Providing cross platform access to to these features on top of .NET is a large undertaking. A number of separate demonstration libraries show some different approaches to accessing audio/video devices and wrapping codecs with .NET. 
    - [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows): An example of a Windows specific library that provides audio capture and playback. 
    - [SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders): An example of a Windows specific wrapper for the [VP8](https://www.webmproject.org/) video codec.
-   - [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery-org/SIPSorceryMedia.FFmpeg): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
+   - [SIPSorceryMedia.FFmpeg](SIPSorceryMedia.FFmpeg/): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
    - [SIPSorceryMedia.SDL2](https://github.com/sipsorcery-org/SIPSorceryMedia.SDL2): An example of integrating the cross-platform [SDL2](https://www.libsdl.org/index.php) Simple Direct Media Layer library.
 
- - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via [Concentus](https://github.com/lostromb/concentus). Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see [VP8.Net](https://github.com/sipsorcery-org/VP8.Net).
+ - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via [Concentus](https://github.com/lostromb/concentus). Additional codecs, particularly video ones, require C or C++ libraries. An effort is underway to port the [VP8](https://www.webmproject.org/) video codec to C# see [VP8.Net](VP8.Net/).
 
 ## Installation
 
