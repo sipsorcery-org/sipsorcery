@@ -2,7 +2,10 @@
   
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.12" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -135,7 +135,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\SIPSorcery.csproj">
+    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj">
       <Project>{5d3ca7d1-7ee0-427a-b214-0ec9d8b48229}</Project>
       <Name>SIPSorcery</Name>
     </ProjectReference>
