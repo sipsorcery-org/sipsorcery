@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/test/">
+    <Project Path="test/FFmpegConsoleApp/FFmpegConsoleApp.csproj" />
+    <Project Path="test/FFmpegEncodingTest/FFmpegEncodingTest.csproj" />
+    <Project Path="test/FFmpegFileAndDevicesTest/FFmpegFileAndDevicesTest.csproj" />
+    <Project Path="test/FFmpegManagedTranscodeTest/FFmpegManagedTranscodeTest.csproj" />
+    <Project Path="test/FFmpegMp4Test/FFmpegMp4Test.csproj" />
+    <Project Path="test/FFmpegTranscodeTest/FFmpegTranscodeTest.csproj" />
+    <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
+  </Folder>
+  <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
+</Solution>

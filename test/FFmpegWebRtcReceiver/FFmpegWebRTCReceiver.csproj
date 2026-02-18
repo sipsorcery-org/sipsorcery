@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SIPSorceryMedia.FFmpeg.csproj" />
+    <ProjectReference Include="..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
   </ItemGroup>
 
 </Project>
