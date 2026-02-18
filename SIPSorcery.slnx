@@ -1,0 +1,15 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Test/">
+    <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
+    <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
+  </Folder>
+  <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
+  <Properties Name="TestCaseManagementSettings" Scope="PostLoad">
+    <Property Name="CategoryFile" Value="SIPSorcery-Core.vsmdi" />
+  </Properties>
+</Solution>
