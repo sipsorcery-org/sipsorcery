@@ -206,49 +206,50 @@ namespace SIPSorcery.Net
 
         private STUNMessage GetResponse(IPEndPoint receivedEndPoint, STUNMessage stunRequest, bool primary)
         {
-            if (stunRequest.Header.MessageType == STUNMessageTypesEnum.BindingRequest)
+            switch(stunRequest.Header.MessageType)
             {
-                STUNMessage stunResponse = new STUNMessage();
-                stunResponse.Header.MessageType = STUNMessageTypesEnum.BindingSuccessResponse;
-                stunResponse.Header.TransactionId = stunRequest.Header.TransactionId;
+                case STUNMessageTypesEnum.BindingRequest:
+                    STUNMessage stunResponse = new STUNMessage();
+                    stunResponse.Header.MessageType = STUNMessageTypesEnum.BindingSuccessResponse;
+                    stunResponse.Header.TransactionId = stunRequest.Header.TransactionId;
 
-                // Add MappedAddress attribute to indicate the socket the request was received from.
-                STUNAddressAttribute mappedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.MappedAddress, receivedEndPoint.Port, receivedEndPoint.Address);
-                stunResponse.Attributes.Add(mappedAddressAtt);
-                stunResponse.AddXORMappedAddressAttribute(receivedEndPoint.Address, receivedEndPoint.Port);//Compatible with the client code
+                    // Add MappedAddress attribute to indicate the socket the request was received from.
+                    STUNAddressAttribute mappedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.MappedAddress, receivedEndPoint.Port, receivedEndPoint.Address);
+                    stunResponse.Attributes.Add(mappedAddressAtt);
+                    stunResponse.AddXORMappedAddressAttribute(receivedEndPoint.Address, receivedEndPoint.Port);//Compatible with the client code
 
-                // Add SourceAddress attribute to indicate the socket used to send the response.
-                if (primary)
-                {
-                    STUNAddressAttribute sourceAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.SourceAddress, m_primaryEndPoint.Port, m_primaryEndPoint.Address);
-                    stunResponse.Attributes.Add(sourceAddressAtt);
-                }
-                else
-                {
-                    STUNAddressAttribute sourceAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.SourceAddress, m_secondaryEndPoint.Port, m_secondaryEndPoint.Address);
-                    stunResponse.Attributes.Add(sourceAddressAtt);
-                }
+                    // Add SourceAddress attribute to indicate the socket used to send the response.
+                    if (primary)
+                    {
+                        STUNAddressAttribute sourceAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.SourceAddress, m_primaryEndPoint.Port, m_primaryEndPoint.Address);
+                        stunResponse.Attributes.Add(sourceAddressAtt);
+                    }
+                    else
+                    {
+                        STUNAddressAttribute sourceAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.SourceAddress, m_secondaryEndPoint.Port, m_secondaryEndPoint.Address);
+                        stunResponse.Attributes.Add(sourceAddressAtt);
+                    }
 
-                // Add ChangedAddress attribute to indicate the servers alternative socket.
-                if (primary)
-                {
-                    STUNAddressAttribute changedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.ChangedAddress, m_secondaryEndPoint.Port, m_secondaryEndPoint.Address);
-                    stunResponse.Attributes.Add(changedAddressAtt);
-                }
-                else
-                {
-                    STUNAddressAttribute changedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.ChangedAddress, m_primaryEndPoint.Port, m_primaryEndPoint.Address);
-                    stunResponse.Attributes.Add(changedAddressAtt);
-                }
+                    // Add ChangedAddress attribute to indicate the servers alternative socket.
+                    if (primary)
+                    {
+                        STUNAddressAttribute changedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.ChangedAddress, m_secondaryEndPoint.Port, m_secondaryEndPoint.Address);
+                        stunResponse.Attributes.Add(changedAddressAtt);
+                    }
+                    else
+                    {
+                        STUNAddressAttribute changedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.ChangedAddress, m_primaryEndPoint.Port, m_primaryEndPoint.Address);
+                        stunResponse.Attributes.Add(changedAddressAtt);
+                    }
 
-                //Console.WriteLine(stunResponse.ToString());
+                    //Console.WriteLine(stunResponse.ToString());
 
-                //byte[] stunResponseBuffer = stunResponse.ToByteBuffer();
+                    //byte[] stunResponseBuffer = stunResponse.ToByteBuffer();
 
-                return stunResponse;
+                    return stunResponse;
+                default://Allocate not supported - this is a STUN server only not a full TURN server
+                    throw new ApplicationException("Unsupported MessageType " + stunRequest.Header.MessageType);
             }
-
-            return null;
         }
 
         public void Stop()
