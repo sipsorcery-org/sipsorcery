@@ -15,8 +15,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: dotnet restore src/SIPSorcery.sln 
+      run: dotnet restore SIPSorcery.slnf 
     - name: Build
-      run: dotnet build src/SIPSorcery.sln -c Release --no-restore
+      run: dotnet build SIPSorcery.slnf -c Release --no-restore
     - name: Test
       run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal -f net8.0

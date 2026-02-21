@@ -5,6 +5,16 @@
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/sipsorcery-core-mac.yml/badge.svg) 
 ![](https://github.com/sipsorcery-org/sipsorcery/actions/workflows/examples-core-win.yml/badge.svg)
 
+## License
+
+![License](https://img.shields.io/badge/license-BSD%203--Clause%20%2B%20BDS-red) ![Use prohibited in Israel](img/israel-ban.svg)
+
+**BSD 3-Clause License with an explicit prohibition on use by entities contributing to Israeli occupation or genocide.**
+
+For full license see [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file).
+
+**The SIPSorceryMediaFFmpeg library is licensed separately under GNU LGPL v2.1 see [License](https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.FFmpeg/LICENSE)**
+
 ## Repository Overview
 
 This repository is the home of the **SIPSorcery** project - a comprehensive real-time communications library for .NET that enables developers to add VoIP and WebRTC capabilities to their applications. The project consists of multiple packages and extensive examples to help you get started quickly.
@@ -17,7 +27,7 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](SIPSorceryMedia.Abstractions/) |
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback | [README](SIPSorceryMedia.Windows/) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](SIPSorceryMedia.FFmpeg/) |
-| **VP8.Net** | [![NuGet](https://img.shields.io/nuget/v/VP8.Net.svg)](https://www.nuget.org/packages/VP8.Net) | [![NuGet](https://img.shields.io/nuget/dt/VP8.Net.svg)](https://www.nuget.org/packages/VP8.Net) | Experimental pure C# VP8 codec implementation | [README](VP8.Net/) |
+| **VP8.Net** |  |  | Experimental pure C# VP8 codec implementation | [README](VP8.Net/) |
 
 ### Related Repositories
 
@@ -41,18 +51,7 @@ This repository includes **[70+ example projects](examples/)** demonstrating var
 
 ---
 
-## License update
 
-> ⚠️ **License Update (16 Jan 2026)**  
-> **Thanks to the excellent DTLS & SRTP implementation by @jimm98y, the AGPL-licensed classes have been removed and this library is now free of GPL/AGPL constraints.**
-
-## License
-
-![License](https://img.shields.io/badge/license-BSD%203--Clause%20%2B%20BDS-red) ![Use prohibited in Israel](img/israel-ban.svg)
-
-**BSD 3-Clause License with an explicit prohibition on use by entities contributing to Israeli occupation or genocide.**
-
-For full license see [LICENSE](https://github.com/sipsorcery-org/sipsorcery?tab=License-1-ov-file).
 
 ## What Is It?
 
