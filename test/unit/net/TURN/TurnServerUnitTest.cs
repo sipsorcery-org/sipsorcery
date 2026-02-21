@@ -1327,7 +1327,7 @@ namespace SIPSorcery.Net.UnitTests
             using var tmpCert = certReq.CreateSelfSigned(
                 DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
             var pfxBytes = tmpCert.Export(X509ContentType.Pfx, (string)null);
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
             using var cert = X509CertificateLoader.LoadPkcs12(pfxBytes, null,
                 X509KeyStorageFlags.Exportable);
 #else
