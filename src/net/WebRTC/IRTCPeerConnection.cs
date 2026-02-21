@@ -98,6 +98,12 @@ namespace SIPSorcery.Net
         public RTCIceCredentialType credentialType;
         public string credential;
 
+        /// <summary>
+        /// Extension: when set to <see cref="RTCIceProtocol.tcp"/>, the TURN server
+        /// will be asked to allocate a TCP relay candidate (RFC 6062).
+        /// </summary>
+        public RTCIceProtocol? X_ICERelayProtocol { get; set; }
+
         public static RTCIceServer Parse(string iceServer)
         {
             var fields = iceServer.Split(';');
