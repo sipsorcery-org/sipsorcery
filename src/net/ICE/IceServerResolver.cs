@@ -84,7 +84,14 @@ public class IceServerResolver
 
                 var server = new IceServer(stunUri, iceServerID++, cfg.username, cfg.credential);
 
-                // immediate bind if it’s already an IP
+                // Set relay protocol if requested (RFC 6062 TCP relay)
+                if (stunUri.Scheme == STUNSchemesEnum.turn && cfg.X_ICERelayProtocol == RTCIceProtocol.tcp)
+                {
+                    server.IceRelayProtocol = System.Net.Sockets.ProtocolType.Tcp;
+                    logger.LogDebug("{caller} will request TCP relay candidate from ICE server {Uri}", nameof(IceServerResolver), stunUri);
+                }
+
+                // immediate bind if it's already an IP
                 if (IPAddress.TryParse(stunUri.Host, out var ip))
                 {
                     server.ServerEndPoint = new IPEndPoint(ip, stunUri.Port);

@@ -83,6 +83,43 @@ namespace SIPSorcery.Net
     }
 
     /// <summary>
+    /// Represents a TCP connection to a peer established via RFC 6062 Connect or
+    /// via an incoming connection on a TCP relay listener.
+    /// </summary>
+    public class TcpPeerConnection : IDisposable
+    {
+        /// <summary>Connection ID assigned by the server (unique within the allocation).</summary>
+        public uint ConnectionId { get; set; }
+
+        /// <summary>The remote peer endpoint.</summary>
+        public IPEndPoint PeerEndPoint { get; set; }
+
+        /// <summary>The TCP client connected to the peer.</summary>
+        public TcpClient TcpClient { get; set; }
+
+        /// <summary>Network stream for the peer TCP connection.</summary>
+        public NetworkStream Stream { get; set; }
+
+        /// <summary>
+        /// Network stream for the client's data connection (set after ConnectionBind).
+        /// </summary>
+        public NetworkStream ClientDataStream { get; set; }
+
+        /// <summary>Whether this connection has been bound to a client data connection.</summary>
+        public bool IsBound { get; set; }
+
+        /// <summary>Cancellation source for the relay tasks.</summary>
+        public CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
+
+        public void Dispose()
+        {
+            try { Cts.Cancel(); } catch { }
+            try { Cts.Dispose(); } catch { }
+            try { TcpClient?.Dispose(); } catch { }
+        }
+    }
+
+    /// <summary>
     /// Represents a TURN allocation — the server-side state for a single client's relay session.
     /// </summary>
     public class TurnAllocation : IDisposable
@@ -90,7 +127,7 @@ namespace SIPSorcery.Net
         /// <summary>Unique identifier (typically the client's remote endpoint string).</summary>
         public string Id { get; set; } = string.Empty;
 
-        /// <summary>The UDP socket used to relay data to/from peers.</summary>
+        /// <summary>The UDP socket used to relay data to/from peers (null for TCP relay).</summary>
         public UdpClient RelaySocket { get; set; }
 
         /// <summary>The relay endpoint (IP + port) advertised to the client.</summary>
@@ -123,11 +160,35 @@ namespace SIPSorcery.Net
         // Internal: cancellation for the relay loop.
         internal CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
 
+        /// <summary>Whether this is a TCP relay allocation (RFC 6062) vs UDP relay.</summary>
+        public bool IsTcpRelay { get; set; }
+
+        /// <summary>TCP listener for accepting peer connections (TCP relay only).</summary>
+        public TcpListener RelayTcpListener { get; set; }
+
+        /// <summary>Active TCP peer connections (Connection ID → connection).</summary>
+        public ConcurrentDictionary<uint, TcpPeerConnection> TcpPeerConnections { get; } =
+            new ConcurrentDictionary<uint, TcpPeerConnection>();
+
+        private int _nextConnectionId;
+
+        /// <summary>Allocates a unique connection ID for this allocation.</summary>
+        public uint AllocateConnectionId()
+        {
+            return (uint)Interlocked.Increment(ref _nextConnectionId);
+        }
+
         public void Dispose()
         {
             try { Cts.Cancel(); } catch { }
             try { Cts.Dispose(); } catch { }
             try { RelaySocket?.Dispose(); } catch { }
+            try { RelayTcpListener?.Stop(); } catch { }
+            foreach (var conn in TcpPeerConnections.Values)
+            {
+                try { conn.Dispose(); } catch { }
+            }
+            TcpPeerConnections.Clear();
         }
     }
 
@@ -148,9 +209,7 @@ namespace SIPSorcery.Net
     ///         server resources.</item>
     ///   <item>No TLS/DTLS for the control channel — credentials are sent in the clear unless the
     ///         transport is already secured.</item>
-    ///   <item>UDP-only relay — the relay leg is always UDP; no TCP relay (RFC 6062) or
-    ///         TURN-over-TLS (RFC 5766 Section 6).</item>
-    ///   <item>No REQUESTED-TRANSPORT validation — the attribute is ignored entirely.</item>
+    ///   <item>No TURN-over-TLS (RFC 5766 Section 6).</item>
     ///   <item>No EVEN-PORT / RESERVATION-TOKEN support.</item>
     ///   <item>IPv4 only (no IPv6 relay addresses).</item>
     ///   <item>Allocation lifetime is not capped — clients can request arbitrarily long lifetimes.</item>
@@ -380,10 +439,37 @@ namespace SIPSorcery.Net
                             continue;
                         }
 
-                        ProcessMessage(stunMsg, fullMsg, clientId,
+                        bool connectionBound = ProcessMessage(stunMsg, fullMsg, clientId,
                             (responseBytes) => SendTcpResponseAsync(stream, responseBytes),
                             ref allocation,
                             stream, null, null);
+
+                        if (connectionBound)
+                        {
+                            // After ConnectionBind, this TCP connection is now a raw data
+                            // channel (RFC 6062 Section 5.4). Exit the STUN message loop
+                            // but keep the connection alive for the relay.
+                            logger.LogDebug("TCP connection from {Client} bound for data relay.", clientId);
+
+                            // Wait for the relay to complete (keeps the TcpClient alive)
+                            // Find the peer connection that was just bound to this stream
+                            foreach (var alloc in _allocations.Values)
+                            {
+                                foreach (var pc in alloc.TcpPeerConnections.Values)
+                                {
+                                    if (pc.IsBound && pc.ClientDataStream == stream)
+                                    {
+                                        try
+                                        {
+                                            await Task.Delay(Timeout.Infinite, pc.Cts.Token).ConfigureAwait(false);
+                                        }
+                                        catch (OperationCanceledException) { }
+                                        return;
+                                    }
+                                }
+                            }
+                            return;
+                        }
                     }
                 }
             }
@@ -395,7 +481,9 @@ namespace SIPSorcery.Net
             }
             finally
             {
-                if (allocation != null)
+                // Only clean up the allocation if this is the control connection, not a data connection.
+                // Data connections do not own the allocation.
+                if (allocation != null && allocation.TcpStream == stream)
                 {
                     _allocations.TryRemove(allocation.Id, out _);
                     allocation.Dispose();
@@ -485,7 +573,7 @@ namespace SIPSorcery.Net
             TurnAllocation udpAllocation = null;
             _allocations.TryGetValue(clientId, out udpAllocation);
 
-            ProcessMessage(stunMsg, data, clientId,
+            _ = ProcessMessage(stunMsg, data, clientId,
                 (responseBytes) => SendUdpResponseAsync(remoteEndPoint, responseBytes),
                 ref udpAllocation,
                 null, remoteEndPoint, _udpSocket);
@@ -513,7 +601,8 @@ namespace SIPSorcery.Net
 
         #region Message processing
 
-        private void ProcessMessage(
+        /// <returns>True if a ConnectionBind was completed and the TCP connection is now a raw data channel.</returns>
+        private bool ProcessMessage(
             STUNMessage msg,
             byte[] rawBytes,
             string clientId,
@@ -576,10 +665,32 @@ namespace SIPSorcery.Net
                     HandleSendIndication(msg, allocation);
                     break; // Indications get no response
 
+                case STUNMessageTypesEnum.Connect:
+                    {
+                        var response = HandleConnect(msg, allocation);
+                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        _ = sendResponse(bytes);
+                    }
+                    break;
+
+                case STUNMessageTypesEnum.ConnectionBind:
+                    {
+                        var (response, connectionBound) = HandleConnectionBind(msg, allocation, tcpStream);
+                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        _ = sendResponse(bytes);
+                        if (connectionBound)
+                        {
+                            return true;
+                        }
+                    }
+                    break;
+
                 default:
                     logger.LogWarning("Unhandled STUN message type: {Type}.", msgType);
                     break;
             }
+
+            return false;
         }
 
         private STUNMessage HandleBindingRequest(STUNMessage request)
@@ -638,28 +749,80 @@ namespace SIPSorcery.Net
                 return (errResponse, true);
             }
 
-            // Create UDP relay socket
-            var relaySocket = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
-            var relayEndpoint = (IPEndPoint)relaySocket.Client.LocalEndPoint;
-
-            allocation = new TurnAllocation
+            // Parse REQUESTED-TRANSPORT to determine UDP or TCP relay
+            bool isTcpRelay = false;
+            var transportAttr = request.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.RequestedTransport);
+            if (transportAttr?.Value != null && transportAttr.Value.Length >= 1)
             {
-                Id = clientId,
-                RelaySocket = relaySocket,
-                RelayEndPoint = relayEndpoint,
-                Expiry = DateTime.UtcNow.AddSeconds(_config.DefaultLifetimeSeconds),
-                TcpStream = tcpStream,
-                UdpClientEndPoint = udpClientEndPoint,
-                UdpControlSocket = udpControlSocket,
-            };
+                byte transportProto = transportAttr.Value[0];
+                if (transportProto == 0x06) // TCP
+                {
+                    isTcpRelay = true;
+                }
+                else if (transportProto != 0x11) // Not UDP either
+                {
+                    var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
+                    errResponse.Header.TransactionId = request.Header.TransactionId;
+                    errResponse.Attributes.Add(BuildErrorCodeAttribute(442, "Unsupported Transport Protocol"));
+                    return (errResponse, true);
+                }
+            }
 
-            _allocations[clientId] = allocation;
+            IPEndPoint relayEndpoint;
 
-            // Start relaying UDP → client
-            _ = RelayUdpToClientAsync(allocation);
+            if (isTcpRelay)
+            {
+                // Create TCP relay listener
+                var tcpRelayListener = new TcpListener(IPAddress.Any, 0);
+                tcpRelayListener.Start();
+                relayEndpoint = (IPEndPoint)tcpRelayListener.LocalEndpoint;
 
-            logger.LogInformation("TURN allocation created for {Client}: relay port {Port}.",
-                clientId, relayEndpoint.Port);
+                allocation = new TurnAllocation
+                {
+                    Id = clientId,
+                    RelayEndPoint = relayEndpoint,
+                    Expiry = DateTime.UtcNow.AddSeconds(_config.DefaultLifetimeSeconds),
+                    TcpStream = tcpStream,
+                    UdpClientEndPoint = udpClientEndPoint,
+                    UdpControlSocket = udpControlSocket,
+                    IsTcpRelay = true,
+                    RelayTcpListener = tcpRelayListener,
+                };
+
+                _allocations[clientId] = allocation;
+
+                // Start accepting peer TCP connections
+                _ = AcceptTcpPeerConnectionsAsync(allocation);
+
+                logger.LogInformation("TURN TCP relay allocation created for {Client}: relay port {Port}.",
+                    clientId, relayEndpoint.Port);
+            }
+            else
+            {
+                // Create UDP relay socket
+                var relaySocket = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+                relayEndpoint = (IPEndPoint)relaySocket.Client.LocalEndPoint;
+
+                allocation = new TurnAllocation
+                {
+                    Id = clientId,
+                    RelaySocket = relaySocket,
+                    RelayEndPoint = relayEndpoint,
+                    Expiry = DateTime.UtcNow.AddSeconds(_config.DefaultLifetimeSeconds),
+                    TcpStream = tcpStream,
+                    UdpClientEndPoint = udpClientEndPoint,
+                    UdpControlSocket = udpControlSocket,
+                };
+
+                _allocations[clientId] = allocation;
+
+                // Start relaying UDP → client
+                _ = RelayUdpToClientAsync(allocation);
+
+                logger.LogInformation("TURN UDP allocation created for {Client}: relay port {Port}.",
+                    clientId, relayEndpoint.Port);
+            }
 
             // Build success response
             var response = new STUNMessage(STUNMessageTypesEnum.AllocateSuccessResponse);
@@ -829,6 +992,282 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug(ex, "Failed to relay UDP to {Peer}. {ErrorMessage}", peerEndpoint, ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Handles a Connect request (RFC 6062 Section 4.3).
+        /// Client sends Connect(XOR-PEER-ADDRESS) → server opens TCP to peer.
+        /// </summary>
+        private STUNMessage HandleConnect(STUNMessage request, TurnAllocation allocation)
+        {
+            if (allocation == null || !allocation.IsTcpRelay)
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                return errResponse;
+            }
+
+            var peerAttr = request.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress);
+            if (peerAttr?.Value == null)
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                return errResponse;
+            }
+
+            var peerAddr = new STUNXORAddressAttribute(
+                STUNAttributeTypesEnum.XORPeerAddress,
+                peerAttr.Value, request.Header.TransactionId);
+            var peerEndpoint = new IPEndPoint(peerAddr.Address, peerAddr.Port);
+
+            // Check permission
+            if (!HasPermission(allocation, peerEndpoint.Address.ToString()))
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(403, "Forbidden"));
+                return errResponse;
+            }
+
+            // Check if a connection to this peer already exists
+            if (allocation.TcpPeerConnections.Values.Any(c => c.PeerEndPoint.Equals(peerEndpoint)))
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(446, "Connection Already Exists"));
+                return errResponse;
+            }
+
+            // Try to connect to peer
+            TcpClient peerTcpClient;
+            try
+            {
+                peerTcpClient = new TcpClient();
+                if (!peerTcpClient.ConnectAsync(peerEndpoint.Address, peerEndpoint.Port)
+                    .Wait(TimeSpan.FromSeconds(5)))
+                {
+                    peerTcpClient.Dispose();
+                    var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectErrorResponse);
+                    errResponse.Header.TransactionId = request.Header.TransactionId;
+                    errResponse.Attributes.Add(BuildErrorCodeAttribute(447, "Connection Timeout or Failure"));
+                    return errResponse;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "TURN Connect: failed to connect to peer {Peer}. {ErrorMessage}", peerEndpoint, ex.Message);
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(447, "Connection Timeout or Failure"));
+                return errResponse;
+            }
+
+            var connectionId = allocation.AllocateConnectionId();
+            var peerConnection = new TcpPeerConnection
+            {
+                ConnectionId = connectionId,
+                PeerEndPoint = peerEndpoint,
+                TcpClient = peerTcpClient,
+                Stream = peerTcpClient.GetStream(),
+            };
+
+            allocation.TcpPeerConnections[connectionId] = peerConnection;
+
+            logger.LogDebug("TURN Connect: connected to peer {Peer}, connectionId={ConnectionId}.",
+                peerEndpoint, connectionId);
+
+            var response = new STUNMessage(STUNMessageTypesEnum.ConnectSuccessResponse);
+            response.Header.TransactionId = request.Header.TransactionId;
+            response.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+            return response;
+        }
+
+        /// <summary>
+        /// Handles a ConnectionBind request (RFC 6062 Section 4.4).
+        /// Received on a new TCP data connection. Pairs this connection with an existing peer connection.
+        /// </summary>
+        private (STUNMessage response, bool connectionBound) HandleConnectionBind(
+            STUNMessage request, TurnAllocation allocation, NetworkStream dataStream)
+        {
+            // ConnectionBind can arrive on a new TCP connection that has no allocation.
+            // We need to find the allocation by looking up the connection ID across all allocations.
+            var connectionIdAttr = request.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ConnectionId) as STUNConnectionIdAttribute;
+
+            if (connectionIdAttr == null)
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectionBindErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                return (errResponse, false);
+            }
+
+            uint connectionId = connectionIdAttr.ConnectionId;
+
+            // Find the peer connection across all allocations
+            TcpPeerConnection peerConnection = null;
+            TurnAllocation ownerAllocation = allocation;
+
+            if (ownerAllocation != null)
+            {
+                ownerAllocation.TcpPeerConnections.TryGetValue(connectionId, out peerConnection);
+            }
+
+            if (peerConnection == null)
+            {
+                // Search across all allocations if the data connection has no associated allocation
+                foreach (var kvp in _allocations)
+                {
+                    if (kvp.Value.TcpPeerConnections.TryGetValue(connectionId, out peerConnection))
+                    {
+                        ownerAllocation = kvp.Value;
+                        break;
+                    }
+                }
+            }
+
+            if (peerConnection == null)
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectionBindErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                return (errResponse, false);
+            }
+
+            if (peerConnection.IsBound)
+            {
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.ConnectionBindErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                return (errResponse, false);
+            }
+
+            // Bind the data connection
+            peerConnection.ClientDataStream = dataStream;
+            peerConnection.IsBound = true;
+
+            logger.LogDebug("TURN ConnectionBind: connectionId={ConnectionId} now bound for data relay.",
+                connectionId);
+
+            // Start bidirectional relay
+            _ = RelayTcpBidirectionalAsync(peerConnection);
+
+            var response = new STUNMessage(STUNMessageTypesEnum.ConnectionBindSuccessResponse);
+            response.Header.TransactionId = request.Header.TransactionId;
+            return (response, true);
+        }
+
+        /// <summary>
+        /// Accepts incoming TCP peer connections on a TCP relay listener (RFC 6062 Section 4.5).
+        /// </summary>
+        private async Task AcceptTcpPeerConnectionsAsync(TurnAllocation allocation)
+        {
+            try
+            {
+                while (!allocation.Cts.IsCancellationRequested)
+                {
+                    TcpClient peerClient;
+                    try
+                    {
+                        peerClient = await allocation.RelayTcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+                    }
+                    catch (ObjectDisposedException) { break; }
+                    catch (SocketException) { break; }
+
+                    var peerEndpoint = (IPEndPoint)peerClient.Client.RemoteEndPoint;
+                    var peerIp = peerEndpoint.Address.ToString();
+
+                    // Check permissions
+                    if (!HasPermission(allocation, peerIp))
+                    {
+                        logger.LogDebug("TURN TCP relay: rejected peer connection from {Peer} (no permission).", peerEndpoint);
+                        peerClient.Dispose();
+                        continue;
+                    }
+
+                    var connectionId = allocation.AllocateConnectionId();
+                    var peerConnection = new TcpPeerConnection
+                    {
+                        ConnectionId = connectionId,
+                        PeerEndPoint = peerEndpoint,
+                        TcpClient = peerClient,
+                        Stream = peerClient.GetStream(),
+                    };
+
+                    allocation.TcpPeerConnections[connectionId] = peerConnection;
+
+                    logger.LogDebug("TURN TCP relay: peer connected from {Peer}, connectionId={ConnectionId}.",
+                        peerEndpoint, connectionId);
+
+                    // Send ConnectionAttemptIndication to the client
+                    var indication = new STUNMessage(STUNMessageTypesEnum.ConnectionAttemptIndication);
+                    indication.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+                    indication.AddXORPeerAddressAttribute(peerEndpoint.Address, peerEndpoint.Port);
+                    var indicationBytes = indication.ToByteBuffer(null, false);
+
+                    await SendToClientAsync(allocation, indicationBytes).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "TURN TCP peer accept loop ended for allocation {Id}. {ErrorMessage}",
+                    allocation.Id, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Bidirectional raw byte relay between client data stream and peer stream (RFC 6062 Section 5.4).
+        /// </summary>
+        private async Task RelayTcpBidirectionalAsync(TcpPeerConnection connection)
+        {
+            try
+            {
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(connection.Cts.Token);
+
+                var clientToPeer = CopyStreamAsync(connection.ClientDataStream, connection.Stream, linkedCts.Token);
+                var peerToClient = CopyStreamAsync(connection.Stream, connection.ClientDataStream, linkedCts.Token);
+
+                // When either direction closes, cancel both
+                await Task.WhenAny(clientToPeer, peerToClient).ConfigureAwait(false);
+                linkedCts.Cancel();
+
+                logger.LogDebug("TURN TCP relay ended for connectionId={ConnectionId}.", connection.ConnectionId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "TURN TCP bidirectional relay error for connectionId={ConnectionId}. {ErrorMessage}",
+                    connection.ConnectionId, ex.Message);
+            }
+        }
+
+        private static async Task CopyStreamAsync(NetworkStream source, NetworkStream destination, CancellationToken ct)
+        {
+            var buffer = new byte[8192];
+            try
+            {
+                while (!ct.IsCancellationRequested)
+                {
+                    int bytesRead;
+#if NET5_0_OR_GREATER
+                    bytesRead = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct).ConfigureAwait(false);
+#else
+                    bytesRead = await source.ReadAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false);
+#endif
+                    if (bytesRead == 0) break;
+
+#if NET5_0_OR_GREATER
+                    await destination.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
+#else
+                    await destination.WriteAsync(buffer, 0, bytesRead, ct).ConfigureAwait(false);
+#endif
+                    await destination.FlushAsync(ct).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (System.IO.IOException) { }
         }
 
         private void HandleChannelData(TurnAllocation allocation, ushort channelNumber, byte[] data)

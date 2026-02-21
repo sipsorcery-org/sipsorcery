@@ -27,6 +27,12 @@ public class IceTcpReceiver : UdpReceiver
 
     protected int m_recvOffset;
 
+    /// <summary>
+    /// When true, received bytes are passed directly to the callback without STUN message parsing.
+    /// Used after RFC 6062 ConnectionBind when the TCP connection becomes a raw data channel.
+    /// </summary>
+    public bool RawMode { get; set; }
+
     public IceTcpReceiver(Socket socket, int mtu = RECEIVE_TCP_BUFFER_SIZE) : base(socket, mtu)
     {
         m_recvOffset = 0;
@@ -182,6 +188,15 @@ public class IceTcpReceiver : UdpReceiver
         var extractCount = 0;
         if (bytesRead > 0)
         {
+            // In raw mode, pass all received bytes directly through without STUN parsing.
+            if (RawMode)
+            {
+                byte[] rawData = new byte[bytesRead];
+                Buffer.BlockCopy(m_recvBuffer, 0, rawData, 0, bytesRead);
+                m_recvOffset = 0;
+                CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP, rawData);
+                return 1;
+            }
             // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
             // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
             // is relying on getting the local IP address on Linux then something may fail.

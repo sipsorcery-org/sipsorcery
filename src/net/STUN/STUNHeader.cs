@@ -105,8 +105,15 @@ namespace SIPSorcery.Net
 
         // New methods defined in TURN (RFC6062).
         Connect = 0x000a,
+        ConnectSuccessResponse = 0x010a,
+        ConnectErrorResponse = 0x011a,
+
         ConnectionBind = 0x000b,
+        ConnectionBindSuccessResponse = 0x010b,
+        ConnectionBindErrorResponse = 0x011b,
+
         ConnectionAttempt = 0x000c,
+        ConnectionAttemptIndication = 0x001c,
     }
 
     /// <summary>
@@ -125,7 +132,11 @@ namespace SIPSorcery.Net
     {
         public static STUNMessageTypesEnum GetSTUNMessageTypeForId(int stunMessageTypeId)
         {
-            return (STUNMessageTypesEnum)Enum.Parse(typeof(STUNMessageTypesEnum), stunMessageTypeId.ToString(), true);
+            if (Enum.IsDefined(typeof(STUNMessageTypesEnum), (ushort)stunMessageTypeId))
+            {
+                return (STUNMessageTypesEnum)stunMessageTypeId;
+            }
+            return 0;
         }
     }
 

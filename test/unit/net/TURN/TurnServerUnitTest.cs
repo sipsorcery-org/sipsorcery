@@ -14,8 +14,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -644,6 +646,909 @@ namespace SIPSorcery.Net.UnitTests
             }
             // If the cleanup timer already ran, allocation count could be 0
         }
+
+        #region RFC 6062 TCP Relay Tests
+
+        /// <summary>
+        /// Tests that GetSTUNMessageTypeForId returns 0 for unknown values instead of throwing.
+        /// </summary>
+        [Fact]
+        public void GetSTUNMessageTypeForId_UnknownValue_ReturnsZero()
+        {
+            var result = STUNMessageTypes.GetSTUNMessageTypeForId(0xFFFF);
+            Assert.Equal((STUNMessageTypesEnum)0, result);
+        }
+
+        /// <summary>
+        /// Tests that GetSTUNMessageTypeForId correctly parses ConnectSuccessResponse.
+        /// </summary>
+        [Fact]
+        public void GetSTUNMessageTypeForId_ConnectSuccessResponse_ReturnsCorrectEnum()
+        {
+            var result = STUNMessageTypes.GetSTUNMessageTypeForId(0x010a);
+            Assert.Equal(STUNMessageTypesEnum.ConnectSuccessResponse, result);
+        }
+
+        /// <summary>
+        /// Tests that a TCP Allocate (RequestedTransport=TCP) succeeds.
+        /// </summary>
+        [Fact]
+        public async Task TcpAllocateSucceeds()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+
+            var allocResponse = await TcpAllocateWithAuth(stream, hmacKey);
+
+            Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+            var relayAttr = allocResponse.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress);
+            Assert.NotNull(relayAttr);
+
+            Assert.Single(server.Allocations);
+            var alloc = server.Allocations.Values.First();
+            Assert.True(alloc.IsTcpRelay);
+        }
+
+        /// <summary>
+        /// Tests that Connect without a TCP allocation returns 437.
+        /// </summary>
+        [Fact]
+        public async Task ConnectWithoutAllocationReturns437()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+
+            // Send Connect without any allocation
+            var connectMsg = new STUNMessage(STUNMessageTypesEnum.Connect);
+            connectMsg.AddXORPeerAddressAttribute(IPAddress.Loopback, 9999);
+            await SendStunMessage(stream, connectMsg, hmacKey);
+
+            var response = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.ConnectErrorResponse, response.Header.MessageType);
+
+            var errorAttr = response.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ErrorCode);
+            Assert.NotNull(errorAttr);
+            Assert.Equal(437, (errorAttr as STUNErrorCodeAttribute)?.ErrorCode ??
+                ParseErrorCode(errorAttr.Value));
+        }
+
+        /// <summary>
+        /// Tests the full flow: TCP Allocate → CreatePermission → Connect → ConnectSuccess with ConnectionId.
+        /// </summary>
+        [Fact]
+        public async Task ConnectToPeerSucceeds()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // Start a TCP listener to act as the peer
+            var peerListener = new TcpListener(IPAddress.Loopback, 0);
+            peerListener.Start();
+            var peerPort = ((IPEndPoint)peerListener.LocalEndpoint).Port;
+
+            try
+            {
+                using var client = await ConnectTcpClient(port);
+                var stream = client.GetStream();
+
+                // Allocate with TCP transport
+                var allocResponse = await TcpAllocateWithAuth(stream, hmacKey);
+                Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+                // Create Permission for peer
+                var permMsg = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
+                permMsg.AddXORPeerAddressAttribute(IPAddress.Loopback, peerPort);
+                permMsg.AddUsernameAttribute(TEST_USERNAME);
+                permMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                permMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(stream, permMsg, hmacKey);
+                var permResponse = await ReceiveStunMessage(stream);
+                Assert.Equal(STUNMessageTypesEnum.CreatePermissionSuccessResponse, permResponse.Header.MessageType);
+
+                // Connect to peer
+                var connectMsg = new STUNMessage(STUNMessageTypesEnum.Connect);
+                connectMsg.AddXORPeerAddressAttribute(IPAddress.Loopback, peerPort);
+                connectMsg.AddUsernameAttribute(TEST_USERNAME);
+                connectMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                connectMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(stream, connectMsg, hmacKey);
+
+                // Accept the peer connection first (server connects out to peer)
+                var peerAcceptTask = peerListener.AcceptTcpClientAsync();
+
+                var connectResponse = await ReceiveStunMessage(stream);
+                Assert.Equal(STUNMessageTypesEnum.ConnectSuccessResponse, connectResponse.Header.MessageType);
+
+                var connIdAttr = connectResponse.Attributes.FirstOrDefault(
+                    a => a.AttributeType == STUNAttributeTypesEnum.ConnectionId) as STUNConnectionIdAttribute;
+                Assert.NotNull(connIdAttr);
+                Assert.True(connIdAttr.ConnectionId > 0);
+
+                // Clean up peer
+                if (peerAcceptTask.IsCompleted)
+                {
+                    (await peerAcceptTask).Dispose();
+                }
+            }
+            finally
+            {
+                peerListener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Tests the full flow: After Connect, open a new TCP data connection,
+        /// send ConnectionBind, and verify success.
+        /// </summary>
+        [Fact]
+        public async Task ConnectionBindPairsDataConnection()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            var peerListener = new TcpListener(IPAddress.Loopback, 0);
+            peerListener.Start();
+            var peerPort = ((IPEndPoint)peerListener.LocalEndpoint).Port;
+
+            try
+            {
+                using var controlClient = await ConnectTcpClient(port);
+                var controlStream = controlClient.GetStream();
+
+                // TCP Allocate + Permission + Connect
+                var allocResponse = await TcpAllocateWithAuth(controlStream, hmacKey);
+                Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+                await CreatePermissionForPeer(controlStream, hmacKey, peerPort);
+
+                var peerAcceptTask = peerListener.AcceptTcpClientAsync();
+                uint connectionId = await ConnectToPeer(controlStream, hmacKey, peerPort);
+
+                if (peerAcceptTask.IsCompleted)
+                {
+                    (await peerAcceptTask).Dispose();
+                }
+
+                // Open a new TCP data connection for ConnectionBind
+                using var dataClient = await ConnectTcpClient(port);
+                var dataStream = dataClient.GetStream();
+
+                var bindMsg = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+                bindMsg.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+                bindMsg.AddUsernameAttribute(TEST_USERNAME);
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(dataStream, bindMsg, hmacKey);
+
+                var bindResponse = await ReceiveStunMessage(dataStream);
+                Assert.Equal(STUNMessageTypesEnum.ConnectionBindSuccessResponse, bindResponse.Header.MessageType);
+            }
+            finally
+            {
+                peerListener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Tests that after full ConnectionBind setup, raw bytes relay bidirectionally.
+        /// </summary>
+        [Fact]
+        public async Task RawDataRelaysAfterConnectionBind()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            var peerListener = new TcpListener(IPAddress.Loopback, 0);
+            peerListener.Start();
+            var peerPort = ((IPEndPoint)peerListener.LocalEndpoint).Port;
+
+            try
+            {
+                using var controlClient = await ConnectTcpClient(port);
+                var controlStream = controlClient.GetStream();
+
+                // Full setup: Allocate + Permission + Connect + ConnectionBind
+                await TcpAllocateWithAuth(controlStream, hmacKey);
+                await CreatePermissionForPeer(controlStream, hmacKey, peerPort);
+
+                var peerAcceptTask = peerListener.AcceptTcpClientAsync();
+                uint connectionId = await ConnectToPeer(controlStream, hmacKey, peerPort);
+
+                using var peerClient = await peerAcceptTask;
+                var peerStream = peerClient.GetStream();
+
+                // Open data connection and bind
+                using var dataClient = await ConnectTcpClient(port);
+                var dataStream = dataClient.GetStream();
+
+                var bindMsg = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+                bindMsg.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+                bindMsg.AddUsernameAttribute(TEST_USERNAME);
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(dataStream, bindMsg, hmacKey);
+
+                var bindResponse = await ReceiveStunMessage(dataStream);
+                Assert.Equal(STUNMessageTypesEnum.ConnectionBindSuccessResponse, bindResponse.Header.MessageType);
+
+                // Give the relay a moment to start
+                await Task.Delay(100);
+
+                // Send raw data: client → peer
+                var testData = Encoding.UTF8.GetBytes("hello from client");
+                await dataStream.WriteAsync(testData, 0, testData.Length);
+                await dataStream.FlushAsync();
+
+                var recvBuffer = new byte[1024];
+                var cts = new CancellationTokenSource(3000);
+                int bytesRead = await peerStream.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+                Assert.True(bytesRead > 0, "Peer should receive data from client");
+                Assert.Equal("hello from client", Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+
+                // Send raw data: peer → client
+                var peerData = Encoding.UTF8.GetBytes("hello from peer");
+                await peerStream.WriteAsync(peerData, 0, peerData.Length);
+                await peerStream.FlushAsync();
+
+                cts = new CancellationTokenSource(3000);
+                bytesRead = await dataStream.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+                Assert.True(bytesRead > 0, "Client should receive data from peer");
+                Assert.Equal("hello from peer", Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+            }
+            finally
+            {
+                peerListener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Tests that when a peer connects to the TCP relay listener, a
+        /// ConnectionAttemptIndication is sent to the client.
+        /// </summary>
+        [Fact]
+        public async Task ConnectionAttemptIndicationSentOnPeerConnect()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            using var controlClient = await ConnectTcpClient(port);
+            var controlStream = controlClient.GetStream();
+
+            // TCP Allocate
+            var allocResponse = await TcpAllocateWithAuth(controlStream, hmacKey);
+            Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+            // Get the relay port
+            var relayAttr = new STUNXORAddressAttribute(
+                STUNAttributeTypesEnum.XORRelayedAddress,
+                allocResponse.Attributes.First(a => a.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).Value,
+                allocResponse.Header.TransactionId);
+            int relayPort = relayAttr.Port;
+
+            // Create permission for our own address (we'll connect as "peer")
+            await CreatePermissionForPeer(controlStream, hmacKey, 0); // port doesn't matter for permission, IP is key
+
+            // Connect as peer to the relay port
+            using var peerClient = new TcpClient();
+            await peerClient.ConnectAsync(IPAddress.Loopback, relayPort);
+
+            // Should receive a ConnectionAttemptIndication on the control stream
+            var indication = await ReceiveStunMessage(controlStream);
+            Assert.Equal(STUNMessageTypesEnum.ConnectionAttemptIndication, indication.Header.MessageType);
+
+            var connIdAttr = indication.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ConnectionId) as STUNConnectionIdAttribute;
+            Assert.NotNull(connIdAttr);
+            Assert.True(connIdAttr.ConnectionId > 0);
+        }
+
+        /// <summary>
+        /// Tests that Allocate with an unsupported transport returns 442.
+        /// </summary>
+        [Fact]
+        public async Task AllocateUnsupportedTransportReturns442()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+
+            // Step 1: Get nonce
+            var request1 = BuildAllocateRequest();
+            await SendStunMessage(stream, request1);
+            var response1 = await ReceiveStunMessage(stream);
+            var nonce = Encoding.UTF8.GetString(
+                response1.Attributes.First(a => a.AttributeType == STUNAttributeTypesEnum.Nonce).Value);
+
+            // Step 2: Send allocate with unsupported transport (0xFF)
+            var request2 = new STUNMessage(STUNMessageTypesEnum.Allocate);
+            request2.Attributes.Add(new STUNAttribute(
+                STUNAttributeTypesEnum.RequestedTransport,
+                new byte[] { 0xFF, 0x00, 0x00, 0x00 }));
+            request2.AddUsernameAttribute(TEST_USERNAME);
+            request2.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                Encoding.UTF8.GetBytes(TEST_REALM)));
+            request2.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes(nonce)));
+            await SendStunMessage(stream, request2, hmacKey);
+
+            var response2 = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.AllocateErrorResponse, response2.Header.MessageType);
+
+            var errorAttr = response2.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ErrorCode);
+            Assert.NotNull(errorAttr);
+            Assert.Equal(442, ParseErrorCode(errorAttr.Value));
+        }
+
+        /// <summary>
+        /// Tests that GotStunResponse handles ConnectSuccessResponse correctly.
+        /// </summary>
+        [Fact]
+        public void ChecklistEntryHandlesConnectSuccess()
+        {
+            var localCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
+            localCandidate.SetAddressProperties(RTCIceProtocol.tcp, IPAddress.Loopback, 1234,
+                RTCIceCandidateType.relay, null, 0);
+            localCandidate.IceServer = new IceServer(
+                new STUNUri(STUNSchemesEnum.turn, "localhost", 3478),
+                0, TEST_USERNAME, TEST_PASSWORD);
+
+            var remoteCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
+            remoteCandidate.SetAddressProperties(RTCIceProtocol.udp, IPAddress.Loopback, 5678,
+                RTCIceCandidateType.host, null, 0);
+
+            var entry = new ChecklistEntry(localCandidate, remoteCandidate, true);
+            entry.State = ChecklistEntryState.InProgress;
+
+            var response = new STUNMessage(STUNMessageTypesEnum.ConnectSuccessResponse);
+            response.Attributes.Add(new STUNConnectionIdAttribute(42));
+
+            entry.GotStunResponse(response, new IPEndPoint(IPAddress.Loopback, 3478));
+
+            Assert.Equal(ChecklistEntryState.Waiting, entry.State);
+            Assert.Equal(42u, entry.TurnConnectionId);
+            Assert.NotEqual(DateTime.MinValue, entry.TurnConnectReportAt);
+        }
+
+        /// <summary>
+        /// Tests that GotStunResponse handles ConnectionBindSuccessResponse correctly.
+        /// </summary>
+        [Fact]
+        public void ChecklistEntryHandlesConnectionBindSuccess()
+        {
+            var localCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
+            localCandidate.SetAddressProperties(RTCIceProtocol.tcp, IPAddress.Loopback, 1234,
+                RTCIceCandidateType.relay, null, 0);
+            localCandidate.IceServer = new IceServer(
+                new STUNUri(STUNSchemesEnum.turn, "localhost", 3478),
+                0, TEST_USERNAME, TEST_PASSWORD);
+
+            var remoteCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
+            remoteCandidate.SetAddressProperties(RTCIceProtocol.udp, IPAddress.Loopback, 5678,
+                RTCIceCandidateType.host, null, 0);
+
+            var entry = new ChecklistEntry(localCandidate, remoteCandidate, true);
+            entry.State = ChecklistEntryState.InProgress;
+
+            var response = new STUNMessage(STUNMessageTypesEnum.ConnectionBindSuccessResponse);
+
+            entry.GotStunResponse(response, new IPEndPoint(IPAddress.Loopback, 3478));
+
+            Assert.Equal(ChecklistEntryState.Waiting, entry.State);
+            Assert.NotEqual(DateTime.MinValue, entry.TurnConnectBindedAt);
+        }
+
+        /// <summary>
+        /// End-to-end TCP relay test using client-initiated Connect (RFC 6062 Section 4.3).
+        /// Flow: TCP Allocate → CreatePermission → Connect → ConnectionBind → bidirectional raw data.
+        /// Verifies multiple round-trips and message ordering through the relay.
+        /// </summary>
+        [Fact]
+        public async Task TcpRelayEndToEnd_ClientInitiatedConnect()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // Peer: start a TCP listener that simulates the remote peer.
+            var peerListener = new TcpListener(IPAddress.Loopback, 0);
+            peerListener.Start();
+            var peerPort = ((IPEndPoint)peerListener.LocalEndpoint).Port;
+
+            try
+            {
+                // --- Control connection: Allocate + Permission + Connect ---
+                using var controlClient = await ConnectTcpClient(port);
+                var controlStream = controlClient.GetStream();
+
+                var allocResponse = await TcpAllocateWithAuth(controlStream, hmacKey);
+                Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+                await CreatePermissionForPeer(controlStream, hmacKey, peerPort);
+
+                // Start accepting peer connections before sending Connect
+                var peerAcceptTask = peerListener.AcceptTcpClientAsync();
+
+                uint connectionId = await ConnectToPeer(controlStream, hmacKey, peerPort);
+                Assert.True(connectionId > 0);
+
+                // Accept the peer-side TCP connection opened by the TURN server
+                using var peerClient = await peerAcceptTask;
+                var peerStream = peerClient.GetStream();
+
+                // --- Data connection: ConnectionBind → raw relay ---
+                using var dataClient = await ConnectTcpClient(port);
+                var dataStream = dataClient.GetStream();
+
+                var bindMsg = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+                bindMsg.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+                bindMsg.AddUsernameAttribute(TEST_USERNAME);
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(dataStream, bindMsg, hmacKey);
+
+                var bindResponse = await ReceiveStunMessage(dataStream);
+                Assert.Equal(STUNMessageTypesEnum.ConnectionBindSuccessResponse, bindResponse.Header.MessageType);
+
+                // Give relay tasks a moment to start
+                await Task.Delay(100);
+
+                // --- Bidirectional data exchange: multiple round-trips ---
+                var recvBuffer = new byte[4096];
+
+                for (int i = 0; i < 5; i++)
+                {
+                    // Client → Peer
+                    var clientMsg = Encoding.UTF8.GetBytes($"client-to-peer-{i}");
+                    await dataStream.WriteAsync(clientMsg, 0, clientMsg.Length);
+                    await dataStream.FlushAsync();
+
+                    var cts = new CancellationTokenSource(3000);
+                    int bytesRead = await peerStream.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+                    Assert.True(bytesRead > 0, $"Peer should receive message {i} from client");
+                    Assert.Equal($"client-to-peer-{i}", Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+
+                    // Peer → Client
+                    var peerMsg = Encoding.UTF8.GetBytes($"peer-to-client-{i}");
+                    await peerStream.WriteAsync(peerMsg, 0, peerMsg.Length);
+                    await peerStream.FlushAsync();
+
+                    cts = new CancellationTokenSource(3000);
+                    bytesRead = await dataStream.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+                    Assert.True(bytesRead > 0, $"Client should receive message {i} from peer");
+                    Assert.Equal($"peer-to-client-{i}", Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+                }
+            }
+            finally
+            {
+                peerListener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// End-to-end TCP relay test using peer-initiated connection (RFC 6062 Section 4.5).
+        /// Flow: TCP Allocate → CreatePermission → peer connects to relay → ConnectionAttemptIndication
+        ///       → ConnectionBind → bidirectional raw data.
+        /// </summary>
+        [Fact]
+        public async Task TcpRelayEndToEnd_PeerInitiatedConnect()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // --- Control connection: TCP Allocate ---
+            using var controlClient = await ConnectTcpClient(port);
+            var controlStream = controlClient.GetStream();
+
+            var allocResponse = await TcpAllocateWithAuth(controlStream, hmacKey);
+            Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+            // Extract relay port from XOR-RELAYED-ADDRESS
+            var relayAttr = new STUNXORAddressAttribute(
+                STUNAttributeTypesEnum.XORRelayedAddress,
+                allocResponse.Attributes.First(a => a.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).Value,
+                allocResponse.Header.TransactionId);
+            int relayPort = relayAttr.Port;
+
+            // Create permission for loopback (peer will connect from loopback)
+            await CreatePermissionForPeer(controlStream, hmacKey, 0);
+
+            // --- Peer connects to the relay TCP listener ---
+            using var peerClient = new TcpClient();
+            await peerClient.ConnectAsync(IPAddress.Loopback, relayPort);
+            var peerStream = peerClient.GetStream();
+
+            // Client should receive ConnectionAttemptIndication
+            var indication = await ReceiveStunMessage(controlStream);
+            Assert.Equal(STUNMessageTypesEnum.ConnectionAttemptIndication, indication.Header.MessageType);
+
+            var connIdAttr = indication.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ConnectionId) as STUNConnectionIdAttribute;
+            Assert.NotNull(connIdAttr);
+            uint connectionId = connIdAttr.ConnectionId;
+            Assert.True(connectionId > 0);
+
+            // --- Data connection: ConnectionBind ---
+            using var dataClient = await ConnectTcpClient(port);
+            var dataStream = dataClient.GetStream();
+
+            var bindMsg = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+            bindMsg.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+            bindMsg.AddUsernameAttribute(TEST_USERNAME);
+            bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                Encoding.UTF8.GetBytes(TEST_REALM)));
+            bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes("dummy")));
+            await SendStunMessage(dataStream, bindMsg, hmacKey);
+
+            var bindResponse = await ReceiveStunMessage(dataStream);
+            Assert.Equal(STUNMessageTypesEnum.ConnectionBindSuccessResponse, bindResponse.Header.MessageType);
+
+            // Give relay tasks a moment to start
+            await Task.Delay(100);
+
+            // --- Bidirectional data exchange ---
+            var recvBuffer = new byte[4096];
+
+            // Client → Peer
+            var clientMsg = Encoding.UTF8.GetBytes("hello from TURN client");
+            await dataStream.WriteAsync(clientMsg, 0, clientMsg.Length);
+            await dataStream.FlushAsync();
+
+            var cts = new CancellationTokenSource(3000);
+            int bytesRead = await peerStream.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+            Assert.True(bytesRead > 0, "Peer should receive data from client");
+            Assert.Equal("hello from TURN client", Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+
+            // Peer → Client
+            var peerMsg = Encoding.UTF8.GetBytes("hello from peer");
+            await peerStream.WriteAsync(peerMsg, 0, peerMsg.Length);
+            await peerStream.FlushAsync();
+
+            cts = new CancellationTokenSource(3000);
+            bytesRead = await dataStream.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+            Assert.True(bytesRead > 0, "Client should receive data from peer");
+            Assert.Equal("hello from peer", Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+        }
+
+        /// <summary>
+        /// End-to-end TCP relay test with a large payload to verify the relay handles
+        /// multi-read fragmentation correctly.
+        /// </summary>
+        [Fact]
+        public async Task TcpRelayEndToEnd_LargePayload()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            var peerListener = new TcpListener(IPAddress.Loopback, 0);
+            peerListener.Start();
+            var peerPort = ((IPEndPoint)peerListener.LocalEndpoint).Port;
+
+            try
+            {
+                using var controlClient = await ConnectTcpClient(port);
+                var controlStream = controlClient.GetStream();
+
+                await TcpAllocateWithAuth(controlStream, hmacKey);
+                await CreatePermissionForPeer(controlStream, hmacKey, peerPort);
+
+                var peerAcceptTask = peerListener.AcceptTcpClientAsync();
+                uint connectionId = await ConnectToPeer(controlStream, hmacKey, peerPort);
+
+                using var peerClient = await peerAcceptTask;
+                var peerStream = peerClient.GetStream();
+
+                // ConnectionBind on data connection
+                using var dataClient = await ConnectTcpClient(port);
+                var dataStream = dataClient.GetStream();
+
+                var bindMsg = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+                bindMsg.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+                bindMsg.AddUsernameAttribute(TEST_USERNAME);
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(dataStream, bindMsg, hmacKey);
+
+                var bindResponse = await ReceiveStunMessage(dataStream);
+                Assert.Equal(STUNMessageTypesEnum.ConnectionBindSuccessResponse, bindResponse.Header.MessageType);
+
+                await Task.Delay(100);
+
+                // Send 64 KB of data: client → peer
+                var largePayload = new byte[65536];
+                new Random(42).NextBytes(largePayload);
+
+                await dataStream.WriteAsync(largePayload, 0, largePayload.Length);
+                await dataStream.FlushAsync();
+
+                // Read all bytes on the peer side
+                var received = await ReadAllBytesAsync(peerStream, largePayload.Length, timeoutMs: 5000);
+                Assert.Equal(largePayload.Length, received.Length);
+                Assert.Equal(largePayload, received);
+
+                // Send 64 KB of data: peer → client
+                var peerPayload = new byte[65536];
+                new Random(99).NextBytes(peerPayload);
+
+                await peerStream.WriteAsync(peerPayload, 0, peerPayload.Length);
+                await peerStream.FlushAsync();
+
+                received = await ReadAllBytesAsync(dataStream, peerPayload.Length, timeoutMs: 5000);
+                Assert.Equal(peerPayload.Length, received.Length);
+                Assert.Equal(peerPayload, received);
+            }
+            finally
+            {
+                peerListener.Stop();
+            }
+        }
+
+#if NET8_0_OR_GREATER
+        /// <summary>
+        /// End-to-end TCP relay test with TLS encryption.
+        /// Flow: TCP Allocate → CreatePermission → Connect → ConnectionBind → TLS handshake
+        ///       over the relay → encrypted bidirectional data exchange.
+        /// Proves that encrypted streams work correctly through the TURN TCP relay.
+        /// </summary>
+        [Fact]
+        public async Task TcpRelayEndToEnd_WithTls()
+        {
+            var (server, port) = CreateTurnServer();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // Generate a self-signed certificate for the TLS handshake.
+            // Export/reimport as PFX to ensure the private key is usable by SslStream on all platforms.
+            using var rsa = RSA.Create(2048);
+            var certReq = new CertificateRequest(
+                "CN=turn-test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            using var tmpCert = certReq.CreateSelfSigned(
+                DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
+            var pfxBytes = tmpCert.Export(X509ContentType.Pfx, (string)null);
+#if NET9_0_OR_GREATER
+            using var cert = X509CertificateLoader.LoadPkcs12(pfxBytes, null,
+                X509KeyStorageFlags.Exportable);
+#else
+            using var cert = new X509Certificate2(pfxBytes, (string)null, X509KeyStorageFlags.Exportable);
+#endif
+
+            var peerListener = new TcpListener(IPAddress.Loopback, 0);
+            peerListener.Start();
+            var peerPort = ((IPEndPoint)peerListener.LocalEndpoint).Port;
+
+            try
+            {
+                // --- Control connection: Allocate + Permission + Connect ---
+                using var controlClient = await ConnectTcpClient(port);
+                var controlStream = controlClient.GetStream();
+
+                var allocResponse = await TcpAllocateWithAuth(controlStream, hmacKey);
+                Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+
+                await CreatePermissionForPeer(controlStream, hmacKey, peerPort);
+
+                var peerAcceptTask = peerListener.AcceptTcpClientAsync();
+                uint connectionId = await ConnectToPeer(controlStream, hmacKey, peerPort);
+
+                using var peerClient = await peerAcceptTask;
+                var peerNetStream = peerClient.GetStream();
+
+                // --- Data connection: ConnectionBind ---
+                using var dataClient = await ConnectTcpClient(port);
+                var dataNetStream = dataClient.GetStream();
+
+                var bindMsg = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+                bindMsg.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+                bindMsg.AddUsernameAttribute(TEST_USERNAME);
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                    Encoding.UTF8.GetBytes(TEST_REALM)));
+                bindMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                    Encoding.UTF8.GetBytes("dummy")));
+                await SendStunMessage(dataNetStream, bindMsg, hmacKey);
+
+                var bindResponse = await ReceiveStunMessage(dataNetStream);
+                Assert.Equal(STUNMessageTypesEnum.ConnectionBindSuccessResponse, bindResponse.Header.MessageType);
+
+                // Give the relay a moment to start
+                await Task.Delay(100);
+
+                // --- TLS handshake over the relay ---
+                // The data connection (client side) acts as TLS server.
+                // The peer connection acts as TLS client.
+                // This is arbitrary — the relay is transparent to TLS.
+
+                // Accept any certificate for the test (self-signed).
+                bool ValidateAnyCert(object s, X509Certificate c, X509Chain ch, SslPolicyErrors e) => true;
+
+                var sslServer = new SslStream(dataNetStream, leaveInnerStreamOpen: true);
+                var sslClient = new SslStream(peerNetStream, leaveInnerStreamOpen: true, ValidateAnyCert);
+
+                // Run TLS handshakes concurrently — server and client need each other.
+                var serverAuth = sslServer.AuthenticateAsServerAsync(cert);
+                var clientAuth = sslClient.AuthenticateAsClientAsync("turn-test");
+
+                var handshakeTimeout = Task.Delay(10000);
+                var handshakeDone = Task.WhenAll(serverAuth, clientAuth);
+                var winner = await Task.WhenAny(handshakeDone, handshakeTimeout);
+                if (winner != handshakeDone)
+                {
+                    // Gather exception info from the handshake tasks if they faulted.
+                    var serverErr = serverAuth.IsFaulted ? serverAuth.Exception?.InnerException?.Message : serverAuth.Status.ToString();
+                    var clientErr = clientAuth.IsFaulted ? clientAuth.Exception?.InnerException?.Message : clientAuth.Status.ToString();
+                    Assert.Fail($"TLS handshake timed out. Server: {serverErr}, Client: {clientErr}");
+                }
+                await handshakeDone; // propagate exceptions
+
+                Assert.True(sslServer.IsAuthenticated, "Server-side TLS should be authenticated");
+                Assert.True(sslClient.IsAuthenticated, "Client-side TLS should be authenticated");
+                Assert.True(sslServer.IsEncrypted, "Server-side TLS should be encrypted");
+                Assert.True(sslClient.IsEncrypted, "Client-side TLS should be encrypted");
+
+                // --- Encrypted bidirectional data exchange ---
+                var recvBuffer = new byte[4096];
+
+                for (int i = 0; i < 3; i++)
+                {
+                    // Client (TLS server side) → Peer (TLS client side)
+                    var msg = $"encrypted-to-peer-{i}";
+                    var msgBytes = Encoding.UTF8.GetBytes(msg);
+                    await sslServer.WriteAsync(msgBytes, 0, msgBytes.Length);
+                    await sslServer.FlushAsync();
+
+                    var cts = new CancellationTokenSource(3000);
+                    int bytesRead = await sslClient.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+                    Assert.True(bytesRead > 0, $"Peer should receive encrypted message {i}");
+                    Assert.Equal(msg, Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+
+                    // Peer (TLS client side) → Client (TLS server side)
+                    var reply = $"encrypted-to-client-{i}";
+                    var replyBytes = Encoding.UTF8.GetBytes(reply);
+                    await sslClient.WriteAsync(replyBytes, 0, replyBytes.Length);
+                    await sslClient.FlushAsync();
+
+                    cts = new CancellationTokenSource(3000);
+                    bytesRead = await sslServer.ReadAsync(recvBuffer, 0, recvBuffer.Length, cts.Token);
+                    Assert.True(bytesRead > 0, $"Client should receive encrypted message {i}");
+                    Assert.Equal(reply, Encoding.UTF8.GetString(recvBuffer, 0, bytesRead));
+                }
+
+                sslClient.Dispose();
+                sslServer.Dispose();
+            }
+            finally
+            {
+                peerListener.Stop();
+            }
+        }
+#endif
+
+        #endregion
+
+        #region RFC 6062 Test Helpers
+
+        private static STUNMessage BuildTcpAllocateRequest()
+        {
+            var msg = new STUNMessage(STUNMessageTypesEnum.Allocate);
+            msg.Attributes.Add(new STUNAttribute(
+                STUNAttributeTypesEnum.RequestedTransport,
+                STUNAttributeConstants.TcpTransportType));
+            return msg;
+        }
+
+        private static STUNMessage BuildAuthenticatedTcpAllocateRequest(byte[] hmacKey, string username, string realm, string nonce)
+        {
+            var msg = new STUNMessage(STUNMessageTypesEnum.Allocate);
+            msg.Attributes.Add(new STUNAttribute(
+                STUNAttributeTypesEnum.RequestedTransport,
+                STUNAttributeConstants.TcpTransportType));
+            msg.AddUsernameAttribute(username);
+            msg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                Encoding.UTF8.GetBytes(realm)));
+            msg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes(nonce)));
+            return msg;
+        }
+
+        private async Task<STUNMessage> TcpAllocateWithAuth(NetworkStream stream, byte[] hmacKey)
+        {
+            // Step 1: Unauthenticated request to get nonce
+            var request1 = BuildTcpAllocateRequest();
+            await SendStunMessage(stream, request1);
+            var response1 = await ReceiveStunMessage(stream);
+
+            var nonceAttr = response1.Attributes.First(
+                a => a.AttributeType == STUNAttributeTypesEnum.Nonce);
+            var nonce = Encoding.UTF8.GetString(nonceAttr.Value);
+
+            // Step 2: Authenticated request
+            var request2 = BuildAuthenticatedTcpAllocateRequest(hmacKey, TEST_USERNAME, TEST_REALM, nonce);
+            await SendStunMessage(stream, request2, hmacKey);
+            return await ReceiveStunMessage(stream);
+        }
+
+        private async Task CreatePermissionForPeer(NetworkStream stream, byte[] hmacKey, int peerPort)
+        {
+            var permMsg = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
+            permMsg.AddXORPeerAddressAttribute(IPAddress.Loopback, peerPort);
+            permMsg.AddUsernameAttribute(TEST_USERNAME);
+            permMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                Encoding.UTF8.GetBytes(TEST_REALM)));
+            permMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes("dummy")));
+            await SendStunMessage(stream, permMsg, hmacKey);
+            var resp = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.CreatePermissionSuccessResponse, resp.Header.MessageType);
+        }
+
+        private async Task<uint> ConnectToPeer(NetworkStream stream, byte[] hmacKey, int peerPort)
+        {
+            var connectMsg = new STUNMessage(STUNMessageTypesEnum.Connect);
+            connectMsg.AddXORPeerAddressAttribute(IPAddress.Loopback, peerPort);
+            connectMsg.AddUsernameAttribute(TEST_USERNAME);
+            connectMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                Encoding.UTF8.GetBytes(TEST_REALM)));
+            connectMsg.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes("dummy")));
+            await SendStunMessage(stream, connectMsg, hmacKey);
+            var connectResp = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.ConnectSuccessResponse, connectResp.Header.MessageType);
+
+            var connIdAttr = connectResp.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ConnectionId) as STUNConnectionIdAttribute;
+            Assert.NotNull(connIdAttr);
+            return connIdAttr.ConnectionId;
+        }
+
+        private static int ParseErrorCode(byte[] errorValue)
+        {
+            if (errorValue == null || errorValue.Length < 4) return 0;
+            return errorValue[2] * 100 + errorValue[3];
+        }
+
+        /// <summary>
+        /// Reads exactly <paramref name="expectedLength"/> bytes from a stream,
+        /// handling partial reads. Throws on timeout.
+        /// </summary>
+        private static async Task<byte[]> ReadAllBytesAsync(NetworkStream stream, int expectedLength, int timeoutMs = 5000)
+        {
+            var buffer = new byte[expectedLength];
+            int totalRead = 0;
+            var cts = new CancellationTokenSource(timeoutMs);
+
+            while (totalRead < expectedLength)
+            {
+                int bytesRead = await stream.ReadAsync(buffer, totalRead, expectedLength - totalRead, cts.Token);
+                if (bytesRead == 0)
+                    throw new Exception($"Stream closed after {totalRead} of {expectedLength} bytes.");
+                totalRead += bytesRead;
+            }
+
+            return buffer;
+        }
+
+        #endregion
 
         #region Test Helpers
 

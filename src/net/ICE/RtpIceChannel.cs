@@ -1689,6 +1689,8 @@ namespace SIPSorcery.Net
             bool isRelayCheck = candidatePair.LocalCandidate.type == RTCIceCandidateType.relay;
             //bool isTcpProtocol = candidatePair.LocalCandidate.IceServer?.Protocol == ProtocolType.Tcp;
 
+            bool isTcpRelay = isRelayCheck && candidatePair.LocalCandidate.IceServer?.IceRelayProtocol == ProtocolType.Tcp;
+
             if (isRelayCheck && candidatePair.TurnPermissionsResponseAt == DateTime.MinValue)
             {
                 if (candidatePair.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
@@ -1703,6 +1705,44 @@ namespace SIPSorcery.Net
 
                     logger.LogDebug("ICE RTP channel sending TURN permissions request {TurnPermissionsRequestSent} to server {IceServerUri} for peer {RemoteCandidate} (TxID: {RequestTransactionID}).", candidatePair.TurnPermissionsRequestSent, candidatePair.LocalCandidate.IceServer._uri, candidatePair.RemoteCandidate.DestinationEndPoint, candidatePair.RequestTransactionID);
                     SendTurnCreatePermissionsRequest(candidatePair.RequestTransactionID, candidatePair.LocalCandidate.IceServer, candidatePair.RemoteCandidate.DestinationEndPoint);
+                }
+            }
+            else if (isTcpRelay && candidatePair.TurnConnectReportAt == DateTime.MinValue)
+            {
+                // RFC 6062: Send Connect request to TURN server to initiate TCP connection to peer.
+                if (candidatePair.TurnConnectRequestSent >= IceServer.MAX_REQUESTS)
+                {
+                    logger.LogWarning("ICE RTP channel failed to get a Connect response from {IceServerUri} after {Sent} attempts.",
+                        candidatePair.LocalCandidate.IceServer._uri, candidatePair.TurnConnectRequestSent);
+                    candidatePair.State = ChecklistEntryState.Failed;
+                }
+                else
+                {
+                    candidatePair.TurnConnectRequestSent++;
+                    logger.LogDebug("ICE RTP channel sending TURN Connect request {Sent} to {IceServerUri} for peer {Peer}.",
+                        candidatePair.TurnConnectRequestSent, candidatePair.LocalCandidate.IceServer._uri,
+                        candidatePair.RemoteCandidate.DestinationEndPoint);
+                    SendTurnConnectRequest(candidatePair.RequestTransactionID, candidatePair.LocalCandidate.IceServer,
+                        candidatePair.RemoteCandidate.DestinationEndPoint);
+                }
+            }
+            else if (isTcpRelay && candidatePair.TurnConnectBindedAt == DateTime.MinValue)
+            {
+                // RFC 6062: Send ConnectionBind on a new data connection.
+                if (candidatePair.TurnConnectRequestSent >= IceServer.MAX_REQUESTS)
+                {
+                    logger.LogWarning("ICE RTP channel failed to get a ConnectionBind response from {IceServerUri} after {Sent} attempts.",
+                        candidatePair.LocalCandidate.IceServer._uri, candidatePair.TurnConnectRequestSent);
+                    candidatePair.State = ChecklistEntryState.Failed;
+                }
+                else
+                {
+                    candidatePair.TurnConnectRequestSent++;
+                    logger.LogDebug("ICE RTP channel sending TURN ConnectionBind request {Sent} to {IceServerUri} (connectionId={ConnId}).",
+                        candidatePair.TurnConnectRequestSent, candidatePair.LocalCandidate.IceServer._uri,
+                        candidatePair.TurnConnectionId);
+                    SendTurnConnectionBindRequest(candidatePair.RequestTransactionID, candidatePair.LocalCandidate.IceServer,
+                        candidatePair.TurnConnectionId);
                 }
             }
             else
@@ -1752,9 +1792,21 @@ namespace SIPSorcery.Net
 
             if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
             {
-                IPEndPoint relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
-                var protocol = candidatePair.LocalCandidate.IceServer.Protocol;
-                SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP, candidatePair.LocalCandidate.IceServer);
+                var iceServer = candidatePair.LocalCandidate.IceServer;
+
+                // RFC 6062: After ConnectionBind, send directly on the data connection as raw bytes.
+                if (iceServer.IceRelayProtocol == ProtocolType.Tcp &&
+                    candidatePair.TurnConnectBindedAt != DateTime.MinValue &&
+                    iceServer._secondaryRelayUri != null)
+                {
+                    SendOverTCP(iceServer._secondaryRelayUri, stunReqBytes, iceServer.ServerEndPoint);
+                }
+                else
+                {
+                    IPEndPoint relayServerEP = iceServer.ServerEndPoint;
+                    var protocol = iceServer.Protocol;
+                    SendRelay(protocol, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP, iceServer);
+                }
             }
             else
             {
@@ -2125,8 +2177,20 @@ namespace SIPSorcery.Net
 
                         if (wasRelayed)
                         {
-                            var protocol = matchingChecklistEntry.LocalCandidate.IceServer.Protocol;
-                            SendRelay(protocol, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint, matchingChecklistEntry.LocalCandidate.IceServer);
+                            var relayIceServer = matchingChecklistEntry.LocalCandidate.IceServer;
+
+                            // RFC 6062: After ConnectionBind, send directly on the data connection.
+                            if (relayIceServer.IceRelayProtocol == ProtocolType.Tcp &&
+                                matchingChecklistEntry.TurnConnectBindedAt != DateTime.MinValue &&
+                                relayIceServer._secondaryRelayUri != null)
+                            {
+                                SendOverTCP(relayIceServer._secondaryRelayUri, stunRespBytes, relayIceServer.ServerEndPoint);
+                            }
+                            else
+                            {
+                                var protocol = relayIceServer.Protocol;
+                                SendRelay(protocol, remoteEndPoint, stunRespBytes, relayIceServer.ServerEndPoint, relayIceServer);
+                            }
                             OnStunMessageSent?.Invoke(stunResponse, remoteEndPoint, true);
                         }
                         else
@@ -2243,7 +2307,10 @@ namespace SIPSorcery.Net
 
             STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate);
             allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
-            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
+            var transportType = iceServer.IceRelayProtocol == ProtocolType.Tcp
+                ? STUNAttributeConstants.TcpTransportType
+                : STUNAttributeConstants.UdpTransportType;
+            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, transportType));
             allocateRequest.Attributes.Add(
                 new STUNAttribute(STUNAttributeTypesEnum.RequestedAddressFamily,
                 iceServer.ServerEndPoint.AddressFamily == AddressFamily.InterNetwork ?
@@ -2367,6 +2434,80 @@ namespace SIPSorcery.Net
             return sendResult;
         }
 
+        /// <summary>
+        /// Sends a TURN Connect request (RFC 6062 Section 4.3) to initiate a TCP
+        /// connection from the TURN server to the peer.
+        /// </summary>
+        private SocketError SendTurnConnectRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
+        {
+            STUNMessage connectRequest = new STUNMessage(STUNMessageTypesEnum.Connect);
+            connectRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
+            connectRequest.Attributes.Add(new STUNXORAddressAttribute(
+                STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address,
+                connectRequest.Header.TransactionId));
+
+            byte[] connectReqBytes;
+            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+            {
+                connectReqBytes = GetAuthenticatedStunRequest(connectRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            }
+            else
+            {
+                connectReqBytes = connectRequest.ToByteBuffer(null, false);
+            }
+
+            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
+                                SendOverTCP(iceServer, connectReqBytes) :
+                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, connectReqBytes);
+
+            if (sendResult != SocketError.Success)
+            {
+                logger.LogWarning("Error sending TURN Connect request for {Uri} to {ServerEndPoint}. {SendResult}.",
+                    iceServer._uri, iceServer.ServerEndPoint, sendResult);
+            }
+
+            return sendResult;
+        }
+
+        /// <summary>
+        /// Sends a TURN ConnectionBind request (RFC 6062 Section 4.4) on a new data
+        /// connection to bind it to an existing peer connection.
+        /// </summary>
+        private SocketError SendTurnConnectionBindRequest(string transactionID, IceServer iceServer, uint connectionId)
+        {
+            STUNMessage bindRequest = new STUNMessage(STUNMessageTypesEnum.ConnectionBind);
+            bindRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
+            bindRequest.Attributes.Add(new STUNConnectionIdAttribute(connectionId));
+
+            byte[] bindReqBytes;
+            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+            {
+                bindReqBytes = GetAuthenticatedStunRequest(bindRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            }
+            else
+            {
+                bindReqBytes = bindRequest.ToByteBuffer(null, false);
+            }
+
+            // ConnectionBind goes over the data connection (secondary URI).
+            if (iceServer._secondaryRelayUri != null)
+            {
+                return SendOverTCP(iceServer._secondaryRelayUri, bindReqBytes, iceServer.ServerEndPoint);
+            }
+
+            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
+                                SendOverTCP(iceServer, bindReqBytes) :
+                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, bindReqBytes);
+
+            if (sendResult != SocketError.Success)
+            {
+                logger.LogWarning("Error sending TURN ConnectionBind request for {Uri} to {ServerEndPoint}. {SendResult}.",
+                    iceServer._uri, iceServer.ServerEndPoint, sendResult);
+            }
+
+            return sendResult;
+        }
+
         protected virtual SocketError SendOverTCP(IceServer iceServer, byte[] buffer)
         {
             IPEndPoint dstEndPoint = iceServer?.ServerEndPoint;
@@ -2447,6 +2588,44 @@ namespace SIPSorcery.Net
                     return SocketError.Fault;
                 }
             }
+        }
+
+        /// <summary>
+        /// Sends data over a TCP socket identified by a STUN URI. Used for sending
+        /// data on secondary connections (e.g., RFC 6062 data connection).
+        /// </summary>
+        private SocketError SendOverTCP(STUNUri uri, byte[] buffer, IPEndPoint dstEndPoint)
+        {
+            RtpTcpSocketByUri.TryGetValue(uri, out Socket sendSocket);
+
+            if (sendSocket == null)
+            {
+                return SocketError.Fault;
+            }
+
+            if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
+            {
+                dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
+            }
+
+            if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint remEP) ||
+                remEP.Port != dstEndPoint.Port || !remEP.Address.Equals(dstEndPoint.Address))
+            {
+                if (sendSocket.Connected)
+                {
+                    sendSocket.Disconnect(true);
+                }
+                sendSocket.Connect(dstEndPoint);
+            }
+
+            m_rtpTcpReceiverByUri.TryGetValue(uri, out IceTcpReceiver rtpTcpReceiver);
+            if (rtpTcpReceiver != null && !rtpTcpReceiver.IsRunningReceive && !rtpTcpReceiver.IsClosed)
+            {
+                rtpTcpReceiver.BeginReceiveFrom();
+            }
+
+            sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendToTCP, sendSocket);
+            return SocketError.Success;
         }
 
         protected virtual void EndSendToTCP(IAsyncResult ar)
@@ -2585,10 +2764,20 @@ namespace SIPSorcery.Net
                 NominatedEntry.RemoteCandidate.DestinationEndPoint.Address.Equals(dstEndPoint.Address) &&
                 NominatedEntry.RemoteCandidate.DestinationEndPoint.Port == dstEndPoint.Port)
             {
+                var iceServer = NominatedEntry.LocalCandidate.IceServer;
+
+                // RFC 6062: After ConnectionBind, data flows as raw bytes on the data connection.
+                if (iceServer.IceRelayProtocol == ProtocolType.Tcp &&
+                    NominatedEntry.TurnConnectBindedAt != DateTime.MinValue &&
+                    iceServer._secondaryRelayUri != null)
+                {
+                    return SendOverTCP(iceServer._secondaryRelayUri, buffer, iceServer.ServerEndPoint);
+                }
+
                 // A TURN relay channel is being used to communicate with the remote peer.
-                var protocol = NominatedEntry.LocalCandidate.IceServer.Protocol;
-                var serverEndPoint = NominatedEntry.LocalCandidate.IceServer.ServerEndPoint;
-                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint, NominatedEntry.LocalCandidate.IceServer);
+                var protocol = iceServer.Protocol;
+                var serverEndPoint = iceServer.ServerEndPoint;
+                return SendRelay(protocol, dstEndPoint, buffer, serverEndPoint, iceServer);
             }
             else
             {
