@@ -50,7 +50,13 @@ namespace SIPSorcery.Net.UnitTests
 
             EventHandler<UnobservedTaskExceptionEventArgs> handler = (s, e) =>
             {
-                capturedException = e.Observed ? null : e.Exception;
+                // Only capture exceptions that originate from UdpReceiver code.
+                // Other tests running in parallel may leave unobserved task exceptions
+                // (e.g. from SIPUserAgent) that the GC collects during our test.
+                if (!e.Observed && e.Exception.ToString().Contains("UdpReceiver"))
+                {
+                    capturedException = e.Exception;
+                }
                 e.SetObserved();
             };
 
