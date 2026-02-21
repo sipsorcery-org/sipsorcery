@@ -269,6 +269,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public List<TextStream> TextStreamList { get; private set; } = new List<TextStream>();
 
+        private int _nextMediaInsertionOrder = 0;
+
         /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
@@ -1032,6 +1034,7 @@ namespace SIPSorcery.Net
             else if (index == AudioStreamList.Count)
             {
                 AudioStream audioStream = new AudioStream(rtpSessionConfig, index);
+                audioStream.MediaInsertionOrder = Interlocked.Increment(ref _nextMediaInsertionOrder);
                 AudioStreamList.Add(audioStream);
                 return audioStream;
             }
@@ -1048,6 +1051,7 @@ namespace SIPSorcery.Net
             else if (index == VideoStreamList.Count)
             {
                 VideoStream videoStream = new VideoStream(rtpSessionConfig, index);
+                videoStream.MediaInsertionOrder = Interlocked.Increment(ref _nextMediaInsertionOrder);
                 VideoStreamList.Add(videoStream);
                 return videoStream;
             }
@@ -1063,6 +1067,7 @@ namespace SIPSorcery.Net
             else if (index == TextStreamList.Count)
             {
                 TextStream textStream = new TextStream(rtpSessionConfig, index);
+                textStream.MediaInsertionOrder = Interlocked.Increment(ref _nextMediaInsertionOrder);
                 TextStreamList.Add(textStream);
                 return textStream;
             }
@@ -2239,51 +2244,26 @@ namespace SIPSorcery.Net
         /// <returns>A list of the local tracks that have been added to this session.</returns>
         protected List<MediaStream> GetMediaStreams()
         {
-            List<MediaStream> mediaStream = new List<MediaStream>();
+            List<MediaStream> mediaStreams = new List<MediaStream>();
 
-            foreach (var audioStream in AudioStreamList)
+            foreach (var stream in AudioStreamList
+                .Concat<MediaStream>(VideoStreamList)
+                .Concat(TextStreamList))
             {
-                if (audioStream.LocalTrack != null)
+                if (stream.LocalTrack != null)
                 {
-                    mediaStream.Add(audioStream);
+                    mediaStreams.Add(stream);
                 }
-                else if (audioStream.RtcpSession != null && !audioStream.RtcpSession.IsClosed && audioStream.RemoteTrack != null)
+                else if (stream.RtcpSession != null && !stream.RtcpSession.IsClosed && stream.RemoteTrack != null)
                 {
-                    var inactiveAudioTrack = new MediaStreamTrack(audioStream.MediaType, false, audioStream.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    audioStream.LocalTrack = inactiveAudioTrack;
-                    mediaStream.Add(audioStream);
+                    var inactiveTrack = new MediaStreamTrack(stream.MediaType, false, stream.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
+                    stream.LocalTrack = inactiveTrack;
+                    mediaStreams.Add(stream);
                 }
             }
 
-            foreach (var videoStream in VideoStreamList)
-            {
-                if (videoStream.LocalTrack != null)
-                {
-                    mediaStream.Add(videoStream);
-                }
-                else if (videoStream.RtcpSession != null && !videoStream.RtcpSession.IsClosed && videoStream.RemoteTrack != null)
-                {
-                    var inactiveAudioTrack = new MediaStreamTrack(videoStream.MediaType, false, videoStream.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    videoStream.LocalTrack = inactiveAudioTrack;
-                    mediaStream.Add(videoStream);
-                }
-            }
-
-            foreach (var textstram in TextStreamList)
-            {
-                if (textstram.LocalTrack != null)
-                {
-                    mediaStream.Add(textstram);
-                }
-                else if (textstram.RtcpSession != null && !textstram.RtcpSession.IsClosed && textstram.RemoteTrack != null)
-                {
-                    var inactiveTextTrack = new MediaStreamTrack(textstram.MediaType, false, textstram.RemoteTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                    textstram.LocalTrack = inactiveTextTrack;
-                    mediaStream.Add(textstram);
-                }
-            }
-
-            return mediaStream;
+            mediaStreams.Sort((a, b) => a.MediaInsertionOrder.CompareTo(b.MediaInsertionOrder));
+            return mediaStreams;
         }
 
         /// <summary>
