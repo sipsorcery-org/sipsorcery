@@ -606,5 +606,71 @@ a=rtpmap:12 PCMA/8000";
 
             rtpSession.Close("normal");
         }
+
+        /// <summary>
+        /// Tests that when video is added before audio, the SDP offer preserves that order
+        /// (video m-line first, audio m-line second) per RFC 3264 §8.
+        /// </summary>
+        [Fact]
+        public void OfferMLineOrderVideoFirstThenAudio()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTPSession rtpSession = new RTPSession(false, false, false);
+
+            // Add video first.
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            rtpSession.addTrack(videoTrack);
+
+            // Add audio second.
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(audioTrack);
+
+            var offer = rtpSession.CreateOffer(IPAddress.Loopback);
+
+            logger.LogDebug("Offer SDP:\n{Sdp}", offer);
+
+            Assert.Equal(2, offer.Media.Count);
+            Assert.Equal(SDPMediaTypesEnum.video, offer.Media[0].Media);
+            Assert.Equal(SDPMediaTypesEnum.audio, offer.Media[1].Media);
+
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that the traditional audio-then-video order is preserved when tracks are added
+        /// in that order (backward compatibility).
+        /// </summary>
+        [Fact]
+        public void OfferMLineOrderAudioFirstThenVideo()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTPSession rtpSession = new RTPSession(false, false, false);
+
+            // Add audio first.
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(audioTrack);
+
+            // Add video second.
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false,
+                new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
+            rtpSession.addTrack(videoTrack);
+
+            var offer = rtpSession.CreateOffer(IPAddress.Loopback);
+
+            logger.LogDebug("Offer SDP:\n{Sdp}", offer);
+
+            Assert.Equal(2, offer.Media.Count);
+            Assert.Equal(SDPMediaTypesEnum.audio, offer.Media[0].Media);
+            Assert.Equal(SDPMediaTypesEnum.video, offer.Media[1].Media);
+
+            rtpSession.Close("normal");
+        }
     }
 }
