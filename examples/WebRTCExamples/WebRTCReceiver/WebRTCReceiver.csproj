@@ -19,11 +19,11 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="SIPSorceryMedia.Encoders" Version="8.0.7" />
-    <PackageReference Include="SIPSorceryMedia.FFmpeg" Version="8.0.10" />
   </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\SIPSorcery.csproj" />
+        <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+        <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     </ItemGroup>
 
 </Project>

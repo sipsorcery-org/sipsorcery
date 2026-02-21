@@ -1,0 +1,26 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorceryMedia.Abstractions\\SIPSorceryMedia.Abstractions.csproj",
+      "src\\SIPSorceryMedia.FFmpeg\\SIPSorceryMedia.FFmpeg.csproj",
+      "src\\SIPSorceryMedia.Windows\\SIPSorceryMedia.Windows.csproj",
+      "src\\SIPSorcery\\SIPSorcery.csproj",
+      "src\\VP8.Net\\VP8.Net.csproj",
+      "test\\FFmpegConsoleApp\\FFmpegConsoleApp.csproj",
+      "test\\FFmpegEncodingTest\\FFmpegEncodingTest.csproj",
+      "test\\FFmpegFileAndDevicesTest\\FFmpegFileAndDevicesTest.csproj",
+      "test\\FFmpegManagedTranscodeTest\\FFmpegManagedTranscodeTest.csproj",
+      "test\\FFmpegMp4Test\\FFmpegMp4Test.csproj",
+      "test\\FFmpegTranscodeTest\\FFmpegTranscodeTest.csproj",
+      "test\\FFmpegWebRtcReceiver\\FFmpegWebRTCReceiver.csproj",
+      "test\\PixelConvertTest\\PixelConvertTest.csproj",
+      "test\\SIPSorceryMedia.Abstractions.UnitTest\\SIPSorceryMedia.Abstractions.UnitTest.csproj",
+      "test\\VP8.Net.TestVectors\\VP8.Net.TestVectors.csproj",
+      "test\\VP8.Net.UnitTest\\VP8.Net.UnitTest.csproj",
+      "test\\VideoCaptureTest\\VideoCaptureTest.csproj",
+      "test\\integration\\SIPSorcery.IntegrationTests.csproj",
+      "test\\unit\\SIPSorcery.UnitTests.csproj"
+    ]
+  }
+}

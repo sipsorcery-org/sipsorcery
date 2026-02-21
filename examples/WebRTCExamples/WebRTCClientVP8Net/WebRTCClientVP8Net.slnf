@@ -1,0 +1,10 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+    "examples/WebRTCExamples/WebRTCClientVP8Net/WebRTCClientVP8Net.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+﻿{
+  "solution": {
+    "path": "../../../SIPSorcery.slnx",
+    "projects": [
+    "examples/SIPScenarios/BlindTransferScenario/Target/Target.csproj",
+    "examples/SIPScenarios/BlindTransferScenario/Transferee/Transferee.csproj",
+    "examples/SIPScenarios/BlindTransferScenario/Transferor/Transferor.csproj",
+    "src/SIPSorcery/SIPSorcery.csproj",
+    "src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj"
+    ]
+  }
+}

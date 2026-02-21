@@ -1,0 +1,109 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Remove="net\RTSP\RTSPClient.cs" />
+    <Compile Remove="net\RTSP\RTSPConnection.cs" />
+    <Compile Remove="net\RTSP\RTSPServer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
+    <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
+    <None Remove="media\Macroform_-_Simplicity.raw" />
+    <None Remove="media\testpattern.i420" />
+    <EmbeddedResource Include="media\Macroform_-_Simplicity.raw" />
+    <EmbeddedResource Include="media\testpattern.i420" />
+    <None Include="icon.png" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Concentus" Version="2.2.2" />
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <PackageReference Include="DnsClient" Version="1.8.0" />
+    <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
+    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103" PrivateAssets="All" />
+
+    <!-- The packages below are transitive references included to overcome vulnerabilities in a top level package. -->
+    <PackageReference Include="System.Net.Security" Version="4.3.2" /> <!-- Vuln version referenced by System.Net.WebSockets.Client. -->
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net462;net5.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <NoWarn>$(NoWarn);SYSLIB0050</NoWarn>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Disable warning for missing XML doc comments. -->
+    <NoWarn>$(NoWarn);CS1591;CS1573;CS1587</NoWarn>
+    <Authors>Aaron Clauson, Christophe Irles, Rafael Soares &amp; Contributors</Authors>
+    <Copyright>Copyright © 2010-2026 Aaron Clauson</Copyright>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Title>SIPSorcery</Title>
+    <Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
+    <Description>Real-time communications library with full support for the Session Initiation Protocol (SIP) and WebRTC. No wrappers and no native libraries required.
+    </Description>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <Product>SIPSorcery</Product>
+    <PackageId>SIPSorcery</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>master</RepositoryBranch>
+    <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
+    <PackageReleaseNotes>-v10.0.4-pre: New SRTP and DTLS implementation (huge thanks to @jimm98y).
+-v10.0.3: Removed null SRTP ciphers.
+-v10.0.2: Removed use of master key index for SRTP.
+-v10.0.1: Support for .NET 10.0 added.
+-v8.0.23: Bug fixes.
+-v8.0.22: Stable release.
+-v8.0.21-pre: Improvements to OPUS encoder wiring.
+-v8.0.20-pre: Improvements to the audio pipeline to avoid consumers needing to handle raw RTP packets.
+-v8.0.15-pre: BouncyCastle update (thanks to @joaoladeiraext).
+-v8.0.14: Fix for OPUS codec using multiple channels.
+-v8.0.13: Added ASP.NET web socket signalling option for WebRTC. Bug fixes.
+-v8.0.12: Bug fixes.
+-v8.0.11: Real-time text (thanks to @xBasov). Bug fixes.
+-v8.0.10: H265 and MJEG packetisation (thanks to @Drescher86), RTCP feedback improvements (thanks to @ispysoftware).
+-v8.0.9: Minor improvements and bug fixes.
+-v8.0.7: Bug fixes and all sipsorcery packages release.
+-v8.0.6: Nuget publish.
+-v8.0.4: Bug fixes.
+-v8.0.3: Bug fixes.
+-v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
+-v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Version>10.0.4-pre</Version>
+    <AssemblyVersion>10.0.4</AssemblyVersion>
+    <FileVersion>10.0.4</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="SourceLink">
+    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

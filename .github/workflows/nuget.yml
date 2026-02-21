@@ -22,19 +22,23 @@ jobs:
 
       # Restore dependencies
       - name: Restore dependencies
-        run: dotnet restore src/SIPSorcery.csproj
+        run: dotnet restore Libraries.slnf
 
-      # Build the project
+      # Build the projects
       - name: Build
-        run: dotnet build src/SIPSorcery.csproj -c Release --no-restore
+        run: dotnet build Libraries.slnf -c Release --no-restore
 
       # Run unit tests
       - name: Unit tests
         run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework ${{ matrix.framework }} -c Release
 
-      # Pack the NuGet package
-      - name: Pack NuGet package
-        run: dotnet pack src/SIPSorcery.csproj -c Release -o ./artifacts
+      # Pack the NuGet packages
+      - name: Pack NuGet SIPSorcery package
+        run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release -o ./artifacts
+      - name: Pack NuGet SIPSorceryMedia.Abstractions package
+        run: dotnet pack src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj -c Release -o ./artifacts
+      - name: Pack NuGet SIPSorceryMedia.Windows package
+        run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release -o ./artifacts
 
       # Publish to NuGet
       - name: Publish NuGet package
@@ -44,4 +48,5 @@ jobs:
         run: |
           dotnet nuget push ./artifacts/*.nupkg \
             --source https://api.nuget.org/v3/index.json \
-            --api-key $NUGET_API_KEY
+            --api-key $NUGET_API_KEY \
+            --skip-duplicate

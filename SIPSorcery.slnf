@@ -1,0 +1,12 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorceryMedia.Abstractions\\SIPSorceryMedia.Abstractions.csproj",
+      "src\\SIPSorcery\\SIPSorcery.csproj",
+      "test\\SIPSorceryMedia.Abstractions.UnitTest\\SIPSorceryMedia.Abstractions.UnitTest.csproj",
+      "test\\integration\\SIPSorcery.IntegrationTests.csproj",
+      "test\\unit\\SIPSorcery.UnitTests.csproj"
+    ]
+  }
+}

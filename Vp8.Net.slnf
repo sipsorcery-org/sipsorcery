@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\VP8.Net\\VP8.Net.csproj",
+      "test\\VP8.Net.UnitTest\\VP8.Net.UnitTest.csproj"
+    ]
+  }
+}
