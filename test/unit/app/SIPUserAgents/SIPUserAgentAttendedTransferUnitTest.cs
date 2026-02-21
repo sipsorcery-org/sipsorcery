@@ -172,15 +172,14 @@ namespace SIPSorcery.SIP.App.UnitTests
         }
 
         /// <summary>
-        /// Verifies that a SIPUserAgent whose dialog does NOT match the Replaces Call-ID
-        /// silently ignores the attended transfer INVITE — no 400 Bad Request is sent.
-        /// Before the fix for #1459, the agent would call AcceptCall (sending 100 Trying
-        /// and 180 Ringing) and then reject with 400 Bad Request when the Replaces
-        /// Call-ID didn't match. This 400 races against the correct agent's acceptance
-        /// when multiple agents share a SIPTransport.
+        /// Verifies that when a Replaces INVITE targets a Call-ID that does NOT match any
+        /// registered dialog, the transport sends a 481 response per RFC 3891.
+        /// Before the dialog registry, the agent would either send 400 Bad Request (racing
+        /// against the correct agent) or silently ignore the request. Now the transport
+        /// handles this centrally with a proper 481.
         /// </summary>
         [Fact]
-        public async Task NonMatchingAgentIgnoresReplacesInvite()
+        public async Task NonMatchingReplacesInviteGets481()
         {
             logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -222,14 +221,14 @@ namespace SIPSorcery.SIP.App.UnitTests
 
                 channel.FireMessageReceived(localEP, remoteEP, rawBytes);
 
-                // Give the agent time to process the request.
-                // With the bug, it would send 100 Trying + 180 Ringing + 400 Bad Request.
-                // With the fix, it should send nothing for this transfer Call-ID.
-                await Task.Delay(1500);
+                // The transport should send a 481 response for the non-matching Replaces.
+                bool sent = channel.SIPMessageSent.WaitOne(3000);
+                Assert.True(sent, "Transport should have sent a response for the non-matching Replaces INVITE.");
+
+                // Allow time for any additional messages.
+                await Task.Delay(500);
 
                 // Filter to only messages related to the transfer INVITE (by its Call-ID).
-                // Other messages (e.g. 200 OK retransmissions for the established dialog) are
-                // expected because the UAS transaction retransmits until ACK is received.
                 var transferResponses = new List<string>();
                 foreach (string msg in channel.AllSentMessages)
                 {
@@ -240,8 +239,10 @@ namespace SIPSorcery.SIP.App.UnitTests
                     }
                 }
 
-                // The non-matching agent must not send any response for the transfer INVITE.
-                Assert.Empty(transferResponses);
+                // The transport should have sent a 481 (not 400, not nothing).
+                Assert.NotEmpty(transferResponses);
+                Assert.Contains(transferResponses, msg => msg.Contains("481"));
+                Assert.DoesNotContain(transferResponses, msg => msg.Contains("400 Bad Request"));
             }
             finally
             {

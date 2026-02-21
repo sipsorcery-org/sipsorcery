@@ -1486,6 +1486,7 @@ namespace SIPSorcery.SIP
         public string ReferTo;                              // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         public string ReplyTo;
         public string Replaces;
+        public bool HasMultipleReplacesHeaders;
         public string Require;
         public string RetryAfter;
         public int RSeq = -1;                               // RFC3262 reliable provisional response sequence number.
@@ -1906,6 +1907,10 @@ namespace SIPSorcery.SIP
                         #region Replaces.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLACES.ToLower())
                         {
+                            if (sipHeader.Replaces != null)
+                            {
+                                sipHeader.HasMultipleReplacesHeaders = true;
+                            }
                             sipHeader.Replaces = headerValue;
                         }
                         #endregion

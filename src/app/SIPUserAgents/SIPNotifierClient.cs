@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.App
     /// generate. Different SIP event packages have different ways of representing their data. For example RFC4235
     /// uses XML to convey dialog notifications, RFC3842 uses plain text to convey message waiting indications.
     /// </summary>
-    public class SIPNotifierClient
+    public class SIPNotifierClient : ISIPDialogOwner
     {
         private const int DEFAULT_SUBSCRIBE_EXPIRY = 300;       // The default value to request on subscription requests.
         //private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
@@ -70,6 +70,21 @@ namespace SIPSorcery.SIP.App
             get { return m_subscribeCallID; }
         }
 
+        #region ISIPDialogOwner
+
+        string ISIPDialogOwner.DialogCallID => m_subscribeCallID;
+
+        string ISIPDialogOwner.DialogLocalTag => m_subscriptionFromTag;
+
+        string ISIPDialogOwner.DialogRemoteTag => m_subscriptionToTag;
+
+        Task ISIPDialogOwner.OnDialogRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            return GotNotificationRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
+        }
+
+        #endregion
+
         public event Action<SIPEventPackagesEnum, string> NotificationReceived;
         public event Action<SIPURI, SIPResponseStatusCodesEnum, string> SubscriptionFailed;
         public event Action<SIPURI> SubscriptionSuccessful;
@@ -102,6 +117,7 @@ namespace SIPSorcery.SIP.App
         {
             m_exit = false;
 
+            m_sipTransport.RegisterDialogOwner(m_subscribeCallID, this);
             m_sipTransport.SIPTransportRequestReceived += GotNotificationRequest;
 
             ThreadPool.QueueUserWorkItem(delegate { StartSubscription(); });
@@ -118,6 +134,7 @@ namespace SIPSorcery.SIP.App
                     m_exit = true;
                     m_attempts = 0;
 
+                    m_sipTransport.UnregisterDialogOwner(m_subscribeCallID, this);
                     m_sipTransport.SIPTransportRequestReceived -= GotNotificationRequest;
 
                     ThreadPool.QueueUserWorkItem(delegate

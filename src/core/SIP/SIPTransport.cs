@@ -89,6 +89,13 @@ namespace SIPSorcery.SIP
         internal SIPTransactionEngine m_transactionEngine;
 
         /// <summary>
+        /// Registry of dialog owners keyed by Call-ID. Enables direct dispatch of in-dialog
+        /// requests and RFC 3891 compliant 481 responses for Replaces INVITEs.
+        /// </summary>
+        private readonly ConcurrentDictionary<string, ISIPDialogOwner> m_dialogOwners
+            = new ConcurrentDictionary<string, ISIPDialogOwner>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Default call to do DNS lookups for SIP URI's. In normal circumstances this property does not need to
         /// be set manually and care needs to be taken if it is. Can be replaced for custom scenarios
         /// and unit testing.
@@ -308,6 +315,42 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Registers a dialog owner so that in-dialog requests and Replaces INVITEs
+        /// for the specified Call-ID are dispatched directly to the owner.
+        /// </summary>
+        /// <param name="callID">The Call-ID of the dialog.</param>
+        /// <param name="owner">The dialog owner to register.</param>
+        /// <returns>True if registration succeeded; false if the Call-ID is already registered.</returns>
+        public bool RegisterDialogOwner(string callID, ISIPDialogOwner owner)
+        {
+            if (string.IsNullOrWhiteSpace(callID) || owner == null)
+            {
+                return false;
+            }
+
+            return m_dialogOwners.TryAdd(callID, owner);
+        }
+
+        /// <summary>
+        /// Unregisters a dialog owner for the specified Call-ID. Only removes the entry
+        /// if the registered owner matches, preventing cross-agent accidents.
+        /// </summary>
+        /// <param name="callID">The Call-ID of the dialog.</param>
+        /// <param name="owner">The dialog owner that should be unregistered.</param>
+        /// <returns>True if the entry was removed; false if not found or owner didn't match.</returns>
+        public bool UnregisterDialogOwner(string callID, ISIPDialogOwner owner)
+        {
+            if (string.IsNullOrWhiteSpace(callID) || owner == null)
+            {
+                return false;
+            }
+
+            // Only remove if the registered owner matches (reference equality).
+            return ((ICollection<KeyValuePair<string, ISIPDialogOwner>>)m_dialogOwners)
+                .Remove(new KeyValuePair<string, ISIPDialogOwner>(callID, owner));
+        }
+
+        /// <summary>
         /// Shuts down the SIP transport layer by closing all SIP channels and stopping long running tasks.
         /// </summary>
         public void Shutdown()
@@ -317,6 +360,7 @@ namespace SIPSorcery.SIP
                 m_closed = true;
                 m_cts.Cancel();
                 m_inMessageArrived.Set();
+                m_dialogOwners.Clear();
                 m_transactionEngine?.Shutdown();
                 m_transactionEngine?.Dispose();
 
@@ -1051,6 +1095,65 @@ namespace SIPSorcery.SIP
                                                 SIPResponse noMatchingTxResponse = SIPResponse.GetResponse(localEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
                                                 return SendResponseAsync(noMatchingTxResponse);
                                             }
+                                        }
+                                        else if (sipRequest.Method == SIPMethodsEnum.INVITE && !string.IsNullOrWhiteSpace(sipRequest.Header.Replaces))
+                                        {
+                                            // RFC 3891 Section 3: "If more than one Replaces header field is present
+                                            // in an INVITE, [...] the UAS MUST reject the request with a 400 Bad Request."
+                                            if (sipRequest.Header.HasMultipleReplacesHeaders)
+                                            {
+                                                SIPResponse badReqResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Multiple Replaces headers");
+                                                return SendResponseAsync(badReqResponse);
+                                            }
+
+                                            // Replaces INVITE: dispatch to the dialog owner matching the Replaces Call-ID + tags,
+                                            // or respond with 481 per RFC 3891 Section 3 if no match is found.
+                                            SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
+
+                                            if (replaces != null &&
+                                                m_dialogOwners.TryGetValue(replaces.CallID, out ISIPDialogOwner replacesOwner) &&
+                                                string.Equals(replaces.ToTag, replacesOwner.DialogLocalTag, StringComparison.OrdinalIgnoreCase) &&
+                                                string.Equals(replaces.FromTag, replacesOwner.DialogRemoteTag, StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                if (sipRequest.Header.MaxForwards == 0)
+                                                {
+                                                    SIPResponse tooManyHops = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.TooManyHops, null);
+                                                    return SendResponseAsync(tooManyHops);
+                                                }
+
+                                                if (sipRequest.Header.Routes.Length > 0)
+                                                {
+                                                    PreProcessRouteInfo(sipRequest);
+                                                }
+
+                                                sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
+                                                _ = replacesOwner.OnDialogRequestReceived(localEndPoint, remoteEndPoint, sipRequest);
+                                            }
+                                            else
+                                            {
+                                                logger.LogDebug("Replaces INVITE with no matching dialog for Call-ID {CallID}.", replaces?.CallID);
+                                                SIPResponse notFoundResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, "Replaces dialog not found");
+                                                return SendResponseAsync(notFoundResponse);
+                                            }
+                                        }
+                                        else if (m_dialogOwners.TryGetValue(sipRequest.Header.CallId, out ISIPDialogOwner dialogOwner) &&
+                                                 sipRequest.Header.From?.FromTag != null &&
+                                                 sipRequest.Header.To?.ToTag != null)
+                                        {
+                                            // In-dialog request: dispatch directly to the registered dialog owner.
+                                            if (sipRequest.Header.MaxForwards == 0 && sipRequest.Method != SIPMethodsEnum.OPTIONS)
+                                            {
+                                                SIPResponse tooManyHops = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.TooManyHops, null);
+                                                return SendResponseAsync(tooManyHops);
+                                            }
+
+                                            if (sipRequest.Header.Routes.Length > 0)
+                                            {
+                                                PreProcessRouteInfo(sipRequest);
+                                            }
+
+                                            sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
+                                            _ = dialogOwner.OnDialogRequestReceived(localEndPoint, remoteEndPoint, sipRequest);
                                         }
                                         else if (SIPTransportRequestReceived != null)
                                         {

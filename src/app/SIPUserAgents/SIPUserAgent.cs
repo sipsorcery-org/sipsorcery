@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.App
     /// which means it can handle things like call on and off hold, RTP end point
     /// changes and sending DTMF events.
     /// </summary>
-    public class SIPUserAgent : IDisposable
+    public class SIPUserAgent : IDisposable, ISIPDialogOwner
     {
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
@@ -221,6 +221,38 @@ namespace SIPSorcery.SIP.App
         {
             get { return m_sipDialogue; }
         }
+
+        #region ISIPDialogOwner
+
+        string ISIPDialogOwner.DialogCallID => m_sipDialogue?.CallId;
+
+        string ISIPDialogOwner.DialogLocalTag => m_sipDialogue?.LocalTag;
+
+        string ISIPDialogOwner.DialogRemoteTag => m_sipDialogue?.RemoteTag;
+
+        async Task ISIPDialogOwner.OnDialogRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            try
+            {
+                if (sipRequest.Method == SIPMethodsEnum.INVITE && !string.IsNullOrWhiteSpace(sipRequest.Header.Replaces))
+                {
+                    // Replaces INVITE for attended transfer — accept and process.
+                    logger.LogDebug("INVITE for attended transfer received via dialog registry, Replaces Call-ID {ReplacesCallID}.", sipRequest.Header.Replaces);
+                    var uas = AcceptCall(sipRequest);
+                    await AcceptAttendedTransfer(uas).ConfigureAwait(false);
+                }
+                else
+                {
+                    await DialogRequestReceivedAsync(sipRequest).ConfigureAwait(false);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.LogError(excp, "Exception SIPUserAgent.OnDialogRequestReceived. {ErrorMessage}", excp.Message);
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// For a call initiated by us this is the call descriptor that was used.
@@ -768,6 +800,7 @@ namespace SIPSorcery.SIP.App
                 if (m_uas?.SIPDialogue != null)
                 {
                     m_sipDialogue = m_uas.SIPDialogue;
+                    m_transport.RegisterDialogOwner(m_sipDialogue.CallId, this);
 
                     if (MediaSession.RemoteDescription == null)
                     {
@@ -1366,8 +1399,14 @@ namespace SIPSorcery.SIP.App
                             else
                             {
                                 OnTransferToTargetSuccessful?.Invoke(referToUserField);
-                                // Hanging up original call.
 
+                                // Unregister the old dialog — the new dialog was registered when Call() succeeded.
+                                if (!string.IsNullOrWhiteSpace(_oldCallID))
+                                {
+                                    m_transport.UnregisterDialogOwner(_oldCallID, this);
+                                }
+
+                                // Hanging up original call.
                                 logger.LogDebug("Transfer succeeded, hanging up original call.");
 
                                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
@@ -1449,27 +1488,6 @@ namespace SIPSorcery.SIP.App
                         // it doesn't know what to do if a request can't be dealt with.
                         logger.LogError(excp, "Exception SIPUserAgent.SIPTransportRequestReceived. {ErrorMessage}", excp.Message);
                     }
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE && !string.IsNullOrWhiteSpace(sipRequest.Header.Replaces))
-                {
-                    // This is a special case of receiving an INVITE request that is part of an attended
-                    // transfer. Check whether the Replaces header targets this dialog BEFORE creating a
-                    // UAS transaction. When multiple SIPUserAgent instances share the same SIPTransport,
-                    // each one receives the INVITE. Only the agent whose dialog matches should act on it;
-                    // the others must silently ignore it. Rejecting with 400 would race against the
-                    // correct agent's acceptance (see #1459).
-                    SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
-
-                    if (replaces == null || replaces.CallID != m_sipDialogue.CallId)
-                    {
-                        logger.LogDebug("Attended transfer INVITE ignored, Replaces CallID {ReplacesCallID} does not match our dialog Call-ID {DialogCallID}.", replaces?.CallID, m_sipDialogue.CallId);
-                        return;
-                    }
-
-                    logger.LogDebug("INVITE for attended transfer received, Replaces CallID {ReplacesCallID} matches our dialog Call-ID {DialogCallID}.", replaces.CallID, m_sipDialogue.CallId);
-                    var uas = AcceptCall(sipRequest);
-                    logger.LogDebug("Proceeding with attended transfer INVITE received from {RemoteEndPoint}.", remoteEndPoint);
-                    await AcceptAttendedTransfer(uas).ConfigureAwait(false);
                 }
             }
             else if (!_isClosed && sipRequest.Method == SIPMethodsEnum.INVITE)
@@ -1560,6 +1578,12 @@ namespace SIPSorcery.SIP.App
             if (answerResult)
             {
                 logger.LogDebug("Attended transfer was successfully answered, hanging up original call.");
+
+                // Unregister the old dialog — the new dialog was registered when Answer() succeeded.
+                if (!string.IsNullOrWhiteSpace(_oldCallID))
+                {
+                    m_transport.UnregisterDialogOwner(_oldCallID, this);
+                }
 
                 // Hanging up original call.
                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
@@ -1760,6 +1784,7 @@ namespace SIPSorcery.SIP.App
                     // See https://github.com/sipsorcery-org/sipsorcery/issues/414.
                     m_sipDialogue = uac.SIPDialogue;
                     m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                    m_transport.RegisterDialogOwner(m_sipDialogue.CallId, this);
 
                     logger.LogInformation("Call attempt to {Uri} was answered; no media update from early media.", uac.CallDescriptor.Uri);
 
@@ -1789,6 +1814,7 @@ namespace SIPSorcery.SIP.App
 
                         m_sipDialogue = uac.SIPDialogue;
                         m_sipDialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                        m_transport.RegisterDialogOwner(m_sipDialogue.CallId, this);
 
                         logger.LogInformation("Call attempt to {URI} was answered.", uac.CallDescriptor.Uri);
 
@@ -1925,6 +1951,10 @@ namespace SIPSorcery.SIP.App
                     }
 
                     OnCallHungup?.Invoke(m_sipDialogue);
+                    if (m_sipDialogue != null)
+                    {
+                        m_transport.UnregisterDialogOwner(m_sipDialogue.CallId, this);
+                    }
                     m_sipDialogue = null;
                 }
             }
@@ -1946,6 +1976,10 @@ namespace SIPSorcery.SIP.App
                         }
 
                         OnCallHungup?.Invoke(m_sipDialogue);
+                        if (m_sipDialogue != null)
+                        {
+                            m_transport.UnregisterDialogOwner(m_sipDialogue.CallId, this);
+                        }
                         m_sipDialogue = null;
                     }
                 }
@@ -2073,6 +2107,10 @@ namespace SIPSorcery.SIP.App
         public void Close()
         {
             _isClosed = true;
+            if (m_sipDialogue != null)
+            {
+                m_transport.UnregisterDialogOwner(m_sipDialogue.CallId, this);
+            }
             m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
         }
 
@@ -2086,6 +2124,10 @@ namespace SIPSorcery.SIP.App
                 Hangup();
             }
 
+            if (m_sipDialogue != null)
+            {
+                m_transport.UnregisterDialogOwner(m_sipDialogue.CallId, this);
+            }
             m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
 
             if (m_isTransportExclusive)
