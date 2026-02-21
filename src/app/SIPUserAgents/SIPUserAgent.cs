@@ -815,18 +815,20 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Initiates a blind transfer by asking the remote call party to call the specified destination.
-        /// If the transfer is accepted the current call will be hungup.
+        /// If the transfer is accepted and <paramref name="exitAfterTransfer"/> is set the current call
+        /// will be hungup and the media session closed.
         /// </summary>
         /// <param name="destination">The URI to transfer the call to.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
         /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
-        /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent 
+        /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent
         /// to the remote party.</param>
         /// <param name="username">Optional. Used if proxy authentication required.</param>
         /// <param name="password">Optional. Used if proxy authentication required.</param>
+        /// <param name="exitAfterTransfer">If true, the call will be hungup after a successful transfer.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null)
+        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null, bool exitAfterTransfer = false)
         {
             if (m_sipDialogue == null)
             {
@@ -836,24 +838,26 @@ namespace SIPSorcery.SIP.App
             else
             {
                 var referRequest = GetReferRequest(destination, customHeaders);
-                return Transfer(referRequest, timeout, ct, username, password);
+                return Transfer(referRequest, timeout, ct, username, password, exitAfterTransfer);
             }
         }
 
         /// <summary>
         /// Initiates an attended transfer by asking the remote call party to call the specified destination.
-        /// If the transfer is accepted the current call will be hungup.
+        /// If the transfer is accepted and <paramref name="exitAfterTransfer"/> is set the current call
+        /// will be hungup and the media session closed.
         /// </summary>
         /// <param name="transferee">The dialog that will be replaced on the transfer target call party.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
         /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
-        /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent 
+        /// <param name="customHeaders">Optional. Custom SIP-Headers that will be set in the REFER request sent
         /// to the remote party.</param>
         /// <param name="username">Optional. Used if proxy authentication required.</param>
         /// <param name="password">Optional. Used if proxy authentication required.</param>
+        /// <param name="exitAfterTransfer">If true, the call will be hungup after a successful transfer.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null)
+        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct, string[] customHeaders = null, string username = null, string password = null, bool exitAfterTransfer = false)
         {
             if (m_sipDialogue == null || transferee == null)
             {
@@ -863,7 +867,7 @@ namespace SIPSorcery.SIP.App
             else
             {
                 var referRequest = GetReferRequest(transferee, customHeaders);
-                return Transfer(referRequest, timeout, ct, username, password);
+                return Transfer(referRequest, timeout, ct, username, password, exitAfterTransfer);
             }
         }
 
@@ -976,7 +980,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="username">Optional. Used if proxy authentication required.</param>
         /// <param name="password">Optional. Used if proxy authentication required.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct, string username = null, string password = null)
+        private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct, string username = null, string password = null, bool exitAfterTransfer = false)
         {
             if (m_sipDialogue == null)
             {
@@ -1036,7 +1040,17 @@ namespace SIPSorcery.SIP.App
 
                 if (transferAccepted.Task.IsCompleted)
                 {
-                    return transferAccepted.Task.Result;
+                    bool result = transferAccepted.Task.Result;
+
+                    // RFC 5589 §6.1: "The Transferor's role in a transfer is complete
+                    // and it CAN send a BYE to the Transferee once it has been
+                    // notified that the REFER was successful."
+                    if (result && exitAfterTransfer)
+                    {
+                        Hangup();
+                    }
+
+                    return result;
                 }
                 else
                 {

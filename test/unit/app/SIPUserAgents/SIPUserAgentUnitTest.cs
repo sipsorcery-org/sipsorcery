@@ -1,4 +1,8 @@
+using System;
 using System.Net;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -232,6 +236,87 @@ namespace SIPSorcery.SIP.App.UnitTests
             Assert.NotNull(authenticatedRequest);
             Assert.Equal(SIPMethodsEnum.REFER, authenticatedRequest.Method);
             Assert.Equal(referRequest.Header.ReferTo, authenticatedRequest.Header.ReferTo);
+        }
+
+        /// <summary>
+        /// Tests that BlindTransfer with exitAfterTransfer set to true hangs up the call
+        /// after a successful 202 Accepted response to the REFER request.
+        /// </summary>
+        [Fact]
+        public async Task BlindTransferExitAfterTransferHangupsCallTest()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string CRLF = SIPConstants.CRLF;
+
+            SIPTransport transport = new SIPTransport();
+            MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
+            transport.AddSIPChannel(mockChannel);
+
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+
+            string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + CRLF +
+"Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + CRLF +
+"To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ" + CRLF +
+"From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938" + CRLF +
+"Call-ID: 17324d6df8744d978008c8997bfd208d" + CRLF +
+"CSeq: 3532 INVITE" + CRLF +
+"Contact: <sip:aaron@192.168.11.50:60163;ob>" + CRLF +
+"Max-Forwards: 70" + CRLF +
+"Content-Length: 343" + CRLF +
+"Content-Type: application/sdp" + CRLF +
+"" + CRLF +
+"v=0" + CRLF +
+"o=- 3785527268 3785527269 IN IP4 192.168.11.50" + CRLF +
+"s=pjmedia" + CRLF +
+"t=0 0" + CRLF +
+"m=audio 4032 RTP/AVP 0 101" + CRLF +
+"c=IN IP4 192.168.11.50" + CRLF +
+"a=rtpmap:0 PCMU/8000" + CRLF +
+"a=rtpmap:101 telephone-event/8000" + CRLF +
+"a=fmtp:101 0-16" + CRLF +
+"a=sendrecv";
+
+            SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            UASInviteTransaction uasTx = new UASInviteTransaction(transport, inviteReq, null);
+            SIPServerUserAgent mockUas = new SIPServerUserAgent(transport, null, uasTx, null);
+            await userAgent.Answer(mockUas, new MockMediaSession());
+
+            Assert.True(userAgent.IsCallActive);
+
+            // Drain any pending signal from Answer's outgoing messages.
+            mockChannel.SIPMessageSent.WaitOne(500);
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+            var transferTask = userAgent.BlindTransfer(
+                SIPURI.ParseSIPURIRelaxed("127.0.0.1"),
+                TimeSpan.FromSeconds(5),
+                cts.Token,
+                exitAfterTransfer: true);
+
+            // Wait for the REFER request to be sent through the mock channel.
+            Assert.True(mockChannel.SIPMessageSent.WaitOne(TimeSpan.FromSeconds(2)), "REFER was not sent in time.");
+
+            // Parse the sent REFER request and create a 202 Accepted response.
+            string referMsgStr = mockChannel.LastSIPMessageSent;
+            SIPMessageBuffer referMsgBuf = SIPMessageBuffer.ParseSIPMessage(referMsgStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest referReq = SIPRequest.ParseSIPRequest(referMsgBuf);
+            Assert.Equal(SIPMethodsEnum.REFER, referReq.Method);
+
+            SIPResponse acceptedResponse = SIPResponse.GetResponse(referReq, SIPResponseStatusCodesEnum.Accepted, null);
+            byte[] respBytes = Encoding.UTF8.GetBytes(acceptedResponse.ToString());
+
+            // Inject the 202 Accepted response back through the transport.
+            mockChannel.FireMessageReceived(dummySipEndPoint, dummySipEndPoint, respBytes);
+
+            bool result = await transferTask;
+
+            Assert.True(result);
+            Assert.False(userAgent.IsCallActive);
+            Assert.True(userAgent.MediaSession.IsClosed);
         }
     }
 }
