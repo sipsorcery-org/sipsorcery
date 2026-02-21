@@ -1327,7 +1327,12 @@ namespace SIPSorcery.Net.UnitTests
             using var tmpCert = certReq.CreateSelfSigned(
                 DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
             var pfxBytes = tmpCert.Export(X509ContentType.Pfx, (string)null);
+#if NET10_0_OR_GREATER
+            using var cert = X509CertificateLoader.LoadPkcs12(pfxBytes, null,
+                X509KeyStorageFlags.Exportable);
+#else
             using var cert = new X509Certificate2(pfxBytes, (string)null, X509KeyStorageFlags.Exportable);
+#endif
 
             var peerListener = new TcpListener(IPAddress.Loopback, 0);
             peerListener.Start();
