@@ -13,8 +13,6 @@
     <Project Path="test/FFmpegTranscodeTest/FFmpegTranscodeTest.csproj" />
     <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
     <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
-    <Project Path="test/PixelConvertTest/PixelConvertTest.csproj" />
-    <Project Path="test/PixelConvertTestFramework/PixelConvertTestFramework.csproj" Id="bf8ea326-7052-494e-a12a-fa746ded6437" />
     <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
     <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
     <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
@@ -40,7 +38,6 @@
     <Project Path="examples/SIPExamples/CallHoldAndTransfer/CallHoldAndTransfer.csproj" />
     <Project Path="examples/SIPExamples/CustomAudioCodec/CustomAudioCodec.csproj" />
     <Project Path="examples/SIPExamples/GetStarted/GetStarted.csproj" />
-    <Project Path="examples/SIPExamples/GetStartedNetFramework/GetStartedNetFramework.csproj" Id="203b98e3-ed46-469e-bcb4-61be9ab6b66e" />
     <Project Path="examples/SIPExamples/GetStartedVideo/GetStartedVideo.csproj" />
     <Project Path="examples/SIPExamples/GetStartedWebSocket/GetStartedWebSocket.csproj" />
     <Project Path="examples/SIPExamples/NotifierClient/NotifierClient.csproj" />
@@ -58,10 +55,6 @@
     <Project Path="examples/SIPExamples/UserAgentRegister/UserAgentRegister.csproj" />
     <Project Path="examples/SIPExamples/UserAgentServer/UserAgentServer.csproj" />
     <Project Path="examples/SIPExamples/VideoPhoneCmdLine/VideoPhoneCmdLine.csproj" />
-  </Folder>
-  <Folder Name="/examples/SIPExamples/GetStartedPortAudio/">
-    <Project Path="examples/SIPExamples/GetStartedPortAudio/GetStartedPortAudio/GetStartedPortAudio.csproj" />
-    <Project Path="examples/SIPExamples/GetStartedPortAudio/ProjectCeilidh.PortAudio/ProjectCeilidh.PortAudio.csproj" />
   </Folder>
   <Folder Name="/examples/SIPScenarios/" />
   <Folder Name="/examples/SIPScenarios/AttendedTransferScenario/">

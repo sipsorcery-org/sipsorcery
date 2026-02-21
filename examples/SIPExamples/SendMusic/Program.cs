@@ -7,7 +7,7 @@ using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
 
 const int SIP_LISTEN_PORT = 5060;
-const string MUSIC_FILENAME = "music.raw";
+//const string MUSIC_FILENAME = "music.raw";
 
 Console.WriteLine("SIP Send Music");
 
@@ -18,10 +18,10 @@ sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_L
 //sipTransport.EnableTraceLogs();
 
 var userAgent = new SIPUserAgent(sipTransport, null, true);
-userAgent.ServerCallCancelled += (uas) => Console.WriteLine("Incoming call cancelled by remote party.");
+userAgent.ServerCallCancelled += (uas, cancelReq) => Console.WriteLine("Incoming call cancelled by remote party.");
 userAgent.OnIncomingCall += async (ua, req) =>
 {
-    var sendOnlyMusic = new VoIPMediaSession(MUSIC_FILENAME, formats => formats.Codec == AudioCodecsEnum.PCMU);
+    var sendOnlyMusic = new VoIPMediaSession(formats => formats.Codec == AudioCodecsEnum.PCMU);
     sendOnlyMusic.AcceptRtpFromAny = true;
 
     var uas = userAgent.AcceptCall(req);
