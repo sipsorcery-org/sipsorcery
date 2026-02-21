@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
     <ProjectReference Include="..\..\src\SIPSorcery\SIPSorcery.csproj" />
-    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
   </ItemGroup>
 
 </Project>

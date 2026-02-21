@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.32014.148
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11512.155 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStarted", "GetStarted\GetStarted.csproj", "{A29CF628-3EBC-44E3-9A5D-F43E40D597CD}"
 EndProject
@@ -39,13 +39,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CustomAudioCodec", "CustomA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotifierClient", "NotifierClient\NotifierClient.csproj", "{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReceiveDtmf", "ReceiveDtmf\ReceiveDtmf.csproj", "{428BFA9A-F082-4444-9E04-30AD60B5E794}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPCallServer", "SIPCallServer\SIPCallServer.csproj", "{515A8A38-6747-61E4-3A95-25388377D05D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPCloudCallServer", "SIPCloudCallServer\SIPCloudCallServer.csproj", "{AC215797-8B94-2D46-A603-D4EAC8C8604A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery", "..\..\src\SIPSorcery\SIPSorcery.csproj", "{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -273,18 +273,6 @@ Global
 		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x64.Build.0 = Release|Any CPU
 		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x86.ActiveCfg = Release|Any CPU
 		{3839C073-00D1-45AD-9C1E-7E4C4719BFCA}.Release|x86.Build.0 = Release|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Debug|x64.Build.0 = Debug|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Debug|x86.Build.0 = Debug|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x64.ActiveCfg = Release|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x64.Build.0 = Release|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x86.ActiveCfg = Release|Any CPU
-		{DE20DB0F-AB95-47DD-B51F-A2A7EC12FA01}.Release|x86.Build.0 = Release|Any CPU
 		{428BFA9A-F082-4444-9E04-30AD60B5E794}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{428BFA9A-F082-4444-9E04-30AD60B5E794}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{428BFA9A-F082-4444-9E04-30AD60B5E794}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -321,6 +309,18 @@ Global
 		{AC215797-8B94-2D46-A603-D4EAC8C8604A}.Release|x64.Build.0 = Release|Any CPU
 		{AC215797-8B94-2D46-A603-D4EAC8C8604A}.Release|x86.ActiveCfg = Release|Any CPU
 		{AC215797-8B94-2D46-A603-D4EAC8C8604A}.Release|x86.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x64.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x86.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x64.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x64.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x86.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

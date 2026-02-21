@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29911.98
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11512.155 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sipcmdline", "sipcmdline.csproj", "{14118008-BF73-4534-9B62-1B64F847AB33}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{F3EF8DCF-11FF-4976-B34F-DF0BA4DDD887}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery", "..\..\src\SIPSorcery\SIPSorcery.csproj", "{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{14118008-BF73-4534-9B62-1B64F847AB33}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14118008-BF73-4534-9B62-1B64F847AB33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14118008-BF73-4534-9B62-1B64F847AB33}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F3EF8DCF-11FF-4976-B34F-DF0BA4DDD887}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F3EF8DCF-11FF-4976-B34F-DF0BA4DDD887}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F3EF8DCF-11FF-4976-B34F-DF0BA4DDD887}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F3EF8DCF-11FF-4976-B34F-DF0BA4DDD887}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

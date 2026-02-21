@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.1.11312.151 d18.0
+VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPToWebRtcBridge", "SIPToWebRtcBridge\SIPToWebRtcBridge.csproj", "{1C72B9CE-BDDB-4C7C-BDD9-D43B9CFFB2B6}"
 EndProject
@@ -45,13 +45,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCGetStartedDataChannel
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RtspToWebRTCAudioAndVideo", "RtspToWebRTCAudioAndVideo\RtspToWebRTCAudioAndVideo.csproj", "{48DA4367-06AC-40D2-9B4B-D45B49BBA1AF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenGL", "WebRTCOpenGL\WebRTCOpenGL.csproj", "{581BE6CD-8699-40C0-A975-F2C1993B62B8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCFFmpegGetStarted", "WebRTCFFmpegGetStarted\WebRTCFFmpegGetStarted.csproj", "{616B1ECF-B8DF-8E04-7AAA-678F947496E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCOpenGLSource", "WebRTCOpenGLSource\WebRTCOpenGLSource.csproj", "{8F5C22E4-34AE-9461-A4B0-D2578D440215}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPSorcery", "..\..\src\SIPSorcery\SIPSorcery.csproj", "{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -315,18 +315,6 @@ Global
 		{48DA4367-06AC-40D2-9B4B-D45B49BBA1AF}.Release|x64.Build.0 = Release|Any CPU
 		{48DA4367-06AC-40D2-9B4B-D45B49BBA1AF}.Release|x86.ActiveCfg = Release|Any CPU
 		{48DA4367-06AC-40D2-9B4B-D45B49BBA1AF}.Release|x86.Build.0 = Release|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Debug|x64.Build.0 = Debug|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Debug|x86.Build.0 = Debug|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Release|x64.ActiveCfg = Release|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Release|x64.Build.0 = Release|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Release|x86.ActiveCfg = Release|Any CPU
-		{3B92CB90-3999-4017-9C4D-ACC2C7DDFDD8}.Release|x86.Build.0 = Release|Any CPU
 		{581BE6CD-8699-40C0-A975-F2C1993B62B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{581BE6CD-8699-40C0-A975-F2C1993B62B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{581BE6CD-8699-40C0-A975-F2C1993B62B8}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -363,6 +351,18 @@ Global
 		{8F5C22E4-34AE-9461-A4B0-D2578D440215}.Release|x64.Build.0 = Release|Any CPU
 		{8F5C22E4-34AE-9461-A4B0-D2578D440215}.Release|x86.ActiveCfg = Release|Any CPU
 		{8F5C22E4-34AE-9461-A4B0-D2578D440215}.Release|x86.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x64.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Debug|x86.Build.0 = Debug|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x64.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x64.Build.0 = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x86.ActiveCfg = Release|Any CPU
+		{4B50D8B5-1549-E5D0-C63C-6A3072BB6024}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
