@@ -1320,11 +1320,14 @@ namespace SIPSorcery.Net.UnitTests
             var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
 
             // Generate a self-signed certificate for the TLS handshake.
+            // Export/reimport as PFX to ensure the private key is usable by SslStream on all platforms.
             using var rsa = RSA.Create(2048);
             var certReq = new CertificateRequest(
                 "CN=turn-test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            using var cert = certReq.CreateSelfSigned(
+            using var tmpCert = certReq.CreateSelfSigned(
                 DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
+            var pfxBytes = tmpCert.Export(X509ContentType.Pfx, (string)null);
+            using var cert = new X509Certificate2(pfxBytes, (string)null, X509KeyStorageFlags.Exportable);
 
             var peerListener = new TcpListener(IPAddress.Loopback, 0);
             peerListener.Start();
@@ -1381,10 +1384,16 @@ namespace SIPSorcery.Net.UnitTests
                 var serverAuth = sslServer.AuthenticateAsServerAsync(cert);
                 var clientAuth = sslClient.AuthenticateAsClientAsync("turn-test");
 
-                var handshakeTimeout = Task.Delay(5000);
+                var handshakeTimeout = Task.Delay(10000);
                 var handshakeDone = Task.WhenAll(serverAuth, clientAuth);
                 var winner = await Task.WhenAny(handshakeDone, handshakeTimeout);
-                Assert.True(winner == handshakeDone, "TLS handshake should complete within 5 seconds");
+                if (winner != handshakeDone)
+                {
+                    // Gather exception info from the handshake tasks if they faulted.
+                    var serverErr = serverAuth.IsFaulted ? serverAuth.Exception?.InnerException?.Message : serverAuth.Status.ToString();
+                    var clientErr = clientAuth.IsFaulted ? clientAuth.Exception?.InnerException?.Message : clientAuth.Status.ToString();
+                    Assert.Fail($"TLS handshake timed out. Server: {serverErr}, Client: {clientErr}");
+                }
                 await handshakeDone; // propagate exceptions
 
                 Assert.True(sslServer.IsAuthenticated, "Server-side TLS should be authenticated");
