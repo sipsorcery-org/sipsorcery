@@ -645,7 +645,165 @@ namespace SIPSorcery.Net.UnitTests
             // If the cleanup timer already ran, allocation count could be 0
         }
 
+        /// <summary>
+        /// Tests that a duplicate Allocate on the same connection returns 437.
+        /// </summary>
+        [Fact]
+        public async Task DuplicateAllocateReturns437()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var (server, port) = CreateTurnServer();
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // First allocation succeeds
+            var allocResponse = await AllocateWithAuth(stream, hmacKey);
+            Assert.Equal(STUNMessageTypesEnum.AllocateSuccessResponse, allocResponse.Header.MessageType);
+            Assert.Single(server.Allocations);
+
+            // Send another unauthenticated allocate to get a fresh nonce
+            var request1 = BuildAllocateRequest();
+            await SendStunMessage(stream, request1);
+            var challenge = await ReceiveStunMessage(stream);
+
+            // Send authenticated allocate — allocation check happens after auth,
+            // so this should pass auth then fail with 437 (duplicate).
+            var nonce = Encoding.UTF8.GetString(
+                challenge.Attributes.First(a => a.AttributeType == STUNAttributeTypesEnum.Nonce).Value);
+            var request2 = BuildAuthenticatedAllocateRequest(hmacKey, TEST_USERNAME, TEST_REALM, nonce);
+            await SendStunMessage(stream, request2, hmacKey);
+
+            var response2 = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.AllocateErrorResponse, response2.Header.MessageType);
+            AssertErrorCode(response2, 437);
+        }
+
+        /// <summary>
+        /// Tests that a Refresh without a prior allocation returns 437.
+        /// </summary>
+        [Fact]
+        public async Task RefreshWithoutAllocationReturns437()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var (server, port) = CreateTurnServer();
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // Send Refresh without allocating first
+            var refresh = new STUNMessage(STUNMessageTypesEnum.Refresh);
+            refresh.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, (uint)600));
+            await SendStunMessage(stream, refresh, hmacKey);
+
+            var response = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.RefreshErrorResponse, response.Header.MessageType);
+            AssertErrorCode(response, 437);
+        }
+
+        /// <summary>
+        /// Tests that a CreatePermission without a prior allocation returns 437.
+        /// </summary>
+        [Fact]
+        public async Task CreatePermissionWithoutAllocationReturns437()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var (server, port) = CreateTurnServer();
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // Send CreatePermission without allocating first
+            var createPerm = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
+            createPerm.AddXORPeerAddressAttribute(IPAddress.Parse("10.0.0.1"), 5000);
+            await SendStunMessage(stream, createPerm, hmacKey);
+
+            var response = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.CreatePermissionErrorResponse, response.Header.MessageType);
+            AssertErrorCode(response, 437);
+        }
+
+        /// <summary>
+        /// Tests that a ChannelBind without a prior allocation returns 437.
+        /// </summary>
+        [Fact]
+        public async Task ChannelBindWithoutAllocationReturns437()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var (server, port) = CreateTurnServer();
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            // Send ChannelBind without allocating first
+            ushort channelNumber = 0x4000;
+            var peerEndpoint = new IPEndPoint(IPAddress.Parse("10.0.0.1"), 5000);
+
+            var channelBind = new STUNMessage(STUNMessageTypesEnum.ChannelBind);
+            var channelValue = new byte[4];
+            channelValue[0] = (byte)(channelNumber >> 8);
+            channelValue[1] = (byte)(channelNumber & 0xFF);
+            channelBind.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.ChannelNumber, channelValue));
+            channelBind.AddXORPeerAddressAttribute(peerEndpoint.Address, peerEndpoint.Port);
+            await SendStunMessage(stream, channelBind, hmacKey);
+
+            var response = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.ChannelBindErrorResponse, response.Header.MessageType);
+            AssertErrorCode(response, 437);
+        }
+
+        /// <summary>
+        /// Tests that a ChannelBind missing required attributes returns 400.
+        /// </summary>
+        [Fact]
+        public async Task ChannelBindMissingAttributesReturns400()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var (server, port) = CreateTurnServer();
+            using var client = await ConnectTcpClient(port);
+            var stream = client.GetStream();
+            var hmacKey = ComputeHmacKey(TEST_USERNAME, TEST_REALM, TEST_PASSWORD);
+
+            await AllocateWithAuth(stream, hmacKey);
+
+            // Case 1: ChannelBind with only ChannelNumber (no XOR-PEER-ADDRESS)
+            var bindNoAddr = new STUNMessage(STUNMessageTypesEnum.ChannelBind);
+            var channelValue = new byte[4];
+            channelValue[0] = 0x40;
+            channelValue[1] = 0x00;
+            bindNoAddr.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.ChannelNumber, channelValue));
+            await SendStunMessage(stream, bindNoAddr, hmacKey);
+
+            var resp1 = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.ChannelBindErrorResponse, resp1.Header.MessageType);
+            AssertErrorCode(resp1, 400);
+
+            // Case 2: ChannelBind with only XOR-PEER-ADDRESS (no ChannelNumber)
+            var bindNoChan = new STUNMessage(STUNMessageTypesEnum.ChannelBind);
+            bindNoChan.AddXORPeerAddressAttribute(IPAddress.Parse("10.0.0.1"), 5000);
+            await SendStunMessage(stream, bindNoChan, hmacKey);
+
+            var resp2 = await ReceiveStunMessage(stream);
+            Assert.Equal(STUNMessageTypesEnum.ChannelBindErrorResponse, resp2.Header.MessageType);
+            AssertErrorCode(resp2, 400);
+        }
+
         #region Test Helpers
+
+        private static void AssertErrorCode(STUNMessage response, int expectedCode)
+        {
+            var errorAttr = response.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.ErrorCode);
+            Assert.NotNull(errorAttr);
+            Assert.True(errorAttr.Value.Length >= 4);
+            int errorCode = errorAttr.Value[2] * 100 + errorAttr.Value[3];
+            Assert.Equal(expectedCode, errorCode);
+        }
 
         /// <summary>
         /// Performs the full authenticate + allocate flow and returns the allocation response.
