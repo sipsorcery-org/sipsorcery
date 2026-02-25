@@ -23,6 +23,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
 using Xunit;
+using Polyfills;
 
 namespace SIPSorcery.Net.UnitTests
 {
@@ -180,7 +181,7 @@ namespace SIPSorcery.Net.UnitTests
                 a => a.AttributeType == STUNAttributeTypesEnum.ErrorCode);
             Assert.NotNull(errorAttr);
             Assert.True(errorAttr.Value.Length >= 4);
-            int errorCode = errorAttr.Value[2] * 100 + errorAttr.Value[3];
+            int errorCode = errorAttr.Value.Span[2] * 100 + errorAttr.Value.Span[3];
             Assert.Equal(401, errorCode);
 
             // Should contain REALM
@@ -660,7 +661,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var nonceAttr = response1.Attributes.First(
                 a => a.AttributeType == STUNAttributeTypesEnum.Nonce);
-            var nonce = Encoding.UTF8.GetString(nonceAttr.Value);
+            var nonce = Encoding.UTF8.GetString(nonceAttr.Value.ToArray());
 
             // Step 2: Authenticated request
             var request2 = BuildAuthenticatedAllocateRequest(hmacKey, TEST_USERNAME, TEST_REALM, nonce);

@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using SIPSorcery.UnitTests;
 using Xunit;
 

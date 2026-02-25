@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCSdpType.offer, init.type);
             Assert.NotNull(init.sdp);
 
-            SDP sdp = SDP.ParseSDPDescription(init.sdp);
+            var sdp = SDP.ParseSDPDescription(init.sdp);
             Assert.Equal(0, sdp.Version);
         }
 

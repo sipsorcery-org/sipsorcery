@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionSdesCryptoNegotiationUnitTest.cs
 //
 // Description: Characterization tests for SDP-driven SRTP (SDES) crypto
@@ -249,7 +249,7 @@ a=rtpmap:96 VP8/90000");
                 Assert.Equal(SetDescriptionResultEnum.OK,
                     session.SetRemoteDescription(SdpType.offer, offer));
 
-                Assert.Throws<System.ApplicationException>(
+                Assert.Throws<SIPSorcery.SipSorceryException>(
                     () => session.CreateAnswer(IPAddress.Loopback));
             }
         }

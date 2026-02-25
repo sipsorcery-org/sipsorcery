@@ -12,6 +12,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -78,7 +79,7 @@ m=video 20002 RTP/AVP 96
 a=rtpmap:96 VP8/90000
 a=sendrecv";
 
-            var initialOffer = SDP.ParseSDPDescription(initialOfferSdp);
+            var initialOffer = SDP.ParseSDPDescription(initialOfferSdp.AsSpan());
             var result = rtpSession.SetRemoteDescription(SdpType.offer, initialOffer);
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 
@@ -104,7 +105,7 @@ a=sendrecv
 m=video 0 RTP/AVP 96
 a=rtpmap:96 VP8/90000";
 
-            var reInviteOffer = SDP.ParseSDPDescription(reInviteOfferSdp);
+            var reInviteOffer = SDP.ParseSDPDescription(reInviteOfferSdp.AsSpan());
             result = rtpSession.SetRemoteDescription(SdpType.offer, reInviteOffer);
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 
@@ -160,7 +161,7 @@ m=video 30002 RTP/AVP 96
 a=rtpmap:96 VP8/90000
 a=sendrecv";
 
-            var offer = SDP.ParseSDPDescription(offerSdp);
+            var offer = SDP.ParseSDPDescription(offerSdp.AsSpan());
             var result = rtpSession.SetRemoteDescription(SdpType.offer, offer);
             Assert.Equal(SetDescriptionResultEnum.OK, result);
             rtpSession.Start();
@@ -179,7 +180,7 @@ m=video 30012 RTP/AVP 96
 a=rtpmap:96 VP8/90000
 a=sendrecv";
 
-            var reInvite = SDP.ParseSDPDescription(reInviteSdp);
+            var reInvite = SDP.ParseSDPDescription(reInviteSdp.AsSpan());
             result = rtpSession.SetRemoteDescription(SdpType.offer, reInvite);
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 

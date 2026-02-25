@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -123,7 +125,7 @@ namespace SIPSorcery.SIP
         /// <returns>A socket error with the result of the cancel.</returns>
         public void CancelCall(SIPRequest sipCancelRequest = null)
         {
-            if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
+            if (TransactionState is SIPTransactionStatesEnum.Calling or SIPTransactionStatesEnum.Trying or SIPTransactionStatesEnum.Proceeding)
             {
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
                 UASInviteTransactionCancelled?.Invoke(this, sipCancelRequest);

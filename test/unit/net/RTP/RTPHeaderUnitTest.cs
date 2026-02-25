@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -35,7 +36,9 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPHeader rtpHeader = new RTPHeader();
-            byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
+            rtpHeader.SetHeader(1, 0, 1);
+            byte[] headerBuffer = new byte[rtpHeader.GetByteCount()];
+            rtpHeader.WriteBytes(headerBuffer.AsSpan());
 
             int byteNum = 1;
             foreach (byte headerByte in headerBuffer)
@@ -52,7 +55,9 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPHeader src = new RTPHeader();
-            byte[] headerBuffer = src.GetHeader(1, 0, 1);
+            src.SetHeader(1, 0, 1);
+            byte[] headerBuffer = new byte[src.GetByteCount()];
+            src.WriteBytes(headerBuffer.AsSpan());
             RTPHeader dst = new RTPHeader(headerBuffer);
 
             logger.LogDebug("Versions: {SrcVersion}, {DstVersion}", src.Version, dst.Version);
@@ -92,7 +97,9 @@ namespace SIPSorcery.Net.UnitTests
             src.CSRCCount = 3;
             src.PayloadType = (int)SDPWellKnownMediaFormatsEnum.PCMA;
 
-            byte[] headerBuffer = src.GetHeader(1, 0, 1);
+            src.SetHeader(1, 0, 1);
+            byte[] headerBuffer = new byte[src.GetByteCount()];
+            src.WriteBytes(headerBuffer.AsSpan());
 
             RTPHeader dst = new RTPHeader(headerBuffer);
 
@@ -221,7 +228,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(13, extension.Id);
             Assert.Equal(RTPHeaderExtensionType.OneByte, extension.Type);
 
-            var expectedValue = new byte[] {0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+            var expectedValue = new byte[] { 0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
             Assert.Equal(expectedValue, extension.Data);
         }
 
@@ -241,9 +248,20 @@ namespace SIPSorcery.Net.UnitTests
             };
             var packet = new RTPPacket(rtpPayload);
             var header = packet.Header;
-            var extensions= header.GetHeaderExtensions().ToList();
+            var extensions = header.GetHeaderExtensions().ToList();
             Assert.NotNull(extensions);
             Assert.Empty(extensions);
+        }
+
+        private byte[] GetHeader(RTPHeader header, UInt16 sequenceNumber, uint timestamp, uint syncSource)
+        {
+            header.SequenceNumber = sequenceNumber;
+            header.Timestamp = timestamp;
+            header.SyncSource = syncSource;
+
+            var bytes = new byte[header.GetByteCount()];
+            header.WriteBytes(bytes);
+            return bytes;
         }
     }
 }

@@ -378,7 +378,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPSession duplicateSession = new RTPSession(false, false, false, IPAddress.Loopback, rtpEndPoint.Port);
             MediaStreamTrack duplicateTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
-            Assert.Throws<ApplicationException>(() => duplicateSession.addTrack(duplicateTrack));
+            Assert.Throws<SipSorceryException>(() => duplicateSession.addTrack(duplicateTrack));
 
             localSession.Close(null);
         }
@@ -421,7 +421,7 @@ a=sendrecv";
             });
             rtpSession.addTrack(localAudioTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -468,7 +468,7 @@ a=rtpmap:111 OPUS/48000/2";
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU));
             rtpSession.addTrack(localAudioTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -514,7 +514,7 @@ a=rtpmap:111 OPUS/48000/2";
             MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPWellKnownMediaFormatsEnum.PCMA, SDPWellKnownMediaFormatsEnum.G723);
             rtpSession.addTrack(localAudioTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -548,7 +548,7 @@ a=fmtp:100 98/98";
 
             rtpSession.addTrack(localTextTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug($"Remote offer: {offer}");
 
@@ -589,7 +589,7 @@ a=rtpmap:12 PCMA/8000";
 
             Assert.Equal(8, rtpSession.AudioStream.LocalTrack.Capabilities.Single(x => x.Name() == "PCMA").ID);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
             var result = rtpSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
 

@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,29 +109,26 @@ namespace SIPSorcery.Net
                     var fieldName = field[fieldKeyValueRange[0]];
                     var fieldValue = field[fieldKeyValueRange[1]];
 
-                    if (fieldName.Equals(CLIENT_RTP_PORT_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    switch (fieldName)
                     {
-                        transportHeader.ClientRTPPortRange = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(DESTINATION_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.Destination = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(SERVER_RTP_PORT_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.ServerRTPPortRange = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(SOURCE_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.Source = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(MODE_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.Mode = fieldValue.Trim().ToString();
-                    }
-                    else
-                    {
-                        logger.LogWarning("An RTSP Transport header parameter was not recognised: {Field}", field.ToString());
+                        case var fn when (CLIENT_RTP_PORT_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.ClientRTPPortRange = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (DESTINATION_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.Destination = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (SERVER_RTP_PORT_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.ServerRTPPortRange = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (SOURCE_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.Source = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (MODE_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.Mode = fieldValue.Trim().ToString();
+                            break;
+                        default:
+                            logger.LogWarning("An RTSP Transport header parameter was not recognised: {Field}", field.ToString());
+                            break;
                     }
 
                     fieldIndex++;

@@ -90,7 +90,7 @@ namespace SIPSorcery.Net.UnitTests
             return base.GetCookieHMAC(buffer);
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string associationID, System.ReadOnlyMemory<byte> buffer, System.IDisposable memoryOwner = null)
         { }
     }
 }

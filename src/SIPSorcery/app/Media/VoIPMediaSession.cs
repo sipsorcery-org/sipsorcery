@@ -17,6 +17,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,7 +164,7 @@ namespace SIPSorcery.Media
 
             if (Media.AudioSink != null)
             {
-                base.OnAudioFrameReceived += Media.AudioSink.GotEncodedMediaFrame; 
+                base.OnAudioFrameReceived += Media.AudioSink.GotEncodedMediaFrame;
             }
 
             if (Media.TextSink != null)
@@ -339,7 +341,10 @@ namespace SIPSorcery.Media
             {
                 logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
-                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.GetPayloadBytes());
+                var rtpPacketBytes = new byte[rtpPacket.GetByteCount()];
+                rtpPacket.WriteBytes(rtpPacketBytes);
+
+                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacketBytes);
             }
             else
             {

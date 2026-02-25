@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -328,7 +330,7 @@ namespace SIPSorcery.SIP.App
                     SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, $"Subscribe failed with response {sipResponse.StatusCode} {sipResponse.ReasonPhrase}.");
                     m_waitForSubscribeResponse.Set();
                 }
-                else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                else if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     if (m_authUsername.IsNullOrBlank() || m_authPassword.IsNullOrBlank())
                     {
@@ -377,7 +379,7 @@ namespace SIPSorcery.SIP.App
                         m_waitForSubscribeResponse.Set();
                     }
                 }
-                else if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+                else if (sipResponse.StatusCode is >= 200 and <= 299)
                 {
                     logger.LogDebug("Authenticating subscribe request for event package {EventPackage} and {ResourceURI} was successful.", m_sipEventPackage, m_resourceURI);
 

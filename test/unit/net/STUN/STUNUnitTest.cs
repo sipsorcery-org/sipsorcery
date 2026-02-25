@@ -14,6 +14,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -411,11 +412,11 @@ namespace SIPSorcery.Net.UnitTests
             var stunReq = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
 
             Assert.NotNull(stunReq);
-            Assert.Equal(1853882367U,
-                NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value, 0));
+            Assert.Equal(1853882367U, 
+                NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value.Span, 0));
             Assert.Equal(8, stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).PaddedLength);
-            Assert.Equal(0x27ff2a171b888ffeU,
-                NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value, 0));
+            Assert.Equal(0x27ff2a171b888ffeU, 
+                NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value.Span, 0));
         }
 
         /// <summary>

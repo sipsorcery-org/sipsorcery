@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -46,13 +47,13 @@ public class UdpReceiver
     /// </summary>
     protected const int RECEIVE_BUFFER_SIZE = 3000;
 
-    protected static readonly ILogger logger = LogFactory.CreateLogger<UdpReceiver>();
+    protected static ILogger logger = LogFactory.CreateLogger<UdpReceiver>();
 
     protected readonly Socket m_socket;
     protected byte[] m_recvBuffer;
     protected bool m_isClosed;
     protected bool m_isRunningReceive;
-    protected IPEndPoint m_localEndPoint;
+    protected IPEndPoint? m_localEndPoint;
     protected AddressFamily m_addressFamily;
 
     public virtual bool IsClosed
@@ -90,18 +91,20 @@ public class UdpReceiver
     /// <summary>
     /// Fires when a new packet has been received on the UDP socket.
     /// </summary>
-    public event PacketReceivedDelegate OnPacketReceived;
+    public event PacketReceivedDelegate? OnPacketReceived;
 
     /// <summary>
     /// Fires when there is an error attempting to receive on the UDP socket.
     /// </summary>
-    public event Action<string> OnClosed;
+    public event Action<string>? OnClosed;
 
     public UdpReceiver(Socket socket, int mtu = RECEIVE_BUFFER_SIZE)
     {
         m_socket = socket;
-        m_localEndPoint = m_socket.LocalEndPoint as IPEndPoint;
+        Debug.Assert(m_socket is not null);
+        m_localEndPoint = (IPEndPoint?)m_socket.LocalEndPoint;
         m_recvBuffer = new byte[mtu];
+        Debug.Assert(m_socket.LocalEndPoint is not null);
         m_addressFamily = m_socket.LocalEndPoint.AddressFamily;
     }
 
@@ -180,7 +183,11 @@ public class UdpReceiver
                     byte[] packetBuffer = new byte[bytesRead];
                     // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                     Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                    CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
+
+                    var remoteEndPoint = remoteEP as IPEndPoint;
+                    Debug.Assert(m_localEndPoint is not null);
+                    Debug.Assert(remoteEndPoint is not null);
+                    CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEndPoint, packetBuffer);
                 }
             }
             else
@@ -205,7 +212,11 @@ public class UdpReceiver
                         byte[] packetBufferSync = new byte[bytesReadSync];
                         // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                         Buffer.BlockCopy(m_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
-                        CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);
+
+                        var remoteEndPoint = remoteEP as IPEndPoint;
+                        Debug.Assert(m_localEndPoint is not null);
+                        Debug.Assert(remoteEndPoint is not null);
+                        CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEndPoint, packetBufferSync);
                     }
                     else
                     {

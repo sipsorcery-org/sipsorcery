@@ -127,7 +127,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             logger.LogDebug("HexStr result: {HexStrResult}", BitConverter.ToString(buffer).Replace("-", ""));
 
-            Assert.Equal("010203", buffer.HexStr());
+            Assert.Equal("010203", TypeExtensions.HexStr(buffer));
         }
 
         [Fact]

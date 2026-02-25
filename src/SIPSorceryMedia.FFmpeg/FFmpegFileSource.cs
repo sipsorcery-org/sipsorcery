@@ -38,7 +38,7 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
     {
         if (!File.Exists(path))
         {
-            if (!Uri.TryCreate(path, UriKind.Absolute, out Uri? result))
+            if (!Uri.TryCreate(path, UriKind.Absolute, out var result))
             {
                 throw new ApplicationException($"Requested path is not a valid file path or not a valid Uri: {path}.");
             }
@@ -75,20 +75,20 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
         OnVideoSourceError?.Invoke(errorMessage);
     }
 
-    private void _FFmpegVideoSource_OnVideoSourceEncodedSample(uint durationRtpUnits, byte[] sample)
-    {
-        OnVideoSourceEncodedSample?.Invoke(durationRtpUnits, sample);
-    }
+        private void _FFmpegVideoSource_OnVideoSourceEncodedSample(uint durationRtpUnits, ReadOnlyMemory<byte> sample)
+        {
+            OnVideoSourceEncodedSample?.Invoke(durationRtpUnits, sample);
+        }
 
     private void _FFmpegVideoSource_OnVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage imageRawSample)
     {
         OnVideoSourceRawSampleFaster?.Invoke(durationMilliseconds, imageRawSample);
     }
 
-    private void _FFmpegAudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, byte[] sample)
-    {
-        OnAudioSourceEncodedSample?.Invoke(durationRtpUnits, sample);
-    }
+        private void _FFmpegAudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, ReadOnlyMemory<byte> sample)
+        {
+            OnAudioSourceEncodedSample?.Invoke(durationRtpUnits, sample);
+        }
 
     private void _FFmpegAudioSource_OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
     {

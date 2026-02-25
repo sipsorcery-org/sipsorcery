@@ -42,13 +42,13 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
         public static List<Monitor> GetMonitors()
         {
             List<Monitor> result = new List<Monitor> ();
-            int index = 0;
+            var index = 0;
             EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero,
                     delegate (IntPtr hMonitor, IntPtr hdcMonitor, ref Rect lprcMonitor, IntPtr dwData)
                     {
                         MonitorInfo mi = new MonitorInfo();
                         mi.size = (uint)Marshal.SizeOf(mi);
-                        bool success = GetMonitorInfo(hMonitor, ref mi);
+                        var success = GetMonitorInfo(hMonitor, ref mi);
 
                         Monitor monitor = new Monitor
                         {

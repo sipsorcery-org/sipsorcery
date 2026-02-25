@@ -34,6 +34,8 @@ using SIPSorcery.OpenAI.Realtime;
 using SIPSorcery.OpenAI.Realtime.Models;
 using SIPSorceryMedia.Abstractions;
 using SIPSorcery.Media;
+using System.Buffers;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace demo;
 
@@ -161,11 +163,15 @@ class Program
 
         webrtcEndPoint.OnAudioFrameReceived += (EncodedAudioFrame encodedAudioFrame) =>
         {
-            var decodedSample = audioEncoder.DecodeAudio(encodedAudioFrame.EncodedAudio, AudioCommonlyUsedFormats.OpusWebRTC);
+            using var buffer = new ArrayPoolBufferWriter<short>(8192);
+            audioEncoder.DecodeAudio(encodedAudioFrame.EncodedAudio.Span, AudioCommonlyUsedFormats.OpusWebRTC, buffer);
+            var decodedSample = buffer.WrittenSpan;
 
-            var samples = decodedSample
-                .Select(s => new Complex(s / 32768f, 0f))
-                .ToArray();
+            var samples = new Complex[decodedSample.Length];
+            for (int i = 0; i < samples.Length; i++)
+            {
+                samples[i] = new Complex(decodedSample[i] / 32768f, 0f);
+            }
 
             var frame = _audioScopeForm?.Invoke(() => _audioScopeForm.ProcessAudioSample(samples, audioScopeNumber));
         };

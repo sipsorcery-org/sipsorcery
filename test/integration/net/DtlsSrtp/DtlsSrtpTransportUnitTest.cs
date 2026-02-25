@@ -92,10 +92,13 @@ namespace SIPSorcery.Net.IntegrationTests
                 dtlsClientTransport.WriteToRecvStream(buf);
             };
 
-            var serverTask = Task.Run<bool>(() =>
-                    dtlsServerTransport.DoHandshake(out _));
-            var clientTask = Task.Run<bool>(() =>
-                    dtlsClientTransport.DoHandshake(out _));
+            string serverError = null;
+            string clientError = null;
+            
+            var serverTask = Task.Run(() =>
+                    dtlsServerTransport.DoHandshake(out serverError));
+            var clientTask = Task.Run(() =>
+                    dtlsClientTransport.DoHandshake(out clientError));
 
             var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(timeout));
             var winner = await Task.WhenAny(serverTask, clientTask, timeoutTask);
@@ -105,8 +108,20 @@ namespace SIPSorcery.Net.IntegrationTests
                 Assert.Fail($"Test timed out after {timeout}ms.");
             }
 
-            Assert.True(await serverTask);
-            Assert.True(await clientTask);
+            var serverResult = await serverTask;
+            var clientResult = await clientTask;
+
+            if (!serverResult)
+            {
+                logger.LogError("Server handshake failed: {Error}", serverError ?? "Unknown error");
+            }
+            if (!clientResult)
+            {
+                logger.LogError("Client handshake failed: {Error}", clientError ?? "Unknown error");
+            }
+
+            Assert.True(serverResult, $"Server handshake failed: {serverError}");
+            Assert.True(clientResult, $"Client handshake failed: {clientError}");
 
             logger.LogDebug("DTLS client fingerprint       : {Fingerprint}", DtlsUtils.Fingerprint(dtlsClient.Certificate));
             //logger.LogDebug($"DTLS client server fingerprint: {dtlsClient.ServerFingerprint}.");

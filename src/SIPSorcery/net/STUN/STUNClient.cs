@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Linq;
 using System.Net;
@@ -86,7 +88,8 @@ public class STUNClient
             using (UdpClient udpClient = new UdpClient(stunServer, port))
             {
                 STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-                byte[] stunMessageBytes = initMessage.ToByteBuffer(null, false);
+                byte[] stunMessageBytes = new byte[initMessage.GetByteBufferSize(null, false)];
+                initMessage.WriteToBuffer(stunMessageBytes, null, false);
                 udpClient.Send(stunMessageBytes, stunMessageBytes.Length);
 
                 IPEndPoint publicEndPoint = null;
@@ -102,7 +105,7 @@ public class STUNClient
                         if (stunResponseBuffer != null && stunResponseBuffer.Length > 0)
                         {
                             logger.LogDebug("STUNClient Response to initial STUN message received from {stunResponseEndPoint}.", stunResponseEndPoint);
-                            STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
+                            STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer.AsSpan());
 
                             if (stunResponse.Attributes.Count > 0)
                             {
@@ -214,7 +217,8 @@ public class STUNClient
             logger.LogDebug("STUNClient sending BindingRequest for RTP channel {LocalEndPoint} to {StunServer}.", rtpChannel.RTPLocalEndPoint, stunServer);
 
             var initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-            var bytes = initMessage.ToByteBuffer(null, false);
+            var bytes = new byte[initMessage.GetByteBufferSize(null, false)];
+            initMessage.WriteToBuffer(bytes, null, false);
             rtpChannel.Send(RTPChannelSocketsEnum.RTP, stunServer, bytes);
 
             // Race the response against a timeout.

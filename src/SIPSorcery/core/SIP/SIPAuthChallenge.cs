@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SIPAuthChallenge.cs
 //
 // Description: Common logic when having to add auth to SIP Requests
@@ -10,6 +10,8 @@
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+
+#nullable disable
 
 using System.Collections.Generic;
 using System.Linq;

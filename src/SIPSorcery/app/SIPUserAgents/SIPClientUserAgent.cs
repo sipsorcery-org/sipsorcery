@@ -16,6 +16,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -410,7 +412,7 @@ namespace SIPSorcery.SIP.App
 
                     #endregion
                 }
-                else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                else if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     #region Authenticate client call to third party server.
 
@@ -453,7 +455,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+                    if (sipResponse.StatusCode is >= 200 and <= 299)
                     {
                         m_sipDialogue = new SIPDialogue(m_serverTransaction);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
@@ -482,7 +484,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.Ringing || sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.Ringing or SIPResponseStatusCodesEnum.SessionProgress)
                 {
                     CallRinging?.Invoke(this, sipResponse);
                 }
@@ -527,7 +529,7 @@ namespace SIPSorcery.SIP.App
                 SIPNonInviteTransaction transaction = sipTransaction as SIPNonInviteTransaction;
                 transaction.NonInviteTransactionFinalResponseReceived -= ByeServerFinalResponseReceived;
 
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     var username = string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername;
                     var authRequest = transaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,

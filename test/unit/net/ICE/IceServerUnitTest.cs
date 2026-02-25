@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: IceServerUnitTest.cs
 //
 // Description: Characterization tests for the IceServer per-server state machine
@@ -27,7 +27,9 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
+using SIPSorcery.Sys;
 using Xunit;
+using Polyfills;
 
 namespace SIPSorcery.Net.UnitTests
 {
@@ -73,8 +75,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(System.Net.Sockets.ProtocolType.Udp, server.Protocol);
             Assert.Equal(STUNSchemesEnum.stun, server.Uri.Scheme);
-            Assert.Null(server._username);
-            Assert.Null(server._password);
+            Assert.True(server.Username.IsEmpty);
+            Assert.True(server.Password.IsEmpty);
         }
 
         [Fact]
@@ -86,8 +88,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(STUNSchemesEnum.turn, server.Uri.Scheme);
             Assert.Equal(System.Net.Sockets.ProtocolType.Tcp, server.Protocol);
-            Assert.Equal("user1", server._username);
-            Assert.Equal("pass1", server._password);
+            Assert.True("user1"u8.SequenceEqual(server.Username.Span));
+            Assert.True("pass1"u8.SequenceEqual(server.Password.Span));
         }
 
         [Fact]
@@ -114,7 +116,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseIceServer_NullThrowsArgumentNull()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
-            Assert.Throws<ArgumentNullException>(() => IceServer.ParseIceServer(null));
+            Assert.Throws<ArgumentException>(() => IceServer.ParseIceServer(null));
         }
 
         [Theory]
@@ -263,7 +265,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(1, server.ErrorResponseCount);
             Assert.Equal(originalTxId, server.TransactionID);  // not an auth error, no rotation.
-            Assert.Null(server.Nonce);
+            Assert.True(server.Nonce.IsEmpty);
         }
 
         [Fact]

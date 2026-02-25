@@ -15,60 +15,45 @@
 // ============================================================================
 
 using System;
-using System.Globalization;
-using System.Text;
+using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public static class Utility
 {
-    public class Utility
+    public static ushort ReverseEndian(ushort val)
     {
-        public static UInt16 ReverseEndian(UInt16 val)
+        return Convert.ToUInt16(val << 8 & 0xff00 | (val >> 8));
+    }
+
+    public static uint ReverseEndian(uint val)
+    {
+        return Convert.ToUInt32((val << 24 & 0xff000000) | (val << 8 & 0x00ff0000) | (val >> 8 & 0xff00) | (val >> 24));
+    }
+
+    public static string? PrintBuffer(byte[] buffer)
+    {
+        if (buffer.Length == 0)
         {
-            return Convert.ToUInt16(val << 8 & 0xff00 | (val >> 8));
+            return null;
         }
 
-        public static UInt32 ReverseEndian(UInt32 val)
-        {
-            return Convert.ToUInt32((val << 24 & 0xff000000) | (val << 8 & 0x00ff0000) | (val >> 8 & 0xff00) | (val >> 24));
-        }
+        using var builder = new ValueStringBuilder(stackalloc char[256]);
 
-        public static string PrintBuffer(byte[] buffer)
+        for (var index = 0; index < buffer.Length; index++)
         {
-            if (buffer.Length == 0)
+            builder.Append(buffer[index], "X2");
+
+            if ((index + 1) % 4 == 0)
             {
-                return null;
+                builder.Append('\n');
             }
-
-            var fullGroups = buffer.Length / 4;
-            var remainder = buffer.Length % 4;
-            var outputLength = (fullGroups * 18) + (remainder * 5);
-
-            return string.Create(
-                outputLength,
-                buffer,
-                static (output, bytes) =>
-                {
-                    const string UPPER_HEX_DIGITS = "0123456789ABCDEF";
-                    var outputIndex = 0;
-
-                    for (var index = 0; index < bytes.Length; index++)
-                    {
-                        var value = bytes[index];
-                        output[outputIndex++] = UPPER_HEX_DIGITS[value >> 4];
-                        output[outputIndex++] = UPPER_HEX_DIGITS[value & 0x0f];
-
-                        if ((index + 1) % 4 == 0)
-                        {
-                            output[outputIndex++] = '\n';
-                        }
-                        else
-                        {
-                            output[outputIndex++] = ' ';
-                            output[outputIndex++] = '|';
-                            output[outputIndex++] = ' ';
-                        }
-                    }
-                });
+            else
+            {
+                builder.Append(" | ");
+            }
         }
+
+        return builder.ToString();
     }
 }

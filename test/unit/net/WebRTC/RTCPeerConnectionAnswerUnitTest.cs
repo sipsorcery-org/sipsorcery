@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionAnswerUnitTest.cs
 //
 // Description: Unit tests for RTCPeerConnection.createAnswer().
@@ -71,7 +71,7 @@ namespace SIPSorcery.Net.UnitTests
 
             // Parse the answer SDP and verify every media announcement has
             // setup:active or setup:passive, never actpass.
-            SDP answerSdp = SDP.ParseSDPDescription(answer.sdp);
+            var answerSdp = SDP.ParseSDPDescription(answer.sdp);
             Assert.NotEmpty(answerSdp.Media);
 
             foreach (var media in answerSdp.Media)
@@ -79,7 +79,7 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.NotNull(media.IceRole);
                 Assert.NotEqual(IceRolesEnum.actpass, media.IceRole.Value);
                 Assert.True(
-                    media.IceRole == IceRolesEnum.active || media.IceRole == IceRolesEnum.passive,
+                    media.IceRole is IceRolesEnum.active or IceRolesEnum.passive,
                     $"Answer SDP media {media.Media} had setup:{media.IceRole} instead of active or passive.");
             }
 

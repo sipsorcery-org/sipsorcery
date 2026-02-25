@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -75,7 +77,7 @@ namespace SIPSorcery.SIP.App
                 string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
                 logger.LogDebug("Server response {StatusCode} {ReasonPhrase} received for {Method} to {Uri}.", sipResponse.StatusCode, reasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
 
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     if (sipResponse.Header.HasAuthenticationHeader)
                     {
