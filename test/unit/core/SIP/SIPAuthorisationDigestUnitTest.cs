@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password", "sip:303@bluesipd", "17190028", "INVITE");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -72,7 +72,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "sip.blueface.ie", "aaronnetgear", "!\"$%^&*()_-+=}[{]~#@':;?><,.", "sip:sip.blueface.ie:5060", "1430352056", "REGISTER");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -90,7 +90,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "sip.blueface.ie", "aaronxten", "_*!$%^()\"", "sip:sip.blueface.ie", "1263192143", "REGISTER");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -108,7 +108,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password", "sip:303@213.168.225.133", "4a4ad124", "INVITE");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -126,7 +126,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaron", "password", "sip:blueface", "1c8192c9", "REGISTER");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -144,7 +144,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaron", "password", "sip:blueface", "1c3c7a97", "REGISTER");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -180,7 +180,7 @@ namespace SIPSorcery.SIP.UnitTests
             authRequest.SetCredentials("user@aim.com", "password", "sip:01135312222222@sip.aol.com;transport=udp", "INVITE");
             authRequest.Cnonce = "e66ea40d700e8ab69509df4893f4a821";
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
             authRequest.Response = digest;
 
             logger.LogDebug("Digest = {digest}.", digest);
@@ -201,7 +201,7 @@ namespace SIPSorcery.SIP.UnitTests
             authRequest.SetCredentials("user@aim.com", "password", "sip:01135312222222@sip.aol.com;transport=udp", "INVITE");
             authRequest.Cnonce = "cf2e005f1801550717cc8c59193aa9f4";
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
             authRequest.Response = digest;
 
             logger.LogDebug("Digest = {digest}.", digest);
@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP.UnitTests
             authRequest.SetCredentials("user", "password", "sip:user.onsip.com", "REGISTER");
             authRequest.Cnonce = "d3a1ca6af34e72e2461b794f48d5045d";
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
             authRequest.Response = digest;
 
             logger.LogDebug("Digest = {digest}.", digest);
@@ -242,7 +242,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"digest realm=""Syndeo Corporation"", nonce=""1265068315059e3bbf3052cf13ea5ca22fb71669a7"", opaque=""09c0f23f71f89ce53baab5664c09cbfa"", algorithm=MD5");
             authRequest.SetCredentials("user", "pass", "sip:sip.ribbit.com", "REGISTER");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -261,7 +261,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"digest realm=""sipsorcery.com"", nonce=""1265068315059e3bbf3052cf13ea5ca22fb71669a7"", opaque=""09c0f23f71f89ce53baab5664c09cbfa"", algorithm=MD5");
             authRequest.SetCredentials("username", "password", "sip:sipsorcery.com", "REGISTER");
 
-            string digest = authRequest.GetDigest();
+            var digest = authRequest.GetDigest();
 
             logger.LogDebug("Digest = {digest}.", digest);
             logger.LogDebug("{AuthRequest}", authRequest.ToString());
@@ -299,7 +299,7 @@ namespace SIPSorcery.SIP.UnitTests
                 SIPAuthorisationDigest authDigest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password", 
                     "sip:303@bluesipd", "17190028", "INVITE", DigestAlgorithmsEnum.SHA256);
 
-                string digest = authDigest.GetDigest();
+                var digest = authDigest.GetDigest();
 
                 logger.LogDebug("SHA256 Digest = {digest}.", digest);
                 logger.LogDebug("{AuthDigest}", authDigest.ToString());
@@ -312,7 +312,7 @@ namespace SIPSorcery.SIP.UnitTests
                 SIPAuthorisationDigest authDigest = new SIPAuthorisationDigest(SIPAuthorisationHeadersEnum.ProxyAuthorization, "asterisk", "aaronxten2", "password",
                     "sip:303@bluesipd", "17190028", "INVITE", DigestAlgorithmsEnum.MD5);
 
-                string digest = authDigest.GetDigest();
+                var digest = authDigest.GetDigest();
 
                 logger.LogDebug("MD5 Digest = {digest}.", digest);
                 logger.LogDebug("{AuthDigest}", authDigest.ToString());
@@ -447,8 +447,8 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // Nonce and opaque both contain trailing '=' base64 padding.
-            string nonce = "MTYxMjM0NTY3OC4xMjM0NTY3OA==";
-            string opaque = "YWJjZGVmZ2hpamtsbW5vcA=";
+            var nonce = "MTYxMjM0NTY3OC4xMjM0NTY3OA==";
+            var opaque = "YWJjZGVmZ2hpamtsbW5vcA=";
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
                 SIPAuthorisationHeadersEnum.WWWAuthenticate,
@@ -477,7 +477,7 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
             authRequest.Cnonce = "cf2e005f1801550717cc8c59193aa9f4";
             authRequest.Response = authRequest.GetDigest();
 
-            string serialised = authRequest.ToString();
+            var serialised = authRequest.ToString();
             logger.LogDebug("Serialised auth header={serialised}.", serialised);
 
             SIPAuthorisationDigest reparsed = SIPAuthorisationDigest.ParseAuthorisationDigest(

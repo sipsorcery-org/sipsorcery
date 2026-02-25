@@ -27,5 +27,5 @@ public static class AudioCommonlyUsedFormats
     /// <summary>
     /// The Opus audio format typical used for WebRTC scenarios.
     /// </summary>
-    public static AudioFormat OpusWebRTC => new AudioFormat(111, AudioCodecsEnum.OPUS.ToString(), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1");
+    public static AudioFormat OpusWebRTC => new AudioFormat(111, nameof(AudioCodecsEnum.OPUS), OPUS_SAMPLE_RATE, OPUS_CHANNELS, "useinbandfec=1");
 }

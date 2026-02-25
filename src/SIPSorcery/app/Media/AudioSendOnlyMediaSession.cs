@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#nullable disable
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -35,7 +37,7 @@ namespace SIPSorcery.Media
         private void AudioFormatsNegotiated(List<AudioFormat> audioFormats)
         {
             var audioFormat = audioFormats.First();
-            logger.LogDebug("Setting audio source format to {AudioFormatID}:{AudioFormatCodec}.", audioFormat.FormatID, audioFormat.Codec);
+            logger.LogSettingAudioFormat(audioFormat.FormatID, audioFormat.Codec);
             AudioExtrasSource.SetAudioSourceFormat(audioFormat);
         }
 

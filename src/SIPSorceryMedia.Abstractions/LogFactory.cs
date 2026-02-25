@@ -8,21 +8,10 @@ namespace SIPSorcery
     {
         private ILoggerFactory _factory = NullLoggerFactory.Instance;
 
-        public event Action OnFactorySet;
+        public event Action? OnFactorySet;
 
-        private static LogFactory _appLog;
-        public static LogFactory Instance
-        {
-            get
-            {
-                if (_appLog == null)
-                {
-                    _appLog = new LogFactory();
-                }
-
-                return _appLog;
-            }
-        }
+        private static LogFactory? _appLog;
+        public static LogFactory Instance => (_appLog ??= new());
 
         private LogFactory()
         { }
@@ -33,9 +22,9 @@ namespace SIPSorcery
         public static ILogger<T> CreateLogger<T>() =>
             Instance._factory.CreateLogger<T>();
 
-        public static void Set(ILoggerFactory factory)
+        public static void Set(ILoggerFactory? factory)
         {
-            Instance._factory = factory;
+            Instance._factory = factory ?? NullLoggerFactory.Instance;
             Instance.OnFactorySet?.Invoke();
         }
     }

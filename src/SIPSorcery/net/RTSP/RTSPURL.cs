@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -127,7 +129,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTSPURL ToString. {ErrorMessage}", excp.Message);
+                logger.LogRtspUrlToStringError(excp.Message, excp);
                 throw;
             }
         }

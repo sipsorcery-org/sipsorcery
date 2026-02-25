@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 namespace SIPSorceryMedia.Abstractions;
@@ -30,14 +32,14 @@ public interface IAudioEncoder
     /// </summary>
     /// <param name="pcm">An array of 16 bit signed audio samples.</param>
     /// <param name="format">The audio format to encode the PCM sample to.</param>
-    /// <returns>A byte array containing the encoded sample.</returns>
-    byte[] EncodeAudio(short[] pcm, AudioFormat format);
+    /// <param name="destination">A <see cref="IBufferWriter{T}"/> of <see langword="byte"/> to receieve the encoded sample.</param>
+    void EncodeAudio(ReadOnlySpan<short> pcm, AudioFormat format, IBufferWriter<byte> destination);
 
     /// <summary>
     /// Decodes to 16bit signed PCM samples.
     /// </summary>
-    /// <param name="encodedSample">The byte array containing the encoded sample.</param>
+    /// <param name="encodedSample">The span containing the encoded sample.</param>
     /// <param name="format">The audio format of the encoded sample.</param>
-    /// <returns>An array containing the 16 bit signed PCM samples.</returns>
-    short[] DecodeAudio(byte[] encodedSample, AudioFormat format);
+    /// <param name="destination">A <see cref="IBufferWriter{T}"/> of <see langword="short"/> to receive the decoded PCM samples.</param>
+    void DecodeAudio(ReadOnlySpan<byte> encodedSample, AudioFormat format, IBufferWriter<short> destination);
 }

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SDPParsingRegressionUnitTest.cs
 //
 // Description: Regression tests covering SDP parsing edge cases (malformed

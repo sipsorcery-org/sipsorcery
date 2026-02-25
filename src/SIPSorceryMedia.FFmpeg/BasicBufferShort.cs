@@ -25,10 +25,10 @@ namespace SIPSorceryMedia.FFmpeg
         public void Write(short[] toWrite)
         {
             // Write the data in chunks
-            int sourceIndex = 0;
+            var sourceIndex = 0;
             while (sourceIndex < toWrite.Length)
             {
-                int count = Math.Min(toWrite.Length - sourceIndex, capacity - writeIndex);
+                var count = Math.Min(toWrite.Length - sourceIndex, capacity - writeIndex);
                 Array.Copy(toWrite, sourceIndex, data, writeIndex, count);
                 writeIndex = (writeIndex + count) % capacity;
                 sourceIndex += count;
@@ -65,14 +65,14 @@ namespace SIPSorceryMedia.FFmpeg
             available = 0;
         }
 
-        public short[] Read(int count)
+        public void Read(int count, Span<short> buffer)
         {
-            short[] returnVal = new short[count];
+            var returnVal = new short[count];
             // Read the data in chunks
-            int sourceIndex = 0;
+            var sourceIndex = 0;
             while (sourceIndex < count)
             {
-                int readCount = Math.Min(count - sourceIndex, capacity - readIndex);
+                var readCount = Math.Min(count - sourceIndex, capacity - readIndex);
                 Array.Copy(data, readIndex, returnVal, sourceIndex, readCount);
                 readIndex = (readIndex + readCount) % capacity;
                 sourceIndex += readCount;
@@ -84,7 +84,6 @@ namespace SIPSorceryMedia.FFmpeg
                 writeIndex = (readIndex + 1) % capacity;
                 available = 0;
             }
-            return returnVal;
         }
 
         /// <summary>
@@ -93,7 +92,7 @@ namespace SIPSorceryMedia.FFmpeg
         /// <returns></returns>
         public short Read()
         {
-            short returnVal = data[readIndex];
+            var returnVal = data[readIndex];
             readIndex = (readIndex + 1) % capacity;
             available -= 1;
             if (available < 0)
@@ -111,14 +110,14 @@ namespace SIPSorceryMedia.FFmpeg
         /// <returns></returns>
         public short[] Peek(int count)
         {
-            int toRead = Math.Min(available, count);
-            short[] returnVal = new short[toRead];
+            var toRead = Math.Min(available, count);
+            var returnVal = new short[toRead];
             // Read the data in chunks
-            int sourceIndex = 0;
-            int localReadIndex = readIndex;
+            var sourceIndex = 0;
+            var localReadIndex = readIndex;
             while (sourceIndex < toRead)
             {
-                int readCount = Math.Min(toRead - sourceIndex, capacity - localReadIndex);
+                var readCount = Math.Min(toRead - sourceIndex, capacity - localReadIndex);
                 Array.Copy(data, localReadIndex, returnVal, sourceIndex, readCount);
                 localReadIndex = (localReadIndex + readCount) % capacity;
                 sourceIndex += readCount;

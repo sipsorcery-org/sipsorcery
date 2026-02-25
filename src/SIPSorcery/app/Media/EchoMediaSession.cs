@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
@@ -52,11 +53,11 @@ public class EchoMediaSession : RTPSession, IMediaSession
         // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
         var audioFormat = audoFormats.First();
-        logger.LogDebug("{session} setting audio source format to {FormatID}:{Codec} {ClockRate} (RTP clock rate {RtpClockRate}).", nameof(EchoMediaSession), audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
+        logger.LogSettingAudioSourceFormatAndClockRate(audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
 
-        if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
+        if (AudioStream?.LocalTrack?.NoDtmfSupport == false)
         {
-            logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
+            logger.LogAudioTrackDtmfNegotiated(AudioStream.NegotiatedRtpEventPayloadID);
         }
 
         if(AudioStream != null && AudioStream.RemoteTrack != null && AudioStream.LocalTrack != null)
@@ -64,7 +65,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
             AudioStream.OnAudioFrameReceived += (audioFrame) =>
             {
                 // Echo the received audio frame back to the sender.
-                AudioStream?.SendAudio(audioFrame.DurationMilliSeconds, audioFrame.EncodedAudio);
+                AudioStream?.SendAudio(audioFrame.DurationMilliSeconds, audioFrame.EncodedAudio.Span);
             };
         }
     }
@@ -77,14 +78,14 @@ public class EchoMediaSession : RTPSession, IMediaSession
         // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
         var videoFormat = videoFormats.First();
-        logger.LogDebug("{session} setting video sink and source format to {VideoFormatID}:{VideoCodec}.", nameof(EchoMediaSession), videoFormat.FormatID, videoFormat.Codec);
+        logger.LogSettingVideoSinkAndSourceFormat(videoFormat.FormatID, videoFormat.Codec);
 
         if (VideoStream != null && VideoStream.RemoteTrack != null && VideoStream.LocalTrack != null)
         {
-            VideoStream.OnVideoFrameReceivedByIndex += (int index, IPEndPoint from, uint ts, byte[] payload, VideoFormat format) =>
+            VideoStream.OnVideoFrameReceivedByIndex += (index, from, ts, payload, format) =>
             {
-               // TODO.
-               logger.LogWarning("Video frame received, echoing not yet implemented.");
+                // TODO.
+                logger.LogVideoEchoNotImplemented();
             };
         }
     }
@@ -92,13 +93,13 @@ public class EchoMediaSession : RTPSession, IMediaSession
     private void TextFormatsNegotiated(List<TextFormat> textFormats)
     {
         var textFormat = textFormats.First();
-        logger.LogDebug("{session} setting text sink and source format to {TextFormatID}:{TextCodec}.", nameof(EchoMediaSession), textFormat.FormatID, textFormat.Codec);
+        logger.LogSettingTextSinkAndSourceFormat(textFormat.FormatID, textFormat.Codec);
 
         if (TextStream != null && TextStream.RemoteTrack != null && TextStream.LocalTrack != null)
         {
             TextStream.OnRtpPacketReceivedByIndex += (int index, IPEndPoint from, SDPMediaTypesEnum mediaType, RTPPacket pkt) =>
             {
-                TextStream.SendText(pkt.Payload);
+                TextStream.SendText(pkt.Payload.Span);
             };
         }
     }
@@ -115,7 +116,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
         {
             var sdpAudioFormat = AudioStream.GetSendingFormat();
             var audioFormat = sdpAudioFormat.ToAudioFormat();
-            logger.LogDebug("{session} starting audio with format {AudioFormatID}:{AudioCodec}.", nameof(EchoMediaSession), sdpAudioFormat.ID, audioFormat.Codec);
+            logger.LogStartingAudioFormat(nameof(EchoMediaSession), sdpAudioFormat.ID, audioFormat.Codec);
 
             short[] silencePcm = new short[audioFormat.ClockRate / 1000 * SILENCE_SAMPLE_PERIOD_MILLISECONDS];
 
@@ -127,7 +128,9 @@ public class EchoMediaSession : RTPSession, IMediaSession
     {
         if (pcm.Length > 0)
         {
-            byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, audioFormat);
+            using var buffer = new ArrayPoolBufferWriter<byte>(8192);
+            _audioEncoder.EncodeAudio(pcm, audioFormat, buffer);
+            var encodedSample = buffer.WrittenSpan;
 
             uint rtpUnits = RtpTimestampExtensions.ToRtpUnits(SILENCE_SAMPLE_PERIOD_MILLISECONDS, audioFormat.RtpClockRate);
 

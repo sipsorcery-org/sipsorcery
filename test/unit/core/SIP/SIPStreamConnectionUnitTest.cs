@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testReceive =
+            var testReceive =
 "SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
 "To: <sip:aaron@10.1.1.5>" + CRLF +
@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP.UnitTests
 CRLF +
 "includesdp=true";
 
-            byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+            var testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             SIPStreamConnection testConnection = new SIPStreamConnection(null, null, SIPProtocolsEnum.tcp);
             //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
@@ -80,7 +80,7 @@ CRLF +
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testReceive =
+            var testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
 "To: <sip:aaron@10.1.1.5>" + CRLF +
@@ -96,12 +96,12 @@ CRLF +
 CRLF + CRLF +
 "includesdp=true";
 
-            byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+            var testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
             SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
-            int sipMessages = 0;
+            var sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; return Task.FromResult(0); };
 
             MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
@@ -122,7 +122,7 @@ CRLF + CRLF +
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testReceive =
+            var testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
 "To: <sip:aaron@10.1.1.5>" + CRLF +
@@ -147,18 +147,18 @@ CRLF +
 + CRLF +
 "SUBSCRIBE sip:aaron@10.1.1";
 
-            byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
+            var testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
             SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
-            int sipMessages = 0;
+            var sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; return Task.FromResult(0); };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
             MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
             testConnection.ExtractSIPMessages(mockChannel, testConnection.RecvSocketArgs.Buffer, testReceiveBytes.Length);
-            string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, testConnection.RecvStartPosn, testConnection.RecvEndPosn - testConnection.RecvStartPosn);
+            var remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, testConnection.RecvStartPosn, testConnection.RecvEndPosn - testConnection.RecvStartPosn);
 
             logger.LogDebug("SocketBufferEndPosition={SocketBufferEndPosition}.", testConnection.RecvEndPosn);
             logger.LogDebug("SocketBuffer={remainingBytes}.", remainingBytes);
@@ -178,7 +178,7 @@ CRLF +
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string notifyRequest =
+            var notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport" + CRLF +
 "Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport" + CRLF +
@@ -192,9 +192,9 @@ CRLF +
 "Max-Forwards: 69" + CRLF +
 "Event: dialog" + CRLF + CRLF;
 
-            byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
+            var notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            var contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -208,7 +208,7 @@ CRLF +
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string notifyRequest =
+            var notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport" + CRLF +
 "Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport" + CRLF +
@@ -222,9 +222,9 @@ CRLF +
 "Max-Forwards: 69" + CRLF +
 "Event: dialog" + CRLF + CRLF;
 
-            byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
+            var notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            var contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }

@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Linq;
 using System.Net;
@@ -50,12 +52,12 @@ public class STUNClient
 
         if (iceServer == null)
         {
-            logger.LogWarning("No STUN server was available to do a public IP address lookup.");
+            logger.LogStunNoServerAvailable();
             return null;
         }
         else if (iceServer.ServerEndPoint == null)
         {
-            logger.LogWarning("The STUN server end point was not available for {uri}.", iceServer?.Uri);
+            logger.LogStunServerEndpointNotAvailable(iceServer?._uri);
             return null;
         }
 
@@ -81,12 +83,13 @@ public class STUNClient
     {
         try
         {
-            logger.LogDebug("STUNClient attempting to determine public IP from {stunServer}.", stunServer);
+            logger.LogStunDeterminingPublicIP(stunServer);
 
             using (UdpClient udpClient = new UdpClient(stunServer, port))
             {
                 STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-                byte[] stunMessageBytes = initMessage.ToByteBuffer(null, false);
+                byte[] stunMessageBytes = new byte[initMessage.GetByteBufferSize(null, false)];
+                initMessage.WriteToBuffer(stunMessageBytes, null, false);
                 udpClient.Send(stunMessageBytes, stunMessageBytes.Length);
 
                 IPEndPoint publicEndPoint = null;
@@ -101,8 +104,8 @@ public class STUNClient
 
                         if (stunResponseBuffer != null && stunResponseBuffer.Length > 0)
                         {
-                            logger.LogDebug("STUNClient Response to initial STUN message received from {stunResponseEndPoint}.", stunResponseEndPoint);
-                            STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
+                            logger.LogStunClientResponseReceived(stunResponseEndPoint);
+                            STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer.AsSpan());
 
                             if (stunResponse.Attributes.Count > 0)
                             {
@@ -124,7 +127,7 @@ public class STUNClient
 
                                 if (publicEndPoint != null)
                                 {
-                                    logger.LogDebug("STUNClient Public IP={publicEndPointAddress} Port={publicEndPointPort}.", publicEndPoint.Address, publicEndPoint.Port);
+                                    logger.LogStunPublicIPResult(publicEndPoint.Address, publicEndPoint.Port);
                                 }
                             }
                         }
@@ -133,7 +136,7 @@ public class STUNClient
                     }
                     catch (Exception recvExcp)
                     {
-                        logger.LogWarning(recvExcp, "Exception STUNClient Receive. {ErrorMessage}", recvExcp.Message);
+                        logger.LogStunClientReceiveError(recvExcp.Message, recvExcp);
                     }
                 }, state: null);
 
@@ -143,14 +146,14 @@ public class STUNClient
                 }
                 else
                 {
-                    logger.LogWarning("STUNClient server response timed out after {Timeout}s.", STUN_SERVER_RESPONSE_TIMEOUT);
+                    logger.LogStunClientTimeout(STUN_SERVER_RESPONSE_TIMEOUT);
                     return null;
                 }
             }
         }
         catch (Exception excp)
         {
-            logger.LogError(excp, "Exception STUNClient GetPublicIPAddress. {ErrorMessage}", excp.Message);
+            logger.LogStunClientGetPublicIPError(excp.Message, excp);
             return null;
         }
     }
@@ -174,7 +177,7 @@ public class STUNClient
         {
             try
             {
-                logger.LogDebug("STUNClient response received from {StunResponseEndPoint}.", remoteEndPoint);
+                logger.LogStunClientResponseReceived(remoteEndPoint);
 
                 IPEndPoint result = null;
 
@@ -196,7 +199,7 @@ public class STUNClient
 
                 if (result != null)
                 {
-                    logger.LogDebug("STUNClient public IP={PublicAddress} Port={PublicPort}.", result.Address, result.Port);
+                    logger.LogStunPublicIPResult(result.Address, result.Port);
                 }
 
                 tcs.TrySetResult(result);
@@ -211,10 +214,11 @@ public class STUNClient
 
         try
         {
-            logger.LogDebug("STUNClient sending BindingRequest for RTP channel {LocalEndPoint} to {StunServer}.", rtpChannel.RTPLocalEndPoint, stunServer);
+            logger.LogStunBindingRequestSend(rtpChannel.RTPLocalEndPoint, stunServer);
 
             var initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-            var bytes = initMessage.ToByteBuffer(null, false);
+            var bytes = new byte[initMessage.GetByteBufferSize(null, false)];
+            initMessage.WriteToBuffer(bytes, null, false);
             rtpChannel.Send(RTPChannelSocketsEnum.RTP, stunServer, bytes);
 
             // Race the response against a timeout.
@@ -223,7 +227,7 @@ public class STUNClient
 
             if (winner == delayTask)
             {
-                logger.LogWarning("STUNClient server response timed out after {Timeout}s.", STUN_SERVER_RESPONSE_TIMEOUT);
+                logger.LogStunClientTimeout(STUN_SERVER_RESPONSE_TIMEOUT);
                 return null;
             }
 
@@ -232,7 +236,7 @@ public class STUNClient
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Exception in STUNClient.GetPublicIPEndPointForSocketAsync: {ErrorMessage}", ex.Message);
+            logger.LogStunClientGetPublicIPEndPointError(ex.Message, ex);
             return null;
         }
         finally

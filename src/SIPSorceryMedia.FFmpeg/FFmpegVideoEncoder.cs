@@ -249,7 +249,7 @@ namespace SIPSorceryMedia.FFmpeg
                         codec = ffmpeg.avcodec_find_encoder_by_name("libsvtav1");
                     }
 
-                    if (codec == null)
+                    if (codec is null)
                     {
                         codec = ffmpeg.avcodec_find_encoder(codecID);
                     }
@@ -582,9 +582,9 @@ namespace SIPSorceryMedia.FFmpeg
             }
             // Calculate frame interval in ticks based on Stopwatch frequency.
             // frameIntervalMs = 1000 / framerate, convert ms to ticks: frameIntervalTicks = frameIntervalMs * Stopwatch.Frequency / 1000
-            long frameIntervalTicks = (long)(1000.0 / _encoderContext->framerate.num * Stopwatch.Frequency / 1000);
+            var frameIntervalTicks = (long)(1000.0 / _encoderContext->framerate.num * Stopwatch.Frequency / 1000);
 
-            long nowTicks = _frameTimer.ElapsedTicks;
+            var nowTicks = _frameTimer.ElapsedTicks;
             if (_lastFrameTicks != 0)
             {
                 if (nowTicks - _lastFrameTicks < frameIntervalTicks)
@@ -661,8 +661,8 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 lock (_encoderLock)
                 {
-                    int width = avFrame->width;
-                    int height = avFrame->height;
+                    var width = avFrame->width;
+                    var height = avFrame->height;
 
                     if (!_isEncoderInitialised)
                     {
@@ -702,7 +702,7 @@ namespace SIPSorceryMedia.FFmpeg
                     try
                     {
                         ffmpeg.avcodec_send_frame(_encoderContext, avFrame).ThrowExceptionIfError();
-                        int error = ffmpeg.avcodec_receive_packet(_encoderContext, pPacket);
+                        var error = ffmpeg.avcodec_receive_packet(_encoderContext, pPacket);
 
                         if (error == 0)
                         {
@@ -712,13 +712,13 @@ namespace SIPSorceryMedia.FFmpeg
                             {
                                 // TODO: Work out how to use the FFmpeg H264 bit stream parser to extract the NALs.
                                 // Currently it's being done in the RTPSession class.
-                                byte[] arr = new byte[pPacket->size];
+                                var arr = new byte[pPacket->size];
                                 Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
                                 return arr;
                             }
                             else
                             {
-                                byte[] arr = new byte[pPacket->size];
+                                var arr = new byte[pPacket->size];
                                 Marshal.Copy((IntPtr)pPacket->data, arr, 0, pPacket->size);
                                 return arr;
                             }
@@ -790,6 +790,7 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     return;
                 }
+
                 _encoderContext->bit_rate = bitrate;
                 _encoderContext->framerate.num = fps;
                 _encoderContext->gop_size = Math.Max(5, fps * 2);
@@ -871,7 +872,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                 ffmpeg.av_frame_unref(_frame);
                 ffmpeg.av_frame_unref(_gpuFrame);
-                int recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, _frame);
+                var recvRes = ffmpeg.avcodec_receive_frame(_decoderContext, _frame);
 
                 while (recvRes == 0)
                 {
@@ -1023,6 +1024,7 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         logger.LogTrace("Skipping unsupported pixel format {fmt}.", *fmts);
                     }
+
                     fmts++;
                 }
 

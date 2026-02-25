@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <PackageId>SIPSorceryMedia.Abstractions</PackageId>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net8.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-	<LangVersion>12.0</LangVersion>
+    <LangVersion>14.0</LangVersion>
     <!-- Disable warning for missing XML doc comments. -->
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
-	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-	<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2020-2026 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2020-2025 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorceryMedia.Abstractions</Title>
@@ -50,16 +50,27 @@
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
-	<None Include="README.md" Pack="true" PackagePath="" />
+  <None Include="README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.2" />
+    <PackageReference Include="NetEscapades.EnumGenerators" Version="1.0.0-beta21" NoWarn="NU5104" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
   </ItemGroup>
 
   <PropertyGroup>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>

@@ -15,10 +15,13 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -100,7 +103,7 @@ namespace SIPSorcery.SIP
 
         private Task<SocketError> UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            logger.LogWarning("UASInviteTransaction received unexpected response, {ReasonPhrase} from {RemoteEndPoint}, ignoring.", sipResponse.ReasonPhrase, remoteEndPoint.ToString());
+            logger.LogUASInviteUnexpectedResponse(sipResponse.ReasonPhrase, remoteEndPoint);
             return Task.FromResult(SocketError.Fault);
         }
 
@@ -123,7 +126,7 @@ namespace SIPSorcery.SIP
         /// <returns>A socket error with the result of the cancel.</returns>
         public void CancelCall(SIPRequest sipCancelRequest = null)
         {
-            if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
+            if (TransactionState is SIPTransactionStatesEnum.Calling or SIPTransactionStatesEnum.Trying or SIPTransactionStatesEnum.Proceeding)
             {
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
                 UASInviteTransactionCancelled?.Invoke(this, sipCancelRequest);
@@ -134,7 +137,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                logger.LogWarning("A request was made to cancel transaction {TransactionId} that was not in the calling, trying or proceeding states, state={TransactionState}.", TransactionId, TransactionState);
+                logger.LogUASInviteCancelInvalidState(TransactionId, TransactionState);
             }
         }
 

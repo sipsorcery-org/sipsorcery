@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: IceServerResolverUnitTest.cs
 //
 // Description: Characterization tests for IceServerResolver. These pin the
@@ -98,7 +98,7 @@ namespace SIPSorcery.Net.UnitTests
             }, RTCIceTransportPolicy.relay);
 
             var server = Assert.Single(resolver.IceServers).Value;
-            Assert.Equal(STUNSchemesEnum.turn, server.Uri.Scheme);
+            Assert.Equal(STUNSchemesEnum.turn, server._uri.Scheme);
         }
 
         /// <summary>
@@ -149,8 +149,8 @@ namespace SIPSorcery.Net.UnitTests
             resolver.InitialiseIceServers(new List<RTCIceServer> { Server("1.2.3.4:3478") }, RTCIceTransportPolicy.all);
 
             var server = Assert.Single(resolver.IceServers).Value;
-            Assert.Equal(STUNSchemesEnum.stun, server.Uri.Scheme);
-            Assert.Equal("1.2.3.4", server.Uri.Host);
+            Assert.Equal(STUNSchemesEnum.stun, server._uri.Scheme);
+            Assert.Equal("1.2.3.4", server._uri.Host);
             Assert.Equal(new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478), server.ServerEndPoint);
             Assert.Null(server.DnsResolutionTask);
         }

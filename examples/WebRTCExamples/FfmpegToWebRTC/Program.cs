@@ -270,7 +270,7 @@ namespace SIPSorcery.Examples
                         if (media == SDPMediaTypesEnum.video && pc.VideoDestinationEndPoint != null)
                         {
                             //logger.LogDebug($"Forwarding {media} RTP packet to webrtc peer timestamp {rtpPkt.Header.Timestamp}.");
-                            pc.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
+                            pc.SendRtpRaw(media, rtpPkt.Payload.Span, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                         }
                     };
                 }

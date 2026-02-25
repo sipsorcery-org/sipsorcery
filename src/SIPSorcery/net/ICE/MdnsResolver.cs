@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: MdnsResolver.cs
 //
 // Description: Multicast DNS (RFC 6762) hostname resolver used by
@@ -35,6 +35,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -73,15 +74,23 @@ namespace SIPSorcery.Net
         // group on every NIC every time -- wasteful and also racey on
         // Windows where the rebind can take a few hundred ms.
         private static readonly object s_lock = new object();
-        private static MulticastService s_mdns;
+        private static MulticastService? s_mdns;
         private static bool s_startFailed;
 
-        private static MulticastService GetService()
+        private static MulticastService? GetService()
         {
-            if (s_mdns != null || s_startFailed) return s_mdns;
+            if (s_mdns is not null || s_startFailed)
+            {
+                return s_mdns;
+            }
+
             lock (s_lock)
             {
-                if (s_mdns != null || s_startFailed) return s_mdns;
+                if (s_mdns is not null || s_startFailed)
+                {
+                    return s_mdns;
+                }
+
                 try
                 {
                     var mdns = new MulticastService();
@@ -91,7 +100,7 @@ namespace SIPSorcery.Net
                 catch (Exception ex)
                 {
                     s_startFailed = true;
-                    logger.LogWarning(ex, "Failed to start mDNS MulticastService; .local hostname resolution will not work.");
+                    logger.LogIceMdnsStartFailed(ex);
                 }
                 return s_mdns;
             }
@@ -111,7 +120,7 @@ namespace SIPSorcery.Net
             }
 
             var mdns = GetService();
-            if (mdns == null)
+            if (mdns  is null)
             {
                 return Array.Empty<IPAddress>();
             }
@@ -133,11 +142,14 @@ namespace SIPSorcery.Net
                             continue;
                         }
 
-                        IPAddress addr = null;
-                        if (rr is ARecord a) addr = a.Address;
-                        else if (rr is AAAARecord aaaa) addr = aaaa.Address;
+                        var addr = rr switch
+                        {
+                            ARecord a => a.Address,
+                            AAAARecord aaaa => aaaa.Address,
+                            _ => null,
+                        };
 
-                        if (addr != null)
+                        if (addr is not null)
                         {
                             lock (addressesLock)
                             {

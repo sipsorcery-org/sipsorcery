@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
@@ -78,7 +80,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(RTSPRequest));
+                logger.LogRtspExceptionMethod(nameof(RTSPRequest), excp);
             }
         }
 
@@ -111,7 +113,7 @@ namespace SIPSorcery.Net
                 if (rtspRequest.Method == RTSPMethodsEnum.UNKNOWN)
                 {
                     rtspRequest.UnknownMethod = method;
-                    logger.LogWarning("Unknown RTSP method received {Method}.", rtspRequest.Method);
+                    logger.LogRtspUnknownMethodWarning(rtspRequest.Method);
                 }
 
                 statusLine = statusLine.Slice(firstSpacePosn).Trim();
@@ -135,7 +137,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception parsing RTSP request. URI, {Uri}. {ErrorMessage}", urlStr, excp.Message);
+                logger.LogRtspRequestParseError(urlStr, excp.Message, excp);
                 throw new ApplicationException($"There was an exception parsing an RTSP request. {excp.Message}");
             }
         }
@@ -159,7 +161,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTSPRequest ToString. {ErrorMessage}", excp.Message);
+                logger.LogRtspRequestToStringError(excp.Message, excp);
                 throw;
             }
         }

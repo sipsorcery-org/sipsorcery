@@ -39,7 +39,7 @@ public class RawImage
     /// <summary>
     /// Pointer to an array of bytes that contains the pixel data.
     /// </summary>
-    public IntPtr Sample { get; set; }
+    public nint Sample { get; set; }
 
     /// <summary>
     /// The pixel format of the image
@@ -52,9 +52,9 @@ public class RawImage
     /// For performance reasons it's better to use directly Sample
     /// </summary>
     /// <returns></returns>
-    public byte[] GetBuffer()
+    public byte[]? GetBuffer()
     {
-        byte[] result = null;
+        byte[]? result = null;
 
         if ((Height > 0) && (Stride > 0))
         {

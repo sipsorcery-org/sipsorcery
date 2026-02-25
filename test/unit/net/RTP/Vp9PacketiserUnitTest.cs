@@ -78,16 +78,14 @@ namespace SIPSorcery.Net.UnitTests
 
             for (ushort i = 0; i < packets.Count; i++)
             {
-                var packet = new RTPPacket
-                {
-                    Header = new RTPHeader
+                var packet = new RTPPacket(
+                    new RTPHeader
                     {
                         SequenceNumber = i,
                         Timestamp = timestamp,
                         MarkerBit = (i == packets.Count - 1) ? 1 : 0
                     },
-                    Payload = packets[i]
-                };
+                    packets[i]);
 
                 reconstructed = framer.GotRtpPacket(packet);
             }

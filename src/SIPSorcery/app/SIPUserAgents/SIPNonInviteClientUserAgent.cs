@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -58,24 +60,23 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPNonInviteClientUserAgent SendRequest to {Uri}. {ErrorMessage}", m_callDescriptor.Uri, excp.Message);
+                logger.LogSendRequestFailure(excp, m_callDescriptor.Uri, excp.Message);
                 throw;
             }
         }
 
         private void TransactionFailed(SIPTransaction sipTransaction, SocketError failureReason)
         {
-            logger.LogWarning("Attempt to send {Method} to {Uri} failed with {FailureReason}.", sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri, failureReason);
+            logger.LogTransactionFailedAttempt(sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri, failureReason);
         }
 
         private Task<SocketError> ServerResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
-                string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                logger.LogDebug("Server response {StatusCode} {ReasonPhrase} received for {Method} to {Uri}.", sipResponse.StatusCode, reasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
+                logger.LogServerResponseReceived(sipResponse.StatusCode, sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
 
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     if (sipResponse.Header.HasAuthenticationHeader)
                     {
@@ -92,13 +93,13 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            logger.LogDebug("Send request received an authentication required response but no credentials were available.");
+                            logger.LogNoCredentialsForAuth();
                             ResponseReceived?.Invoke(sipResponse);
                         }
                     }
                     else
                     {
-                        logger.LogDebug("Send request failed with {StatusCode} but no authentication header was supplied for {Method} to {Uri}.", sipResponse.StatusCode, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
+                        logger.LogSendRequestFailedNoAuthHeader(sipResponse.StatusCode, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
                         ResponseReceived?.Invoke(sipResponse);
                     }
                 }
@@ -120,7 +121,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         private Task<SocketError> AuthResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            logger.LogDebug("Server response {StatusCode} {ReasonPhrase} received for authenticated {Method} to {Uri}.", sipResponse.Status, (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
+            logger.LogAuthenticatedServerResponseReceived(sipResponse.Status, sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.Method, m_callDescriptor.Uri);
 
             if (ResponseReceived != null)
             {

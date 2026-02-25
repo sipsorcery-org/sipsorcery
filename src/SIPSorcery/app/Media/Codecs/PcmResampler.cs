@@ -18,18 +18,18 @@ namespace SIPSorcery.Media
                 return pcm;
             }
 
-            int outLength = (int)((long)pcm.Length * outRate / inRate);
+            var outLength = (int)((long)pcm.Length * outRate / inRate);
             var resampled = new short[outLength];
-            double step = (double)inRate / outRate;
+            var step = (double)inRate / outRate;
 
-            for (int i = 0; i < outLength; i++)
+            for (var i = 0; i < outLength; i++)
             {
-                double srcPos = i * step;
-                int srcIndex = (int)srcPos;
-                double frac = srcPos - srcIndex;
+                var srcPos = i * step;
+                var srcIndex = (int)srcPos;
+                var frac = srcPos - srcIndex;
 
-                short s0 = pcm[srcIndex];
-                short s1 = pcm[Math.Min(srcIndex + 1, pcm.Length - 1)];
+                var s0 = pcm[srcIndex];
+                var s1 = pcm[Math.Min(srcIndex + 1, pcm.Length - 1)];
 
                 resampled[i] = (short)Math.Round(s0 + (s1 - s0) * frac);
             }

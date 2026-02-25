@@ -17,6 +17,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,7 +164,7 @@ namespace SIPSorcery.Media
 
             if (Media.AudioSink != null)
             {
-                base.OnAudioFrameReceived += Media.AudioSink.GotEncodedMediaFrame; 
+                base.OnAudioFrameReceived += Media.AudioSink.GotEncodedMediaFrame;
             }
 
             if (Media.TextSink != null)
@@ -181,7 +183,7 @@ namespace SIPSorcery.Media
             {
                 _videoCaptureDeviceFailed = true;
 
-                logger.LogWarning("Video source for capture device failure. {ErrorMessage}", errorMessage);
+                logger.LogVideoCaptureDeviceFailure(errorMessage);
 
                 if (_videoTestPatternSource != null)
                 {
@@ -199,13 +201,13 @@ namespace SIPSorcery.Media
             // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
             var audioFormat = audoFormats.First();
-            logger.LogDebug("Setting audio source format to {FormatID}:{Codec} {ClockRate} (RTP clock rate {RtpClockRate}).", audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
+            logger. LogSettingAudioSourceFormatAndClockRate(audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
             Media.AudioSource?.SetAudioSourceFormat(audioFormat);
             _audioExtrasSource.SetAudioSourceFormat(audioFormat);
 
             if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
             {
-                logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
+                logger.LogAudioTrackDtmfNegotiated(AudioStream.NegotiatedRtpEventPayloadID);
             }
         }
 
@@ -217,7 +219,7 @@ namespace SIPSorcery.Media
             // the standard is very fuzzy in that area. See https://datatracker.ietf.org/doc/html/rfc3264#section-7 and note the "SHOULD" in the text.
 
             var videoFormat = videoFormats.First();
-            logger.LogDebug("Setting video sink and source format to {VideoFormatID}:{VideoCodec}.", videoFormat.FormatID, videoFormat.Codec);
+            logger.LogSettingVideoSinkAndSourceFormat(videoFormat.FormatID, videoFormat.Codec);
             Media.VideoSource?.SetVideoSourceFormat(videoFormat);
             _videoTestPatternSource?.SetVideoSourceFormat(videoFormat);
         }
@@ -225,7 +227,7 @@ namespace SIPSorcery.Media
         private void TextFormatsNegotiated(List<TextFormat> textFormats)
         {
             var textFormat = textFormats.First();
-            logger.LogDebug("Setting text sink and source format to {TextFormatID}:{TextCodec}.", textFormat.FormatID, textFormat.Codec);
+            logger.LogSettingTextSinkAndSourceFormat(textFormat.FormatID, textFormat.Codec);
             Media.TextSource?.SetTextSourceFormat(textFormat);
         }
 
@@ -253,7 +255,7 @@ namespace SIPSorcery.Media
                 }
                 else
                 {
-                    logger.LogWarning("Webcam video source failed before start, switching to test pattern source.");
+                    logger.LogWebcamFailedSwitchingToPattern();
 
                     // The webcam source failed to start. Switch to a test pattern source.
                     await _videoTestPatternSource.StartVideo().ConfigureAwait(false);
@@ -339,7 +341,10 @@ namespace SIPSorcery.Media
             {
                 logger.LogTrace(nameof(RtpMediaPacketReceived) + " text RTP packet received from {RemoteEndPoint} ssrc {SyncSource} seqnum {SequenceNumber} timestamp {Timestamp} payload type {PayloadType}.", remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType);
 
-                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacket.GetPayloadBytes());
+                var rtpPacketBytes = new byte[rtpPacket.GetByteCount()];
+                rtpPacket.WriteBytes(rtpPacketBytes);
+
+                Media.TextSink.GotTextRtp(remoteEndPoint, hdr.SyncSource, hdr.SequenceNumber, hdr.Timestamp, hdr.PayloadType, hdr.MarkerBit, rtpPacketBytes);
             }
             else
             {

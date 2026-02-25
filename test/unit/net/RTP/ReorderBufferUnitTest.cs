@@ -191,7 +191,7 @@ namespace SIPSorcery.UnitTests.Net
         }
 
         private RTPPacket CreatePacket(ushort seq, DateTime datetime = default) {
-            return new RTPPacket() { Header = new RTPHeader() { SequenceNumber = seq, ReceivedTime = datetime } };
+            return new RTPPacket(new RTPHeader() { SequenceNumber = seq, ReceivedTime = datetime }, ReadOnlyMemory<byte>.Empty);
         }
     }
 }

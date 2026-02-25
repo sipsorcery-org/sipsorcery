@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: IceTcpReceiverUnitTest.cs
 //
 // Description: Characterization tests for the STUN-over-TCP framing in
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.UnitTests
                 var msg = StunMessage();
                 Assert.True(msg.Length > STUNHeader.STUN_HEADER_LENGTH);
 
-                int extracted = receiver.Feed(msg);
+                var extracted = receiver.Feed(msg);
 
                 Assert.Equal(1, extracted);
                 Assert.Single(packets);
@@ -124,7 +124,7 @@ namespace SIPSorcery.Net.UnitTests
                 var b = StunMessage("bbbb");
                 var combined = a.Concat(b).ToArray();
 
-                int extracted = receiver.Feed(combined);
+                var extracted = receiver.Feed(combined);
 
                 Assert.Equal(2, extracted);
                 Assert.Equal(2, packets.Count);
@@ -145,14 +145,14 @@ namespace SIPSorcery.Net.UnitTests
             {
                 var msg = StunMessage("fragmented");
                 // Split partway through the body (past the header so the header parses but the message is incomplete).
-                int split = STUNHeader.STUN_HEADER_LENGTH + 2;
+                var split = STUNHeader.STUN_HEADER_LENGTH + 2;
 
-                int firstExtract = receiver.Feed(Slice(msg, 0, split));
+                var firstExtract = receiver.Feed(Slice(msg, 0, split));
                 Assert.Equal(0, firstExtract);                 // incomplete - nothing extracted yet.
                 Assert.Empty(packets);
                 Assert.Equal(split, receiver.CachedOffset);    // remembered for the next read.
 
-                int secondExtract = receiver.Feed(Slice(msg, split, msg.Length - split));
+                var secondExtract = receiver.Feed(Slice(msg, split, msg.Length - split));
                 Assert.Equal(1, secondExtract);
                 Assert.Single(packets);
                 Assert.Equal(msg, packets[0]);                 // reassembled correctly.
@@ -171,12 +171,12 @@ namespace SIPSorcery.Net.UnitTests
             {
                 var msg = StunMessage();
 
-                int firstExtract = receiver.Feed(Slice(msg, 0, 10));   // less than a full header.
+                var firstExtract = receiver.Feed(Slice(msg, 0, 10));   // less than a full header.
                 Assert.Equal(0, firstExtract);
                 Assert.Empty(packets);
                 Assert.Equal(10, receiver.CachedOffset);
 
-                int secondExtract = receiver.Feed(Slice(msg, 10, msg.Length - 10));
+                var secondExtract = receiver.Feed(Slice(msg, 10, msg.Length - 10));
                 Assert.Equal(1, secondExtract);
                 Assert.Single(packets);
                 Assert.Equal(msg, packets[0]);
@@ -201,7 +201,7 @@ namespace SIPSorcery.Net.UnitTests
                 var msg = StunHeaderOnly();
                 Assert.Equal(STUNHeader.STUN_HEADER_LENGTH, msg.Length);
 
-                int extracted = receiver.Feed(msg);
+                var extracted = receiver.Feed(msg);
 
                 Assert.Equal(0, extracted);
                 Assert.Empty(packets);
@@ -218,9 +218,9 @@ namespace SIPSorcery.Net.UnitTests
             try
             {
                 var garbage = new byte[40];
-                for (int i = 0; i < garbage.Length; i++) { garbage[i] = 0xEE; }
+                for (var i = 0; i < garbage.Length; i++) { garbage[i] = 0xEE; }
 
-                int extracted = receiver.Feed(garbage);
+                var extracted = receiver.Feed(garbage);
 
                 Assert.Equal(0, extracted);
                 Assert.Empty(packets);

@@ -120,7 +120,7 @@ class Program
             var turnServer = IceServer.ParseIceServer(turnServerUrl.Trim());
             if (turnServer != null)
             {
-                Log.LogInformation("Using TURN server {uri}.", turnServer.Uri);
+                Log.LogInformation("Using TURN server {uri}.", turnServer._uri);
 
                 _turnServerUrl = turnServerUrl.Trim();
             }
@@ -136,7 +136,7 @@ class Program
             var stunServer = IceServer.ParseIceServer(stunServerUrl.Trim());
             if (stunServer != null)
             {
-                Log.LogInformation("Using STUN server {uri}.", stunServer.Uri);
+                Log.LogInformation("Using STUN server {uri}.", stunServer._uri);
 
                 _stunServerUrl = stunServerUrl.Trim();
             }

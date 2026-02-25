@@ -79,7 +79,7 @@ public struct AudioFormat
     /// In the case below this filed should be set as "emphasis=50-15".
     /// a=fmtp:97 emphasis=50-15
     /// </example>
-    public string Parameters { get; set; }
+    public string? Parameters { get; set; }
 
     private bool _isNonEmpty;
 
@@ -98,7 +98,7 @@ public struct AudioFormat
         int formatID,
         int clockRate = DEFAULT_CLOCK_RATE,
         int channelCount = DEFAULT_CHANNEL_COUNT,
-        string parameters = null) :
+        string? parameters = null) :
         this(codec, formatID, clockRate, clockRate, channelCount, parameters)
     { }
 
@@ -111,8 +111,8 @@ public struct AudioFormat
         int clockRate,
         int rtpClockRate,
         int channelCount,
-        string parameters)
-         : this(formatID, codec.ToString(), clockRate, rtpClockRate, channelCount, parameters)
+        string? parameters)
+         : this(formatID, codec.ToStringFast(), clockRate, rtpClockRate, channelCount, parameters)
     { }
 
     /// <summary>
@@ -123,7 +123,7 @@ public struct AudioFormat
         string formatName,
         int clockRate = DEFAULT_CLOCK_RATE,
         int channelCount = DEFAULT_CHANNEL_COUNT,
-        string parameters = null) :
+        string? parameters = null) :
         this(formatID, formatName, clockRate, clockRate, channelCount, parameters)
     { }
 
@@ -134,33 +134,33 @@ public struct AudioFormat
     /// <summary>
     /// Creates a new audio format based on a dynamic codec (or an unsupported well known codec).
     /// </summary>
-    public AudioFormat(int formatID, string formatName, int clockRate, int rtpClockRate, int channelCount, string parameters)
+    public AudioFormat(int formatID, string formatName, int clockRate, int rtpClockRate, int channelCount, string? parameters)
     {
         if (formatID < 0)
         {
             // Note format ID's less than the dynamic start range are allowed as the codec list
             // does not currently support all well known codecs.
-            throw new ApplicationException("The format ID for an AudioFormat must be greater than 0.");
+            throw new SipSorceryMediaException("The format ID for an AudioFormat must be greater than 0.");
         }
         else if (formatID > DYNAMIC_ID_MAX)
         {
-            throw new ApplicationException($"The format ID for an AudioFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
+            throw new SipSorceryMediaException($"The format ID for an AudioFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
         }
         else if (string.IsNullOrWhiteSpace(formatName))
         {
-            throw new ApplicationException($"The format name must be provided for an AudioFormat.");
+            throw new SipSorceryMediaException($"The format name must be provided for an AudioFormat.");
         }
         else if (clockRate <= 0)
         {
-            throw new ApplicationException($"The clock rate for an AudioFormat must be greater than 0.");
+            throw new SipSorceryMediaException($"The clock rate for an AudioFormat must be greater than 0.");
         }
         else if (rtpClockRate <= 0)
         {
-            throw new ApplicationException($"The RTP clock rate for an AudioFormat must be greater than 0.");
+            throw new SipSorceryMediaException($"The RTP clock rate for an AudioFormat must be greater than 0.");
         }
         else if (channelCount <= 0)
         {
-            throw new ApplicationException($"The channel count for an AudioFormat must be greater than 0.");
+            throw new SipSorceryMediaException($"The channel count for an AudioFormat must be greater than 0.");
         }
 
         FormatID = formatID;
@@ -171,7 +171,7 @@ public struct AudioFormat
         Parameters = parameters;
         _isNonEmpty = true;
 
-        if (Enum.TryParse<AudioCodecsEnum>(FormatName, true, out var audioCodec))
+        if (AudioCodecsEnumExtensions.TryParse(FormatName, out var audioCodec, true))
         {
             Codec = audioCodec;
         }
@@ -182,4 +182,14 @@ public struct AudioFormat
     }
 
     public bool IsEmpty() => !_isNonEmpty;
+
+    public override bool Equals(object? obj)
+    {
+        throw new InvalidOperationException("AudioFormat equality is not supported.");
+    }
+
+    public override int GetHashCode()
+    {
+        throw new InvalidOperationException("Using AudioFormat as a key is not supported.");
+    }
 }

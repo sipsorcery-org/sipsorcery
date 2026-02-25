@@ -93,7 +93,11 @@ namespace RtspToWebRtcRestreamer
                     return false;
             }
             
-            catch(Exception ex) { return false; }
+            catch (Exception ex) 
+            {
+                Debug.WriteLine($"[FFmpegDemuxer] Exception: {ex}");
+                return false;
+            }
         }
 
         void SetupAndRunProcess(ref Process proc, string arguments)

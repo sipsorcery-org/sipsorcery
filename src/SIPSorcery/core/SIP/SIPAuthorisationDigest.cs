@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -149,7 +151,7 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
-                            logger.LogWarning("SIPAuthorisationDigest did not recognised digest algorithm value of {DigestAlgorithms}, defaulting to {DigestAlgorithmsEnumMD5}.", headerValue, DigestAlgorithmsEnum.MD5);
+                            logger.LogDigestAlgorithmUnrecognized(headerValue, (int)DigestAlgorithmsEnum.MD5);
                             authRequest.DigestAlgorithm = DigestAlgorithmsEnum.MD5;
                         }
                     }

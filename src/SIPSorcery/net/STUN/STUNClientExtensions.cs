@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -55,7 +57,7 @@ public static class STUNClientExtensions
         }
         else
         {
-            logger?.LogDebug("Using ICE server {iceServerUri} -> {iceServerEndPoint} to get public IP address.", iceServer.Uri, iceServer.ServerEndPoint);
+            logger?.LogDebug("Using ICE server {iceServerUri} -> {iceServerEndPoint} to get public IP address.", iceServer._uri, iceServer.ServerEndPoint);
 
             var rtpPublicEndPoint = await STUNClient.GetPublicIPEndPointForSocketAsync(iceServer.ServerEndPoint, mediaStream.GetRTPChannel());
 
