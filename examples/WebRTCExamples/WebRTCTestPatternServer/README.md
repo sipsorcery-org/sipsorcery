@@ -14,4 +14,4 @@ You will need `.NET` installed.
 
 - If you are feeling brave you can open `3x3.html` in a  browser for 9 separate Peer Connections.
 
-![3x3 screenshot](3x3.png)
+[3x3 screenshot](3x3.png)

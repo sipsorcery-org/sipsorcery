@@ -23,6 +23,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -33,6 +35,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using WebSocketSharp;
 using WebSocketSharp.Net;
 using WebSocketSharp.Server;
@@ -88,7 +91,7 @@ namespace SIPSorcery.SIP
 
             protected override void OnOpen()
             {
-                Logger.LogDebug("SIPMessagWebSocketBehavior.OnOpen.");
+                Logger.LogWebSocketOnOpen();
 
                 _sipProtocol = this.Context.IsSecureConnection ? SIPProtocolsEnum.wss : SIPProtocolsEnum.ws;
                 _remoteEndPoint = this.Context.UserEndPoint;
@@ -99,7 +102,7 @@ namespace SIPSorcery.SIP
 
             protected override void OnMessage(MessageEventArgs e)
             {
-                Logger.LogDebug("SIPMessagWebSocketBehavior.OnMessage: bytes received {Length}.", e.Data?.Length);
+                Logger.LogWebSocketOnMessage(e.Data?.Length ?? 0);
 
                 if (e.RawData?.Length > 0)
                 {
@@ -112,13 +115,13 @@ namespace SIPSorcery.SIP
 
             protected override void OnClose(CloseEventArgs e)
             {
-                Logger.LogDebug("SIPMessagWebSocketBehavior.OnClose: reason {Reason}, was clean {WasClean}.", e.Reason, e.WasClean);
+                Logger.LogWebSocketOnClose(e.Reason, e.WasClean);
                 OnClientClose?.Invoke(this.ID);
             }
 
             protected override void OnError(ErrorEventArgs e)
             {
-                Logger.LogDebug("SIPMessagWebSocketBehavior.OnError: reason {Message}.", e.Message);
+                Logger.LogWebSocketOnError(e.Message);
             }
 
             public void Send(byte[] buffer, int offset, int length)
@@ -200,12 +203,12 @@ namespace SIPSorcery.SIP
 
             //m_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
 
-            logger.LogInformation("SIP WebSocket Channel created for {EndPoint}.", endPoint);
+            logger.LogWebSocketChannelCreated(endPoint);
 
             m_webSocketServer.AddWebSocketService<SIPMessagWebSocketBehavior>("/", (behaviour) =>
             {
                 behaviour.Channel = this;
-                behaviour.Logger = this.logger;
+                behaviour.Logger = logger;
 
                 behaviour.OnClientClose += (id) => m_ingressConnections.TryRemove(id, out _);
             });
@@ -355,7 +358,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug("Closing SIP Web Socket Channel {ListeningEndPoint}.", ListeningEndPoint);
+                logger.LogWebSocketChannelClosing(ListeningEndPoint);
 
                 Closed = true;
                 //m_webSocketServer.Stop();
@@ -365,7 +368,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogWarning(excp, "Exception SIPWebSocketChannel Close. {ErrorMessage}", excp.Message);
+                logger.LogSIPWebSocketCloseWarning(excp);
             }
         }
 

@@ -31,9 +31,9 @@ public interface IVideoSource
 
     event RawVideoSampleDelegate OnVideoSourceRawSample;
 
-    event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster; // Avoid to use byte[] to improve performance
+    event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster; // Avoid to use byte[] to improve performance
 
-    event SourceErrorDelegate OnVideoSourceError;
+    event SourceErrorDelegate? OnVideoSourceError;
 
     Task PauseVideo();
 

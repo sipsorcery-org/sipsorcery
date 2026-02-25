@@ -82,9 +82,9 @@ namespace SIPSorceryMedia.FFmpeg
 
                 if(decoderOptions != null)
                 {
-                    foreach (String key in decoderOptions.Keys)
+                    foreach (var key in decoderOptions.Keys)
                     {
-                        if (ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0) < 0)
+                        if(ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0) < 0)
                         {
                             logger.LogWarning("Cannot set option [{OptionKey}]=[{OptionValue}]", key, decoderOptions[key]);
                         }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorceryMedia.Abstractions
 {
@@ -8,7 +7,7 @@ namespace SIPSorceryMedia.Abstractions
     {
         public readonly List<T> SupportedFormats = new List<T>();
 
-        public T SelectedFormat { get; private set; }
+        public T? SelectedFormat { get; private set; }
         private List<T> _filteredFormats = new List<T>();
 
         public MediaFormatManager(List<T> supportedFormats)
@@ -30,13 +29,21 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="filter">Function to determine which formats the source formats should be restricted to.</param>
         public void RestrictFormats(Func<T, bool> filter)
         {
-            if (filter == null)
+            if (filter is null)
             {
                 _filteredFormats = new List<T>(SupportedFormats);
             }
             else
             {
-                _filteredFormats = _filteredFormats.Where(x => filter(x)).ToList();
+                var filtered = new List<T>(_filteredFormats.Count);
+                foreach (var item in _filteredFormats)
+                {
+                    if (filter(item))
+                    {
+                        filtered.Add(item);
+                    }
+                }
+                _filteredFormats = filtered;
             }
         }
 

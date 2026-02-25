@@ -16,6 +16,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -129,11 +131,11 @@ namespace SIPSorcery.SIP.App
                     {
                         if (authenticationResult.WasAuthenticatedByIP)
                         {
-                            logger.LogDebug("{Method} request from {RemoteEndPoint} successfully authenticated by IP address.", m_transaction.TransactionRequest.Method, remoteEndPoint);
+                            logger.LogRequestAuthenticatedByIP(m_transaction.TransactionRequest.Method, remoteEndPoint);
                         }
                         else
                         {
-                            logger.LogDebug("{Method} request from {RemoteEndPoint} successfully authenticated by digest.", m_transaction.TransactionRequest.Method, remoteEndPoint);
+                            logger.LogRequestAuthenticatedByDigest(m_transaction.TransactionRequest.Method, remoteEndPoint);
                         }
 
                         m_isAuthenticated = true;
@@ -143,7 +145,7 @@ namespace SIPSorcery.SIP.App
                         // Send authorisation failure or required response
                         SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
                         authReqdResponse.Header.AuthenticationHeaders.Add(authenticationResult.AuthenticationRequiredHeader);
-                        logger.LogDebug("{TransactionRequestMethod} request not authenticated for {SipUsername}@{SipDomain}, responding with {ErrorResponse}.", m_transaction.TransactionRequest.Method, m_sipUsername, m_sipDomain, authenticationResult.ErrorResponse);
+                        logger.LogTransactionNotAuthenticated(m_transaction.TransactionRequest.Method, m_sipUsername, m_sipDomain, authenticationResult.ErrorResponse);
                         m_transaction.SendResponse(authReqdResponse);
                     }
                 }
@@ -159,7 +161,7 @@ namespace SIPSorcery.SIP.App
 
         public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
         {
-            logger.LogDebug("{Method} request succeeded with a response status of {StatusCode} {ReasonPhrase}.", m_transaction.TransactionRequest.Method, (int)answerStatus, reasonPhrase);
+            logger.LogNonInviteAnswerSucceeded(m_transaction.TransactionRequest.Method, (int)answerStatus, reasonPhrase);
             SIPResponse answerResponse = SIPResponse.GetResponse(m_transaction.TransactionRequest, answerStatus, reasonPhrase);
 
             if (customHeaders != null && customHeaders.Length > 0)
@@ -186,7 +188,7 @@ namespace SIPSorcery.SIP.App
 
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)
         {
-            logger.LogDebug("{Method} request failed with a response status of {StatusCode} {ReasonPhrase}.", m_transaction.TransactionRequest.Method, (int)failureStatus, reasonPhrase);
+            logger.LogNonInviteRejectFailed(m_transaction.TransactionRequest.Method, (int)failureStatus, reasonPhrase);
             SIPResponse failureResponse = SIPResponse.GetResponse(m_transaction.TransactionRequest, failureStatus, reasonPhrase);
             m_transaction.SendResponse(failureResponse);
         }

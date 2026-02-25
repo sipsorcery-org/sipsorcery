@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Author(s):
 // Aaron Clauson
 //
@@ -35,7 +35,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel", out var unknown);
 
             Assert.Contains(SIPExtensions.Prack, known);
             Assert.Null(unknown);
@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("100REL", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("100REL", out var unknown);
 
             Assert.Contains(SIPExtensions.Prack, known);
             Assert.Null(unknown);
@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel,", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel,", out var unknown);
 
             Assert.Contains(SIPExtensions.Prack, known);
             Assert.True(string.IsNullOrEmpty(unknown), $"Expected no unknown extensions but got [{unknown}].");
@@ -85,7 +85,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel,,replaces", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel,,replaces", out var unknown);
 
             Assert.Contains(SIPExtensions.Prack, known);
             Assert.Contains(SIPExtensions.Replaces, known);
@@ -101,7 +101,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("   ", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("   ", out var unknown);
 
             Assert.Empty(known);
             Assert.True(string.IsNullOrEmpty(unknown), $"Expected no unknown extensions but got [{unknown}].");
@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel,madeupext", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("100rel,madeupext", out var unknown);
 
             Assert.Contains(SIPExtensions.Prack, known);
             Assert.NotNull(unknown);
@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("foo,foo", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("foo,foo", out var unknown);
 
             Assert.Empty(known);
             Assert.Equal("foo,foo", unknown);
@@ -151,7 +151,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            var known = SIPExtensionHeaders.ParseSIPExtensions("Foo,foo", out string unknown);
+            var known = SIPExtensionHeaders.ParseSIPExtensions("Foo,foo", out var unknown);
 
             Assert.Empty(known);
             Assert.Equal("Foo,foo", unknown);

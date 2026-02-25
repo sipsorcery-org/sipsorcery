@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: LiveKitSourceNode.cs
 //
 // Description: A live WebRTC ingress edge for the "route" verb that SUBSCRIBES to a
@@ -273,7 +273,7 @@ public sealed class LiveKitSourceNode : ISourceNode
             uint duration = _haveVideoTimestamp ? timestamp - _lastVideoTimestamp : 0;
             _lastVideoTimestamp = timestamp;
             _haveVideoTimestamp = true;
-            OnFrame?.Invoke(MediaFrame.ForVideo(frame, timestamp, format, duration));
+            OnFrame?.Invoke(MediaFrame.ForVideo(frame.ToArray(), timestamp, format, duration));
         };
 
         pc.OnAudioFrameReceived += (encodedFrame) =>
@@ -281,7 +281,7 @@ public sealed class LiveKitSourceNode : ISourceNode
             // Convert the frame's millisecond duration to RTP clock units for the outgoing track.
             uint durationRtpUnits = (uint)((long)encodedFrame.DurationMilliSeconds * encodedFrame.AudioFormat.RtpClockRate / 1000);
             _audioTimestamp += durationRtpUnits;
-            OnFrame?.Invoke(MediaFrame.ForAudio(encodedFrame.EncodedAudio, _audioTimestamp, durationRtpUnits, encodedFrame.AudioFormat));
+            OnFrame?.Invoke(MediaFrame.ForAudio(encodedFrame.EncodedAudio.ToArray(), _audioTimestamp, durationRtpUnits, encodedFrame.AudioFormat));
         };
 
         pc.onconnectionstatechange += (state) =>

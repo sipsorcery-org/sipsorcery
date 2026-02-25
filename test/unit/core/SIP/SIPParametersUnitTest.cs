@@ -31,9 +31,9 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string routeParam = ";lr;server=hippo";
+            var routeParam = ";lr;server=hippo";
             SIPParameters serverParam = new SIPParameters(routeParam, ';');
-            string serverParamValue = serverParam.Get("server");
+            var serverParamValue = serverParam.Get("server");
 
             logger.LogDebug("Parameter string={ParameterString}.", serverParam.ToString());
             logger.LogDebug("The server parameter is={serverParamValue}.", serverParamValue);
@@ -47,9 +47,9 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string methodsParam = ";methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"";
+            var methodsParam = ";methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"";
             SIPParameters serverParam = new SIPParameters(methodsParam, ';');
-            string methodsParamValue = serverParam.Get("methods");
+            var methodsParamValue = serverParam.Get("methods");
 
             logger.LogDebug("Parameter string={ParameterString}.", serverParam.ToString());
             logger.LogDebug("The methods parameter is={methodsParamValue}.", methodsParamValue);
@@ -63,8 +63,8 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\"";
-            string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
+            var userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\"";
+            var keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
 
             logger.LogDebug("KeyValuePair count={KeyValuePairCount}.", keyValuePairs.Length);
             logger.LogDebug("First KetValuePair={FirstKeyValuePair}.", keyValuePairs[0]);
@@ -78,8 +78,8 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" , \"Jane Doe\" <sip:jabe@doe.com>";
-            string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
+            var userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" , \"Jane Doe\" <sip:jabe@doe.com>";
+            var keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
 
             logger.LogDebug("KeyValuePair count={KeyValuePairCount}.", keyValuePairs.Length);
             logger.LogDebug("First KetValuePair={FirstKeyValuePair}.", keyValuePairs[0]);
@@ -94,8 +94,8 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string userField = "  \"Joe Bloggs\"   <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" \t,   \"Jane Doe\" <sip:jabe@doe.com>";
-            string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
+            var userField = "  \"Joe Bloggs\"   <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" \t,   \"Jane Doe\" <sip:jabe@doe.com>";
+            var keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
 
             logger.LogDebug("KeyValuePair count={KeyValuePairCount}.", keyValuePairs.Length);
             logger.LogDebug("First KetValuePair={FirstKeyValuePair}.", keyValuePairs[0]);
@@ -110,10 +110,10 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testParamStr1 = ";lr;server=hippo;ftag=12345";
+            var testParamStr1 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
 
-            string testParamStr2 = ";lr;server=hippo;ftag=12345";
+            var testParamStr2 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
 
             Assert.Equal(testParam1, testParam2);
@@ -125,10 +125,10 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testParamStr1 = ";lr;server=hippo;ftag=12345";
+            var testParamStr1 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
 
-            string testParamStr2 = "ftag=12345;lr;server=hippo;";
+            var testParamStr2 = "ftag=12345;lr;server=hippo;";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
 
             Assert.Equal(testParam1, testParam2);
@@ -140,11 +140,11 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testParamStr1 = ";LR;Server=hippo;FTag=12345";
+            var testParamStr1 = ";LR;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
             logger.LogDebug("Parameter 1={Parameter1}.", testParam1.ToString());
 
-            string testParamStr2 = "ftag=12345;lr;server=hippo;";
+            var testParamStr2 = "ftag=12345;lr;server=hippo;";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
             logger.LogDebug("Parameter 2={Parameter2}.", testParam2.ToString());
 
@@ -157,11 +157,11 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testParamStr1 = ";LR;Server=hippo;FTag=12345";
+            var testParamStr1 = ";LR;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
             logger.LogDebug("Parameter 1={Parameter1}.", testParam1.ToString());
 
-            string testParamStr2 = "ftag=12345;lr;server=HiPPo;";
+            var testParamStr2 = "ftag=12345;lr;server=HiPPo;";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
             logger.LogDebug("Parameter 2={Parameter2}.", testParam2.ToString());
 
@@ -174,7 +174,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string testParamStr1 = ";emptykey;Server=hippo;FTag=12345";
+            var testParamStr1 = ";emptykey;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
             logger.LogDebug("Parameter 1={Parameter1}.", testParam1.ToString());
 
@@ -192,7 +192,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string paramStr = ";text=\"a;b;c\";lr";
+            var paramStr = ";text=\"a;b;c\";lr";
             SIPParameters parameters = new SIPParameters(paramStr, ';');
 
             logger.LogDebug("Parameter string={ParameterString}.", parameters.ToString());
@@ -212,7 +212,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string paramStr = ";data=\"key=value\";lr";
+            var paramStr = ";data=\"key=value\";lr";
             SIPParameters parameters = new SIPParameters(paramStr, ';');
 
             logger.LogDebug("Parameter string={ParameterString}.", parameters.ToString());
@@ -268,10 +268,10 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string paramStr = ";lr;server=hippo;ftag=12345";
+            var paramStr = ";lr;server=hippo;ftag=12345";
             SIPParameters original = new SIPParameters(paramStr, ';');
 
-            string serialised = original.ToString();
+            var serialised = original.ToString();
             logger.LogDebug("Serialised parameters={Serialised}.", serialised);
 
             SIPParameters reparsed = new SIPParameters(serialised, ';');

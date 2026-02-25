@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
         public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, bool canInitiateConnection, string connectionIDHint)
         {
-            string message = Encoding.UTF8.GetString(buffer);
+            var message = Encoding.UTF8.GetString(buffer);
             AllSentMessages.Add(message);
             SIPMessageSent.Set();
             return Task.FromResult(SocketError.Success);
@@ -112,7 +112,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             header.MaxForwards = 70;
 
             // Minimal SDP body so Answer() can process the offer.
-            string sdpBody =
+            var sdpBody =
                 $"v=0\r\no=- 0 0 IN IP4 {channelEndPoint.Address}\r\ns=-\r\nc=IN IP4 {channelEndPoint.Address}\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\n";
 
             request.Body = sdpBody;
@@ -130,9 +130,9 @@ namespace SIPSorcery.SIP.App.UnitTests
             RecordingMockSIPChannel channel,
             IPEndPoint channelEndPoint)
         {
-            string callId = CallProperties.CreateNewCallId();
-            string fromTag = CallProperties.CreateNewTag();
-            string toTag = CallProperties.CreateNewTag();
+            var callId = CallProperties.CreateNewCallId();
+            var fromTag = CallProperties.CreateNewTag();
+            var toTag = CallProperties.CreateNewTag();
 
             var incomingCallReceived = new TaskCompletionSource<SIPRequest>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             // Answer the call to establish the dialog.
             var uas = agent.AcceptCall(request);
             var mediaSession = new MockMediaSession();
-            bool answered = await agent.Answer(uas, mediaSession);
+            var answered = await agent.Answer(uas, mediaSession);
             Assert.True(answered, "Failed to answer call and establish dialog.");
             Assert.NotNull(agent.Dialogue);
 
@@ -188,7 +188,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             try
             {
-                string callId = await EstablishDialogAsync(agent, channel, channelEndPoint);
+                var callId = await EstablishDialogAsync(agent, channel, channelEndPoint);
                 logger.LogDebug("Agent dialog Call-ID: {CallId}", callId);
 
                 // Allow time for all dialog establishment messages (100 Trying, 180 Ringing, 200 OK)
@@ -201,11 +201,11 @@ namespace SIPSorcery.SIP.App.UnitTests
 
                 // Inject an attended transfer INVITE with Replaces targeting a DIFFERENT Call-ID
                 // that does NOT match this agent's dialog.
-                string nonMatchingCallId = CallProperties.CreateNewCallId();
+                var nonMatchingCallId = CallProperties.CreateNewCallId();
                 Assert.NotEqual(callId, nonMatchingCallId);
 
-                string transferCallId = CallProperties.CreateNewCallId();
-                string replacesValue = $"{nonMatchingCallId};to-tag={CallProperties.CreateNewTag()};from-tag={CallProperties.CreateNewTag()}";
+                var transferCallId = CallProperties.CreateNewCallId();
+                var replacesValue = $"{nonMatchingCallId};to-tag={CallProperties.CreateNewTag()};from-tag={CallProperties.CreateNewTag()}";
 
                 var transferInvite = CreateInviteRequest(transferCallId, CallProperties.CreateNewTag(), null, channelEndPoint);
                 transferInvite.Header.Replaces = replacesValue;
@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP.App.UnitTests
                 // Other messages (e.g. 200 OK retransmissions for the established dialog) are
                 // expected because the UAS transaction retransmits until ACK is received.
                 var transferResponses = new List<string>();
-                foreach (string msg in channel.AllSentMessages)
+                foreach (var msg in channel.AllSentMessages)
                 {
                     if (msg.Contains(transferCallId))
                     {
@@ -262,7 +262,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             try
             {
-                string callId = await EstablishDialogAsync(agent, channel, channelEndPoint);
+                var callId = await EstablishDialogAsync(agent, channel, channelEndPoint);
                 logger.LogDebug("Established dialog with Call-ID: {CallId}", callId);
 
                 // Allow time for all dialog establishment messages to be fully sent before clearing.
@@ -273,8 +273,8 @@ namespace SIPSorcery.SIP.App.UnitTests
                 channel.SIPMessageSent.Reset();
 
                 // Inject an attended transfer INVITE with Replaces targeting this agent's dialog.
-                string transferCallId = CallProperties.CreateNewCallId();
-                string replacesValue = $"{callId};to-tag={CallProperties.CreateNewTag()};from-tag={CallProperties.CreateNewTag()}";
+                var transferCallId = CallProperties.CreateNewCallId();
+                var replacesValue = $"{callId};to-tag={CallProperties.CreateNewTag()};from-tag={CallProperties.CreateNewTag()}";
 
                 var transferInvite = CreateInviteRequest(transferCallId, CallProperties.CreateNewTag(), null, channelEndPoint);
                 transferInvite.Header.Replaces = replacesValue;
@@ -287,7 +287,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
                 // The matching agent should send provisional responses (100 Trying, 180 Ringing)
                 // from AcceptCall, which is called inside SIPTransportRequestReceived.
-                bool messageSent = channel.SIPMessageSent.WaitOne(5000);
+                var messageSent = channel.SIPMessageSent.WaitOne(5000);
                 Assert.True(messageSent, "Expected matching agent to send a SIP response for the Replaces INVITE.");
 
                 // Allow time for all messages to be sent.
@@ -296,7 +296,7 @@ namespace SIPSorcery.SIP.App.UnitTests
                 // Verify that responses were sent and none is a 400 Bad Request.
                 Assert.NotEmpty(channel.AllSentMessages);
 
-                foreach (string msg in channel.AllSentMessages)
+                foreach (var msg in channel.AllSentMessages)
                 {
                     logger.LogDebug("SIP message sent:\n{Message}", msg);
                     Assert.DoesNotContain("400 Bad Request", msg);

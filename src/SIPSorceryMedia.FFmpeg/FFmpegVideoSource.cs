@@ -311,6 +311,7 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     await _videoDecoder.Close();
                 }
+
                 Dispose();
             }
         }

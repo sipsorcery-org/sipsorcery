@@ -201,12 +201,12 @@ namespace SIPSorcery.Examples
                         if (media == SDPMediaTypesEnum.audio && rtpSession.AudioDestinationEndPoint != null)
                         {
                             //logger.LogDebug($"Forwarding {media} RTP packet to ffplay timestamp {rtpPkt.Header.Timestamp}.");
-                            rtpSession.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
+                            rtpSession.SendRtpRaw(media, rtpPkt.Payload.Span, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                         }
                         else if (media == SDPMediaTypesEnum.video && rtpSession.VideoDestinationEndPoint != null)
                         {
                             //logger.LogDebug($"Forwarding {media} RTP packet to ffplay timestamp {rtpPkt.Header.Timestamp}.");
-                            rtpSession.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
+                            rtpSession.SendRtpRaw(media, rtpPkt.Payload.Span, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
                         }
                     };
                     pc.OnRtpClosed += (reason) => rtpSession.Close(reason);

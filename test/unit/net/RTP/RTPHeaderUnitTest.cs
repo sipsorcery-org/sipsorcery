@@ -221,7 +221,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(13, extension.Id);
             Assert.Equal(RTPHeaderExtensionType.OneByte, extension.Type);
 
-            var expectedValue = new byte[] {0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+            var expectedValue = new byte[] { 0xb3, 0x85, 0xb0, 0x8f, 0xc, 0x13, 0x9d, 0xe5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
             Assert.Equal(expectedValue, extension.Data);
         }
 
@@ -241,7 +241,7 @@ namespace SIPSorcery.Net.UnitTests
             };
             var packet = new RTPPacket(rtpPayload);
             var header = packet.Header;
-            var extensions= header.GetHeaderExtensions().ToList();
+            var extensions = header.GetHeaderExtensions().ToList();
             Assert.NotNull(extensions);
             Assert.Empty(extensions);
         }

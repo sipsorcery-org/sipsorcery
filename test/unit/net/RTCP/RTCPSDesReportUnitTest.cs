@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
 using Xunit;
 
@@ -40,10 +41,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 8;
-            string cname = "abc";
+            var cname = "abc";
 
             RTCPSDesReport sdesReport = new RTCPSDesReport(ssrc, cname);
-            byte[] buffer = sdesReport.GetBytes();
+            var buffer = sdesReport.GetBytes();
 
             RTCPSDesReport parsedReport = new RTCPSDesReport(buffer);
 
@@ -63,10 +64,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 8;
-            string cname = "ab1234";
+            var cname = "ab1234";
 
             RTCPSDesReport sdesReport = new RTCPSDesReport(ssrc, cname);
-            byte[] buffer = sdesReport.GetBytes();
+            var buffer = sdesReport.GetBytes();
 
             RTCPSDesReport parsedReport = new RTCPSDesReport(buffer);
 
@@ -86,10 +87,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 8;
-            string cname = "ab123"; // 5 bytes + 1 byte for the item null termination.
+            var cname = "ab123"; // 5 bytes + 1 byte for the item null termination.
 
             RTCPSDesReport sdesReport = new RTCPSDesReport(ssrc, cname);
-            byte[] buffer = sdesReport.GetBytes();
+            var buffer = sdesReport.GetBytes();
 
             RTCPSDesReport parsedReport = new RTCPSDesReport(buffer);
 

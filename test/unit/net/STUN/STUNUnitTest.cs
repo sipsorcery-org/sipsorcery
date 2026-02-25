@@ -148,8 +148,7 @@ namespace SIPSorcery.Net.UnitTests
 
             STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, 49608, IPAddress.Parse("192.168.33.125"), null);
 
-            byte[] buffer = new byte[12];
-            xorAddressAttribute.ToByteBuffer(buffer, 0);
+            byte[] buffer = xorAddressAttribute.GetBytes();
 
             Assert.Equal(0x00, buffer[0]);
             Assert.Equal(0x20, buffer[1]);
@@ -411,11 +410,11 @@ namespace SIPSorcery.Net.UnitTests
             var stunReq = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
 
             Assert.NotNull(stunReq);
-            Assert.Equal(1853882367U,
-                NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value, 0));
+            Assert.Equal(1853882367U, 
+                NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value.Span, 0));
             Assert.Equal(8, stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).PaddedLength);
-            Assert.Equal(0x27ff2a171b888ffeU,
-                NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value, 0));
+            Assert.Equal(0x27ff2a171b888ffeU, 
+                NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value.Span, 0));
         }
 
         /// <summary>

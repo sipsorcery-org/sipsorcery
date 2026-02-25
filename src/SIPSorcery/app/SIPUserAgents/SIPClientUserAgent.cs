@@ -16,6 +16,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,7 +122,7 @@ namespace SIPSorcery.SIP.App
                 //m_serverEndPoint = m_outboundProxy;
                 m_outboundProxy = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
                 serverEndPoint = m_outboundProxy;
-                logger.LogDebug("SIPClientUserAgent Call using alternate outbound proxy of {ServerEndPoint}.", serverEndPoint);
+                logger.LogUsingAlternateOutboundProxy(serverEndPoint);
             }
             else if (m_outboundProxy != null)
             {
@@ -139,13 +141,13 @@ namespace SIPSorcery.SIP.App
                 {
                     var routeSet = new SIPRouteSet();
                     routeSet.PushRoute(new SIPRoute(sipCallDescriptor.RouteSet, true));
-                    logger.LogDebug("Route set for call {RouteSet}.", routeSet.ToString());
+                    logger.LogRouteSetForCall(routeSet);
                     //lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
                     lookupResult = await m_sipTransport.ResolveSIPUriAsync(routeSet.TopRoute.URI).ConfigureAwait(false);
                 }
                 else
                 {
-                    logger.LogDebug("SIPClientUserAgent attempting to resolve {Host}.", callURI.Host);
+                    logger.LogAttemptingToResolveHost(callURI.Host);
                     //lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
                     DateTime lookupStartedAt = DateTime.Now;
                     lookupResult = await m_sipTransport.ResolveSIPUriAsync(callURI).ConfigureAwait(false);
@@ -154,11 +156,11 @@ namespace SIPSorcery.SIP.App
 
                 if (lookupResult == null)
                 {
-                    logger.LogDebug("SIPClientUserAgent DNS failure resolving {Host} in {Duration:0.##}ms. Call cannot proceed.", callURI.Host, lookupDurationMilliseconds);
+                    logger.LogDNSResolutionFailure(callURI.Host, lookupDurationMilliseconds);
                 }
                 else
                 {
-                    logger.LogDebug("SIPClientUserAgent resolved {Host} to {Result} in {Duration:0.##}ms.", callURI.Host, lookupResult, lookupDurationMilliseconds);
+                    logger.LogDNSResolutionSuccess(callURI.Host, lookupResult, lookupDurationMilliseconds);
                     serverEndPoint = lookupResult;
                 }
             }
@@ -185,7 +187,7 @@ namespace SIPSorcery.SIP.App
                 SIPURI callURI = SIPURI.ParseSIPURI(sipCallDescriptor.Uri);
                 SIPRouteSet routeSet = null;
 
-                logger.LogDebug("UAC commencing call to {CanonicalAddress}.", SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress);
+                logger.LogUACCommencingCall(SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress);
 
                 // A custom route set may have been specified for the call.
                 if (m_sipCallDescriptor.RouteSet != null && m_sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1)
@@ -197,7 +199,7 @@ namespace SIPSorcery.SIP.App
                     }
                     catch
                     {
-                        logger.LogDebug("Error an outbound proxy value was not recognised in SIPClientUserAgent Call. {RouteSet}.", m_sipCallDescriptor.RouteSet);
+                        logger.LogUnrecognisedOutboundProxy(m_sipCallDescriptor.RouteSet);
                     }
                 }
 
@@ -205,7 +207,7 @@ namespace SIPSorcery.SIP.App
                 bool sendOkAckManually = false;
                 if (content.IsNullOrBlank())
                 {
-                    logger.LogDebug("Body on UAC call was empty.");
+                    logger.LogUACCallBodyEmpty();
                     sendOkAckManually = true;
                 }
 
@@ -260,23 +262,23 @@ namespace SIPSorcery.SIP.App
                 // Cancel server call.
                 if (m_serverTransaction == null)
                 {
-                    logger.LogDebug("Cancelling forwarded call leg {Uri}, server transaction has not been created yet no CANCEL request required.", m_sipCallDescriptor.Uri);
+                    logger.LogCancellingForwardedCallLeg(m_sipCallDescriptor.Uri);
                 }
                 else if (m_cancelTransaction != null)
                 {
                     if (m_cancelTransaction.TransactionState != SIPTransactionStatesEnum.Completed)
                     {
-                        logger.LogDebug("Call {Uri} has already been cancelled once, trying again.", m_serverTransaction.TransactionRequest.URI.ToString());
+                        logger.LogAlreadyCancelled(m_serverTransaction.TransactionRequest.URI);
                         m_cancelTransaction.SendRequest();
                     }
                     else
                     {
-                        logger.LogDebug("Call {Uri} has already responded to CANCEL, probably overlap in messages not re-sending.", m_serverTransaction.TransactionRequest.URI.ToString());
+                        logger.LogAlreadyRespondedToCancel(m_serverTransaction.TransactionRequest.URI);
                     }
                 }
                 else //if (m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding || m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Trying)
                 {
-                    logger.LogDebug("Cancelling forwarded call leg, sending CANCEL to {URI}.", m_serverTransaction.TransactionRequest.URI.ToString());
+                    logger.LogSendingCancelToURI(m_serverTransaction.TransactionRequest.URI);
 
                     // No response has been received from the server so no CANCEL request necessary, stop any retransmits of the INVITE.
                     m_serverTransaction.CancelCall();
@@ -341,7 +343,7 @@ namespace SIPSorcery.SIP.App
 
                 m_byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                 m_byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                m_byeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning("Bye request for {Uri} failed with {Reason}.", m_sipCallDescriptor.Uri, reason);
+                m_byeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogByeRequestFailed(m_sipCallDescriptor.Uri, reason);
                 m_byeTransaction.SendRequest();
             }
             catch (Exception excp)
@@ -372,7 +374,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.LogDebug("Response {StatusCode} {ReasonPhrase} for {URI}.", sipResponse.StatusCode, sipResponse.ReasonPhrase, m_serverTransaction.TransactionRequest.URI);
+                logger.LogServerFinalResponse(sipResponse.StatusCode, sipResponse.ReasonPhrase, m_serverTransaction.TransactionRequest.URI);
 
                 m_serverTransaction.UACInviteTransactionInformationResponseReceived -= ServerInformationResponseReceived;
                 m_serverTransaction.UACInviteTransactionFinalResponseReceived -= ServerFinalResponseReceived;
@@ -387,13 +389,13 @@ namespace SIPSorcery.SIP.App
 
                     if (m_hungupOnCancel)
                     {
-                        logger.LogDebug("A cancelled call to {Uri} has been answered AND has already been hungup, no further action being taken.", m_sipCallDescriptor.Uri);
+                        logger.LogCancelledCallAlreadyHungup(m_sipCallDescriptor.Uri);
                     }
                     else
                     {
                         m_hungupOnCancel = true;
 
-                        logger.LogDebug("A cancelled call to {Uri} has been answered, hanging up.", m_sipCallDescriptor.Uri);
+                        logger.LogCancelledCallAnsweredHangingUp(m_sipCallDescriptor.Uri);
 
                         if (sipResponse.Header.Contact != null && sipResponse.Header.Contact.Count > 0)
                         {
@@ -404,13 +406,13 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            logger.LogDebug("No contact header provided on response for cancelled call to {Uri} no further action.", m_sipCallDescriptor.Uri);
+                            logger.LogNoContactHeaderForCancelledCall(m_sipCallDescriptor.Uri);
                         }
                     }
 
                     #endregion
                 }
-                else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                else if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     #region Authenticate client call to third party server.
 
@@ -419,7 +421,7 @@ namespace SIPSorcery.SIP.App
                         if (m_sipCallDescriptor.Password.IsNullOrBlank())
                         {
                             // No point trying to authenticate if there is no password to use.
-                            logger.LogDebug("Forward leg failed, authentication was requested but no credentials were available.");
+                            logger.LogNoCredentialsAvailable();
                             CallFailed?.Invoke(this, "Authentication requested when no credentials available", sipResponse);
                         }
                         else if (m_serverAuthAttempts == 0)
@@ -453,7 +455,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+                    if (sipResponse.StatusCode is >= 200 and <= 299)
                     {
                         m_sipDialogue = new SIPDialogue(m_serverTransaction);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
@@ -473,7 +475,7 @@ namespace SIPSorcery.SIP.App
 
         private Task<SocketError> ServerInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            logger.LogDebug("Information response {StatusCode} {ReasonPhrase} for {URI}.", sipResponse.StatusCode, sipResponse.ReasonPhrase, m_serverTransaction.TransactionRequest.URI.ToString());
+            logger.LogInformationResponse(sipResponse.StatusCode, sipResponse.ReasonPhrase, m_serverTransaction.TransactionRequest.URI);
 
             if (m_callCancelled)
             {
@@ -482,7 +484,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.Ringing || sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.Ringing or SIPResponseStatusCodesEnum.SessionProgress)
                 {
                     CallRinging?.Invoke(this, sipResponse);
                 }
@@ -522,19 +524,19 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.LogDebug("Response {StatusCode} {ReasonPhrase} for {URI}.", sipResponse.StatusCode, sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.URI.ToString());
+                logger.LogServerFinalResponse(sipResponse.StatusCode, sipResponse.ReasonPhrase, sipTransaction.TransactionRequest.URI);
 
                 SIPNonInviteTransaction transaction = sipTransaction as SIPNonInviteTransaction;
                 transaction.NonInviteTransactionFinalResponseReceived -= ByeServerFinalResponseReceived;
 
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     var username = string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername;
                     var authRequest = transaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
                         username, m_sipCallDescriptor.Password);
 
                     SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authRequest, m_outboundProxy);
-                    authByeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogWarning("Authenticated Bye request for {Uri} failed with {Reason}.", m_sipCallDescriptor.Uri, reason);
+                    authByeTransaction.NonInviteTransactionFailed += (tx, reason) => logger.LogAuthenticatedByeRequestFailed(m_sipCallDescriptor.Uri, reason);
                     authByeTransaction.SendRequest();
                 }
 
@@ -613,7 +615,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception Parsing CustomHeader for GetInviteRequest. {ErrorMessage} {CustomHeaders}", excp.Message, sipCallDescriptor.CustomHeaders);
+                logger.LogGetInviteRequestCustomHeaderParseError(excp, sipCallDescriptor.CustomHeaders);
             }
 
             if (AdjustInvite != null)

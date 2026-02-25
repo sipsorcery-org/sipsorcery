@@ -34,6 +34,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -110,13 +111,13 @@ namespace demo
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
              throw new ApplicationException("This Video End Point requires full video frames rather than individual RTP packets.");
 
-        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
+        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, ReadOnlyMemory<byte> frame, VideoFormat format)
         {
             if (OnVideoSinkDecodedSample != null)
             {
                 try
                 {
-                    foreach (var decoded in _videoDecoder.DecodeVideo(frame, VideoPixelFormatsEnum.Bgr, format.Codec))
+                    foreach (var decoded in _videoDecoder.DecodeVideo(frame.ToArray(), VideoPixelFormatsEnum.Bgr, format.Codec))
                     {
                         OnVideoSinkDecodedSample(decoded.Sample, decoded.Width, decoded.Height, (int)(decoded.Width * 3), VideoPixelFormatsEnum.Bgr);
                     }

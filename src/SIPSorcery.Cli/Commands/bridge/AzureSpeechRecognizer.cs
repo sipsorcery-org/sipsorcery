@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: AzureSpeechRecognizer.cs
 //
 // Description: Continuous speech-to-text with the Azure Speech SDK for the voice
@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
@@ -84,15 +85,15 @@ public sealed class AzureSpeechRecognizer : IDisposable
     }
 
     /// <summary>Pushes a block of decoded 16kHz 16-bit mono PCM into the recogniser.</summary>
-    public void Write(short[] pcm)
+    public void Write(ReadOnlySpan<short> pcm)
     {
-        if (_disposed || pcm == null || pcm.Length == 0)
+        if (_disposed || pcm.IsEmpty)
         {
             return;
         }
 
         var bytes = new byte[pcm.Length * sizeof(short)];
-        Buffer.BlockCopy(pcm, 0, bytes, 0, bytes.Length);
+        MemoryMarshal.Cast<short, byte>(pcm).CopyTo(bytes);
         _pushStream.Write(bytes);
     }
 

@@ -12,6 +12,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -78,7 +79,7 @@ namespace SIPSorcery.Net.IntegrationTests
             pc.addTrack(audioTrack);
             var offer = pc.createOffer(new RTCOfferOptions());
 
-            SDP offerSDP = SDP.ParseSDPDescription(offer.sdp);
+            SDP offerSDP = SDP.ParseSDPDescription(offer.sdp.AsSpan());
 
             Assert.NotNull(offer);
             Assert.NotNull(offer.sdp);
@@ -197,7 +198,7 @@ a=ssrc:4165955869 label:video0";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -255,7 +256,7 @@ a=max-message-size:262144";
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -372,7 +373,7 @@ a=ssrc:1091343449 label:5b06be39-0752-497f-80f5-6cf3db665f14";
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -517,7 +518,7 @@ a=ssrc:4165955869 label:video0";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -641,7 +642,7 @@ a=rtpmap:100 VP8/90000";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -717,7 +718,7 @@ a=rtpmap:100 VP8/90000";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -820,7 +821,7 @@ a=rtpmap:126 telephone-event/8000";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -998,7 +999,7 @@ a=fingerprint:sha-256 AE:1C:59:19:00:7B:C2:1C:85:95:0C:6C:8C:14:E8:67:A4:7D:D0:A
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 100, "H264", 90000) });
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(remoteSdp);
+            var offer = SDP.ParseSDPDescription(remoteSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
@@ -1145,7 +1146,7 @@ a=max-message-size:1073741823";
             MediaStreamTrack localVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPMediaTypesEnum.video, 96, "VP8", 90000) }, headerExtensions: videoExtensions);
             pc.addTrack(localVideoTrack);
 
-            var offer = SDP.ParseSDPDescription(offerSdp);
+            var offer = SDP.ParseSDPDescription(offerSdp.AsSpan());
 
             logger.LogDebug("Remote offer: {RemoteOffer}", offer);
 
