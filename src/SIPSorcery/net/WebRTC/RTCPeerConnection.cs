@@ -328,7 +328,16 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="configuration">Optional.</param>
         public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null, Boolean videoAsPrimary = false) :
-            base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
+            base(new RtpSessionConfig
+            {
+                IsMediaMultiplexed = true,
+                IsRtcpMultiplexed = true,
+                RtpSecureMediaOption = RtpSecureMediaOptionEnum.DtlsSrtp,
+                BindAddress = configuration?.X_BindAddress,
+                BindPort = bindPort,
+                RtpPortRange = portRange,
+                UseTCP = configuration.X_ICEForceTCP
+            })
         {
             _crypto = new BcTlsCrypto();
             _dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
@@ -352,6 +361,23 @@ namespace SIPSorcery.Net
                 if (_configuration.X_UseRtpFeedbackProfile)
                 {
                     RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
+                }
+
+                if (_configuration.X_ICEForceTCP)
+                {
+                    // TODO: Remove conditional block when TCP is implemented for direct RTP
+                    if (_configuration.iceTransportPolicy == RTCIceTransportPolicy.relay)
+                    {
+                        // TODO: keep logging when TCP is implemented for direct RTP
+                        logger.LogDebug("Forcing all ICE candidates to use TCP.");
+            }
+            else
+            {
+                        logger.LogWarning("Experimental {X_ICEForceTCP} is set but ICE transport policy is not {relay}, ICE candidates will not use TCP.",
+                            nameof(_configuration.X_ICEForceTCP), RTCIceTransportPolicy.relay);
+
+                        _configuration.X_ICEForceTCP = false;
+                    }
                 }
             }
             else
@@ -543,7 +569,8 @@ namespace SIPSorcery.Net
             _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
             _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
             rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2,
-            rtpSessionConfig.RtpPortRange);
+            rtpSessionConfig.RtpPortRange,
+            _configuration.X_ICEForceTCP);
 
             if (rtpSessionConfig.IsMediaMultiplexed)
             {
@@ -552,8 +579,11 @@ namespace SIPSorcery.Net
 
             rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
 
+            if (!_configuration.X_ICEForceTCP)
+            {
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpIceChannel.Start();
+            }
 
             m_rtpChannelsCount++;
 
