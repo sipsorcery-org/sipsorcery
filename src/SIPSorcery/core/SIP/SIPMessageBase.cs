@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPMessageBase
     {
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<SIPMessageBase>();
 
         protected const string m_CRLF = SIPConstants.CRLF;
         protected const string m_sipFullVersion = SIPConstants.SIP_FULLVERSION_STRING;

@@ -85,7 +85,7 @@ namespace SIPSorcery.Net
 
     public class RTCPFeedback
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTCPFeedback>();
 
         public int SENDER_PAYLOAD_SIZE = 20;
         public int MIN_PACKET_SIZE = 0;

@@ -60,7 +60,7 @@ namespace SIPSorcery.Net
         private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
         private const int NO_ACTIVITY_TIMEOUT_FACTOR = 6;
         
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTCPSession>();
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);

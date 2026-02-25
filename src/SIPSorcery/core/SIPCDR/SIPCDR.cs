@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPCDR.cs
 //
 // Description: SIP Call Detail Records. 
@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPCDR
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPCDR>();
 
         public static event CDRReadyDelegate CDRCreated = c => { };
         public static event CDRReadyDelegate CDRUpdated = c => { };

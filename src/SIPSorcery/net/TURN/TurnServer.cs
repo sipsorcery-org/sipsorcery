@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: TurnServer.cs
 //
 // Description: Implements a TURN Server as defined in RFC 5766.
@@ -190,7 +190,7 @@ namespace SIPSorcery.Net
         private const int PERMISSION_LIFETIME_SECONDS = 300; // RFC 5766 Section 8
         private const int CLEANUP_INTERVAL_SECONDS = 30;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<TurnServer>();
 
         private readonly TurnServerConfig _config;
         private readonly byte[] _hmacKey;

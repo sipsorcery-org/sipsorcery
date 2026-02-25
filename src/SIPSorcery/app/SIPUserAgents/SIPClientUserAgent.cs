@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.App
     {
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPClientUserAgent>();
 
         private SIPTransport m_sipTransport;
 

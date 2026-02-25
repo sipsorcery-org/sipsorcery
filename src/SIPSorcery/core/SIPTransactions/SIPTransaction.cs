@@ -90,7 +90,7 @@ namespace SIPSorcery.SIP
     /// </note>
     public class SIPTransaction
     {
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<SIPTransaction>();
 
         /// <summary>
         /// Maximum time an INVITE will be left ringing for (typically 10 minutes).

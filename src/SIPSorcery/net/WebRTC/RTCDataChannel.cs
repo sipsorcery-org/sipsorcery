@@ -46,7 +46,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTCDataChannel : IRTCDataChannel
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTCDataChannel>();
 
         public string label { get; set; }
 

@@ -41,7 +41,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         internal static int MaxReliableTranismissionsCount = 5000;
 
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<SIPTransactionEngine>();
 
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for.    
 

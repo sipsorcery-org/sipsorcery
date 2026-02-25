@@ -37,7 +37,7 @@ namespace SIPSorcery.Sys
 
     public class StorageTypesConverter
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<StorageTypesConverter>();
 
         public static StorageTypes GetStorageType(string storageType)
         {

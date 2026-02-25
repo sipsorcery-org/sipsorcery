@@ -102,7 +102,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
 
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<RTPSession>();
 
         protected RtpSessionConfig rtpSessionConfig;
 

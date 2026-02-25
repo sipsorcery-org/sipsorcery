@@ -41,7 +41,7 @@ namespace SIPSorcery.Net
         // TODO: Add MTU path discovery.
         public const ushort DEFAULT_DTLS_MTU = 1200;
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTCPeerSctpAssociation>();
 
         /// <summary>
         /// The DTLS transport to send and receive SCTP packets on.

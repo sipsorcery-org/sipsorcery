@@ -35,7 +35,7 @@ namespace SIPSorcery.SIP
         private const int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private const int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger("SIPSorcery.Core");
 
         public static List<SIPChannel> ParseSIPChannelsNode(XmlNode sipChannelsNode, int port = 0)
         {

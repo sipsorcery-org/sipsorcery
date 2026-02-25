@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPParameterlessURI
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPParameterlessURI>();
 
         private SIPURI m_uri;
 

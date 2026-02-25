@@ -33,7 +33,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTCPCompoundPacket
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTCPCompoundPacket>();
 
         public RTCPSenderReport SenderReport { get; private set; }
         public RTCPReceiverReport ReceiverReport { get; private set; }

@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP.App
         private readonly static string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static char m_customHeadersSeparator = '|';                 // Must match SIPProvider.CUSTOM_HEADERS_SEPARATOR.
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPCallDescriptor>();
 
         public string Username;                 // The username that will be used in the From header and to authenticate the call unless overridden by AuthUsername.
         public string AuthUsername;             // The username that will be used from authentication. Optional setting only needed if the From header user needs to be different from the digest username.

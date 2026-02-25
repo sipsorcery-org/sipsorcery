@@ -64,7 +64,7 @@ namespace SIPSorcery.SIP
     /// </remarks>
     public class SIPEventDialogInfo
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPEventDialogInfo>();
 
         public static readonly string m_dialogXMLNS = SIPEventConsts.DIALOG_XML_NAMESPACE_URN;
 

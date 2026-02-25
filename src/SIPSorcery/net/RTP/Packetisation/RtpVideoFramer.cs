@@ -26,7 +26,7 @@ namespace SIPSorcery.Net
 {
     public class RtpVideoFramer
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RtpVideoFramer>();
 
         private VideoCodecsEnum _codec;
         private int _maxFrameSize;

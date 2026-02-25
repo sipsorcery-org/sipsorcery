@@ -54,7 +54,7 @@ namespace SIPSorcery.Net
         public const int DNS_TIMEOUT_SECONDS = 1;
         public const int DNS_RETRIES_PER_SERVER = 1;
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<STUNDns>();
 
         private static LookupClient _lookupClient;
 

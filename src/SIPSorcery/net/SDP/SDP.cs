@@ -138,7 +138,7 @@ namespace SIPSorcery.Net
         public const string END_ICE_CANDIDATES_ATTRIBUTE = "end-of-candidates";
         public const string ICE_OPTIONS = "ice-options";
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SDP>();
 
         public decimal Version = SDP_PROTOCOL_VERSION;
 

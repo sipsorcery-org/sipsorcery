@@ -28,7 +28,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPPacketMangler
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPPacketMangler>();
 
         public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled)
         {

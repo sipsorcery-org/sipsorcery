@@ -48,7 +48,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public bool PreferIPv6NameResolution = false;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPTransport>();
 
         /// <summary>
         /// Determines whether the transport later will queue incoming requests for processing on a separate thread of process
@@ -1106,7 +1106,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                Log.Logger.LogError(excp, "Exception SIPMessageReceived. {ErrorMessage}", excp.Message);
+                logger.LogError(excp, "Exception SIPMessageReceived. {ErrorMessage}", excp.Message);
                 SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
                 return Task.FromResult(SocketError.Fault);
             }

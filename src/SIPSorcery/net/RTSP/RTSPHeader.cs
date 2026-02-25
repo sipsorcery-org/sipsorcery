@@ -52,7 +52,7 @@ namespace SIPSorcery.Net
         private const string DEFAULT_TRANSPORT_SPECIFIER = "RTP/AVP/UDP";
         private const string DEFAULT_BROADCAST_TYPE = "unicast";
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTSPTransportHeader>();
 
         public string RawHeader;
 
@@ -239,7 +239,7 @@ namespace SIPSorcery.Net
     {
         private static string m_CRLF = RTSPConstants.CRLF;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTSPHeader>();
 
         private static char[] delimiterChars = new char[] { ':' };
 

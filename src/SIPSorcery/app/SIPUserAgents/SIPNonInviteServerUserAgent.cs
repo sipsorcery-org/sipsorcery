@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPNonInviteServerUserAgent : ISIPServerUserAgent
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPNonInviteServerUserAgent>();
 
         private SIPTransport m_sipTransport;
         private SIPNonInviteTransaction m_transaction;

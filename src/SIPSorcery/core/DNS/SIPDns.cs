@@ -54,12 +54,17 @@ namespace SIPSorcery.SIP
     /// </remarks>
     public static class SIPDns
     {
+        /// <summary>
+        /// Empty class only meant to be an anchor type for the logger.
+        /// </summary>
+        private class SipDNS { }
+
         public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
         public const int DNS_TIMEOUT_SECONDS = 1;
         public const int DNS_RETRIES_PER_SERVER = 1;
         public const int CACHE_FAILED_RESULTS_DURATION = 10;    // Cache failed DNS responses for this duration in seconds.
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SipDNS>();
 
         /// <summary>
         /// Don't use IN_ANY queries by default. These are useful if a DNS server supports them as they can

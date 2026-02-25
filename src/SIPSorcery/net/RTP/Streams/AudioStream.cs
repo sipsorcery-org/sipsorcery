@@ -31,7 +31,7 @@ namespace SIPSorcery.Net
     {
         private const uint DEFAULT_AUDIO_SAMPLE_DURATION_MILLISECONDS = 20;
 
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<AudioStream>();
         protected bool rtpEventInProgress = false;
 
         private bool sendingFormatFound = false;

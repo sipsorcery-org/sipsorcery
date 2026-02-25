@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP.App
     {
         private const int NONCE_REFRESH_SECONDS = 120;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPRequestAuthenticator>();
 
         private static string m_previousNoncePrefix = null;
         private static string m_currentNoncePrefix = null;

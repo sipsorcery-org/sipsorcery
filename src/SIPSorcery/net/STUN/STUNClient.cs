@@ -33,7 +33,7 @@ public class STUNClient
     private const int STUN_SERVER_RESPONSE_TIMEOUT = 3;
     private const int STUN_SERVER_RESOLUTION_DEFAULT_TIMEOUT_MILLISECONDS = 5000;
 
-    private static readonly ILogger logger = Log.Logger;
+    private static readonly ILogger logger = LogFactory.CreateLogger<STUNClient>();
 
     private readonly IceServerResolver _iceServerResolver = new IceServerResolver();
 

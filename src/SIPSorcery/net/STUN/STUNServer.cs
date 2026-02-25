@@ -28,7 +28,7 @@ namespace SIPSorcery.Net
 
     public class STUNServer
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<STUNServer>();
 
         private IPEndPoint m_primaryEndPoint;
         private IPEndPoint m_secondaryEndPoint;

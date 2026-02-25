@@ -408,7 +408,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         private const int Ta = 50;
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RtpIceChannel>();
 
         /// <summary>
         /// The period in seconds after which a connection will be flagged as disconnected.

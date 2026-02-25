@@ -64,7 +64,7 @@ namespace SIPSorcery.Sys
         /// </summary>
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<NetServices>();
 
         /// <summary>
         /// Doing the same check as here https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/SocketPal.Unix.cs#L19.

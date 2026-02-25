@@ -28,7 +28,7 @@ namespace SIPSorcery.Net
     {
         private const string STUN_LISTENER_THREAD_NAME = "stunlistener-";
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<STUNListener>();
 
         private IPEndPoint m_localEndPoint = null;
         private UdpClient m_stunConn = null;
