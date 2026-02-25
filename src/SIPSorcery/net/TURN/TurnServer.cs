@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -57,8 +59,8 @@ namespace SIPSorcery.Net
         public bool EnableUdp { get; set; } = true;
 
         /// <summary>
-        /// The address advertised in XOR-RELAYED-ADDRESS responses. Set to a public IP
-        /// when the server is behind NAT. Defaults to <see cref="ListenAddress"/>.
+        /// The address advertised in XOR-RELAYED-ADDRESS responses. Set to a public IP when the server is behind NAT.
+        /// Defaults to <see cref="ListenAddress"/>.
         /// </summary>
         public IPAddress RelayAddress { get; set; }
 
@@ -83,19 +85,18 @@ namespace SIPSorcery.Net
         public int DefaultLifetimeSeconds { get; set; } = 600;
 
         /// <summary>
-        /// Optional shared secret enabling REST-style ephemeral credentials
-        /// (draft-uberti-behave-turn-rest, also referenced by RFC 8489 Section 9.2).
-        /// When set, <see cref="Username"/> / <see cref="Password"/> are ignored. Clients must
-        /// present <c>USERNAME = "{unix-expiry}:{userId}"</c> and
-        /// <c>PASSWORD = base64(HMAC-SHA1(StaticAuthSecret, "USERNAME:REALM"))</c>. The expiry
-        /// is enforced and expired credentials are rejected with 401 Unauthorized.
+        /// Optional shared secret enabling REST-style ephemeral credentials (draft-uberti-behave-turn-rest, also
+        /// referenced by RFC 8489 Section 9.2). When set, <see cref="Username"/> / <see cref="Password"/> are ignored.
+        /// Clients must present <c> USERNAME = "{unix-expiry}:{userId}"</c> and <c> PASSWORD =
+        /// base64(HMAC-SHA1(StaticAuthSecret, "USERNAME:REALM"))</c>. The expiry is enforced and expired credentials
+        /// are rejected with 401 Unauthorized.
         /// </summary>
         public string StaticAuthSecret { get; set; }
 
         /// <summary>
-        /// Inclusive lower bound for the relay UDP port. If both <see cref="RelayPortMin"/>
-        /// and <see cref="RelayPortMax"/> are zero (the default) the relay socket is bound to
-        /// an ephemeral port chosen by the OS.
+        /// Inclusive lower bound for the relay UDP port. If both <see cref="RelayPortMin"/> and
+        /// <see cref="RelayPortMax"/> are zero (the default) the relay socket is bound to an ephemeral port chosen by
+        /// the OS.
         /// </summary>
         public int RelayPortMin { get; set; } = 0;
 
@@ -123,8 +124,8 @@ namespace SIPSorcery.Net
         public DateTime Expiry { get; set; }
 
         /// <summary>
-        /// Installed permissions: peer IP address → expiry time.
-        /// Per RFC 5766 Section 8, permissions expire after 300 seconds.
+        /// Installed permissions: peer IP address → expiry time. Per RFC 5766 Section 8, permissions expire after 300
+        /// seconds.
         /// </summary>
         public ConcurrentDictionary<string, DateTime> Permissions { get; } = new ConcurrentDictionary<string, DateTime>();
 
@@ -160,56 +161,33 @@ namespace SIPSorcery.Net
     }
 
     /// <summary>
-    /// A lightweight TURN relay server (RFC 5766) supporting TCP and UDP control channels.
-    /// Provides NAT traversal by relaying UDP traffic between clients and peers.
-    /// Intended for development, testing, and small-scale/embedded scenarios — not for
-    /// production use at scale (use coturn or similar for that).
+    /// A lightweight TURN relay server (RFC 5766) supporting TCP and UDP control channels. Provides NAT traversal by
+    /// relaying UDP traffic between clients and peers. Intended for development, testing, and small-scale/embedded
+    /// scenarios — not for production use at scale (use coturn or similar for that).
     /// </summary>
     /// <remarks>
-    /// <para><strong>Known limitations (contributions welcome):</strong></para>
-    /// <list type="bullet">
-    ///   <item>Two credential modes: a single long-term username/password, or REST-style
-    ///         ephemeral credentials (draft-uberti-behave-turn-rest /
-    ///         RFC 8489 Section 9.2) when <see cref="TurnServerConfig.StaticAuthSecret"/> is
-    ///         set. There is no per-user credential database for non-REST deployments.</item>
-    ///   <item>No nonce validation/expiry — nonces are generated but never verified on subsequent
-    ///         requests, so replay attacks are possible within the allocation lifetime.</item>
-    ///   <item>No rate limiting or per-IP allocation caps — a misbehaving client can exhaust
-    ///         server resources.</item>
-    ///   <item>No TLS/DTLS for the control channel — credentials are sent in the clear unless the
-    ///         transport is already secured.</item>
-    ///   <item>UDP-only relay — the relay leg is always UDP; no TCP relay (RFC 6062) or
-    ///         TURN-over-TLS (RFC 5766 Section 6).</item>
-    ///   <item>No REQUESTED-TRANSPORT validation — the attribute is ignored entirely.</item>
-    ///   <item>No EVEN-PORT / RESERVATION-TOKEN support.</item>
-    ///   <item>IPv4 only (no IPv6 relay addresses).</item>
-    ///   <item>Allocation lifetime is not capped — clients can request arbitrarily long lifetimes.</item>
-    ///   <item>No ALTERNATE-SERVER support.</item>
-    /// </list>
-    /// <para><strong>Security considerations:</strong></para>
-    /// <list type="bullet">
-    ///   <item>Default credentials (<c>turn-user</c> / <c>turn-pass</c>) — callers MUST configure
-    ///         real credentials; defaults are intentionally weak to encourage replacement.</item>
-    ///   <item>Default listen address is loopback — safe by default, but if bound to a public
-    ///         interface without TLS, credentials travel in cleartext.</item>
-    ///   <item>No input validation on allocation count or relay port range — in production you
-    ///         would want to bound these.</item>
-    /// </list>
+    /// <para> <strong> Known limitations (contributions welcome):</strong></para> <list type="bullet"> <item> Two
+    /// credential modes: a single long-term username/password, or REST-style ephemeral credentials
+    /// (draft-uberti-behave-turn-rest / RFC 8489 Section 9.2) when <see cref="TurnServerConfig.StaticAuthSecret"/> is
+    /// set. There is no per-user credential database for non-REST deployments.</item> <item> No nonce validation/expiry
+    /// — nonces are generated but never verified on subsequent requests, so replay attacks are possible within the
+    /// allocation lifetime.</item> <item> No rate limiting or per-IP allocation caps — a misbehaving client can exhaust
+    /// server resources.</item> <item> No TLS/DTLS for the control channel — credentials are sent in the clear unless
+    /// the transport is already secured.</item> <item> UDP-only relay — the relay leg is always UDP; no TCP relay (RFC
+    /// 6062) or TURN-over-TLS (RFC 5766 Section 6).</item> <item> No REQUESTED-TRANSPORT validation — the attribute is
+    /// ignored entirely.</item> <item> No EVEN-PORT / RESERVATION-TOKEN support.</item> <item> IPv4 only (no IPv6 relay
+    /// addresses).</item> <item> Allocation lifetime is not capped — clients can request arbitrarily long
+    /// lifetimes.</item> <item> No ALTERNATE-SERVER support.</item> </list> <para> <strong> Security
+    /// considerations:</strong></para> <list type="bullet"> <item> Default credentials (<c>turn-user</c> / <c>
+    /// turn-pass</c>) — callers MUST configure real credentials; defaults are intentionally weak to encourage
+    /// replacement.</item> <item> Default listen address is loopback — safe by default, but if bound to a public
+    /// interface without TLS, credentials travel in cleartext.</item> <item> No input validation on allocation count or
+    /// relay port range — in production you would want to bound these.</item> </list>
     /// </remarks>
     /// <example>
-    /// <code>
-    /// var server = new TurnServer(new TurnServerConfig
-    /// {
-    ///     ListenAddress = IPAddress.Loopback,
-    ///     Port = 3478,
-    ///     Username = "user",
-    ///     Password = "pass",
-    ///     Realm = "example.com"
-    /// });
-    /// server.Start();
-    /// // ... server is running ...
-    /// server.Dispose(); // or server.Stop();
-    /// </code>
+    /// <code> var server = new TurnServer(new TurnServerConfig { ListenAddress = IPAddress.Loopback, Port = 3478,
+    /// Username = "user", Password = "pass", Realm = "example.com" }); server.Start(); // ... server is running ...
+    /// server.Dispose(); // or server.Stop(); </code>
     /// </example>
     public class TurnServer : IDisposable
     {
@@ -246,16 +224,13 @@ namespace SIPSorcery.Net
         public IReadOnlyDictionary<string, TurnAllocation> Allocations => _allocations;
 
         /// <summary>
-        /// Translates a packet's observed source endpoint into the advertised relay endpoint
-        /// when the source is one of this server's own relay sockets. Returns <c>null</c> if
-        /// the endpoint isn't recognized as a local relay.
-        ///
-        /// This is the hook that makes hairpinning work when a peer on the same machine as
-        /// the TURN server uses one of its allocations: the OS picks a local interface
-        /// address as the source IP, which differs from the public IP advertised in
-        /// <c>XOR-RELAYED-ADDRESS</c>. Wiring this method into
-        /// <c>RTCPeerConnection.RemoteEndpointTranslator</c> lets the ICE source filter and
-        /// candidate matcher reconcile the two views.
+        /// Translates a packet's observed source endpoint into the advertised relay endpoint when the source is one of
+        /// this server's own relay sockets. Returns <c> null</c> if the endpoint isn't recognized as a local relay.
+        /// This is the hook that makes hairpinning work when a peer on the same machine as the TURN server uses one of
+        /// its allocations: the OS picks a local interface address as the source IP, which differs from the public IP
+        /// advertised in <c> XOR-RELAYED-ADDRESS</c>. Wiring this method into <c>
+        /// RTCPeerConnection.RemoteEndpointTranslator</c> lets the ICE source filter and candidate matcher reconcile
+        /// the two views.
         /// </summary>
         public IPEndPoint TranslateLocalSource(IPEndPoint observedSource)
         {
@@ -498,7 +473,7 @@ namespace SIPSorcery.Net
                         if (remaining > 0 && !await ReadExactAsync(stream, fullMsg, 4, remaining).ConfigureAwait(false))
                             break;
 
-                        var stunMsg = STUNMessage.ParseSTUNMessage(fullMsg, fullMsg.Length);
+                        var stunMsg = STUNMessage.ParseSTUNMessage(fullMsg.AsSpan(0, fullMsg.Length));
                         if (stunMsg == null)
                         {
                             logger.LogWarning("Failed to parse STUN message from TCP client {Client}.", clientId);
@@ -597,7 +572,7 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            var stunMsg = STUNMessage.ParseSTUNMessage(data, data.Length);
+            var stunMsg = STUNMessage.ParseSTUNMessage(data.AsSpan(0, data.Length));
             if (stunMsg == null)
             {
                 logger.LogWarning("Failed to parse STUN message from UDP client {Client}.", clientId);
@@ -646,7 +621,8 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.BindingRequest:
                     {
                         var response = HandleBindingRequest(msg, clientEndPoint);
-                        var bytes = response.ToByteBuffer(null, false);
+                        var bytes = new byte[response.GetByteBufferSize(null, false)];
+                        response.WriteToBuffer(bytes, null, false);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -656,9 +632,9 @@ namespace SIPSorcery.Net
                         var (response, signingKey) = HandleAllocate(msg, clientId, clientEndPoint,
                             tcpStream, udpClientEndPoint, udpControlSocket,
                             ref allocation);
-                        var bytes = signingKey != null
-                            ? response.ToByteBuffer(signingKey, true)
-                            : response.ToByteBuffer(null, false);
+                        var includeIntegrity = signingKey != null;
+                        var bytes = new byte[response.GetByteBufferSize(signingKey, includeIntegrity)];
+                        response.WriteToBuffer(bytes, signingKey, includeIntegrity);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -711,23 +687,22 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Serialize a response, signing it with the allocation's cached HMAC key when
-        /// available, falling back to the server's static key (long-term cred mode). In REST
-        /// mode without a known allocation the response goes out unsigned — the client will
-        /// retry with fresh credentials anyway.
+        /// Serialize a response, signing it with the allocation's cached HMAC key when available, falling back to the
+        /// server's static key (long-term cred mode). In REST mode without a known allocation the response goes out
+        /// unsigned — the client will retry with fresh credentials anyway.
         /// </summary>
         private byte[] SignResponse(STUNMessage response, TurnAllocation allocation)
         {
             var key = allocation?.HmacKey ?? _hmacKey;
-            return key != null
-                ? response.ToByteBuffer(key, true)
-                : response.ToByteBuffer(null, false);
+            var includeIntegrity = key != null;
+            var bytes = new byte[response.GetByteBufferSize(key, includeIntegrity)];
+            response.WriteToBuffer(bytes, key, includeIntegrity);
+            return bytes;
         }
 
         /// <summary>
-        /// In REST mode, derive the per-user long-term HMAC key from the USERNAME in the
-        /// request and validate the embedded expiry. Returns false (with rejectReason
-        /// populated) when the credential is malformed or expired.
+        /// In REST mode, derive the per-user long-term HMAC key from the USERNAME in the request and validate the
+        /// embedded expiry. Returns false (with rejectReason populated) when the credential is malformed or expired.
         /// </summary>
         private bool TryDeriveRestKey(STUNMessage request, out byte[] key, out string rejectReason)
         {
@@ -741,7 +716,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            var username = Encoding.UTF8.GetString(usernameAttr.Value);
+            var username = Encoding.UTF8.GetString(usernameAttr.Value.Span);
             var colonIdx = username.IndexOf(':');
             if (colonIdx <= 0)
             {
@@ -907,9 +882,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Bind the relay UDP socket. If a relay port range is configured walk it in order
-        /// and bind to the first free port; if no range is set let the OS pick an ephemeral
-        /// port. Returns false when a range was set but every port in it is occupied.
+        /// Bind the relay UDP socket. If a relay port range is configured walk it in order and bind to the first free
+        /// port; if no range is set let the OS pick an ephemeral port. Returns false when a range was set but every
+        /// port in it is occupied.
         /// </summary>
         private bool TryBindRelaySocket(out UdpClient socket)
         {
@@ -954,8 +929,8 @@ namespace SIPSorcery.Net
             uint lifetime = (uint)_config.DefaultLifetimeSeconds;
             if (lifetimeAttr?.Value != null && lifetimeAttr.Value.Length >= 4)
             {
-                lifetime = (uint)((lifetimeAttr.Value[0] << 24) | (lifetimeAttr.Value[1] << 16) |
-                                  (lifetimeAttr.Value[2] << 8) | lifetimeAttr.Value[3]);
+                lifetime = (uint)((lifetimeAttr.Value.Span[0] << 24) | (lifetimeAttr.Value.Span[1] << 16) |
+                                  (lifetimeAttr.Value.Span[2] << 8) | lifetimeAttr.Value.Span[3]);
             }
 
             if (lifetime == 0)
@@ -1027,7 +1002,7 @@ namespace SIPSorcery.Net
                 return errResponse;
             }
 
-            var channelNumber = (ushort)((channelAttr.Value[0] << 8) | channelAttr.Value[1]);
+            var channelNumber = (ushort)((channelAttr.Value.Span[0] << 8) | channelAttr.Value.Span[1]);
 
             var peerAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.XORPeerAddress);
             if (peerAttr?.Value == null)
@@ -1076,7 +1051,7 @@ namespace SIPSorcery.Net
 
             try
             {
-                allocation.RelaySocket.Send(dataAttr.Value, dataAttr.Value.Length, peerEndpoint);
+                allocation.RelaySocket.Send(dataAttr.Value.Span, peerEndpoint);
             }
             catch (Exception ex)
             {
@@ -1157,7 +1132,8 @@ namespace SIPSorcery.Net
                             result.RemoteEndPoint.Address, result.RemoteEndPoint.Port);
                         indication.Attributes.Add(new STUNAttribute(
                             STUNAttributeTypesEnum.Data, result.Buffer));
-                        var bytes = indication.ToByteBuffer(null, false);
+                        var bytes = new byte[indication.GetByteBufferSize(null, false)];
+                        indication.WriteToBuffer(bytes, null, false);
                         await SendToClientAsync(allocation, bytes).ConfigureAwait(false);
                     }
                 }

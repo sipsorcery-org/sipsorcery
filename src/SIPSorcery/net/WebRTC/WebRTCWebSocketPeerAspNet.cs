@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net.WebSockets;
 using System.Text;
@@ -97,8 +99,7 @@ public class WebRTCWebSocketPeerAspNet
         {
             _logger.LogDebug("Got local ICE candidate, {Candidate}.", iceCandidate.candidate);
 
-            if (_pc.signalingState == RTCSignalingState.have_remote_offer ||
-                _pc.signalingState == RTCSignalingState.stable)
+            if (_pc.signalingState is RTCSignalingState.have_remote_offer or RTCSignalingState.stable)
             {
                 await SendMessageAsync(iceCandidate.toJSON());
             }

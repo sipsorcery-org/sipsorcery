@@ -50,13 +50,13 @@ namespace SIPSorcery.Net.UnitTests
 
             uint rrSsrc = 5;
             byte fractionLost = 6;
-            int packetsLost = 7;
+            var packetsLost = 7;
             uint highestSeqNum = 8;
             uint jitter = 9;
             uint lastSRTimestamp = 10;
             uint delaySinceLastSR = 11;
 
-            string cname = "dummy";
+            var cname = "dummy";
 
             ReceptionReportSample rr = new ReceptionReportSample(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
             var sr = new RTCPSenderReport(ssrc, ntpTs, rtpTs, packetCount, octetCount, new List<ReceptionReportSample> { rr });
@@ -64,7 +64,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPCompoundPacket compoundPacket = new RTCPCompoundPacket(sr, sdesReport);
 
-            byte[] buffer = compoundPacket.GetBytes();
+            var buffer = compoundPacket.GetBytes();
 
             RTCPCompoundPacket parsedCP = new RTCPCompoundPacket(buffer);
             RTCPSenderReport parsedSR = parsedCP.SenderReport;

@@ -21,7 +21,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net;
 
-public class RTPHeader
+public class RTPHeader : IByteSerializable
 {
     public const int MIN_HEADER_LEN = 12;
 
@@ -30,18 +30,18 @@ public class RTPHeader
     public const int TWO_BYTE_EXTENSION_PROFILE = 0x1000;
 
     public int Version = RTP_VERSION;                       // 2 bits.
-    public int PaddingFlag = 0;                             // 1 bit.
-    public int HeaderExtensionFlag = 0;                     // 1 bit.
-    public int CSRCCount = 0;                               // 4 bits
-    public int MarkerBit = 0;                               // 1 bit.
-    public int PayloadType = 0;                             // 7 bits.
-    public UInt16 SequenceNumber;                           // 16 bits.
+    public int PaddingFlag;                             // 1 bit.
+    public int HeaderExtensionFlag;                     // 1 bit.
+    public int CSRCCount;                               // 4 bits
+    public int MarkerBit;                               // 1 bit.
+    public int PayloadType;                             // 7 bits.
+    public ushort SequenceNumber;                           // 16 bits.
     public uint Timestamp;                                  // 32 bits.
     public uint SyncSource;                                 // 32 bits.
-    public int[] CSRCList;                                  // 32 bits.
-    public UInt16 ExtensionProfile;                         // 16 bits.
-    public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
-    public byte[] ExtensionPayload;
+    public int[]? CSRCList;                                  // 32 bits.
+    public ushort ExtensionProfile;                         // 16 bits.
+    public ushort ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
+    public byte[]? ExtensionPayload;
 
     public int PayloadSize;
     public byte PaddingCount;
@@ -62,18 +62,17 @@ public class RTPHeader
     /// Extract and load the RTP header from an RTP packet.
     /// </summary>
     /// <param name="packet"></param>
-    public RTPHeader(byte[] packet)
+    public RTPHeader(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < MIN_HEADER_LEN)
         {
-            throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
+            throw new SipSorceryException("The packet did not contain the minimum number of bytes for an RTP header packet.");
         }
 
-        UInt16 firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
-        SequenceNumber = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(2));
-        Timestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(4));
-        SyncSource = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(8));
-
+        var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+        SequenceNumber = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(2));
+        Timestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
+        SyncSource = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(8));
 
         Version = firstWord >> 14;
         PaddingFlag = (firstWord >> 13) & 0x1;
@@ -83,20 +82,19 @@ public class RTPHeader
         MarkerBit = (firstWord >> 7) & 0x1;
         PayloadType = firstWord & 0x7f;
 
-        int headerExtensionLength = 0;
-        int headerAndCSRCLength = 12 + 4 * CSRCCount;
+        var headerExtensionLength = 0;
+        var headerAndCSRCLength = 12 + 4 * CSRCCount;
 
         if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
         {
-            ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(12 + 4 * CSRCCount));
+            ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(12 + 4 * CSRCCount));
             headerExtensionLength += 2;
-            ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(14 + 4 * CSRCCount));
+            ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(packet.Slice(14 + 4 * CSRCCount));
             headerExtensionLength += 2 + ExtensionLength * 4;
 
             if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
             {
-                ExtensionPayload = new byte[ExtensionLength * 4];
-                Buffer.BlockCopy(packet, headerAndCSRCLength + 4, ExtensionPayload, 0, ExtensionLength * 4);
+                ExtensionPayload = packet.Slice(headerAndCSRCLength + 4, ExtensionLength * 4).ToArray();
             }
         }
 
@@ -111,44 +109,56 @@ public class RTPHeader
         }
     }
 
-    public byte[] GetHeader(UInt16 sequenceNumber, uint timestamp, uint syncSource)
+    public void SetHeader(ushort sequenceNumber, uint timestamp, uint syncSource)
     {
         SequenceNumber = sequenceNumber;
         Timestamp = timestamp;
         SyncSource = syncSource;
-
-        return GetBytes();
     }
 
-    public byte[] GetBytes()
+    /// <inheritdoc/>
+    public int GetByteCount() => Length;
+
+    /// <inheritdoc/>
+    public int WriteBytes(Span<byte> buffer)
     {
-        byte[] header = new byte[Length];
+        var size = GetByteCount();
 
-        UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+        if (buffer.Length < size)
+        {
+            throw new ArgumentOutOfRangeException($"The buffer should have at least {size} bytes and had only {buffer.Length}.");
+        }
 
-        BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(0), firstWord);
-        BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(2), SequenceNumber);
-        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(4), Timestamp);
-        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(8), SyncSource);
+        WriteBytesCore(buffer.Slice(0, size));
+
+        return size;
+    }
+
+    private void WriteBytesCore(Span<byte> buffer)
+    {
+        var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+
+        BinaryPrimitives.WriteUInt16BigEndian(buffer, firstWord);
+        BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(2), SequenceNumber);
+        BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(4), Timestamp);
+        BinaryPrimitives.WriteUInt32BigEndian(buffer.Slice(8), SyncSource);
 
         if (HeaderExtensionFlag == 1)
         {
-            BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(12 + 4 * CSRCCount), ExtensionProfile);
-            BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(14 + 4 * CSRCCount), ExtensionLength);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(12 + 4 * CSRCCount), ExtensionProfile);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(14 + 4 * CSRCCount), ExtensionLength);
         }
 
-        if (ExtensionLength > 0 && ExtensionPayload != null)
+        if (ExtensionLength > 0 && ExtensionPayload is { Length: > 0 })
         {
-            Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
+            ExtensionPayload.CopyTo(buffer.Slice(16 + 4 * CSRCCount));
         }
-
-        return header;
     }
 
-    private RTPHeaderExtensionData GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid)
+    private RTPHeaderExtensionData? GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid)
     {
-        RTPHeaderExtensionData ext = null;
-        if (ExtensionPayload != null)
+        RTPHeaderExtensionData? ext = null;
+        if (ExtensionPayload is { })
         {
             if (id != 0)
             {
@@ -194,10 +204,10 @@ public class RTPHeader
          */
 
         var extensions = new List<RTPHeaderExtensionData>();
-        RTPHeaderExtensionData extension = null;
+        RTPHeaderExtensionData? extension = null;
         var i = 0;
-        bool invalid = false;
-        if (ExtensionPayload != null)
+        var invalid = false;
+        if (ExtensionPayload is { })
         {
             while (i + 1 < ExtensionPayload.Length)
             {
@@ -221,7 +231,7 @@ public class RTPHeader
                     break;
                 }
 
-                if (!invalid && extension != null)
+                if (!invalid && extension is { })
                 {
                     extensions.Add(extension);
                 }
@@ -238,7 +248,7 @@ public class RTPHeader
     {
         header = new RTPHeader();
         consumed = 0;
-        int offset = 0;
+        var offset = 0;
         if (buffer.Length < MIN_HEADER_LEN)
         {
             return false;
@@ -247,7 +257,7 @@ public class RTPHeader
         var firstWord = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
         offset += 2;
 
-        header.SequenceNumber =BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+        header.SequenceNumber = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
         offset += 2;
         header.Timestamp = BinaryPrimitives.ReadUInt32BigEndian(buffer.Slice(offset));
         offset += 4;
@@ -262,11 +272,11 @@ public class RTPHeader
         header.MarkerBit = (firstWord >> 7) & 0x1;
         header.PayloadType = firstWord & 0x7f;
 
-        int headerAndCSRCLength = offset + 4 * header.CSRCCount;
+        var headerAndCSRCLength = offset + 4 * header.CSRCCount;
 
         if (header.HeaderExtensionFlag == 1 && (buffer.Length >= (headerAndCSRCLength + 4)))
         {
-            header.ExtensionProfile =BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
+            header.ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
             offset += 2;
             header.ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset));
             offset += 2 + header.ExtensionLength * 4;
@@ -274,8 +284,7 @@ public class RTPHeader
             var extensionPayloadLength = header.ExtensionLength * 4;
             if (header.ExtensionLength > 0 && buffer.Length >= extensionPayloadLength)
             {
-                header.ExtensionPayload = new byte[extensionPayloadLength];
-                Buffer.BlockCopy(buffer.ToArray(), headerAndCSRCLength + 4, header.ExtensionPayload, 0, extensionPayloadLength);
+                header.ExtensionPayload = buffer.Slice(headerAndCSRCLength + 4, extensionPayloadLength).ToArray();
             }
         }
 
@@ -291,7 +300,7 @@ public class RTPHeader
         }
 
         consumed = offset;
-        return header.PayloadSize>=0;
+        return header.PayloadSize >= 0;
     }
 
     /// <summary>
@@ -307,7 +316,7 @@ public class RTPHeader
             return 0;
         }
 
-        uint currentTs = this.Timestamp;
+        var currentTs = this.Timestamp;
         if (currentTs >= previousTs)
         {
             // No wraparound
@@ -317,7 +326,7 @@ public class RTPHeader
         {
             // Wrapped around 2^32
             const ulong FullRange = (ulong)uint.MaxValue + 1UL;
-            ulong diff = (ulong)currentTs + FullRange - previousTs;
+            var diff = (ulong)currentTs + FullRange - previousTs;
             return (uint)(diff & 0xFFFFFFFF);
         }
     }

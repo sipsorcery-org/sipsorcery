@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -103,7 +105,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
+                if (sipResponse.StatusCode is > 100 and <= 199)
                 {
                     if (!_disablePrackSupport && sipResponse.Header.RSeq > 0)
                     {
@@ -145,7 +147,7 @@ namespace SIPSorcery.SIP
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
 
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
-                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
+                if (sipResponse.StatusCode is >= 200 and < 299)
                 {
                     if (_sendOkAckManually == false)
                     {

@@ -14,6 +14,8 @@
 // MIT, see https://github.com/zanders3/json/blob/master/LICENSE.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;

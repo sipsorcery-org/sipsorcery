@@ -22,6 +22,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -153,8 +155,8 @@ namespace SIPSorcery.SIP.App
             {
                 if (!IsCallActive && m_uac != null && m_uac.ServerTransaction != null)
                 {
-                    return m_uac.ServerTransaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                    m_uac.ServerTransaction.TransactionState == SIPTransactionStatesEnum.Trying;
+                    return m_uac.ServerTransaction.TransactionState is SIPTransactionStatesEnum.Calling or
+                    SIPTransactionStatesEnum.Trying;
                 }
                 else
                 {
@@ -1754,7 +1756,7 @@ namespace SIPSorcery.SIP.App
         {
             _ringTimeout?.Dispose();
 
-            if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+            if (sipResponse.StatusCode is >= 200 and <= 299)
             {
                 if (sipResponse.Body == null && ((MediaSession as RTPSession)?.IsAudioStarted ?? false))
                 {

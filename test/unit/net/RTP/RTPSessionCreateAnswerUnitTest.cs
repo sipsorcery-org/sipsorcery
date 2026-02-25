@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionCreateAnswerUnitTest.cs
 //
 // Description: Characterization tests for RTPSession.CreateAnswer
@@ -37,7 +37,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// CreateAnswer must throw ApplicationException when no remote
+        /// CreateAnswer must throw SipSorceryException when no remote
         /// description has been set. Mirrors the WebRTC createAnswer
         /// contract.
         /// </summary>
@@ -46,7 +46,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             using (var session = new RtpSessionBuilder().WithAudioTrack().Build())
             {
-                Assert.Throws<ApplicationException>(() => session.CreateAnswer(IPAddress.Loopback));
+                Assert.Throws<SipSorceryException>(() => session.CreateAnswer(IPAddress.Loopback));
             }
         }
 

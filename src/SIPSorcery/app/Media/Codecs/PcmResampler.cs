@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace SIPSorcery.Media
 {
@@ -7,34 +6,28 @@ namespace SIPSorcery.Media
     {
         public static short[] Resample(short[] pcm, int inRate, int outRate)
         {
-            if (inRate == outRate)
+            if (inRate == outRate || pcm.Length == 0)
             {
                 return pcm;
             }
-            else if (inRate == 8000 && outRate == 16000)
+
+            var outLength = (int)((long)pcm.Length * outRate / inRate);
+            var resampled = new short[outLength];
+            var step = (double)inRate / outRate;
+
+            for (var i = 0; i < outLength; i++)
             {
-                // Crude up-sample to 16Khz by doubling each sample.
-                return pcm.SelectMany(x => new short[] { x, x }).ToArray();
+                var srcPos = i * step;
+                var srcIndex = (int)srcPos;
+                var frac = srcPos - srcIndex;
+
+                var s0 = pcm[srcIndex];
+                var s1 = pcm[Math.Min(srcIndex + 1, pcm.Length - 1)];
+
+                resampled[i] = (short)Math.Round(s0 + (s1 - s0) * frac);
             }
-            else if (inRate == 8000 && outRate == 48000)
-            {
-                // Crude up-sample to 48Khz by 6x each sample. This sounds bad, use for testing only.
-                return pcm.SelectMany(x => new short[] { x, x, x, x, x, x }).ToArray();
-            }
-            else if (inRate == 16000 && outRate == 8000)
-            {
-                // Crude down-sample to 8Khz by skipping every second sample.
-                return pcm.Where((x, i) => i % 2 == 0).ToArray();
-            }
-            else if (inRate == 16000 && outRate == 48000)
-            {
-                // Crude up-sample to 48Khz by 3x each sample. This sounds bad, use for testing only.
-                return pcm.SelectMany(x => new short[] { x, x, x }).ToArray();
-            }
-            else
-            {
-                throw new ApplicationException($"Sorry don't know how to re-sample PCM from {inRate} to {outRate}. Pull requests welcome!");
-            }
+
+            return resampled;
         }
     }
 }

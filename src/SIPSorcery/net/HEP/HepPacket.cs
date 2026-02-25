@@ -136,7 +136,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public static byte[] GetBytes(ChunkTypeEnum chunkType, IPAddress address)
         {
-            if (chunkType == ChunkTypeEnum.IPv4SourceAddress || chunkType == ChunkTypeEnum.IPv4DesinationAddress)
+            if (chunkType is ChunkTypeEnum.IPv4SourceAddress or ChunkTypeEnum.IPv4DesinationAddress)
             {
                 if (address.AddressFamily != AddressFamily.InterNetwork)
                 {
@@ -147,7 +147,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(address.GetAddressBytes(), 0, buf, MINIMUM_CHUNK_LENGTH, 4);
                 return buf;
             }
-            else if (chunkType == ChunkTypeEnum.IPv6SourceAddress || chunkType == ChunkTypeEnum.IPv6DesinationAddress)
+            else if (chunkType is ChunkTypeEnum.IPv6SourceAddress or ChunkTypeEnum.IPv6DesinationAddress)
             {
                 if (address.AddressFamily != AddressFamily.InterNetworkV6)
                 {

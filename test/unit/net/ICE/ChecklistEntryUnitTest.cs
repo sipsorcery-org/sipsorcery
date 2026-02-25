@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: ChecklistEntryUnitTest.cs
 //
 // Description: Characterization tests for ChecklistEntry, the ICE candidate-pair
@@ -315,7 +315,7 @@ namespace SIPSorcery.Net.UnitTests
             var entry = new ChecklistEntry(localCandidate, Candidate(200), isLocalController: true);
 
             var resp = Response(STUNMessageTypesEnum.RefreshSuccessResponse);
-            byte[] lifetime = new byte[4];
+            var lifetime = new byte[4];
             BinaryPrimitives.WriteUInt32BigEndian(lifetime, 600);
             resp.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, lifetime));
 

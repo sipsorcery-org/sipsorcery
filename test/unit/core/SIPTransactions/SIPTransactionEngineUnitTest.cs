@@ -180,7 +180,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;     // Client side of the INVITE.
 
-            string inviteRequestStr =
+            var inviteRequestStr =
                 $"INVITE sip:303@sip.blueface.ie SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}User-Agent: Dummy{m_CRLF}{m_CRLF}";
 
             SIPRequest inviteRequest = SIPRequest.ParseSIPRequest(inviteRequestStr);
@@ -190,7 +190,7 @@ namespace SIPSorcery.SIP.UnitTests
             UASInviteTransaction serverTransaction = new UASInviteTransaction(sipTransport, inviteRequest, null, true);
             engine.AddTransaction(serverTransaction);
 
-            string ackRequestStr =
+            var ackRequestStr =
                 $"ACK sip:303@sip.blueface.ie SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 ACK{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: Dummy{m_CRLF}{m_CRLF}";
 
             SIPRequest ackRequest = SIPRequest.ParseSIPRequest(ackRequestStr);
@@ -260,7 +260,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         private SIPRequest GetDummyINVITERequest(SIPURI dummyURI)
         {
-            string dummyFrom = "<sip:unittest@mysipswitch.com>";
+            var dummyFrom = "<sip:unittest@mysipswitch.com>";
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, dummyURI);
 
             SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(dummyFrom), new SIPToHeader(null, dummyURI, null), 1, CallProperties.CreateNewCallId());

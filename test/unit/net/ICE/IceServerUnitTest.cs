@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: IceServerUnitTest.cs
 //
 // Description: Characterization tests for the IceServer per-server state machine
@@ -27,7 +27,9 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
+using SIPSorcery.Sys;
 using Xunit;
+using Polyfills;
 
 namespace SIPSorcery.Net.UnitTests
 {
@@ -73,8 +75,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(System.Net.Sockets.ProtocolType.Udp, server.Protocol);
             Assert.Equal(STUNSchemesEnum.stun, server.Uri.Scheme);
-            Assert.Null(server._username);
-            Assert.Null(server._password);
+            Assert.True(server.Username.IsEmpty);
+            Assert.True(server.Password.IsEmpty);
         }
 
         [Fact]
@@ -86,8 +88,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(STUNSchemesEnum.turn, server.Uri.Scheme);
             Assert.Equal(System.Net.Sockets.ProtocolType.Tcp, server.Protocol);
-            Assert.Equal("user1", server._username);
-            Assert.Equal("pass1", server._password);
+            Assert.True("user1"u8.SequenceEqual(server.Username.Span));
+            Assert.True("pass1"u8.SequenceEqual(server.Password.Span));
         }
 
         [Fact]
@@ -114,7 +116,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseIceServer_NullThrowsArgumentNull()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
-            Assert.Throws<ArgumentNullException>(() => IceServer.ParseIceServer(null));
+            Assert.Throws<ArgumentException>(() => IceServer.ParseIceServer(null));
         }
 
         [Theory]
@@ -195,7 +197,7 @@ namespace SIPSorcery.Net.UnitTests
             var resp = new STUNMessage(STUNMessageTypesEnum.AllocateSuccessResponse);
             resp.Header.TransactionId = Encoding.ASCII.GetBytes("99999900wxyz"); // wrong prefix/id, 12 chars.
 
-            bool candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            var candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
 
             Assert.False(candidates);
             Assert.Equal(5, server.OutstandingRequestsSent);   // untouched - response ignored.
@@ -216,7 +218,7 @@ namespace SIPSorcery.Net.UnitTests
             resp.AddXORAddressAttribute(STUNAttributeTypesEnum.XORRelayedAddress, IPAddress.Parse("198.51.100.20"), 60000);
             resp.Attributes.Add(Lifetime(600));
 
-            bool candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            var candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
 
             Assert.True(candidates);
             Assert.Equal(new IPEndPoint(IPAddress.Parse("203.0.113.10"), 50000), server.ServerReflexiveEndPoint);
@@ -239,7 +241,7 @@ namespace SIPSorcery.Net.UnitTests
             resp.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, Encoding.UTF8.GetBytes("n1")));
             resp.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, Encoding.UTF8.GetBytes("r1")));
 
-            bool candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            var candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
 
             Assert.False(candidates);
             Assert.Equal("n1", Encoding.UTF8.GetString(server.Nonce));
@@ -263,7 +265,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(1, server.ErrorResponseCount);
             Assert.Equal(originalTxId, server.TransactionID);  // not an auth error, no rotation.
-            Assert.Null(server.Nonce);
+            Assert.True(server.Nonce.IsEmpty);
         }
 
         [Fact]
@@ -276,7 +278,7 @@ namespace SIPSorcery.Net.UnitTests
             var resp = ResponseFor(server, STUNMessageTypesEnum.BindingSuccessResponse);
             resp.AddXORMappedAddressAttribute(IPAddress.Parse("203.0.113.55"), 40000);
 
-            bool candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            var candidates = server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
 
             Assert.True(candidates);
             Assert.Equal(new IPEndPoint(IPAddress.Parse("203.0.113.55"), 40000), server.ServerReflexiveEndPoint);

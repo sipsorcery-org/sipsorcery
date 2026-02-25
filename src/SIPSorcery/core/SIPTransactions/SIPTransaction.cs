@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -291,14 +293,14 @@ namespace SIPSorcery.SIP
 
         public Task<SocketError> GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            if (TransactionState == SIPTransactionStatesEnum.Completed || TransactionState == SIPTransactionStatesEnum.Confirmed)
+            if (TransactionState is SIPTransactionStatesEnum.Completed or SIPTransactionStatesEnum.Confirmed)
             {
                 TransactionTraceMessage?.Invoke(this, $"Transaction received duplicate response {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
                 TransactionDuplicateResponse?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
 
                 if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE)
                 {
-                    if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
+                    if (sipResponse.StatusCode is > 100 and <= 199)
                     {
                         return ResendPrackRequest();
                     }
@@ -316,7 +318,7 @@ namespace SIPSorcery.SIP
             {
                 TransactionTraceMessage?.Invoke(this, $"Transaction received Response {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 
-                if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
+                if (sipResponse.StatusCode is >= 100 and <= 199)
                 {
                     UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
                     return TransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
@@ -344,9 +346,9 @@ namespace SIPSorcery.SIP
         {
             m_transactionState = transactionState;
 
-            if (transactionState == SIPTransactionStatesEnum.Confirmed ||
-                transactionState == SIPTransactionStatesEnum.Terminated ||
-                transactionState == SIPTransactionStatesEnum.Cancelled)
+            if (transactionState is SIPTransactionStatesEnum.Confirmed or
+                SIPTransactionStatesEnum.Terminated or
+                SIPTransactionStatesEnum.Cancelled)
             {
                 if (transactionState == SIPTransactionStatesEnum.Cancelled && CancelledAt == DateTime.MinValue)
                 {
@@ -395,7 +397,7 @@ namespace SIPSorcery.SIP
                 UnreliableProvisionalResponse = sipResponse;
                 return m_sipTransport.SendResponseAsync(sipResponse);
             }
-            else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
+            else if (sipResponse.StatusCode is > 100 and <= 199)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
 

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
@@ -88,6 +90,7 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 return _audioFormatManager.GetSourceFormats();
             }
+
             return new List<AudioFormat>();
         }
 
@@ -155,27 +158,57 @@ namespace SIPSorceryMedia.FFmpeg
                 dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSizeInSamples, avFrame.extended_data, avFrame.nb_samples);
             }
 
-            if(dstSampleCount < 0)
+            if (dstSampleCount < 0)
             {
                 OnAudioSourceError?.Invoke("Cannot convert audio");
                 Dispose();
                 return;
             }
 
-            if(dstSampleCount > 0)
+            if (dstSampleCount > 0)
             {
                 // FFmpeg AV_SAMPLE_FMT_S16 will store the bytes in the correct endianess for the underlying platform.
                 short[] pcm = new short[dstSampleCount];
                 Buffer.BlockCopy(buffer, 0, pcm, 0, dstSampleCount * sizeof(short));
                 _incomingSamples.Write(pcm);
 
-                while (_incomingSamples.Available() >= frameSize)
+                if (_incomingSamples.Available() >= frameSize)
                 {
-                    var pcmFrame = _incomingSamples.Read(frameSize);
-                    var encodedSample = _audioEncoder.EncodeAudio(pcmFrame, _audioFormatManager.SelectedFormat);
-                    if (encodedSample.Length > 0)
+                    var pcmFrame = ArrayPool<short>.Shared.Rent(frameSize);
+                    try
                     {
-                        OnAudioSourceEncodedSample?.Invoke((uint)(pcmFrame.Length * _audioFormatManager.SelectedFormat.RtpClockRate / _audioFormatManager.SelectedFormat.ClockRate), encodedSample);
+                        while (_incomingSamples.Available() >= frameSize)
+                        {
+                            _incomingSamples.Read(frameSize, pcmFrame);
+                            using var encodedBuffer = new ArrayPoolBufferWriter<byte>();
+                            _audioEncoder.EncodeAudio(pcmFrame.AsSpan(0, frameSize), _audioFormatManager.SelectedFormat, encodedBuffer);
+
+                            var encodedMemory = encodedBuffer.WrittenMemory;
+
+                            var onAudioSourceEncodedSample = OnAudioSourceEncodedSample;
+                            var onAudioSourceEncodedFrameReady = OnAudioSourceEncodedFrameReady;
+
+                            if (!encodedMemory.IsEmpty && (onAudioSourceEncodedSample is { } || onAudioSourceEncodedFrameReady is { }))
+                            {
+                                onAudioSourceEncodedSample?.Invoke((uint)encodedMemory.Length, encodedMemory);
+
+                                if (onAudioSourceEncodedFrameReady is { })
+                                {
+                                    var audioFormat = _audioFormatManager.SelectedFormat;
+                                    var numChannels = audioFormat.ChannelCount;
+                                    var sampleRate = audioFormat.ClockRate;
+                                    var frames = pcm.Length / numChannels;
+                                    var durationMsD = sampleRate > 0 ? (frames / (double)sampleRate) * 1000.0 : 0;
+                                    var durationMs = (uint)Math.Round(durationMsD);
+                                    var encodedFrame = new EncodedAudioFrame(0, audioFormat, durationMs, encodedMemory);
+                                    onAudioSourceEncodedFrameReady(encodedFrame);
+                                }
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        ArrayPool<short>.Shared.Return(pcmFrame);
                     }
                 }
             }

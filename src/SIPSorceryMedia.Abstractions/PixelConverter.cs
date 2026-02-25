@@ -44,32 +44,16 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="pixelFormat">The pixel format of the image.</param>
         /// <returns>If successful a buffer containing an I420 formatted image sample.</returns>
         public static byte[] ToI420(int width, int height, int stride, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+            => pixelFormat switch
         {
-            switch (pixelFormat)
-            {
-                case VideoPixelFormatsEnum.I420:
-                    // No conversion needed.
-                    return sample;
-                case VideoPixelFormatsEnum.Bgra:
-                    return PixelConverter.BGRAtoI420(sample, width, height, stride);
-                case VideoPixelFormatsEnum.Bgr:
-                    return PixelConverter.BGRtoI420(sample, width, height, stride);
-                case VideoPixelFormatsEnum.Rgba:
-                    return PixelConverter.RGBAtoI420(sample, width, height, stride);
-                case VideoPixelFormatsEnum.Rgb:
-                    return PixelConverter.RGBtoI420(sample, width, height, stride);
-                case VideoPixelFormatsEnum.NV12:
-                    return PixelConverter.NV12toI420(sample, width, height);
-                default:
-                    throw new ApplicationException($"Pixel format {pixelFormat} does not have an I420 conversion implemented.");
-            }
-        }
-
-        [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
-        public static byte[] RGBAtoI420(byte[] rgba, int width, int height)
-        {
-            return RGBAtoI420(rgba, width, height, width * 4);
-        }
+            VideoPixelFormatsEnum.I420 => sample,// No conversion needed.
+            VideoPixelFormatsEnum.Bgra => PixelConverter.BGRAtoI420(sample, width, height, stride),
+            VideoPixelFormatsEnum.Bgr => PixelConverter.BGRtoI420(sample, width, height, stride),
+            VideoPixelFormatsEnum.Rgba => PixelConverter.RGBAtoI420(sample, width, height, stride),
+            VideoPixelFormatsEnum.Rgb => PixelConverter.RGBtoI420(sample, width, height, stride),
+            VideoPixelFormatsEnum.NV12 => PixelConverter.NV12toI420(sample, width, height),
+            _ => throw new SipSorceryMediaException($"Pixel format {pixelFormat} does not have an I420 conversion implemented."),
+        };
 
         /// <summary>
         /// Converts an RGBA sample to an I420 formatted sample.
@@ -86,9 +70,9 @@ namespace SIPSorceryMedia.Abstractions
         /// </remarks>
         public static byte[] RGBAtoI420(byte[] rgba, int width, int height, int stride, int dop = 1)
         {
-            if (rgba == null || rgba.Length < (stride * height))
+            if (rgba is null || rgba.Length < (stride * height))
             {
-                throw new ApplicationException($"RGBA buffer supplied to RGBAtoI420 was too small, expected {stride * height} but got {rgba?.Length}.");
+                throw new SipSorceryMediaException($"RGBA buffer supplied to RGBAtoI420 was too small, expected {stride * height} but got {rgba?.Length}.");
             }
 
             int ySize = width * height;
@@ -132,12 +116,6 @@ namespace SIPSorceryMedia.Abstractions
             return buffer;
         }
 
-        [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
-        public static byte[] RGBtoI420(byte[] rgb, int width, int height)
-        {
-            return RGBtoI420(rgb, width, height, width * 3);
-        }
-
         /// <summary>
         /// Converts an RGB sample to an I420 formatted sample.
         /// </summary>
@@ -149,9 +127,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <returns>An I420 buffer representing the source image.</returns>
         public static byte[] RGBtoI420(byte[] rgb, int width, int height, int stride, int dop = 1)
         {
-            if (rgb == null || rgb.Length < (stride * height))
+            if (rgb is null || rgb.Length < (stride * height))
             {
-                throw new ApplicationException($"RGB buffer supplied to RGBtoI420 was too small, expected {stride * height} but got {rgb?.Length}.");
+                throw new SipSorceryMediaException($"RGB buffer supplied to RGBtoI420 was too small, expected {stride * height} but got {rgb?.Length}.");
             }
 
             int ySize = width * height;
@@ -194,12 +172,6 @@ namespace SIPSorceryMedia.Abstractions
             return buffer;
         }
 
-        [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
-        public static byte[] BGRtoI420(byte[] bgr, int width, int height)
-        {
-            return BGRtoI420(bgr, width, height, width * 3);
-        }
-
         /// <summary>
         /// Converts a BGR sample to an I420 formatted sample.
         /// </summary>
@@ -211,9 +183,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <returns>An I420 buffer representing the source image.</returns>
         public static byte[] BGRtoI420(byte[] bgr, int width, int height, int stride, int dop = 1)
         {
-            if (bgr == null || bgr.Length < (stride * height))
+            if (bgr is null || bgr.Length < (stride * height))
             {
-                throw new ApplicationException($"BGR buffer supplied to BGRtoI420 was too small, expected {stride * height} but got {bgr?.Length}.");
+                throw new SipSorceryMediaException($"BGR buffer supplied to BGRtoI420 was too small, expected {stride * height} but got {bgr?.Length}.");
             }
 
             int ySize = width * height;
@@ -267,9 +239,9 @@ namespace SIPSorceryMedia.Abstractions
         /// <returns>An I420 buffer representing the source image.</returns>
         public static byte[] BGRAtoI420(byte[] bgra, int width, int height, int stride, int dop = 1)
         {
-            if (bgra == null || bgra.Length < (stride * height))
+            if (bgra is null || bgra.Length < (stride * height))
             {
-                throw new ApplicationException($"BGRA buffer supplied to BGRAtoI420 was too small, expected {stride * height} but got {bgra?.Length}.");
+                throw new SipSorceryMediaException($"BGRA buffer supplied to BGRAtoI420 was too small, expected {stride * height} but got {bgra?.Length}.");
             }
 
             int ySize = width * height;
@@ -312,13 +284,6 @@ namespace SIPSorceryMedia.Abstractions
             return buffer;
         }
 
-
-        [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
-        public static byte[] I420toRGB(byte[] data, int width, int height)
-        {
-            return I420toRGB(data, width, height, out _);
-        }
-
         /// <summary>
         /// Converts an I420 sample to an RGB formatted sample.
         /// </summary>
@@ -332,9 +297,9 @@ namespace SIPSorceryMedia.Abstractions
         {
             int ySize = width * height;
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            if (data == null || data.Length < (ySize + uvSize))
+            if (data is null || data.Length < (ySize + uvSize))
             {
-                throw new ApplicationException($"I420 buffer supplied to I420toRGB was too small, expected {ySize + uvSize} but got {data?.Length}.");
+                throw new SipSorceryMediaException($"I420 buffer supplied to I420toRGB was too small, expected {ySize + uvSize} but got {data?.Length}.");
             }
 
             int uOffset = ySize;
@@ -374,12 +339,6 @@ namespace SIPSorceryMedia.Abstractions
             return rgb;
         }
 
-        [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
-        public static byte[] I420toBGR(byte[] data, int width, int height)
-        {
-            return I420toBGR(data, width, height, out _);
-        }
-
         /// <summary>
         /// Converts an I420 sample to an BGR formatted sample.
         /// </summary>
@@ -393,9 +352,9 @@ namespace SIPSorceryMedia.Abstractions
         {
             int ySize = width * height;
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            if (data == null || data.Length < (ySize + uvSize))
+            if (data is null || data.Length < (ySize + uvSize))
             {
-                throw new ApplicationException($"I420 buffer supplied to I420toBGR was too small, expected {ySize + uvSize} but got {data?.Length}.");
+                throw new SipSorceryMediaException($"I420 buffer supplied to I420toBGR was too small, expected {ySize + uvSize} but got {data?.Length}.");
             }
 
             int uOffset = ySize;
@@ -435,12 +394,6 @@ namespace SIPSorceryMedia.Abstractions
             return bgr;
         }
 
-        [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
-        public static byte[] NV12toBGR(byte[] data, int width, int height)
-        {
-            return NV12toBGR(data, width, height, width * 3);
-        }
-
         /// <summary>
         /// Converts an NV12 sample to an BGR formatted sample.
         /// </summary>
@@ -454,9 +407,9 @@ namespace SIPSorceryMedia.Abstractions
         {
             int ySize = width * height;
             int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            if (data == null || data.Length < (ySize + uvSize))
+            if (data is null || data.Length < (ySize + uvSize))
             {
-                throw new ApplicationException($"NV12 buffer supplied to NV12toBGR was too small, expected {ySize + uvSize} but got {data?.Length}.");
+                throw new SipSorceryMediaException($"NV12 buffer supplied to NV12toBGR was too small, expected {ySize + uvSize} but got {data?.Length}.");
             }
 
             int uvOffset = ySize;
@@ -530,9 +483,7 @@ namespace SIPSorceryMedia.Abstractions
             DeinterleaveUVSimd(nv12, nv12UvOffset, i420, i420UOffset, i420VOffset, uvWidth, uvHeight);
 #else
             if (!_optDOP.ContainsKey(dop))
-            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
 
             // De-interleave UV plane: NV12 has UV interleaved, I420 has separate U and V planes.
             Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
@@ -697,9 +648,7 @@ namespace SIPSorceryMedia.Abstractions
             InterleaveUVSimd(i420, i420UOffset, i420VOffset, nv12, nv12UvOffset, uvWidth, uvHeight);
 #else
             if (!_optDOP.ContainsKey(dop))
-            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
 
             // Interleave UV plane: I420 has separate U and V planes, NV12 has UV interleaved.
             Parallel.For(0, uvHeight, _optDOP[dop], (row) =>

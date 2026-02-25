@@ -21,6 +21,7 @@
 
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
+using SIPSorcery.Sys;
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
@@ -71,7 +72,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 #endif
             GenerateRtcpIV(iv, rtcpPacket, index);
 
-            byte[] iv2 = new byte[BLOCK_SIZE];
+            var iv2 = new byte[BLOCK_SIZE];
 
             GenerateIV2(engine, k_e, k_s, iv, iv2);
 
@@ -108,14 +109,14 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Encryption
 
         public static void Encrypt(IBlockCipher aes, ReadOnlySpan<byte> input, Span<byte> output, ReadOnlySpan<byte> iv)
         {
-            int payloadSize = input.Length;
-            int blockCount = (payloadSize + BLOCK_SIZE - 1) / BLOCK_SIZE;
-            byte[] cipher = ArrayPool<byte>.Shared.Rent(blockCount * BLOCK_SIZE);
+            var payloadSize = input.Length;
+            var blockCount = (payloadSize + BLOCK_SIZE - 1) / BLOCK_SIZE;
+            var cipher = ArrayPool<byte>.Shared.Rent(blockCount * BLOCK_SIZE);
 
             try
             {
-                int blockNo = 0;
-                byte[] iv2 = GC.AllocateUninitializedArray<byte>(iv.Length);
+                var blockNo = 0;
+                var iv2 = GC.AllocateUninitializedArray<byte>(iv.Length);
                 for (uint j = 0; j < blockCount; j++)
                 {
                     iv.CopyTo(iv2);

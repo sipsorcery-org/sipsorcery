@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: H26XPacketiserUnitTest.cs
 //
 // Description: Unit tests for the H264 and H265 packetiser NAL parsing. These

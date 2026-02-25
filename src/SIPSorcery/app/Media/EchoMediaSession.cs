@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
@@ -54,7 +55,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
         var audioFormat = audoFormats.First();
         logger.LogDebug("{session} setting audio source format to {FormatID}:{Codec} {ClockRate} (RTP clock rate {RtpClockRate}).", nameof(EchoMediaSession), audioFormat.FormatID, audioFormat.Codec, audioFormat.ClockRate, audioFormat.RtpClockRate);
 
-        if (AudioStream != null && AudioStream.LocalTrack.NoDtmfSupport == false)
+        if (AudioStream?.LocalTrack?.NoDtmfSupport == false)
         {
             logger.LogDebug("Audio track negotiated DTMF payload ID {AudioStreamNegotiatedRtpEventPayloadID}.", AudioStream.NegotiatedRtpEventPayloadID);
         }
@@ -64,7 +65,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
             AudioStream.OnAudioFrameReceived += (audioFrame) =>
             {
                 // Echo the received audio frame back to the sender.
-                AudioStream?.SendAudio(audioFrame.DurationMilliSeconds, audioFrame.EncodedAudio);
+                AudioStream?.SendAudio(audioFrame.DurationMilliSeconds, audioFrame.EncodedAudio.Span);
             };
         }
     }
@@ -81,7 +82,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
 
         if (VideoStream != null && VideoStream.RemoteTrack != null && VideoStream.LocalTrack != null)
         {
-            VideoStream.OnVideoFrameReceivedByIndex += (int index, IPEndPoint from, uint ts, byte[] payload, VideoFormat format) =>
+            VideoStream.OnVideoFrameReceivedByIndex += (index, from, ts, payload, format) =>
             {
                // TODO.
                logger.LogWarning("Video frame received, echoing not yet implemented.");
@@ -98,7 +99,7 @@ public class EchoMediaSession : RTPSession, IMediaSession
         {
             TextStream.OnRtpPacketReceivedByIndex += (int index, IPEndPoint from, SDPMediaTypesEnum mediaType, RTPPacket pkt) =>
             {
-                TextStream.SendText(pkt.Payload);
+                TextStream.SendText(pkt.Payload.Span);
             };
         }
     }
@@ -127,7 +128,9 @@ public class EchoMediaSession : RTPSession, IMediaSession
     {
         if (pcm.Length > 0)
         {
-            byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, audioFormat);
+            using var buffer = new ArrayPoolBufferWriter<byte>(8192);
+            _audioEncoder.EncodeAudio(pcm, audioFormat, buffer);
+            var encodedSample = buffer.WrittenSpan;
 
             uint rtpUnits = RtpTimestampExtensions.ToRtpUnits(SILENCE_SAMPLE_PERIOD_MILLISECONDS, audioFormat.RtpClockRate);
 
