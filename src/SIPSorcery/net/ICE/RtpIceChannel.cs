@@ -802,12 +802,12 @@ namespace SIPSorcery.Net
             }
         }
 
-        private IceTcpReceiver_ GetIceTcpReceiver(Socket tcpSocket, bool isrelay = false)
+        private IceTcpReceiver GetIceTcpReceiver(Socket tcpSocket, bool isrelay = false)
         {
-            var rtpTcpReceiver = new IceTcpReceiver_(tcpSocket);
+            var rtpTcpReceiver = new IceTcpReceiver(tcpSocket);
 
             rtpTcpReceiver.OnPacketReceived +=
-                (_, localPort, remoteEndPoint, packet) =>
+                (recv, localPort, remoteEndPoint, packet) =>
                 {
                     if (logger.IsEnabled(LogLevel.Trace))
                     {
@@ -815,7 +815,7 @@ namespace SIPSorcery.Net
                             packet.Length, tcpSocket.LocalEndPoint);
                     }
 
-                    OnPacketReceived(localPort, remoteEndPoint, packet, isrelay);
+                    OnPacketReceived(recv, localPort, remoteEndPoint, packet, isrelay);
                 };
 
             rtpTcpReceiver.OnClosed += (reason) => CloseTcp(rtpTcpReceiver, reason);
@@ -1096,39 +1096,39 @@ namespace SIPSorcery.Net
             return hostCandidates;
         }
 
-                                var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
+        //                        var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
 
-                                // Check whether the server end point can be set. IF it can't a DNS lookup will be required.
-                                if (IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
-                                {
-                                    iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
-                                    logger.LogDebug("ICE server end point for {Uri} set to {EndPoint}.", iceServerState._uri, iceServerState.ServerEndPoint);
-                                }
+        //                        // Check whether the server end point can be set. IF it can't a DNS lookup will be required.
+        //                        if (IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
+        //                        {
+        //                            iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
+        //                            logger.LogDebug("ICE server end point for {Uri} set to {EndPoint}.", iceServerState._uri, iceServerState.ServerEndPoint);
+        //                        }
 
-                                if (stunUri.Scheme == STUNSchemesEnum.turn && iceServer.X_ICERelayProtocol == RTCIceProtocol.tcp)
-                                {
-                                    iceServerState._reqIceProtocol = ProtocolType.Tcp;
-                                    logger.LogDebug("Will request TCP relay candidate from ICE server {Uri}", iceServerState._uri);
-                                }
+        //                        if (stunUri.Scheme == STUNSchemesEnum.turn && iceServer.X_ICERelayProtocol == RTCIceProtocol.tcp)
+        //                        {
+        //                            iceServerState._reqIceProtocol = ProtocolType.Tcp;
+        //                            logger.LogDebug("Will request TCP relay candidate from ICE server {Uri}", iceServerState._uri);
+        //                        }
 
-                                _iceServerConnections.TryAdd(stunUri, iceServerState);
+        //                        _iceServerConnections.TryAdd(stunUri, iceServerState);
 
-                                iceServerID++;
-                                if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
-                                {
-                                    logger.LogWarning("The maximum number of ICE servers for the session has been reached.");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            logger.LogWarning("RTP ICE Channel could not parse ICE server URL {url}.", url);
-                        }
-                    }
-                }
-            }
-        }
+        //                        iceServerID++;
+        //                        if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
+        //                        {
+        //                            logger.LogWarning("The maximum number of ICE servers for the session has been reached.");
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    logger.LogWarning("RTP ICE Channel could not parse ICE server URL {url}.", url);
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
 
         private void RefreshTurn(Object state)
         {
@@ -2854,16 +2854,16 @@ namespace SIPSorcery.Net
 
                     return SocketError.SocketError;
 
-                    var ep = (sendSocket.LocalEndPoint as IPEndPoint);
-                    (var ip, var port) = (ep.Address, ep.Port);
+                    //var ep = (sendSocket.LocalEndPoint as IPEndPoint);
+                    //(var ip, var port) = (ep.Address, ep.Port);
 
-                    //recreate sockets?
-                    // TODO: may modify this path if base TCP is supported
+                    ////recreate sockets?
+                    //// TODO: may modify this path if base TCP is supported
 
-                    NetServices.CreateRtpSocket(false, ProtocolType.Tcp, ip, port, null, true, true, out var reConnectSocket, out _);
+                    //NetServices.CreateRtpSocket(false, ProtocolType.Tcp, ip, port, null, true, true, out var reConnectSocket, out _);
 
-                    m_rtpTcpReceiverByUri[uri] = GetIceTcpReceiver(reConnectSocket);
-                    sendSocket = RtpTcpSocketByUri[uri] = reConnectSocket;
+                    //m_rtpTcpReceiverByUri[uri] = GetIceTcpReceiver(reConnectSocket);
+                    //sendSocket = RtpTcpSocketByUri[uri] = reConnectSocket;
                 }
 
                 sendSocket.Connect(dstEndPoint);
@@ -2954,7 +2954,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                    //OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                    base.OnRTPPacketReceived(receiver, localPort, remoteEndPoint, packet);
                 }
             }
         }
@@ -2968,9 +2969,9 @@ namespace SIPSorcery.Net
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
         protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
-            => OnPacketReceived(localPort, remoteEndPoint, packet, false);
+            => OnPacketReceived(receiver, localPort, remoteEndPoint, packet, false);
 
-        private void OnPacketReceived(int localPort, IPEndPoint remoteEndPoint, byte[] packet, bool wasRelayed)
+        private void OnPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet, bool wasRelayed)
         {
             if (packet?.Length > 0)
             {
@@ -2997,7 +2998,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                    //OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                    base.OnRTPPacketReceived(receiver, localPort, remoteEndPoint, packet);
                 }
             }
         }

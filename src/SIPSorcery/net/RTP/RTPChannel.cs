@@ -153,9 +153,10 @@ public class RTPChannel : IDisposable
     /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
     /// and fallback to the IPv4 any address.</param>
     /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
-    public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0, PortRange rtpPortRange = null)
+    /// <param name="useTcp">Wheter to use TCP as transport.</param>
+    public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0, PortRange rtpPortRange = null, bool useTcp = false)
     {
-        NetServices.CreateRtpSocket(createControlSocket, bindAddress, bindPort, rtpPortRange, out var rtpSocket, out m_controlSocket);
+        NetServices.CreateRtpSocket(createControlSocket, useTcp ? ProtocolType.Tcp : ProtocolType.Udp, bindAddress, bindPort, rtpPortRange, true, true, out var rtpSocket, out m_controlSocket);
 
         if (rtpSocket == null)
         {
