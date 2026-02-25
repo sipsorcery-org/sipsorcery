@@ -32,19 +32,13 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public ReadOnlyMemory<byte> MasterSalt { get; }
         public ReadOnlyMemory<byte> MasterKeySalt { get; }
 
-        public SrtpKeys(SrtpProtectionProfileConfiguration protectionProfile, byte[] masterKeySalt, byte[] mki = default)
+        public SrtpKeys(SrtpProtectionProfileConfiguration protectionProfile, byte[] masterKeySalt, byte[]? mki = default)
         {
-#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(protectionProfile);
             this.ProtectionProfile = protectionProfile;
 
             ArgumentNullException.ThrowIfNull(masterKeySalt);
             this.MasterKeySalt = masterKeySalt.AsMemory();
-#else
-            this.ProtectionProfile = protectionProfile ?? throw new ArgumentNullException(nameof(protectionProfile));
-
-            this.MasterKeySalt = (masterKeySalt ?? throw new ArgumentNullException(nameof(masterKeySalt))).AsMemory();
-#endif
 
             if (masterKeySalt.Length != (protectionProfile.CipherKeyLength + protectionProfile.CipherSaltLength) >> 3)
             {

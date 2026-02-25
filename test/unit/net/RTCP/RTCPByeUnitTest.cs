@@ -15,6 +15,7 @@
 
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -42,7 +43,7 @@ namespace SIPSorcery.Net.UnitTests
             uint ssrc = 23;
 
             RTCPBye bye = new RTCPBye(ssrc, null);
-            byte[] buffer = bye.GetBytes();
+            var buffer = bye.GetBytes();
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
@@ -61,10 +62,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 19;
-            string reason = "x";
+            var reason = "x";
 
             RTCPBye bye = new RTCPBye(ssrc, reason);
-            byte[] buffer = bye.GetBytes();
+            var buffer = bye.GetBytes();
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
@@ -84,10 +85,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 123121231;
-            string reason = "1234567";
+            var reason = "1234567";
 
             RTCPBye bye = new RTCPBye(ssrc, reason);
-            byte[] buffer = bye.GetBytes();
+            var buffer = bye.GetBytes();
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
@@ -107,10 +108,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             uint ssrc = 19;
-            string reason = RTCPSession.NO_ACTIVITY_TIMEOUT_REASON;
+            var reason = RTCPSession.NO_ACTIVITY_TIMEOUT_REASON;
 
             RTCPBye bye = new RTCPBye(ssrc, reason);
-            byte[] buffer = bye.GetBytes();
+            var buffer = bye.GetBytes();
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 

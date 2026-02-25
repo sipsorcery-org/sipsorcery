@@ -35,86 +35,85 @@
  *
  * @author Lubomir Marinov (translation of ITU-T C source code to Java)
  */
-namespace SIPSorcery.Media.G729Codec
+namespace SIPSorcery.Media.G729Codec;
+
+internal sealed class PostPro
 {
-    internal class PostPro
+
+    /* ITU-T G.729 Software Package Release 2 (November 2006) */
+    /*
+ITU-T G.729 Annex C - Reference C code for floating point
+                     implementation of G.729
+                     Version 1.01 of 15.September.98
+*/
+
+    /*
+----------------------------------------------------------------------
+                COPYRIGHT NOTICE
+----------------------------------------------------------------------
+ITU-T G.729 Annex C ANSI C source code
+Copyright (C) 1998, AT&T, France Telecom, NTT, University of
+Sherbrooke.  All rights reserved.
+
+----------------------------------------------------------------------
+*/
+
+    /*
+File : POST_PRO.C
+Used for the floating point version of both
+G.729 main body and G.729A
+*/
+
+    /**
+* High-pass fir memory
+*/
+    private float x0, x1;
+
+    /**
+* High-pass iir memory
+*/
+    private float y1, y2;
+
+    /**
+* Init Post Process.
+*/
+
+    public void init_post_process()
     {
+        x0 = x1 = 0.0f;
+        y2 = y1 = 0.0f;
+    }
 
-        /* ITU-T G.729 Software Package Release 2 (November 2006) */
-        /*
-   ITU-T G.729 Annex C - Reference C code for floating point
-                         implementation of G.729
-                         Version 1.01 of 15.September.98
+    /**
+* Post Process
+*
+* @param signal        (i/o)  : signal
+* @param lg            (i)    : lenght of signal
 */
 
-        /*
-----------------------------------------------------------------------
-                    COPYRIGHT NOTICE
-----------------------------------------------------------------------
-   ITU-T G.729 Annex C ANSI C source code
-   Copyright (C) 1998, AT&T, France Telecom, NTT, University of
-   Sherbrooke.  All rights reserved.
+    public void post_process(
+        float[] signal,
+        int lg
+    )
+    {
+        var a100 = TabLd8k.a100;
+        var b100 = TabLd8k.b100;
 
-----------------------------------------------------------------------
-*/
+        int i;
+        float x2;
+        float y0;
 
-        /*
- File : POST_PRO.C
- Used for the floating point version of both
- G.729 main body and G.729A
-*/
-
-        /**
- * High-pass fir memory
- */
-        private float x0, x1;
-
-        /**
- * High-pass iir memory
- */
-        private float y1, y2;
-
-        /**
- * Init Post Process.
- */
-
-        public void init_post_process()
+        for (i = 0; i < lg; i++)
         {
-            x0 = x1 = 0.0f;
-            y2 = y1 = 0.0f;
-        }
+            x2 = x1;
+            x1 = x0;
+            x0 = signal[i];
 
-        /**
- * Post Process
- *
- * @param signal        (i/o)  : signal
- * @param lg            (i)    : lenght of signal
- */
+            y0 = y1 * a100[1] + y2 * a100[2] + x0 * b100[0] + x1 * b100[1] + x2 * b100[2];
 
-        public void post_process(
-            float[] signal,
-            int lg
-        )
-        {
-            var a100 = TabLd8k.a100;
-            var b100 = TabLd8k.b100;
-
-            int i;
-            float x2;
-            float y0;
-
-            for (i = 0; i < lg; i++)
-            {
-                x2 = x1;
-                x1 = x0;
-                x0 = signal[i];
-
-                y0 = y1 * a100[1] + y2 * a100[2] + x0 * b100[0] + x1 * b100[1] + x2 * b100[2];
-
-                signal[i] = y0;
-                y2 = y1;
-                y1 = y0;
-            }
+            signal[i] = y0;
+            y2 = y1;
+            y1 = y0;
         }
     }
 }

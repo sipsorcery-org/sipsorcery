@@ -414,7 +414,7 @@ namespace SIPSorcery.Sys.UnitTests
                 Assert.NotNull(rtpSocket);
                 Assert.NotNull(controlSocket);
 
-                Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
+                Assert.Throws<SipSorceryException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
 
                 rtpSocket.Close();
                 controlSocket.Close();
@@ -453,7 +453,7 @@ namespace SIPSorcery.Sys.UnitTests
                 Assert.NotNull(rtpSocket);
                 Assert.NotNull(controlSocket);
 
-                Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.Any));
+                Assert.Throws<SipSorceryException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.Any));
 
                 rtpSocket.Close();
                 controlSocket.Close();

@@ -27,116 +27,136 @@ using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
+namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP;
+
+// Useful link for troubleshooting WebRTC in Chrome/Edge: https://learn.microsoft.com/en-us/azure/communication-services/resources/troubleshooting/voice-video-calling/references/how-to-collect-browser-verbose-log
+public class DtlsSrtpServer : DtlsServer, IDtlsSrtpPeer
 {
-    // Useful link for troubleshooting WebRTC in Chrome/Edge: https://learn.microsoft.com/en-us/azure/communication-services/resources/troubleshooting/voice-video-calling/references/how-to-collect-browser-verbose-log
-    public class DtlsSrtpServer : DtlsServer, IDtlsSrtpPeer
+    /// <summary>
+    /// Used in WebRTC to tell the server to not use MKI even if the client requested it.
+    /// </summary>
+    /// <remarks>
+    /// RFC 8827 states: An SRTP Master Key Identifier (MKI) MUST NOT be used.
+    /// </remarks>
+    public bool ForceDisableMKI { get; set; } = false;
+
+    private UseSrtpData? _srtpData;
+
+    public event EventHandler<DtlsSessionStartedEventArgs>? OnSessionStarted;
+
+    public DtlsSrtpServer(
+        Certificate? certificate = null,
+        AsymmetricKeyParameter? privateKey = null,
+        short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+        short certificateHashAlgorithm = HashAlgorithm.sha256)
+        : this(
+              new BcTlsCrypto(),
+              certificate,
+              privateKey,
+              certificateSignatureAlgorithm,
+              certificateHashAlgorithm)
+    { }
+
+    public DtlsSrtpServer(
+        TlsCrypto crypto,
+        Certificate? certificate = null,
+        AsymmetricKeyParameter? privateKey = null,
+        short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+        short certificateHashAlgorithm = HashAlgorithm.sha256)
+        : base(
+              crypto,
+              certificate,
+              privateKey,
+              certificateSignatureAlgorithm,
+              certificateHashAlgorithm)
     {
-        /// <summary>
-        /// Used in WebRTC to tell the server to not use MKI even if the client requested it.
-        /// </summary>
-        /// <remarks>
-        /// RFC 8827 states: An SRTP Master Key Identifier (MKI) MUST NOT be used.
-        /// </remarks>
-        public bool ForceDisableMKI { get; set; } = false;
+        this.OnHandshakeCompleted += DtlsSrtpServer_OnHandshakeCompleted;
+    }
 
-        private UseSrtpData _srtpData;
+    private void DtlsSrtpServer_OnHandshakeCompleted(object? sender, DtlsHandshakeCompletedEventArgs e)
+    {
+        SrtpSessionContext context = CreateSessionContext(e.SecurityParameters);
+        Certificate peerCertificate = e.SecurityParameters.PeerCertificate;
+        OnSessionStarted?.Invoke(this, new DtlsSessionStartedEventArgs(context, peerCertificate, base._clientDatagramTransport));
+    }
 
-        public event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
-
-        public DtlsSrtpServer(Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256)
-            : this(new BcTlsCrypto(), certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
-        { }
-
-        public DtlsSrtpServer(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256)
-            : base(crypto, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
+    protected virtual int[] GetSupportedProtectionProfiles()
+    {
+        return new int[]
         {
-            this.OnHandshakeCompleted += DtlsSrtpServer_OnHandshakeCompleted;
-        }
+            ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
+            ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
+            ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
+            ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
+            ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
+            ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
+            ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
+            ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
+            ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
+            ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
+            ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
+            ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
 
-        private void DtlsSrtpServer_OnHandshakeCompleted(object sender, DtlsHandshakeCompletedEventArgs e)
-        {
-            SrtpSessionContext context = CreateSessionContext(e.SecurityParameters);
-            Certificate peerCertificate = e.SecurityParameters.PeerCertificate;
-            OnSessionStarted?.Invoke(this, new DtlsSessionStartedEventArgs(context, peerCertificate, base._clientDatagramTransport));
-        }
+            // do not offer NULL profiles to make sure these do not get selected by accident
+            //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80,
+            //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32,
+        };
+    }
 
-        protected virtual int[] GetSupportedProtectionProfiles()
+    protected override string GetCertificateCommonName()
+    {
+        return "WebRTC";
+    }
+
+    public override void ProcessClientExtensions(IDictionary<int, byte[]> clientExtensions)
+    {
+        base.ProcessClientExtensions(clientExtensions);
+
+        UseSrtpData clientSrtpExtension = TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions);
+
+        // Choose the highest priority profile supported by the server
+        int[] serverSupportedProfiles = GetSupportedProtectionProfiles();
+        bool found = false;
+        int selectedProfile = int.MinValue;
+        int minIndex = int.MaxValue;
+        for (int i = 0; i < clientSrtpExtension.ProtectionProfiles.Length; i++)
         {
-            return new int[]
+            int val = clientSrtpExtension.ProtectionProfiles[i];
+            int idx = Array.IndexOf(serverSupportedProfiles, val);
+            if (idx >= 0 && idx < minIndex)
             {
-                ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_256_GCM_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.DOUBLE_AEAD_AES_128_GCM_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_256_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_AES_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_AEAD_ARIA_128_GCM,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_80,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_256_CTR_HMAC_SHA1_32,
-                ExtendedSrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32,
-                ExtendedSrtpProtectionProfile.SRTP_ARIA_128_CTR_HMAC_SHA1_32,
-
-                // do not offer NULL profiles to make sure these do not get selected by accident
-                //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80,
-                //ExtendedSrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32,
-            };
-        }
-
-        protected override string GetCertificateCommonName()
-        {
-            return "WebRTC";
-        }
-
-        public override void ProcessClientExtensions(IDictionary<int, byte[]> clientExtensions)
-        {
-            base.ProcessClientExtensions(clientExtensions);
-
-            UseSrtpData clientSrtpExtension = TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions);
-
-            // Choose the highest priority profile supported by the server
-            int[] serverSupportedProfiles = GetSupportedProtectionProfiles();
-            bool found = false;
-            int selectedProfile = int.MinValue;
-            int minIndex = int.MaxValue;
-            for (int i = 0; i < clientSrtpExtension.ProtectionProfiles.Length; i++)
-            {
-                int val = clientSrtpExtension.ProtectionProfiles[i];
-                int idx = Array.IndexOf(serverSupportedProfiles, val);
-                if (idx >= 0 && idx < minIndex)
-                {
-                    minIndex = idx;
-                    selectedProfile = val;
-                    found = true;
-                }
+                minIndex = idx;
+                selectedProfile = val;
+                found = true;
             }
-            if (!found)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-            _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? Array.Empty<byte>() : clientSrtpExtension.Mki); // Server must return only a single selected profile
         }
-
-        public override IDictionary<int, byte[]> GetServerExtensions()
+        if (!found)
         {
-            var extensions = base.GetServerExtensions();
-            TlsSrtpUtilities.AddUseSrtpExtension(extensions, _srtpData);
-            return extensions;
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
+        _srtpData = new UseSrtpData(new int[] { selectedProfile }, ForceDisableMKI ? Array.Empty<byte>() : clientSrtpExtension.Mki); // Server must return only a single selected profile
+    }
 
-        public virtual SrtpSessionContext CreateSessionContext(SecurityParameters securityParameters)
+    public override IDictionary<int, byte[]> GetServerExtensions()
+    {
+        var extensions = base.GetServerExtensions();
+        TlsSrtpUtilities.AddUseSrtpExtension(extensions, _srtpData);
+        return extensions;
+    }
+
+    public virtual SrtpSessionContext CreateSessionContext(SecurityParameters securityParameters)
+    {
+        // this should only be called from OnHandshakeCompleted so we should still have _srtpData from the connection
+        if (m_context == null)
         {
-            // this should only be called from OnHandshakeCompleted so we should still have _srtpData from the connection
-            if (m_context == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            int selectedProtectionProfile = _srtpData.ProtectionProfiles[0];
-            DtlsSrtpKeys keys = DtlsSrtpProtocol.CreateMasterKeys(_srtpData.ProtectionProfiles[0], _srtpData.Mki, securityParameters, ForceUseExtendedMasterSecret);
-            return DtlsSrtpProtocol.CreateSrtpServerSessionContext(keys);
+            throw new InvalidOperationException();
         }
+
+        Debug.Assert(_srtpData is not null);
+        int selectedProtectionProfile = _srtpData.ProtectionProfiles[0];
+        DtlsSrtpKeys keys = DtlsSrtpProtocol.CreateMasterKeys(_srtpData.ProtectionProfiles[0], _srtpData.Mki, securityParameters, ForceUseExtendedMasterSecret);
+        return DtlsSrtpProtocol.CreateSrtpServerSessionContext(keys);
     }
 }

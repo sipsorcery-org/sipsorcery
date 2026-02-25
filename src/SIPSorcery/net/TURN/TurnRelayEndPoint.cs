@@ -25,12 +25,12 @@ public class TurnRelayEndPoint
     /// for sending and receiving data to/from the TURN server. The RTP channel needs to use this end
     /// point when it wants to send TURN relay packets that will be forwarded to the remote peer.
     /// </summary>
-    public IPEndPoint RelayServerEndPoint { get; set; }
+    public required IPEndPoint RelayServerEndPoint { get; init; }
 
     /// <summary>
     /// Gets or sets the remote peer relay endpoint. This is the end point allocated on the TURN server
     /// that the remote peer will send its packets to. This end point needs to be using in the SDP offer/answer
     /// that is sent to the remote peer so it knows where to send its RTP packets.
     /// </summary>
-    public IPEndPoint RemotePeerRelayEndPoint { get; set; }
+    public required IPEndPoint RemotePeerRelayEndPoint { get; init; }
 }

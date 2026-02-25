@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WhepSourceNode.cs
 //
 // Description: A live WebRTC ingress edge: connects to a WHEP endpoint (the same
@@ -85,7 +85,7 @@ public sealed class WhepSourceNode : ISourceNode
         _pc.addTrack(new MediaStreamTrack(RouteVideoFormats.All(), MediaStreamStatusEnum.RecvOnly));
 
         _pc.OnVideoFrameReceived += (_, timestamp, frame, format) =>
-            OnFrame?.Invoke(MediaFrame.ForVideo(frame, timestamp, format));
+            OnFrame?.Invoke(MediaFrame.ForVideo(frame.ToArray(), timestamp, format));
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pc.onconnectionstatechange += (state) =>

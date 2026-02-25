@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionCreateAnswerUnitTest.cs
 //
 // Description: Characterization tests for RTCPeerConnection.createAnswer.
@@ -52,7 +52,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             using (var pc = new PeerConnectionBuilder().WithAudioTrack().Build())
             {
-                Assert.Throws<ApplicationException>(() => pc.createAnswer(null));
+                Assert.Throws<SipSorceryException>(() => pc.createAnswer(null));
             }
         }
 

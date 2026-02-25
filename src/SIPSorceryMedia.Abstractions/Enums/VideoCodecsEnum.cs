@@ -18,6 +18,8 @@ namespace SIPSorceryMedia.Abstractions;
 
 public enum VideoCodecsEnum
 {
+    Unknown,
+
     CELB,
     JPEG,
     NV,
@@ -30,6 +32,4 @@ public enum VideoCodecsEnum
     AV1,
     H264,
     H265,
-
-    Unknown
 }

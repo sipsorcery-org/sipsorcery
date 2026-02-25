@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -129,9 +131,9 @@ namespace SIPSorcery.Media
 
         public void SetFrameRate(int framesPerSecond)
         {
-            if (framesPerSecond < MINIMUM_FRAMES_PER_SECOND || framesPerSecond > MAXIMUM_FRAMES_PER_SECOND)
+            if (framesPerSecond is < MINIMUM_FRAMES_PER_SECOND or > MAXIMUM_FRAMES_PER_SECOND)
             {
-                logger.LogWarning("{FramesPerSecond} fames per second not in the allowed range of {MinimumFramesPerSecond} to {MaximumFramesPerSecond}, ignoring.", framesPerSecond, MINIMUM_FRAMES_PER_SECOND, MAXIMUM_FRAMES_PER_SECOND);
+                logger.LogFrameRateError(framesPerSecond, MINIMUM_FRAMES_PER_SECOND, MAXIMUM_FRAMES_PER_SECOND);
             }
             else
             {
@@ -246,8 +248,8 @@ namespace SIPSorcery.Media
 
                         if (encodedBuffer != null)
                         {
-                            uint fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
-                            uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                            var fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
+                            var durationRtpTS = VIDEO_SAMPLING_RATE / fps;
                             // Use ?.Invoke so the null-check and the call are
                             // a single atomic delegate read. Without this a
                             // subscriber unsubscribing on another thread
@@ -283,12 +285,12 @@ namespace SIPSorcery.Media
         public static void StampI420Buffer(byte[] i420Buffer, int width, int height, int frameNumber)
         {
             // Draws a varying grey scale square in the bottom right corner on the base I420 buffer.
-            int startX = width - STAMP_BOX_SIZE - STAMP_BOX_PADDING;
-            int startY = height - STAMP_BOX_SIZE - STAMP_BOX_PADDING;
+            var startX = width - STAMP_BOX_SIZE - STAMP_BOX_PADDING;
+            var startY = height - STAMP_BOX_SIZE - STAMP_BOX_PADDING;
 
-            for (int y = startY; y < startY + STAMP_BOX_SIZE; y++)
+            for (var y = startY; y < startY + STAMP_BOX_SIZE; y++)
             {
-                for (int x = startX; x < startX + STAMP_BOX_SIZE; x++)
+                for (var x = startX; x < startX + STAMP_BOX_SIZE; x++)
                 {
                     i420Buffer[y * width + x] = (byte)(frameNumber % 255);
                 }

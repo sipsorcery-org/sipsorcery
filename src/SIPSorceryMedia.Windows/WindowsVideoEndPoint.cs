@@ -14,15 +14,17 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
@@ -68,9 +70,9 @@ namespace SIPSorceryMedia.Windows
         private bool _isPaused;
         private bool _isClosed;
         private MediaCapture _mediaCapture;
-        private MediaFrameReader _mediaFrameReader;
-        private SoftwareBitmap _backBuffer;
-        private string _videoDeviceID;
+        private MediaFrameReader? _mediaFrameReader;
+        private SoftwareBitmap? _backBuffer;
+        private string? _videoDeviceID;
         private uint _width = 0;
         private uint _height = 0;
         private uint _fpsNumerator = 0;
@@ -84,36 +86,36 @@ namespace SIPSorceryMedia.Windows
         /// <seealso cref="OnVideoSourceEncodedSample"/> event is fired after the sample
         /// has been encoded and is ready for transmission.
         /// </summary>
-        public event RawVideoSampleDelegate OnVideoSourceRawSample;
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
 
 #pragma warning disable 0067
         /// <summary>
         /// Event Not used in this component - use instead <see cref="OnVideoSourceRawSample"/>
         /// </summary>
-        public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
+        public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
 #pragma warning restore 0067
 
         /// <summary>
         /// This event will be fired whenever a video sample is encoded and is ready to transmit to the remote party.
         /// </summary>
-        public event EncodedSampleDelegate OnVideoSourceEncodedSample;
+        public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
 
         /// <summary>
         /// This event is fired after the sink decodes a video frame from the remote party.
         /// </summary>
-        public event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
+        public event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
 
 #pragma warning disable 0067
         /// <summary>
         /// Event Not used in this component - use instead <see cref="OnVideoSinkDecodedSample"/>
         /// </summary>
-        public event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster;
+        public event VideoSinkSampleDecodedFasterDelegate? OnVideoSinkDecodedSampleFaster;
 #pragma warning restore 0067
 
         /// <summary>
         /// This event will be fired if there is a problem acquiring the capture device.
         /// </summary>
-        public event SourceErrorDelegate OnVideoSourceError;
+        public event SourceErrorDelegate? OnVideoSourceError;
 
         /// <summary>
         /// Attempts to create a new video source from a local video capture device.
@@ -129,7 +131,7 @@ namespace SIPSorceryMedia.Windows
         /// rate. If the attempt fails an exception is thrown. If not specified the device's default frame rate will
         /// be used.</param>
         public WindowsVideoEndPoint(IVideoEncoder videoEncoder,
-            string videoDeviceID = null,
+            string? videoDeviceID = null,
             uint width = 0,
             uint height = 0,
             uint fps = 0)
@@ -156,14 +158,14 @@ namespace SIPSorceryMedia.Windows
         public List<VideoFormat> GetVideoSinkFormats() => _videoFormatManager.GetSourceFormats();
         public void SetVideoSinkFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
-             throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
+             throw new SipSorceryMediaException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
 
         public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
-            throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
+            throw new SipSorceryMediaException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
 
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
-            throw new ApplicationException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
+            throw new SipSorceryMediaException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public bool IsVideoSourcePaused() => _isPaused;
 
@@ -227,22 +229,27 @@ namespace SIPSorceryMedia.Windows
             if (_videoDeviceID != null)
             {
                 var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture).AsTask().ConfigureAwait(false);
-                var vidDevice = vidCapDevices.FirstOrDefault(x => x.Id == _videoDeviceID || x.Name == _videoDeviceID);
+                FindDeviceByIdOrName(vidCapDevices, _videoDeviceID);
 
-                if (vidDevice == null)
+                void FindDeviceByIdOrName(IEnumerable<DeviceInformation> devices, string idOrName)
                 {
-                    logger.LogWarning("Could not find video capture device for specified ID {VideoDeviceId}, using default device.", _videoDeviceID);
+                    foreach (var device in devices)
+                    {
+                        if (device.Id == idOrName || device.Name == idOrName)
+                        {
+                            mediaCaptureSettings.VideoDeviceId = device.Id;
+                            logger.LogVideoDeviceSelected(device.Name);
+                            return;
+                        }
                 }
-                else
-                {
-                    logger.LogInformation("Video capture device {VideoDeviceName} selected.", vidDevice.Name);
-                    mediaCaptureSettings.VideoDeviceId = vidDevice.Id;
+
+                    logger.LogVideoDeviceNotFound(_videoDeviceID);
                 }
             }
 
             await _mediaCapture.InitializeAsync(mediaCaptureSettings).AsTask().ConfigureAwait(false);
 
-            MediaFrameSourceInfo colorSourceInfo = null;
+            MediaFrameSourceInfo? colorSourceInfo = null;
             foreach (var srcInfo in _mediaCapture.FrameSources)
             {
                 if (srcInfo.Value.Info.MediaStreamType == MediaStreamType.VideoRecord &&
@@ -253,39 +260,45 @@ namespace SIPSorceryMedia.Windows
                 }
             }
 
+            Debug.Assert(colorSourceInfo is not null, "No suitable video capture source was found on the system.");
             var colorFrameSource = _mediaCapture.FrameSources[colorSourceInfo.Id];
 
-            var preferredFormat = colorFrameSource.SupportedFormats.Where(format =>
+            MediaFrameFormat? FindPreferredFormat(IEnumerable<MediaFrameFormat> formats, uint width, uint height, uint fps)
             {
-                return format.VideoFormat.Width >= _width &&
-                       format.VideoFormat.Width >= _height &&
-                       (format.FrameRate.Numerator / format.FrameRate.Denominator) >= fps
-                        && format.Subtype == MF_NV12_PIXEL_FORMAT;
-            }).FirstOrDefault();
-
-            if (preferredFormat == null)
-            {
-                // Try again without the pixel format.
-                preferredFormat = colorFrameSource.SupportedFormats.Where(format =>
+                MediaFrameFormat? firstAny = null;
+                foreach (var format in formats)
                 {
-                    return format.VideoFormat.Width >= _width &&
-                           format.VideoFormat.Width >= _height &&
-                           (format.FrameRate.Numerator / format.FrameRate.Denominator) >= fps;
-                }).FirstOrDefault();
+                    if (format.VideoFormat.Width >= width &&
+                        format.VideoFormat.Width >= height &&
+                        (format.FrameRate.Numerator / format.FrameRate.Denominator) >= fps)
+            {
+                        if (format.Subtype == MF_NV12_PIXEL_FORMAT)
+                        {
+                            return format;
+                        }
+
+                        if (firstAny is null)
+            {
+                            firstAny = format;
+                        }
+                    }
+                }
+                return firstAny;
             }
 
-            if (preferredFormat == null)
+            var preferredFormat = FindPreferredFormat(colorFrameSource.SupportedFormats, _width, _height, fps);
+
+            if (preferredFormat is null)
             {
                 // Still can't get what we want. Log a warning message and take the default.
-                logger.LogWarning("The video capture device did not support the requested format (or better) {Width}x{Height} {Fps}fps. Using default mode.",
-                    _width, _height, fps);
+                logger.LogVideoFormatNotSupported(_width, _height, fps);
 
-                preferredFormat = colorFrameSource.SupportedFormats.First();
+                preferredFormat = colorFrameSource.SupportedFormats[0];
             }
 
-            if (preferredFormat == null)
+            if (preferredFormat is null)
             {
-                throw new ApplicationException("The video capture device does not support a compatible video format for the requested parameters.");
+                throw new SipSorceryMediaException("The video capture device does not support a compatible video format for the requested parameters.");
             }
 
             await colorFrameSource.SetFormatAsync(preferredFormat).AsTask().ConfigureAwait(false);
@@ -311,18 +324,19 @@ namespace SIPSorceryMedia.Windows
             return true;
         }
 
-        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
+        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, ReadOnlyMemory<byte> frame, VideoFormat format)
         {
             if (!_isClosed)
             {
                 //DateTime startTime = DateTime.Now;
 
                 //List<byte[]> decodedFrames = _vp8Decoder.Decode(frame, frame.Length, out var width, out var height);
-                var decodedFrames = _videoEncoder.DecodeVideo(frame, EncoderInputFormat, _videoFormatManager.SelectedFormat.Codec);
+                // TODO: use ReadOnlySequence<byte> without ToArray() to avoid unnecessary copying of the frame data.
+                var decodedFrames = _videoEncoder.DecodeVideo(frame.ToArray(), EncoderInputFormat, _videoFormatManager.SelectedFormat.Codec);
 
                 if (decodedFrames == null)
                 {
-                    logger.LogWarning("VPX decode of video sample failed.");
+                    logger.LogVpxDecodeFailed();
                 }
                 else
                 {
@@ -331,7 +345,7 @@ namespace SIPSorceryMedia.Windows
                         // Windows bitmaps expect BGR when supplying System.Drawing.Imaging.PixelFormat.Format24bppRgb. 
                         //byte[] bgr = PixelConverter.I420toBGR(decodedFrame.Sample, (int)decodedFrame.Width, (int)decodedFrame.Height);
                         //Console.WriteLine($"VP8 decode took {DateTime.Now.Subtract(startTime).TotalMilliseconds}ms.");
-                        OnVideoSinkDecodedSample(decodedFrame.Sample, decodedFrame.Width, decodedFrame.Height, (int)(decodedFrame.Width * 3), VideoPixelFormatsEnum.Bgr);
+                        OnVideoSinkDecodedSample?.Invoke(decodedFrame.Sample, decodedFrame.Width, decodedFrame.Height, (int)(decodedFrame.Width * 3), VideoPixelFormatsEnum.Bgr);
                     }
                 }
             }
@@ -376,6 +390,8 @@ namespace SIPSorceryMedia.Windows
                     await InitialiseVideoSourceDevice().ConfigureAwait(false);
                 }
 
+                Debug.Assert(_mediaFrameReader is not null);
+
                 await _mediaFrameReader.StartAsync().AsTask().ConfigureAwait(false);
             }
         }
@@ -405,13 +421,20 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Attempts to list the system video capture devices and supported  video modes.
         /// </summary>
-        public static async Task<List<VideoCaptureDeviceInfo>> GetVideoCatpureDevices()
+        public static async Task<List<VideoCaptureDeviceInfo>?> GetVideoCatpureDevices()
         {
             var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
 
             if (vidCapDevices != null)
             {
-                return vidCapDevices.Select(x => new VideoCaptureDeviceInfo { ID = x.Id, Name = x.Name }).ToList();
+                var result = new List<VideoCaptureDeviceInfo>(vidCapDevices.Count);
+
+                foreach (var x in vidCapDevices)
+                {
+                    result.Add(new VideoCaptureDeviceInfo { ID = x.Id, Name = x.Name });
+                }
+
+                return result;
             }
             else
             {
@@ -446,24 +469,24 @@ namespace SIPSorceryMedia.Windows
                     VideoDeviceId = vidCapDevice.Id
                 };
 
-                MediaCapture mediaCapture = new MediaCapture();
+                var mediaCapture = new MediaCapture();
                 await mediaCapture.InitializeAsync(mediaCaptureSettings);
 
-                if (logger.IsEnabled(LogLevel.Debug))
+                foreach (var kvp in mediaCapture.FrameSources)
                 {
-                    foreach (var srcFmtList in mediaCapture.FrameSources.Values)
+                    var supportedFormats = kvp.Value.SupportedFormats;
+                    foreach (var srcFmt in supportedFormats)
                     {
-                        foreach (var srcFmt in srcFmtList.SupportedFormats)
+                        var vidFmt = srcFmt.VideoFormat;
+                        float vidFps = 0f;
+                        uint num = vidFmt.MediaFrameFormat.FrameRate.Numerator;
+                        uint den = vidFmt.MediaFrameFormat.FrameRate.Denominator;
+                        if (den != 0)
                         {
-                            var vidFps = srcFmt.VideoFormat.MediaFrameFormat.FrameRate.Numerator / srcFmt.VideoFormat.MediaFrameFormat.FrameRate.Denominator;
-                            var pixFmt = srcFmt.VideoFormat.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : srcFmt.VideoFormat.MediaFrameFormat.Subtype;
-                            logger.LogDebug("Video Capture device {VideoDeviceName} format {Width}x{Height} {FrameRate:0.##}fps {PixelFormat}",
-                                vidCapDevice.Name,
-                                srcFmt.VideoFormat.Width,
-                                srcFmt.VideoFormat.Height,
-                                vidFps,
-                                pixFmt);
+                            vidFps = (float)num / den;
                         }
+                        string pixFmt = vidFmt.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : vidFmt.MediaFrameFormat.Subtype;
+                        logger.LogVideoCaptureDeviceFormat(vidCapDevice.Name, vidFmt.Width, vidFmt.Height, vidFps, pixFmt);
                     }
                 }
             }
@@ -476,17 +499,14 @@ namespace SIPSorceryMedia.Windows
         /// <returns>A list of supported video frame formats for the specified webcam.</returns>
         public static async Task<List<VideoMediaFrameFormat>> GetDeviceFrameFormats(string deviceName)
         {
-            if(string.IsNullOrEmpty(deviceName))
-            {
-                throw new ArgumentNullException(nameof(deviceName), "A webcam name must be specified to get the video formats for.");
-            }
+            ArgumentNullException.ThrowIfNullOrEmpty(deviceName);
 
             List<VideoMediaFrameFormat> formats = new List<VideoMediaFrameFormat>();
 
             var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
             foreach (var vidCapDevice in vidCapDevices)
             {
-                if(string.Equals(vidCapDevice.Name, deviceName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(vidCapDevice.Name, deviceName, StringComparison.OrdinalIgnoreCase))
                 {
                     var mediaCaptureSettings = new MediaCaptureInitializationSettings()
                     {
@@ -495,12 +515,13 @@ namespace SIPSorceryMedia.Windows
                         VideoDeviceId = vidCapDevice.Id
                     };
 
-                    MediaCapture mediaCapture = new MediaCapture();
+                var mediaCapture = new MediaCapture();
                     await mediaCapture.InitializeAsync(mediaCaptureSettings);
 
-                    foreach (var srcFmtList in mediaCapture.FrameSources.Values.Select(x => x.SupportedFormats).Select(y => y.ToList()))
+                    foreach (var kvp in mediaCapture.FrameSources)
                     {
-                        foreach (var srcFmt in srcFmtList)
+                        var supportedFormats = kvp.Value.SupportedFormats;
+                        foreach (var srcFmt in supportedFormats)
                         {
                             formats.Add(srcFmt.VideoFormat);
                         }
@@ -547,8 +568,8 @@ namespace SIPSorceryMedia.Windows
 
                         if (softwareBitmap != null)
                         {
-                            int width = softwareBitmap.PixelWidth;
-                            int height = softwareBitmap.PixelHeight;
+                            var width = softwareBitmap.PixelWidth;
+                            var height = softwareBitmap.PixelHeight;
 
                             if (softwareBitmap.BitmapPixelFormat != BitmapPixelFormat.Nv12)
                             {
@@ -558,7 +579,7 @@ namespace SIPSorceryMedia.Windows
                             // Swap the processed frame to _backBuffer and dispose of the unused image.
                             softwareBitmap = Interlocked.Exchange(ref _backBuffer, softwareBitmap);
 
-                            using (BitmapBuffer buffer = _backBuffer.LockBuffer(BitmapBufferAccessMode.Read))
+                            using (var buffer = _backBuffer.LockBuffer(BitmapBufferAccessMode.Read))
                             {
                                 using (var reference = buffer.CreateReference())
                                 {
@@ -567,7 +588,7 @@ namespace SIPSorceryMedia.Windows
                                         byte* dataInBytes;
                                         uint capacity;
                                         reference.As<IMemoryBufferByteAccess>().GetBuffer(out dataInBytes, out capacity);
-                                        byte[] nv12Buffer = new byte[capacity];
+                                        var nv12Buffer = new byte[capacity];
                                         Marshal.Copy((IntPtr)dataInBytes, nv12Buffer, 0, (int)capacity);
 
                                         if (OnVideoSourceEncodedSample != null)
@@ -578,8 +599,8 @@ namespace SIPSorceryMedia.Windows
 
                                                 if (encodedBuffer != null)
                                                 {
-                                                    uint fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
-                                                    uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                                                    var fps = (_fpsDenominator > 0 && _fpsNumerator > 0) ? _fpsNumerator / _fpsDenominator : DEFAULT_FRAMES_PER_SECOND;
+                                                    var durationRtpTS = VIDEO_SAMPLING_RATE / fps;
                                                     OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
                                                 }
 
@@ -592,7 +613,7 @@ namespace SIPSorceryMedia.Windows
 
                                         if (OnVideoSourceRawSample != null)
                                         {
-                                            uint frameSpacing = 0;
+                                            var frameSpacing = 0u;
                                             if (_lastFrameAt != DateTime.MinValue)
                                             {
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
@@ -684,21 +705,16 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         private void PrintFrameSourceInfo(MediaFrameSource frameSource)
         {
-            if (!logger.IsEnabled(LogLevel.Information))
-            {
-                return;
-            }
+            var width = frameSource.CurrentFormat.VideoFormat.Width;
+            var height = frameSource.CurrentFormat.VideoFormat.Height;
+            var fpsNumerator = frameSource.CurrentFormat.FrameRate.Numerator;
+            var fpsDenominator = frameSource.CurrentFormat.FrameRate.Denominator;
 
-            var currentFormat = frameSource.CurrentFormat;
-            var videoFormat = currentFormat.VideoFormat;
-            var frameRate = currentFormat.FrameRate;
+            double fps = fpsNumerator / fpsDenominator;
+            string pixFmt = frameSource.CurrentFormat.Subtype;
+            string deviceName = frameSource.Info.DeviceInformation.Name;
 
-            logger.LogInformation("Video capture device {VideoDeviceName} successfully initialised: {Width}x{Height} {Fps:0.##}fps pixel format {PixelFormat}.",
-                frameSource.Info.DeviceInformation.Name,
-                videoFormat.Width,
-                videoFormat.Height,
-                frameRate.Numerator / frameRate.Denominator,
-                currentFormat.Subtype);
+            logger.LogVideoCaptureDeviceFormat(deviceName, width, height, (float)fps, pixFmt);
         }
 
         public void Dispose()

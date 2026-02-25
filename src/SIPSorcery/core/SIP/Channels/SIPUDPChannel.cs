@@ -22,6 +22,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -37,6 +39,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
+        protected virtual string ProtDescr { get; } = "UDP";
         private const string UDP_EXPIRE_THREAD_NAME = "sip-udpexpire";
         private const int FAILED_DESTINATION_PERIOD_SECONDS = 30;       // How long a failed send should prevent subsequent sends for.
         private const int EXPIRED_FAILED_PERIOD_SECONDS = 5;            // Period at which to check the failed send list and remove expired items.
@@ -95,7 +98,7 @@ namespace SIPSorcery.SIP
 
             m_recvBuffer = new byte[SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH];
 
-            logger.LogInformation("SIP UDP Channel created for {ListeningSIPEndPoint}.", ListeningSIPEndPoint);
+            logger.LogChannelCreated("UDP", ListeningSIPEndPoint);
 
             Receive();
 
@@ -112,14 +115,18 @@ namespace SIPSorcery.SIP
                 EndPoint recvEndPoint = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                 m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
             }
-            catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
+            catch (ObjectDisposedException) 
+            {
+                // Thrown when socket is closed. Can be safely ignored.
+                logger.LogChannelSendObjectDisposed(ProtDescr, ListeningEndPoint);
+            }
             catch (Exception excp)
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
                 // the BeginReceiveFrom will only throw if there is a problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
-                logger.LogError(excp, "Exception SIPUDPChannel.Receive. {ErrorMessage}", excp.Message);
-                logger.LogDebug("SIPUDPChannel socket on {ListeningEndPoint} listening halted.", ListeningEndPoint);
+                logger.LogSIPUDPChannelReceiveException(excp);
+                logger.LogUdpListenerStopped(ListeningEndPoint);
                 Closed = true;
             }
         }
@@ -138,7 +145,7 @@ namespace SIPSorcery.SIP
 
                     if (flags == SocketFlags.Truncated)
                     {
-                        logger.LogWarning("The message was too large to fit into the specified buffer and was truncated.");
+                        logger.LogUdpTruncatedMessage();
                     }
 
                     if (bytesRead > 0)
@@ -188,8 +195,11 @@ namespace SIPSorcery.SIP
                     logger.LogWarning("SocketException SIPUDPChannel EndReceiveFrom ({ErrorCode}). {ErrorMessage}", sockExcp.ErrorCode, sockExcp.Message);
                 }
             }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
+            catch (ObjectDisposedException) 
+            {
+                // Thrown when socket is closed. Can be safely ignored.
+                logger.LogChannelSendObjectDisposed(ProtDescr, ListeningEndPoint);
+            }
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SIPUDPChannel EndReceiveFrom. {ErrorMesssage}", excp.Message);
@@ -214,10 +224,9 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException(nameof(buffer), "The buffer must be set and non empty for Send in SIPUDPChannel.");
             }
 
+            IPEndPoint dstIPEndPoint = dstEndPoint.GetIPEndPoint(m_isDualMode);
             try
             {
-                IPEndPoint dstIPEndPoint = dstEndPoint.GetIPEndPoint(m_isDualMode);
-
                 if (m_sendFailures.ContainsKey(dstEndPoint.GetIPEndPoint()))
                 {
                     return Task.FromResult(SocketError.ConnectionRefused);
@@ -230,6 +239,7 @@ namespace SIPSorcery.SIP
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             {
+                logger.LogChannelSendObjectDisposed(ProtDescr, dstIPEndPoint);
                 return Task.FromResult(SocketError.Disconnecting);
             }
             catch (SocketException sockExcp)
@@ -238,7 +248,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUDPChannel.SendAsync. {ErrorMessage}", excp);
+                logger.LogSIPUDPChannelSendAsyncException(excp);
                 return Task.FromResult(SocketError.Fault);
             }
         }
@@ -256,11 +266,14 @@ namespace SIPSorcery.SIP
                 // so that we know to stop sending.
                 logger.LogWarning(sockExcp, "SocketException SIPUDPChannel EndSendTo ({ErrorCode}). {ErrorMessage}", sockExcp.ErrorCode, sockExcp.Message);
             }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
+            catch (ObjectDisposedException) 
+            {
+                // Thrown when socket is closed. Can be safely ignored.
+                logger.LogChannelSendObjectDisposed(ProtDescr, ListeningEndPoint);
+            }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUDPChannel EndSendTo. {ErrorMessage}", excp.Message);
+                logger.LogSIPUDPChannelEndSendToException(excp);
             }
         }
 
@@ -334,7 +347,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug("Closing SIP UDP Channel {ListeningSIPEndPoint}.", ListeningSIPEndPoint);
+                logger.LogUdpChannelClosing(ListeningSIPEndPoint);
 
                 Closed = true;
                 m_cts.Cancel();
@@ -342,7 +355,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogWarning(excp, "Exception SIPUDPChannel Close. {Message}", excp.Message);
+                logger.LogSIPUDPChannelCloseWarning(excp);
             }
         }
 
@@ -372,11 +385,17 @@ namespace SIPSorcery.SIP
                     Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token).Wait();
                 }
             }
-            catch (OperationCanceledException) { }
-            catch (AggregateException) { } // This gets thrown if task is cancelled.
+            catch (OperationCanceledException) 
+            {
+                logger.LogSIPUDPChannelExpireCancelled();
+            }
+            catch (AggregateException) 
+            {
+                logger.LogSIPUDPChannelExpireCancelled(); // This gets thrown if task is cancelled.
+            }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUDPChannel.ExpireFailedSends. {ErrorMessage}", excp.Message);
+                logger.LogSIPUDPChannelExpireFailedSendsException(excp);
             }
         }
     }

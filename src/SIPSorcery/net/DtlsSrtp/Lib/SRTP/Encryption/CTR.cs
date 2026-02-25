@@ -20,6 +20,7 @@
 // SOFTWARE.
 
 using Org.BouncyCastle.Crypto;
+using SIPSorcery.Sys;
 using System;
 using System.Buffers;
 using System.Buffers.Binary;

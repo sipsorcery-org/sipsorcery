@@ -15,38 +15,29 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Text;
+using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public partial class STUNConnectionIdAttribute : STUNAttribute
 {
-    public class STUNConnectionIdAttribute : STUNAttribute
+    public readonly uint ConnectionId;
+
+    public STUNConnectionIdAttribute(ReadOnlyMemory<byte> attributeValue)
+        : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
     {
-        public readonly uint ConnectionId;
+        ConnectionId = BinaryPrimitives.ReadUInt32BigEndian(attributeValue.Span);
+    }
 
-        public STUNConnectionIdAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
-        {
-            ConnectionId = BinaryPrimitives.ReadUInt32BigEndian(attributeValue);
-        }
+    public STUNConnectionIdAttribute(uint connectionId)
+        : base(STUNAttributeTypesEnum.ConnectionId, connectionId)
+    {
+        ConnectionId = connectionId;
+    }
 
-        private static byte[] GetBytes(uint value)
-        {
-            var buf = new byte[4];
-            BinaryPrimitives.WriteUInt32BigEndian(buf, value);
-            return buf;
-        }
-
-        public STUNConnectionIdAttribute(uint connectionId)
-            : base(STUNAttributeTypesEnum.ConnectionId, GetBytes(connectionId))
-        {
-            ConnectionId = connectionId;
-        }
-
-        public override string ToString()
-        {
-            string attrDescrStr = $"STUN CONNECTION_ID Attribute: value={ConnectionId}.";
-
-            return attrDescrStr;
-        }
+    private protected override void ValueToString(ref ValueStringBuilder sb)
+    {
+        sb.Append("connection ID=");
+        sb.Append(ConnectionId);
     }
 }

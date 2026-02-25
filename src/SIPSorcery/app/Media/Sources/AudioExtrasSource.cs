@@ -20,6 +20,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,6 +29,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -36,14 +40,12 @@ namespace SIPSorcery.Media
     public enum AudioSourcesEnum
     {
         /// <summary>
-        /// Plays music samples from a file. The file will be played in a loop until
-        /// another source option is set.
+        /// Plays music samples from a file. The file will be played in a loop until another source option is set.
         /// </summary>
         Music = 0,
 
         /// <summary>
-        /// Send an audio stream of silence. Note this option does result
-        /// in audio RTP packet getting sent.
+        /// Send an audio stream of silence. Note this option does result in audio RTP packet getting sent.
         /// </summary>
         Silence = 1,
 
@@ -68,9 +70,9 @@ namespace SIPSorcery.Media
         None = 5,
 
         /// <summary>
-        /// A soft, slowly-evolving ambient chord ("pad"). Several detuned sine partials voicing a
-        /// consonant chord, each gently swelling in and out, for a calm, continuous texture rather
-        /// than a static (and rather electrical-sounding) drone.
+        /// A soft, slowly-evolving ambient chord ("pad"). Several detuned sine partials voicing a consonant chord, each
+        /// gently swelling in and out, for a calm, continuous texture rather than a static (and rather
+        /// electrical-sounding) drone.
         /// </summary>
         Pad = 6,
     }
@@ -83,22 +85,21 @@ namespace SIPSorcery.Media
         public AudioSourcesEnum AudioSource;
 
         /// <summary>
-        /// The sampling rate used to generate the input or if the source is
-        /// being generated the sample rate to generate it at.
+        /// The sampling rate used to generate the input or if the source is being generated the sample rate to generate
+        /// it at.
         /// </summary>
         public AudioSamplingRatesEnum MusicInputSamplingRate = AudioSamplingRatesEnum.Rate8KHz;
 
         /// <summary>
-        /// If the audio source is set to music this must be the path to a raw PCM 8K sampled file.
-        /// If set to null or the file doesn't exist the default embedded resource music file will
-        /// be used.
+        /// If the audio source is set to music this must be the path to a raw PCM 8K sampled file. If set to null or
+        /// the file doesn't exist the default embedded resource music file will be used.
         /// </summary>
         public string MusicFile;
     }
 
     /// <summary>
-    /// An audio source implementation that provides a diverse range of audio source options.
-    /// The available options encompass signal generation, playback from file and more.
+    /// An audio source implementation that provides a diverse range of audio source options. The available options
+    /// encompass signal generation, playback from file and more.
     /// </summary>
     public class AudioExtrasSource : IAudioSource
     {
@@ -130,9 +131,8 @@ namespace SIPSorcery.Media
         private AudioSamplingRatesEnum _streamSourceRate = AudioSamplingRatesEnum.Rate8KHz;
 
         /// <summary>
-        /// Fires when the current send audio from stream operation completes. Send from
-        /// stream operations are intended to be short snippets of audio that get sent 
-        /// as interruptions to the primary audio stream.
+        /// Fires when the current send audio from stream operation completes. Send from stream operations are intended
+        /// to be short snippets of audio that get sent as interruptions to the primary audio stream.
         /// </summary>
         public event Action OnSendFromAudioStreamComplete;
 
@@ -141,8 +141,8 @@ namespace SIPSorcery.Media
         public event Action<EncodedAudioFrame> OnAudioSourceEncodedFrameReady;
 
         /// <summary>
-        /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event
-        /// to get samples ready for passing to the RTP transport layer.
+        /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event to get samples ready
+        /// for passing to the RTP transport layer.
         /// </summary>
         [Obsolete("This audio source only produces encoded samples. Do not subscribe to this event.")]
         public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
@@ -165,7 +165,7 @@ namespace SIPSorcery.Media
             get => _audioSamplePeriodMilliseconds;
             set
             {
-                if (value < AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN || value > AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX)
+                if (value is < AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN or > AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX)
                 {
                     throw new ApplicationException($"Invalid value for the audio sample period. Must be between {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN} and {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX}ms.");
                 }
@@ -177,11 +177,12 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Instantiates an audio source that can generate output samples from a variety of different
-        /// non-live sources.
+        /// Instantiates an audio source that can generate output samples from a variety of different non-live sources.
         /// </summary>
-        /// <param name="audioOptions">Optional. The options that determine the type of audio to stream to the remote party. 
-        /// Example type of audio sources are music, silence, white noise etc.</param>
+        /// <param name="audioOptions">
+        /// Optional. The options that determine the type of audio to stream to the remote party. Example type of audio
+        /// sources are music, silence, white noise etc.
+        /// </param>
         public AudioExtrasSource(
             IAudioEncoder audioEncoder,
             AudioSourceOptions audioOptions = null)
@@ -248,10 +249,12 @@ namespace SIPSorcery.Media
         /// <summary>
         /// Attempts to send audio samples from a stream, typically a file, input.
         /// </summary>
-        /// <param name="audioStream">The stream containing the 16 bit PCM sampled at either 8 or 16Khz 
-        /// to send to the remote party.</param>
-        /// <param name="streamSampleRate">The sample rate of the supplied PCM samples. Supported rates are
-        /// 8 or 16 KHz.</param>
+        /// <param name="audioStream">
+        /// The stream containing the 16 bit PCM sampled at either 8 or 16Khz to send to the remote party.
+        /// </param>
+        /// <param name="streamSampleRate">
+        /// The sample rate of the supplied PCM samples. Supported rates are 8 or 16 KHz.
+        /// </param>
         /// <returns>A task that completes once the stream has been fully sent.</returns>
         public Task SendAudioFromStream(Stream audioStream, AudioSamplingRatesEnum streamSampleRate)
         {
@@ -291,11 +294,13 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Convenience method for audio sources when only default options are required,
-        /// e.g. the default music file rather than a custom one.
+        /// Convenience method for audio sources when only default options are required, e.g. the default music file
+        /// rather than a custom one.
         /// </summary>
-        /// <param name="audioSource">The audio source to set. The call will fail
-        /// if the source requires additional options, e.g. stream from file.</param>
+        /// <param name="audioSource">
+        /// The audio source to set. The call will fail if the source requires additional options, e.g. stream from
+        /// file.
+        /// </param>
         public void SetSource(AudioSourcesEnum audioSource)
         {
             SetSource(new AudioSourceOptions { AudioSource = audioSource });
@@ -332,9 +337,9 @@ namespace SIPSorcery.Media
                         _sendSampleTimer = new Timer(SendSilenceSample);
                         _sendSampleTimer.Change(0, _audioSamplePeriodMilliseconds);
                     }
-                    else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
-                         _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
-                         _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
+                    else if (_audioOpts.AudioSource is AudioSourcesEnum.PinkNoise or
+                         AudioSourcesEnum.WhiteNoise or
+                         AudioSourcesEnum.SineWave)
                     {
                         _signalGenerator = new SignalGenerator(_audioFormatManager.SelectedFormat.ClockRate, 1);
 
@@ -387,13 +392,15 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Sends a stream containing 16 bit PCM audio to the remote party. Calling this method
-        /// will pause the existing audio source until the stream has been sent.
+        /// Sends a stream containing 16 bit PCM audio to the remote party. Calling this method will pause the existing
+        /// audio source until the stream has been sent.
         /// </summary>
-        /// <param name="audioStream">The stream containing the 16 bit PCM, sampled at either 8 or 16 Khz,
-        /// to send to the remote party.</param>
-        /// <param name="streamSampleRate">The sample rate of the supplied PCM samples. Supported rates are
-        /// 8 or 16 KHz.</param>
+        /// <param name="audioStream">
+        /// The stream containing the 16 bit PCM, sampled at either 8 or 16 Khz, to send to the remote party.
+        /// </param>
+        /// <param name="streamSampleRate">
+        /// The sample rate of the supplied PCM samples. Supported rates are 8 or 16 KHz.
+        /// </param>
         private void InitialiseSendAudioFromStreamTimer(Stream audioStream, AudioSamplingRatesEnum streamSampleRate)
         {
             if (!_isClosed && audioStream != null && audioStream.Length > 0)
@@ -488,9 +495,9 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Sends a sample of a soft, slowly-evolving ambient chord ("pad"). The chord is built from
-        /// several detuned sine partials, each with its own slow amplitude swell, which gives a calm,
-        /// continuously-evolving texture rather than a static (and rather electrical-sounding) drone.
+        /// Sends a sample of a soft, slowly-evolving ambient chord ("pad"). The chord is built from several detuned
+        /// sine partials, each with its own slow amplitude swell, which gives a calm, continuously-evolving texture
+        /// rather than a static (and rather electrical-sounding) drone.
         /// </summary>
         private void SendPadSample(object state)
         {
@@ -522,10 +529,9 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// Computes one sample (roughly in the range [-1, 1]) of the ambient pad at time
-        /// <paramref name="t"/> seconds. An open A-major chord; each note is two slightly detuned sine
-        /// oscillators (for a warm chorus) modulated by a slow, per-note amplitude swell so that the
-        /// partials rise and fade independently.
+        /// Computes one sample (roughly in the range [-1, 1]) of the ambient pad at time <paramref name="t"/> seconds.
+        /// An open A-major chord; each note is two slightly detuned sine oscillators (for a warm chorus) modulated by a
+        /// slow, per-note amplitude swell so that the partials rise and fade independently.
         /// </summary>
         private static double GetPadSample(double t)
         {
@@ -542,8 +548,7 @@ namespace SIPSorcery.Media
         }
 
         /// <summary>
-        /// A single pad voice: two slightly detuned sine oscillators (gentle chorus) scaled by a slow
-        /// amplitude swell.
+        /// A single pad voice: two slightly detuned sine oscillators (gentle chorus) scaled by a slow amplitude swell.
         /// </summary>
         private static double PadVoice(double t, double freq, double swellRate, double swellPhase, double level)
         {
@@ -637,22 +642,36 @@ namespace SIPSorcery.Media
             return null;
         }
 
-        private void EncodeAndSend(short[] pcm, int pcmSampleRate)
+        private void EncodeAndSend(ReadOnlySpan<short> pcm, int pcmSampleRate)
         {
             if (pcm.Length > 0)
             {
-                if (pcmSampleRate != _audioFormatManager.SelectedFormat.ClockRate)
+                var clockRate = _audioFormatManager.SelectedFormat.ClockRate;
+                if (pcmSampleRate != clockRate)
                 {
-                    pcm = PcmResampler.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
+                    using var buffer = new ArrayPoolBufferWriter<short>(0);
+                    PcmResampler.Resample(pcm, pcmSampleRate, clockRate, buffer);
+                    pcm = buffer.WrittenSpan;
+
+                    EncodeAndSendCore(pcm);
+                }
+                else
+                {
+                    EncodeAndSendCore(pcm);
                 }
 
-                byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
+                void EncodeAndSendCore(ReadOnlySpan<short> pcm)
+                {
+                    using var buffer = new ArrayPoolBufferWriter<byte>(8192);
+                    _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat, buffer);
+                    var encodedSample = buffer.WrittenMemory;
 
-                uint rtpUnits = RtpTimestampExtensions.ToRtpUnits(_audioSamplePeriodMilliseconds, _audioFormatManager.SelectedFormat.RtpClockRate);
+                    var rtpUnits = RtpTimestampExtensions.ToRtpUnits(_audioSamplePeriodMilliseconds, _audioFormatManager.SelectedFormat.RtpClockRate);
 
-                OnAudioSourceEncodedSample?.Invoke(rtpUnits, encodedSample);
+                    OnAudioSourceEncodedSample?.Invoke(rtpUnits, encodedSample);
 
-                OnAudioSourceEncodedFrameReady?.Invoke(new EncodedAudioFrame(-1, _audioFormatManager.SelectedFormat, (uint)_audioSamplePeriodMilliseconds, encodedSample));
+                    OnAudioSourceEncodedFrameReady?.Invoke(new EncodedAudioFrame(-1, _audioFormatManager.SelectedFormat, (uint)_audioSamplePeriodMilliseconds, encodedSample));
+                }
             }
         }
 

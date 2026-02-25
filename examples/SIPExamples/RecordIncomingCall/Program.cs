@@ -81,13 +81,13 @@ namespace demo
                 {
                     if (rtpPacket.Header.PayloadType == (int)SDPWellKnownMediaFormatsEnum.PCMA)
                     {
-                        short pcm = NAudio.Codecs.ALawDecoder.ALawToLinearSample(sample[index]);
+                        short pcm = NAudio.Codecs.ALawDecoder.ALawToLinearSample(sample.Span[index]);
                         byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
                         _waveFile.Write(pcmSample, 0, 2);
                     }
                     else
                     {
-                        short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
+                        short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample.Span[index]);
                         byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
                         _waveFile.Write(pcmSample, 0, 2);
                     }

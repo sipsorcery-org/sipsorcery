@@ -1,23 +1,9 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-internal static partial class PolyfillExtensions
+internal static partial class ArraySegmentExtensions
 {
 #if !NET8_0_OR_GREATER
-    extension(GC)
-    {
-        /// <summary>
-        /// Allocate an array while skipping zero-initialization if possible.
-        /// </summary>
-        /// <typeparam name="T">Specifies the type of the array element.</typeparam>
-        /// <param name="length">Specifies the length of the array.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] // forced to ensure no perf drop for small memory buffers (hot path)
-        public static T[] AllocateUninitializedArray<T>(int length) // T[] rather than T?[] to match `new T[length]` behavior
-        {
-            return new T[length];
-        }
-    }
-
     extension<T>(ArraySegment<T> source)
     {
         public int Length => source.Count;
@@ -70,7 +56,7 @@ internal static partial class PolyfillExtensions
         }
     }
 
-    extension (byte[] bytes)
+    extension(byte[] bytes)
     {
         public void CopyTo(Span<byte> destination)
         {

@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 namespace SIPSorcery.SIP.App
 {
     public class SIPRequestAuthenticationResult

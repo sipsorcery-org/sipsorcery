@@ -122,7 +122,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                     logger.LogDebug("MockTurnServer relaying {BufferLength} bytes to {DestinationEndPoint}.", buffer.Length, destEP);
 
-                    _relaySocket.SendTo(buffer, destEP);
+                    _relaySocket.SendTo(buffer.ToArray(), destEP);
 
                     break;
 

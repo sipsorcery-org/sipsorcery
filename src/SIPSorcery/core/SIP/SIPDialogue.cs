@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Text;
@@ -367,7 +369,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPDialogue Hangup. {ErrorMessage}", excp.Message);
+                logger.LogSIPDialogueHangupException(excp);
             }
         }
 

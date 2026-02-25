@@ -1,4 +1,4 @@
-﻿  //-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: TurnClient.cs
 //
 // Description: TURN client implementation. Initial use case is to allocate a relay
@@ -15,13 +15,16 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
+using System.Buffers.Binary;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Digests;
 using SIPSorcery.Sys;
@@ -117,12 +120,12 @@ public class TurnClient
 
         if(_iceServer == null)
         {
-            logger.LogWarning("No TURN server was available to allocate a relay endpoint.");
+            logger.LogTurnNoServer();
             return null;
         }
         else if (_iceServer.ServerEndPoint == null)
         {
-            logger.LogWarning("The TURN server end point was not available for {uri}.", _iceServer?.Uri);
+            logger.LogTurnEndPointNotAvailable(_iceServer?._uri);
             return null;
         }
 
@@ -132,7 +135,7 @@ public class TurnClient
         {
             if ((int)DateTime.Now.Subtract(start).TotalMilliseconds > timeoutMilliseconds)
             {
-                logger.LogWarning("TURN allocate timed out.");
+                logger.LogTurnAllocateTimeout();
                 break;
             }
 
@@ -142,7 +145,7 @@ public class TurnClient
             {
                 if (_allocateRetries >= MAX_ALLOCATE_ATTEMPTS)
                 {
-                    logger.LogWarning("TURN allocate max retries reached.");
+                    logger.LogTurnAllocateMaxRetries();
                     break;
                 }
 
@@ -153,7 +156,7 @@ public class TurnClient
 
                 if (sendRes != SocketError.Success)
                 {
-                    logger.LogWarning("TURN allocate send error {Result}.", sendRes);
+                    logger.LogTurnAllocateSendError(sendRes);
                 }
             }
 
@@ -162,11 +165,11 @@ public class TurnClient
 
         if(_iceServer.RelayEndPoint == null)
         {
-            logger.LogWarning("TURN allocate failed to get a relay endpoint.");
+            logger.LogTurnAllocateFailed();
         }
         else
         {
-            logger.LogInformation("TURN allocate succeeded, relay endpoint is {relayEndPoint}.", _iceServer.RelayEndPoint);
+            logger.LogTurnAllocateSucceeded(_iceServer.RelayEndPoint);
         }
 
         return _iceServer?.RelayEndPoint;
@@ -202,11 +205,11 @@ public class TurnClient
 
             if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
             {
-                logger.LogInformation("TURN client received a success response for an Allocate request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+                logger.LogTurnAllocateSuccessResponse(_iceServer._uri, remoteEndPoint);
 
                 _iceServer.ErrorResponseCount = 0;
 
-                logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _iceServer.Uri);
+                logger.LogTurnAllocateSuccessReceived(_iceServer._uri);
 
                 var mappedAddrAttr = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.XORMappedAddress);
 
@@ -228,18 +231,17 @@ public class TurnClient
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
             {
-                logger.LogWarning("TURN client received an error response for an Allocate request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+                logger.LogTurnAllocateErrorResponse(_iceServer._uri, remoteEndPoint);
 
                 _iceServer.ErrorResponseCount++;
 
-                var errCodeAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
-                if (errCodeAttribute != null)
+                if (stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.ErrorCode) is STUNErrorCodeAttribute errCodeAttribute)
                 {
                     var alternateServerAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.AlternateServer) as STUNAddressAttribute;
 
-                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    if (errCodeAttribute.ErrorCode is IceServer.STUN_UNAUTHORISED_ERROR_CODE or IceServer.STUN_STALE_NONCE_ERROR_CODE)
                     {
-                        logger.LogWarning("TURN client error response code {errorCode} for an Allocate request to {Uri} from {remoteEP}.", errCodeAttribute.ErrorCode, _iceServer.Uri, remoteEndPoint);
+                        logger.LogTurnAllocateErrorCode(errCodeAttribute.ErrorCode, _iceServer._uri, remoteEndPoint);
 
                         // Set the authentication properties authenticate.
                         SetAuthenticationFields(stunResponse);
@@ -255,7 +257,7 @@ public class TurnClient
                     {
                         _iceServer.ServerEndPoint = new IPEndPoint(alternateServerAttribute.Address, alternateServerAttribute.Port);
 
-                        logger.LogWarning("TURN client received an alternate respose for an Allocate request to {Uri}, changed server url to {ServerEndPoint}.", _iceServer.Uri, _iceServer.ServerEndPoint);
+                        logger.LogTurnAllocateAlternateResponse(_iceServer._uri, _iceServer.ServerEndPoint);
 
                         // Set a new transaction ID.
                         _iceServer.GenerateNewTransactionID();
@@ -264,36 +266,36 @@ public class TurnClient
                     }
                     else
                     {
-                        logger.LogWarning("TURN client received an error response for an Allocate request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _iceServer.Uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                        logger.LogTurnAllocateErrorWithReason(_iceServer._uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
                     }
                 }
                 else
                 {
-                    logger.LogWarning("TURN client received an error response for an Allocate request to {Uri}.", _iceServer.Uri);
+                    logger.LogTurnAllocateGenericError(_iceServer._uri);
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
             {
-                logger.LogInformation("TURN client received a success response for a CreatePermission request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+                logger.LogTurnPermissionSuccessResponse(_iceServer._uri, remoteEndPoint);
 
                 var permissionLifetime = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime);
                 TimeSpan permissionDuration = TimeSpan.FromSeconds(PERMISSION_DEFAULT_LIFETIME_SECONDS);
 
                 if (permissionLifetime != null)
                 {
-                    permissionDuration = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(permissionLifetime.Value));
+                    permissionDuration = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(permissionLifetime.Value.Span));
 
-                    logger.LogDebug("TURN permission lifetime attribute value {lifetimeSeconds}s.", permissionDuration.TotalSeconds);
+                    logger.LogTurnPermissionLifetime(permissionDuration.TotalSeconds);
                 }
                 else
                 {
-                    logger.LogDebug("TURN permission using default lifetime of {lifetimeSeconds}s.", PERMISSION_DEFAULT_LIFETIME_SECONDS);
+                    logger.LogTurnPermissionDefaultLifetime(PERMISSION_DEFAULT_LIFETIME_SECONDS);
                 }
 
                 var renewalTime = DateTime.Now.Add(permissionDuration).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS));
                 var renewalMilliseconds = GetTimerDueTimeMilliseconds(renewalTime.Subtract(DateTime.Now));
 
-                logger.LogInformation("Scheduling TURN create permission refresh for server {RelayEndPoint} and peer {peer}, allocation expires in {renewalMilliseconds}ms, renew at {renewalTime}.", _iceServer.RelayEndPoint, _peerEndPoint, renewalMilliseconds, renewalTime.ToString("o"));
+                logger.LogTurnSchedulePermissionRefresh(_iceServer.RelayEndPoint, _peerEndPoint, renewalMilliseconds, renewalTime);
 
                 _permissionsRenewalTimer?.Dispose();
                 _permissionsRenewalTimer = new Timer((e) =>
@@ -304,16 +306,15 @@ public class TurnClient
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
             {
-                logger.LogWarning("TURN client received an error response for a Create Permission request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+                logger.LogTurnPermissionErrorResponse(_iceServer._uri, remoteEndPoint);
 
                 _iceServer.ErrorResponseCount++;
 
-                var errCodeAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
-                if (errCodeAttribute != null)
+                if (stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.ErrorCode) is STUNErrorCodeAttribute errCodeAttribute)
                 {
-                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    if (errCodeAttribute.ErrorCode is IceServer.STUN_UNAUTHORISED_ERROR_CODE or IceServer.STUN_STALE_NONCE_ERROR_CODE)
                     {
-                        logger.LogWarning("TURN client error response code {errorCode} for a Create Permission request to {Uri} from {remoteEP}.", errCodeAttribute.ErrorCode, _iceServer.Uri, remoteEndPoint);
+                        logger.LogTurnPermissionErrorCode(errCodeAttribute.ErrorCode, _iceServer._uri, remoteEndPoint);
 
                         // Set the authentication properties authenticate.
                         SetAuthenticationFields(stunResponse);
@@ -327,23 +328,23 @@ public class TurnClient
                     }
                     else
                     {
-                        logger.LogWarning("TURN client received an error response for a Create Permission request to {Uri}, error {ErrorCode} {ReasonPhrase}.", _iceServer.Uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
+                        logger.LogTurnPermissionErrorWithReason(_iceServer._uri, errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase);
                     }
                 }
                 else
                 {
-                    logger.LogWarning("TURN client received an error response for a Create Permission request to {Uri}.", _iceServer.Uri);
+                    logger.LogTurnPermissionGenericError(_iceServer._uri);
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
             {
-                logger.LogInformation("TURN client received a success response for a Refresh request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
+                logger.LogTurnRefreshSuccessResponse(_iceServer._uri, remoteEndPoint);
 
-                ScheduleAllocateRefresh(stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime));
+                ScheduleAllocateRefresh(stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime));
             }
             else
             {
-                logger.LogWarning("An unrecognised STUN {MessageType} response for an ICE server check was received from {RemoteEndPoint}.", stunResponse.Header.MessageType, remoteEndPoint);
+                logger.LogTurnUnrecognisedStunResponse(stunResponse.Header.MessageType, remoteEndPoint);
                 _iceServer.ErrorResponseCount++;
             }
         }
@@ -353,21 +354,21 @@ public class TurnClient
     {
         if(_rtpChannel == null || _rtpChannel.IsClosed)
         {
-            logger.LogWarning("RTP channel is not set or closed, cannot schedule TURN Allocate refresh.");
+            logger.LogTurnRtpChannelNotReady();
             return;
         }
 
         if (lifetimeAttribute != null)
         {
-            var lifetimeSpan = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetimeAttribute.Value));
+            var lifetimeSpan = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetimeAttribute.Value.Span));
 
-            logger.LogDebug("TURN allocate lifetime attribute value {lifetimeSeconds}s.", lifetimeSpan.TotalSeconds);
+            logger.LogTurnAllocateLifetime(lifetimeSpan.TotalSeconds);
 
             _iceServer.TurnTimeToExpiry = DateTime.Now + lifetimeSpan;
         }
         else
         {
-            logger.LogDebug("TURN allocate using default lifetime of {lifetimeSeconds}s.", ALLOCATE_DEFAULT_LIFETIME_SECONDS);
+            logger.LogTurnAllocateDefaultLifetime(ALLOCATE_DEFAULT_LIFETIME_SECONDS);
 
             _iceServer.TurnTimeToExpiry = DateTime.Now + TimeSpan.FromSeconds(ALLOCATE_DEFAULT_LIFETIME_SECONDS);
         }
@@ -376,8 +377,8 @@ public class TurnClient
             _iceServer.TurnTimeToExpiry.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(GRACE_RENEWAL_SECONDS)));
         var renewalTime = _iceServer.TurnTimeToExpiry;
 
-        logger.LogInformation("Scheduling TURN client allocated refresh for server {RelayEndPoint} at {Uri}, allocation expires at {Expiry}.",
-            _iceServer.RelayEndPoint, _iceServer.Uri, renewalTime.ToString("o"));
+        logger.LogTurnScheduleAllocationRefresh(
+            _iceServer.RelayEndPoint, _iceServer._uri, renewalTime);
 
         _allocateRenewalTimer?.Dispose();
         _allocateRenewalTimer = new Timer((e) =>
@@ -395,10 +396,10 @@ public class TurnClient
     {
         // Set the authentication properties authenticate.
         var nonceAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Nonce);
-        _iceServer.Nonce = nonceAttribute?.Value;
+        _iceServer.Nonce = nonceAttribute?.Value ?? default;
 
         var realmAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Realm);
-        _iceServer.Realm = realmAttribute?.Value;
+        _iceServer.Realm = realmAttribute?.Value ?? default;
     }
 
     /// <summary>
@@ -410,7 +411,7 @@ public class TurnClient
     {
         if (_rtpChannel == null || _rtpChannel.IsClosed)
         {
-            logger.LogWarning("RTP channel is not set or closed, cannot send TURN Allocate request.");
+            logger.LogTurnRtpChannelNotReadyAllocate();
             return SocketError.NotConnected;
         }
 
@@ -427,20 +428,21 @@ public class TurnClient
 
         byte[] allocateReqBytes = null;
 
-        if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+        if (iceServer.Nonce.IsEmpty && iceServer.Realm.IsEmpty && iceServer.Username.IsEmpty && iceServer.Password.IsEmpty)
         {
-            allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer.Username, iceServer.Realm, iceServer.Password, iceServer.Nonce);
         }
         else
         {
-            allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
+            allocateReqBytes = new byte[allocateRequest.GetByteBufferSize(null, false)];
+            allocateRequest.WriteToBuffer(allocateReqBytes, null, false);
         }
 
         var sendResult = _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
         if (sendResult != SocketError.Success)
         {
-            logger.LogWarning("Error sending TURN Allocate request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+            logger.LogTurnAllocateSendErrorDetail(
                 iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
         }
         else
@@ -467,7 +469,7 @@ public class TurnClient
     {
         if(_rtpChannel == null || _rtpChannel.IsClosed)
         {
-            logger.LogWarning("RTP channel is not set or closed, cannot send TURN Create Permissions request.");
+            logger.LogTurnRtpChannelNotReadyPermission();
             return SocketError.NotConnected;
         }
 
@@ -477,20 +479,21 @@ public class TurnClient
 
         byte[] createPermissionReqBytes = null;
 
-        if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+        if (iceServer.Nonce.IsEmpty && iceServer.Realm.IsEmpty && iceServer.Username.IsEmpty && iceServer.Password.IsEmpty)
         {
-            createPermissionReqBytes = GetAuthenticatedStunRequest(permissionsRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            createPermissionReqBytes = GetAuthenticatedStunRequest(permissionsRequest, iceServer.Username, iceServer.Realm, iceServer.Password, iceServer.Nonce);
         }
         else
         {
-            createPermissionReqBytes = permissionsRequest.ToByteBuffer(null, false);
+            createPermissionReqBytes = new byte[permissionsRequest.GetByteBufferSize(null, false)];
+            permissionsRequest.WriteToBuffer(createPermissionReqBytes, null, false);
         }
 
         var sendResult = _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
 
         if (sendResult != SocketError.Success)
         {
-            logger.LogWarning("Error sending TURN Create Permissions request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+            logger.LogTurnPermissionSendErrorDetail(
                 iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
         }
         else
@@ -526,20 +529,21 @@ public class TurnClient
 
         byte[] allocateReqBytes = null;
 
-        if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
+        if (iceServer.Nonce.IsEmpty && iceServer.Realm.IsEmpty && iceServer.Username.IsEmpty && iceServer.Password.IsEmpty)
         {
-            allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+            allocateReqBytes = GetAuthenticatedStunRequest(allocateRequest, iceServer.Username, iceServer.Realm, iceServer.Password, iceServer.Nonce);
         }
         else
         {
-            allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
+            allocateReqBytes = new byte[allocateRequest.GetByteBufferSize(null, false)];
+            allocateRequest.WriteToBuffer(allocateReqBytes, null, false);
         }
 
         var sendResult = _rtpChannel.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
         if (sendResult != SocketError.Success)
         {
-            logger.LogWarning("Error sending TURN Refresh request {OutstandingRequestsSent} for {Uri} to {ServerEndPoint}. {SendResult}.",
+            logger.LogTurnRefreshSendErrorDetail(
                 iceServer.OutstandingRequestsSent, iceServer._uri, iceServer.ServerEndPoint, sendResult);
         }
         else
@@ -554,14 +558,14 @@ public class TurnClient
     /// Adds the authentication fields to a STUN request.
     /// </summary>
     /// <returns>The serialised STUN request.</returns>
-    private byte[] GetAuthenticatedStunRequest(STUNMessage stunRequest, string username, byte[] realm, string password, byte[] nonce)
+    private byte[] GetAuthenticatedStunRequest(STUNMessage stunRequest, ReadOnlyMemory<byte> username, ReadOnlyMemory<byte> realm, ReadOnlyMemory<byte> password, ReadOnlyMemory<byte> nonce)
     {
         stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, nonce));
         stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, realm));
         stunRequest.AddUsernameAttribute(username);
 
         // See https://tools.ietf.org/html/rfc5389#section-15.4
-        string key = $"{username}:{Encoding.UTF8.GetString(realm)}:{password}";
+        string key = $"{username.ToString()}:{Encoding.UTF8.GetString(realm.Span)}:{password.ToString()}";
         var buffer = Encoding.UTF8.GetBytes(key);
         var md5Digest = new MD5Digest();
         var hash = new byte[md5Digest.GetDigestSize()];
@@ -569,7 +573,9 @@ public class TurnClient
         md5Digest.BlockUpdate(buffer, 0, buffer.Length);
         md5Digest.DoFinal(hash, 0);
 
-        return stunRequest.ToByteBuffer(hash, true);
+        var requestBytes = new byte[stunRequest.GetByteBufferSize(hash, true)];
+        stunRequest.WriteToBuffer(requestBytes, hash, true);
+        return requestBytes;
     }
 
     private void OnClosed(string closeReason)

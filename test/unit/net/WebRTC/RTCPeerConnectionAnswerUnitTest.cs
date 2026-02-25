@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionAnswerUnitTest.cs
 //
 // Description: Unit tests for RTCPeerConnection.createAnswer().

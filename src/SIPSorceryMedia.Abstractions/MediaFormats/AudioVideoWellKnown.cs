@@ -14,13 +14,14 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Frozen;
 using System.Collections.Generic;
 
 namespace SIPSorceryMedia.Abstractions;
 
 public static class AudioVideoWellKnown
 {
-    public static Dictionary<SDPWellKnownMediaFormatsEnum, AudioFormat> WellKnownAudioFormats =
+    public static readonly FrozenDictionary<SDPWellKnownMediaFormatsEnum, AudioFormat> WellKnownAudioFormats =
         new Dictionary<SDPWellKnownMediaFormatsEnum, AudioFormat> {
                 { SDPWellKnownMediaFormatsEnum.PCMU,     new AudioFormat(AudioCodecsEnum.PCMU, 0, 8000, 1)},
                 { SDPWellKnownMediaFormatsEnum.GSM,      new AudioFormat(AudioCodecsEnum.GSM,  3, 8000, 1)},
@@ -39,9 +40,9 @@ public static class AudioVideoWellKnown
                 { SDPWellKnownMediaFormatsEnum.DVI4_11K, new AudioFormat(AudioCodecsEnum.DVI4, 16, 11025, 1)},
                 { SDPWellKnownMediaFormatsEnum.DVI4_22K, new AudioFormat(AudioCodecsEnum.DVI4, 17, 22050, 1)},
                 { SDPWellKnownMediaFormatsEnum.G729,     new AudioFormat(AudioCodecsEnum.G729, 18, 8000, 1)},
-        };
+        }.ToFrozenDictionary();
 
-    public static Dictionary<SDPWellKnownMediaFormatsEnum, VideoFormat> WellKnownVideoFormats =
+    public static readonly FrozenDictionary<SDPWellKnownMediaFormatsEnum, VideoFormat> WellKnownVideoFormats =
        new Dictionary<SDPWellKnownMediaFormatsEnum, VideoFormat> {
                 { SDPWellKnownMediaFormatsEnum.CELB,     new VideoFormat(VideoCodecsEnum.CELB, 24, 90000)},
                 { SDPWellKnownMediaFormatsEnum.JPEG,     new VideoFormat(VideoCodecsEnum.JPEG, 26, 90000)},
@@ -50,5 +51,5 @@ public static class AudioVideoWellKnown
                 { SDPWellKnownMediaFormatsEnum.MPV,      new VideoFormat(VideoCodecsEnum.MPV,  32, 90000)},
                 { SDPWellKnownMediaFormatsEnum.MP2T,     new VideoFormat(VideoCodecsEnum.MP2T, 33, 90000)},
                 { SDPWellKnownMediaFormatsEnum.H263,     new VideoFormat(VideoCodecsEnum.H263, 34, 90000)}
-       };
+       }.ToFrozenDictionary();
 }

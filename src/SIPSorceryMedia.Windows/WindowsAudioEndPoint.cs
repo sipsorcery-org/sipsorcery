@@ -20,17 +20,22 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using NAudio.Wave;
+using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorceryMedia.Windows
 {
-    public class WindowsAudioEndPoint : IAudioEndPoint
+    public class WindowsAudioEndPoint : IAudioEndPoint, IDisposable
     {
         private const int DEVICE_BITS_PER_SAMPLE = 16;
         private const int DEFAULT_DEVICE_CHANNELS = 1;
@@ -39,6 +44,14 @@ namespace SIPSorceryMedia.Windows
         private const int AUDIO_INPUTDEVICE_INDEX = -1;
         private const int AUDIO_OUTPUTDEVICE_INDEX = -1;
 
+        // Audio buffer sizing constants for optimal memory allocation
+        private const int DEFAULT_AUDIO_BUFFER_SIZE = 4096;        // 4KB - optimal for typical audio frames
+        private const int LARGE_AUDIO_BUFFER_SIZE = 8192;          // 8KB - for larger frames
+        private const int MAX_AUDIO_BUFFER_SIZE = 16384;           // 16KB - maximum size cap
+
+        // Adaptive sizing tracking - learns from observed buffer usage patterns
+        private static int _maxObservedBufferSize = DEFAULT_AUDIO_BUFFER_SIZE;
+
         /// <summary>
         /// Microphone input is sampled at 8KHz.
         /// </summary>
@@ -46,25 +59,27 @@ namespace SIPSorceryMedia.Windows
 
         public readonly static AudioSamplingRatesEnum DefaultAudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
 
-        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
+        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
-        private WaveFormat _waveSinkFormat;
-        private WaveFormat _waveSourceFormat;
+        private WaveFormat? _waveSinkFormat;
+        private WaveFormat? _waveSourceFormat;
+
+        private bool _isDisposed;
 
         /// <summary>
         /// Audio render device.
         /// </summary>
-        private WaveOutEvent _waveOutEvent;
+        private WaveOutEvent? _waveOutEvent;
 
         /// <summary>
         /// Buffer for audio samples to be rendered.
         /// </summary>
-        private BufferedWaveProvider _waveProvider;
+        private Sys.BufferedWaveProvider? _waveProvider;
 
         /// <summary>
         /// Audio capture device.
         /// </summary>
-        private WaveInEvent _waveInEvent;
+        private WaveInEvent? _waveInEvent;
 
         private IAudioEncoder _audioEncoder;
         private MediaFormatManager<AudioFormat> _audioFormatManager;
@@ -74,42 +89,41 @@ namespace SIPSorceryMedia.Windows
         private int _audioInDeviceIndex;
         private bool _disableSource;
 
-        protected bool _isAudioSourceStarted;
-        protected bool _isAudioSinkStarted;
-        protected bool _isAudioSourcePaused;
-        protected bool _isAudioSinkPaused;
-        protected bool _isAudioSourceClosed;
-        protected bool _isAudioSinkClosed;
+        protected int _isAudioSourceStarted;
+        protected int _isAudioSinkStarted;
+        protected int _isAudioSourcePaused;
+        protected int _isAudioSinkPaused;
+        protected int _isAudioSourceClosed;
+        protected int _isAudioSinkClosed;
 
         /// <summary>
-        /// Obsolete. Use the <cref="OnAudioSourceEncodedSample"/> event instead.
+        /// Obsolete. Use the <see cref="OnAudioSourceEncodedFrameReady"/> event instead.
         /// </summary>
-        public event EncodedSampleDelegate OnAudioSourceEncodedSample;
+        [Obsolete("Use OnAudioSourceEncodedFrameReady instead.")]
+        public event EncodedSampleDelegate? OnAudioSourceEncodedSample;
 
         /// <summary>
         /// Event handler for when an encoded audio frame is ready to be sent to the RTP transport layer.
         /// The sample contained in this event is already encoded with the chosen audio format (codec) and ready for transmission.
         /// </summary>
-        public event Action<EncodedAudioFrame> OnAudioSourceEncodedFrameReady;
+        public event Action<EncodedAudioFrame>? OnAudioSourceEncodedFrameReady;
 
         /// <summary>
         /// This audio source DOES NOT generate raw samples. Subscribe to the encoded samples event
         /// to get samples ready for passing to the RTP transport layer.
         /// </summary>
         [Obsolete("The audio source only generates encoded samples.")]
-        public event RawAudioSampleDelegate OnAudioSourceRawSample { add { } remove { } }
+        public event RawAudioSampleDelegate? OnAudioSourceRawSample { add { } remove { } }
 
-        public event SourceErrorDelegate OnAudioSourceError;
+        public event SourceErrorDelegate? OnAudioSourceError;
 
-        public event SourceErrorDelegate OnAudioSinkError;
+        public event SourceErrorDelegate? OnAudioSinkError;
 
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
         /// <param name="audioEncoder">An audio encoder that can be used to encode and decode
         /// specific audio codecs.</param>
-        /// <param name="externalSource">Optional. An external source to use in combination with the source
-        /// provided by this end point. The application will need to signal which source is active.</param>
         /// <param name="disableSource">Set to true to disable the use of the audio source functionality, i.e.
         /// don't capture input from the microphone.</param>
         /// <param name="disableSink">Set to true to disable the use of the audio sink functionality, i.e.
@@ -132,7 +146,7 @@ namespace SIPSorceryMedia.Windows
 
             if (!_disableSink)
             {
-                InitPlaybackDevice(_audioOutDeviceIndex, DefaultAudioPlaybackRate.GetHashCode(), DEFAULT_DEVICE_CHANNELS);
+                InitPlaybackDevice(_audioOutDeviceIndex, (int)DefaultAudioPlaybackRate, DEFAULT_DEVICE_CHANNELS);
 
                 if (audioEncoder.SupportedFormats?.Count == 1)
                 {
@@ -151,54 +165,101 @@ namespace SIPSorceryMedia.Windows
             }
         }
 
-        public void RestrictFormats(Func<AudioFormat, bool> filter) => _audioFormatManager.RestrictFormats(filter);
-        public List<AudioFormat> GetAudioSourceFormats() => _audioFormatManager.GetSourceFormats();
-        public List<AudioFormat> GetAudioSinkFormats() => _audioFormatManager.GetSourceFormats();
+        public void RestrictFormats(Func<AudioFormat, bool> filter)
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        public bool HasEncodedAudioSubscribers() => OnAudioSourceEncodedSample != null;
-        public bool IsAudioSourcePaused() => _isAudioSourcePaused;
-        public bool IsAudioSinkPaused() => _isAudioSinkPaused;
-        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) =>
+            _audioFormatManager.RestrictFormats(filter);
+        }
+
+        public List<AudioFormat> GetAudioSourceFormats()
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            return _audioFormatManager.GetSourceFormats();
+        }
+
+        public List<AudioFormat> GetAudioSinkFormats()
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            return _audioFormatManager.GetSourceFormats();
+        }
+
+        public bool HasEncodedAudioSubscribers()
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            return OnAudioSourceEncodedSample is { };
+        }
+
+        public bool IsAudioSourcePaused()
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            return Interlocked.CompareExchange(ref _isAudioSourcePaused, 0, 0) == 1;
+        }
+
+        public bool IsAudioSinkPaused()
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            return Interlocked.CompareExchange(ref _isAudioSinkPaused, 0, 0) == 1;
+        }
+
+        public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
+        {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
             throw new NotImplementedException();
+        }
 
         public void SetAudioSourceFormat(AudioFormat audioFormat)
         {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
             _audioFormatManager.SetSelectedFormat(audioFormat);
 
             if (!_disableSource)
             {
-                if (_waveSourceFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
+                var selectedFormat = _audioFormatManager.SelectedFormat;
+                Debug.Assert(_waveSourceFormat is { });
+                Debug.Assert(selectedFormat is { });
+                if (_waveSourceFormat.SampleRate != selectedFormat.ClockRate)
                 {
                     // Reinitialise the audio capture device.
-                    logger.LogDebug("Windows audio end point adjusting capture rate from {CurrentCaptureRate} to {SelectedCaptureRate}.",
-                        _waveSourceFormat.SampleRate,
-                        _audioFormatManager.SelectedFormat.ClockRate);
+                    logger.LogAudioCaptureRateAdjusted(_waveSourceFormat.SampleRate, selectedFormat.ClockRate);
 
-                    InitCaptureDevice(_audioInDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
+                    InitCaptureDevice(_audioInDeviceIndex, selectedFormat.ClockRate, selectedFormat.ChannelCount);
                 }
             }
         }
 
         public void SetAudioSinkFormat(AudioFormat audioFormat)
         {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
             _audioFormatManager.SetSelectedFormat(audioFormat);
 
             if (!_disableSink)
             {
-                if (_waveSinkFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
+                var selectedFormat = _audioFormatManager.SelectedFormat;
+                Debug.Assert(_waveSinkFormat is { });
+                Debug.Assert(selectedFormat is { });
+                if (_waveSinkFormat.SampleRate != selectedFormat.ClockRate)
                 {
                     // Reinitialise the audio output device.
-                    logger.LogDebug("Windows audio end point adjusting playback rate from {CurrentPlaybackRate} to {SelectedPlaybackRate}.",
-                        _waveSinkFormat.SampleRate,
-                        _audioFormatManager.SelectedFormat.ClockRate);
+                    logger.LogAudioPlaybackRateAdjusted(_waveSinkFormat.SampleRate, selectedFormat.ClockRate);
 
-                    InitPlaybackDevice(_audioOutDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
+                    InitPlaybackDevice(_audioOutDeviceIndex, selectedFormat.ClockRate, selectedFormat.ChannelCount);
                 }
             }
         }
 
         public MediaEndPoints ToMediaEndPoints()
         {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
             return new MediaEndPoints
             {
                 AudioSource = _disableSource ? null : this,
@@ -211,12 +272,14 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task Start()
         {
-            if (!_isAudioSourceStarted && _waveInEvent != null)
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            if (Interlocked.CompareExchange(ref _isAudioSourceStarted, 0, 0) == 0 && _waveInEvent is { })
             {
                 StartAudio();
             }
 
-            if (!_isAudioSinkStarted && _waveOutEvent != null)
+            if (Interlocked.CompareExchange(ref _isAudioSinkStarted, 0, 0) == 0 && _waveOutEvent is { })
             {
                 StartAudioSink();
             }
@@ -229,12 +292,14 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task Close()
         {
-            if (!_isAudioSourceClosed && _waveInEvent != null)
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            if (Interlocked.CompareExchange(ref _isAudioSourceClosed, 0, 0) == 0 && _waveInEvent is { })
             {
                 CloseAudio();
             }
 
-            if (!_isAudioSinkClosed && _waveOutEvent != null)
+            if (Interlocked.CompareExchange(ref _isAudioSinkClosed, 0, 0) == 0 && _waveOutEvent is { })
             {
                 CloseAudioSink();
             }
@@ -244,12 +309,15 @@ namespace SIPSorceryMedia.Windows
 
         public Task Pause()
         {
-            if (!_isAudioSourcePaused && _waveInEvent != null)
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            if (Interlocked.CompareExchange(ref _isAudioSourcePaused, 0, 0) == 0 && _waveInEvent is { })
             {
                 PauseAudio();
             }
 
-            if (!_isAudioSinkPaused && _waveOutEvent != null)
+            if (Interlocked.CompareExchange(ref _isAudioSinkPaused, 0, 0) == 0 && _waveOutEvent is { }
+)
             {
                 PauseAudioSink();
             }
@@ -259,12 +327,14 @@ namespace SIPSorceryMedia.Windows
 
         public Task Resume()
         {
-            if (_isAudioSourcePaused && _waveInEvent != null)
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            if (Interlocked.CompareExchange(ref _isAudioSourcePaused, 0, 0) == 1 && _waveInEvent is { })
             {
                 ResumeAudio();
             }
 
-            if (_isAudioSinkPaused && _waveOutEvent != null)
+            if (Interlocked.CompareExchange(ref _isAudioSinkPaused, 0, 0) == 1 && _waveOutEvent is { })
             {
                 ResumeAudioSink();
             }
@@ -276,7 +346,13 @@ namespace SIPSorceryMedia.Windows
         {
             try
             {
-                _waveOutEvent?.Stop();
+                // Dispose existing playback device if present
+                if (_waveOutEvent is { } waveOutEvent)
+                {
+                    _waveOutEvent = null;
+                    waveOutEvent.Stop();
+                    waveOutEvent.Dispose();
+                }
 
                 _waveSinkFormat = new WaveFormat(
                     audioSinkSampleRate,
@@ -284,15 +360,17 @@ namespace SIPSorceryMedia.Windows
                     channels);
 
                 // Playback device.
+                // For playback devices, we'll rely on WaveOutEvent's internal validation
+                // since the static DeviceCount property may not be available in this NAudio version
                 _waveOutEvent = new WaveOutEvent();
                 _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
-                _waveProvider = new BufferedWaveProvider(_waveSinkFormat);
+                _waveProvider = new Sys.BufferedWaveProvider(_waveSinkFormat);
                 _waveProvider.DiscardOnBufferOverflow = true;
                 _waveOutEvent.Init(_waveProvider);
             }
             catch (Exception excp)
             {
-                logger.LogWarning(0, excp, "WindowsAudioEndPoint failed to initialise playback device.");
+                logger.LogPlaybackDeviceInitFailed(excp);
                 OnAudioSinkError?.Invoke($"WindowsAudioEndPoint failed to initialise playback device. {excp.Message}");
             }
         }
@@ -301,40 +379,49 @@ namespace SIPSorceryMedia.Windows
         {
             if (WaveInEvent.DeviceCount > 0)
             {
-                if (WaveInEvent.DeviceCount > audioInDeviceIndex)
+                // Handle default device (-1) and validate range properly
+                if (audioInDeviceIndex >= -1 && audioInDeviceIndex < WaveInEvent.DeviceCount)
                 {
-                    if (_waveInEvent != null)
+                    try
                     {
-                        _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
-                        _waveInEvent.StopRecording();
+                        if (_waveInEvent is { } waveInEvent)
+                        {
+                            _waveInEvent = null;
+                            waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
+                            waveInEvent.StopRecording();
+                            waveInEvent.Dispose();
+                        }
+
+                        _waveSourceFormat = new WaveFormat(
+                               audioSourceSampleRate,
+                               DEVICE_BITS_PER_SAMPLE,
+                               audioSourceChannels);
+
+                        _waveInEvent = new WaveInEvent();
+
+                        // Note NAudio recommends a buffer size of 100ms but codecs like Opus can only handle 20ms buffers.
+                        _waveInEvent.BufferMilliseconds = DEFAULT_PLAYBACK_BUFFER_MILLISECONDS;
+
+                        _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
+                        _waveInEvent.DeviceNumber = audioInDeviceIndex;
+                        _waveInEvent.WaveFormat = _waveSourceFormat;
+                        _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
                     }
-
-                    _waveSourceFormat = new WaveFormat(
-                           audioSourceSampleRate,
-                           DEVICE_BITS_PER_SAMPLE,
-                           audioSourceChannels);
-
-                    _waveInEvent = new WaveInEvent();
-
-                    // Note NAudio recommends a buffer size of 100ms but codecs like Opus can only handle 20ms buffers.
-                    _waveInEvent.BufferMilliseconds = DEFAULT_PLAYBACK_BUFFER_MILLISECONDS;
-
-                    _waveInEvent.NumberOfBuffers = INPUT_BUFFERS;
-                    _waveInEvent.DeviceNumber = audioInDeviceIndex;
-                    _waveInEvent.WaveFormat = _waveSourceFormat;
-                    _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
+                    catch (Exception ex)
+                    {
+                        logger.LogAudioCaptureDeviceInitFailed(audioInDeviceIndex, ex);
+                        OnAudioSourceError?.Invoke($"Failed to initialize audio capture device: {ex.Message}");
+                    }
                 }
                 else
                 {
-                    logger.LogWarning("The requested audio input device index {AudioInputDeviceIndex} exceeds the maximum index of {MaximumDeviceIndex}.",
-                        audioInDeviceIndex,
-                        WaveInEvent.DeviceCount - 1);
-                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
+                    logger.LogAudioInputDeviceIndexExceeded(audioInDeviceIndex, WaveInEvent.DeviceCount - 1);
+                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}. Use -1 for default device.");
                 }
             }
             else
             {
-                logger.LogWarning("No audio capture devices are available.");
+                logger.LogNoAudioCaptureDevices();
                 OnAudioSourceError?.Invoke("No audio capture devices are available.");
             }
         }
@@ -342,34 +429,38 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Event handler for audio sample being supplied by local capture device.
         /// </summary>
-        private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
+        private void LocalAudioSampleAvailable(object? sender, WaveInEventArgs args)
         {
             // Note NAudio.Wave.WaveBuffer.ShortBuffer does not take into account little endian.
             // https://github.com/naudio/NAudio/blob/master/NAudio/Wave/WaveOutputs/WaveBuffer.cs
 
-            short[] pcm = new short[args.BytesRecorded / sizeof(short)];
-            Buffer.BlockCopy(args.Buffer, 0, pcm, 0, args.BytesRecorded);
-            byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
-            
-            OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
+            var pcm = MemoryMarshal.Cast<byte, short>(args.Buffer.AsSpan(0, args.BytesRecorded));
 
-            if (OnAudioSourceEncodedFrameReady != null)
+            // Use adaptive buffer sizing for optimal memory allocation
+            using var buffer = new ArrayPoolBufferWriter<byte>(GetOptimalBufferSize(pcm.Length));
+            _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat, buffer);
+
+            var encodedMemory = buffer.WrittenMemory;
+
+            var onAudioSourceEncodedSample = OnAudioSourceEncodedSample;
+            var onAudioSourceEncodedFrameReady = OnAudioSourceEncodedFrameReady;
+
+            if (!encodedMemory.IsEmpty && (onAudioSourceEncodedSample is { } || onAudioSourceEncodedFrameReady is { }))
             {
-                var encodedAudioFrame = new EncodedAudioFrame(0,
-                    _audioFormatManager.SelectedFormat,
-                    GetEncodSampleDurationMs(pcm.Length, _audioFormatManager.SelectedFormat),
-                    encodedSample);
-                OnAudioSourceEncodedFrameReady(encodedAudioFrame);
-            }
-        }
+                onAudioSourceEncodedSample?.Invoke((uint)encodedMemory.Length, encodedMemory);
 
-        private uint GetEncodSampleDurationMs(int totalPcmSamples, AudioFormat audioFormat)
-        {
-            int numChannels = audioFormat.ChannelCount; 
-            int sampleRate = audioFormat.ClockRate;
-            int frames = totalPcmSamples / numChannels;
-            double durationMsD = sampleRate > 0 ? (frames / (double)sampleRate) * 1000.0 : 0;
-            return (uint)Math.Round(durationMsD);
+                if (onAudioSourceEncodedFrameReady is { })
+                {
+                    var audioFormat = _audioFormatManager.SelectedFormat;
+                    var numChannels = audioFormat.ChannelCount;
+                    var sampleRate = audioFormat.ClockRate;
+                    var frames = pcm.Length / numChannels;
+                    var durationMsD = sampleRate > 0 ? (frames / (double)sampleRate) * 1000.0 : 0;
+                    var durationMs = (uint)Math.Round(durationMsD);
+                    var encodedFrame = new EncodedAudioFrame(0, audioFormat, durationMs, encodedMemory);
+                    onAudioSourceEncodedFrameReady(encodedFrame);
+                }
+            }
         }
 
         /// <summary>
@@ -378,10 +469,9 @@ namespace SIPSorceryMedia.Windows
         /// <param name="pcmSample">Raw PCM sample from remote party.</param>
         public void GotAudioSample(byte[] pcmSample)
         {
-            if (_waveProvider != null)
-            {
-                _waveProvider.AddSamples(pcmSample, 0, pcmSample.Length);
-            }
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            _waveProvider?.AddSamples(pcmSample.AsSpan());
         }
 
         /// <summary>
@@ -390,12 +480,9 @@ namespace SIPSorceryMedia.Windows
         [Obsolete("Use GotEncodedMediaFrame instead.")]
         public void GotAudioRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
         {
-            if (_waveProvider != null && _audioEncoder != null)
-            {
-                var pcmSample = _audioEncoder.DecodeAudio(payload, _audioFormatManager.SelectedFormat);
-                byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
-                _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
-            }
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            ProcessDecodedAudio(payload.AsMemory(), _audioFormatManager.SelectedFormat);
         }
 
         /// <summary>
@@ -404,51 +491,60 @@ namespace SIPSorceryMedia.Windows
         /// <param name="encodedMediaFrame">Encoded audio frame received from the remote party.</param>
         public void GotEncodedMediaFrame(EncodedAudioFrame encodedMediaFrame)
         {
-            var audioFormat = encodedMediaFrame.AudioFormat;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-            if (_waveProvider != null && _audioEncoder != null && !audioFormat.IsEmpty())
+            ProcessDecodedAudio(encodedMediaFrame.EncodedAudio, encodedMediaFrame.AudioFormat);
+        }
+
+        /// <summary>
+        /// Common helper method to process decoded PCM audio samples and add them to the wave provider.
+        /// </summary>
+        /// <param name="encodedAudio">The encoded audio data to decode.</param>
+        /// <param name="audioFormat">The audio format for decoding.</param>
+        private void ProcessDecodedAudio(ReadOnlyMemory<byte> encodedAudio, AudioFormat audioFormat)
+        {
+            if (_waveProvider is { } && _audioEncoder is { } && !audioFormat.IsEmpty())
             {
-                // The remote party's send format is only known once media arrives (see the note in
-                // VoIPMediaSession.AudioFormatsNegotiated), so the playback device is adjusted from
-                // the received frame's format. Without this, audio decoded at e.g. 16KHz (G722) or
-                // 48KHz (OPUS) gets played through the default 8KHz device at a fraction of the
-                // correct speed.
-                if (_waveSinkFormat != null && _waveSinkFormat.SampleRate != audioFormat.ClockRate)
-                {
-                    SetAudioSinkFormat(audioFormat);
+                // Use optimal buffer sizing for PCM shorts buffer (decode typically expands data 3-4x)
+                var estimatedPcmShorts = encodedAudio.Length * 4; // Conservative estimate for decoded size
+                using var pcmShortsBuffer = new ArrayPoolBufferWriter<short>(GetOptimalBufferSize(estimatedPcmShorts));
+                _audioEncoder.DecodeAudio(encodedAudio.Span, audioFormat, pcmShortsBuffer);
 
-                    if (_isAudioSinkStarted)
-                    {
-                        // The re-initialised playback device starts in the stopped state.
-                        _waveOutEvent?.Play();
-                    }
+                var pcmSpan = pcmShortsBuffer.WrittenSpan;
+                if (pcmSpan.IsEmpty)
+                {
+                    return;
                 }
 
-                var pcmSample = _audioEncoder.DecodeAudio(encodedMediaFrame.EncodedAudio, audioFormat);
-                byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
-                _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
+                var pcmBytes = MemoryMarshal.Cast<short, byte>(pcmSpan);
+                _waveProvider.AddSamples(pcmBytes);
             }
         }
 
         public Task PauseAudioSink()
         {
-            _isAudioSinkPaused = true;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            Interlocked.Exchange(ref _isAudioSinkPaused, 1);
             _waveOutEvent?.Pause();
             return Task.CompletedTask;
         }
 
         public Task ResumeAudioSink()
         {
-            _isAudioSinkPaused = false;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            Interlocked.Exchange(ref _isAudioSinkPaused, 0);
             _waveOutEvent?.Play();
             return Task.CompletedTask;
         }
 
         public Task StartAudioSink()
         {
-            if (!_isAudioSinkStarted)
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            if (Interlocked.CompareExchange(ref _isAudioSinkStarted, 1, 0) == 0)
             {
-                _isAudioSinkStarted = true;
                 _waveOutEvent?.Play();
             }
             return Task.CompletedTask;
@@ -456,10 +552,10 @@ namespace SIPSorceryMedia.Windows
 
         public Task CloseAudioSink()
         {
-            if (!_isAudioSinkClosed)
-            {
-                _isAudioSinkClosed = true;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
 
+            if (Interlocked.CompareExchange(ref _isAudioSinkClosed, 1, 0) == 0)
+            {
                 _waveOutEvent?.Stop();
             }
 
@@ -471,7 +567,9 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task PauseAudio()
         {
-            _isAudioSourcePaused = true;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            Interlocked.Exchange(ref _isAudioSourcePaused, 1);
             _waveInEvent?.StopRecording();
 
             return Task.CompletedTask;
@@ -482,7 +580,9 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task ResumeAudio()
         {
-            _isAudioSourcePaused = false;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            Interlocked.Exchange(ref _isAudioSourcePaused, 0);
             _waveInEvent?.StartRecording();
 
             return Task.CompletedTask;
@@ -493,9 +593,10 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task StartAudio()
         {
-            if (!_isAudioSourceStarted)
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+
+            if (Interlocked.CompareExchange(ref _isAudioSourceStarted, 1, 0) == 0)
             {
-                _isAudioSourceStarted = true;
                 _waveInEvent?.StartRecording();
             }
 
@@ -507,11 +608,11 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         public Task CloseAudio()
         {
-            if (!_isAudioSourceClosed)
-            {
-                _isAudioSourceClosed = true;
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-                if (_waveInEvent != null)
+            if (Interlocked.CompareExchange(ref _isAudioSourceClosed, 1, 0) == 0)
+            {
+                if (_waveInEvent is { })
                 {
                     _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
                     _waveInEvent.StopRecording();
@@ -519,6 +620,61 @@ namespace SIPSorceryMedia.Windows
             }
 
             return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_isDisposed && disposing)
+            {
+                _isDisposed = true;
+
+                if (_waveInEvent is { } waveInEvent)
+                {
+                    _waveInEvent = null;
+                    waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
+                    waveInEvent.Dispose();
+                }
+
+                if (_waveOutEvent is { } waveOutEvent)
+                {
+                    _waveOutEvent = null;
+                    waveOutEvent.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calculates optimal buffer size for audio processing based on PCM sample count.
+        /// Uses adaptive sizing to learn from usage patterns and reduce buffer fragmentation.
+        /// </summary>
+        /// <param name="pcmSampleCount">Number of PCM samples to be encoded</param>
+        /// <returns>Optimal buffer size for PooledSegmentedBuffer allocation</returns>
+        private static int GetOptimalBufferSize(int pcmSampleCount)
+        {
+            // Estimate encoded size (typically 25-50% of PCM for modern codecs like Opus)
+            var estimatedEncodedSize = pcmSampleCount * sizeof(short) / 3; // Conservative estimate
+
+            var optimalSize = estimatedEncodedSize switch
+            {
+                <= 2048 => DEFAULT_AUDIO_BUFFER_SIZE,    // 4KB for normal frames
+                <= 4096 => LARGE_AUDIO_BUFFER_SIZE,      // 8KB for large frames  
+                _ => MAX_AUDIO_BUFFER_SIZE                // 16KB for very large frames
+            };
+
+            // Adaptive sizing: learn from observed patterns to reduce future fragmentation
+            if (estimatedEncodedSize > _maxObservedBufferSize && estimatedEncodedSize <= MAX_AUDIO_BUFFER_SIZE)
+            {
+                _maxObservedBufferSize = estimatedEncodedSize;
+            }
+
+            // Use the larger of calculated optimal size or previously observed maximum
+            return Math.Max(optimalSize, _maxObservedBufferSize);
         }
     }
 }

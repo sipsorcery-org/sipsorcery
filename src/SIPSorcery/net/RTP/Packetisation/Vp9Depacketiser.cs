@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Logging;
@@ -30,9 +31,21 @@ public class Vp9Depacketiser
     private static readonly ILogger logger = LogFactory.CreateLogger<Vp9Depacketiser>();
 
     private uint _previousTimestamp;
-    private readonly List<KeyValuePair<int, byte[]>> _temporaryRtpPayloads = new List<KeyValuePair<int, byte[]>>();
+    private readonly List<(int sequenceNumber, Range range)> _temporaryRtpPayloads = new();
+    private readonly MemoryStream _payloadBuffer = new();
 
-    public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markerBit, out bool isKeyFrame)
+    /// <summary>
+    /// Processes an RTP payload and writes the completed VP9 frame to the buffer writer
+    /// when a full frame has been assembled.
+    /// </summary>
+    /// <param name="bufferWriter">The buffer writer to receive the reassembled frame.</param>
+    /// <param name="rtpPayload">The RTP payload bytes (descriptor + payload data).</param>
+    /// <param name="seqNum">The RTP sequence number.</param>
+    /// <param name="timestamp">The RTP timestamp.</param>
+    /// <param name="markerBit">The RTP marker bit (1 = last packet of frame).</param>
+    /// <param name="isKeyFrame">Set to <c>true</c> when the assembled frame is a key frame.</param>
+    /// <returns><c>true</c> when a complete frame has been written to <paramref name="bufferWriter"/>.</returns>
+    public virtual bool ProcessRTPPayload(IBufferWriter<byte> bufferWriter, ReadOnlySpan<byte> rtpPayload, ushort seqNum, uint timestamp, int markerBit, out bool isKeyFrame)
     {
         isKeyFrame = false;
 
@@ -40,48 +53,50 @@ public class Vp9Depacketiser
         // completed; discard them and start accumulating the new frame.
         if (_previousTimestamp != timestamp && _previousTimestamp > 0)
         {
-            _temporaryRtpPayloads.Clear();
+            ClearPayloads();
             _previousTimestamp = 0;
         }
 
-        _temporaryRtpPayloads.Add(new KeyValuePair<int, byte[]>(seqNum, rtpPayload));
+        var payloadOffset = (int)_payloadBuffer.Length;
+        _payloadBuffer.Write(rtpPayload);
+        _temporaryRtpPayloads.Add((seqNum, payloadOffset..(payloadOffset + rtpPayload.Length)));
 
         if (markerBit == 1)
         {
             if (_temporaryRtpPayloads.Count > 1)
             {
                 _temporaryRtpPayloads.Sort((a, b) =>
-                    (Math.Abs(b.Key - a.Key) > (0xFFFF - 2000)) ? -a.Key.CompareTo(b.Key) : a.Key.CompareTo(b.Key));
+                    (Math.Abs(b.sequenceNumber - a.sequenceNumber) > (0xFFFF - 2000)) ? -a.sequenceNumber.CompareTo(b.sequenceNumber) : a.sequenceNumber.CompareTo(b.sequenceNumber));
             }
 
-            byte[] frame = ProcessVp9PayloadFrame(_temporaryRtpPayloads, out isKeyFrame);
-            _temporaryRtpPayloads.Clear();
+            var payloadSpan = _payloadBuffer.GetBuffer().AsSpan(0, (int)_payloadBuffer.Length);
+            var hasFrame = ProcessVp9PayloadFrame(bufferWriter, payloadSpan, _temporaryRtpPayloads, out isKeyFrame);
+            ClearPayloads();
             _previousTimestamp = 0;
 
-            if (frame == null || frame.Length == 0)
-            {
-                return null;
-            }
-
-            var frameStream = new MemoryStream(frame.Length);
-            frameStream.Write(frame, 0, frame.Length);
-            frameStream.Position = 0;
-            return frameStream;
+            return hasFrame;
         }
 
         _previousTimestamp = timestamp;
-        return null;
+        return false;
     }
 
-    protected virtual byte[] ProcessVp9PayloadFrame(List<KeyValuePair<int, byte[]>> rtpPayloads, out bool isKeyFrame)
+    private void ClearPayloads()
+    {
+        _payloadBuffer.SetLength(0);
+        _temporaryRtpPayloads.Clear();
+    }
+
+    protected virtual bool ProcessVp9PayloadFrame(IBufferWriter<byte> bufferWriter, ReadOnlySpan<byte> payloadBuffer, List<(int sequenceNumber, Range range)> rtpPayloads, out bool isKeyFrame)
     {
         isKeyFrame = false;
-        using var frame = new MemoryStream();
+        var hasOutput = false;
 
-        foreach (var rtpPayload in rtpPayloads)
+        foreach (var entry in rtpPayloads)
         {
-            var payload = rtpPayload.Value;
-            if (payload == null || payload.Length == 0)
+            var payload = payloadBuffer[entry.range];
+
+            if (payload.IsEmpty)
             {
                 continue;
             }
@@ -89,24 +104,32 @@ public class Vp9Depacketiser
             int descriptorLength = GetDescriptorLength(payload);
             if (descriptorLength <= 0 || descriptorLength >= payload.Length)
             {
-                logger.LogWarning("VP9 depacketiser could not parse the payload descriptor, discarding packet.");
+                logger.LogVp9DepacketiserCouldNotParsePayloadDescriptor();
                 continue;
             }
 
             // The B (start of frame) flag marks the packet that carries the VP9 uncompressed header,
-            // which is where the key frame flag can be read.
+            // which is where the key frame flag can be read. Only the first packet in a multi-packet
+            // frame has the uncompressed header; later packets only have their descriptor.
             bool startOfFrame = (payload[0] & Vp9Packetiser.B_BIT) != 0;
             if (startOfFrame)
             {
-                var frameStart = new byte[payload.Length - descriptorLength];
-                Buffer.BlockCopy(payload, descriptorLength, frameStart, 0, frameStart.Length);
+                var frameStart = payload.Slice(descriptorLength).ToArray();
                 isKeyFrame = Vp9Packetiser.IsKeyFrame(frameStart);
             }
 
-            frame.Write(payload, descriptorLength, payload.Length - descriptorLength);
+            try
+            {
+                bufferWriter.Write(payload.Slice(descriptorLength));
+                hasOutput = true;
+            }
+            catch (Exception ex)
+            {
+                logger.LogVp9DepacketiserFailedPayloadData(ex);
+            }
         }
 
-        return frame.Length > 0 ? frame.ToArray() : null;
+        return hasOutput;
     }
 
     /// <summary>
@@ -114,9 +137,9 @@ public class Vp9Depacketiser
     /// or -1 if it is malformed/truncated. Handles the picture ID (I), layer indices (L), flexible-mode
     /// reference diffs (F + P) and the scalability structure (V).
     /// </summary>
-    private static int GetDescriptorLength(byte[] payload)
+    private static int GetDescriptorLength(ReadOnlySpan<byte> payload)
     {
-        if (payload == null || payload.Length < 1)
+        if (payload.Length < 1)
         {
             return -1;
         }

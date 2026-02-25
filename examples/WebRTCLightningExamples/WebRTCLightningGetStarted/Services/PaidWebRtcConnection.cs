@@ -142,7 +142,7 @@ public class PaidWebRtcConnection : IPaidWebRtcConnection, IDisposable
 
         if (videoSource != null)
         {
-            await videoSource!.CloseVideo();
+            await videoSource.CloseVideo();
         }
     }
 

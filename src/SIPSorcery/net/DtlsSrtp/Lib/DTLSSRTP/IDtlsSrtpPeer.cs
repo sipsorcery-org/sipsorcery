@@ -24,25 +24,24 @@ using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 using System;
 
-namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
+namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP;
+
+public class DtlsSessionStartedEventArgs : EventArgs
 {
-    public class DtlsSessionStartedEventArgs : EventArgs
-    {
-        public SrtpSessionContext Context { get; private set; }
-        public Certificate PeerCertificate { get; private set;  }
-        public DatagramTransport ClientDatagramTransport { get; private set; }
+    public SrtpSessionContext Context { get; private set; }
+    public Certificate PeerCertificate { get; private set;  }
+    public DatagramTransport? ClientDatagramTransport { get; private set; }
 
-        public DtlsSessionStartedEventArgs(SrtpSessionContext context, Certificate peerCertificate, DatagramTransport clientDatagramTransport)
-        {
-            this.Context = context ?? throw new ArgumentNullException(nameof(context));
-            this.PeerCertificate = peerCertificate ?? throw new ArgumentNullException(nameof(peerCertificate));
-            this.ClientDatagramTransport = clientDatagramTransport ?? throw new ArgumentNullException(nameof(clientDatagramTransport));
-        }
-    }
-
-    public interface IDtlsSrtpPeer : IDtlsPeer
+    public DtlsSessionStartedEventArgs(SrtpSessionContext context, Certificate peerCertificate, DatagramTransport? clientDatagramTransport)
     {
-        event EventHandler<DtlsSessionStartedEventArgs> OnSessionStarted;
-        SrtpSessionContext CreateSessionContext(SecurityParameters securityParameters);
+        this.Context = context ?? throw new ArgumentNullException(nameof(context));
+        this.PeerCertificate = peerCertificate ?? throw new ArgumentNullException(nameof(peerCertificate));
+        this.ClientDatagramTransport = clientDatagramTransport ?? throw new ArgumentNullException(nameof(clientDatagramTransport));
     }
+}
+
+public interface IDtlsSrtpPeer : IDtlsPeer
+{
+    event EventHandler<DtlsSessionStartedEventArgs>? OnSessionStarted;
+    SrtpSessionContext CreateSessionContext(SecurityParameters securityParameters);
 }
