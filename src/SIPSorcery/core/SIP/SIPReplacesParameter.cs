@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: SIPReplacesParameter.cs
 //
 // Description: Represents the Replaces parameter on a Refer-To header. The Replaces parameter
@@ -13,6 +13,8 @@
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+
+#nullable disable
 
 using System.Text.RegularExpressions;
 

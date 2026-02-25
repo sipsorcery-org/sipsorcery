@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+
 namespace SIPSorceryMedia.Abstractions;
 
 /// <summary>
@@ -21,7 +23,7 @@ namespace SIPSorceryMedia.Abstractions;
 /// </summary>
 public class EncodedAudioFrame
 {
-    public EncodedAudioFrame(int mediaStreamIndex, AudioFormat mediaformat, uint durationMilliSeconds, byte[] encodedMedia)
+    public EncodedAudioFrame(int mediaStreamIndex, AudioFormat mediaformat, uint durationMilliSeconds, ReadOnlyMemory<byte> encodedMedia)
     {
         MediaStreamIndex = mediaStreamIndex;
         AudioFormat = mediaformat;
@@ -35,5 +37,5 @@ public class EncodedAudioFrame
 
     public uint DurationMilliSeconds { get; }
 
-    public byte[] EncodedAudio { get; }
+    public ReadOnlyMemory<byte> EncodedAudio { get; }
 }

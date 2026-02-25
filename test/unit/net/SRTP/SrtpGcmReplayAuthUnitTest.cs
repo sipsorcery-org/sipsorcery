@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SrtpGcmReplayAuthUnitTest.cs
 //
 // Description: Regression test for the AES-GCM SRTP "ROC poisoning" bug

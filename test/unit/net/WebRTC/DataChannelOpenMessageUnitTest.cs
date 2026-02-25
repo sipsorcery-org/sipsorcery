@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: DataChannelOpenMessageUnitTest.cs
 //
 // Description: Unit tests for the DataChannelOpenMessage class.
@@ -81,7 +81,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(DataChannelOpenMessage.DCEP_OPEN_FIXED_PARAMETERS_LENGTH, buffer.Length);
 
-            var excp = Assert.Throws<ApplicationException>(() => DataChannelOpenMessage.Parse(buffer, 0));
+            var excp = Assert.Throws<SipSorceryException>(() => DataChannelOpenMessage.Parse(buffer, 0));
 
             logger.LogDebug("Parse failed with {Message}", excp.Message);
         }
@@ -94,7 +94,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             byte[] buffer = GetDcepOpenBuffer(0, 0xFFFF, null);
 
-            Assert.Throws<ApplicationException>(() => DataChannelOpenMessage.Parse(buffer, 0));
+            Assert.Throws<SipSorceryException>(() => DataChannelOpenMessage.Parse(buffer, 0));
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net.UnitTests
             // Ten bytes of payload but the two lengths claim six each.
             byte[] buffer = GetDcepOpenBuffer(6, 6, Encoding.UTF8.GetBytes("0123456789"));
 
-            Assert.Throws<ApplicationException>(() => DataChannelOpenMessage.Parse(buffer, 0));
+            Assert.Throws<SipSorceryException>(() => DataChannelOpenMessage.Parse(buffer, 0));
         }
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             byte[] buffer = new byte[DataChannelOpenMessage.DCEP_OPEN_FIXED_PARAMETERS_LENGTH - 1];
 
-            Assert.Throws<ApplicationException>(() => DataChannelOpenMessage.Parse(buffer, 0));
+            Assert.Throws<SipSorceryException>(() => DataChannelOpenMessage.Parse(buffer, 0));
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             byte[] buffer = GetDcepOpenBuffer(0, 0, null);
 
-            Assert.Throws<ApplicationException>(() => DataChannelOpenMessage.Parse(buffer, 1));
+            Assert.Throws<SipSorceryException>(() => DataChannelOpenMessage.Parse(buffer, 1));
         }
     }
 }

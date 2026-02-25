@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr =
+            var inviteReqStr =
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -86,7 +86,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr =
+            var inviteReqStr =
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -128,7 +128,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string okRespStr =
+            var okRespStr =
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>
@@ -170,7 +170,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string okRespStr =
+            var okRespStr =
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>
@@ -211,7 +211,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr =
+            var inviteReqStr =
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -232,7 +232,7 @@ dummy";
             {
                 transport.AddSIPChannel(new MockSIPChannel(dummyEP.GetIPEndPoint()));
 
-                string contactHost = "devcall.sipsorcery.com";
+                var contactHost = "devcall.sipsorcery.com";
                 transport.CustomiseRequestHeader = (local, dst, req) =>
                 {
                     var hdr = req.Header.Copy();
@@ -259,7 +259,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string okRespStr =
+            var okRespStr =
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>
@@ -279,7 +279,7 @@ dummy";
             {
                 transport.AddSIPChannel(new MockSIPChannel(dummyEP.GetIPEndPoint()));
 
-                string contactHost = "devcall.sipsorcery.com";
+                var contactHost = "devcall.sipsorcery.com";
                 transport.CustomiseResponseHeader = (local, dst, resp) =>
                 {
                     var hdr = resp.Header.Copy();

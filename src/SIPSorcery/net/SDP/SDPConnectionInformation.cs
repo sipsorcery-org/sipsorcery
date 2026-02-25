@@ -16,73 +16,93 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using Polyfills;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public class SDPConnectionInformation
 {
-    public class SDPConnectionInformation
+    public const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
+    public const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
+
+    public const string m_CRLF = "\r\n";
+
+    /// <summary>
+    /// Type of network, IN = Internet.
+    /// </summary>
+    public string ConnectionNetworkType = "IN";
+
+    /// <summary>
+    /// Session level address family.
+    /// </summary>
+    public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+
+    /// <summary>
+    /// IP or multicast address for the media connection.
+    /// </summary>
+    public string? ConnectionAddress;
+
+    private SDPConnectionInformation()
+    { }
+
+    public SDPConnectionInformation(IPAddress connectionAddress)
     {
-        public const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
-        public const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
+        ConnectionAddress = connectionAddress.ToString();
+        ConnectionAddressType = (connectionAddress.AddressFamily == AddressFamily.InterNetworkV6) ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
+    }
 
-        public const string m_CRLF = "\r\n";
+    public static SDPConnectionInformation ParseConnectionInformation(ReadOnlySpan<char> connectionLine)
+    {
+        var connectionInfo = new SDPConnectionInformation();
 
-        /// <summary>
-        /// Type of network, IN = Internet.
-        /// </summary>
-        public string ConnectionNetworkType = "IN";
+        connectionLine = connectionLine.Slice(2).Trim();
 
-        /// <summary>
-        /// Session level address family.
-        /// </summary>
-        public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+        Span<Range> fields = stackalloc Range[3];
+        var fieldCount = connectionLine.Split(fields, ' ', StringSplitOptions.RemoveEmptyEntries);
 
-        /// <summary>
-        /// IP or multicast address for the media connection.
-        /// </summary>
-        public string ConnectionAddress;
-
-        private SDPConnectionInformation()
-        { }
-
-        public SDPConnectionInformation(IPAddress connectionAddress)
+        if (fieldCount > 0)
         {
-            ConnectionAddress = connectionAddress.ToString();
-            ConnectionAddressType = (connectionAddress.AddressFamily == AddressFamily.InterNetworkV6) ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
+            connectionInfo.ConnectionNetworkType = connectionLine[fields[0]].Trim().ToString();
         }
 
-        public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
+        if (fieldCount > 1)
         {
-            SDPConnectionInformation connectionInfo = new SDPConnectionInformation();
-            var connectionFields = connectionLine.AsSpan(2).Trim();
-            var fieldIndex = 0;
-            foreach (var fieldRange in connectionFields.Split(' '))
-            {
-                var field = connectionFields[fieldRange].Trim().ToString();
-                if (fieldIndex == 0)
-                {
-                    connectionInfo.ConnectionNetworkType = field;
-                }
-                else if (fieldIndex == 1)
-                {
-                    connectionInfo.ConnectionAddressType = field;
-                }
-                else if (fieldIndex == 2)
-                {
-                    connectionInfo.ConnectionAddress = field;
-                    break;
-                }
-
-                fieldIndex++;
-            }
-
-            return connectionInfo;
+            connectionInfo.ConnectionAddressType = connectionLine[fields[1]].Trim().ToString();
         }
 
-        public override string ToString()
+        if (fieldCount >= 2)
         {
-            return $"c={ConnectionNetworkType} {ConnectionAddressType} {ConnectionAddress}{m_CRLF}";
+            connectionInfo.ConnectionAddress = connectionLine[fields[2]].Trim().ToString();
         }
+
+        return connectionInfo;
+    }
+
+    public override string ToString()
+    {
+        var builder = new ValueStringBuilder();
+
+        try
+        {
+            ToString(ref builder);
+
+            return builder.ToString();
+        }
+        finally
+        {
+            builder.Dispose();
+        }
+    }
+
+    internal void ToString(ref ValueStringBuilder builder)
+    {
+        builder.Append("c=");
+        builder.Append(ConnectionNetworkType);
+        builder.Append(' ');
+        builder.Append(ConnectionAddressType);
+        builder.Append(' ');
+        builder.Append(ConnectionAddress);
+        builder.Append(m_CRLF);
+
     }
 }

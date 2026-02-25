@@ -164,7 +164,7 @@ public static class WebRTCServiceCollectionExtensions
     {
         // Pipe audio payloads receied from the source WebRTC peer connection to the destination peer connection.
         source.OnAudioFrameReceived += (encodeAudioFrame) => destination.SendAudio(
-            RtpTimestampExtensions.ToRtpUnits(encodeAudioFrame.DurationMilliSeconds, destination.AudioStream.NegotiatedFormat.ToAudioFormat().RtpClockRate),
+            RtpTimestampExtensions.ToRtpUnits(encodeAudioFrame.DurationMilliSeconds, destination.AudioStream!.NegotiatedFormat.ToAudioFormat().RtpClockRate),
             encodeAudioFrame.EncodedAudio);
     }
 }

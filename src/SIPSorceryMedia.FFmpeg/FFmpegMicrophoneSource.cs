@@ -12,7 +12,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public unsafe FFmpegMicrophoneSource(string path, IAudioEncoder audioEncoder, uint frameSize = 960) : base(audioEncoder, frameSize)
         {
-            string inputFormat = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dshow"
+            var inputFormat = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dshow"
                 : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "alsa"
                 : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "avfoundation"
                 : throw new NotSupportedException($"Cannot find adequate input format - OSArchitecture:[{RuntimeInformation.OSArchitecture}] - OSDescription:[{RuntimeInformation.OSDescription}]");

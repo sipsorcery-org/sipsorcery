@@ -13,7 +13,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Linq;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -43,9 +45,13 @@ public class PcmResamplerUnitTest
         logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
         logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-        short[] pcm = new short[inRate / 50]; // 20ms.
+        var pcm = new short[inRate / 50]; // 20ms.
 
-        var resampled = PcmResampler.Resample(pcm, inRate, outRate);
+        using var writer = new ArrayPoolBufferWriter<short>(0);
+
+        PcmResampler.Resample(pcm, inRate, outRate, writer);
+
+        var resampled = writer.WrittenSpan;
 
         Assert.Equal(outRate / 50, resampled.Length);
     }
@@ -62,15 +68,17 @@ public class PcmResamplerUnitTest
         logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
         logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-        short[] ramp = Enumerable.Range(0, 160).Select(x => (short)(x * 60)).ToArray(); // 20ms of 8KHz ramp.
+        var ramp = Enumerable.Range(0, 160).Select(x => (short)(x * 60)).ToArray(); // 20ms of 8KHz ramp.
 
-        var resampled = PcmResampler.Resample(ramp, 8000, 48000);
+        using var writer = new ArrayPoolBufferWriter<short>(0);
+        PcmResampler.Resample(ramp, 8000, 48000, writer);
+        var resampled = writer.WrittenSpan;
 
         Assert.Equal(960, resampled.Length);
 
         // With linear interpolation each output step on a ramp is one sixth of the input
         // step. Sample repetition produces runs of six identical values instead.
-        for (int i = 1; i < 12; i++)
+        for (var i = 1; i < 12; i++)
         {
             Assert.Equal(10, resampled[i] - resampled[i - 1]);
         }
@@ -82,10 +90,12 @@ public class PcmResamplerUnitTest
         logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
         logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-        short[] pcm = { 1, 2, 3, 4 };
+        var pcm = new short[] { 1, 2, 3, 4 };
 
-        var resampled = PcmResampler.Resample(pcm, 8000, 8000);
+        using var writer = new ArrayPoolBufferWriter<short>(0);
+        PcmResampler.Resample(pcm, 8000, 8000, writer);
+        var resampled = writer.WrittenSpan;
 
-        Assert.Same(pcm, resampled);
+        Assert.True(resampled.SequenceEqual(pcm));
     }
 }

@@ -14,18 +14,23 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.Windows;
 
 namespace demo
 {
@@ -50,15 +55,21 @@ namespace demo
             _g729Decoder = new G729Decoder();
         }
 
-        public short[] DecodeAudio(byte[] encodedSample, AudioFormat format)
+        public void DecodeAudio(ReadOnlySpan<byte> encodedSample, AudioFormat format, IBufferWriter<short> destination)
         {
-            var pcm = _g729Decoder.Process(encodedSample);
-            return pcm.Where((x, i) => i % 2 == 0).Select((y, i) => (short)(pcm[i * 2 + 1] << 8 | pcm[i * 2])).ToArray();
+            using var buffer = new ArrayPoolBufferWriter<byte>(8192);
+            _g729Decoder.Process(encodedSample, buffer);
+
+            var pcm = buffer.WrittenSpan;
+            for (int i = 0; i < pcm.Length / 2; i++)
+            {
+                destination.Write(BinaryPrimitives.ReadInt16LittleEndian(pcm.Slice(i * 2, 2)));
+            }
         }
 
-        public byte[] EncodeAudio(short[] pcm, AudioFormat format)
+        public void EncodeAudio(ReadOnlySpan<short> pcm, AudioFormat format, IBufferWriter<byte> destination)
         {
-            return _g729Encoder.Process(pcm.SelectMany(x => new byte[] { (byte)(x), (byte)(x >> 8) }).ToArray());
+            _g729Encoder.Process(MemoryMarshal.AsBytes(pcm), destination);
         }
     }
 
@@ -105,7 +116,8 @@ namespace demo
                         Console.WriteLine("Hanging up established call.");
                         userAgent.Hangup();
                     }
-                };
+                }
+                ;
 
                 exitCts.Cancel();
             };

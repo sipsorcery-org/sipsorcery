@@ -14,7 +14,7 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
 
         private static unsafe String GetAvFoundationLogsAboutDevicesList()
         {
-            String inputFormat = "avfoundation";
+            var inputFormat = "avfoundation";
             
             AVInputFormat* avInputFormat = ffmpeg.av_find_input_format(inputFormat);
             AVFormatContext* pFormatCtx = ffmpeg.avformat_alloc_context();
@@ -36,13 +36,13 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
 
         static public unsafe List<Monitor>? GetMonitors()
         {
-            String logs = GetAvFoundationLogsAboutDevicesList();
+            var logs = GetAvFoundationLogsAboutDevicesList();
             return ParseAvFoundationLogsForMonitors(logs);
         }
 
         static public unsafe List<Camera>? GetCameraDevices()
         {
-            String logs = GetAvFoundationLogsAboutDevicesList();
+            var logs = GetAvFoundationLogsAboutDevicesList();
             return ParseAvFoundationLogsForCameras(logs);
         }
 
@@ -55,22 +55,26 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                 // Do we have at least a video device ?
                 if (logs.Contains(AVFOUNDATION_VIDEO_DEVICE_LOG_OUTPUT))
                 {
-                    String[] lines = logs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                    var lines = logs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
                     String? header = null;
                     int index;
 
-                    foreach (String line in lines)
+                    foreach (var line in lines)
                     {
                         // If we reach audio devices, we have finish the parsing
                         if (line.Contains(AVFOUNDATION_AUDIO_DEVICE_LOG_OUTPUT))
+                        {
                             break;
+                        }
 
                         // Get "header"
                         if (header == null)
                         {
                             index = line.IndexOf(AVFOUNDATION_VIDEO_DEVICE_LOG_OUTPUT);
                             if (index > 0)
+                            {
                                 header = line.Substring(0, index);
+                            }
                         }
                         else
                         {
@@ -80,12 +84,12 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                                 if (line.Contains(header))
                                 {
                                     // remove header
-                                    String ln = line.Replace(header, "");
+                                    var ln = line.Replace(header, "");
                                     if (ln.StartsWith("["))
                                     {
                                         index = ln.IndexOf("]");
-                                        string name = ln.Substring(index + 2);
-                                        string path = $"{ln.Substring(1, index - 1)}:";
+                                        var name = ln.Substring(index + 2);
+                                        var path = $"{ln.Substring(1, index - 1)}:";
 
                                         Monitor monitor = new Monitor
                                         {
@@ -95,7 +99,9 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                                         };
 
                                         if (result == null)
+                                        {
                                             result = new List<Monitor>();
+                                        }
 
                                         result.Add(monitor);
                                     }
@@ -119,22 +125,26 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                 // Do we have at least a video device ?
                 if (logs.Contains(AVFOUNDATION_VIDEO_DEVICE_LOG_OUTPUT))
                 {
-                    String[] lines = logs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                    var lines = logs.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
                     String? header = null;
                     int index;
 
-                    foreach (String line in lines)
+                    foreach (var line in lines)
                     {
                         // If we reach audio devices, we have finish the parsing
                         if (line.Contains(AVFOUNDATION_AUDIO_DEVICE_LOG_OUTPUT))
+                        {
                             break;
+                        }
 
                         // Get "header"
-                        if(header == null)
+                        if (header == null)
                         {
                             index = line.IndexOf(AVFOUNDATION_VIDEO_DEVICE_LOG_OUTPUT);
                             if (index > 0)
+                            {
                                 header = line.Substring(0, index);
+                            }
                         }
                         else
                         {
@@ -144,12 +154,12 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                                 if (line.Contains(header))
                                 {
                                     // remove header
-                                    String ln = line.Replace(header, "");
+                                    var ln = line.Replace(header, "");
                                     if(ln.StartsWith("["))
                                     {
                                         index = ln.IndexOf("]");
-                                        string name = ln.Substring(index+2);
-                                        string path = $"{ln.Substring(1, index - 1)}:";
+                                        var name = ln.Substring(index+2);
+                                        var path = $"{ln.Substring(1, index - 1)}:";
 
                                         Camera camera = new Camera
                                         {
@@ -158,7 +168,9 @@ namespace SIPSorceryMedia.FFmpeg.Interop.MacOS
                                         };
 
                                         if (result == null)
+                                        {
                                             result = new List<Camera>();
+                                        }
 
                                         result.Add(camera);
                                     }

@@ -104,7 +104,7 @@ namespace SIPSorcery.Net.UnitTests
             NetConvert.ToBuffer((ushort)numGapAckBlocks, buffer, 12);
             NetConvert.ToBuffer((ushort)numDuplicateTSNs, buffer, 14);
 
-            var ex = Assert.Throws<ApplicationException>(() => SctpSackChunk.ParseChunk(buffer, 0));
+            var ex = Assert.Throws<SipSorceryException>(() => SctpSackChunk.ParseChunk(buffer.AsSpan()));
 
             logger.LogDebug("Parse rejected with: {Message}", ex.Message);
         }
@@ -126,7 +126,7 @@ namespace SIPSorcery.Net.UnitTests
             buffer[1] = 0x00;
             NetConvert.ToBuffer((ushort)4, buffer, 2);              // Chunk header only.
 
-            Assert.Throws<ApplicationException>(() => SctpSackChunk.ParseChunk(buffer, 0));
+            Assert.Throws<ApplicationException>(() => SctpSackChunk.ParseChunk(buffer.AsSpan()));
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace SIPSorcery.Net.UnitTests
             NetConvert.ToBuffer((ushort)9, buffer, 22);             // Gap block 2 end.
             NetConvert.ToBuffer(1234U, buffer, 24);                 // Duplicate TSN.
 
-            var sackChunk = SctpSackChunk.ParseChunk(buffer, 0);
+            var sackChunk = SctpSackChunk.ParseChunk(buffer.AsSpan());
 
             Assert.Equal(1000U, sackChunk.CumulativeTsnAck);
             Assert.Equal(262144U, sackChunk.ARwnd);

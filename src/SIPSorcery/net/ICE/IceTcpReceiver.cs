@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -27,7 +29,6 @@ public class IceTcpReceiver : UdpReceiver
     protected const int REVEIVE_TCP_BUFFER_SIZE = RECEIVE_BUFFER_SIZE * 2;
 
     protected int m_recvOffset;
-    protected bool m_isEndOfStream;
 
     public IceTcpReceiver(Socket socket, int mtu = REVEIVE_TCP_BUFFER_SIZE) : base(socket, mtu)
     {
@@ -51,7 +52,7 @@ public class IceTcpReceiver : UdpReceiver
     /// and a new receiver.
     /// </para>
     /// </remarks>
-    public virtual bool IsEndOfStream => m_isEndOfStream;
+    public virtual bool IsEndOfStream { get; protected set; }
 
     /// <summary>
     /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
@@ -93,7 +94,7 @@ public class IceTcpReceiver : UdpReceiver
         catch (SocketException sockExcp)
         {
             m_isRunningReceive = false;
-            logger.LogWarning(sockExcp, "Socket error {SocketErrorCode} in IceTcpReceiver.BeginReceiveFrom. {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
+            logger.LogIceSocketWarning(sockExcp.SocketErrorCode, sockExcp.Message, sockExcp);
             //Close(sockExcp.Message);
         }
         catch (Exception excp)
@@ -102,7 +103,7 @@ public class IceTcpReceiver : UdpReceiver
             // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
             // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
             // case the socket can be considered to be unusable and there's no point trying another receive.
-            logger.LogError(excp, "Exception IceTcpReceiver.BeginReceiveFrom. {ErrorMessage}", excp.Message);
+            logger.LogIceSocketReceiveError(excp.Message, excp);
             Close(excp.Message);
         }
     }
@@ -120,7 +121,7 @@ public class IceTcpReceiver : UdpReceiver
         // call straight back into this method, recursing until the process died with a StackOverflowException.
         // It is also surfaced on IsEndOfStream so the send path can tell a half closed connection from a
         // live one, which Socket.Connected cannot.
-        bool endOfStream = false;
+        var endOfStream = false;
 
         try
         {
@@ -128,7 +129,7 @@ public class IceTcpReceiver : UdpReceiver
             // When socket is closed the object will be disposed of in the middle of a receive.
             if (!m_isClosed)
             {
-                int bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
+                var bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
 
                 if (bytesRead > 0)
                 {
@@ -161,7 +162,7 @@ public class IceTcpReceiver : UdpReceiver
                         m_recvOffset = 0;
                         recvLength = m_recvBuffer.Length;
                     }
-                    int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref remoteEP);
+                    var bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, m_recvOffset, recvLength, SocketFlags.None, ref remoteEP);
 
                     if (bytesReadSync > 0)
                     {
@@ -187,13 +188,13 @@ public class IceTcpReceiver : UdpReceiver
             // and that reconnect only re-arms this receive loop while the receiver has not been closed.
             // Closing here would make the reconnect permanently unable to resume receiving. Re-arming is
             // safe because BeginReceiveFrom returns immediately while the socket is not connected.
-            logger.LogWarning(resetSockExcp, "SocketException IceTcpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
+            logger.LogIceSocketEndReceiveWarning(resetSockExcp.SocketErrorCode, resetSockExcp.Message, resetSockExcp);
         }
         catch (SocketException sockExcp)
         {
             // Other socket errors are handled the same way and for the same reason: the reconnect in
             // SendOverTCP is what recovers the connection, and it needs this receiver left open to do it.
-            logger.LogWarning(sockExcp, "SocketException IceTcpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
+            logger.LogIceSocketEndReceiveWarning(sockExcp.SocketErrorCode, sockExcp.Message, sockExcp);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
@@ -206,7 +207,7 @@ public class IceTcpReceiver : UdpReceiver
             // drop the offending packet instead and let the receive loop continue, mirroring the
             // drop-and-continue behaviour of the base UdpReceiver.EndReceiveFrom. Genuine socket failures
             // are handled by the SocketException/ObjectDisposedException catches above.
-            logger.LogError(excp, "Exception IceTcpReceiver.EndReceiveFrom. {ErrorMessage}", excp.Message);
+            logger.LogIceTcpReceiveError(excp.Message, excp);
         }
         finally
         {
@@ -218,7 +219,7 @@ public class IceTcpReceiver : UdpReceiver
             // tries to send anything else to that ICE server.
             if (endOfStream)
             {
-                m_isEndOfStream = true;
+                IsEndOfStream = true;
             }
 
             if (!m_isClosed && !endOfStream)
@@ -263,7 +264,7 @@ public class IceTcpReceiver : UdpReceiver
                 }
                 if (header != null)
                 {
-                    int stunMsgBytes = STUNHeader.STUN_HEADER_LENGTH + header.MessageLength;
+                    var stunMsgBytes = STUNHeader.STUN_HEADER_LENGTH + header.MessageLength;
                     if (stunMsgBytes % 4 != 0)
                     {
                         stunMsgBytes = stunMsgBytes - (stunMsgBytes % 4) + 4;
@@ -275,7 +276,7 @@ public class IceTcpReceiver : UdpReceiver
                         extractCount++;
                         m_recvOffset = recvRemainingSegment.Offset + recvRemainingSegment.Count;
 
-                        byte[] packetBuffer = new byte[stunMsgBytes];
+                        var packetBuffer = new byte[stunMsgBytes];
                         Buffer.BlockCopy(recvRemainingSegment.Array, recvRemainingSegment.Offset, packetBuffer, 0, stunMsgBytes);
 
                         // A throw from the packet handler must not escape the framing loop. Unwinding here

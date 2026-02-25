@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SipBridgeParticipant.cs
 //
 // Description: The "sip" bridge endpoint: a SIP call as a full-duplex participant,
@@ -37,6 +37,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Cli.Commands.Route;
 using SIPSorcery.Media;
@@ -268,7 +269,9 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
                 _inWindowPeak = 0;
             }
 
-            short[] pcm48 = PcmResampler.Resample(pcm8, _negotiatedFormat.ClockRate, OPUS_RTP_CLOCK_RATE);
+            using var writer = new ArrayPoolBufferWriter<short>(0);
+            PcmResampler.Resample(pcm8, _negotiatedFormat.ClockRate, OPUS_RTP_CLOCK_RATE, writer);
+            var pcm48 = writer.WrittenSpan;
 
             lock (_inLock)
             {
@@ -330,8 +333,12 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
             {
                 return;
             }
-            short[] pcm8 = PcmResampler.Resample(pcm48, OPUS_RTP_CLOCK_RATE, _negotiatedFormat.ClockRate);
-            byte[] g711 = _outbound.EncodeAudio(pcm8, _negotiatedFormat);
+            using var pcm8Writer = new ArrayPoolBufferWriter<short>(0);
+            PcmResampler.Resample(pcm48, OPUS_RTP_CLOCK_RATE, _negotiatedFormat.ClockRate, pcm8Writer);
+            var pcm8 = pcm8Writer.WrittenSpan;
+            using var g711Writer = new ArrayPoolBufferWriter<byte>(0);
+            _outbound.EncodeAudio(pcm8, _negotiatedFormat, g711Writer);
+            var g711 = g711Writer.WrittenSpan;
             if (g711.Length == 0)
             {
                 return;

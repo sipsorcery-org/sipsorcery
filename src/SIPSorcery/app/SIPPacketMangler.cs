@@ -16,6 +16,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -57,7 +59,7 @@ namespace SIPSorcery.SIP.App
                     var sdpEndPoint = SDP.GetSDPRTPEndPoint(sdpBody);
                     if (sdpEndPoint == null)
                     {
-                        logger.LogWarning("SDP mangling failed to find a valid RTP endpoint in the SDP body.");
+                        logger.LogSdpManglingFailed();
                         return sdpBody;
                     }
 
@@ -89,14 +91,14 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    logger.LogWarning("Mangle SDP was called with an empty body or public IP address.");
+                    logger.LogEmptySdpBodyOrAddress();
                 }
 
                 return sdpBody;
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MangleSDP. {ErrorMessage}", excp.Message);
+                logger.LogExceptionMangleSDP(excp.Message, excp);
                 return sdpBody;
             }
         }
@@ -138,13 +140,13 @@ namespace SIPSorcery.SIP.App
                         sipRequest.Body = mangledSDP;
                         sipRequest.Header.ContentLength = sipRequest.Body.Length;
 
-                        logger.LogDebug("SDP mangled for {Status} response from {RemoteSIPEndPoint}, adjusted address {RemoteEndPointAddress}.", sipRequest.Method, sipRequest.RemoteSIPEndPoint, bottomViaIPAddress);
+                        logger.LogSdpMangled(sipRequest.Method, sipRequest.RemoteSIPEndPoint, bottomViaIPAddress);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MangleSDP. {ErrorMessage}", excp.Message);
+                logger.LogExceptionMangleSDP(excp.Message, excp);
             }
         }
 
@@ -183,13 +185,13 @@ namespace SIPSorcery.SIP.App
                         sipResponse.Body = mangledSDP;
                         sipResponse.Header.ContentLength = sipResponse.Body.Length;
 
-                        logger.LogDebug("SDP mangled for {Status} response from {RemoteSIPEndPoint}, adjusted address {RemoteEndPointAddress}.", sipResponse.Status, sipResponse.RemoteSIPEndPoint, remoteEndPoint.Address);
+                        logger.LogSdpMangled(sipResponse.Status, sipResponse.RemoteSIPEndPoint, remoteEndPoint.Address);
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MangleSIPResponse. {ErrorMessage}", excp.Message);
+                logger.LogExceptionMangleSIPResponse(excp.Message, excp);
             }
         }
 

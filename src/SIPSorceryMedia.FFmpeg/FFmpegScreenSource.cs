@@ -54,7 +54,9 @@ namespace SIPSorceryMedia.FFmpeg
                 };
             }
             else
+            {
                 throw new NotSupportedException($"Cannot find adequate input format - OSArchitecture:[{RuntimeInformation.OSArchitecture}] - OSDescription:[{RuntimeInformation.OSDescription}]");
+            }
 
             AVInputFormat* aVInputFormat = ffmpeg.av_find_input_format(inputFormat);
 

@@ -17,10 +17,9 @@
 /**
  * @author Lubomir Marinov
  */
-namespace SIPSorcery.Media.G729Codec
+namespace SIPSorcery.Media.G729Codec;
+
+internal sealed class FloatReference
 {
-    internal class FloatReference
-    {
-        public float value;
-    }
+    public float value;
 }

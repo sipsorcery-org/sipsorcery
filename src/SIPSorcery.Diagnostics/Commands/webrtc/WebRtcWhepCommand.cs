@@ -225,7 +225,7 @@ public sealed class WebRtcWhepCommand : CommandBase
 
                 if (videoSink.IsActive)
                 {
-                    videoSink.WriteFrame(frame, timestamp, format);
+                    videoSink.WriteFrame(frame.ToArray(), timestamp, format);
                 }
             };
 

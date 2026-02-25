@@ -39,7 +39,9 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
                 ffmpeg.avdevice_free_list_devices(&dvls);
 
                 if (GetDShowCameras(devNames) is var add && add is not null)
+                {
                     _cachedCameras.AddRange(add);
+                }
 
                 return _cachedCameras;
             }
@@ -148,11 +150,16 @@ namespace SIPSorceryMedia.FFmpeg.Interop.Win32
         {
             // We clear previous stored logs
             if (!string.IsNullOrEmpty(storedLogs))
+            {
                 storedLogs = string.Empty;
+            }
 
             av_log_set_callback_callback logCallback = (p0, level, format, vl) =>
             {
-                if (level > ffmpeg.av_log_get_level()) return;
+                if (level > ffmpeg.av_log_get_level())
+                {
+                    return;
+                }
 
                 var lineSize = 4096;
                 var lineBuffer = stackalloc byte[lineSize];

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionHeaderExtensionUnitTest.cs
 //
 // Description: Characterization tests for RTP header-extension

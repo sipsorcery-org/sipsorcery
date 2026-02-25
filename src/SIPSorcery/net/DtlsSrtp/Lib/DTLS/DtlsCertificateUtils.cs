@@ -19,23 +19,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Prng;
-using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Tls.Crypto.Impl.BC;
-using Org.BouncyCastle.Tls.Crypto;
 using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.Utilities.Encoders;
 using Org.BouncyCastle.X509;
-using System.Collections.Generic;
-using System.Text;
-using System;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net.SharpSRTP.DTLS
 {
@@ -177,20 +178,25 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
 
         public static string Fingerprint(X509CertificateStructure c, string algorithm = "SHA256")
         {
-            byte[] der = c.GetEncoded();
-            byte[] hash = DigestUtilities.CalculateDigest(algorithm, der);
-            byte[] hexBytes = Hex.Encode(hash);
-            string hex = Encoding.ASCII.GetString(hexBytes).ToUpperInvariant();
+            var der = c.GetEncoded();
+            var hash = DigestUtilities.CalculateDigest(algorithm, der);
 
-            StringBuilder fp = new StringBuilder();
-            int i = 0;
-            fp.Append(hex.Substring(i, 2));
-            while ((i += 2) < hex.Length)
+            return string.Create(hash.Length + hash.Length / 2 - 1, hash, (span, value) =>
             {
-                fp.Append(':');
-                fp.Append(hex.Substring(i, 2));
-            }
-            return fp.ToString();
+                var digits = "0123456789ABCDEF".AsSpan();
+                var p = 0;
+                for (var i = 0; p < span.Length && i < value.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        span[p++] = ':';
+                    }
+
+                    var b = value[i];
+                    span[p++] = char.ToUpperInvariant((char)(digits[b >> 4]));
+                    span[p++] = char.ToUpperInvariant((char)(digits[b & 0x0F]));
+                }
+            });
         }
 
         public static bool IsHashSupported(string algStr)
@@ -200,7 +206,7 @@ namespace SIPSorcery.Net.SharpSRTP.DTLS
                 throw new ArgumentNullException(nameof(algStr));
             }
 
-            IDigest digest = null;
+            IDigest? digest = null;
 
             try
             {

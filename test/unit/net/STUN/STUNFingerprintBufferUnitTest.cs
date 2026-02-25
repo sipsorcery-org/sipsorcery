@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNFingerprintBufferUnitTest.cs
 //
 // Description: Unit tests for ParseSTUNMessage fingerprint validation with

@@ -104,7 +104,7 @@ namespace SIPSorcery.Net
                 var hostname = RtspUrlHostnameRegex().Match(url).Result("${hostname}");
                 //IPEndPoint rtspEndPoint = DNSResolver.R(hostname, DNS_RESOLUTION_TIMEOUT);
 
-                logger.LogDebug("RTSP Client connecting to {Hostname}.", hostname);
+                logger.LogRtspClientConnectingHostname(hostname);
                 TcpClient rtspSocket = new TcpClient(hostname, RTSP_PORT);
                 NetworkStream rtspStream = rtspSocket.GetStream();
 
@@ -125,7 +125,8 @@ namespace SIPSorcery.Net
 
                 if (bytesRead > 0)
                 {
-                    logger.LogDebug(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                string responseText = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    logger.LogRtspDebugResponseReceived(responseText);
                     byte[] msgBuffer = new byte[bytesRead];
                     Buffer.BlockCopy(buffer, 0, msgBuffer, 0, bytesRead);
                     rtspMessage = RTSPMessage.ParseRTSPMessage(msgBuffer, null, null);
@@ -133,14 +134,14 @@ namespace SIPSorcery.Net
                     if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                     {
                         rtspResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                        logger.LogDebug("RTSP Response received: {StatusCode} {Status} {ReasonPhrase}.", rtspResponse.StatusCode, rtspResponse.Status, rtspResponse.ReasonPhrase);
+                        logger.LogRtspResponseReceivedDebug(rtspResponse.StatusCode, rtspResponse.Status, rtspResponse.ReasonPhrase);
                     }
 
                     rtspSDP = rtspResponse.Body;
                 }
                 else
                 {
-                    logger.LogWarning("Socket closed prematurely in {Method} for {Url}.", nameof(GetStreamDescription), url);
+                    logger.LogRtspStreamDescriptionSocketClosed(nameof(GetStreamDescription), url);
                 }
 
                 rtspSocket.Close();
@@ -149,7 +150,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(GetStreamDescription));
+                logger.LogRtspExceptionMethod(nameof(GetStreamDescription), excp);
                 throw excp;
             }
         }
@@ -175,7 +176,7 @@ namespace SIPSorcery.Net
                     hostname = SIPSorcery.Sys.IPSocket.ParseHostFromSocket(hostname);
                 }
 
-                logger.LogDebug("RTSP client connecting to {Hostname}, port {Port}.", hostname, port);
+                logger.LogRtspClientConnectingHostPort(hostname, port);
 
                 _rtspConnection = new TcpClient(hostname, port);
                 _rtspStream = _rtspConnection.GetStream();
@@ -217,8 +218,7 @@ namespace SIPSorcery.Net
                             _rtspSession.RemoteEndPoint = new IPEndPoint((_rtspConnection.Client.RemoteEndPoint as IPEndPoint).Address, setupResponse.Header.Transport.GetServerRTPPort());
                             _rtspSession.Start();
 
-                            logger.LogDebug("RTSP Response received to SETUP: {Status}, session ID {SessionId}, server RTP endpoint {RemoteEndPoint}.",
-                                setupResponse.Status, _rtspSession.SessionID, _rtspSession.RemoteEndPoint);
+                            logger.LogRtspSetupResponseDebug(setupResponse.Status.ToString(), _rtspSession.SessionID, _rtspSession.RemoteEndPoint.ToString());
 
                             if (OnSetupSuccess != null)
                             {
@@ -227,7 +227,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning("RTSP Response received to SETUP: {Status}.", setupResponse.Status);
+                            logger.LogRtspSetupResponseWarning(setupResponse.Status.ToString());
                             throw new ApplicationException($"An error response of {setupResponse.Status} was received for an RTSP setup request.");
                         }
                     }
@@ -243,7 +243,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.LogWarning("RTSPCient.RTPQueueFull purging frames list.");
+                logger.LogRtspRtpQueueFull();
                 System.Diagnostics.Debug.WriteLine("RTSPCient.RTPQueueFull purging frames list.");
 
                 lock (_frames)
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(RTPQueueFull));
+                logger.LogRtspExceptionMethod(nameof(RTPQueueFull), excp);
             }
         }
 
@@ -290,7 +290,7 @@ namespace SIPSorcery.Net
                 if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                 {
                     var playResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                    logger.LogDebug("RTSP Response received to PLAY: {StatusCode} {Status} {ReasonPhrase}.", playResponse.StatusCode, playResponse.Status, playResponse.ReasonPhrase);
+                    logger.LogRtspPlayResponseDebug(playResponse.StatusCode, playResponse.Status, playResponse.ReasonPhrase);
                 }
             }
             else
@@ -308,7 +308,7 @@ namespace SIPSorcery.Net
             {
                 if (_rtspStream != null && _rtspConnection.Connected)
                 {
-                    logger.LogDebug("RTSP client sending teardown request for {Url}.", _url);
+                    logger.LogRtspClientTeardownUrl(_url);
 
                     RTSPRequest teardownRequest = new RTSPRequest(RTSPMethodsEnum.TEARDOWN, _url);
                     RTSPHeader teardownHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
@@ -321,12 +321,12 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogDebug("RTSP client did not send teardown request for {Url}, the socket was closed.", _url);
+                    logger.LogRtspClientTeardownClosedDebug(_url);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(Teardown));
+                logger.LogRtspExceptionMethod(nameof(Teardown), excp);
             }
         }
 
@@ -339,7 +339,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.LogDebug("RTSP client, closing connection for {Url}.", _url);
+                    logger.LogRtspCloseConnectionDebug(_url);
 
                     _isClosed = true;
                     _sendKeepAlivesMRE.Set();
@@ -359,7 +359,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception rtpStreamExcp)
                         {
-                            logger.LogError(rtpStreamExcp, "Exception in {Method} closing RTP stream.", nameof(Close));
+                            logger.LogRtspCloseRtpStreamError(nameof(Close), rtpStreamExcp);
                         }
                     }
 
@@ -371,7 +371,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(Close));
+                logger.LogRtspExceptionMethod(nameof(Close), excp);
             }
         }
 
@@ -456,7 +456,7 @@ namespace SIPSorcery.Net
                                     foreach (var oldFrame in _frames.Where(x => x.Timestamp <= rtpPacket.Header.Timestamp).ToList())
                                     {
                                         System.Diagnostics.Debug.WriteLine("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
-                                        logger.LogWarning("Discarding old frame for timestamp {Timestamp}.", oldFrame.Timestamp);
+                                        logger.LogRtspDiscardingOldFrameWarning(oldFrame.Timestamp);
                                         _frames.Remove(oldFrame);
                                     }
 
@@ -477,7 +477,7 @@ namespace SIPSorcery.Net
                                         }
                                         catch (Exception frameReadyExcp)
                                         {
-                                            logger.LogError(frameReadyExcp, "Exception in {Method} OnFrameReady.", nameof(ProcessRTPPackets));
+                                            logger.LogRtspFrameReadyError(nameof(ProcessRTPPackets), frameReadyExcp);
                                         }
                                     }
                                 }
@@ -487,7 +487,7 @@ namespace SIPSorcery.Net
 
                     if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
                     {
-                        logger.LogWarning("No RTP packets were received on RTSP session {SessionId} for {TimeoutSeconds}. The session will now be closed.",
+                        logger.LogRtspSessionNoRtpTimeoutWarning(
                             _rtspSession.SessionID, RTP_TIMEOUT_SECONDS);
                         Close();
                     }
@@ -499,7 +499,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(ProcessRTPPackets));
+                logger.LogRtspExceptionMethod(nameof(ProcessRTPPackets), excp);
             }
         }
 
@@ -546,7 +546,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        logger.LogWarning("Zero bytes were read from the RTSP client socket in response to an OPTIONS keep-alive request.");
+                        logger.LogRtspKeepAliveWarning();
                     }
 
                     _sendKeepAlivesMRE.Reset();
@@ -555,7 +555,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception in {Method}.", nameof(SendKeepAlives));
+                logger.LogRtspExceptionMethod(nameof(SendKeepAlives), excp);
             }
         }
     }

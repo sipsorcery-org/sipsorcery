@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: CallProperties.cs
 //
 // Description: Helper functions for setting SIP headers.
@@ -12,6 +12,8 @@
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+
+#nullable disable
 
 using System;
 using SIPSorcery.Sys;

@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,7 +79,7 @@ namespace SIPSorcery.SIP
     {
         private static int _lastUsedChannelID = 0;
 
-        protected ILogger logger = LogFactory.CreateLogger<SIPChannel>();
+        protected static readonly ILogger logger = LogFactory.CreateLogger<SIPChannel>();
 
         /// <summary>
         /// A unique ID for the channel. Useful for ensuring a transmission can occur

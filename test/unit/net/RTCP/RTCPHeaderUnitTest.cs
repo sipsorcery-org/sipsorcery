@@ -37,10 +37,10 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPHeader rtcpHeader = new RTCPHeader(RTCPReportTypesEnum.SR, 1);
-            byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
+            var headerBuffer = rtcpHeader.GetHeader(0, 0);
 
-            int byteNum = 1;
-            foreach (byte headerByte in headerBuffer)
+            var byteNum = 1;
+            foreach (var headerByte in headerBuffer)
             {
                 logger.LogDebug("{ByteNum}: {HeaderByte}", byteNum, headerByte.ToString("x"));
                 byteNum++;
@@ -54,7 +54,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPHeader src = new RTCPHeader(RTCPReportTypesEnum.SR, 1);
-            byte[] headerBuffer = src.GetHeader(17, 54443);
+            var headerBuffer = src.GetHeader(17, 54443);
             RTCPHeader dst = new RTCPHeader(headerBuffer);
 
             logger.LogDebug("Version: {SrcVersion}, {DstVersion}", src.Version, dst.Version);

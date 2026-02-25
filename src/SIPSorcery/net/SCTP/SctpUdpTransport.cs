@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -40,7 +41,7 @@ namespace SIPSorcery.Net
         /// The UDP encapsulation socket if the instance is managing its own transport layer.
         /// For WebRTC data channels the socket will not be managed externally.
         /// </summary>
-        private Socket _udpEncapSocket;
+        private Socket? _udpEncapSocket;
 
         private ConcurrentDictionary<string, SctpAssociation> _associations = new ConcurrentDictionary<string, SctpAssociation>();
 
@@ -49,14 +50,18 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="udpEncapPort">The port to bind to for the UDP encapsulation socket.</param>
         /// <param name="portRange">Optional. The portRange which should be used to get a listening port.</param>
-        public SctpUdpTransport(int udpEncapPort = 0, PortRange portRange = null)
+        public SctpUdpTransport(int udpEncapPort = 0, PortRange? portRange = null)
         {
             NetServices.CreateRtpSocket(false, IPAddress.IPv6Any, udpEncapPort, portRange, out _udpEncapSocket, out _);
-            UdpReceiver udpReceiver = new UdpReceiver(_udpEncapSocket);
+            Debug.Assert(_udpEncapSocket is { });
+            var udpReceiver = new UdpReceiver(_udpEncapSocket);
             udpReceiver.OnPacketReceived += OnEncapsulationSocketPacketReceived;
             udpReceiver.OnClosed += OnEncapsulationSocketClosed;
             udpReceiver.BeginReceiveFrom();
         }
+
+        private void OnEncapsulationSocketPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+            => OnEncapsulationSocketPacketReceived(receiver, localPort, remoteEndPoint, packet.AsMemory());
 
         /// <summary>
         /// Event handler for a packet receive on the UDP encapsulation socket.
@@ -65,24 +70,24 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port the packet was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the packet was received from.</param>
         /// <param name="packet">A buffer containing the packet.</param>
-        private void OnEncapsulationSocketPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnEncapsulationSocketPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint? remoteEndPoint, ReadOnlyMemory<byte> packet)
         {
             try
             {
-                if (!SctpPacket.VerifyChecksum(packet, 0, packet.Length))
+                if (!SctpPacket.VerifyChecksum(packet.Span))
                 {
-                    logger.LogWarning("SCTP packet from UDP {RemoteEndPoint} dropped due to invalid checksum.", remoteEndPoint);
+                    logger.LogSctpPacketDroppedInvalidChecksum(remoteEndPoint);
                 }
                 else
                 {
-                    var sctpPacket = SctpPacket.Parse(packet, 0, packet.Length);
+                    var sctpPacket = SctpPacket.Parse(packet.Span);
 
                     // Process packet.
                     if (sctpPacket.Header.VerificationTag == 0)
                     {
                         GotInit(sctpPacket, remoteEndPoint);
                     }
-                    else if (sctpPacket.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
+                    else if (HasCookieEcho(sctpPacket))
                     {
                         // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                         // requested a new association be created.
@@ -90,11 +95,12 @@ namespace SIPSorcery.Net
 
                         if (cookie.IsEmpty())
                         {
-                            logger.LogWarning("SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
+                            logger.LogSctpErrorAcquiringHandshakeCookie();
                         }
                         else
                         {
-                            logger.LogDebug("SCTP creating new association for {RemoteEndPoint}.", remoteEndPoint);
+                            Debug.Assert(remoteEndPoint is { });
+                            logger.LogSctpCreatingNewAssociation(remoteEndPoint);
 
                             var association = new SctpAssociation(this, cookie, localPort);
 
@@ -108,20 +114,37 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogError("SCTP failed to add new association to dictionary.");
+                                logger.LogSctpFailedToAddNewAssociation();
                             }
                         }
                     }
                     else
                     {
                         // TODO: Lookup the existing association for the packet.
-                        _associations.Values.First().OnPacketReceived(sctpPacket);
+                        // TODO: ConcurrentDictionary is not the best performing here. Consider a different structure.
+                        Debug.Assert(_associations.Count > 0);
+                        _associations.First().Value.OnPacketReceived(sctpPacket);
+                    }
+
+                    static bool HasCookieEcho(SctpPacket sctpPacket)
+                    {
+                        var hasCookieEcho = false;
+                        foreach (var ch in sctpPacket.Chunks)
+                        {
+                            if (ch.KnownType == SctpChunkType.COOKIE_ECHO)
+                            {
+                                hasCookieEcho = true;
+                                break;
+                            }
+                        }
+
+                        return hasCookieEcho;
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SctpTransport.OnEncapsulationSocketPacketReceived. {ErrorMessage}", excp.Message);
+                logger.LogSctpPacketReceivedException($"Exception SctpTransport.OnEncapsulationSocketPacketReceived. {excp.Message}", excp);
             }
         }
 
@@ -129,16 +152,23 @@ namespace SIPSorcery.Net
         /// Event handler for the UDP encapsulation socket closing.
         /// </summary>
         /// <param name="reason"></param>
-        private void OnEncapsulationSocketClosed(string reason)
+        private void OnEncapsulationSocketClosed(string? reason)
         {
-            logger.LogInformation("SCTP transport encapsulation receiver closed with reason: {Reason}.", reason);
+            logger.LogSctpTransportEncapsulationReceiverClosed(reason);
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string? associationID, ReadOnlyMemory<byte> buffer, IDisposable? memoryOwner = null)
         {
+            Debug.Assert(!string.IsNullOrEmpty(associationID));
             if (_associations.TryGetValue(associationID, out var assoc))
             {
-                _udpEncapSocket.SendTo(buffer, offset, length, SocketFlags.None, assoc.Destination);
+                Debug.Assert(_udpEncapSocket is { });
+                Debug.Assert(assoc.Destination is { });
+                _udpEncapSocket.SendTo(assoc.Destination, buffer, memoryOwner);
+            }
+            else
+            {
+                memoryOwner?.Dispose();
             }
         }
 
@@ -149,18 +179,18 @@ namespace SIPSorcery.Net
         /// <param name="sourcePort">The SCTP source port.</param>
         /// <param name="destinationPort">The SCTP destination port.</param>
         /// <returns>An SCTP association.</returns>
-        public SctpAssociation Associate(
-            IPEndPoint destination, 
-            ushort sourcePort, 
-            ushort destinationPort, 
+        public SctpAssociation? Associate(
+            IPEndPoint destination,
+            ushort sourcePort,
+            ushort destinationPort,
             ushort numberOutboundStreams = SctpAssociation.DEFAULT_NUMBER_OUTBOUND_STREAMS,
             ushort numberInboundStreams = SctpAssociation.DEFAULT_NUMBER_INBOUND_STREAMS)
         {
             var association = new SctpAssociation(
-                this, 
-                destination, 
-                sourcePort, 
-                destinationPort, 
+                this,
+                destination,
+                sourcePort,
+                destinationPort,
                 DEFAULT_UDP_MTU,
                 numberOutboundStreams,
                 numberInboundStreams);
@@ -172,7 +202,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.LogWarning("SCTP transport failed to add association.");
+                logger.LogSctpTransportFailedToAddAssociation();
                 association.Shutdown();
                 return null;
             }

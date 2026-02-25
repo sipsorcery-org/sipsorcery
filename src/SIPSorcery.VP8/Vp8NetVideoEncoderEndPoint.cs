@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -157,11 +158,12 @@ namespace Vpx.Net
             }
         }
 
-        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] frame, VideoFormat format)
+        public void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, ReadOnlyMemory<byte> frame, VideoFormat format)
         {
             if (!_isClosed)
             {
-                foreach (var decoded in _vp8Codec.DecodeVideo(frame, VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.VP8))
+                // TODO: use ReadOnlySequence<byte> without ToArray() to avoid unnecessary copying of the frame data.
+                foreach (var decoded in _vp8Codec.DecodeVideo(frame.ToArray(), VideoPixelFormatsEnum.Bgr, VideoCodecsEnum.VP8))
                 {
                     OnVideoSinkDecodedSample(decoded.Sample, decoded.Width, decoded.Height, (int)(decoded.Width * 3), VideoPixelFormatsEnum.Bgr);
                 }

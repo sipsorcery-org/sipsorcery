@@ -22,44 +22,43 @@
 using System;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 
-namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP
+namespace SIPSorcery.Net.SharpSRTP.DTLSSRTP;
+
+public class DtlsSrtpKeys
 {
-    public class DtlsSrtpKeys
+    public SrtpProtectionProfileConfiguration ProtectionProfile { get; }
+    public ReadOnlyMemory<byte> Mki { get; }
+
+    public ReadOnlyMemory<byte> ClientWriteMasterKey { get; }
+    public ReadOnlyMemory<byte> ClientWriteMasterSalt { get; }
+    public ReadOnlyMemory<byte> ServerWriteMasterKey { get; }
+    public ReadOnlyMemory<byte> ServerWriteMasterSalt { get; }
+
+    public DtlsSrtpKeys(
+        SrtpProtectionProfileConfiguration protectionProfile,
+        ReadOnlyMemory<byte> clientWriteMasterKey,
+        ReadOnlyMemory<byte> clientWriteMasterSalt,
+        ReadOnlyMemory<byte> serverWriteMasterKey,
+        ReadOnlyMemory<byte> serverWriteMasterSalt,
+        ReadOnlyMemory<byte> mki = default)
     {
-        public SrtpProtectionProfileConfiguration ProtectionProfile { get; }
-        public ReadOnlyMemory<byte> Mki { get; }
+        this.ProtectionProfile = protectionProfile ?? throw new ArgumentNullException(nameof(protectionProfile));
+        this.Mki = mki;
 
-        public ReadOnlyMemory<byte> ClientWriteMasterKey { get; }
-        public ReadOnlyMemory<byte> ClientWriteMasterSalt { get; }
-        public ReadOnlyMemory<byte> ServerWriteMasterKey { get; }
-        public ReadOnlyMemory<byte> ServerWriteMasterSalt { get; }
+        int cipherKeyLen = protectionProfile.CipherKeyLength >> 3;
+        int cipherSaltLen = protectionProfile.CipherSaltLength >> 3;
 
-        public DtlsSrtpKeys(
-            SrtpProtectionProfileConfiguration protectionProfile,
-            ReadOnlyMemory<byte> clientWriteMasterKey,
-            ReadOnlyMemory<byte> clientWriteMasterSalt,
-            ReadOnlyMemory<byte> serverWriteMasterKey,
-            ReadOnlyMemory<byte> serverWriteMasterSalt,
-            ReadOnlyMemory<byte> mki = default)
+        if (clientWriteMasterKey.Length != cipherKeyLen
+            || clientWriteMasterSalt.Length != cipherSaltLen
+            || serverWriteMasterKey.Length != cipherKeyLen
+            || serverWriteMasterSalt.Length != cipherSaltLen)
         {
-            this.ProtectionProfile = protectionProfile ?? throw new ArgumentNullException(nameof(protectionProfile));
-            this.Mki = mki;
-
-            int cipherKeyLen = protectionProfile.CipherKeyLength >> 3;
-            int cipherSaltLen = protectionProfile.CipherSaltLength >> 3;
-
-            if (clientWriteMasterKey.Length != cipherKeyLen
-                || clientWriteMasterSalt.Length != cipherSaltLen
-                || serverWriteMasterKey.Length != cipherKeyLen
-                || serverWriteMasterSalt.Length != cipherSaltLen)
-            {
-                throw new ArgumentException();
-            }
-
-            this.ClientWriteMasterKey = clientWriteMasterKey;
-            this.ClientWriteMasterSalt = clientWriteMasterSalt;
-            this.ServerWriteMasterKey = serverWriteMasterKey;
-            this.ServerWriteMasterSalt = serverWriteMasterSalt;
+            throw new ArgumentException();
         }
+
+        this.ClientWriteMasterKey = clientWriteMasterKey;
+        this.ClientWriteMasterSalt = clientWriteMasterSalt;
+        this.ServerWriteMasterKey = serverWriteMasterKey;
+        this.ServerWriteMasterSalt = serverWriteMasterSalt;
     }
 }

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SrtcpGcmMultiPacketUnitTest.cs
 //
 // Description: Regression test for the SRTCP AES-GCM decrypt IV. UnprotectRtcp

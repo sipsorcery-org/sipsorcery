@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionCodecMatchingUnitTest.cs
 //
 // Description: Integration-level characterization tests for codec /

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionRtcpLifecycleUnitTest.cs
 //
 // Description: Characterization tests for the RTCP session lifecycle
