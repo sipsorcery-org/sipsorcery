@@ -37,7 +37,7 @@ namespace SIPSorcery.Sys
         public const int AES_IV_SIZE = 16;
         private const string CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<Crypto>();
 
         static int seed = Environment.TickCount;
 

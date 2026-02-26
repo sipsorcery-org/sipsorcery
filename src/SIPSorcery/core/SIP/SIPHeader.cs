@@ -1441,7 +1441,7 @@ namespace SIPSorcery.SIP
     {
         public const int DEFAULT_CSEQ = 100;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPHeader>();
         private static string m_CRLF = SIPConstants.CRLF;
 
         // RFC SIP headers.

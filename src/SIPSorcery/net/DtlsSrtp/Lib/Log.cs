@@ -26,8 +26,13 @@ namespace SIPSorcery.Net.SharpSRTP
 {
     public static class Log
     {
+        /// <summary>
+        /// Empty class only meant to be an anchor type for the logger.
+        /// </summary>
+        private class SharpSRTP { }
+
         // wire up the sipsorcery's logger
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SharpSRTP>();
 
         public static bool WarnEnabled { get; set; } = true;
         public static void Warn(string message, Exception ex = null)

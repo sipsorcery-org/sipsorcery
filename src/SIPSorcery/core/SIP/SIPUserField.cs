@@ -46,7 +46,7 @@ namespace SIPSorcery.SIP
     {
         private const char PARAM_TAG_DELIMITER = ';';
 
-        private static ILogger logger = Log.Logger;
+        private static ILogger logger = LogFactory.CreateLogger<SIPUserField>();
 
         [DataMember]
         public string Name;

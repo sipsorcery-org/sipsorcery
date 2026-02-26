@@ -46,7 +46,7 @@ public class UdpReceiver
     /// </summary>
     protected const int RECEIVE_BUFFER_SIZE = 3000;
 
-    protected static ILogger logger = Log.Logger;
+    protected static readonly ILogger logger = LogFactory.CreateLogger<UdpReceiver>();
 
     protected readonly Socket m_socket;
     protected byte[] m_recvBuffer;

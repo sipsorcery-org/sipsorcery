@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPChannel.cs
 //
 // Description: Generic items for SIP channels.
@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
     {
         private static int _lastUsedChannelID = 0;
 
-        protected ILogger logger = Log.Logger;
+        protected ILogger logger = LogFactory.CreateLogger<SIPChannel>();
 
         /// <summary>
         /// A unique ID for the channel. Useful for ensuring a transmission can occur

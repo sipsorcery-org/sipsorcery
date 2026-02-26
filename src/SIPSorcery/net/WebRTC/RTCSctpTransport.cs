@@ -60,7 +60,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         internal const uint SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTCSctpTransport>();
 
         /// <summary>
         /// The SCTP ports are redundant for a DTLS transport. There will only ever be one

@@ -102,7 +102,7 @@ namespace SIPSorcery.Media
         private const string MUSIC_RESOURCE_PATH = "SIPSorcery.media.Macroform_-_Simplicity.raw";
         private static float LINEAR_MAXIMUM = 32767f;
 
-        private static ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static readonly ILogger Log = LogFactory.CreateLogger<AudioExtrasSource>();
 
         private MediaFormatManager<AudioFormat> _audioFormatManager;
         private BinaryReader _musicStreamReader;

@@ -28,7 +28,7 @@ namespace SIPSorcery.Net
 {
     public class VideoStream : MediaStream
     {
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<VideoStream>();
         protected RtpVideoFramer RtpVideoFramer;
 
         private VideoFormat sendingFormat;

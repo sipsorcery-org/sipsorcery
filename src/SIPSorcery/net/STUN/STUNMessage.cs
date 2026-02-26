@@ -30,7 +30,7 @@ namespace SIPSorcery.Net
         private const int MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH = 20;
         private const int FINGERPRINT_ATTRIBUTE_CRC32_LENGTH = 4;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<STUNMessage>();
 
         /// <summary>
         /// For parsed STUN messages this indicates whether a valid fingerprint

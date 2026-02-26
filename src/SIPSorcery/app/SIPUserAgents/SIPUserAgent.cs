@@ -52,7 +52,7 @@ namespace SIPSorcery.SIP.App
         private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T6;
         private readonly SemaphoreSlim m_semaphoreSlim = new SemaphoreSlim(1, 1);
 
-        private static ILogger logger = Log.Logger;
+        private static ILogger logger = LogFactory.CreateLogger<SIPUserAgent>();
 
         private CancellationTokenSource m_cts = new CancellationTokenSource();
 

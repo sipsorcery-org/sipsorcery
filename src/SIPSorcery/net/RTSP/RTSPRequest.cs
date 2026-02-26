@@ -31,7 +31,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTSPRequest
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTSPRequest>();
 
         private static string m_CRLF = RTSPConstants.CRLF;
         private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;

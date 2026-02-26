@@ -85,7 +85,7 @@ namespace SIPSorcery.Net
 
         public const string m_CRLF = "\r\n";
 
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SDPMediaAnnouncement>();
 
         public SDPConnectionInformation Connection;
 

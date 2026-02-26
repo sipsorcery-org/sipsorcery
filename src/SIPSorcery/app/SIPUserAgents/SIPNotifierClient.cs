@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP.App
 
         private static readonly string m_filterTextType = SIPMIMETypes.MWI_TEXT_TYPE;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPNotifierClient>();
 
         private SIPTransport m_sipTransport;
         private SIPEndPoint m_outboundProxy;

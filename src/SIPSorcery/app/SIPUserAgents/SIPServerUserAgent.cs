@@ -29,7 +29,7 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class SIPServerUserAgent : ISIPServerUserAgent
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPServerUserAgent>();
 
         protected SIPTransport m_sipTransport;
         protected UASInviteTransaction m_uasTransaction;

@@ -47,7 +47,7 @@ public class TurnClient
 
     private const int GRACE_RENEWAL_SECONDS = 10;
 
-    private static readonly ILogger logger = Log.Logger;
+    private static readonly ILogger logger = LogFactory.CreateLogger<TurnClient>();
 
     private readonly IceServerResolver _iceServerResolver = new IceServerResolver();
 

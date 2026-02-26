@@ -46,7 +46,7 @@ namespace SIPSorcery.Net
         protected object _pendingPackagesLock = new object();
         protected List<PendingPackages> _pendingPackagesBuffer = new List<PendingPackages>();
 
-        private static ILogger logger = Log.Logger;
+        private static  readonly ILogger logger = LogFactory.CreateLogger<MediaStream>();
 
         private RtpSessionConfig RtpSessionConfig;
 

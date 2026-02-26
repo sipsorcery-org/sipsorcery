@@ -39,7 +39,7 @@ public enum RTPChannelSocketsEnum
 /// </summary>
 public class RTPChannel : IDisposable
 {
-    private static ILogger logger = Log.Logger;
+    private static readonly ILogger logger = LogFactory.CreateLogger<RTPChannel>();
     protected UdpReceiver m_rtpReceiver;
     private Socket m_controlSocket;
     protected UdpReceiver m_controlReceiver;

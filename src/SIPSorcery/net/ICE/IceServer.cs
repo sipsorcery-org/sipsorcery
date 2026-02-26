@@ -33,7 +33,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class IceServer
     {
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<IceServer>();
 
         /// <summary>
         /// A magic cookie to use as the prefix for STUN requests generated for ICE servers.

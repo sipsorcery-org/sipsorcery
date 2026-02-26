@@ -45,7 +45,7 @@ namespace SIPSorcery.SIP
         private const int NONCE_DEFAULT_COUNT = 1;
         private const string SHA256_ALGORITHM_ID = "SHA-256";
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPAuthorisationDigest>();
 
         private static char[] m_headerFieldRemoveChars = new char[] { ' ', '"', '\'' };
 

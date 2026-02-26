@@ -26,7 +26,7 @@ namespace SIPSorcery.Net
         private const string RTSP_RESPONSE_PREFIX = "RTSP";
         private const string RTSP_MESSAGE_IDENTIFIER = "RTSP";  // String that must be in a message buffer to be recognised as an RTSP message and processed.
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTSPMessage>();
 
         private static string m_CRLF = RTSPConstants.CRLF;
         private static int m_minFirstLineLength = 7;

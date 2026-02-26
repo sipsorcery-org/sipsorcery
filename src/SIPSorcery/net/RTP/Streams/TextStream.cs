@@ -10,7 +10,7 @@ namespace SIPSorcery.Net
 {
     public class TextStream : MediaStream
     {
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<TextStream>();
 
         private DateTime _lastSendTime = DateTime.MinValue;
 

@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP
         private static string m_CRLF = SIPConstants.CRLF;
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;    // The delimiting character sequence for messages in a stream.
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPMessageBuffer>();
 
         public string RawMessage
         {

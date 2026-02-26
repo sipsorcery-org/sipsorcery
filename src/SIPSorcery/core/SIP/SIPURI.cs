@@ -37,7 +37,7 @@ namespace SIPSorcery.SIP
         private const char HEADER_TAG_DELIMITER = '&';
         private const char TAG_NAME_VALUE_SEPERATOR = '=';
 
-        private static ILogger logger = Log.Logger;
+        private static ILogger logger = LogFactory.CreateLogger<SIPURI>();
 
         private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
 

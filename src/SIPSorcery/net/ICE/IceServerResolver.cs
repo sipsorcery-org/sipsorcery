@@ -29,7 +29,7 @@ namespace SIPSorcery.Net;
 
 public class IceServerResolver
 {
-    private static readonly ILogger logger = Log.Logger;
+    private static readonly ILogger logger = LogFactory.CreateLogger<IceServerResolver>();
 
     private ConcurrentDictionary<STUNUri, IceServer> _iceServers = new();
 

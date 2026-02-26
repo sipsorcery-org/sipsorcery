@@ -46,7 +46,7 @@ namespace SIPSorcery.SIP
     /// </remarks>
     public class SIPDialogue
     {
-        protected static ILogger logger = Log.Logger;
+        protected static readonly ILogger logger = LogFactory.CreateLogger<SIPDialogue>();
 
         public Guid Id { get; set; }                                // Id for persistence, NOT used for SIP call purposes.
         public string CallId { get; set; }

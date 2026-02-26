@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class ChecklistEntry : IComparable
     {
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<ChecklistEntry>();
 
         //Previous RequestIds
         protected List<string> _cachedRequestTransactionIDs = new List<string>();

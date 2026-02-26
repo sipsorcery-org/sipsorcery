@@ -27,7 +27,7 @@ namespace SIPSorcery.Net
 {
     public class MediaStreamTrack
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<MediaStreamTrack>();
 
         /// <summary>
         /// The type of media stream represented by this track. Must be audio or video.

@@ -25,7 +25,7 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class SIPB2BUserAgent : SIPServerUserAgent, ISIPClientUserAgent
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPB2BUserAgent>();
 
         private SIPClientUserAgent m_uac;
         private SIPCallDescriptor m_uacCallDescriptor;

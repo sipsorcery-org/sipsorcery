@@ -42,7 +42,7 @@ namespace SIPSorcery.Media
         /// </summary>
         private const int OPUS_MAXIMUM_ENCODED_FRAME_SIZE = 1275;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<AudioEncoder>();
 
         private bool _disposedValue = false;
 

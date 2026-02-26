@@ -11,7 +11,7 @@ namespace SIPSorcery.Net
         private readonly System.Collections.Generic.LinkedList<RTPPacket> _data = new System.Collections.Generic.LinkedList<RTPPacket>();
         private ushort? _currentSeqNumber;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<RTPReorderBuffer>();
 
         public RTPReorderBuffer(TimeSpan maxDropOutTime, IDateTime datetimeProvider = null)
         {
