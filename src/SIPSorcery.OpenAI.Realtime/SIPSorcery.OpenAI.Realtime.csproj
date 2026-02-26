@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+	<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+	<!-- Disable warning for missing XML doc comments. -->
+	<NoWarn>$(NoWarn);CS1591;</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Aaron Clauson</Authors>
+    <Copyright>Copyright © 2025 Aaron Clauson</Copyright>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Title>SIPSorcery</Title>
+    <Summary>A .NET library for interacting with OpenAI's real-time WebRTC API.</Summary>
+    <Description>A .NET library for interacting with OpenAI's real-time WebRTC API. It provides helper classes to negotiate peer connections, send and receive Opus audio frames and exchange control messages over a data channel. Not an official OpenAI package and no affiliation with OpenAI.
+    </Description>
+    <Company>SIP Sorcery PTY LTD</Company>
+    <Product>SIPSorcery.OpenAI.WebRTC</Product>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC</PackageProjectUrl>
+    <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+    <PackageTags>OpenAI WebRTC SIPSorcery Real-time</PackageTags>
+    <PackageReleaseNotes>-v8.0.4: Added gpt-4o-realtime-preview-2025-06-03 model option.
+-v8.0.3: Stable release.
+-v8.0.2-pre: Synchronised realtime models with OpenAI spec.
+-v8.0.1-pre: Initial version.
+</PackageReleaseNotes>
+    <NeutralLanguage>en</NeutralLanguage>
+    <Version>10.0.1-pre</Version>
+    <AssemblyVersion>10.0.1</AssemblyVersion>
+    <FileVersion>10.0.1</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="SourceLink">
+    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="" />
+	<None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
+  </ItemGroup>
+
+
+</Project>
