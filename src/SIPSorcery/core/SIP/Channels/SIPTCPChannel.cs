@@ -155,8 +155,8 @@ namespace SIPSorcery.SIP
             {
                 m_channelSocket.Listen(MAX_TCP_CONNECTIONS);
 
-                Task.Factory.StartNew(AcceptConnections, TaskCreationOptions.LongRunning);
-                Task.Factory.StartNew(PruneConnections, TaskCreationOptions.LongRunning);
+                Task.Factory.StartNew(AcceptConnections, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                Task.Factory.StartNew(PruneConnections, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             }
         }
 

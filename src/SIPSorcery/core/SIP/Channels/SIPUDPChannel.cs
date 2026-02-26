@@ -99,7 +99,7 @@ namespace SIPSorcery.SIP
 
             Receive();
 
-            Task.Factory.StartNew(ExpireFailedSends, TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(ExpireFailedSends, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
