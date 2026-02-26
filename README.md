@@ -26,7 +26,7 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/) |
 | **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.WebRTC.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.WebRTC) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.WebRTC.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.WebRTC) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/) |
-| **VP8.Net** |  |  | Experimental pure C# VP8 codec implementation | [README](VP8.Net/) |
+| **VP8.Net** |  |  | Experimental pure C# VP8 codec implementation | [README](src/VP8.Net/) |
 
 ### Related Repositories
 
