@@ -1,0 +1,253 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        audio {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 1.5rem;
+        }
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .controls input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .controls button {
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-success {
+            background: #28a745;
+            color: #fff;
+        }
+        .close-btn {
+            background: #dc3545;
+            color: #fff;
+        }
+        .controls button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .button-row {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            width: 100%;
+            justify-content: center;
+        }
+        .diagnostics-panel {
+            width: 100%;
+            min-height: 160px;
+            max-height: 640px;
+            margin-top: 1.5rem;
+            background: #222;
+            color: #fff;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            overflow-y: auto;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            audio {
+                max-width: 100%;
+            }
+            .button-row {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: center;
+            }
+            .controls button {
+                width: 100%;
+                font-size: 1.1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+    <script type="text/javascript">
+        const WEBSOCKET_URL = "ws://127.0.0.1:8080/ws"
+        const STUN_URL = "stun:stun.cloudflare.com";
+
+        let pc, ws, localStream;
+
+        // Auto-detect WebSocket URL based on current page
+        function getWebSocketUrl() {
+            const location = window.location;
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = location.host;
+            const path = '/ws';
+
+            return `${protocol}//${host}${path}`;
+        }
+
+        function logDiag(msg) {
+            const panel = document.getElementById('diagnosticsPanel');
+            if (!panel) return; // Prevent error if panel not yet in DOM
+            const now = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.textContent = `[${now}] ${msg}`;
+            if (panel.firstChild) {
+                panel.insertBefore(entry, panel.firstChild);
+            } else {
+                panel.appendChild(entry);
+            }
+        }
+
+        function setButtonStates(startEnabled, closeEnabled) {
+            document.getElementById('startBtn').disabled = !startEnabled;
+            document.getElementById('closeBtn').disabled = !closeEnabled;
+            logDiag(`Button states updated: Start ${startEnabled ? 'ENABLED' : 'DISABLED'}, Close ${closeEnabled ? 'ENABLED' : 'DISABLED'}`);
+        }
+
+        async function start() {
+            logDiag('Start button clicked. Attempting to start peer connection.');
+            setButtonStates(false, true);
+            try {
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: STUN_URL }
+                    ]
+                });
+                logDiag('RTCPeerConnection created.');
+
+                localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                logDiag('Got local audio stream.');
+
+                localStream.getTracks().forEach(track => {
+                    logDiag('Adding local track: ' + track.kind);
+                    pc.addTrack(track, localStream);
+                });
+
+                pc.ontrack = evt => {
+                    logDiag('Received remote track.');
+                    document.querySelector('#audioCtl').srcObject = evt.streams[0];
+                }
+
+                pc.onicecandidate = evt => {
+                    if (evt.candidate) {
+                        logDiag('ICE candidate generated. Sending to server.');
+                        ws.send(JSON.stringify(evt.candidate));
+                    }
+                };
+
+                pc.onconnectionstatechange = () => {
+                    logDiag('Peer connection state: ' + pc.connectionState);
+                    if (pc.connectionState === 'connected' || pc.connectionState === 'connecting') {
+                        setButtonStates(false, true);
+                    } else {
+                        setButtonStates(true, false);
+                    }
+                };
+
+                pc.onclose = () => {
+                    logDiag('Peer connection closed.');
+                };
+
+                const wsUrl = document.querySelector('#websockurl').value;
+                logDiag('Opening WebSocket: ' + wsUrl);
+                ws = new WebSocket(wsUrl, []);
+
+                ws.onopen = function () {
+                    logDiag('WebSocket connection opened.');
+                };
+                ws.onmessage = async function (evt) {
+                    logDiag('WebSocket message received: ' + evt.data);
+                    var obj = JSON.parse(evt.data);
+                    if (obj?.candidate) {
+                        logDiag('Received ICE candidate from server.');
+                        pc.addIceCandidate(obj);
+                    }
+                    else if (obj?.sdp) {
+                        logDiag('Received SDP from server. Setting remote description.');
+                        await pc.setRemoteDescription(new RTCSessionDescription(obj));
+                        pc.createAnswer()
+                            .then((answer) => pc.setLocalDescription(answer))
+                            .then(() => {
+                                logDiag('Sending local SDP answer.');
+                                ws.send(JSON.stringify(pc.localDescription));
+                            });
+                    }
+                };
+                ws.onclose = function (evt) {
+                    logDiag('WebSocket closed. Code: ' + evt.code + ', Reason: ' + evt.reason);
+                };
+                ws.onerror = function (evt) {
+                    logDiag('WebSocket error: ' + JSON.stringify(evt));
+                };
+            } catch (err) {
+                logDiag('Error in start(): ' + err);
+                setButtonStates(true, false);
+            }
+        };
+
+        async function closePeer() {
+            logDiag('Close button clicked. Closing peer connection and WebSocket.');
+            setButtonStates(true, false);
+            try {
+                await pc?.close();
+                await ws?.close();
+                logDiag('Peer connection and WebSocket closed.');
+            } catch (err) {
+                logDiag('Error closing connections: ' + err);
+            }
+            // stop and release the mic
+            if (localStream) {
+                localStream.getAudioTracks().forEach(t => t.stop());
+                localStream = null;
+                logDiag('Local audio tracks stopped.');
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <audio controls autoplay id="audioCtl"></audio>
+        <div class="controls">
+            <input type="text" id="websockurl" size="40" />
+            <div class="button-row">
+                <button type="button" class="btn btn-success" id="startBtn" onclick="start();">Start</button>
+                <button type="button" class="btn close-btn" id="closeBtn" onclick="closePeer();" disabled>Close</button>
+            </div>
+        </div>
+        <div id="diagnosticsPanel" class="diagnostics-panel"></div>
+    </div>
+</body>
+
+<script>
+    document.querySelector('#websockurl').value = getWebSocketUrl();
+    logDiag('Diagnostics panel initialized. User agent: ' + navigator.userAgent);
+</script>

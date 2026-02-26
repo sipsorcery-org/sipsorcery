@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "SIPSorcery.slnx",
+    "projects": [
+      "src\\SIPSorcery.OpenAI.Realtime\\SIPSorcery.OpenAI.Realtime.csproj",
+      "test\\SIPSorcery.OpenAI.Realtime.UnitTest\\SIPSorcery.OpenAI.Realtime.UnitTests.csproj"
+    ]
+  }
+}
