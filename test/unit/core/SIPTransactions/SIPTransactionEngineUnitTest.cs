@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -220,6 +221,60 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransaction matchingTransaction = engine.GetTransaction(ackRequest);
 
             Assert.True(matchingTransaction.TransactionId == serverTransaction.TransactionId, "ACK transaction did not match INVITE transaction.");
+        }
+
+        [Fact]
+        public void CancelledInviteWithoutCancelledAt_ExpiresUsingCreatedFallback()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine engine = sipTransport.m_transactionEngine;
+
+            SIPRequest inviteRequest = GetDummyINVITERequest(SIPURI.ParseSIPURI("sip:dummy@127.0.0.1:12014"));
+            var tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
+            engine.AddTransaction(tx);
+
+            tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 + 1000));
+            tx.CancelledAt = DateTime.MinValue;
+
+            var stateField = typeof(SIPTransaction).GetField("m_transactionState", BindingFlags.Instance | BindingFlags.NonPublic);
+            stateField.SetValue(tx, SIPTransactionStatesEnum.Cancelled);
+
+            var removeExpiredMethod = typeof(SIPTransactionEngine).GetMethod("RemoveExpiredTransactions", BindingFlags.Instance | BindingFlags.NonPublic);
+            removeExpiredMethod.Invoke(engine, null);
+
+            Assert.Null(engine.GetTransaction(inviteRequest));
+
+            sipTransport.Shutdown();
+        }
+
+        [Fact]
+        public void CancelledInviteWithRecentCancelledAt_IsNotExpired()
+        {
+            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine engine = sipTransport.m_transactionEngine;
+
+            SIPRequest inviteRequest = GetDummyINVITERequest(SIPURI.ParseSIPURI("sip:dummy@127.0.0.1:12014"));
+            var tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
+            engine.AddTransaction(tx);
+
+            tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 * 2));
+            tx.CancelledAt = DateTime.Now;
+
+            var stateField = typeof(SIPTransaction).GetField("m_transactionState", BindingFlags.Instance | BindingFlags.NonPublic);
+            stateField.SetValue(tx, SIPTransactionStatesEnum.Cancelled);
+
+            var removeExpiredMethod = typeof(SIPTransactionEngine).GetMethod("RemoveExpiredTransactions", BindingFlags.Instance | BindingFlags.NonPublic);
+            removeExpiredMethod.Invoke(engine, null);
+
+            Assert.NotNull(engine.GetTransaction(inviteRequest));
+
+            sipTransport.Shutdown();
         }
 
         private SIPRequest GetDummyINVITERequest(SIPURI dummyURI)
