@@ -138,6 +138,12 @@ namespace SIPSorcery.SIP
         /// </summary>
         public DateTime TimedOutAt;
 
+        /// <summary>
+        /// For cancelled INVITEs this is the time they entered the cancelled state and is used to
+        /// calculate expiry after T6. If unset, Created is used as a fallback by the transaction engine.
+        /// </summary>
+        public DateTime CancelledAt;
+
         protected string m_branchId;
         public string BranchId
         {
@@ -342,6 +348,11 @@ namespace SIPSorcery.SIP
                 transactionState == SIPTransactionStatesEnum.Terminated ||
                 transactionState == SIPTransactionStatesEnum.Cancelled)
             {
+                if (transactionState == SIPTransactionStatesEnum.Cancelled && CancelledAt == DateTime.MinValue)
+                {
+                    CancelledAt = DateTime.Now;
+                }
+
                 DeliveryPending = false;
             }
             else if (transactionState == SIPTransactionStatesEnum.Completed)
