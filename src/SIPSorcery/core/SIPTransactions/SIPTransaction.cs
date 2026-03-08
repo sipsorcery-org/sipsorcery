@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP
         /// For cancelled INVITEs this is the time they entered the cancelled state and is used to
         /// calculate expiry after T6. If unset, Created is used as a fallback by the transaction engine.
         /// </summary>
-        public DateTime CancelledAt;
+        public DateTime CancelledAt { get; private set; }
 
         protected string m_branchId;
         public string BranchId

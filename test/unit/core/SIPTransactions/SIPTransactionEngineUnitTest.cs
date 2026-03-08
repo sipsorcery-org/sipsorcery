@@ -237,7 +237,6 @@ namespace SIPSorcery.SIP.UnitTests
             engine.AddTransaction(tx);
 
             tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 + 1000));
-            tx.CancelledAt = DateTime.MinValue;
 
             var stateField = typeof(SIPTransaction).GetField("m_transactionState", BindingFlags.Instance | BindingFlags.NonPublic);
             stateField.SetValue(tx, SIPTransactionStatesEnum.Cancelled);
@@ -264,10 +263,7 @@ namespace SIPSorcery.SIP.UnitTests
             engine.AddTransaction(tx);
 
             tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 * 2));
-            tx.CancelledAt = DateTime.Now;
-
-            var stateField = typeof(SIPTransaction).GetField("m_transactionState", BindingFlags.Instance | BindingFlags.NonPublic);
-            stateField.SetValue(tx, SIPTransactionStatesEnum.Cancelled);
+            tx.CancelCall();
 
             var removeExpiredMethod = typeof(SIPTransactionEngine).GetMethod("RemoveExpiredTransactions", BindingFlags.Instance | BindingFlags.NonPublic);
             removeExpiredMethod.Invoke(engine, null);
