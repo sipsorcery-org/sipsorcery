@@ -45,6 +45,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -305,11 +306,11 @@ namespace SIPSorcery.Net
                 else
                 {
                     //Luma
-                    BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)Math.Min(Math.Max((defaultQuantizers[i] * q + 50) / 100, 1), byte.MaxValue))).CopyTo(resultTables, i);
+                    BinaryPrimitives.WriteUInt16BigEndian(resultTables.AsSpan(i), (ushort)Math.Min(Math.Max((defaultQuantizers[i] * q + 50) / 100, 1), byte.MaxValue));
                     i++;
 
                     //Chroma
-                    BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)Math.Min(Math.Max((defaultQuantizers[j] * q + 50) / 100, 1), byte.MaxValue))).CopyTo(resultTables, j);
+                    BinaryPrimitives.WriteUInt16BigEndian(resultTables.AsSpan(j), (ushort)Math.Min(Math.Max((defaultQuantizers[j] * q + 50) / 100, 1), byte.MaxValue));
                     j++;
                 }
             }

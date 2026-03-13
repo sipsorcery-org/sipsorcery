@@ -20,6 +20,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -2505,8 +2506,7 @@ namespace SIPSorcery.Net
             // Get the SSRC in order to be able to figure out which media type 
             // This will let us choose the apropriate unprotect methods
 
-            uint rawSsrc = BitConverter.ToUInt32(buffer, 4);
-            uint ssrc = BitConverter.IsLittleEndian ? NetConvert.DoReverseEndian(rawSsrc) : rawSsrc;
+            uint ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(4));
 
 
             MediaStream mediaStream = GetMediaStream(ssrc);

@@ -22,6 +22,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto.Digests;
 using SIPSorcery.Sys;
@@ -271,7 +272,7 @@ public class TurnClient
 
                 if (permissionLifetime != null)
                 {
-                    permissionDuration = TimeSpan.FromSeconds(BitConverter.ToUInt32(permissionLifetime.Value.FluentReverse().ToArray(), 0));
+                    permissionDuration = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(permissionLifetime.Value));
 
                     logger.LogDebug("TURN permission lifetime attribute value {lifetimeSeconds}s.", permissionDuration.TotalSeconds);
                 }
@@ -349,7 +350,7 @@ public class TurnClient
 
         if (lifetimeAttribute != null)
         {
-            var lifetimeSpan = TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetimeAttribute.Value.FluentReverse().ToArray(), 0));
+            var lifetimeSpan = TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetimeAttribute.Value));
 
             logger.LogDebug("TURN allocate lifetime attribute value {lifetimeSeconds}s.", lifetimeSpan.TotalSeconds);
 

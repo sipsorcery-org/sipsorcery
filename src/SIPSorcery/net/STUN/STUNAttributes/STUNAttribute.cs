@@ -37,6 +37,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -235,33 +236,16 @@ namespace SIPSorcery.Net
 
         public virtual int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(startIndex), (ushort)AttributeType);
 
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Value.Length))), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+            if (Value != null && Value.Length > 0)
+            {
+                BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(startIndex + 2), Convert.ToUInt16(Value.Length));
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
-
-                if (Value != null && Value.Length > 0)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Value.Length)), 0, buffer, startIndex + 2, 2);
-                }
-                else
-                {
-                    buffer[startIndex + 2] = 0x00;
-                    buffer[startIndex + 3] = 0x00;
-                }
+                buffer[startIndex + 2] = 0x00;
+                buffer[startIndex + 3] = 0x00;
             }
 
             if (Value != null && Value.Length > 0)

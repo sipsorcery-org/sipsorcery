@@ -14,9 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 using System.Net;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -56,16 +56,10 @@ namespace SIPSorcery.Net
 
             byte[] address;
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                address = BitConverter.GetBytes(NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE).FluentReverse().ToArray();
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                address = BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 4)  ^ STUNHeader.MAGIC_COOKIE);
-            }
+            Port = BinaryPrimitives.ReadUInt16BigEndian(attributeValue.AsSpan(2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
+            uint xorAddrBE = BinaryPrimitives.ReadUInt32BigEndian(attributeValue.AsSpan(4)) ^ STUNHeader.MAGIC_COOKIE;
+            address = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(address, xorAddrBE);
 
             if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
             {
@@ -111,36 +105,18 @@ namespace SIPSorcery.Net
 
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(AddressAttributeLength)), 0, buffer, startIndex + 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(AddressAttributeLength), 0, buffer, startIndex + 2, 2);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(startIndex), (UInt16)base.AttributeType);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(startIndex + 2), AddressAttributeLength);
 
             buffer[startIndex + 4] = 0x00;
             buffer[startIndex + 5] = (byte)Family;
 
             var address = Address.GetAddressBytes();
 
-            if (BitConverter.IsLittleEndian)
-            {
-                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
-                UInt32 xorAddress = NetConvert.DoReverseEndian(BitConverter.ToUInt32(address, 0)) ^ STUNHeader.MAGIC_COOKIE;
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorPort)), 0, buffer, startIndex + 6, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorAddress)), 0, buffer, startIndex + 8, 4);
-            }
-            else
-            {
-                UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
-                UInt32 xorAddress = BitConverter.ToUInt32(address, 0) ^ STUNHeader.MAGIC_COOKIE;
-                Buffer.BlockCopy(BitConverter.GetBytes(xorPort), 0, buffer, startIndex + 6, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);
-            }
+            UInt16 xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16));
+            UInt32 xorAddress = BinaryPrimitives.ReadUInt32BigEndian(address) ^ STUNHeader.MAGIC_COOKIE;
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(startIndex + 6), xorPort);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(startIndex + 8), xorAddress);
 
             if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
             {
