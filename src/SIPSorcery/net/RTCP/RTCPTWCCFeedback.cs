@@ -35,9 +35,9 @@
 *   2025-02-20  Initial creation.
 */
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -533,43 +533,27 @@ namespace SIPSorcery.Net
 
         private uint ReadUInt32(byte[] buffer, ref int offset)
         {
-            uint value = BitConverter.ToUInt32(buffer, offset);
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
+            uint value = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(offset));
             offset += 4;
             return value;
         }
 
         private ushort ReadUInt16(byte[] buffer, ref int offset)
         {
-            ushort value = BitConverter.ToUInt16(buffer, offset);
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
+            ushort value = BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset));
             offset += 2;
             return value;
         }
 
         private void WriteUInt32(byte[] buffer, ref int offset, uint value)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, buffer, offset, 4);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(offset), value);
             offset += 4;
         }
 
         private void WriteUInt16(byte[] buffer, ref int offset, ushort value)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                value = NetConvert.DoReverseEndian(value);
-            }
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, buffer, offset, 2);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(offset), value);
             offset += 2;
         }
 

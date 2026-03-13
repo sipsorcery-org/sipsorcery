@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP.Packetisation;
@@ -164,12 +165,8 @@ namespace SIPSorcery.Net
             // Bytes 1 to 3: Three byte fragment offset
             //http://tools.ietf.org/search/rfc2435#section-3.1.2
 
-            if (BitConverter.IsLittleEndian)
-            {
-                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
-            }
-
-            byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
+            var offsetBytes = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(offsetBytes, fragmentOffset);
             rtpJpegHeader[1] = offsetBytes[2];
             rtpJpegHeader[2] = offsetBytes[1];
             rtpJpegHeader[3] = offsetBytes[0];

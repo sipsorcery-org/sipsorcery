@@ -13,8 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
 using System;
+using System.Buffers.Binary;
 using System.Text;
 
 namespace SIPSorcery.Net
@@ -26,21 +26,18 @@ namespace SIPSorcery.Net
         public STUNConnectionIdAttribute(byte[] attributeValue)
             : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                ConnectionId = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 0));
-            }
-            else
-            {
-                ConnectionId = BitConverter.ToUInt32(attributeValue, 0);
-            }
+            ConnectionId = BinaryPrimitives.ReadUInt32BigEndian(attributeValue);
+        }
+
+        private static byte[] GetBytes(uint value)
+        {
+            var buf = new byte[4];
+            BinaryPrimitives.WriteUInt32BigEndian(buf, value);
+            return buf;
         }
 
         public STUNConnectionIdAttribute(uint connectionId)
-            : base(STUNAttributeTypesEnum.ConnectionId, 
-                  BitConverter.IsLittleEndian?
-                  BitConverter.GetBytes(NetConvert.DoReverseEndian(connectionId)) : 
-                  BitConverter.GetBytes(connectionId))
+            : base(STUNAttributeTypesEnum.ConnectionId, GetBytes(connectionId))
         {
             ConnectionId = connectionId;
         }
