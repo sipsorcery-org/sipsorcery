@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -247,15 +248,15 @@ namespace SIPSorcery.SIP.App
 
         public SIPDialogue Answer(string contentType, string body, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
         {
-            return Answer(contentType, body, null, transferMode, customHeaders);
+            return Answer(contentType, body, null, transferMode, customHeaders, null);
         }
 
         public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode)
         {
-            return Answer(contentType, body, toTag, transferMode, null);
+            return Answer(contentType, body, toTag, transferMode, null, null);
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders, SIPContactHeader contactHeader)
         {
             try
             {
@@ -276,6 +277,10 @@ namespace SIPSorcery.SIP.App
                     }
 
                     SIPResponse okResponse = m_uasTransaction.GetOkResponse(contentType, body);
+                    if (contactHeader != null)
+                    {
+                        okResponse.Header.Contact = new List<SIPContactHeader> { contactHeader };
+                    }
 
                     if (body != null)
                     {
