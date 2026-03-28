@@ -47,7 +47,7 @@ public struct VideoFormat
     /// </summary>
     /// <remarks>
     /// Example, 90000 is the clock rate:
-    /// a=rtpmap:102 H264/90000
+    /// a=rtpmap:102 AV1/90000
     /// </remarks>
     public int ClockRate { get; set; }
 
