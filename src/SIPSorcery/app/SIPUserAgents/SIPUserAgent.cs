@@ -1690,7 +1690,8 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress &&
+                if (sipResponse.StatusCode > 100 &&
+                    sipResponse.StatusCode < 200 &&
                     sipResponse.Body != null)
                 {
                     var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
