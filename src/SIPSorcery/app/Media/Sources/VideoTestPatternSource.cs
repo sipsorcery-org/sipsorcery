@@ -40,13 +40,15 @@ namespace SIPSorcery.Media
         private const int TIMER_DISPOSE_WAIT_MILLISECONDS = 1000;
         private const int VP8_SUGGESTED_FORMAT_ID = 96;
         private const int H264_SUGGESTED_FORMAT_ID = 100;
+        private const int AV1_SUGGESTED_FORMAT_ID = 101;
 
         public static readonly ILogger logger = LogFactory.CreateLogger<VideoTestPatternSource>();
 
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
             new VideoFormat(VideoCodecsEnum.VP8, VP8_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE),
-            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=1")
+            new VideoFormat(VideoCodecsEnum.H264, H264_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE, "packetization-mode=1"),
+            new VideoFormat(VideoCodecsEnum.AV1, AV1_SUGGESTED_FORMAT_ID, VIDEO_SAMPLING_RATE)
         };
 
         private int _frameSpacing;

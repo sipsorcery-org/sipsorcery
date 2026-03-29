@@ -267,6 +267,42 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends an AV1 temporal unit as one or more RTP packets.
+        /// </summary>
+        /// <param name="duration"> The duration in timestamp units of the payload. Needs
+        /// to be based on a 90Khz clock.</param>
+        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
+        /// <param name="temporalUnit">The AV1 encoded temporal unit, represented as a sequence of OBUs.</param>
+        public void SendAv1Frame(uint duration, int payloadTypeID, byte[] temporalUnit)
+        {
+            if (CheckIfCanSendRtpRaw())
+            {
+                try
+                {
+                    bool sentPacket = false;
+
+                    foreach (var packet in AV1Packetiser.Packetize(temporalUnit, RTPSession.RTP_MAX_PAYLOAD))
+                    {
+                        int markerBit = packet.IsLast ? 1 : 0;
+
+                        SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+                        SendRtpRaw(packet.Payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                        sentPacket = true;
+                    }
+
+                    if (sentPacket)
+                    {
+                        LocalTrack.Timestamp += duration;
+                    }
+                }
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError(sockExcp, "SocketException SendAv1Frame.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Sends a JPEG frame as one or more RTP packets.
         /// </summary>
         /// <param name="durationRtpUnits"> The duration in timestamp units of the payload.</param>
@@ -333,6 +369,9 @@ namespace SIPSorcery.Net
                 case VideoCodecsEnum.VP8:
                     SendVp8Frame(durationRtpUnits, payloadID, sample);
                     break;
+                case VideoCodecsEnum.AV1:
+                    SendAv1Frame(durationRtpUnits, payloadID, sample);
+                    break;
                 case VideoCodecsEnum.H264:
                     SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
@@ -371,6 +410,7 @@ namespace SIPSorcery.Net
             else
             {
                 if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.AV1 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H264 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H265 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.JPEG)

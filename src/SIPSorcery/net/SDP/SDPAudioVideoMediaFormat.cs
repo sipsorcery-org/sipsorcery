@@ -152,6 +152,14 @@ namespace SIPSorcery.Net
             }
         }
 
+        public bool IsAV1
+        {
+            get
+            {
+                return MatchesCodecName("AV1");
+            }
+        }
+
         public bool IsMJPEG
         {
             get
@@ -202,6 +210,23 @@ namespace SIPSorcery.Net
             }
 
             return parameters;
+        }
+
+        private bool MatchesCodecName(string codecName)
+        {
+            if (!TryParseRtpmap(Rtpmap, out var name, out _, out _))
+            {
+                return false;
+            }
+
+            if (string.Equals(name, codecName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return name.Length > codecName.Length &&
+                name.StartsWith(codecName, StringComparison.OrdinalIgnoreCase) &&
+                !char.IsDigit(name[codecName.Length]);
         }
 
 

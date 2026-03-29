@@ -33,22 +33,27 @@ namespace SIPSorcery.Net
         private int _maxFrameSize;
         private byte[] _currVideoFrame;
         private int _currVideoFramePosn = 0;
+        private AV1Depacketiser _av1Depacketiser;
         private H264Depacketiser _h264Depacketiser;
         private H265Depacketiser _h265Depacketiser;
         private MJPEGDepacketiser _mJPEGDepacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {
-            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.H265 || codec == VideoCodecsEnum.JPEG))
+            if (!(codec == VideoCodecsEnum.VP8 || codec == VideoCodecsEnum.AV1 || codec == VideoCodecsEnum.H264 || codec == VideoCodecsEnum.H265 || codec == VideoCodecsEnum.JPEG))
             {
-                throw new NotSupportedException("The RTP video framer currently only understands H264, VP8 and JPEG encoded frames.");
+                throw new NotSupportedException("The RTP video framer currently only understands VP8, AV1, H264, H265 and JPEG encoded frames.");
             }
 
             _codec = codec;
             _maxFrameSize = maxFrameSize;
             _currVideoFrame = new byte[maxFrameSize];
             
-            if (_codec == VideoCodecsEnum.H264)
+            if (_codec == VideoCodecsEnum.AV1)
+            {
+                _av1Depacketiser = new AV1Depacketiser();
+            }
+            else if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
             }
@@ -101,6 +106,15 @@ namespace SIPSorcery.Net
                 {
                     logger.LogWarning("Discarding RTP packet, VP8 header Start bit not set.");
                     //logger.LogWarning("rtp video, seqnum {SequenceNumber}, ts {Timestamp}, marker {MarkerBit}, payload {PayloadLength}.", hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, payload.Length);
+                }
+            }
+            else if (_codec == VideoCodecsEnum.AV1)
+            {
+                var frameStream = _av1Depacketiser.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+
+                if (frameStream != null)
+                {
+                    return frameStream.ToArray();
                 }
             }
             else if (_codec == VideoCodecsEnum.H264)
