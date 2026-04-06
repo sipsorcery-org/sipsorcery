@@ -689,6 +689,15 @@ namespace SIPSorcery.SIP
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
+                        else if (transaction.TransactionState == SIPTransactionStatesEnum.Cancelled)
+                        {
+                            var cancelledAt = (transaction.CancelledAt == DateTime.MinValue) ? transaction.Created : transaction.CancelledAt;
+
+                            if (now.Subtract(cancelledAt).TotalMilliseconds >= m_t6)
+                            {
+                                expiredTransactionIds.Add(transaction.TransactionId);
+                            }
+                        }
                         else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                         {
                             //logger.LogDebug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");

@@ -16,6 +16,7 @@
  *   2025-02-20  Initial creation.
  */
 using System;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -80,11 +81,8 @@ namespace SIPSorcery.Net
             byte headerByte = (byte)((Id << 4) | (RTP_HEADER_EXTENSION_SIZE - 1));
 
             // Convert the sequence number to a 2-byte array in big-endian order.
-            byte[] seqBytes = BitConverter.GetBytes(SequenceNumber);
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(seqBytes);
-            }
+            byte[] seqBytes = new byte[2];
+            BinaryPrimitives.WriteUInt16BigEndian(seqBytes, SequenceNumber);
 
             return new byte[] { headerByte, seqBytes[0], seqBytes[1] };
         }

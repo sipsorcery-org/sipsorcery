@@ -33,7 +33,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SIPSorcery.Sys;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -134,12 +134,7 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-            }
+            UInt16 firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
             return (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
         }
 
@@ -154,17 +149,8 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-            if (BitConverter.IsLittleEndian)
-            {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-                Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Length = BitConverter.ToUInt16(packet, 2);
-            }
+            UInt16 firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+            Length = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(2));
 
             Version = Convert.ToInt32(firstWord >> 14);
             PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
@@ -231,14 +217,7 @@ namespace SIPSorcery.Net
                 firstWord += (uint)ReceptionReportCount << 24;
             }
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
-            }
+            BinaryPrimitives.WriteUInt32BigEndian(header, firstWord);
 
             return header;
         }

@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SIPSorcery.Sys;
+using System.Buffers.Binary;
 
 namespace SIPSorcery.Net
 {
@@ -83,14 +83,7 @@ namespace SIPSorcery.Net
             payload[1] = (byte)(EndOfEvent ? 0x80 : 0x00);
             payload[1] += (byte)(Volume & 0xcf); // The Volume field uses 6 bits.
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Duration)), 0, payload, 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(Duration), 0, payload, 2, 2);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(payload.AsSpan(2), Duration);
 
             return payload;
         }
@@ -110,14 +103,7 @@ namespace SIPSorcery.Net
             EndOfEvent = (packet[1] & 0x80) > 1;
             Volume = (ushort)(packet[1] & 0xcf);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Duration = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            }
-            else
-            {
-                Duration = BitConverter.ToUInt16(packet, 2);
-            }
+            Duration = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(2));
         }
     }
 }

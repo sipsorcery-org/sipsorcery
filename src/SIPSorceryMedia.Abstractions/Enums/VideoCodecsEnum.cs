@@ -27,6 +27,7 @@ public enum VideoCodecsEnum
     H263,
     VP8,
     VP9,
+    AV1,
     H264,
     H265,
 

@@ -70,21 +70,10 @@ public class RTPHeader
             throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
         }
 
-        UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
-
-        if (BitConverter.IsLittleEndian)
-        {
-            firstWord = NetConvert.DoReverseEndian(firstWord);
-            SequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-            Timestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            SyncSource = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
-        }
-        else
-        {
-            SequenceNumber = BitConverter.ToUInt16(packet, 2);
-            Timestamp = BitConverter.ToUInt32(packet, 4);
-            SyncSource = BitConverter.ToUInt32(packet, 8);
-        }
+        UInt16 firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
+        SequenceNumber = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(2));
+        Timestamp = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(4));
+        SyncSource = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(8));
 
 
         Version = firstWord >> 14;
@@ -100,20 +89,10 @@ public class RTPHeader
 
         if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount));
-                headerExtensionLength += 2;
-                ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount));
-                headerExtensionLength += 2 + ExtensionLength * 4;
-            }
-            else
-            {
-                ExtensionProfile = BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount);
-                headerExtensionLength += 2;
-                ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
-                headerExtensionLength += 2 + ExtensionLength * 4;
-            }
+            ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(12 + 4 * CSRCCount));
+            headerExtensionLength += 2;
+            ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(14 + 4 * CSRCCount));
+            headerExtensionLength += 2 + ExtensionLength * 4;
 
             if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
             {
@@ -148,31 +127,15 @@ public class RTPHeader
 
         UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
 
-        if (BitConverter.IsLittleEndian)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, header, 2, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, header, 4, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, header, 8, 4);
+        BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(0), firstWord);
+        BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(2), SequenceNumber);
+        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(4), Timestamp);
+        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(8), SyncSource);
 
-            if (HeaderExtensionFlag == 1)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionProfile)), 0, header, 12 + 4 * CSRCCount, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionLength)), 0, header, 14 + 4 * CSRCCount, 2);
-            }
-        }
-        else
+        if (HeaderExtensionFlag == 1)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, header, 2, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, header, 4, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, header, 8, 4);
-
-            if (HeaderExtensionFlag == 1)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(ExtensionProfile), 0, header, 12 + 4 * CSRCCount, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ExtensionLength), 0, header, 14 + 4 * CSRCCount, 2);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(12 + 4 * CSRCCount), ExtensionProfile);
+            BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(14 + 4 * CSRCCount), ExtensionLength);
         }
 
         if (ExtensionLength > 0 && ExtensionPayload != null)

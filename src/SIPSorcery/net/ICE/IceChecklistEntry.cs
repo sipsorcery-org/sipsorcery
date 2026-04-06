@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using System.Buffers.Binary;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -310,7 +311,7 @@ namespace SIPSorcery.Net
                 if (lifetime != null)
                 {
                     LocalCandidate.IceServer.TurnTimeToExpiry = DateTime.Now +
-                                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.FluentReverse().ToArray(), 0));
+                                                               TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetime.Value));
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)

@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -111,7 +112,8 @@ namespace SIPSorcery.Net
                     var input = buffer.Take(bufferLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH).ToArray();
 
                     uint crc = Crc32.Compute(input) ^ FINGERPRINT_XOR;
-                    byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+                    var fingerPrint = new byte[4];
+                    BinaryPrimitives.WriteUInt32BigEndian(fingerPrint, crc);
 
                     //logger.LogDebug($"STUNMessage supplied fingerprint attribute: {fingerprintAttribute.Value.HexStr()}.");
                     //logger.LogDebug($"STUNMessage calculated fingerprint attribute: {fingerPrint.HexStr()}.");
@@ -150,18 +152,9 @@ namespace SIPSorcery.Net
 
             byte[] buffer = new byte[messageLength];
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)Header.MessageType)), 0, buffer, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(attributesLength)), 0, buffer, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(STUNHeader.MAGIC_COOKIE)), 0, buffer, 4, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)Header.MessageType), 0, buffer, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(attributesLength), 0, buffer, 2, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(STUNHeader.MAGIC_COOKIE), 0, buffer, 4, 4);
-            }
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(0), (UInt16)Header.MessageType);
+            BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(2), attributesLength);
+            BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(4), STUNHeader.MAGIC_COOKIE);
 
             Buffer.BlockCopy(Header.TransactionId, 0, buffer, 8, STUNHeader.TRANSACTION_ID_LENGTH);
 
@@ -190,18 +183,12 @@ namespace SIPSorcery.Net
                 attributesLength += STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + FINGERPRINT_ATTRIBUTE_CRC32_LENGTH;
                 messageLength += STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + FINGERPRINT_ATTRIBUTE_CRC32_LENGTH;
 
-                if (BitConverter.IsLittleEndian)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(attributesLength)), 0, buffer, 2, 2);
-                }
-                else
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(attributesLength), 0, buffer, 2, 2);
-                }
+                    BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(2), attributesLength);
 
                 var fingerprintAttribute = new STUNAttribute(STUNAttributeTypesEnum.FingerPrint, new byte[FINGERPRINT_ATTRIBUTE_CRC32_LENGTH]);
                 uint crc = Crc32.Compute(buffer) ^ FINGERPRINT_XOR;
-                byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+                var fingerPrint = new byte[4];
+                BinaryPrimitives.WriteUInt32BigEndian(fingerPrint, crc);
                 fingerprintAttribute.Value = fingerPrint;
 
                 Array.Resize(ref buffer, messageLength);
@@ -274,14 +261,7 @@ namespace SIPSorcery.Net
                     ? (ushort)(Header.MessageLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH)
                     : Header.MessageLength;
 
-                if (BitConverter.IsLittleEndian)
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(length)), 0, _receivedBuffer, 2, 2);
-                }
-                else
-                {
-                    Buffer.BlockCopy(BitConverter.GetBytes(length), 0, _receivedBuffer, 2, 2);
-                }
+                    BinaryPrimitives.WriteUInt16BigEndian(_receivedBuffer.AsSpan(2), length);
 
                 HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
                 byte[] calculatedHmac = hmacSHA.ComputeHash(_receivedBuffer, 0, preImageLength);

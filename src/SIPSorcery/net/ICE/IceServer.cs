@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using System.Buffers.Binary;
 
 [assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
 
@@ -428,7 +429,7 @@ namespace SIPSorcery.Net
                         if (lifetime != null)
                         {
                             TurnTimeToExpiry = DateTime.Now +
-                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.FluentReverse().ToArray(), 0));
+                                               TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetime.Value));
                         }
                         else
                         {
@@ -536,7 +537,7 @@ namespace SIPSorcery.Net
                     if (lifetime != null)
                     {
                         TurnTimeToExpiry = DateTime.Now +
-                                           TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.FluentReverse().ToArray(), 0));
+                                           TimeSpan.FromSeconds(BinaryPrimitives.ReadUInt32BigEndian(lifetime.Value));
                     }
 
                 }
