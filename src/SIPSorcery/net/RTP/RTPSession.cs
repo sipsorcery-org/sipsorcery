@@ -974,10 +974,20 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                var sdpConnectionAddress = GetSdpConnectionAddress(
-                    connectionAddress,
-                    offer.Connection?.ConnectionAddress != null ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null);
+                // If connectionAddress is specified, we should always use this
+                IPAddress sdpConnectionAddress;
 
+                if(connectionAddress != null)
+                {
+                    sdpConnectionAddress = connectionAddress;
+                }
+                else
+                {
+                    sdpConnectionAddress = GetSdpConnectionAddress(
+                        connectionAddress,
+                        offer.Connection?.ConnectionAddress != null ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null);
+                }
+                
                 return GetSessionDescription(mediaStreams, sdpConnectionAddress);
             }
         }
