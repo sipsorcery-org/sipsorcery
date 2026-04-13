@@ -45,12 +45,10 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP.Readers
             int length = ReadHeaderLenWithoutExtensions(payload);
             if ((payload[0] & 0x10) == 0x10)
             {
-                return 4 + System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(length + 2, 2));
+                var extensionsCount = System.Buffers.Binary.BinaryPrimitives.ReadUInt16BigEndian(payload.Slice(length + 2, 2));
+                return 4 + (extensionsCount * 4);
             }
-            else
-            {
-                return 0;
-            }
+            return 0;
         }
 
         public static int ReadHeaderLenWithoutExtensions(ReadOnlySpan<byte> payload)
