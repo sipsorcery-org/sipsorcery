@@ -526,6 +526,19 @@ namespace SIPSorcery.Net
 
             while (!_isClosed)
             {
+                // Reset the sender wake event at the START of each iteration. Resetting
+                // AFTER the send work introduces a lost-wakeup race with SACK arrival:
+                // a SACK that fires _senderMre.Set() between the last chunk sent and
+                // the Reset() gets its signal wiped by Reset(), and the thread then
+                // blocks in _senderMre.Wait() for the full BURST_PERIOD_MILLISECONDS
+                // even though more work is ready to go. On loopback where SACKs
+                // round-trip in microseconds this window is hit almost every burst,
+                // capping throughput at the RFC4960 §7.2.2 steady-state of roughly
+                // MAX_BURST * MTU / BURST_PERIOD (~104 KB/s for MTU=1300, period=50ms).
+                // Resetting first preserves any Set() that happens during send work so
+                // Wait() returns immediately on the next iteration.
+                _senderMre.Reset();
+
                 var outstandingBytes = _outstandingBytes;
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
@@ -614,8 +627,6 @@ namespace SIPSorcery.Net
                         chunksSent++;
                     }
                 }
-
-                _senderMre.Reset();
 
                 int wait = GetSendWaitMilliseconds();
                 //logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +
