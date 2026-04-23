@@ -13,7 +13,7 @@
 	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 	<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <PackageId>SIPSorceryMedia.Windows</PackageId>
-    <TargetFrameworks>net8.0-windows10.0.17763.0</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows10.0.17763.0</TargetFrameworks>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
