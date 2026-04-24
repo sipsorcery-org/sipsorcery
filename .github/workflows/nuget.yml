@@ -1,6 +1,3 @@
-Good. The full updated file to put in your PR:
-
-```yaml
 name: Publish to Nuget
 
 on:
