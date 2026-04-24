@@ -45,7 +45,9 @@ jobs:
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet nuget push ./artifacts/*.nupkg `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key $env:NUGET_API_KEY `
-            --skip-duplicate
+          Get-ChildItem ./artifacts/*.nupkg | ForEach-Object {
+            dotnet nuget push $_.FullName `
+              --source https://api.nuget.org/v3/index.json `
+              --api-key $env:NUGET_API_KEY `
+              --skip-duplicate
+          }
