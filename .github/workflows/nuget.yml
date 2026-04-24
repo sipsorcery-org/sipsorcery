@@ -52,8 +52,3 @@ jobs:
             --source https://api.nuget.org/v3/index.json `
             --api-key $env:NUGET_API_KEY `
             --skip-duplicate
-```
-
-The key changes from before:
-- Added explicit `dotnet build Libraries.slnf -c Release` step before packing
-- Added `--no-build` to all `dotnet pack` steps so they use the already-built output rather than trying to build again
