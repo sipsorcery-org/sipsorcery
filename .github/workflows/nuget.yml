@@ -6,8 +6,8 @@ on:
       - 'v*' # Triggers on tag pushes starting with 'v'
 
 jobs:
-  pack-cross-platform:
-    runs-on: ubuntu-latest
+  build-test-pack:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -15,10 +15,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # Unit tests only need the cross-platform libs
+      # Unit tests
       - name: Unit tests
         run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework net10.0 -c Release
 
+      # Pack all NuGet packages (Windows can build all target frameworks incl. net462 and net10.0-windows)
       - name: Pack SIPSorcery
         run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release -o ./artifacts
 
@@ -28,53 +29,19 @@ jobs:
       - name: Pack SIPSorceryMedia.FFmpeg
         run: dotnet pack src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj -c Release -o ./artifacts
 
-      - name: Pack SIPSorcery.OpenAI.Realtime
-        run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release -o ./artifacts
-
-      - name: Upload cross-platform artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuget-cross-platform
-          path: ./artifacts/*.nupkg
-
-  pack-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
       - name: Pack SIPSorceryMedia.Windows
         run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release -o ./artifacts
 
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuget-windows
-          path: ./artifacts/*.nupkg
+      - name: Pack SIPSorcery.OpenAI.Realtime
+        run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release -o ./artifacts
 
-  publish:
-    needs: [pack-cross-platform, pack-windows]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: nuget-*
-          path: ./artifacts
-          merge-multiple: true
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
+      # Publish to NuGet (only on tag pushes)
       - name: Publish all packages to NuGet
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet nuget push ./artifacts/*.nupkg \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key $NUGET_API_KEY \
+          dotnet nuget push ./artifacts/*.nupkg `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key $env:NUGET_API_KEY `
             --skip-duplicate
