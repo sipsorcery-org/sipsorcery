@@ -1,3 +1,6 @@
+Good. The full updated file to put in your PR:
+
+```yaml
 name: Publish to Nuget
 
 on:
@@ -19,21 +22,25 @@ jobs:
       #- name: Unit tests
       #  run: dotnet test test/unit/SIPSorcery.UnitTests.csproj --framework net10.0 -c Release
 
+      # Build all libs first (dotnet pack does not build by default)
+      - name: Build
+        run: dotnet build Libraries.slnf -c Release
+
       # Pack all NuGet packages (Windows can build all target frameworks incl. net462 and net10.0-windows)
       - name: Pack SIPSorcery
-        run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorcery/SIPSorcery.csproj -c Release --no-build -o ./artifacts
 
       - name: Pack SIPSorceryMedia.Abstractions
-        run: dotnet pack src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj -c Release --no-build -o ./artifacts
 
       - name: Pack SIPSorceryMedia.FFmpeg
-        run: dotnet pack src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj -c Release --no-build -o ./artifacts
 
       - name: Pack SIPSorceryMedia.Windows
-        run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj -c Release --no-build -o ./artifacts
 
       - name: Pack SIPSorcery.OpenAI.Realtime
-        run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release -o ./artifacts
+        run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release --no-build -o ./artifacts
 
       # Publish to NuGet (only on tag pushes)
       - name: Publish all packages to NuGet
@@ -45,3 +52,8 @@ jobs:
             --source https://api.nuget.org/v3/index.json `
             --api-key $env:NUGET_API_KEY `
             --skip-duplicate
+```
+
+The key changes from before:
+- Added explicit `dotnet build Libraries.slnf -c Release` step before packing
+- Added `--no-build` to all `dotnet pack` steps so they use the already-built output rather than trying to build again
