@@ -17,10 +17,10 @@
 // is ported.
 //
 // Author(s):
-// Aaron Clauson (aaron@sipsorcery.com)
+// Claude (Anthropic AI assistant), commissioned by Aaron Clauson
 //
 // History:
-// 25 Apr 2026  Aaron Clauson   Ported from libvpx vp8/encoder/vp8_quantize.c.
+// 25 Apr 2026  Claude          Ported from libvpx vp8/encoder/vp8_quantize.c.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

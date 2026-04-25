@@ -11,10 +11,10 @@
 // vectors used here. Any divergence indicates a bug in the C# port.
 //
 // Author(s):
-// Aaron Clauson (aaron@sipsorcery.com)
+// Claude (Anthropic AI assistant), commissioned by Aaron Clauson
 //
 // History:
-// 25 Apr 2026  Aaron Clauson   Created.
+// 25 Apr 2026  Claude          Created.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
