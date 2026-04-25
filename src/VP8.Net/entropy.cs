@@ -121,6 +121,29 @@ namespace Vpx.Net
         };
 
         /// <summary>
+        /// For each of the 25 blocks in a macroblock (16 Y, 4 U, 4 V, 1 Y2),
+        /// the index of the slot in the above_context array whose entropy
+        /// state is "above" this block. Port of libvpx vp8_block2above.
+        /// </summary>
+        public static readonly byte[] vp8_block2above = {
+            0, 1, 2, 3,    0, 1, 2, 3,    0, 1, 2, 3,    0, 1, 2, 3,   // 16 Y
+            4, 5,          4, 5,                                        // 4 U
+            6, 7,          6, 7,                                        // 4 V
+            8,                                                          // Y2
+        };
+
+        /// <summary>
+        /// Same as vp8_block2above but for the left_context array. Port of
+        /// libvpx vp8_block2left.
+        /// </summary>
+        public static readonly byte[] vp8_block2left = {
+            0, 0, 0, 0,    1, 1, 1, 1,    2, 2, 2, 2,    3, 3, 3, 3,   // 16 Y
+            4, 4,          5, 5,                                        // 4 U
+            6, 6,          7, 7,                                        // 4 V
+            8,                                                          // Y2
+        };
+
+        /// <summary>
         /// Encoding tree for VP8 coefficient tokens. Port of libvpx
         /// vp8_coef_tree (vp8/common/entropy.c). Negative values are
         /// terminal token values (negated), positive values are next

@@ -50,28 +50,50 @@ namespace Vpx.Net
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public bool IsSupported(VideoCodecsEnum codec) => codec == VideoCodecsEnum.VP8;
 
+        // Default base quantizer for the foundation encoder. Keyframes only;
+        // there is no rate control, so this is a fixed Q. Mid-quality.
+        private const int DEFAULT_BASE_QINDEX = 32;
+
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
-            //lock (_encoderLock)
-            //{
-            //    if (_vp8Encoder == null)
-            //    {
-            //        _vp8Encoder = new Vp8Codec();
-            //        _vp8Encoder.InitialiseEncoder((uint)width, (uint)height);
-            //    }
+            lock (_encoderLock)
+            {
+                if (width <= 0 || width % 16 != 0 || height <= 0 || height % 16 != 0)
+                {
+                    // The foundation encoder requires multiples of 16 — no
+                    // padding/cropping support yet.
+                    throw new NotSupportedException(
+                        "Width and height must be positive multiples of 16. Got " + width + "x" + height + ".");
+                }
 
-            //    var i420Buffer = PixelConverter.ToI420(width, height, sample, pixelFormat);
-            //    var encodedBuffer = _vp8Encoder.Encode(i420Buffer, _forceKeyFrame);
+                // Convert the input sample into planar I420.
+                byte[] i420 = (pixelFormat == VideoPixelFormatsEnum.I420)
+                    ? sample
+                    : PixelConverter.ToI420(width, height, sample, pixelFormat);
 
-            //    if (_forceKeyFrame)
-            //    {
-            //        _forceKeyFrame = false;
-            //    }
+                int ySize = width * height;
+                int cSize = (width / 2) * (height / 2);
+                if (i420.Length != ySize + 2 * cSize)
+                {
+                    throw new ArgumentException(
+                        "I420 buffer length " + i420.Length + " does not match expected " +
+                        (ySize + 2 * cSize) + " for " + width + "x" + height + ".");
+                }
 
-            //    return encodedBuffer;
-            //}
+                byte[] srcY = new byte[ySize];
+                byte[] srcU = new byte[cSize];
+                byte[] srcV = new byte[cSize];
+                Buffer.BlockCopy(i420, 0,             srcY, 0, ySize);
+                Buffer.BlockCopy(i420, ySize,         srcU, 0, cSize);
+                Buffer.BlockCopy(i420, ySize + cSize, srcV, 0, cSize);
 
-            throw new NotImplementedException("TODO: The encoder has not yet been ported.");
+                // ForceKeyFrame is currently the only mode (every frame is a
+                // keyframe in the foundation encoder). Reset the flag for
+                // API parity with future inter-frame support.
+                _forceKeyFrame = false;
+
+                return frame_encoder.EncodeKeyframe(srcY, srcU, srcV, width, height, DEFAULT_BASE_QINDEX);
+            }
         }
 
         public unsafe IEnumerable<VideoSample> DecodeVideo(byte[] frame, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
