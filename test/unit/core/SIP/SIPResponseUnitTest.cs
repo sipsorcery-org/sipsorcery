@@ -9,6 +9,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
@@ -488,7 +490,10 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.Equal(resp.Status, copy.Status);
             Assert.Equal(resp.StatusCode, copy.StatusCode);
             Assert.Equal(resp.ReasonPhrase, copy.ReasonPhrase);
-            Assert.Equal(resp.Header?.ToString(), copy.Header?.ToString());
+            // SIP parameters within a single header line are unordered (RFC 3261 §7.3.1):
+            // "param1=v1;param2=v2" and "param2=v2;param1=v1" are semantically equivalent.
+            // Compare header lines as multi-sets of parameters rather than as raw strings.
+            AssertHeadersEquivalent(resp.Header?.ToString(), copy.Header?.ToString());
             Assert.Equal(resp.SIPEncoding, copy.SIPEncoding);
             Assert.Equal(resp.SIPBodyEncoding, copy.SIPBodyEncoding);
             Assert.Equal(resp.BodyBuffer, copy.BodyBuffer);
@@ -498,6 +503,51 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.Equal(resp.SendFromHintChannelID, copy.SendFromHintChannelID);
             Assert.Equal(resp.SendFromHintConnectionID, copy.SendFromHintConnectionID);
         }
+
+        /// <summary>
+        /// Compares two serialised SIP header blocks for semantic equivalence: the same
+        /// set of header lines, each with the same set of parameters (parameter order is
+        /// not significant per RFC 3261 §7.3.1). Use this in copy/round-trip tests where
+        /// strict string equality would be over-specified.
+        /// </summary>
+        private static void AssertHeadersEquivalent(string expected, string actual)
+        {
+            if (expected == null || actual == null)
+            {
+                Assert.Equal(expected, actual);
+                return;
+            }
+
+            string[] expectedLines = expected.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            string[] actualLines = actual.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+            Assert.Equal(expectedLines.Length, actualLines.Length);
+
+            for (int i = 0; i < expectedLines.Length; i++)
+            {
+                string e = expectedLines[i];
+                string a = actualLines[i];
+
+                if (e == a)
+                {
+                    continue;
+                }
+
+                // Lines differ. The only acceptable difference is the parameter order
+                // after the first ';'. Split on the first ';' into <prefix>;<params>.
+                int eSemi = e.IndexOf(';');
+                int aSemi = a.IndexOf(';');
+                Assert.True(eSemi >= 0 && aSemi >= 0,
+                    "Header line " + i + " differs and has no parameters; expected=" + e + " actual=" + a);
+                Assert.Equal(e.Substring(0, eSemi), a.Substring(0, aSemi));
+
+                var eParams = new HashSet<string>(e.Substring(eSemi + 1).Split(';'));
+                var aParams = new HashSet<string>(a.Substring(aSemi + 1).Split(';'));
+                Assert.True(eParams.SetEquals(aParams),
+                    "Header line " + i + " parameter sets differ; expected=[" + string.Join(";", eParams) + "] actual=[" + string.Join(";", aParams) + "]");
+            }
+        }
+
 
         /// <summary>
         /// Tests that a SIP response with Chinese characters can be successfully parsed. See #848.
