@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: dct.cs
 //
 // Description: Forward DCT for the VP8 encoder. Port of:
@@ -12,7 +12,7 @@
 //                             of a 16x16 prediction
 //
 // Author(s):
-// Claude (Anthropic AI assistant), commissioned by Aaron Clauson
+// Claude Opus 4.7 (Anthropic AI assistant, model: claude-opus-4-7), commissioned by Aaron Clauson
 //
 // History:
 // 25 Apr 2026  Claude          Ported from libvpx vp8/encoder/dct.c.

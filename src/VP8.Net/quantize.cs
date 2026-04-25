@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: quantize.cs
 //
 // Description: Forward quantization for the VP8 encoder. Port of:
@@ -17,7 +17,7 @@
 // is ported.
 //
 // Author(s):
-// Claude (Anthropic AI assistant), commissioned by Aaron Clauson
+// Claude Opus 4.7 (Anthropic AI assistant, model: claude-opus-4-7), commissioned by Aaron Clauson
 //
 // History:
 // 25 Apr 2026  Claude          Ported from libvpx vp8/encoder/vp8_quantize.c.

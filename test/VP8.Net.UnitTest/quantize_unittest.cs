@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: quantize_unittest.cs
 //
 // Description: Unit tests for the VP8 forward quantizer (encoder side,
@@ -11,7 +11,7 @@
 // the C# port.
 //
 // Author(s):
-// Claude (Anthropic AI assistant), commissioned by Aaron Clauson
+// Claude Opus 4.7 (Anthropic AI assistant, model: claude-opus-4-7), commissioned by Aaron Clauson
 //
 // History:
 // 25 Apr 2026  Claude          Created.
