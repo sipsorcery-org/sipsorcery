@@ -58,6 +58,17 @@ namespace SIPSorcery.SIP
         //[DataMember]
         private readonly ConcurrentDictionary<string, string> m_dictionary;
 
+        // Tracks the insertion order of the keys held in m_dictionary so that
+        // ToString() produces deterministic output across instances. Without
+        // this, ConcurrentDictionary's enumeration order is implementation-
+        // defined and was observed to produce different orderings between two
+        // dictionaries holding the same keys, which caused round-trip tests
+        // such as SipResponseCopy to fail intermittently. Mutations of the
+        // list are guarded by m_keyOrderLock; reads are guarded by snapshotting
+        // under the same lock.
+        private readonly List<string> m_keyOrder = new List<string>();
+        private readonly object m_keyOrderLock = new object();
+
         [IgnoreDataMember]
         public int Count
         {
@@ -199,16 +210,46 @@ namespace SIPSorcery.SIP
                     // If this is not the parameter that is being removed put it back on.
                     if (!dictionary.ContainsKey(keyName))
                     {
-                        dictionary.TryAdd(keyName, keyValuePair.Substring(seperatorPosn + 1).Trim());
+                        if (dictionary.TryAdd(keyName, keyValuePair.Substring(seperatorPosn + 1).Trim()))
+                        {
+                            TrackKeyInsertion(keyName);
+                        }
                     }
                 }
                 else
                 {
                     // Keys with no values are valid in SIP so they get added to the collection with a null value.
-                    if (!dictionary.ContainsKey(keyValuePair))
+                    string trimmedKey = keyValuePair.Trim();
+                    if (!dictionary.ContainsKey(trimmedKey))
                     {
-                        dictionary.TryAdd(keyValuePair, null);
+                        if (dictionary.TryAdd(trimmedKey, null))
+                        {
+                            TrackKeyInsertion(trimmedKey);
+                        }
                     }
+                }
+            }
+        }
+
+        private void TrackKeyInsertion(string key)
+        {
+            lock (m_keyOrderLock)
+            {
+                // dictionary.TryAdd may race with another caller; only append
+                // if the key isn't already in the order list (case-insensitive
+                // to match the dictionary's comparer).
+                bool exists = false;
+                for (int i = 0; i < m_keyOrder.Count; i++)
+                {
+                    if (string.Equals(m_keyOrder[i], key, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                {
+                    m_keyOrder.Add(key);
                 }
             }
         }
@@ -221,7 +262,10 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                m_dictionary.TryAdd(name, value);
+                if (m_dictionary.TryAdd(name, value))
+                {
+                    TrackKeyInsertion(name);
+                }
             }
         }
 
@@ -260,13 +304,30 @@ namespace SIPSorcery.SIP
         {
             if (name != null)
             {
-                m_dictionary.TryRemove(name, out string ignore);
+                if (m_dictionary.TryRemove(name, out string ignore))
+                {
+                    lock (m_keyOrderLock)
+                    {
+                        for (int i = m_keyOrder.Count - 1; i >= 0; i--)
+                        {
+                            if (string.Equals(m_keyOrder[i], name, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                m_keyOrder.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
 
         public void RemoveAll()
         {
             m_dictionary.Clear();
+            lock (m_keyOrderLock)
+            {
+                m_keyOrder.Clear();
+            }
         }
 
         public string[] GetKeys()
@@ -294,15 +355,31 @@ namespace SIPSorcery.SIP
 
             if (m_dictionary != null)
             {
-                foreach (KeyValuePair<string, string> param in m_dictionary)
+                // Snapshot insertion order under the lock so concurrent mutations
+                // don't corrupt the iteration. The snapshot is then walked outside
+                // the lock to keep ToString cheap.
+                string[] keys;
+                lock (m_keyOrderLock)
                 {
-                    if (param.Value != null && param.Value.Trim().Length > 0)
+                    keys = m_keyOrder.ToArray();
+                }
+
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    string key = keys[i];
+                    if (!m_dictionary.TryGetValue(key, out string value))
                     {
-                        paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPURIParameterEscape(param.Value);
+                        // Key was removed between snapshot and read; skip it.
+                        continue;
+                    }
+
+                    if (value != null && value.Trim().Length > 0)
+                    {
+                        paramStr += TagDelimiter + key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPURIParameterEscape(value);
                     }
                     else
                     {
-                        paramStr += TagDelimiter + param.Key;
+                        paramStr += TagDelimiter + key;
                     }
                 }
             }
@@ -319,9 +396,22 @@ namespace SIPSorcery.SIP
         {
             SIPParameters copy = new SIPParameters();
             copy.TagDelimiter = this.TagDelimiter;
-            foreach (var kvp in this.m_dictionary)
+
+            // Iterate this instance's insertion order so the copy preserves it.
+            string[] keys;
+            lock (m_keyOrderLock)
             {
-                copy.m_dictionary.TryAdd(kvp.Key, kvp.Value);
+                keys = m_keyOrder.ToArray();
+            }
+            foreach (string key in keys)
+            {
+                if (this.m_dictionary.TryGetValue(key, out string value))
+                {
+                    if (copy.m_dictionary.TryAdd(key, value))
+                    {
+                        copy.TrackKeyInsertion(key);
+                    }
+                }
             }
             return copy;
         }
