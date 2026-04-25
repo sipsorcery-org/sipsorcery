@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -48,10 +49,21 @@ namespace SIPSorcery.Net.UnitTests
 
             AggregateException capturedException = null;
 
+            // Only capture (and observe) unobserved-task exceptions whose stack trace
+            // mentions UdpReceiver. The TaskScheduler.UnobservedTaskException event is
+            // process-global, so without a filter this handler also picks up Task leaks
+            // from any other test running in parallel — which made this test fail
+            // sporadically. Exceptions from other sources are intentionally left
+            // unobserved so their owning tests still see them.
             EventHandler<UnobservedTaskExceptionEventArgs> handler = (s, e) =>
             {
-                capturedException = e.Observed ? null : e.Exception;
-                e.SetObserved();
+                bool fromUdpReceiver = e.Exception.InnerExceptions
+                    .Any(ex => ex.StackTrace?.Contains(nameof(UdpReceiver)) == true);
+                if (fromUdpReceiver)
+                {
+                    capturedException = e.Exception;
+                    e.SetObserved();
+                }
             };
 
             TaskScheduler.UnobservedTaskException += handler;
