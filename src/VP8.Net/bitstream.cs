@@ -301,5 +301,90 @@ namespace Vpx.Net
             if (Math.Abs(cfg.UvAcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.UvAcDeltaQ), cfg.UvAcDeltaQ, "UvAcDeltaQ must be -15..15.");
             _ = dqRange;
         }
+
+        // -----------------------------------------------------------------
+        // Token bitstream writer (PR 4 of the VP8 encoder series).
+        //
+        // Port of libvpx vp8_pack_tokens (vp8/encoder/bitstream.c). Takes the
+        // TOKENEXTRA stream produced by tokenize.vp8_tokenize_block and
+        // writes it through the boolean coder. Bit-exact with libvpx.
+        //
+        // The libvpx implementation inlines the bool-coder fast path for
+        // performance; here we delegate to vp8_encode_bool for clarity.
+        // The output bytes are identical because vp8_encode_bool is a
+        // bit-exact port of the same fast path.
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Pack a sequence of <see cref="TOKENEXTRA"/> tokens into the
+        /// boolean-coder bitstream <paramref name="bc"/>. Caller is
+        /// responsible for having already called
+        /// <c>boolhuff.vp8_start_encode</c> on <paramref name="bc"/>, and
+        /// must call <c>boolhuff.vp8_stop_encode</c> after all tokens (and
+        /// any other partition data) have been written.
+        /// </summary>
+        /// <param name="bc">Open boolean coder to write into.</param>
+        /// <param name="tokens">Tokens to write, in order.</param>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, System.Collections.Generic.IList<TOKENEXTRA> tokens)
+        {
+            if (tokens == null) return;
+
+            for (int idx = 0; idx < tokens.Count; idx++)
+            {
+                TOKENEXTRA p = tokens[idx];
+                int t = p.Token;
+                entropy.vp8_token a = entropy.vp8_coef_encodings[t];
+                entropy.vp8_extra_bit_struct b = entropy.vp8_extra_bits[t];
+                int v = a.value;
+                int n = a.Len;
+                int i = 0;
+
+                // skip_eob_node: when the previous token's class was 0
+                // (ZERO_TOKEN) the EOB tree node is not written. The first
+                // bit of the encoding is suppressed and the tree-walk
+                // resumes from internal node 2.
+                if (p.skip_eob_node != 0)
+                {
+                    n--;
+                    i = 2;
+                }
+
+                // Walk the coefficient encoding tree, one bit per node.
+                byte[] pp = p.context_tree;
+                do
+                {
+                    int bb = (v >> --n) & 1;
+                    boolhuff.vp8_encode_bool(ref bc, bb, pp[i >> 1]);
+                    i = entropy.vp8_coef_tree[i + bb];
+                } while (n != 0);
+
+                // Magnitude "extra" bits + sign for category tokens.
+                if (b.base_val != 0)
+                {
+                    int e = p.Extra;
+                    int L = b.Len;
+
+                    // Walk the per-category extra-bits tree if it has any
+                    // (cat1..cat6 all do; cat0 = ZERO/ONE/TWO/THREE/FOUR
+                    // tokens are handled separately by the main tree).
+                    if (L != 0)
+                    {
+                        byte[] proba = b.prob;
+                        int v2 = e >> 1;        // strip sign bit
+                        int n2 = L;
+                        int i2 = 0;
+                        do
+                        {
+                            int bb = (v2 >> --n2) & 1;
+                            boolhuff.vp8_encode_bool(ref bc, bb, proba[i2 >> 1]);
+                            i2 = b.tree[i2 + bb];
+                        } while (n2 != 0);
+                    }
+
+                    // Sign bit (LSB of Extra) at probability 128.
+                    boolhuff.vp8_encode_bool(ref bc, e & 1, VP8_PROB_HALF);
+                }
+            }
+        }
     }
 }
