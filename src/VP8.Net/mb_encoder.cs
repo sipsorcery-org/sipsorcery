@@ -177,40 +177,95 @@ namespace Vpx.Net
                 vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i]);
             }
 
-            // ---- Step 6: tokenize ----
-            // Block types per libvpx:
-            //   type 0 = Y AC (first coefficient index = 1; DC went to Y2)
+            // ---- Step 6: tokenize, with per-block above/left entropy contexts ----
+            //
+            // VP8 tracks an "above" context byte per column-position and a
+            // "left" context byte per row-position. Each transformed block
+            // reads its initial context = (aboveCtx | leftCtx) (bool OR; both
+            // represented as 0 or 1) and the bit it writes (zero block vs
+            // non-zero) updates BOTH the above and the left slots used for
+            // its position. The slot indices come from vp8_block2above and
+            // vp8_block2left in entropy.cs.
+            //
+            // Within an MB the relevant slots are 0..3 for the 4 Y columns
+            // (above) / 4 Y rows (left), 4..5 for U, 6..7 for V, 8 for Y2.
+            //
+            // Bug history: an earlier draft of this file passed
+            // initialContext=0 to every block. That worked for all-zero
+            // residual (every block tokenizes to a single EOB and the
+            // context stays 0), but broke once any block carried a
+            // non-zero coefficient — the encoder wrote with prob row 0 and
+            // the decoder, computing context 1 from its own state machine,
+            // read with prob row 1. Output: garbled chroma in the test.
+            //
+            // For now the above/left arrays are local to the MB; multi-MB
+            // context propagation is a follow-up.
+            byte[] aboveCtx = new byte[9];
+            byte[] leftCtx = new byte[9];
+
+            // Block type per libvpx:
+            //   type 0 = Y AC (firstCoeffIndex = 1; DC went to Y2)
             //   type 1 = Y2
             //   type 2 = UV
-            //   type 3 = Y with DC (used when no Y2 block — not our case)
-            for (int i = 0; i < 16; i++)
-            {
-                result.YBlocks[i] = new List<TOKENEXTRA>();
-                tokenize.vp8_tokenize_block(yQ[i],
-                    firstCoeffIndex: 1, eob: yEob[i],
-                    blockType: 0, initialContext: 0,
-                    coefProbs: default_coef_probs_c.default_coef_probs,
-                    output: result.YBlocks[i]);
-            }
-            tokenize.vp8_tokenize_block(y2Q,
+            //   type 3 = Y with DC (no Y2, not used for DC_PRED 16x16)
+
+            // -- Y2 block (block index 24) --
+            int slot = entropy.vp8_block2above[24];   // = 8
+            int slotL = entropy.vp8_block2left[24];   // = 8
+            result.Y2Block = new List<TOKENEXTRA>();
+            bool y2NonZero = tokenize.vp8_tokenize_block(y2Q,
                 firstCoeffIndex: 0, eob: y2Eob,
-                blockType: 1, initialContext: 0,
+                blockType: 1,
+                initialContext: aboveCtx[slot] | leftCtx[slotL],
                 coefProbs: default_coef_probs_c.default_coef_probs,
                 output: result.Y2Block);
+            aboveCtx[slot] = leftCtx[slotL] = (byte)(y2NonZero ? 1 : 0);
+
+            // -- 16 Y AC blocks (indices 0..15) --
+            for (int i = 0; i < 16; i++)
+            {
+                int s = entropy.vp8_block2above[i];
+                int sL = entropy.vp8_block2left[i];
+                result.YBlocks[i] = new List<TOKENEXTRA>();
+                bool nz = tokenize.vp8_tokenize_block(yQ[i],
+                    firstCoeffIndex: 1, eob: yEob[i],
+                    blockType: 0,
+                    initialContext: CombineCtx(aboveCtx[s], leftCtx[sL]),
+                    coefProbs: default_coef_probs_c.default_coef_probs,
+                    output: result.YBlocks[i]);
+                aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
+            }
+
+            // -- 4 U blocks (indices 16..19) --
             for (int i = 0; i < 4; i++)
             {
+                int blkIdx = 16 + i;
+                int s = entropy.vp8_block2above[blkIdx];
+                int sL = entropy.vp8_block2left[blkIdx];
                 result.UBlocks[i] = new List<TOKENEXTRA>();
-                tokenize.vp8_tokenize_block(uQ[i],
+                bool nz = tokenize.vp8_tokenize_block(uQ[i],
                     firstCoeffIndex: 0, eob: uEob[i],
-                    blockType: 2, initialContext: 0,
+                    blockType: 2,
+                    initialContext: CombineCtx(aboveCtx[s], leftCtx[sL]),
                     coefProbs: default_coef_probs_c.default_coef_probs,
                     output: result.UBlocks[i]);
+                aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
+            }
+
+            // -- 4 V blocks (indices 20..23) --
+            for (int i = 0; i < 4; i++)
+            {
+                int blkIdx = 20 + i;
+                int s = entropy.vp8_block2above[blkIdx];
+                int sL = entropy.vp8_block2left[blkIdx];
                 result.VBlocks[i] = new List<TOKENEXTRA>();
-                tokenize.vp8_tokenize_block(vQ[i],
+                bool nz = tokenize.vp8_tokenize_block(vQ[i],
                     firstCoeffIndex: 0, eob: vEob[i],
-                    blockType: 2, initialContext: 0,
+                    blockType: 2,
+                    initialContext: CombineCtx(aboveCtx[s], leftCtx[sL]),
                     coefProbs: default_coef_probs_c.default_coef_probs,
                     output: result.VBlocks[i]);
+                aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
             }
 
             // ---- Step 7: reconstruct ----
@@ -415,6 +470,16 @@ namespace Vpx.Net
             for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
                 dstPlane[(blockOffsetY + r) * dstStride + (blockOffsetX + c)] = dstBuf[r * 4 + c];
+        }
+
+        /// <summary>
+        /// VP8_COMBINEENTROPYCONTEXTS in libvpx: returns (above != 0) +
+        /// (left != 0), an int in {0, 1, 2} that selects which row of
+        /// the 3-context probability table to use for the next block.
+        /// </summary>
+        private static int CombineCtx(byte above, byte left)
+        {
+            return (above != 0 ? 1 : 0) + (left != 0 ? 1 : 0);
         }
     }
 }
