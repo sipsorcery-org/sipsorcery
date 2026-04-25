@@ -262,8 +262,16 @@ namespace SIPSorcery.SIP.UnitTests
             var tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
             engine.AddTransaction(tx);
 
-            tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 * 2));
+            // Flip to Cancelled BEFORE backdating Created. Otherwise there is a brief
+            // window in which the transaction has an "old" Created timestamp but is
+            // still in the Calling state, and the engine's background sweep thread
+            // (started by SIPTransport's constructor) can match the
+            // "now - Created >= T6, state == Calling/Trying" fall-through branch in
+            // RemoveExpiredTransactions and remove the transaction before this test
+            // ever calls the sweep itself. That manifested as a sporadic CI failure
+            // on the order of ~5% of runs.
             tx.CancelCall();
+            tx.Created = DateTime.Now.AddMilliseconds(-(SIPTimings.T6 * 2));
 
             var removeExpiredMethod = typeof(SIPTransactionEngine).GetMethod("RemoveExpiredTransactions", BindingFlags.Instance | BindingFlags.NonPublic);
             removeExpiredMethod.Invoke(engine, null);
