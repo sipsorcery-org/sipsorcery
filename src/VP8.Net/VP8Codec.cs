@@ -47,6 +47,14 @@ namespace Vpx.Net
         public VP8Codec()
         { }
 
+        // Pooled per-instance plane-split buffers, reused across calls.
+        // Resized lazily when the input dimensions change. Allocating these
+        // afresh each frame was a major chunk of the encoder's GC pressure
+        // (~440 KB per 640x480 frame).
+        private byte[] _srcY;
+        private byte[] _srcU;
+        private byte[] _srcV;
+
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public bool IsSupported(VideoCodecsEnum codec) => codec == VideoCodecsEnum.VP8;
 
@@ -80,19 +88,18 @@ namespace Vpx.Net
                         (ySize + 2 * cSize) + " for " + width + "x" + height + ".");
                 }
 
-                byte[] srcY = new byte[ySize];
-                byte[] srcU = new byte[cSize];
-                byte[] srcV = new byte[cSize];
-                Buffer.BlockCopy(i420, 0,             srcY, 0, ySize);
-                Buffer.BlockCopy(i420, ySize,         srcU, 0, cSize);
-                Buffer.BlockCopy(i420, ySize + cSize, srcV, 0, cSize);
+                if (_srcY == null || _srcY.Length < ySize) _srcY = new byte[ySize];
+                if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
+                Buffer.BlockCopy(i420, 0,             _srcY, 0, ySize);
+                Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);
+                Buffer.BlockCopy(i420, ySize + cSize, _srcV, 0, cSize);
 
                 // ForceKeyFrame is currently the only mode (every frame is a
                 // keyframe in the foundation encoder). Reset the flag for
                 // API parity with future inter-frame support.
                 _forceKeyFrame = false;
 
-                return frame_encoder.EncodeKeyframe(srcY, srcU, srcV, width, height, DEFAULT_BASE_QINDEX);
+                return frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, DEFAULT_BASE_QINDEX);
             }
         }
 
