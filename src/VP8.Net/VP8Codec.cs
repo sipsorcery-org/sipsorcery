@@ -62,6 +62,41 @@ namespace Vpx.Net
         // there is no rate control, so this is a fixed Q. Mid-quality.
         private const int DEFAULT_BASE_QINDEX = 32;
 
+        private int _baseQIndex = DEFAULT_BASE_QINDEX;
+
+        /// <summary>
+        /// VP8 base quantizer index used for every frame. Range [0, 127];
+        /// 0 is highest quality / largest frames, 127 is lowest quality /
+        /// smallest frames. Default is 32 (mid-quality).
+        ///
+        /// Tuning this is the primary lever for trading bitrate against
+        /// visible quality on this foundation encoder, since the encoder
+        /// is keyframe-only with no rate control. As a rough guide on
+        /// 640x480 high-detail content (e.g. the standard test pattern):
+        ///   Q=32 -> ~50 KB/frame (~12 Mbps at 30 fps) — too high for
+        ///                         most receivers' un-paced burst
+        ///                         tolerance.
+        ///   Q=64 -> ~28 KB/frame (~6.7 Mbps at 30 fps).
+        ///   Q=96 -> ~16 KB/frame (~3.8 Mbps at 30 fps) — visible block
+        ///                         artefacts but typically streamable
+        ///                         with audio intact.
+        /// Lower-detail content (typical webcam) lands at materially
+        /// smaller frame sizes for the same Q.
+        /// </summary>
+        public int BaseQIndex
+        {
+            get => _baseQIndex;
+            set
+            {
+                if (value < 0 || value > 127)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value),
+                        "BaseQIndex must be in the range [0, 127] (VP8 base quantizer index).");
+                }
+                _baseQIndex = value;
+            }
+        }
+
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             lock (_encoderLock)
@@ -99,7 +134,7 @@ namespace Vpx.Net
                 // API parity with future inter-frame support.
                 _forceKeyFrame = false;
 
-                return frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, DEFAULT_BASE_QINDEX);
+                return frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, _baseQIndex);
             }
         }
 
