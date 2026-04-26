@@ -418,7 +418,45 @@ namespace SIPSorcery.Net
             return rv;
         }
 
+        /// <summary>
+        /// Optional outbound packet pacer. When set, every call to
+        /// <see cref="SendRtpRaw(ArraySegment{byte}, uint, int, int, bool, ushort?)"/>
+        /// queues the SRTP-encrypt-and-send work onto the pacer's
+        /// dedicated background thread instead of running it inline. The
+        /// pacer dispatches packets at a configured maximum rate, which
+        /// converts the natural per-frame burst into an evenly spaced
+        /// stream. Default null (no pacing — original behaviour).
+        ///
+        /// Set this on the video stream of an RTPSession / RTCPeerConnection
+        /// when you have a high-bitrate codec that produces multi-packet
+        /// frames (e.g. an intra-only VP8 keyframe encoder); audio streams
+        /// generally don't need pacing because they already emit one
+        /// packet per packetisation interval.
+        /// </summary>
+        public RtpPacer Pacer { get; set; }
+
         protected void SendRtpRaw(ArraySegment<byte> data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
+        {
+            // Pacer fast-path check: if pacing is enabled, capture the
+            // call into a delegate and enqueue. The pacer thread later
+            // calls SendRtpRawDirect to do the real work. The check-done
+            // gate is honoured on the calling thread so we don't queue
+            // packets that wouldn't be sent anyway, but a defensive copy
+            // of the payload is taken because the caller may reuse the
+            // buffer immediately after this method returns.
+            var pacer = Pacer;
+            if (pacer != null)
+            {
+                if (!checkDone && !CheckIfCanSendRtpRaw()) { return; }
+                byte[] dataCopy = new byte[data.Count];
+                Buffer.BlockCopy(data.Array, data.Offset, dataCopy, 0, data.Count);
+                pacer.Enqueue(() => SendRtpRawDirect(new ArraySegment<byte>(dataCopy), timestamp, markerBit, payloadType, true /*already check-gated*/, seqNum));
+                return;
+            }
+            SendRtpRawDirect(data, timestamp, markerBit, payloadType, checkDone, seqNum);
+        }
+
+        private void SendRtpRawDirect(ArraySegment<byte> data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
         {
             if (checkDone || CheckIfCanSendRtpRaw())
             {
