@@ -35,11 +35,28 @@
 // "left" / "above" neighbour buffers so that DC prediction matches the
 // decoder's reconstruction context exactly.
 //
+// Cross-MB entropy-context propagation: each MB's 9-slot above/left
+// entropy contexts (4 Y + 2 U + 2 V + 1 Y2) are maintained at frame
+// scope rather than per-MB. The above contexts are stored as one row
+// of 9-slot entries indexed by MB column position; left contexts are
+// kept as a single 9-slot array reset to zero at the start of each MB
+// row. Each call into mb_encoder.EncodeMacroblockDcPred passes both
+// arrays in by reference so that each block's initial probability-row
+// context matches the row the decoder will read with — this was the
+// root cause of the macroblock-aligned colour artefacts observed on
+// real webcam content with the previous per-MB-only contexts.
+//
 // Author(s):
 // Claude Opus 4.7 (Anthropic AI assistant, model: claude-opus-4-7), commissioned by Aaron Clauson
 //
 // History:
 // 25 Apr 2026  Claude          Created.
+// 26 Apr 2026  Claude          Thread above/left entropy contexts at
+//                              frame scope (previously they were local
+//                              to each MB and reset at MB boundaries,
+//                              which made the encoder use the wrong
+//                              probability rows for the decoder's
+//                              context state on non-uniform content).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -160,9 +177,20 @@ namespace Vpx.Net
             byte[] aboveVRow = new byte[chromaW];
             // First row has no "above"; null indicates "use 128 default".
 
+            // Frame-scope entropy contexts. The above row stores one
+            // 9-slot context per MB column position (4 Y + 2 U + 2 V + 1
+            // Y2 = 9 slots), reused across MB rows so that an MB at
+            // (row r, col c) reads its above context from the bottom of
+            // the MB at (r-1, c). The left context is a single 9-slot
+            // array that persists across MBs in a row and is reset at
+            // each row boundary (no wrap-around). C-array layout (flat,
+            // row-major-ish): aboveCtx[mbCol * 9 + slot].
+            byte[] frameAboveCtx = new byte[mbCols * 9];
+
             for (int mbRow = 0; mbRow < mbRows; mbRow++)
             {
                 byte[] leftY = null, leftU = null, leftV = null;
+                byte[] leftCtx = new byte[9];   // reset at the start of each MB row
 
                 for (int mbCol = 0; mbCol < mbCols; mbCol++)
                 {
@@ -176,11 +204,23 @@ namespace Vpx.Net
                     byte[] aboveU = (mbRow == 0) ? null : ExtractRow(aboveURow, mbCol * 8, 8);
                     byte[] aboveV = (mbRow == 0) ? null : ExtractRow(aboveVRow, mbCol * 8, 8);
 
+                    // Pull this MB column's above context out of the
+                    // frame-scope buffer; mb_encoder mutates it in place
+                    // as it processes blocks, then we copy it back.
+                    byte[] aboveCtx = new byte[9];
+                    int aboveBase = mbCol * 9;
+                    for (int s = 0; s < 9; s++) aboveCtx[s] = frameAboveCtx[aboveBase + s];
+
                     var r = mb_encoder.EncodeMacroblockDcPred(
                         mbY, mbU, mbV,
                         aboveY, leftY, aboveU, leftU, aboveV, leftV,
-                        fq);
+                        fq,
+                        aboveCtx, leftCtx);
                     mbResults[mbRow * mbCols + mbCol] = r;
+
+                    // The mutated aboveCtx is the new "above" for the MB
+                    // immediately below this one (same column, next row).
+                    for (int s = 0; s < 9; s++) frameAboveCtx[aboveBase + s] = aboveCtx[s];
 
                     // Encode the Y mode (DC_PRED) -> bits 1, 0, 0 with
                     // probs vp8_kf_ymode_prob[0..2].
