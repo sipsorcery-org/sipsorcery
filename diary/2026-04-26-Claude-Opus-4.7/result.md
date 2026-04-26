@@ -46,13 +46,6 @@ the same workstream:
 | [#1570](https://github.com/sipsorcery-org/sipsorcery/pull/1570) | Per-macroblock encode pipeline (PR 6 of N) | `mb_encoder.EncodeMacroblockDcPred` ties together predict → residual → fdct → walsh → quantize → tokenize → reconstruct for one MB |
 | [#1571](https://github.com/sipsorcery-org/sipsorcery/pull/1571) | Frame orchestration + `EncodeVideo` wire-up + round-trip (PR 7 of N) | `frame_encoder.cs`, the `vp8_block2above` / `vp8_block2left` tables, and the `VP8Codec.EncodeVideo` wiring; first frame to round-trip and first frame Chrome accepts |
 
-Side-fixes triggered by tests flaking on the foundation PRs' CI runs:
-
-| PR | Title | Why |
-| --- | --- | --- |
-| [#1563](https://github.com/sipsorcery-org/sipsorcery/pull/1563) | Fix two sporadically failing unit tests | Race in `SIPTransactionEngine` test setup, and a `TaskScheduler.UnobservedTaskException` handler that captured cross-test leaks in the `UdpReceiver` test |
-| [#1565](https://github.com/sipsorcery-org/sipsorcery/pull/1565) | Compare SIP headers semantically in `SipResponseCopy` | `SIPParameters.ToString()` iteration order over `ConcurrentDictionary` is not stable across instances; the test was over-specified — RFC 3261 §7.3.1 allows parameter reordering, so the fix is in the test, not the production code (an earlier draft, #1564, fixed it in production code and was correctly rejected for being intrusive) |
-
 ## Capabilities of the encoder as it stands
 
 Implemented:
