@@ -178,16 +178,65 @@ namespace Vpx.Net
             return true;
         }
 
-        // Helper: copy a single 11-element probability row out of the 4D
-        // coefProbs table. Allocates per call — fine for tests; in PR 5
-        // the macroblock-level driver will batch this with a per-frame
-        // cache instead.
+        // 4 block types x 8 coef bands x 3 prev-token contexts = 96 unique
+        // probability rows in the default_coef_probs table. The encoder
+        // hot path calls SliceProbRow up to ~75 times per MB (= ~90,000
+        // calls per 640x480 frame). Each fresh allocation is ~32 bytes
+        // (16 byte header + 11 byte payload aligned to 8); allocating
+        // 90K of those per frame is ~3 MB/sec of GC pressure on a
+        // 30 fps stream, which is exactly the kind of per-frame
+        // allocation the encoder needs to avoid.
+        //
+        // Caching strategy: lazily build a flat vp8_prob[][] keyed by
+        // (type * 24 + band * 3 + ctx) the first time we see a given
+        // coefProbs reference, and reuse on every subsequent call. The
+        // common case (and only case in the current encoder) is the
+        // singleton default_coef_probs.default_coef_probs table.
+        private static vp8_prob[,,,] s_cachedTable;
+        private static vp8_prob[][]  s_cachedRows;
+        private static readonly object s_cacheLock = new object();
+
         private static vp8_prob[] SliceProbRow(vp8_prob[,,,] coefProbs, int type, int band, int ctx)
         {
-            int n = coefProbs.GetLength(3);
-            var row = new vp8_prob[n];
-            for (int i = 0; i < n; i++) row[i] = coefProbs[type, band, ctx, i];
-            return row;
+            // Fast path: same table reference as the previous cache fill.
+            if (object.ReferenceEquals(coefProbs, s_cachedTable))
+            {
+                return s_cachedRows[type * 24 + band * 3 + ctx];
+            }
+
+            // Cache miss: build the cache for this table, then return.
+            return BuildCacheAndSlice(coefProbs, type, band, ctx);
+        }
+
+        private static vp8_prob[] BuildCacheAndSlice(vp8_prob[,,,] coefProbs, int type, int band, int ctx)
+        {
+            lock (s_cacheLock)
+            {
+                if (!object.ReferenceEquals(coefProbs, s_cachedTable))
+                {
+                    int blockTypes = coefProbs.GetLength(0);
+                    int coefBands  = coefProbs.GetLength(1);
+                    int prevCtx    = coefProbs.GetLength(2);
+                    int nodes      = coefProbs.GetLength(3);
+                    var rows = new vp8_prob[blockTypes * coefBands * prevCtx][];
+                    for (int t = 0; t < blockTypes; t++)
+                        for (int b = 0; b < coefBands; b++)
+                            for (int c = 0; c < prevCtx; c++)
+                            {
+                                var row = new vp8_prob[nodes];
+                                for (int i = 0; i < nodes; i++)
+                                    row[i] = coefProbs[t, b, c, i];
+                                rows[t * (coefBands * prevCtx) + b * prevCtx + c] = row;
+                            }
+                    // Publish atomically so concurrent readers see a fully
+                    // initialised cache.
+                    System.Threading.Interlocked.Exchange(ref s_cachedRows,  rows);
+                    System.Threading.Interlocked.Exchange(ref s_cachedTable, coefProbs);
+                }
+                return s_cachedRows[type * (coefProbs.GetLength(1) * coefProbs.GetLength(2))
+                                  + band * coefProbs.GetLength(2)
+                                  + ctx];
+            }
         }
     }
 }

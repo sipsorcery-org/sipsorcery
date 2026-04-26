@@ -37,6 +37,18 @@
 //                              them at frame scope (cross-MB context
 //                              propagation). Also fix Y2 initial
 //                              context from boolean OR to CombineCtx.
+// 26 Apr 2026  Claude          Allocation hygiene pass: add optional
+//                              MbEncodeResult result and MbEncoderScratch
+//                              scratch parameters so the per-MB encode
+//                              path allocates nothing when called from
+//                              a pooled-state caller. MbEncodeResult
+//                              gains a Reset() method that clears its
+//                              25 token lists in place (initial capacity
+//                              17 each so they never grow). All inner
+//                              short[][] arrays are now scratch-pool
+//                              backed; the small fixed-size buffers in
+//                              IdctAndAddToPlane and InverseWalsh4x4
+//                              are stackalloc.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -70,10 +82,15 @@ namespace Vpx.Net
     /// </summary>
     public sealed class MbEncodeResult
     {
+        // Per-block token storage. Each list is pre-allocated with capacity
+        // 17 (16 coefficients max + 1 trailing EOB) so Add() never grows
+        // the backing array. Reset() clears all 25 lists in place without
+        // releasing the storage — designed for pool-based reuse from
+        // frame_encoder so per-MB encoding doesn't allocate.
         public List<TOKENEXTRA>[] YBlocks  = new List<TOKENEXTRA>[16];
         public List<TOKENEXTRA>[] UBlocks  = new List<TOKENEXTRA>[4];
         public List<TOKENEXTRA>[] VBlocks  = new List<TOKENEXTRA>[4];
-        public List<TOKENEXTRA>  Y2Block  = new List<TOKENEXTRA>();
+        public List<TOKENEXTRA>  Y2Block  = new List<TOKENEXTRA>(17);
 
         /// <summary>Reconstructed 16x16 luma pixels, raster order.</summary>
         public byte[] ReconY = new byte[16 * 16];
@@ -83,6 +100,63 @@ namespace Vpx.Net
 
         /// <summary>Reconstructed 8x8 V pixels, raster order.</summary>
         public byte[] ReconV = new byte[8 * 8];
+
+        public MbEncodeResult()
+        {
+            for (int i = 0; i < 16; i++) YBlocks[i] = new List<TOKENEXTRA>(17);
+            for (int i = 0; i < 4;  i++) UBlocks[i] = new List<TOKENEXTRA>(17);
+            for (int i = 0; i < 4;  i++) VBlocks[i] = new List<TOKENEXTRA>(17);
+        }
+
+        /// <summary>Clear all 25 token lists in place. Backing arrays are
+        /// retained so the next encode pass into this result allocates
+        /// nothing.</summary>
+        public void Reset()
+        {
+            Y2Block.Clear();
+            for (int i = 0; i < 16; i++) YBlocks[i].Clear();
+            for (int i = 0; i < 4;  i++) UBlocks[i].Clear();
+            for (int i = 0; i < 4;  i++) VBlocks[i].Clear();
+        }
+    }
+
+    /// <summary>
+    /// Per-MB scratch buffers held by the caller (frame_encoder) and
+    /// passed back into EncodeMacroblockDcPred so the per-MB encode path
+    /// allocates nothing on the hot path. All buffers are sized for the
+    /// fixed 16x16 luma + 8x8 chroma macroblock layout; nothing in here
+    /// has any state across calls — it's just storage.
+    /// </summary>
+    public sealed class MbEncoderScratch
+    {
+        public short[] ResidY = new short[256];   // 16x16 residual after DC_PRED subtract
+        public short[] ResidU = new short[64];    // 8x8 chroma U residual
+        public short[] ResidV = new short[64];    // 8x8 chroma V residual
+
+        public short[][] YCoef = new short[16][]; // 16 4x4 Y forward DCT outputs
+        public short[][] UCoef = new short[4][];  // 4 4x4 U forward DCT outputs
+        public short[][] VCoef = new short[4][];  // 4 4x4 V forward DCT outputs
+        public short[]   Y2In  = new short[16];   // 16 Y DCs prior to Walsh
+        public short[]   Y2Coef = new short[16];  // Walsh output
+
+        public short[][] YQ  = new short[16][];   // quantized Y AC blocks
+        public short[][] YDQ = new short[16][];   // dequantized Y AC blocks
+        public short[]   Y2Q  = new short[16];    // quantized Y2
+        public short[]   Y2DQ = new short[16];    // dequantized Y2
+        public short[][] UQ  = new short[4][];
+        public short[][] UDQ = new short[4][];
+        public short[][] VQ  = new short[4][];
+        public short[][] VDQ = new short[4][];
+        public int[]     YEob = new int[16];
+        public int[]     UEob = new int[4];
+        public int[]     VEob = new int[4];
+
+        public MbEncoderScratch()
+        {
+            for (int i = 0; i < 16; i++) { YCoef[i] = new short[16]; YQ[i] = new short[16]; YDQ[i] = new short[16]; }
+            for (int i = 0; i < 4;  i++) { UCoef[i] = new short[16]; UQ[i] = new short[16]; UDQ[i] = new short[16]; }
+            for (int i = 0; i < 4;  i++) { VCoef[i] = new short[16]; VQ[i] = new short[16]; VDQ[i] = new short[16]; }
+        }
     }
 
     public static class mb_encoder
@@ -119,7 +193,9 @@ namespace Vpx.Net
             byte[] aboveV, byte[] leftV,
             FrameQuantizer fq,
             byte[] aboveCtx = null,
-            byte[] leftCtx = null)
+            byte[] leftCtx = null,
+            MbEncodeResult result = null,
+            MbEncoderScratch scratch = null)
         {
             if (srcY == null || srcY.Length != 256) throw new ArgumentException("srcY must be 16*16");
             if (srcU == null || srcU.Length != 64)  throw new ArgumentException("srcU must be 8*8");
@@ -130,7 +206,19 @@ namespace Vpx.Net
             if (leftCtx != null && leftCtx.Length != 9)
                 throw new ArgumentException("leftCtx must have length 9 (4 Y + 2 U + 2 V + 1 Y2)", nameof(leftCtx));
 
-            var result = new MbEncodeResult();
+            // Pool semantics: when called by frame_encoder with a pooled
+            // result the caller has already Reset()'d the lists; when
+            // called by unit tests (or an external caller) without a
+            // pooled result, allocate a fresh one. Same for scratch.
+            if (result == null)
+            {
+                result = new MbEncodeResult();
+            }
+            else
+            {
+                result.Reset();
+            }
+            if (scratch == null) scratch = new MbEncoderScratch();
 
             // ---- Step 1: DC predictions ----
             byte yPred = DcPred16x16(aboveY, leftY);
@@ -138,31 +226,37 @@ namespace Vpx.Net
             byte vPred = DcPred8x8(aboveV, leftV);
 
             // ---- Step 2: residual = source - prediction ----
-            short[] residY = SubtractFlat(srcY, yPred);
-            short[] residU = SubtractFlat(srcU, uPred);
-            short[] residV = SubtractFlat(srcV, vPred);
+            short[] residY = scratch.ResidY;
+            short[] residU = scratch.ResidU;
+            short[] residV = scratch.ResidV;
+            SubtractFlatInto(srcY, yPred, residY);
+            SubtractFlatInto(srcU, uPred, residU);
+            SubtractFlatInto(srcV, vPred, residV);
 
             // ---- Step 3: forward DCT for each 4x4 block ----
             // Y: 16 blocks of 4x4 carved out of the 16x16 plane.
-            short[][] yCoef = new short[16][];
+            short[][] yCoef = scratch.YCoef;
             for (int by = 0; by < 4; by++)
             for (int bx = 0; bx < 4; bx++)
             {
                 int blkIdx = by * 4 + bx;
-                yCoef[blkIdx] = Fdct4x4FromPlane(residY, srcStride: 16,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
+                Fdct4x4FromPlaneInto(residY, srcStride: 16,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                    coef: yCoef[blkIdx]);
             }
             // U / V: 4 blocks of 4x4 each.
-            short[][] uCoef = new short[4][];
-            short[][] vCoef = new short[4][];
+            short[][] uCoef = scratch.UCoef;
+            short[][] vCoef = scratch.VCoef;
             for (int by = 0; by < 2; by++)
             for (int bx = 0; bx < 2; bx++)
             {
                 int blkIdx = by * 2 + bx;
-                uCoef[blkIdx] = Fdct4x4FromPlane(residU, srcStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
-                vCoef[blkIdx] = Fdct4x4FromPlane(residV, srcStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
+                Fdct4x4FromPlaneInto(residU, srcStride: 8,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                    coef: uCoef[blkIdx]);
+                Fdct4x4FromPlaneInto(residV, srcStride: 8,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                    coef: vCoef[blkIdx]);
             }
 
             // ---- Step 4: build Y2 block from the 16 Y DCs and Walsh-transform ----
@@ -170,33 +264,36 @@ namespace Vpx.Net
             // 16 Y DC coefficients are themselves transformed by a 4x4 Walsh
             // and then quantized as a "Y2" second-order block. The 16 Y AC
             // blocks then drop their DC (zero out coef[0]).
-            short[] y2In = new short[16];
+            short[] y2In = scratch.Y2In;
             for (int i = 0; i < 16; i++) y2In[i] = yCoef[i][0];
-            short[] y2Coef = Walsh4x4(y2In);
+            short[] y2Coef = scratch.Y2Coef;
+            Walsh4x4Into(y2In, y2Coef);
 
             // Zero out the DC of each Y AC block.
             for (int i = 0; i < 16; i++) yCoef[i][0] = 0;
 
             // ---- Step 5: quantize ----
-            short[][] yQ = new short[16][], yDQ = new short[16][];
-            int[] yEob = new int[16];
+            short[][] yQ = scratch.YQ;
+            short[][] yDQ = scratch.YDQ;
+            int[] yEob = scratch.YEob;
             for (int i = 0; i < 16; i++)
             {
-                yQ[i] = new short[16]; yDQ[i] = new short[16];
                 yEob[i] = QuantizeBlock(yCoef[i], fq.Y1, yQ[i], yDQ[i]);
             }
 
-            short[] y2Q = new short[16], y2DQ = new short[16];
+            short[] y2Q = scratch.Y2Q;
+            short[] y2DQ = scratch.Y2DQ;
             int y2Eob = QuantizeBlock(y2Coef, fq.Y2, y2Q, y2DQ);
 
-            short[][] uQ = new short[4][], uDQ = new short[4][];
-            short[][] vQ = new short[4][], vDQ = new short[4][];
-            int[] uEob = new int[4], vEob = new int[4];
+            short[][] uQ = scratch.UQ;
+            short[][] uDQ = scratch.UDQ;
+            short[][] vQ = scratch.VQ;
+            short[][] vDQ = scratch.VDQ;
+            int[] uEob = scratch.UEob;
+            int[] vEob = scratch.VEob;
             for (int i = 0; i < 4; i++)
             {
-                uQ[i] = new short[16]; uDQ[i] = new short[16];
                 uEob[i] = QuantizeBlock(uCoef[i], fq.UV, uQ[i], uDQ[i]);
-                vQ[i] = new short[16]; vDQ[i] = new short[16];
                 vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i]);
             }
 
@@ -250,7 +347,6 @@ namespace Vpx.Net
             // -- Y2 block (block index 24) --
             int slot = entropy.vp8_block2above[24];   // = 8
             int slotL = entropy.vp8_block2left[24];   // = 8
-            result.Y2Block = new List<TOKENEXTRA>();
             bool y2NonZero = tokenize.vp8_tokenize_block(y2Q,
                 firstCoeffIndex: 0, eob: y2Eob,
                 blockType: 1,
@@ -264,7 +360,6 @@ namespace Vpx.Net
             {
                 int s = entropy.vp8_block2above[i];
                 int sL = entropy.vp8_block2left[i];
-                result.YBlocks[i] = new List<TOKENEXTRA>();
                 bool nz = tokenize.vp8_tokenize_block(yQ[i],
                     firstCoeffIndex: 1, eob: yEob[i],
                     blockType: 0,
@@ -280,7 +375,6 @@ namespace Vpx.Net
                 int blkIdx = 16 + i;
                 int s = entropy.vp8_block2above[blkIdx];
                 int sL = entropy.vp8_block2left[blkIdx];
-                result.UBlocks[i] = new List<TOKENEXTRA>();
                 bool nz = tokenize.vp8_tokenize_block(uQ[i],
                     firstCoeffIndex: 0, eob: uEob[i],
                     blockType: 2,
@@ -296,7 +390,6 @@ namespace Vpx.Net
                 int blkIdx = 20 + i;
                 int s = entropy.vp8_block2above[blkIdx];
                 int sL = entropy.vp8_block2left[blkIdx];
-                result.VBlocks[i] = new List<TOKENEXTRA>();
                 bool nz = tokenize.vp8_tokenize_block(vQ[i],
                     firstCoeffIndex: 0, eob: vEob[i],
                     blockType: 2,
@@ -308,12 +401,13 @@ namespace Vpx.Net
 
             // ---- Step 7: reconstruct ----
             // Inverse Walsh on the Y2 block to recover the (quantized) DC of
-            // each Y block. libvpx's inverse Walsh writes the per-block DC
-            // into mb_dqcoeff[i*16].
-            short[] y2InvOut = InverseWalsh4x4(y2DQ);
+            // each Y block. We write directly into the existing y2In scratch
+            // buffer (now holding the recovered DCs) — y2In is no longer
+            // needed for its phase-4 role at this point.
+            InverseWalsh4x4Into(y2DQ, y2In);
             for (int i = 0; i < 16; i++)
             {
-                yDQ[i][0] = y2InvOut[i];
+                yDQ[i][0] = y2In[i];
             }
 
             // For each Y block: idct(dq) + prediction -> reconstructed.
@@ -369,45 +463,44 @@ namespace Vpx.Net
             return (byte)((sum + count / 2) / count);
         }
 
-        /// <summary>Subtracts a flat prediction value from each source byte.</summary>
-        private static short[] SubtractFlat(byte[] src, byte pred)
+        /// <summary>Subtracts a flat prediction value from each source byte
+        /// into <paramref name="dst"/>. <paramref name="dst"/> must be at
+        /// least as long as <paramref name="src"/>.</summary>
+        private static void SubtractFlatInto(byte[] src, byte pred, short[] dst)
         {
-            var r = new short[src.Length];
-            for (int i = 0; i < src.Length; i++) r[i] = (short)(src[i] - pred);
-            return r;
+            for (int i = 0; i < src.Length; i++) dst[i] = (short)(src[i] - pred);
         }
 
         /// <summary>
         /// Extract a 4x4 sub-block from <paramref name="plane"/> (raster order
-        /// at <paramref name="srcStride"/>) into a contiguous 16-short
-        /// buffer, then forward-DCT it.
+        /// at <paramref name="srcStride"/>) and forward-DCT it into the
+        /// provided <paramref name="coef"/> buffer (must be at least 16
+        /// shorts long). The intermediate 4x4 input block is stack-
+        /// allocated so this entire helper does no heap allocation.
         /// </summary>
-        private static unsafe short[] Fdct4x4FromPlane(short[] plane, int srcStride, int blockOffsetX, int blockOffsetY)
+        private static unsafe void Fdct4x4FromPlaneInto(short[] plane, int srcStride, int blockOffsetX, int blockOffsetY, short[] coef)
         {
-            short[] block = new short[16];
+            Span<short> block = stackalloc short[16];
             for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
                 block[r * 4 + c] = plane[(blockOffsetY + r) * srcStride + (blockOffsetX + c)];
 
-            short[] coef = new short[16];
             fixed (short* inP = block)
             fixed (short* outP = coef)
             {
                 dct.vp8_short_fdct4x4_c(inP, outP, pitch: 8);
             }
-            return coef;
         }
 
-        /// <summary>4x4 Walsh-Hadamard on a 16-element input.</summary>
-        private static unsafe short[] Walsh4x4(short[] input)
+        /// <summary>4x4 Walsh-Hadamard from <paramref name="input"/> into
+        /// the supplied <paramref name="outBuf"/>. No allocation.</summary>
+        private static unsafe void Walsh4x4Into(short[] input, short[] outBuf)
         {
-            short[] outBuf = new short[16];
             fixed (short* inP = input)
             fixed (short* outP = outBuf)
             {
                 dct.vp8_short_walsh4x4_c(inP, outP, pitch: 8);
             }
-            return outBuf;
         }
 
         /// <summary>
@@ -435,16 +528,13 @@ namespace Vpx.Net
         /// <summary>
         /// Bit-exact port of libvpx's vp8_short_inv_walsh4x4_c for 16 inputs
         /// (the second-order inverse Walsh used in 16x16 intra modes).
-        /// libvpx writes into an MB-wide dqcoeff buffer; we return a flat
-        /// 16-element array of "DC values per Y block" instead, since the
-        /// caller decides where to install them.
+        /// libvpx writes into an MB-wide dqcoeff buffer; we write into the
+        /// supplied <paramref name="outBuf"/>. The 16-element row-pass
+        /// scratch is stack-allocated. No heap allocation.
         /// </summary>
-        private static short[] InverseWalsh4x4(short[] input)
+        private static void InverseWalsh4x4Into(short[] input, short[] outBuf)
         {
-            // Adapted from idctllm.cs vp8_short_inv_walsh4x4_c — one buffer
-            // pass that puts the recovered DC of each Y block into the
-            // returned 16-element array (one per Y block).
-            int[] tmp = new int[16];
+            Span<int> tmp = stackalloc int[16];
             int a1, b1, c1, d1, a2, b2, c2, d2;
 
             // Stage 1 — rows.
@@ -462,7 +552,6 @@ namespace Vpx.Net
             }
 
             // Stage 2 — columns.
-            short[] outBuf = new short[16];
             for (int i = 0; i < 4; i++)
             {
                 a1 = tmp[0 * 4 + i] + tmp[3 * 4 + i];
@@ -480,13 +569,13 @@ namespace Vpx.Net
                 outBuf[2 * 4 + i] = (short)((c2 + 3) >> 3);
                 outBuf[3 * 4 + i] = (short)((d2 + 3) >> 3);
             }
-            return outBuf;
         }
 
         /// <summary>
         /// Inverse-DCT a 16-element block, add a flat prediction, write the
         /// resulting bytes to a 4x4 sub-block of <paramref name="dstPlane"/>.
         /// Reuses the existing decoder-side idctllm.vp8_short_idct4x4llm_c.
+        /// The 4x4 prediction and output buffers are stack-allocated.
         /// </summary>
         private static unsafe void IdctAndAddToPlane(short[] dqcoeff, byte pred,
             byte[] dstPlane, int dstStride, int blockOffsetX, int blockOffsetY)
@@ -494,15 +583,13 @@ namespace Vpx.Net
             // The decoder's idct adds to a prediction buffer and clamps to
             // [0, 255]. Build a 4x4 prediction buffer (all = pred), call
             // idct, then copy back to the destination plane.
-            byte[] predBuf = new byte[16];
+            byte* predBuf = stackalloc byte[16];
             for (int i = 0; i < 16; i++) predBuf[i] = pred;
-            byte[] dstBuf = new byte[16];
+            byte* dstBuf = stackalloc byte[16];
 
             fixed (short* coefP = dqcoeff)
-            fixed (byte* predP = predBuf)
-            fixed (byte* dstP = dstBuf)
             {
-                idctllm.vp8_short_idct4x4llm_c(coefP, predP, 4, dstP, 4);
+                idctllm.vp8_short_idct4x4llm_c(coefP, predBuf, 4, dstBuf, 4);
             }
 
             for (int r = 0; r < 4; r++)
