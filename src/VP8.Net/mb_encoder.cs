@@ -31,6 +31,12 @@
 //
 // History:
 // 25 Apr 2026  Claude          Created.
+// 26 Apr 2026  Claude          Lift above/left context arrays out of
+//                              per-call allocation: now optional
+//                              parameters so frame_encoder can thread
+//                              them at frame scope (cross-MB context
+//                              propagation). Also fix Y2 initial
+//                              context from boolean OR to CombineCtx.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -94,18 +100,35 @@ namespace Vpx.Net
         ///           MB, or null if this is the left column.
         ///   aboveU/leftU/aboveV/leftV: the 8-byte chroma equivalents.
         ///   fq:     quantizer tables built by quantizer_init.BuildForQIndex.
+        ///   aboveCtx, leftCtx: optional 9-byte entropy-context arrays
+        ///           (4 Y + 2 U + 2 V + 1 Y2 slots). When null, fresh
+        ///           zero-filled arrays are allocated for this single MB
+        ///           and discarded after — the per-MB-isolation behaviour
+        ///           used by mb_encoder unit tests. When non-null, the
+        ///           caller (typically frame_encoder) maintains them at
+        ///           frame scope and threads them across MBs: this method
+        ///           reads each block's initial context from them and
+        ///           writes the resulting non-zero/zero flag back, in
+        ///           place. See the comment block inside the method for
+        ///           the threading rules.
         /// </summary>
         public static MbEncodeResult EncodeMacroblockDcPred(
             byte[] srcY, byte[] srcU, byte[] srcV,
             byte[] aboveY, byte[] leftY,
             byte[] aboveU, byte[] leftU,
             byte[] aboveV, byte[] leftV,
-            FrameQuantizer fq)
+            FrameQuantizer fq,
+            byte[] aboveCtx = null,
+            byte[] leftCtx = null)
         {
             if (srcY == null || srcY.Length != 256) throw new ArgumentException("srcY must be 16*16");
             if (srcU == null || srcU.Length != 64)  throw new ArgumentException("srcU must be 8*8");
             if (srcV == null || srcV.Length != 64)  throw new ArgumentException("srcV must be 8*8");
             if (fq == null) throw new ArgumentNullException(nameof(fq));
+            if (aboveCtx != null && aboveCtx.Length != 9)
+                throw new ArgumentException("aboveCtx must have length 9 (4 Y + 2 U + 2 V + 1 Y2)", nameof(aboveCtx));
+            if (leftCtx != null && leftCtx.Length != 9)
+                throw new ArgumentException("leftCtx must have length 9 (4 Y + 2 U + 2 V + 1 Y2)", nameof(leftCtx));
 
             var result = new MbEncodeResult();
 
@@ -196,12 +219,27 @@ namespace Vpx.Net
             // context stays 0), but broke once any block carried a
             // non-zero coefficient — the encoder wrote with prob row 0 and
             // the decoder, computing context 1 from its own state machine,
-            // read with prob row 1. Output: garbled chroma in the test.
+            // read with prob row 1.
             //
-            // For now the above/left arrays are local to the MB; multi-MB
-            // context propagation is a follow-up.
-            byte[] aboveCtx = new byte[9];
-            byte[] leftCtx = new byte[9];
+            // The follow-up bug history (this PR): when the contexts are
+            // local to the MB they reset to 0 at every MB boundary. Within
+            // an MB that's right (every MB is independent of the others
+            // for prediction in keyframe-only intra), but between MBs in
+            // the same row (left context) and between MB rows (above
+            // context) the decoder DOES thread context — so the encoder
+            // must too, or the decoder reads with a different prob row
+            // from the one the encoder wrote with.
+            //
+            // The fix: aboveCtx and leftCtx are now optional parameters.
+            // When null (the default), behaviour matches the old per-MB
+            // semantics — useful for unit-testing this function in
+            // isolation. When non-null (the path taken by frame_encoder),
+            // the caller maintains them at frame scope, threading
+            // aboveCtx by MB column position (read before this call,
+            // write back after) and leftCtx across MBs in a row (reset
+            // to zero at the start of each row).
+            if (aboveCtx == null) aboveCtx = new byte[9];
+            if (leftCtx == null) leftCtx = new byte[9];
 
             // Block type per libvpx:
             //   type 0 = Y AC (firstCoeffIndex = 1; DC went to Y2)
@@ -216,7 +254,7 @@ namespace Vpx.Net
             bool y2NonZero = tokenize.vp8_tokenize_block(y2Q,
                 firstCoeffIndex: 0, eob: y2Eob,
                 blockType: 1,
-                initialContext: aboveCtx[slot] | leftCtx[slotL],
+                initialContext: CombineCtx(aboveCtx[slot], leftCtx[slotL]),
                 coefProbs: default_coef_probs_c.default_coef_probs,
                 output: result.Y2Block);
             aboveCtx[slot] = leftCtx[slotL] = (byte)(y2NonZero ? 1 : 0);

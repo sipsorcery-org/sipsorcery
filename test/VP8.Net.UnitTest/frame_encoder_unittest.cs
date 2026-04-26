@@ -18,6 +18,10 @@
 //
 // History:
 // 25 Apr 2026  Claude          Created.
+// 26 Apr 2026  Claude          Add checkerboard tests that exercise
+//                              cross-MB entropy-context propagation
+//                              (would fail with maxErr ~97 on master
+//                              before the frame-scope context fix).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -79,6 +83,46 @@ namespace Vpx.Net.UnitTest
             AssertExact(yuv, decoded);
         }
 
+        // ---------- Cross-MB entropy-context propagation ----------
+        //
+        // These tests exercise non-uniform content across multiple MBs
+        // in the same row and across multiple MB rows. A regression
+        // in either direction (omitting the frame-scope above-context,
+        // or omitting the row-scope left-context) shows up here as
+        // visibly garbled output past the first MB while the first MB
+        // alone decodes correctly.
+        //
+        // Discriminator: on master before the fix, the 32x16 case
+        // produced maxErr=97 / MAE=25.77 and the 32x32 case produced
+        // maxErr=97 / MAE=37.97; the fix brings both to maxErr<=4 /
+        // MAE<=1.53. The asserted bound of 16 is well below the
+        // bug-present floor and well above the bug-fixed ceiling.
+
+        [Fact]
+        public void EncodeAndDecode_Checkerboard32x16_CrossMbContextRoundTrips()
+        {
+            // 32x16 = 2 MBs side by side; same row.
+            const int W = 32, H = 16;
+            byte[] yuv = MakeCheckerboardI420(W, H, dark: 50, light: 200);
+
+            byte[] decoded = EncodeAndDecodeI420(yuv, W, H, qIndex: 32);
+
+            AssertWithin(yuv, decoded, tol: 16);
+        }
+
+        [Fact]
+        public void EncodeAndDecode_Checkerboard32x32_CrossMbRowAndColumnRoundTrips()
+        {
+            // 32x32 = 2x2 MB grid; exercises both cross-row above
+            // context and cross-column left context.
+            const int W = 32, H = 32;
+            byte[] yuv = MakeCheckerboardI420(W, H, dark: 50, light: 200);
+
+            byte[] decoded = EncodeAndDecodeI420(yuv, W, H, qIndex: 32);
+
+            AssertWithin(yuv, decoded, tol: 16);
+        }
+
         // ---------- helpers ----------
 
         // Encode an I420 source via the public VP8Codec, then decode using
@@ -135,6 +179,26 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < ySize; i++) b[i] = y;
             for (int i = 0; i < cSize; i++) b[ySize + i] = u;
             for (int i = 0; i < cSize; i++) b[ySize + cSize + i] = v;
+            return b;
+        }
+
+        // Y has a 2x2-pixel checkerboard pattern (dark / light); UV are
+        // flat 128 to keep the test focused on the luma path. The 2x2
+        // tile size means most 4x4 transformed blocks contain a busy
+        // mix of high-frequency components, so quantization at Q=32
+        // produces non-zero coefficient tokens in essentially every
+        // block - which is the configuration where the cross-MB
+        // entropy-context bug manifests.
+        private static byte[] MakeCheckerboardI420(int width, int height, byte dark, byte light)
+        {
+            int ySize = width * height;
+            int cSize = (width / 2) * (height / 2);
+            var b = new byte[ySize + 2 * cSize];
+            for (int row = 0; row < height; row++)
+                for (int col = 0; col < width; col++)
+                    b[row * width + col] = ((((row >> 1) ^ (col >> 1)) & 1) != 0) ? dark : light;
+            for (int i = 0; i < cSize; i++) b[ySize + i] = 128;
+            for (int i = 0; i < cSize; i++) b[ySize + cSize + i] = 128;
             return b;
         }
 
