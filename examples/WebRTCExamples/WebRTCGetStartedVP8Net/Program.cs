@@ -98,8 +98,30 @@ namespace demo
             // spikes back to ~6 Gen 2 GCs per second under that wiring.
             // Switching to the direct-codec path eliminates that GC
             // pressure entirely (0 Gen 2 collections per 10 s observed).
-            var vp8Codec = new VP8Codec();
+            // Workaround for the burst-rate problem the foundation encoder
+            // exposes on busy content (see PR notes for the full story):
+            //
+            //   * Q=96 produces ~16 KB keyframes on the test pattern instead
+            //     of ~50 KB at the default Q=32. ~13 RTP packets per frame
+            //     instead of ~42, so each frame's burst is ~3x smaller.
+            //
+            //   * SetFrameRate(15) halves the burst frequency from 30/s
+            //     to 15/s, giving Chrome's UDP receive pipeline twice as
+            //     long to drain between bursts.
+            //
+            // Combined: ~5x reduction in burst pressure on the receiver,
+            // at the cost of visible blocking artefacts on the test
+            // pattern (which is intentionally high-detail). For typical
+            // webcam content the same defaults will produce smaller
+            // frames and the artefacts will be much less noticeable.
+            //
+            // The proper fix (RTP pacing in SIPSorcery's send path, and/or
+            // P-frames in VP8.Net) is a follow-up; this is the smallest
+            // configuration change that makes the audio stream survive
+            // beyond the few-tens-of-seconds window it was breaking at.
+            var vp8Codec = new VP8Codec { BaseQIndex = 96 };
             var testPatternSource = new VideoTestPatternSource(vp8Codec);
+            testPatternSource.SetFrameRate(15);
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
