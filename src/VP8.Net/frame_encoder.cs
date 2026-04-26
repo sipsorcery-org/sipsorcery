@@ -24,8 +24,9 @@
 //                5x put_delta_q
 //                refresh_entropy_probs = 1
 //                ★ coef-prob updates  -- 1056 zero bits ("no update")
-//                ★ mb_no_skip_coeff = 0
-//                ★ for each MB: keyframe Y mode + UV mode tree paths
+//                ★ mb_no_skip_coeff = 1
+//                ★ prob_skip_false (8-bit literal)
+//                ★ for each MB: skip-flag bit + keyframe Y mode + UV mode tree paths
 //   [bc1]      Token partition (ONE_PARTITION):
 //                for each MB: Y2, 16 Y, 4 U, 4 V token streams.
 //
@@ -57,6 +58,15 @@
 //                              which made the encoder use the wrong
 //                              probability rows for the decoder's
 //                              context state on non-uniform content).
+// 26 Apr 2026  Claude          Enable per-MB skip flag (mb_no_skip_coeff
+//                              = 1 + prob_skip_false in header). For MBs
+//                              whose 25 transformed blocks are all
+//                              EOB-only, write a 1-bit skip flag and
+//                              suppress the token streams entirely in
+//                              partition 1, mirroring libvpx's per-MB
+//                              skip optimisation. Cuts per-frame
+//                              tokenizer / pack_tokens work for any MB
+//                              without residual content.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -156,17 +166,19 @@ namespace Vpx.Net
                             boolhuff.vp8_encode_bool(ref bc0, 0,
                                 coefupdateprobs.vp8_coef_update_probs[t, b, c, n]);
 
-            // ----- mb_no_skip_coeff = 0 -----
-            // No per-MB skip optimization. The decoder will not look for
-            // a per-MB skip flag; every MB's coefficient blocks are decoded.
-            bitstream.vp8_write_bit(ref bc0, 0);
+            // ----- Phase 1: encode all MBs (no bit writing yet) -----
+            //
+            // We need the per-MB skip flags before we can write
+            // prob_skip_false in the header. So all MBs are encoded
+            // first (predict + DCT + Walsh + quantize + tokenize +
+            // reconstruct) into MbEncodeResults, with cross-MB entropy
+            // context propagation happening in this pass. Bit-writing
+            // happens in phase 2 below.
 
-            // ----- Per-MB modes loop -----
-            // Encode every MB's Y mode and UV mode through their keyframe
-            // trees. We use DC_PRED (= 0) everywhere. Cache the per-MB
-            // encode results so we can replay the token streams into bc1
-            // afterwards.
             var mbResults = new MbEncodeResult[mbRows * mbCols];
+            bool[] mbSkip = new bool[mbRows * mbCols];
+            int skipTrueCount = 0;
+            int skipFalseCount = 0;
 
             // Reconstruction context buffers — one row of bottom-of-MB
             // samples (the "above" context for the next row) and per-MB
@@ -216,22 +228,27 @@ namespace Vpx.Net
                         aboveY, leftY, aboveU, leftU, aboveV, leftV,
                         fq,
                         aboveCtx, leftCtx);
-                    mbResults[mbRow * mbCols + mbCol] = r;
+                    int idx = mbRow * mbCols + mbCol;
+                    mbResults[idx] = r;
+
+                    // An MB is skippable iff every one of its 25
+                    // transformed blocks (Y2 + 16 Y + 4 U + 4 V) is
+                    // EOB-only. EOB-only blocks contribute nothing to
+                    // the residual the decoder reconstructs, so the
+                    // decoder can be told to skip the entire token
+                    // partition for this MB and reset its entropy
+                    // contexts. Crucially, the encoder's mb_encoder also
+                    // sets every per-block context slot to 0 in this
+                    // case (see context update lines in mb_encoder.cs),
+                    // so the encoder and decoder context state stay in
+                    // sync without any extra reset on this side.
+                    bool skip = IsAllEob(r);
+                    mbSkip[idx] = skip;
+                    if (skip) skipTrueCount++; else skipFalseCount++;
 
                     // The mutated aboveCtx is the new "above" for the MB
                     // immediately below this one (same column, next row).
                     for (int s = 0; s < 9; s++) frameAboveCtx[aboveBase + s] = aboveCtx[s];
-
-                    // Encode the Y mode (DC_PRED) -> bits 1, 0, 0 with
-                    // probs vp8_kf_ymode_prob[0..2].
-                    var yProbs = vp8_entropymodedata.vp8_kf_ymode_prob;
-                    boolhuff.vp8_encode_bool(ref bc0, 1, yProbs[0]);
-                    boolhuff.vp8_encode_bool(ref bc0, 0, yProbs[1]);
-                    boolhuff.vp8_encode_bool(ref bc0, 0, yProbs[2]);
-
-                    // Encode the UV mode (DC_PRED) -> bit 0 with prob[0].
-                    var uvProbs = vp8_entropymodedata.vp8_kf_uv_mode_prob;
-                    boolhuff.vp8_encode_bool(ref bc0, 0, uvProbs[0]);
 
                     // Update neighbour context for the next MB in this row
                     // (rightmost column of the MB's reconstruction) and for
@@ -247,6 +264,52 @@ namespace Vpx.Net
                     CopyRowOut(r.ReconV, srcStride: 8,  srcRow: 7,
                                dst: aboveVRow, dstOffset: mbCol * 8, count: 8);
                 }
+            }
+
+            // ----- Phase 2a: mb_no_skip_coeff + prob_skip_false -----
+            //
+            // Now that we know how many MBs are skippable we can pick
+            // prob_skip_false. libvpx's formula: prob_skip_false =
+            // skipFalseCount * 256 / total. Clamped to [1, 255] so the
+            // boolean coder can still encode whichever bit value occurs.
+            // Falls back to 0xfb (libvpx's hardcoded initial default)
+            // when no MBs are skippable, which is efficient because then
+            // every per-MB skip-flag bit is "0" and a high prob_skip_false
+            // makes that essentially free.
+            bitstream.vp8_write_bit(ref bc0, 1);   // mb_no_skip_coeff = 1
+
+            byte probSkipFalse;
+            if (skipTrueCount == 0)
+            {
+                probSkipFalse = 0xfb;
+            }
+            else
+            {
+                int total = skipFalseCount + skipTrueCount;
+                int p = skipFalseCount * 256 / total;
+                if (p < 1) p = 1;
+                if (p > 255) p = 255;
+                probSkipFalse = (byte)p;
+            }
+            for (int b = 7; b >= 0; b--)
+                bitstream.vp8_write_bit(ref bc0, (probSkipFalse >> b) & 1);
+
+            // ----- Phase 2b: per-MB skip flag + Y/UV mode trees -----
+            for (int i = 0; i < mbResults.Length; i++)
+            {
+                // Skip flag (boolean coder, prob_skip_false).
+                boolhuff.vp8_encode_bool(ref bc0, mbSkip[i] ? 1 : 0, probSkipFalse);
+
+                // Y mode = DC_PRED -> tree path 1, 0, 0 with
+                // vp8_kf_ymode_prob[0..2].
+                var yProbs = vp8_entropymodedata.vp8_kf_ymode_prob;
+                boolhuff.vp8_encode_bool(ref bc0, 1, yProbs[0]);
+                boolhuff.vp8_encode_bool(ref bc0, 0, yProbs[1]);
+                boolhuff.vp8_encode_bool(ref bc0, 0, yProbs[2]);
+
+                // UV mode = DC_PRED -> bit 0 with vp8_kf_uv_mode_prob[0].
+                var uvProbs = vp8_entropymodedata.vp8_kf_uv_mode_prob;
+                boolhuff.vp8_encode_bool(ref bc0, 0, uvProbs[0]);
             }
 
             // ----- Close partition 0 (flush + patch frame tag) -----
@@ -265,10 +328,16 @@ namespace Vpx.Net
             {
                 boolhuff.vp8_start_encode(ref bc1, p + totalThroughP0, p + outBuf.Length);
 
-                // Pack tokens for each MB in raster order: Y2 first, then
-                // 16 Y, then 4 U, then 4 V — same order tokenize_mb emits.
+                // Pack tokens for each MB in raster order: Y2 first,
+                // then 16 Y, then 4 U, then 4 V — same order
+                // tokenize_mb emits. SKIPPABLE MBs contribute zero
+                // tokens to partition 1, mirroring the decoder which on
+                // skip_flag = 1 calls vp8_reset_mb_tokens_context and
+                // never reads coefficient bits for the MB.
                 for (int i = 0; i < mbResults.Length; i++)
                 {
+                    if (mbSkip[i]) continue;
+
                     var r = mbResults[i];
                     bitstream.vp8_pack_tokens(ref bc1, r.Y2Block);
                     for (int b = 0; b < 16; b++) bitstream.vp8_pack_tokens(ref bc1, r.YBlocks[b]);
@@ -286,6 +355,22 @@ namespace Vpx.Net
         }
 
         // ----- helpers -----
+
+        /// <summary>
+        /// True iff every transformed block in the MB is EOB-only — i.e.
+        /// the MB has no residual content and can be marked as skipped.
+        /// libvpx's per-MB skip detection uses the same condition (sum
+        /// of EOBs across the 25 blocks == 0; we check the token list
+        /// length equivalently).
+        /// </summary>
+        private static bool IsAllEob(MbEncodeResult r)
+        {
+            if (r.Y2Block.Count != 1) return false;
+            for (int i = 0; i < 16; i++) if (r.YBlocks[i].Count != 1) return false;
+            for (int i = 0; i < 4;  i++) if (r.UBlocks[i].Count != 1) return false;
+            for (int i = 0; i < 4;  i++) if (r.VBlocks[i].Count != 1) return false;
+            return true;
+        }
 
         private static byte[] ExtractPlane(byte[] src, int srcStride, int x, int y, int w, int h)
         {
