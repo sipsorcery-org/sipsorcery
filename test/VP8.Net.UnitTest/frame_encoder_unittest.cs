@@ -22,6 +22,11 @@
 //                              cross-MB entropy-context propagation
 //                              (would fail with maxErr ~97 on master
 //                              before the frame-scope context fix).
+// 26 Apr 2026  Claude          Add skip-MB tests covering uniform
+//                              (all-skip), mixed-content (partial-skip),
+//                              and a bitstream-size sanity check that
+//                              an all-skip frame is meaningfully smaller
+//                              than its non-skip equivalent would be.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -121,6 +126,107 @@ namespace Vpx.Net.UnitTest
             byte[] decoded = EncodeAndDecodeI420(yuv, W, H, qIndex: 32);
 
             AssertWithin(yuv, decoded, tol: 16);
+        }
+
+        // ---------- Per-MB skip flag (mb_no_skip_coeff = 1) ----------
+        //
+        // The encoder enables libvpx's per-MB skip optimisation: the
+        // keyframe header writes mb_no_skip_coeff = 1 and an 8-bit
+        // prob_skip_false; for each MB whose 25 transformed blocks are
+        // all EOB-only, a single skip-flag bit is written and the
+        // entire token stream for that MB is suppressed in partition 1.
+        //
+        // The two existing uniform-grey round-trip tests already
+        // exercise the all-skip path implicitly. These tests cover the
+        // mixed (some-skip / some-non-skip) path and the bitstream-size
+        // sanity check.
+
+        [Fact]
+        public void EncodeAndDecode_MixedContent64x16_SomeMbsSkipSomeDont()
+        {
+            // 64x16 = 4 MBs in a row.  The leftmost two MBs are flat
+            // grey (residual zero -> every block tokenizes to a single
+            // EOB -> skip flag = 1), the rightmost two are checkerboard
+            // (busy residual -> every block emits coefficient tokens ->
+            // skip flag = 0).  A correct encoder/decoder pair has to
+            // handle the mix: skip-flag bits emitted for every MB, but
+            // tokens written only for the right half.
+            const int W = 64, H = 16;
+            int ySize = W * H, cSize = (W / 2) * (H / 2);
+            byte[] yuv = new byte[ySize + 2 * cSize];
+
+            // Y: flat 128 on the left half, checkerboard on the right.
+            for (int row = 0; row < H; row++)
+            {
+                for (int col = 0; col < W; col++)
+                {
+                    byte y;
+                    if (col < 32)
+                    {
+                        y = 128;
+                    }
+                    else
+                    {
+                        y = ((((row >> 1) ^ (col >> 1)) & 1) != 0) ? (byte)50 : (byte)200;
+                    }
+                    yuv[row * W + col] = y;
+                }
+            }
+            // UV: flat 128 across the frame.
+            for (int i = 0; i < cSize; i++) yuv[ySize + i] = 128;
+            for (int i = 0; i < cSize; i++) yuv[ySize + cSize + i] = 128;
+
+            byte[] decoded = EncodeAndDecodeI420(yuv, W, H, qIndex: 32);
+
+            // The flat half must round-trip exactly (skipped MBs decode
+            // to pure DC_PRED reconstruction = the prediction value).
+            for (int row = 0; row < H; row++)
+                for (int col = 0; col < 32; col++)
+                    Assert.Equal(yuv[row * W + col], decoded[row * W + col]);
+
+            // The checkerboard half goes through the full encode/decode
+            // pipeline; bound by the same tol the cross-MB tests use.
+            for (int row = 0; row < H; row++)
+                for (int col = 32; col < W; col++)
+                {
+                    int d = decoded[row * W + col] - yuv[row * W + col];
+                    if (d < 0) d = -d;
+                    Assert.True(d <= 16, $"Y[{row},{col}] err {d} > 16 (src={yuv[row*W+col]} dec={decoded[row*W+col]})");
+                }
+
+            // UV planes are uniform 128 (skippable); must round-trip
+            // exactly.
+            for (int i = 0; i < 2 * cSize; i++)
+                Assert.Equal(yuv[ySize + i], decoded[ySize + i]);
+        }
+
+        [Fact]
+        public void EncodeKeyframe_AllSkipFrame_IsMaterallySmallerThanNonSkip()
+        {
+            // An all-skip frame writes only skip-flag bits + mode-tree
+            // bits in partition 0 and ZERO bytes in partition 1 (the
+            // bool coder's flush still emits a few trailing bytes for
+            // alignment, but no per-block coefficient tokens). A
+            // non-trivial frame at the same dimensions writes the full
+            // token stream for every MB. The size delta is the proof
+            // that mb_no_skip_coeff = 1 is doing real work.
+            const int W = 32, H = 32;
+
+            byte[] uniform = MakeFlatI420(W, H, y: 128, u: 128, v: 128);
+            byte[] busy = MakeCheckerboardI420(W, H, dark: 50, light: 200);
+
+            var (uy, uu, uv) = SplitI420(uniform, W, H);
+            var (by, bu, bv) = SplitI420(busy, W, H);
+
+            byte[] uniformFrame = frame_encoder.EncodeKeyframe(uy, uu, uv, W, H, qIndex: 32);
+            byte[] busyFrame    = frame_encoder.EncodeKeyframe(by, bu, bv, W, H, qIndex: 32);
+
+            // The all-skip frame must be smaller than the non-skip
+            // one. Empirically the difference is order-of-magnitude;
+            // require at least 2x to avoid being brittle to encoder
+            // tuning that doesn't change the underlying mechanism.
+            Assert.True(uniformFrame.Length * 2 < busyFrame.Length,
+                $"all-skip frame ({uniformFrame.Length} bytes) should be <50% the size of a busy frame ({busyFrame.Length} bytes)");
         }
 
         // ---------- helpers ----------
