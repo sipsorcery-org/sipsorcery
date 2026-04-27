@@ -129,8 +129,58 @@ namespace demo
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
-            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+            // ---- Diagnostic packet counters ----
+            //
+            // Two counters logged once per second on each stream:
+            //
+            //   * "src":   packets handed off by the source to pc.Send*.
+            //              Increments iff the source is still producing
+            //              encoded samples — answers "did our test
+            //              source / encoder stop?".
+            //
+            //   * "rtcp":  cumulative PacketCount field of our outgoing
+            //              RTCP Sender Reports, fired by SIPSorcery's
+            //              RTPSession.OnSendReport. SIPSorcery emits an
+            //              SR roughly every 5 s and sets PacketCount to
+            //              the total number of RTP packets that have
+            //              actually left this peer. If this counter
+            //              keeps growing while Chrome's webrtc-internals
+            //              packetsReceived stalls, packets are leaving
+            //              the .NET app but Chrome is dropping them
+            //              (suspected SRTP / DTLS issue). If "rtcp"
+            //              stalls when "src" stalls, the issue is at or
+            //              above the SIPSorcery send path.
+            int audioSrcCount = 0, videoSrcCount = 0;
+
+            testPatternSource.OnVideoSourceEncodedSample += (rtpTs, frame) =>
+            {
+                pc.SendVideo(rtpTs, frame);
+                int n = System.Threading.Interlocked.Increment(ref videoSrcCount);
+                if (n % 15 == 0) { logger.LogInformation("video src: {Count} frames (~{Sec:F0}s at 15 fps)", n, n / 15.0); }
+            };
+
+            audioSource.OnAudioSourceEncodedSample += (rtpTs, sample) =>
+            {
+                pc.SendAudio(rtpTs, sample);
+                int n = System.Threading.Interlocked.Increment(ref audioSrcCount);
+                if (n % 50 == 0) { logger.LogInformation("audio src: {Count} packets (~{Sec:F0}s at 50 pps)", n, n / 50.0); }
+            };
+
+            // Hook outgoing RTCP Sender Reports. PacketCount is the
+            // cumulative count of RTP packets the local SIPSorcery
+            // send path has emitted on each stream. Compare against
+            // Chrome's inbound-rtp packetsReceived to see whether
+            // packets are getting lost between the .NET app and
+            // Chrome. SIPSorcery emits SRs every ~5 s by default.
+            pc.OnSendReport += (mediaType, compound) =>
+            {
+                var sr = compound?.SenderReport;
+                if (sr != null)
+                {
+                    logger.LogInformation("rtcp SR {Media}: SSRC={SSRC,10} PacketCount={Pkts} OctetCount={Octets}",
+                        mediaType, sr.SSRC, sr.PacketCount, sr.OctetCount);
+                }
+            };
 
             pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
             pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
