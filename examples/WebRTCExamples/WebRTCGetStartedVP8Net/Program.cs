@@ -156,14 +156,34 @@ namespace demo
             {
                 pc.SendVideo(rtpTs, frame);
                 int n = System.Threading.Interlocked.Increment(ref videoSrcCount);
-                if (n % 15 == 0) { logger.LogInformation("video src: {Count} frames (~{Sec:F0}s at 15 fps)", n, n / 15.0); }
+                if (n % 15 == 0)
+                {
+                    // Log the current RTP sequence number alongside the
+                    // packet count so the wrap-around boundary
+                    // (65535 -> 0) is visible in the trace.  Hypothesis
+                    // being tested: audio/video stream loss correlates
+                    // with the 16-bit RTP sequence number wrapping for
+                    // the affected stream, suggesting an SRTP rollover-
+                    // counter bug somewhere in SIPSorcery's send path
+                    // (or BouncyCastle's wrapper of it).  Note the
+                    // SeqNum reported here is the *next* number the
+                    // track will assign (one ahead of what was just
+                    // sent), so the wrap shows as the value going from
+                    // ~65535 to a small number around the failure time.
+                    var seq = pc.VideoStream?.LocalTrack?.SeqNum;
+                    logger.LogInformation("video src: {Count} frames seq~{Seq} (~{Sec:F0}s at 15 fps)", n, seq, n / 15.0);
+                }
             };
 
             audioSource.OnAudioSourceEncodedSample += (rtpTs, sample) =>
             {
                 pc.SendAudio(rtpTs, sample);
                 int n = System.Threading.Interlocked.Increment(ref audioSrcCount);
-                if (n % 50 == 0) { logger.LogInformation("audio src: {Count} packets (~{Sec:F0}s at 50 pps)", n, n / 50.0); }
+                if (n % 50 == 0)
+                {
+                    var seq = pc.AudioStream?.LocalTrack?.SeqNum;
+                    logger.LogInformation("audio src: {Count} packets seq~{Seq} (~{Sec:F0}s at 50 pps)", n, seq, n / 50.0);
+                }
             };
 
             // Hook outgoing RTCP Sender Reports. PacketCount is the
