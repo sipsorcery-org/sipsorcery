@@ -19,20 +19,20 @@
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2025 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2025-2026 Aaron Clauson</Copyright>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorcery</Title>
     <Summary>A .NET library for interacting with OpenAI's real-time WebRTC API.</Summary>
     <Description>A .NET library for interacting with OpenAI's real-time WebRTC API. It provides helper classes to negotiate peer connections, send and receive Opus audio frames and exchange control messages over a data channel. Not an official OpenAI package and no affiliation with OpenAI.
     </Description>
     <Company>SIP Sorcery PTY LTD</Company>
-    <Product>SIPSorcery.OpenAI.WebRTC</Product>
+    <Product>SIPSorcery.OpenAI.Realtime</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorcery.OpenAI.WebRTC</RepositoryUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageTags>OpenAI WebRTC SIPSorcery Real-time</PackageTags>
