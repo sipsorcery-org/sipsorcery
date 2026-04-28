@@ -353,18 +353,18 @@ namespace Vpx.Net
 
             //(void)flags;
 
-            if (pbi.common.frame_to_show != null)
-            {
+            //if (pbi.common.frame_to_show != null)
+            //{
                 sd = pbi.common.frame_to_show;
                 sd.y_width = pbi.common.Width;
                 sd.y_height = pbi.common.Height;
                 sd.uv_height = pbi.common.Height / 2;
                 ret = 0;
-            }
-            else
-            {
-                ret = -1;
-            }
+            //}
+            //else
+            //{
+            //    ret = -1;
+            //}
 
             // Port AC: Noop in libvpx.
             //vpx_clear_system_state();

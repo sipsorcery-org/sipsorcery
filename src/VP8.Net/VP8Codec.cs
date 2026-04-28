@@ -161,7 +161,7 @@ namespace Vpx.Net
                 // Convert the input sample into planar I420.
                 byte[] i420 = (pixelFormat == VideoPixelFormatsEnum.I420)
                     ? sample
-                    : PixelConverter.ToI420(width, height, sample, pixelFormat);
+                    : PixelConverter.ToI420(width, height, width, sample, pixelFormat);
 
                 int ySize = width * height;
                 int cSize = (width / 2) * (height / 2);

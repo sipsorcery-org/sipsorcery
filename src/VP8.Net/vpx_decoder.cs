@@ -305,7 +305,7 @@ namespace Vpx.Net
         {
             vpx_image_t img;
 
-            if (ctx == null || iter  == null|| ctx.iface == null || ctx.priv == null)
+            if (ctx == null || ctx.iface == null || ctx.priv == null)
             {
                 img = null;
             }

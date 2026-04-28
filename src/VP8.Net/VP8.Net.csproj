@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CS1570;CS1573;CS1591;CS1587;CS8981</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
