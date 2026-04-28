@@ -7,19 +7,28 @@ This is a **living record** — kept up to date as further progress lands.
 ## Headline
 
 The fifth AI attempt at this task is the first to clear the wall the previous
-four ran into. `VP8Codec.EncodeVideo` produces a fully-decodable VP8 keyframe
-stream that Chrome renders correctly and continuously — **the
+four ran into. `VP8Codec.EncodeVideo` produces a fully-decodable VP8 stream
+(keyframe + inter) that Chrome renders correctly and continuously -- **the
 WebRTCGetStartedVP8Net example streams audio + video to Chrome at the
-default Q=32 / 30 fps for 7+ minutes with no audio loss and no video
-artefacts** (running on the `srtp-per-ssrc-rollover-counter` branch — see
-"Followup work" below for why that branch matters).
+default Q=32 / 30 fps with no audio loss and no video artefacts** (running
+on master after the SRTP fix and the P-frame foundation series merged --
+see "Followup work" below).
 
 Encoder primitives are individually bit-exact-verified against libvpx C
 reference output. The end-to-end stream against Chrome is the structural
 signal that the foundation port worked.
 
 Compared to the prior four entries in this diary, the difference is not the
-model alone — it's the working method. See "What worked" below.
+model alone -- it's the working method. See "What worked" below.
+
+## Cost
+
+Aaron's commission of the work cost approximately **EUR 150 in
+Anthropic credits** for the successful encoder write -- spanning the
+seven-PR keyframe foundation series, the SRTP rollover-counter
+investigation and fix, the five-PR P-frame foundation series, and the
+follow-up cross-thread fix. Recorded here for future reference on what
+this scope of port-and-debug work costs in 2026 dollars.
 
 ## Reframing of the original task
 
@@ -138,35 +147,87 @@ keyframe-only stream wraps the video sequence number every 30-50
 seconds; libvpx's mostly-P-frame stream wraps roughly an order of
 magnitude less often, so the bug is statistically much rarer to hit.
 
-## Capabilities of the encoder as it stands
+### P-frame foundation series (Apr 27-28)
+
+With the SRTP fix landed and audio + video stable for arbitrarily long
+sessions, the next thing on the roadmap was inter (P) frames. Same
+foundation-series shape as the original encoder port: a sequence of
+small, independently-testable PRs each porting one libvpx primitive,
+with the orchestration ticked over to "real" inter encoding only in the
+final PR. Five PRs, plus a follow-up cross-thread bug fix.
+
+| PR | Title | What it did |
+| --- | --- | --- |
+| [#1586](https://github.com/sipsorcery-org/sipsorcery/pull/1586) | P-frame foundation: reference frame storage + key/inter cadence (PR 1 of 5) | `FrameEncoderBuffers.LastFrameY/U/V`, `VP8Codec.KeyframeIntervalFrames`, `_framesSinceLastKeyframe` counter. Inter branch in `EncodeVideo` is wired but still falls through to `EncodeKeyframe` -- decision logic in place, behaviour unchanged. |
+| [#1587](https://github.com/sipsorcery-org/sipsorcery/pull/1587) | P-frame foundation: inter (P-frame) header writer (PR 2 of 5) | `bitstream.StartInterFrameHeader` + `FinishInterFrameFirstPartition`. Frame tag with `key_frame_flag = 1`, no start code, no dimensions. Compressed first-partition prefix through `refresh_last_frame`. Bit-exact round-trip tests against the existing decoder's frame-tag parser. |
+| [#1588](https://github.com/sipsorcery-org/sipsorcery/pull/1588) | P-frame foundation: ZEROMV inter MB encoder (PR 3 of 5) | `mb_encoder.EncodeMacroblockZeroMvLast`. Same DCT/Walsh/quantize/tokenize pipeline as DC_PRED but the prediction is the same-position 16x16 + 8x8 + 8x8 samples from the previous frame's reconstruction. |
+| [#1589](https://github.com/sipsorcery-org/sipsorcery/pull/1589) | P-frame foundation: per-MB inter mode + ref bits writer (PR 4 of 5) | `bitstream.WriteInterMbRefAndMode`, `WriteInterMode`, `vp8_treed_write`, `WriteInterMbZeroMvLast`. The inter-mode tree path bits, walking `vp8_mv_ref_tree` for any of ZEROMV / NEAREST / NEAR / NEW / SPLITMV. Round-trip tested for every (ref_frame, mode) combination against the decoder's `vp8_treed_read`. |
+| [#1591](https://github.com/sipsorcery-org/sipsorcery/pull/1591) | P-frame foundation: `EncodeInterFrame` orchestration + `EncodeVideo` wire-up (PR 5 of 5) | `frame_encoder.EncodeInterFrame`. `VP8Codec.EncodeVideo` inter branch now actually emits a P-frame instead of falling through. Round-trip tests at Q=4/16/32 vs source PSNR. |
+| [#1592](https://github.com/sipsorcery-org/sipsorcery/pull/1592) | VP8: fix cross-thread inter-frame encoding (regression from #1591) | Lifts `FrameEncoderBuffers` from `[ThreadStatic]` on `frame_encoder` to a per-instance field on `VP8Codec`, so the LAST_FRAME reference survives the .NET thread pool moving the work between worker threads on each Timer tick. |
+
+The single bug surfaced during the series was caught by per-MB pixel
+dumping under a moving-content round-trip test. The decoder picks a
+row of `vp8_mode_contexts` based on `cnt[CNT_INTRA]`, which it
+computes by walking the above/left/aboveleft neighbours' inter state.
+For an all-ZEROMV LAST_FRAME stream that's deterministic by MB
+position: `(0, 0)` -> 0, edges -> 2, interior -> 5. The encoder
+initially used row 0 for every MB; the decoder used different rows;
+the boolean coder desynced on the third MB of the first row, and the
+test caught it as a flat-DC-PRED block where ZEROMV inter should
+have been. Fixed in PR 5 itself.
+
+The cross-thread bug found by Aaron's first test run after #1591
+merged is a useful illustration of the foundation-series discipline:
+the unit tests passed because they all ran on one thread, but the
+example app's `Timer`-driven dispatch path tripped a real defect
+the moment inter encoding required cross-call state. Fixed and
+regression-tested in #1592 -- a `Task.Factory.StartNew(LongRunning)`
+test that asserts the keyframe and inter calls land on different
+ManagedThreadIds *and* both encode successfully.
 
 ## Capabilities of the encoder as it stands
 
 Implemented:
 
-- Keyframe-only encoding (every emitted frame is `KEY_FRAME`).
+- Keyframe + inter-frame (P-frame) encoding. `VP8Codec.KeyframeIntervalFrames`
+  controls cadence (default 30 -> 1 keyframe/sec at 30 fps); intermediate
+  frames are inter.
+- Inter mode: ZEROMV referencing LAST_FRAME for every macroblock. Same-position
+  16x16 Y + 8x8 U + 8x8 V samples from the previous frame's reconstruction.
 - Single-partition layout (`log2_nbr_of_dct_partitions = 0`).
-- DC_PRED for both Y (16×16) and UV (8×8); no other intra modes.
+- DC_PRED for both Y (16x16) and UV (8x8); no other intra modes.
 - Forward DCT + Walsh, regular quantizer, full coefficient tokenizer
   including the `skip_eob_node` and CAT1..CAT6 paths.
 - Per-MB above/left entropy contexts maintained internally, combined via
   libvpx's `VP8_COMBINEENTROPYCONTEXTS` rule (count of non-zero
   neighbours, in {0, 1, 2}).
+- Per-MB inter mode context: `cnt[CNT_INTRA]` computed correctly across
+  MB position so the encoder's `vp8_mode_contexts` row matches the
+  decoder's.
+- Per-MB skip optimisation: skippable MBs (all 25 transformed blocks
+  EOB-only) suppress their tokens in partition 1.
 - Default base quantizer of 32 (no rate control yet).
-- Output is pure I420 in, byte stream out — same shape as the existing
+- Cross-thread-safe encoding: `FrameEncoderBuffers` is per-codec-instance,
+  so `Timer`-dispatched stream sources work correctly.
+- Output is pure I420 in, byte stream out -- same shape as the existing
   decoder.
 
-Not yet implemented (and called out explicitly so the next session has a
-clean starting list):
+Not yet implemented:
 
-- Inter / P-frames. Every emitted frame is a key-frame.
-- Motion estimation, motion vectors, reference frame management.
-- Mode picking — DC_PRED is the only intra mode used.
+- **Real motion estimation.** Every inter MB is ZEROMV. Source content
+  with actual motion gets encoded as residuals against a stationary
+  prediction, which works correctness-wise but loses most of the
+  compression benefit a real motion-compensated encoder would give.
+- NEWMV (encoded motion vectors), NEAREST / NEAR (predicted MVs),
+  SPLITMV (4x4 sub-MB partitions).
+- GOLDEN / ALTREF reference frames -- only LAST_FRAME is supported.
+- Mode picking -- DC_PRED is the only intra mode used. Other intra
+  modes (V_PRED, H_PRED, TM_PRED, B_PRED) and an RD-style picker.
 - RD optimisation, segmentation, loop-filter level tuning.
 - Rate control / target bitrate.
 - Coefficient probability updates (1056 zero bits are written for "no
-  update" — leaves the decoder using the default tables).
-- `EncodeVideoFaster` / `DecodeVideoFaster` — still throw.
+  update" -- leaves the decoder using the default tables).
+- `EncodeVideoFaster` / `DecodeVideoFaster` -- still throw.
 
 ## Known issues
 
@@ -215,25 +276,29 @@ shape that broke that streak this time:
 
 ## Roadmap
 
-With the SRTP fix in place the encoder is functional for production
-streaming at default settings. Remaining items are quality / efficiency
-enhancements rather than correctness fixes:
+With keyframe encoding, P-frame foundation, and the SRTP fix all in
+place, the encoder is functional for production streaming at default
+settings. Remaining items are quality / efficiency enhancements rather
+than correctness fixes:
 
-1. **Other intra modes** (V_PRED, H_PRED, TM_PRED for Y; the 4 UV
-   modes; B_PRED for 4×4 luma). Improves compression on detailed
+1. **Real motion estimation**: NEWMV with a motion-vector search, plus
+   the NEAREST / NEAR predicted-MV modes that depend on neighbour MV
+   accumulation. The biggest single compression-quality lever left --
+   for typical webcam content with bounded motion this would drop the
+   inter bitrate by another order of magnitude vs ZEROMV. Itself a
+   foundation-series-shaped sequence of PRs (MV entropy coding, search
+   primitive, mode picker integration).
+2. **Other intra modes** (V_PRED, H_PRED, TM_PRED for Y; the 4 UV
+   modes; B_PRED for 4x4 luma). Improves compression on detailed
    content; the current DC_PRED-only encoder is the lowest-quality
    intra option.
-2. **A trivial mode picker** — pick the one that minimises
-   sum-of-squared error on the residual. Pairs with (1).
-3. **Inter / P-frames**: motion vector entropy, `vp8_pack_mb_row` for
-   non-keyframe partitions, `last_frame` reference frame management,
-   ZEROMV / NEAREST / NEAR / NEWMV. (This is where libvpx is biggest;
-   would itself span several PRs.) Would drop the steady-state
-   bitrate by 10-100×, dramatically lowering bandwidth for typical
-   webcam content. No longer urgent now that the encoder works at
-   default settings.
-4. **Optional: rate control loop.** Useful only if production deployments
-   want guaranteed bitrate caps.
+3. **A trivial mode picker** -- pick the one that minimises
+   sum-of-squared error on the residual. Pairs with (1) and (2).
+4. **Loop filter on the encoder side** (currently `FilterLevel = 0`,
+   so the bitstream signals "filter off"; turning it on would
+   reduce blocking artefacts at lower quality settings).
+5. **Optional: rate control loop.** Useful only if production
+   deployments want guaranteed bitrate caps.
 
 Each of these is plausibly one PR of foundation-series scope.
 
