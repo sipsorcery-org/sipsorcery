@@ -14,11 +14,11 @@
     <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
     <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
     <Project Path="test/SIPSorcery.OpenAI.Realtime.UnitTest/SIPSorcery.OpenAI.Realtime.UnitTests.csproj" />
+    <Project Path="test/SIPSorcery.VP8.TestVectors/SIPSorcery.VP8.TestVectors.csproj" />
+    <Project Path="test/SIPSorcery.VP8.UnitTest/SIPSorcery.VP8.UnitTest.csproj" />
     <Project Path="test/SIPSorceryMedia.Abstractions.UnitTest/SIPSorceryMedia.Abstractions.UnitTest.csproj" />
     <Project Path="test/unit/SIPSorcery.UnitTests.csproj" />
     <Project Path="test/VideoCaptureTest/VideoCaptureTest.csproj" />
-    <Project Path="test/SIPSorcery.VP8.TestVectors/SIPSorcery.VP8.TestVectors.csproj" />
-    <Project Path="test/SIPSorcery.VP8.UnitTest/SIPSorcery.VP8.UnitTest.csproj" />
   </Folder>
   <Folder Name="/examples/">
     <Project Path="examples/sipcmdline/sipcmdline.csproj" />
@@ -101,9 +101,10 @@
     <Project Path="examples/WebRTCExamples/WebRTCDaemon/WebRTCDaemon.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCEchoClient/WebRTCEchoClient.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCEchoServer/WebRTCEchoServer.csproj" />
-    <Project Path="examples/WebRTCExamples/WebRTCFFmpegGetStarted/WebRTCFFmpegGetStarted.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCGetStarted/WebRTCGetStarted.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedDataChannel/WebRTCGetStartedDataChannel.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGetStartedFFmpeg/WebRTCGetStartedFFmpeg.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGetStartedLibvpx/WebRTCGetStartedLibvpx.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedVP8Net/WebRTCGetStartedVP8Net.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCNoSignalling/WebRTCNoSignalling.csproj" />
@@ -132,11 +133,11 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj" />
+    <Project Path="src/SIPSOrcery.VP8/SIPSorcery.VP8.csproj" />
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
     <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
     <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
     <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
-    <Project Path="src/SIPSOrcery.VP8/SIPSorcery.VP8.csproj" />
   </Folder>
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">
     <Property Name="CategoryFile" Value="SIPSorcery-Core.vsmdi" />

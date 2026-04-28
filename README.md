@@ -26,7 +26,7 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/) |
 | **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/) |
-| **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/) |
+| **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
 
 ### Examples
 
@@ -137,7 +137,6 @@ The example requires two steps:
 
  The full project file and code are available at [WebRTC Get Started](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStarted).
 
-The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, which is mainly a wrapper around [libvpx](https://chromium.googlesource.com/webm/libvpx). Hopefully in the future there will be equivalent packages for other platforms.
 
 **Step 1:**
 
@@ -145,7 +144,7 @@ The example relies on the Windows specific `SIPSorceryMedia.Encoders` package, w
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
 dotnet add package SIPSorcery
-dotnet add package SIPSorceryMedia.Encoders
+dotnet add package SIPSorcery.VP8
 # Paste the code below into Program.cs.
 dotnet run
 ````
@@ -157,7 +156,7 @@ using System.Net;
 using System.Threading.Tasks;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Encoders;
+using Vpx.Net;
 using WebSocketSharp.Server;
 
 namespace demo
@@ -186,7 +185,7 @@ namespace demo
         {
             var pc = new RTCPeerConnection(null);
 
-            var testPatternSource = new VideoTestPatternSource(new VpxVideoEncoder());
+            var testPatternSource = new VideoTestPatternSource(new VP8Codec());
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);

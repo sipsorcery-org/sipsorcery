@@ -70,9 +70,9 @@
 -v0.0.1-pre: Initial release.
 		</PackageReleaseNotes>
 		<NeutralLanguage>en</NeutralLanguage>
-		<Version>10.0.5</Version>
-		<AssemblyVersion>10.0.5</AssemblyVersion>
-		<FileVersion>10.0.5</FileVersion>
+		<Version>10.0.6</Version>
+		<AssemblyVersion>10.0.6</AssemblyVersion>
+		<FileVersion>10.0.6</FileVersion>
 	</PropertyGroup>
 
 </Project>
