@@ -2,12 +2,12 @@
 // Filename: SrtpContextRolloverUnitTest.cs
 //
 // Description: Regression test for the per-SSRC outbound rollover counter
-// fix in SrtpContext (RFC 3711 §3.2.1). Before the fix, SrtpContext used
+// fix in SrtpContext (RFC 3711 section 3.2.1). Before the fix, SrtpContext used
 // a single context-wide Roc field that was incremented whenever ANY SSRC's
 // 16-bit RTP sequence number wrapped from 0xFFFF to 0x0000. Sharing the
 // counter across SSRCs caused the keystream for every other SSRC sharing
 // the same SrtpContext (e.g. audio + video bundled on a DTLS-SRTP
-// transport) to desynchronise from the receiver — the receiver's
+// transport) to desynchronise from the receiver -- the receiver's
 // per-SSRC ROC inference is unaffected by another SSRC's wrap, so HMAC
 // verification fails and packets are silently dropped.
 //
@@ -41,7 +41,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void OutboundRollover_OnOneSsrc_DoesNotBreakAnotherSsrc()
         {
-            // SRTP_AES128_CM_HMAC_SHA1_80 — the standard WebRTC profile.
+            // SRTP_AES128_CM_HMAC_SHA1_80 -- the standard WebRTC profile.
             var profile = new SrtpProtectionProfileConfiguration(
                 SrtpCiphers.AES_128_CM,
                 cipherKeyLength:  128,
@@ -78,7 +78,7 @@ namespace SIPSorcery.Net.UnitTests
             // ---- 2. Send a single packet on SSRC B with a low seq ----
             // Without the fix: sender uses the shared (now-incremented)
             // Roc=1, but SSRC B's receiver-side ROC is 0 (no wrap observed
-            // on B). HMAC mismatch — UnprotectRtp returns -3.
+            // on B). HMAC mismatch -- UnprotectRtp returns -3.
             //
             // With the fix: SSRC B has its own outbound ROC=0, the sender
             // encrypts with roc=0, the receiver decrypts with roc=0,
@@ -87,7 +87,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(decryptResult == 0,
                 "Per-SSRC outbound ROC: SSRC B's encryption was corrupted by SSRC A's "
                 + "sequence wrap. UnprotectRtp returned " + decryptResult
-                + " (-3 = ERROR_HMAC_CHECK_FAILED).  Per RFC 3711 §3.2.1 each SRTP "
+                + " (-3 = ERROR_HMAC_CHECK_FAILED).  Per RFC 3711 section 3.2.1 each SRTP "
                 + "stream maintains its own ROC; the SrtpContext must not share Roc "
                 + "across SSRCs.");
         }
