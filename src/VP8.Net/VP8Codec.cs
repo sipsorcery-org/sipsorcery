@@ -64,6 +64,13 @@ namespace Vpx.Net
 
         private int _baseQIndex = DEFAULT_BASE_QINDEX;
 
+        // Per-codec-instance scratch buffers used by frame_encoder. Holds
+        // the LAST_FRAME reference between key/inter calls; instance-scoped
+        // (vs ThreadStatic) so that calls dispatched onto different
+        // thread-pool threads -- a Timer callback in particular -- still
+        // share the same reference frame.
+        private readonly FrameEncoderBuffers _frameBuffers = new FrameEncoderBuffers();
+
         /// <summary>
         /// VP8 base quantizer index used for every frame. Range [0, 127];
         /// 0 is highest quality / largest frames, 127 is lowest quality /
@@ -184,7 +191,7 @@ namespace Vpx.Net
                 byte[] result;
                 if (forceKey)
                 {
-                    result = frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, _baseQIndex);
+                    result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
                     _framesSinceLastKeyframe = 1;
                 }
                 else
@@ -193,7 +200,7 @@ namespace Vpx.Net
                     // every macroblock. The reference frame is the
                     // reconstruction of the previous keyframe / inter
                     // frame, cached on the per-thread FrameEncoderBuffers.
-                    result = frame_encoder.EncodeInterFrame(_srcY, _srcU, _srcV, width, height, _baseQIndex);
+                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
                     _framesSinceLastKeyframe++;
                 }
                 return result;

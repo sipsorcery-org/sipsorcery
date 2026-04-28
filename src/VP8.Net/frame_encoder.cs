@@ -245,9 +245,10 @@ namespace Vpx.Net
         /// <param name="height">Frame height in pixels (multiple of 16).</param>
         /// <param name="qIndex">VP8 base quantizer (0 = lossless-ish, 127 = very lossy).</param>
         /// <returns>The encoded VP8 frame bytes.</returns>
-        public static byte[] EncodeKeyframe(byte[] srcY, byte[] srcU, byte[] srcV,
-            int width, int height, int qIndex)
+        internal static byte[] EncodeKeyframeWithBuffers(byte[] srcY, byte[] srcU, byte[] srcV,
+            int width, int height, int qIndex, FrameEncoderBuffers buffers)
         {
+            if (buffers == null) throw new System.ArgumentNullException(nameof(buffers));
             if (width <= 0 || width % 16 != 0)
                 throw new ArgumentException("width must be a positive multiple of 16", nameof(width));
             if (height <= 0 || height % 16 != 0)
@@ -266,9 +267,8 @@ namespace Vpx.Net
             // Build the quantizer for this Q index.
             FrameQuantizer fq = quantizer_init.BuildForQIndex(qIndex);
 
-            // Pull per-thread scratch buffers (allocated lazily on first
-            // call, resized only on dimension changes).
-            var buf = _buffers ??= new FrameEncoderBuffers();
+            // Use the caller-supplied per-codec scratch buffers.
+            var buf = buffers;
             buf.EnsureForFrame(width, height);
             var scratch = buf.Scratch;
 
@@ -578,9 +578,10 @@ namespace Vpx.Net
         /// <param name="height">Frame height (multiple of 16).</param>
         /// <param name="qIndex">Base quantizer (0..127).</param>
         /// <returns>The encoded VP8 inter frame bytes.</returns>
-        public static byte[] EncodeInterFrame(byte[] srcY, byte[] srcU, byte[] srcV,
-            int width, int height, int qIndex)
+        internal static byte[] EncodeInterFrameWithBuffers(byte[] srcY, byte[] srcU, byte[] srcV,
+            int width, int height, int qIndex, FrameEncoderBuffers buffers)
         {
+            if (buffers == null) throw new System.ArgumentNullException(nameof(buffers));
             if (width <= 0 || width % 16 != 0)
                 throw new ArgumentException("width must be a positive multiple of 16", nameof(width));
             if (height <= 0 || height % 16 != 0)
@@ -598,7 +599,7 @@ namespace Vpx.Net
 
             FrameQuantizer fq = quantizer_init.BuildForQIndex(qIndex);
 
-            var buf = _buffers ??= new FrameEncoderBuffers();
+            var buf = buffers;
             buf.EnsureForFrame(width, height);
             var scratch = buf.Scratch;
 
@@ -876,6 +877,43 @@ namespace Vpx.Net
             byte[] result = new byte[totalBytes];
             Array.Copy(outBuf, result, totalBytes);
             return result;
+        }
+
+        /// <summary>
+        /// Convenience wrapper for callers that don't want to manage their
+        /// own <see cref="FrameEncoderBuffers"/>. Uses a per-thread
+        /// instance allocated lazily on first call.
+        ///
+        /// IMPORTANT: this wrapper is unsuitable for codecs that emit
+        /// inter frames between keyframes -- if the keyframe call lands
+        /// on one thread and the next inter call lands on another (e.g.
+        /// when invoked from a Timer callback), the second thread's
+        /// buffers will not have a valid LAST_FRAME reference and the
+        /// inter call will throw. Use the <see cref="VP8Codec"/> entry
+        /// point in that case; it owns a single per-codec
+        /// <see cref="FrameEncoderBuffers"/> guarded by a lock.
+        /// </summary>
+        public static byte[] EncodeKeyframe(byte[] srcY, byte[] srcU, byte[] srcV,
+            int width, int height, int qIndex)
+        {
+            return EncodeKeyframeWithBuffers(srcY, srcU, srcV, width, height, qIndex,
+                _buffers ??= new FrameEncoderBuffers());
+        }
+
+        /// <summary>
+        /// Convenience wrapper for callers that don't want to manage their
+        /// own <see cref="FrameEncoderBuffers"/>. Uses a per-thread
+        /// instance allocated lazily on first call.
+        ///
+        /// IMPORTANT: see the warning on <see cref="EncodeKeyframe"/>
+        /// regarding cross-thread invocation. <see cref="VP8Codec"/> is
+        /// the production-correct entry point.
+        /// </summary>
+        public static byte[] EncodeInterFrame(byte[] srcY, byte[] srcU, byte[] srcV,
+            int width, int height, int qIndex)
+        {
+            return EncodeInterFrameWithBuffers(srcY, srcU, srcV, width, height, qIndex,
+                _buffers ??= new FrameEncoderBuffers());
         }
 
         // ----- helpers -----

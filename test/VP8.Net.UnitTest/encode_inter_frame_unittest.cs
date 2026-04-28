@@ -186,6 +186,77 @@ namespace Vpx.Net.UnitTest
             }
         }
 
+
+        [Fact]
+        public void VP8Codec_KeyAndInterDispatchedAcrossThreads()
+        {
+            // Reproducer for the bug encountered in the
+            // WebRTCGetStartedVP8Net example: VideoTestPatternSource
+            // dispatches each frame onto a Timer callback, which the
+            // .NET thread pool is free to run on different worker
+            // threads each tick. With the previous ThreadStatic
+            // FrameEncoderBuffers each thread had its own LastFrameY
+            // reference; if the keyframe ran on thread A and the next
+            // inter call ran on thread B, B's buffers had no valid
+            // reference and EncodeInterFrame would throw.
+            //
+            // This test forces calls onto distinct threads via
+            // Task.Factory.StartNew(LongRunning) and verifies the
+            // codec encodes both a keyframe and a subsequent inter
+            // frame without throwing. The single per-codec
+            // FrameEncoderBuffers (guarded by the codec's _encoderLock)
+            // is what makes this work.
+            const int width = 32, height = 32;
+
+            var codec = new VP8Codec
+            {
+                BaseQIndex = 32,
+                KeyframeIntervalFrames = 4,
+            };
+
+            byte[] yuv = new byte[width * height + 2 * (width / 2) * (height / 2)];
+            for (int i = 0; i < width * height; i++) yuv[i] = 100;
+            for (int i = width * height; i < yuv.Length; i++) yuv[i] = 128;
+
+            int keyframeThreadId = -1;
+            int interFrameThreadId = -1;
+
+            // Frame 1 -- keyframe, on a fresh long-running thread.
+            byte[] kf = System.Threading.Tasks.Task.Factory.StartNew(() =>
+            {
+                keyframeThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                return codec.EncodeVideo(width, height, yuv,
+                    SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.I420,
+                    SIPSorceryMedia.Abstractions.VideoCodecsEnum.VP8);
+            }, System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
+
+            Assert.NotNull(kf);
+            Assert.True(kf.Length > 3);
+            Assert.Equal(0, kf[0] & 0x1);  // key_frame_flag = 0 for keyframe
+
+            // Frame 2 -- inter, on a *different* long-running thread.
+            // With the old ThreadStatic buffers this would throw
+            // InvalidOperationException("EncodeInterFrame requires a
+            // valid LAST_FRAME reference") because the new thread's
+            // buffers are empty.
+            byte[] inter = System.Threading.Tasks.Task.Factory.StartNew(() =>
+            {
+                interFrameThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                return codec.EncodeVideo(width, height, yuv,
+                    SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.I420,
+                    SIPSorceryMedia.Abstractions.VideoCodecsEnum.VP8);
+            }, System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
+
+            Assert.NotNull(inter);
+            Assert.True(inter.Length > 3);
+            Assert.Equal(1, inter[0] & 0x1);  // key_frame_flag = 1 for inter
+
+            // Sanity: the two calls really did run on different threads
+            // (otherwise the test reduces to the single-thread case
+            // which we already cover).
+            Assert.NotEqual(keyframeThreadId, interFrameThreadId);
+        }
+
         // ---------- helpers ----------
 
         private static vpx_codec_ctx_t OpenDecoder()
