@@ -49,6 +49,14 @@
 //                              backed; the small fixed-size buffers in
 //                              IdctAndAddToPlane and InverseWalsh4x4
 //                              are stackalloc.
+// 27 Apr 2026  Claude          PR 3 of P-frame foundation: add
+//                              EncodeMacroblockZeroMvLast for ZEROMV
+//                              LAST_FRAME inter coding. Reuses the
+//                              existing DCT / Walsh / quantize /
+//                              tokenize / inverse-transform pipeline;
+//                              the only new piece is per-pixel
+//                              prediction from the last frame at the
+//                              same MB position.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -431,6 +439,244 @@ namespace Vpx.Net
             return result;
         }
 
+        /// <summary>
+        /// Encode one 16x16 macroblock as an inter MB using ZEROMV with
+        /// LAST_FRAME as the reference. The prediction is the same-position
+        /// 16x16 Y + 8x8 U + 8x8 V samples from the previous frame's
+        /// reconstruction (motion vector = (0, 0)). Residual = source -
+        /// prediction; the rest of the pipeline is identical to
+        /// EncodeMacroblockDcPred (forward DCT + Walsh on Y DCs +
+        /// quantize + tokenize + reconstruct).
+        ///
+        /// PR 3 of the P-frame foundation series. The caller (frame_encoder
+        /// in PR 5) supplies the per-MB prediction by extracting the
+        /// relevant 16x16 / 8x8 / 8x8 samples from the FrameEncoderBuffers
+        /// last-frame reference (added in PR 1).
+        ///
+        /// Inputs:
+        ///   srcY:   16*16 luma source bytes, raster order.
+        ///   srcU:   8*8 chroma U source, raster order.
+        ///   srcV:   8*8 chroma V source, raster order.
+        ///   predY:  16*16 luma prediction (same position from last frame).
+        ///   predU:  8*8 chroma U prediction.
+        ///   predV:  8*8 chroma V prediction.
+        ///   fq:     quantizer tables built by quantizer_init.BuildForQIndex.
+        ///   aboveCtx, leftCtx: optional 9-byte entropy-context arrays as
+        ///           per EncodeMacroblockDcPred.
+        ///   result, scratch: optional pooled buffers (see
+        ///           EncodeMacroblockDcPred for the pooling contract).
+        /// </summary>
+        public static MbEncodeResult EncodeMacroblockZeroMvLast(
+            byte[] srcY, byte[] srcU, byte[] srcV,
+            byte[] predY, byte[] predU, byte[] predV,
+            FrameQuantizer fq,
+            byte[] aboveCtx = null,
+            byte[] leftCtx = null,
+            MbEncodeResult result = null,
+            MbEncoderScratch scratch = null)
+        {
+            if (srcY == null  || srcY.Length  != 256) throw new ArgumentException("srcY must be 16*16");
+            if (srcU == null  || srcU.Length  != 64)  throw new ArgumentException("srcU must be 8*8");
+            if (srcV == null  || srcV.Length  != 64)  throw new ArgumentException("srcV must be 8*8");
+            if (predY == null || predY.Length != 256) throw new ArgumentException("predY must be 16*16");
+            if (predU == null || predU.Length != 64)  throw new ArgumentException("predU must be 8*8");
+            if (predV == null || predV.Length != 64)  throw new ArgumentException("predV must be 8*8");
+            if (fq == null) throw new ArgumentNullException(nameof(fq));
+            if (aboveCtx != null && aboveCtx.Length != 9)
+                throw new ArgumentException("aboveCtx must have length 9 (4 Y + 2 U + 2 V + 1 Y2)", nameof(aboveCtx));
+            if (leftCtx != null && leftCtx.Length != 9)
+                throw new ArgumentException("leftCtx must have length 9 (4 Y + 2 U + 2 V + 1 Y2)", nameof(leftCtx));
+
+            // Pool semantics — see EncodeMacroblockDcPred for the full
+            // explanation. When result/scratch are null we allocate
+            // fresh; otherwise we reuse the supplied instances.
+            if (result == null)
+            {
+                result = new MbEncodeResult();
+            }
+            else
+            {
+                result.Reset();
+            }
+            if (scratch == null) scratch = new MbEncoderScratch();
+            if (aboveCtx == null) aboveCtx = new byte[9];
+            if (leftCtx == null) leftCtx = new byte[9];
+
+            // ---- Step 1: residual = source - prediction ----
+            //
+            // ZEROMV LAST_FRAME means the prediction is the *exact*
+            // same-position samples from the last frame's
+            // reconstruction. Per-pixel subtraction (vs the single-byte
+            // prediction used by DC_PRED) is the only difference at this
+            // layer; everything below it is identical.
+            short[] residY = scratch.ResidY;
+            short[] residU = scratch.ResidU;
+            short[] residV = scratch.ResidV;
+            SubtractPerPixelInto(srcY, predY, residY);
+            SubtractPerPixelInto(srcU, predU, residU);
+            SubtractPerPixelInto(srcV, predV, residV);
+
+            // ---- Step 2: forward DCT for each 4x4 block ----
+            // Same code path as DC_PRED: 16 Y blocks (4x4 carved from
+            // the 16x16 residual plane), 4 U blocks, 4 V blocks.
+            short[][] yCoef = scratch.YCoef;
+            for (int by = 0; by < 4; by++)
+            for (int bx = 0; bx < 4; bx++)
+            {
+                int blkIdx = by * 4 + bx;
+                Fdct4x4FromPlaneInto(residY, srcStride: 16,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                    coef: yCoef[blkIdx]);
+            }
+            short[][] uCoef = scratch.UCoef;
+            short[][] vCoef = scratch.VCoef;
+            for (int by = 0; by < 2; by++)
+            for (int bx = 0; bx < 2; bx++)
+            {
+                int blkIdx = by * 2 + bx;
+                Fdct4x4FromPlaneInto(residU, srcStride: 8,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                    coef: uCoef[blkIdx]);
+                Fdct4x4FromPlaneInto(residV, srcStride: 8,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                    coef: vCoef[blkIdx]);
+            }
+
+            // ---- Step 3: Y2 (Walsh) on the 16 Y DCs + zero Y AC DCs ----
+            // Same as DC_PRED. ZEROMV is a 16x16 inter mode so the Y2
+            // second-order block is enabled and the Y AC blocks have
+            // their DC dropped (firstCoeffIndex = 1 in tokenize).
+            short[] y2In = scratch.Y2In;
+            for (int i = 0; i < 16; i++) y2In[i] = yCoef[i][0];
+            short[] y2Coef = scratch.Y2Coef;
+            Walsh4x4Into(y2In, y2Coef);
+
+            for (int i = 0; i < 16; i++) yCoef[i][0] = 0;
+
+            // ---- Step 4: quantize ----
+            short[][] yQ = scratch.YQ;
+            short[][] yDQ = scratch.YDQ;
+            int[] yEob = scratch.YEob;
+            for (int i = 0; i < 16; i++)
+            {
+                yEob[i] = QuantizeBlock(yCoef[i], fq.Y1, yQ[i], yDQ[i]);
+            }
+
+            short[] y2Q = scratch.Y2Q;
+            short[] y2DQ = scratch.Y2DQ;
+            int y2Eob = QuantizeBlock(y2Coef, fq.Y2, y2Q, y2DQ);
+
+            short[][] uQ = scratch.UQ;
+            short[][] uDQ = scratch.UDQ;
+            short[][] vQ = scratch.VQ;
+            short[][] vDQ = scratch.VDQ;
+            int[] uEob = scratch.UEob;
+            int[] vEob = scratch.VEob;
+            for (int i = 0; i < 4; i++)
+            {
+                uEob[i] = QuantizeBlock(uCoef[i], fq.UV, uQ[i], uDQ[i]);
+                vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i]);
+            }
+
+            // ---- Step 5: tokenize, with per-block above/left contexts ----
+            // Same context-handling rules as EncodeMacroblockDcPred (see
+            // the long comment block there explaining
+            // VP8_COMBINEENTROPYCONTEXTS and the cross-MB threading
+            // requirement). Inter MBs share the same coef-prob table as
+            // intra MBs of equivalent type, so default_coef_probs is
+            // re-used here.
+
+            // -- Y2 block (block index 24) --
+            int slot = entropy.vp8_block2above[24];
+            int slotL = entropy.vp8_block2left[24];
+            bool y2NonZero = tokenize.vp8_tokenize_block(y2Q,
+                firstCoeffIndex: 0, eob: y2Eob,
+                blockType: 1,
+                initialContext: CombineCtx(aboveCtx[slot], leftCtx[slotL]),
+                coefProbs: default_coef_probs_c.default_coef_probs,
+                output: result.Y2Block);
+            aboveCtx[slot] = leftCtx[slotL] = (byte)(y2NonZero ? 1 : 0);
+
+            // -- 16 Y AC blocks --
+            for (int i = 0; i < 16; i++)
+            {
+                int s = entropy.vp8_block2above[i];
+                int sL = entropy.vp8_block2left[i];
+                bool nz = tokenize.vp8_tokenize_block(yQ[i],
+                    firstCoeffIndex: 1, eob: yEob[i],
+                    blockType: 0,
+                    initialContext: CombineCtx(aboveCtx[s], leftCtx[sL]),
+                    coefProbs: default_coef_probs_c.default_coef_probs,
+                    output: result.YBlocks[i]);
+                aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
+            }
+
+            // -- 4 U blocks --
+            for (int i = 0; i < 4; i++)
+            {
+                int blkIdx = 16 + i;
+                int s = entropy.vp8_block2above[blkIdx];
+                int sL = entropy.vp8_block2left[blkIdx];
+                bool nz = tokenize.vp8_tokenize_block(uQ[i],
+                    firstCoeffIndex: 0, eob: uEob[i],
+                    blockType: 2,
+                    initialContext: CombineCtx(aboveCtx[s], leftCtx[sL]),
+                    coefProbs: default_coef_probs_c.default_coef_probs,
+                    output: result.UBlocks[i]);
+                aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
+            }
+
+            // -- 4 V blocks --
+            for (int i = 0; i < 4; i++)
+            {
+                int blkIdx = 20 + i;
+                int s = entropy.vp8_block2above[blkIdx];
+                int sL = entropy.vp8_block2left[blkIdx];
+                bool nz = tokenize.vp8_tokenize_block(vQ[i],
+                    firstCoeffIndex: 0, eob: vEob[i],
+                    blockType: 2,
+                    initialContext: CombineCtx(aboveCtx[s], leftCtx[sL]),
+                    coefProbs: default_coef_probs_c.default_coef_probs,
+                    output: result.VBlocks[i]);
+                aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
+            }
+
+            // ---- Step 6: reconstruct ----
+            // Inverse Walsh recovers the per-block DC. Then per-block
+            // IDCT + add the per-pixel prediction (vs DC_PRED's flat
+            // single-byte prediction).
+            InverseWalsh4x4Into(y2DQ, y2In);
+            for (int i = 0; i < 16; i++)
+            {
+                yDQ[i][0] = y2In[i];
+            }
+
+            for (int by = 0; by < 4; by++)
+            for (int bx = 0; bx < 4; bx++)
+            {
+                int blkIdx = by * 4 + bx;
+                IdctAndAddBlockToPlane(yDQ[blkIdx],
+                    predPlane: predY, predStride: 16,
+                    dstPlane: result.ReconY, dstStride: 16,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
+            }
+            for (int by = 0; by < 2; by++)
+            for (int bx = 0; bx < 2; bx++)
+            {
+                int blkIdx = by * 2 + bx;
+                IdctAndAddBlockToPlane(uDQ[blkIdx],
+                    predPlane: predU, predStride: 8,
+                    dstPlane: result.ReconU, dstStride: 8,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
+                IdctAndAddBlockToPlane(vDQ[blkIdx],
+                    predPlane: predV, predStride: 8,
+                    dstPlane: result.ReconV, dstStride: 8,
+                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
+            }
+
+            return result;
+        }
+
         // ---------- helpers ----------
 
         /// <summary>
@@ -469,6 +715,14 @@ namespace Vpx.Net
         private static void SubtractFlatInto(byte[] src, byte pred, short[] dst)
         {
             for (int i = 0; i < src.Length; i++) dst[i] = (short)(src[i] - pred);
+        }
+
+        /// <summary>Per-pixel subtract: dst[i] = src[i] - pred[i]. Used by
+        /// the ZEROMV inter path where the prediction is a same-position
+        /// MB from the last frame's reconstruction. Lengths must match.</summary>
+        private static void SubtractPerPixelInto(byte[] src, byte[] pred, short[] dst)
+        {
+            for (int i = 0; i < src.Length; i++) dst[i] = (short)(src[i] - pred[i]);
         }
 
         /// <summary>
@@ -585,6 +839,35 @@ namespace Vpx.Net
             // idct, then copy back to the destination plane.
             byte* predBuf = stackalloc byte[16];
             for (int i = 0; i < 16; i++) predBuf[i] = pred;
+            byte* dstBuf = stackalloc byte[16];
+
+            fixed (short* coefP = dqcoeff)
+            {
+                idctllm.vp8_short_idct4x4llm_c(coefP, predBuf, 4, dstBuf, 4);
+            }
+
+            for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+                dstPlane[(blockOffsetY + r) * dstStride + (blockOffsetX + c)] = dstBuf[r * 4 + c];
+        }
+
+        /// <summary>
+        /// Per-pixel-prediction variant of IdctAndAddToPlane. Extracts the
+        /// relevant 4x4 sub-block of <paramref name="predPlane"/> as the
+        /// prediction buffer (vs the flat-byte version used by DC_PRED),
+        /// then runs the same inverse-DCT + clamp-and-add through the
+        /// existing decoder-side idctllm.vp8_short_idct4x4llm_c.
+        /// </summary>
+        private static unsafe void IdctAndAddBlockToPlane(short[] dqcoeff,
+            byte[] predPlane, int predStride,
+            byte[] dstPlane, int dstStride,
+            int blockOffsetX, int blockOffsetY)
+        {
+            byte* predBuf = stackalloc byte[16];
+            for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+                predBuf[r * 4 + c] = predPlane[(blockOffsetY + r) * predStride + (blockOffsetX + c)];
+
             byte* dstBuf = stackalloc byte[16];
 
             fixed (short* coefP = dqcoeff)
