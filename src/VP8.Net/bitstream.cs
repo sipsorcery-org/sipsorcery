@@ -102,6 +102,57 @@ namespace Vpx.Net
         public int UvAcDeltaQ;
     }
 
+    /// <summary>
+    /// Per-call configuration for an INTER (P-frame) header. Subset of
+    /// <see cref="KeyframeHeaderConfig"/> -- inter frames omit the start
+    /// code, dimensions, color_space and clamp_type (those fields are
+    /// keyframe-only).
+    ///
+    /// As of PR 2 of the P-frame foundation series the inter-encoder is
+    /// not yet wired into VP8Codec.EncodeVideo; this header writer + its
+    /// FinishInterFrameFirstPartition counterpart exist as standalone
+    /// pieces that can be bit-exactly tested against the existing VP8
+    /// decoder before PRs 3-5 plumb them into the actual encode path.
+    /// </summary>
+    public sealed class InterFrameHeaderConfig
+    {
+        /// <summary>Profile / version (3 bits, 0..7). 0 = baseline profile.</summary>
+        public int Version;
+
+        /// <summary>true if the frame is to be displayed (sets show_frame bit to 1).</summary>
+        public bool ShowFrame = true;
+
+        /// <summary>Loop filter type (1 bit). 0 = normal, 1 = simple.</summary>
+        public int FilterType;
+
+        /// <summary>Loop filter level (6 bits, 0..63). 0 disables the filter.</summary>
+        public int FilterLevel;
+
+        /// <summary>Loop filter sharpness (3 bits, 0..7).</summary>
+        public int SharpnessLevel;
+
+        /// <summary>log2 of the number of token partitions (2 bits, 0..2). 0 = single partition.</summary>
+        public int Log2NumberOfTokenPartitions;
+
+        /// <summary>Frame baseline quantizer index (7 bits, 0..127).</summary>
+        public int BaseQindex;
+
+        /// <summary>Y1 DC quantizer delta (signed 5-bit value).</summary>
+        public int Y1DcDeltaQ;
+
+        /// <summary>Y2 DC quantizer delta.</summary>
+        public int Y2DcDeltaQ;
+
+        /// <summary>Y2 AC quantizer delta.</summary>
+        public int Y2AcDeltaQ;
+
+        /// <summary>UV DC quantizer delta.</summary>
+        public int UvDcDeltaQ;
+
+        /// <summary>UV AC quantizer delta.</summary>
+        public int UvAcDeltaQ;
+    }
+
     public static unsafe class bitstream
     {
         /// <summary>
@@ -300,6 +351,192 @@ namespace Vpx.Net
             if (Math.Abs(cfg.UvDcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.UvDcDeltaQ), cfg.UvDcDeltaQ, "UvDcDeltaQ must be -15..15.");
             if (Math.Abs(cfg.UvAcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.UvAcDeltaQ), cfg.UvAcDeltaQ, "UvAcDeltaQ must be -15..15.");
             _ = dqRange;
+        }
+
+        // -----------------------------------------------------------------
+        // Inter (P-frame) header writer (PR 2 of the VP8 P-frame
+        // foundation series).
+        //
+        // Mirrors the keyframe-header writer above for the inter-frame
+        // path of libvpx vp8_pack_bitstream. The bool-coded fields up
+        // through refresh_last_frame are emitted here; the 1056 coef-
+        // prob "no update" bits, the mb_no_skip_coeff / prob_skip_false
+        // pair, the prob_intra / prob_last / prob_gf trio, the
+        // intra-mode prob update flags, the MV prob update bits, and
+        // the per-MB modes/refs/tokens are emitted by the caller (the
+        // frame_encoder, in subsequent PRs of this series). The split
+        // matches the keyframe path: StartXxxHeader writes "everything
+        // before the per-frame entropy state update bits" and the
+        // caller composes the rest.
+        //
+        // Inter frame layout vs keyframe (per RFC 6386 section 9 and
+        // libvpx vp8_pack_bitstream):
+        //
+        //   - 3-byte frame tag with key_frame_flag = 1 (versus 0 for
+        //     keyframes -- the bit semantics are inverted from intuition).
+        //     Patched in FinishInterFrameFirstPartition once the
+        //     first_partition_length is known.
+        //   - NO start code (0x9D 0x01 0x2A) -- keyframe-only.
+        //   - NO width/height -- keyframe-only.
+        //   - color_space and clamp_type bits -- keyframe-only.
+        //   - segmentation_enabled (always 0 here, like the keyframe
+        //     path).
+        //   - filter_type, filter_level (6), sharpness_level (3).
+        //   - mode_ref_lf_delta_enabled (always 0 here).
+        //   - log2_nbr_of_dct_partitions (2 bits).
+        //   - base_qindex (7 bits) + 5x put_delta_q.
+        //   - INTER-ONLY: refresh_golden_frame (1 bit, 0).
+        //   - INTER-ONLY: refresh_alt_ref_frame (1 bit, 0).
+        //   - INTER-ONLY: copy_buffer_to_gf (2 bits, 0) -- only when
+        //     refresh_golden_frame == 0.
+        //   - INTER-ONLY: copy_buffer_to_arf (2 bits, 0) -- only when
+        //     refresh_alt_ref_frame == 0.
+        //   - INTER-ONLY: ref_frame_sign_bias[GOLDEN] (1 bit, 0).
+        //   - INTER-ONLY: ref_frame_sign_bias[ALTREF] (1 bit, 0).
+        //   - refresh_entropy_probs (1 bit, 1).
+        //   - INTER-ONLY: refresh_last_frame (1 bit, 1).
+        //
+        // For our simple P-frame model every inter frame uses LAST_FRAME
+        // as its only reference -- GOLDEN_FRAME and ALTREF_FRAME are not
+        // refreshed (refresh flags = 0) and not copied (copy flags = 0).
+        // refresh_last_frame = 1 makes the freshly-encoded frame the
+        // next inter frame's reference, as expected for a simple
+        // sequential P-frame stream.
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Length of the inter-frame uncompressed prefix (just the 3-byte
+        /// frame tag -- inter frames have no start code or dimensions).
+        /// The boolean coder begins at byte 3.
+        /// </summary>
+        public const int INTER_FRAME_PREFIX_BYTES = FRAME_TAG_BYTES;
+
+        /// <summary>
+        /// Open the boolean coder for an inter frame and write the
+        /// uncompressed frame tag (patched at finish time) plus the
+        /// compressed first-partition prefix up through
+        /// refresh_last_frame.
+        /// </summary>
+        /// <returns>The byte offset where the boolean coder begins
+        /// emitting -- equal to <see cref="INTER_FRAME_PREFIX_BYTES"/>.</returns>
+        public static int StartInterFrameHeader(byte* dest, int destLen, InterFrameHeaderConfig cfg, ref BOOL_CODER bc)
+        {
+            if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+            if (dest == null) throw new ArgumentNullException(nameof(dest));
+            if (destLen < INTER_FRAME_PREFIX_BYTES)
+            {
+                throw new ArgumentException("Destination buffer too small for inter-frame header prefix.", nameof(destLen));
+            }
+            ValidateInterConfig(cfg);
+
+            // Bytes 0-2: frame tag -- left blank for now and patched in
+            // FinishInterFrameFirstPartition once the partition size is
+            // known. Inter frames have no start code or dimensions
+            // afterwards -- the bool coder begins immediately at byte 3.
+            dest[0] = 0; dest[1] = 0; dest[2] = 0;
+
+            int firstPartitionStart = INTER_FRAME_PREFIX_BYTES;
+            bc = new BOOL_CODER();
+            boolhuff.vp8_start_encode(ref bc, dest + firstPartitionStart, dest + destLen);
+
+            // segmentation_enabled = 0 (no per-MB segmentation features).
+            vp8_write_bit(ref bc, 0);
+
+            // Loop filter params.
+            vp8_write_bit(ref bc, cfg.FilterType);
+            boolhuff.vp8_encode_value(ref bc, cfg.FilterLevel, 6);
+            boolhuff.vp8_encode_value(ref bc, cfg.SharpnessLevel, 3);
+
+            // mode_ref_lf_delta_enabled = 0
+            vp8_write_bit(ref bc, 0);
+
+            // log2_nbr_of_dct_partitions
+            boolhuff.vp8_encode_value(ref bc, cfg.Log2NumberOfTokenPartitions, 2);
+
+            // Frame baseline quantizer index.
+            boolhuff.vp8_encode_value(ref bc, cfg.BaseQindex, 7);
+
+            // Five quantizer-delta fields (Y1DC, Y2DC, Y2AC, UVDC, UVAC).
+            put_delta_q(ref bc, cfg.Y1DcDeltaQ);
+            put_delta_q(ref bc, cfg.Y2DcDeltaQ);
+            put_delta_q(ref bc, cfg.Y2AcDeltaQ);
+            put_delta_q(ref bc, cfg.UvDcDeltaQ);
+            put_delta_q(ref bc, cfg.UvAcDeltaQ);
+
+            // Inter-only: golden / altref refresh + copy + sign-bias.
+            // We do not refresh either reference, do not copy, and use
+            // sign_bias = 0 for both -- matches the simple P-frame model
+            // where LAST_FRAME is the only reference in active use.
+            vp8_write_bit(ref bc, 0);   // refresh_golden_frame
+            vp8_write_bit(ref bc, 0);   // refresh_alt_ref_frame
+            // refresh_golden == 0 -> write copy_buffer_to_gf (2 bits, 0).
+            boolhuff.vp8_encode_value(ref bc, 0, 2);
+            // refresh_alt_ref == 0 -> write copy_buffer_to_arf (2 bits, 0).
+            boolhuff.vp8_encode_value(ref bc, 0, 2);
+            vp8_write_bit(ref bc, 0);   // sign_bias[GOLDEN]
+            vp8_write_bit(ref bc, 0);   // sign_bias[ALTREF]
+
+            // refresh_entropy_probs = 1 -- matches the keyframe path's
+            // choice. The decoder uses default probability tables either
+            // way; this bit signals whether the post-frame probability
+            // updates persist or are discarded.
+            vp8_write_bit(ref bc, 1);
+
+            // Inter-only: refresh_last_frame = 1 -- this frame becomes
+            // the reference for the next inter frame, which is the
+            // expected behaviour for a simple sequential P-frame stream.
+            vp8_write_bit(ref bc, 1);
+
+            return firstPartitionStart;
+        }
+
+        /// <summary>
+        /// Closes the boolean coder for partition 0 of an inter frame
+        /// and patches the 3-byte frame tag with first_partition_length,
+        /// show_frame, version, and key_frame_flag = 1 (inter).
+        /// </summary>
+        /// <returns>Total bytes written into <paramref name="dest"/>:
+        /// <see cref="INTER_FRAME_PREFIX_BYTES"/> + bytes consumed by
+        /// the boolean coder.</returns>
+        public static int FinishInterFrameFirstPartition(byte* dest, InterFrameHeaderConfig cfg, ref BOOL_CODER bc)
+        {
+            // Flush trailing bits of the boolean coder.
+            boolhuff.vp8_stop_encode(ref bc);
+
+            int firstPartitionLength = (int)bc.pos;
+
+            // Pack the frame tag exactly as libvpx does:
+            //
+            //   v = (length << 5) | (show_frame << 4) | (version << 1) | key_frame_flag
+            //
+            // and write it little-endian into bytes 0..2. Note
+            // key_frame_flag is 1 for inter frames and 0 for keyframes.
+            int keyFrameFlag = 1; // inter
+            int showFrame = cfg.ShowFrame ? 1 : 0;
+            int v = (firstPartitionLength << 5)
+                  | (showFrame << 4)
+                  | ((cfg.Version & 0x7) << 1)
+                  | keyFrameFlag;
+
+            dest[0] = (byte)(v & 0xff);
+            dest[1] = (byte)((v >> 8) & 0xff);
+            dest[2] = (byte)((v >> 16) & 0xff);
+
+            return INTER_FRAME_PREFIX_BYTES + firstPartitionLength;
+        }
+
+        private static void ValidateInterConfig(InterFrameHeaderConfig cfg)
+        {
+            if ((uint)cfg.Version > 7) throw new ArgumentOutOfRangeException(nameof(cfg.Version), cfg.Version, "Version must be 0..7.");
+            if ((uint)cfg.BaseQindex > 0x7F) throw new ArgumentOutOfRangeException(nameof(cfg.BaseQindex), cfg.BaseQindex, "BaseQindex must be 0..127.");
+            if ((uint)cfg.FilterLevel > 0x3F) throw new ArgumentOutOfRangeException(nameof(cfg.FilterLevel), cfg.FilterLevel, "FilterLevel must be 0..63.");
+            if ((uint)cfg.SharpnessLevel > 0x07) throw new ArgumentOutOfRangeException(nameof(cfg.SharpnessLevel), cfg.SharpnessLevel, "SharpnessLevel must be 0..7.");
+            if ((uint)cfg.Log2NumberOfTokenPartitions > 2) throw new ArgumentOutOfRangeException(nameof(cfg.Log2NumberOfTokenPartitions), cfg.Log2NumberOfTokenPartitions, "Log2NumberOfTokenPartitions must be 0..2.");
+            if (Math.Abs(cfg.Y1DcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y1DcDeltaQ), cfg.Y1DcDeltaQ, "Y1DcDeltaQ must be -15..15.");
+            if (Math.Abs(cfg.Y2DcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y2DcDeltaQ), cfg.Y2DcDeltaQ, "Y2DcDeltaQ must be -15..15.");
+            if (Math.Abs(cfg.Y2AcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y2AcDeltaQ), cfg.Y2AcDeltaQ, "Y2AcDeltaQ must be -15..15.");
+            if (Math.Abs(cfg.UvDcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.UvDcDeltaQ), cfg.UvDcDeltaQ, "UvDcDeltaQ must be -15..15.");
+            if (Math.Abs(cfg.UvAcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.UvAcDeltaQ), cfg.UvAcDeltaQ, "UvAcDeltaQ must be -15..15.");
         }
 
         // -----------------------------------------------------------------
