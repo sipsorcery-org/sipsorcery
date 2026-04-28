@@ -146,6 +146,22 @@ namespace Vpx.Net
         // Output buffer.
         public byte[] OutBuf;
 
+        // Reference-frame storage. After every successful encode,
+        // EncodeKeyframe / future EncodeInterFrame copies the
+        // per-MB reconstructed pixels here, building a frame-sized
+        // copy of what the decoder will see as the most recent
+        // decoded frame. Inter frames (PR 3+) will use this as the
+        // prediction reference.
+        //
+        // LastFrameValid starts false and is set true after the first
+        // successful encode. Inter encoding requires it to be true;
+        // when false (first frame of stream, or after a forced reset)
+        // the frame must be a keyframe regardless of interval.
+        public byte[] LastFrameY;
+        public byte[] LastFrameU;
+        public byte[] LastFrameV;
+        public bool LastFrameValid;
+
         public void EnsureForFrame(int width, int height)
         {
             int chromaW = width / 2;
@@ -177,6 +193,24 @@ namespace Vpx.Net
             int bufLen = System.Math.Max(4096, width * height * 2 + 1024);
             if (OutBuf == null || OutBuf.Length < bufLen)
                 OutBuf = new byte[bufLen];
+
+            int ySize = width * height;
+            int cSize = chromaW * (height / 2);
+            if (LastFrameY == null || LastFrameY.Length < ySize)
+            {
+                LastFrameY = new byte[ySize];
+            }
+            if (LastFrameU == null || LastFrameU.Length < cSize)
+            {
+                LastFrameU = new byte[cSize];
+                LastFrameV = new byte[cSize];
+            }
+            // Dimension change invalidates any previously-stored
+            // reference frame.
+            if (Width != width || Height != height)
+            {
+                LastFrameValid = false;
+            }
 
             Width = width;
             Height = height;
@@ -395,6 +429,45 @@ namespace Vpx.Net
                                dst: aboveVRow, dstOffset: mbCol * 8, count: 8);
                 }
             }
+
+            // ----- Save the reconstructed frame as the next inter
+            //       prediction reference -----
+            //
+            // For each MB we already have its 16x16 Y + 8x8 U + 8x8 V
+            // reconstruction in mbResults[idx].ReconY/U/V (the bytes
+            // the decoder will produce given the same bitstream).
+            // Stitch them into LastFrameY/U/V so the next inter frame
+            // (added in PR 3+) can use this as its prediction source.
+            //
+            // PR 1 just plumbs the storage; nothing currently consumes
+            // the saved reference. The work is unconditional regardless
+            // because (a) the per-MB cost is O(384 bytes) so trivial,
+            // and (b) this lets PR 5's wire-up happen as a flip rather
+            // than a behaviour change to EncodeKeyframe.
+            for (int mbRow = 0; mbRow < mbRows; mbRow++)
+            {
+                for (int mbCol = 0; mbCol < mbCols; mbCol++)
+                {
+                    var r = mbResults[mbRow * mbCols + mbCol];
+
+                    int yBase = (mbRow * 16) * width + (mbCol * 16);
+                    for (int row = 0; row < 16; row++)
+                    {
+                        Buffer.BlockCopy(r.ReconY, row * 16,
+                            buf.LastFrameY, yBase + row * width, 16);
+                    }
+
+                    int cBase = (mbRow * 8) * chromaW + (mbCol * 8);
+                    for (int row = 0; row < 8; row++)
+                    {
+                        Buffer.BlockCopy(r.ReconU, row * 8,
+                            buf.LastFrameU, cBase + row * chromaW, 8);
+                        Buffer.BlockCopy(r.ReconV, row * 8,
+                            buf.LastFrameV, cBase + row * chromaW, 8);
+                    }
+                }
+            }
+            buf.LastFrameValid = true;
 
             // ----- Phase 2a: mb_no_skip_coeff + prob_skip_false -----
             //

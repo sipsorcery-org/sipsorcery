@@ -97,6 +97,49 @@ namespace Vpx.Net
             }
         }
 
+        // Default cadence for keyframes when inter coding lands in a
+        // future PR. 30 = one keyframe per second at 30 fps. Currently
+        // every frame is still a keyframe (the inter-encoding path is
+        // built up across PRs 2-5 of the P-frame foundation series), so
+        // this property only controls the internal state machine for now.
+        private const int DEFAULT_KEYFRAME_INTERVAL_FRAMES = 30;
+
+        private int _keyframeIntervalFrames = DEFAULT_KEYFRAME_INTERVAL_FRAMES;
+        private int _framesSinceLastKeyframe = 0;
+
+        /// <summary>
+        /// Number of frames between forced keyframes. Set to 1 to force
+        /// every frame to be a keyframe; 30 (default) gives one keyframe
+        /// per second at 30 fps. Range [1, int.MaxValue].
+        ///
+        /// Note: as of PR 1 of the P-frame foundation series the inter
+        /// encoding path is not yet implemented, so EncodeVideo emits a
+        /// keyframe every call regardless of this setting. The value is
+        /// honoured by the internal frame counter so the keyframe-vs-
+        /// inter decision logic can be wired up in subsequent PRs
+        /// without behaviour changing here.
+        /// </summary>
+        public int KeyframeIntervalFrames
+        {
+            get => _keyframeIntervalFrames;
+            set
+            {
+                if (value < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value),
+                        "KeyframeIntervalFrames must be at least 1.");
+                }
+                _keyframeIntervalFrames = value;
+            }
+        }
+
+        /// <summary>
+        /// Read-only count of frames emitted since the last keyframe
+        /// (resets to 0 immediately after a keyframe is encoded).
+        /// Exposed primarily for tests and diagnostics.
+        /// </summary>
+        public int FramesSinceLastKeyframe => _framesSinceLastKeyframe;
+
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             lock (_encoderLock)
@@ -129,12 +172,38 @@ namespace Vpx.Net
                 Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);
                 Buffer.BlockCopy(i420, ySize + cSize, _srcV, 0, cSize);
 
-                // ForceKeyFrame is currently the only mode (every frame is a
-                // keyframe in the foundation encoder). Reset the flag for
-                // API parity with future inter-frame support.
+                // Decide keyframe vs inter for this call.
+                // - Forced keyframe (via ForceKeyFrame()): always keyframe.
+                // - Frame counter reached interval: keyframe.
+                // - First frame of stream / no valid reference: keyframe.
+                // - Otherwise: inter.
+                //
+                // Note: as of PR 1 of the P-frame foundation series the
+                // inter branch falls through to EncodeKeyframe too. PRs
+                // 2-5 build out the actual inter encoding path. The
+                // decision logic is in place here so later PRs are pure
+                // implementation flips and not interface changes.
+                bool forceKey = _forceKeyFrame
+                              || _framesSinceLastKeyframe == 0
+                              || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
                 _forceKeyFrame = false;
 
-                return frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, _baseQIndex);
+                byte[] result;
+                if (forceKey)
+                {
+                    result = frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, _baseQIndex);
+                    _framesSinceLastKeyframe = 1;
+                }
+                else
+                {
+                    // PR 1 of N: inter encoding not yet implemented;
+                    // fall through to keyframe to preserve current
+                    // behaviour. Subsequent PRs replace this call with
+                    // the real inter frame encoder.
+                    result = frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, _baseQIndex);
+                    _framesSinceLastKeyframe++;
+                }
+                return result;
             }
         }
 
