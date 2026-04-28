@@ -179,14 +179,14 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         /// Rollover counter.
         /// </summary>
         /// <summary>
-        /// Obsolete. RFC 3711 section 3.2.1 specifies that the rollover counter
-        /// is per-SSRC, not per-SrtpContext. Use
+        /// DEPRECATED. RFC 3711 section 3.2.1 specifies that the rollover
+        /// counter is per-SSRC, not per-SrtpContext. Use
         /// <see cref="SsrcSrtpContext.OutboundRoc"/> on the per-SSRC
         /// context returned from <see cref="ReplayProtection"/> instead.
-        /// Retained as a settable property for binary compatibility but
-        /// no longer read or written by ProtectRtp / UnprotectRtp.
+        /// This property is retained as a settable field for binary
+        /// compatibility but is no longer read or written by ProtectRtp
+        /// or UnprotectRtp.
         /// </summary>
-        [Obsolete("ROC is per-SSRC per RFC 3711 section 3.2.1 -- use SsrcSrtpContext.OutboundRoc on the per-SSRC context.")]
         public uint Roc { get; set; } = 0;
 
         private long _masterKeySentCounter = 0;
