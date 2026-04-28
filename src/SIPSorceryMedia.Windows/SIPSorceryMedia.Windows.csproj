@@ -17,7 +17,7 @@
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Aaron Clauson</Authors>
-    <Copyright>Copyright © 2020-2025 Aaron Clauson</Copyright>
+    <Copyright>Copyright © 2020-2026 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Title>SIPSorceryMedia.Windows</Title>
@@ -26,7 +26,7 @@
     <Product>SIPSorceryMedia.Windows</Product>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <RepositoryUrl>https://github.com/sipsorcery-org/SIPSorceryMedia.Windows</RepositoryUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>10.0.5</Version>
     <AssemblyVersion>10.0.5</AssemblyVersion>
