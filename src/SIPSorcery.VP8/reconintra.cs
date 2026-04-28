@@ -28,7 +28,7 @@ using System.Runtime.CompilerServices;
 
 using ptrdiff_t = System.Int64;
 
-[assembly: InternalsVisibleTo("VP8.Net.UnitTest")]
+[assembly: InternalsVisibleTo("SIPSOrcery.VP8.UnitTest")]
 
 namespace Vpx.Net
 {

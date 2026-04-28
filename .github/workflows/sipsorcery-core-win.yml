@@ -10,7 +10,7 @@ on:
       
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-2026
     name: dotnet windows sipsorcery core
     steps:
     - uses: actions/checkout@v2
@@ -19,4 +19,4 @@ jobs:
     - name: Build
       run: dotnet build SIPSorcery.slnf -c Release --no-restore
     - name: Test
-      run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal -f net8.0
+      run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal -f net10.0
