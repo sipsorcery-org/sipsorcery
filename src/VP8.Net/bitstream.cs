@@ -623,5 +623,198 @@ namespace Vpx.Net
                 }
             }
         }
+
+        // -----------------------------------------------------------------
+        // Per-MB inter mode + reference frame bits (PR 4 of P-frame series).
+        //
+        // Mirrors the bit sequence read by decodemv.read_mb_modes_mv. For an
+        // inter MB the encoder writes:
+        //   1) is_inter (1 bit) using prob_intra
+        //   2) ref_frame_is_LAST (1 bit) using prob_last  -- 0 = LAST, 1 = G/A
+        //   3) if ref_frame in {GOLDEN, ALTREF}: 1 bit using prob_gf
+        //   4) inter mode tree path (vp8_mv_ref_tree) using a 4-element prob
+        //      array sourced from modecont.vp8_mode_contexts indexed by the
+        //      neighbour-MV-counting context (computed by the caller).
+        //
+        // For an intra-in-inter-frame MB the encoder writes is_inter=0 and
+        // returns; the caller must follow up with the intra mode bits using
+        // the existing intra-frame helpers.
+        //
+        // The two helpers below are deliberately narrow: they only deal with
+        // the ref/mode tree bits. MV residuals (NEWMV) and 4x4 split data
+        // (SPLITMV) are not produced here; the mode_probs computation lives
+        // in the orchestration layer (PR 5) where neighbour MBs are visible.
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Generic boolean-coder tree-walk, used for writing fixed-shape
+        /// trees like vp8_mv_ref_tree. Bit-exact mirror of libvpx's
+        /// vp8_treed_write helper in vp8/encoder/treewriter.h.
+        /// </summary>
+        /// <param name="bc">Open boolean coder.</param>
+        /// <param name="tree">Tree array, sbyte leaves are negative.</param>
+        /// <param name="probs">Per-internal-node probability array.</param>
+        /// <param name="value">Bit-string to emit, MSB first.</param>
+        /// <param name="length">Number of bits in <paramref name="value"/>.</param>
+        public static void vp8_treed_write(
+            ref BOOL_CODER bc,
+            sbyte[] tree,
+            byte[] probs,
+            int value,
+            int length)
+        {
+            int i = 0;
+            do
+            {
+                int bit = (value >> --length) & 1;
+                boolhuff.vp8_encode_bool(ref bc, bit, probs[i >> 1]);
+                i = tree[i + bit];
+            } while (length != 0);
+        }
+
+        /// <summary>
+        /// Pre-computed (value, length) tuples that walk
+        /// <see cref="entropymode.vp8_mv_ref_tree"/> to each
+        /// <see cref="MB_PREDICTION_MODE"/> inter-mode leaf. Indexed by
+        /// (mode - NEARESTMV); ZEROMV uses a special index of -1 mapped to
+        /// position 0 of the tree by <see cref="WriteInterMode"/>.
+        ///
+        /// Order corresponds to libvpx's vp8_mv_ref_encoding_array:
+        ///   ZEROMV    -> {0, 1}     (binary 0)
+        ///   NEARESTMV -> {2, 2}     (binary 10)
+        ///   NEARMV    -> {6, 3}     (binary 110)
+        ///   NEWMV     -> {14, 4}    (binary 1110)
+        ///   SPLITMV   -> {15, 4}    (binary 1111)
+        /// </summary>
+        private static readonly (int Value, int Length)[] s_mvRefEncoding = new[]
+        {
+            (0, 1),     // ZEROMV
+            (2, 2),     // NEARESTMV
+            (6, 3),     // NEARMV
+            (14, 4),    // NEWMV
+            (15, 4),    // SPLITMV
+        };
+
+        /// <summary>
+        /// Looks up the bit-encoding for an inter <see cref="MB_PREDICTION_MODE"/>
+        /// in <see cref="s_mvRefEncoding"/>. Throws if the supplied mode is
+        /// not one of the five inter modes.
+        /// </summary>
+        private static (int Value, int Length) GetMvRefEncoding(MB_PREDICTION_MODE mode)
+        {
+            switch (mode)
+            {
+                case MB_PREDICTION_MODE.ZEROMV:    return s_mvRefEncoding[0];
+                case MB_PREDICTION_MODE.NEARESTMV: return s_mvRefEncoding[1];
+                case MB_PREDICTION_MODE.NEARMV:    return s_mvRefEncoding[2];
+                case MB_PREDICTION_MODE.NEWMV:     return s_mvRefEncoding[3];
+                case MB_PREDICTION_MODE.SPLITMV:   return s_mvRefEncoding[4];
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode),
+                        mode, "Mode is not an inter MB prediction mode.");
+            }
+        }
+
+        /// <summary>
+        /// Writes the inter mode tree path for the supplied inter mode using
+        /// the supplied 4-element probability array. The probability array
+        /// is normally a row of <see cref="modecont.vp8_mode_contexts"/> chosen
+        /// by the neighbour-MV-counting context (computed in PR 5).
+        /// </summary>
+        public static void WriteInterMode(
+            ref BOOL_CODER bc,
+            byte[] modeProbs,
+            MB_PREDICTION_MODE mode)
+        {
+            if (modeProbs == null) throw new ArgumentNullException(nameof(modeProbs));
+            if (modeProbs.Length < 4)
+                throw new ArgumentException("modeProbs must have 4 entries.", nameof(modeProbs));
+
+            var enc = GetMvRefEncoding(mode);
+            vp8_treed_write(ref bc, entropymode.vp8_mv_ref_tree, modeProbs, enc.Value, enc.Length);
+        }
+
+        /// <summary>
+        /// Writes the per-MB ref_frame + inter mode bits for an inter
+        /// macroblock. <paramref name="refFrame"/> must not be
+        /// <see cref="MV_REFERENCE_FRAME.INTRA_FRAME"/>; for intra-in-inter
+        /// MBs use <see cref="WriteInterMbAsIntra"/> instead.
+        /// </summary>
+        /// <param name="bc">Open boolean coder.</param>
+        /// <param name="probIntra">P(is_inter); 8-bit prob from frame header.</param>
+        /// <param name="probLast">P(ref != LAST | is_inter); 8-bit prob.</param>
+        /// <param name="probGf">P(ref == ALTREF | ref in {G,A}); 8-bit prob.</param>
+        /// <param name="refFrame">Reference frame for this MB (LAST/GOLDEN/ALTREF).</param>
+        /// <param name="modeProbs">4-element row from vp8_mode_contexts.</param>
+        /// <param name="mode">Inter mode for this MB.</param>
+        public static void WriteInterMbRefAndMode(
+            ref BOOL_CODER bc,
+            int probIntra,
+            int probLast,
+            int probGf,
+            MV_REFERENCE_FRAME refFrame,
+            byte[] modeProbs,
+            MB_PREDICTION_MODE mode)
+        {
+            if (refFrame == MV_REFERENCE_FRAME.INTRA_FRAME)
+                throw new ArgumentException(
+                    "WriteInterMbRefAndMode is for inter MBs only; use WriteInterMbAsIntra for intra-in-inter.",
+                    nameof(refFrame));
+
+            // is_inter = 1
+            boolhuff.vp8_encode_bool(ref bc, 1, probIntra);
+
+            // ref_frame_is_LAST: 0 -> LAST, 1 -> GOLDEN/ALTREF
+            int refIsNotLast = (refFrame == MV_REFERENCE_FRAME.LAST_FRAME) ? 0 : 1;
+            boolhuff.vp8_encode_bool(ref bc, refIsNotLast, probLast);
+
+            if (refIsNotLast != 0)
+            {
+                // 0 -> GOLDEN, 1 -> ALTREF
+                int refIsAlt = (refFrame == MV_REFERENCE_FRAME.ALTREF_FRAME) ? 1 : 0;
+                boolhuff.vp8_encode_bool(ref bc, refIsAlt, probGf);
+            }
+
+            WriteInterMode(ref bc, modeProbs, mode);
+        }
+
+        /// <summary>
+        /// Writes the is_inter=0 bit for an intra-in-inter macroblock. The
+        /// caller is responsible for following up with the intra Y/UV mode
+        /// bits using the existing intra helpers (which in PR 4 are not yet
+        /// hooked up; the orchestrator added in PR 5 will handle that).
+        /// </summary>
+        public static void WriteInterMbAsIntra(ref BOOL_CODER bc, int probIntra)
+        {
+            boolhuff.vp8_encode_bool(ref bc, 0, probIntra);
+        }
+
+        /// <summary>
+        /// Convenience wrapper for the common "ZEROMV referencing LAST"
+        /// inter MB encoded by <c>EncodeMacroblockZeroMvLast</c>. Picks the
+        /// vp8_mode_contexts row for cnt[CNT_INTRA] = 0 (no inter neighbours)
+        /// which is the correct context for the all-ZEROMV first-row-of-frame
+        /// case used by PR 5 in its initial form. Once neighbour MV
+        /// accumulation is added, callers should use
+        /// <see cref="WriteInterMbRefAndMode"/> directly with a context-derived
+        /// probability row.
+        /// </summary>
+        public static void WriteInterMbZeroMvLast(
+            ref BOOL_CODER bc,
+            int probIntra,
+            int probLast,
+            int probGf)
+        {
+            // Row 0 of vp8_mode_contexts corresponds to cnt[CNT_INTRA] = 0.
+            byte[] row0 = new byte[4];
+            for (int j = 0; j < 4; j++) row0[j] = (byte)modecont.vp8_mode_contexts[0, j];
+
+            WriteInterMbRefAndMode(
+                ref bc,
+                probIntra, probLast, probGf,
+                MV_REFERENCE_FRAME.LAST_FRAME,
+                row0,
+                MB_PREDICTION_MODE.ZEROMV);
+        }
     }
 }
