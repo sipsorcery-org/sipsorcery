@@ -112,12 +112,11 @@ namespace Vpx.Net
         /// every frame to be a keyframe; 30 (default) gives one keyframe
         /// per second at 30 fps. Range [1, int.MaxValue].
         ///
-        /// Note: as of PR 1 of the P-frame foundation series the inter
-        /// encoding path is not yet implemented, so EncodeVideo emits a
-        /// keyframe every call regardless of this setting. The value is
-        /// honoured by the internal frame counter so the keyframe-vs-
-        /// inter decision logic can be wired up in subsequent PRs
-        /// without behaviour changing here.
+        /// Inter frames between keyframes are encoded as ZEROMV
+        /// referencing LAST_FRAME (PR 5 of the P-frame foundation
+        /// series). The trade-off vs all-keyframes is dramatically lower
+        /// bitrate at the cost of error-resilience -- a lost inter frame
+        /// will desync the decoder until the next keyframe.
         /// </summary>
         public int KeyframeIntervalFrames
         {
@@ -176,13 +175,7 @@ namespace Vpx.Net
                 // - Forced keyframe (via ForceKeyFrame()): always keyframe.
                 // - Frame counter reached interval: keyframe.
                 // - First frame of stream / no valid reference: keyframe.
-                // - Otherwise: inter.
-                //
-                // Note: as of PR 1 of the P-frame foundation series the
-                // inter branch falls through to EncodeKeyframe too. PRs
-                // 2-5 build out the actual inter encoding path. The
-                // decision logic is in place here so later PRs are pure
-                // implementation flips and not interface changes.
+                // - Otherwise: inter (ZEROMV LAST_FRAME).
                 bool forceKey = _forceKeyFrame
                               || _framesSinceLastKeyframe == 0
                               || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
@@ -196,11 +189,11 @@ namespace Vpx.Net
                 }
                 else
                 {
-                    // PR 1 of N: inter encoding not yet implemented;
-                    // fall through to keyframe to preserve current
-                    // behaviour. Subsequent PRs replace this call with
-                    // the real inter frame encoder.
-                    result = frame_encoder.EncodeKeyframe(_srcY, _srcU, _srcV, width, height, _baseQIndex);
+                    // Inter (P) frame: ZEROMV referencing LAST_FRAME for
+                    // every macroblock. The reference frame is the
+                    // reconstruction of the previous keyframe / inter
+                    // frame, cached on the per-thread FrameEncoderBuffers.
+                    result = frame_encoder.EncodeInterFrame(_srcY, _srcU, _srcV, width, height, _baseQIndex);
                     _framesSinceLastKeyframe++;
                 }
                 return result;

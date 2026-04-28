@@ -559,6 +559,325 @@ namespace Vpx.Net
             return result;
         }
 
+        /// <summary>
+        /// Encode an I420 source frame as a VP8 inter (P) frame using
+        /// ZEROMV + LAST_FRAME for every macroblock. The reference frame
+        /// must already be cached on the per-thread <see cref="FrameEncoderBuffers"/>
+        /// via a previous call to <see cref="EncodeKeyframe"/> (or another
+        /// <see cref="EncodeInterFrame"/>).
+        ///
+        /// PR 5 of the P-frame foundation series — the orchestration layer
+        /// that ties the header writer (PR 2), the inter MB encoder (PR 3),
+        /// and the per-MB inter mode bit writer (PR 4) into a fully
+        /// decodable inter frame.
+        /// </summary>
+        /// <param name="srcY">width * height luma source bytes.</param>
+        /// <param name="srcU">(width/2) * (height/2) chroma U.</param>
+        /// <param name="srcV">(width/2) * (height/2) chroma V.</param>
+        /// <param name="width">Frame width (multiple of 16).</param>
+        /// <param name="height">Frame height (multiple of 16).</param>
+        /// <param name="qIndex">Base quantizer (0..127).</param>
+        /// <returns>The encoded VP8 inter frame bytes.</returns>
+        public static byte[] EncodeInterFrame(byte[] srcY, byte[] srcU, byte[] srcV,
+            int width, int height, int qIndex)
+        {
+            if (width <= 0 || width % 16 != 0)
+                throw new ArgumentException("width must be a positive multiple of 16", nameof(width));
+            if (height <= 0 || height % 16 != 0)
+                throw new ArgumentException("height must be a positive multiple of 16", nameof(height));
+            if (srcY == null || srcY.Length != width * height)
+                throw new ArgumentException("srcY size mismatch");
+            int chromaW = width / 2, chromaH = height / 2;
+            if (srcU == null || srcU.Length != chromaW * chromaH)
+                throw new ArgumentException("srcU size mismatch");
+            if (srcV == null || srcV.Length != chromaW * chromaH)
+                throw new ArgumentException("srcV size mismatch");
+
+            int mbCols = width / 16;
+            int mbRows = height / 16;
+
+            FrameQuantizer fq = quantizer_init.BuildForQIndex(qIndex);
+
+            var buf = _buffers ??= new FrameEncoderBuffers();
+            buf.EnsureForFrame(width, height);
+            var scratch = buf.Scratch;
+
+            if (!buf.LastFrameValid)
+            {
+                throw new InvalidOperationException(
+                    "EncodeInterFrame requires a valid LAST_FRAME reference. Call EncodeKeyframe first.");
+            }
+
+            var cfg = new InterFrameHeaderConfig
+            {
+                BaseQindex = qIndex,
+            };
+
+            byte[] outBuf = buf.OutBuf;
+
+            // ----- Open compressed first partition (header through refresh_last_frame) -----
+            BOOL_CODER bc0 = new BOOL_CODER();
+            int partitionStart;
+            fixed (byte* p = outBuf)
+            {
+                partitionStart = bitstream.StartInterFrameHeader(p, outBuf.Length, cfg, ref bc0);
+            }
+
+            // ----- Coef-prob updates: 1056 zero flag bits (no updates) -----
+            for (int t = 0; t < entropy.BLOCK_TYPES; t++)
+                for (int b = 0; b < entropy.COEF_BANDS; b++)
+                    for (int c = 0; c < entropy.PREV_COEF_CONTEXTS; c++)
+                        for (int n = 0; n < entropy.ENTROPY_NODES; n++)
+                            boolhuff.vp8_encode_bool(ref bc0, 0,
+                                coefupdateprobs.vp8_coef_update_probs[t, b, c, n]);
+
+            // ----- Phase 1: encode all MBs into MbEncodeResults -----
+            //
+            // Same two-phase split as the keyframe path: encode every MB
+            // first so we know skip flags before writing prob_skip_false
+            // and the per-MB skip bits. For the ZEROMV-everywhere model
+            // the prediction for each MB is the same-position 16x16 Y +
+            // 8x8 U + 8x8 V samples from buf.LastFrameY/U/V.
+
+            MbEncodeResult[] mbResults = buf.MbResults;
+            bool[] mbSkip = buf.MbSkip;
+            int skipTrueCount = 0;
+            int skipFalseCount = 0;
+
+            byte[] frameAboveCtx = buf.FrameAboveCtx;
+            Array.Clear(frameAboveCtx, 0, mbCols * 9);
+
+            byte[] leftCtx = buf.LeftCtx;
+            byte[] aboveCtx = buf.AboveCtx;
+            byte[] mbY = buf.MbY;
+            byte[] mbU = buf.MbU;
+            byte[] mbV = buf.MbV;
+
+            // ZEROMV prediction reuses the per-MB scratch slots that the
+            // keyframe path used for above/left neighbour pixels — the
+            // inter encoder only needs same-position prediction so those
+            // slots are free to repurpose.
+            byte[] predY = buf.AboveY.Length >= 256 ? buf.AboveY : new byte[256];
+            byte[] predU = buf.AboveU.Length >= 64  ? buf.AboveU : new byte[64];
+            byte[] predV = buf.AboveV.Length >= 64  ? buf.AboveV : new byte[64];
+            // Above slots are 16/8/8 in the keyframe path; for inter we
+            // need 256/64/64. Allocate dedicated buffers if the existing
+            // ones aren't large enough (one-time per encoder lifetime).
+            if (predY.Length < 256) predY = new byte[256];
+            if (predU.Length < 64) predU = new byte[64];
+            if (predV.Length < 64) predV = new byte[64];
+
+            for (int mbRow = 0; mbRow < mbRows; mbRow++)
+            {
+                Array.Clear(leftCtx, 0, 9);
+
+                for (int mbCol = 0; mbCol < mbCols; mbCol++)
+                {
+                    // Source MB.
+                    ExtractPlaneInto(srcY, width,   mbCol * 16, mbRow * 16, 16, 16, mbY);
+                    ExtractPlaneInto(srcU, chromaW, mbCol * 8,  mbRow * 8,   8,  8, mbU);
+                    ExtractPlaneInto(srcV, chromaW, mbCol * 8,  mbRow * 8,   8,  8, mbV);
+
+                    // Same-position prediction from LAST_FRAME.
+                    ExtractPlaneInto(buf.LastFrameY, width,   mbCol * 16, mbRow * 16, 16, 16, predY);
+                    ExtractPlaneInto(buf.LastFrameU, chromaW, mbCol * 8,  mbRow * 8,   8,  8, predU);
+                    ExtractPlaneInto(buf.LastFrameV, chromaW, mbCol * 8,  mbRow * 8,   8,  8, predV);
+
+                    // Pull this MB column's above context.
+                    int aboveBase = mbCol * 9;
+                    for (int s = 0; s < 9; s++) aboveCtx[s] = frameAboveCtx[aboveBase + s];
+
+                    int idx = mbRow * mbCols + mbCol;
+                    var pooled = mbResults[idx];
+
+                    var r = mb_encoder.EncodeMacroblockZeroMvLast(
+                        mbY, mbU, mbV,
+                        predY, predU, predV,
+                        fq,
+                        aboveCtx, leftCtx,
+                        pooled, scratch);
+                    mbResults[idx] = r;
+
+                    bool skip = IsAllEob(r);
+                    mbSkip[idx] = skip;
+                    if (skip) skipTrueCount++; else skipFalseCount++;
+
+                    // Save mutated above context for the row below.
+                    for (int s = 0; s < 9; s++) frameAboveCtx[aboveBase + s] = aboveCtx[s];
+                }
+            }
+
+            // ----- Save reconstructed frame as next inter prediction ref -----
+            //
+            // Same per-MB stitch as the keyframe path. Future inter
+            // frames in the stream will use the bytes we write here as
+            // their LAST_FRAME prediction source.
+            for (int mbRow = 0; mbRow < mbRows; mbRow++)
+            {
+                for (int mbCol = 0; mbCol < mbCols; mbCol++)
+                {
+                    var r = mbResults[mbRow * mbCols + mbCol];
+
+                    int yBase = (mbRow * 16) * width + (mbCol * 16);
+                    for (int row = 0; row < 16; row++)
+                    {
+                        Buffer.BlockCopy(r.ReconY, row * 16,
+                            buf.LastFrameY, yBase + row * width, 16);
+                    }
+
+                    int cBase = (mbRow * 8) * chromaW + (mbCol * 8);
+                    for (int row = 0; row < 8; row++)
+                    {
+                        Buffer.BlockCopy(r.ReconU, row * 8,
+                            buf.LastFrameU, cBase + row * chromaW, 8);
+                        Buffer.BlockCopy(r.ReconV, row * 8,
+                            buf.LastFrameV, cBase + row * chromaW, 8);
+                    }
+                }
+            }
+            buf.LastFrameValid = true;
+
+            // ----- Phase 2a: mb_no_skip_coeff + prob_skip_false -----
+            bitstream.vp8_write_bit(ref bc0, 1);   // mb_no_skip_coeff = 1
+
+            byte probSkipFalse;
+            if (skipTrueCount == 0)
+            {
+                probSkipFalse = 0xfb;
+            }
+            else
+            {
+                int total = skipFalseCount + skipTrueCount;
+                int p = skipFalseCount * 256 / total;
+                if (p < 1) p = 1;
+                if (p > 255) p = 255;
+                probSkipFalse = (byte)p;
+            }
+            for (int b = 7; b >= 0; b--)
+                bitstream.vp8_write_bit(ref bc0, (probSkipFalse >> b) & 1);
+
+            // ----- Phase 2b: inter-only prob_intra / prob_last / prob_gf -----
+            //
+            // Choices for the ZEROMV-everywhere model:
+            //   prob_intra = 1   -> writing is_inter=1 costs ~0 bits.
+            //   prob_last  = 1   -> writing ref_is_LAST=0 costs ~0 bits.
+            //   prob_gf    = 128 -> never used (ref is always LAST).
+            const byte probIntra = 1;
+            const byte probLast = 1;
+            const byte probGf = 128;
+            for (int b = 7; b >= 0; b--) bitstream.vp8_write_bit(ref bc0, (probIntra >> b) & 1);
+            for (int b = 7; b >= 0; b--) bitstream.vp8_write_bit(ref bc0, (probLast >> b) & 1);
+            for (int b = 7; b >= 0; b--) bitstream.vp8_write_bit(ref bc0, (probGf >> b) & 1);
+
+            // ymode_prob update flag = 0 (use defaults).
+            bitstream.vp8_write_bit(ref bc0, 0);
+            // uv_mode_prob update flag = 0.
+            bitstream.vp8_write_bit(ref bc0, 0);
+
+            // MV context updates: for each of the two MV components
+            // (row, col) and each of MVPcount (=19) probabilities, write
+            // an "update?" flag of 0 with the default vp8_mv_update_probs.
+            // We never update MV probs because we never code MV
+            // residuals (all MBs are ZEROMV).
+            for (int comp = 0; comp < 2; comp++)
+            {
+                byte[] up = entropymv.vp8_mv_update_probs[comp].prob;
+                int mvpCount = (int)MV_ENUM.MVPcount;
+                for (int j = 0; j < mvpCount; j++)
+                {
+                    boolhuff.vp8_encode_bool(ref bc0, 0, up[j]);
+                }
+            }
+
+            // ----- Phase 2c: per-MB skip flag + ref_frame + inter mode -----
+            //
+            // The inter mode tree probabilities depend on a per-MB
+            // neighbour-MV-counting context cnt[CNT_INTRA]. The decoder
+            // (decodemv.read_mb_modes_mv) accumulates this context by
+            // walking the above, left and aboveleft neighbours: each
+            // non-intra neighbour with a zero MV adds either 2
+            // (above/left) or 1 (aboveleft) to cnt[CNT_INTRA].
+            //
+            // For an all-ZEROMV LAST_FRAME stream the cnt[CNT_INTRA]
+            // value is determined entirely by the MB's position, since
+            // every inter MB has ref_frame = LAST and mv.as_int = 0:
+            //   (0,0)        -> 0 (no inter neighbours)
+            //   (0,c) c>0    -> 2 (only left contributes)
+            //   (r,0) r>0    -> 2 (only above contributes)
+            //   (r,c) r>0,c>0 -> 5 (above+left+aboveleft all contribute: 2+2+1)
+            //
+            // We pre-build the three context rows we'll need and pick
+            // the right one per MB, then walk the inter mode tree with
+            // the decoder-matching row.
+            byte[] modeProbsRow0 = new byte[4];
+            byte[] modeProbsRow2 = new byte[4];
+            byte[] modeProbsRow5 = new byte[4];
+            for (int j = 0; j < 4; j++)
+            {
+                modeProbsRow0[j] = (byte)modecont.vp8_mode_contexts[0, j];
+                modeProbsRow2[j] = (byte)modecont.vp8_mode_contexts[2, j];
+                modeProbsRow5[j] = (byte)modecont.vp8_mode_contexts[5, j];
+            }
+
+            for (int mbRow = 0; mbRow < mbRows; mbRow++)
+            {
+                for (int mbCol = 0; mbCol < mbCols; mbCol++)
+                {
+                    int i = mbRow * mbCols + mbCol;
+
+                    // Skip flag (boolean coder, prob_skip_false).
+                    boolhuff.vp8_encode_bool(ref bc0, mbSkip[i] ? 1 : 0, probSkipFalse);
+
+                    // Pick the context-correct mode prob row.
+                    byte[] modeProbs;
+                    if (mbRow == 0 && mbCol == 0)       modeProbs = modeProbsRow0;
+                    else if (mbRow == 0 || mbCol == 0)  modeProbs = modeProbsRow2;
+                    else                                modeProbs = modeProbsRow5;
+
+                    // is_inter=1, ref_is_LAST=0, ZEROMV tree path.
+                    bitstream.WriteInterMbRefAndMode(
+                        ref bc0,
+                        probIntra, probLast, probGf,
+                        MV_REFERENCE_FRAME.LAST_FRAME,
+                        modeProbs,
+                        MB_PREDICTION_MODE.ZEROMV);
+                }
+            }
+
+            // ----- Close partition 0 -----
+            int totalThroughP0;
+            fixed (byte* p = outBuf)
+            {
+                totalThroughP0 = bitstream.FinishInterFrameFirstPartition(p, cfg, ref bc0);
+            }
+
+            // ----- Open partition 1 (token partition) -----
+            BOOL_CODER bc1 = new BOOL_CODER();
+            fixed (byte* p = outBuf)
+            {
+                boolhuff.vp8_start_encode(ref bc1, p + totalThroughP0, p + outBuf.Length);
+
+                int totalMbs = mbRows * mbCols;
+                for (int i = 0; i < totalMbs; i++)
+                {
+                    if (mbSkip[i]) continue;
+
+                    var r = mbResults[i];
+                    bitstream.vp8_pack_tokens(ref bc1, r.Y2Block);
+                    for (int b = 0; b < 16; b++) bitstream.vp8_pack_tokens(ref bc1, r.YBlocks[b]);
+                    for (int b = 0; b < 4;  b++) bitstream.vp8_pack_tokens(ref bc1, r.UBlocks[b]);
+                    for (int b = 0; b < 4;  b++) bitstream.vp8_pack_tokens(ref bc1, r.VBlocks[b]);
+                }
+
+                boolhuff.vp8_stop_encode(ref bc1);
+            }
+
+            int totalBytes = totalThroughP0 + (int)bc1.pos;
+            byte[] result = new byte[totalBytes];
+            Array.Copy(outBuf, result, totalBytes);
+            return result;
+        }
+
         // ----- helpers -----
 
         /// <summary>
