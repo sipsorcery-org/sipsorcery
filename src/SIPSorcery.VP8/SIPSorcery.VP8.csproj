@@ -14,7 +14,7 @@
     <Title>SIPSorcery</Title>
     <Summary>A .NET library that implements the VP8 video codec.</Summary>
     <Description>
-        A .NET library that implements the VP8 video codec. This package is intended to be used as a video encoder and decoder for the SIPSorcery real-time communications library.
+A .NET library that implements the VP8 video codec. This package is intended to be used as a video encoder and decoder for the SIPSorcery real-time communications library.
     </Description>
     <Company>SIP Sorcery PTY LTD</Company>
     <Product>SIPSorcery.VP8</Product>
@@ -27,10 +27,10 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIPSorcery Video-Encoding VP8</PackageTags>
-    <PackageReleaseNotes>-v10.0.6-pre: Initial version.
+    <PackageReleaseNotes>-v10.0.6: Initial release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.6-pre</Version>
+    <Version>10.0.6</Version>
     <AssemblyVersion>10.0.6</AssemblyVersion>
     <FileVersion>10.0.6</FileVersion>
   </PropertyGroup>

@@ -66,7 +66,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>v10.0.5: Stable release. Bug fixes.
+    <PackageReleaseNotes>-v10.0.6: Bug fixes.
+-v10.0.5: Stable release. Bug fixes.
 -v10.0.4-pre: New SRTP and DTLS implementation (huge thanks to @jimm98y).
 -v10.0.3: Removed null SRTP ciphers.
 -v10.0.2: Removed use of master key index for SRTP.
@@ -89,9 +90,9 @@
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.5</Version>
-    <AssemblyVersion>10.0.5</AssemblyVersion>
-    <FileVersion>10.0.5</FileVersion>
+    <Version>10.0.6</Version>
+    <AssemblyVersion>10.0.6</AssemblyVersion>
+    <FileVersion>10.0.6</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

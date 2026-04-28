@@ -43,7 +43,8 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryBranch>master</RepositoryBranch>
 		<PackageTags>WebRTC VoIP SIPSorcery Media FFmpeg</PackageTags>
-		<PackageReleaseNotes>-v10.0.5: Updated for main sipsorcery library release.
+		<PackageReleaseNotes>-v10.0.6: Updated for main sipsorcery library release.
+-v10.0.5: Updated for main sipsorcery library release.
 -v8.0.12: Updated to latest abstractions package.
 -v8.0.10: H265 and MJPEG support. RTCP feedback improvements.
 -v8.0.8: Bug fixes, including segfault fix, for FFmpeg file source.

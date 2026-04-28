@@ -24,12 +24,13 @@
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>10.0.5</Version>
-    <AssemblyVersion>10.0.5</AssemblyVersion>
-    <FileVersion>10.0.5</FileVersion>
+    <Version>10.0.6</Version>
+    <AssemblyVersion>10.0.6</AssemblyVersion>
+    <FileVersion>10.0.6</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-v10.0.5: Updated for main sipsorcery library release.
+    <PackageReleaseNotes>-v10.0.6: Updated for main sipsorcery library release.
+-v10.0.5: Updated for main sipsorcery library release.
 -v8.0.12: Added IAudioEndPoint and GotEncodedMediaFrame to IAudioSink.
 -v8.0.10: Change to text encoder interface.
 -v8.0.7: New sampling frequencies and all sipsorcery packages release.
