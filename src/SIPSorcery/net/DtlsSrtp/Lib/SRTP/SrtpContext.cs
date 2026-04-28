@@ -123,6 +123,17 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             S_l = sequenceNumber;
             S_l_set = true;
         }
+
+        /// <summary>
+        /// Sender only — current rollover counter (ROC) for this SSRC.
+        /// Per RFC 3711 §3.2.1 each SRTP stream maintains its own ROC;
+        /// SSRCs that share the same SrtpContext (e.g. audio + video
+        /// bundled on the same DTLS-SRTP transport) MUST track ROC
+        /// independently. Incremented from 0 each time the 16-bit
+        /// RTP sequence number wraps from 0xFFFF to 0x0000 on this
+        /// SSRC.
+        /// </summary>
+        public uint OutboundRoc { get; set; } = 0;
     }
 
     /// <summary>
@@ -167,6 +178,15 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         /// <summary>
         /// Rollover counter.
         /// </summary>
+        /// <summary>
+        /// Obsolete. RFC 3711 §3.2.1 specifies that the rollover counter
+        /// is per-SSRC, not per-SrtpContext. Use
+        /// <see cref="SsrcSrtpContext.OutboundRoc"/> on the per-SSRC
+        /// context returned from <see cref="ReplayProtection"/> instead.
+        /// Retained as a settable property for binary compatibility but
+        /// no longer read or written by ProtectRtp / UnprotectRtp.
+        /// </summary>
+        [Obsolete("ROC is per-SSRC per RFC 3711 §3.2.1 — use SsrcSrtpContext.OutboundRoc on the per-SSRC context.")]
         public uint Roc { get; set; } = 0;
 
         private long _masterKeySentCounter = 0;
@@ -493,7 +513,21 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             var ssrc = RtpReader.ReadSsrc(input);
             var sequenceNumber = RtpReader.ReadSequenceNumber(input);
             var offset = RtpReader.ReadHeaderLen(input);
-            var roc = context.Roc;
+
+            // RFC 3711 §3.2.1 — ROC is per-SSRC. Look up (or initialise)
+            // the per-SSRC context for this stream. Audio + video bundled
+            // on the same transport share this SrtpContext but MUST have
+            // independent rollover counters; conflating them via a single
+            // context-wide Roc field caused all streams sharing the
+            // context to have their keystream desynchronise from the
+            // receiver whenever ANY stream's sequence number wrapped.
+            SsrcSrtpContext outboundCtx;
+            if (!context.ReplayProtection.TryGetValue(ssrc, out outboundCtx))
+            {
+                outboundCtx = new SsrcSrtpContext();
+                context.ReplayProtection.Add(ssrc, outboundCtx);
+            }
+            var roc = outboundCtx.OutboundRoc;
             var index = SrtpContext.GenerateRtpIndex(roc, sequenceNumber);
 
             // copy header from input to output
@@ -634,10 +668,12 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                 length += context.N_tag;
             }
 
-            // TODO: review
+            // Increment the per-SSRC ROC when the RTP sequence wraps
+            // from 0xFFFF to 0x0000. Per RFC 3711 §3.3.1 the next packet
+            // (with sequence 0) belongs to the next epoch.
             if (sequenceNumber == 0xFFFF)
             {
-                context.Roc++;
+                outboundCtx.OutboundRoc++;
             }
 
             outputBufferLength = length;
