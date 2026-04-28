@@ -82,46 +82,16 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            // Pass the VP8 codec directly to the test pattern source. With
-            // this wiring the source calls VP8Codec.EncodeVideo on its
-            // native I420 buffer once per frame and fires
-            // OnVideoSourceEncodedSample with the encoded VP8 byte
-            // stream; no per-frame format conversion happens.
-            //
-            // The previous wiring (see git history) hooked the
-            // OnVideoSourceRawSample event to a Vp8NetVideoEncoderEndPoint
-            // — that path forces an I420 -> BGR conversion in the source
-            // and then a BGR -> I420 conversion back in the endpoint
-            // before the encoder runs, allocating roughly 1.4 MB per
-            // frame at 640x480 (= 42 MB/sec at 30 fps) of throw-away
-            // buffers. Profiling traced visible audio/video jitter
-            // spikes back to ~6 Gen 2 GCs per second under that wiring.
-            // Switching to the direct-codec path eliminates that GC
-            // pressure entirely (0 Gen 2 collections per 10 s observed).
-            // Workaround for the burst-rate problem the foundation encoder
-            // exposes on busy content (see PR notes for the full story):
-            //
-            //   * Q=96 produces ~16 KB keyframes on the test pattern instead
-            //     of ~50 KB at the default Q=32. ~13 RTP packets per frame
-            //     instead of ~42, so each frame's burst is ~3x smaller.
-            //
-            //   * SetFrameRate(15) halves the burst frequency from 30/s
-            //     to 15/s, giving Chrome's UDP receive pipeline twice as
-            //     long to drain between bursts.
-            //
-            // Combined: ~5x reduction in burst pressure on the receiver,
-            // at the cost of visible blocking artefacts on the test
-            // pattern (which is intentionally high-detail). For typical
-            // webcam content the same defaults will produce smaller
-            // frames and the artefacts will be much less noticeable.
-            //
-            // The proper fix (RTP pacing in SIPSorcery's send path, and/or
-            // P-frames in VP8.Net) is a follow-up; this is the smallest
-            // configuration change that makes the audio stream survive
-            // beyond the few-tens-of-seconds window it was breaking at.
-            var vp8Codec = new VP8Codec { BaseQIndex = 96 };
+            // Pass the VP8 codec directly to the test pattern source so the
+            // source's GenerateTestPattern path calls EncodeVideo on the
+            // native I420 buffer and fires OnVideoSourceEncodedSample
+            // directly. Avoids a per-frame I420 -> BGR -> I420 round-trip
+            // that the alternative event-based wiring through a
+            // Vp8NetVideoEncoderEndPoint would incur (~1.4 MB / frame of
+            // throw-away allocations at 640x480, traced as the cause of
+            // ~6 Gen 2 GCs/sec under #1577).
+            var vp8Codec = new VP8Codec();
             var testPatternSource = new VideoTestPatternSource(vp8Codec);
-            testPatternSource.SetFrameRate(15);
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
@@ -129,78 +99,8 @@ namespace demo
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            // ---- Diagnostic packet counters ----
-            //
-            // Two counters logged once per second on each stream:
-            //
-            //   * "src":   packets handed off by the source to pc.Send*.
-            //              Increments iff the source is still producing
-            //              encoded samples — answers "did our test
-            //              source / encoder stop?".
-            //
-            //   * "rtcp":  cumulative PacketCount field of our outgoing
-            //              RTCP Sender Reports, fired by SIPSorcery's
-            //              RTPSession.OnSendReport. SIPSorcery emits an
-            //              SR roughly every 5 s and sets PacketCount to
-            //              the total number of RTP packets that have
-            //              actually left this peer. If this counter
-            //              keeps growing while Chrome's webrtc-internals
-            //              packetsReceived stalls, packets are leaving
-            //              the .NET app but Chrome is dropping them
-            //              (suspected SRTP / DTLS issue). If "rtcp"
-            //              stalls when "src" stalls, the issue is at or
-            //              above the SIPSorcery send path.
-            int audioSrcCount = 0, videoSrcCount = 0;
-
-            testPatternSource.OnVideoSourceEncodedSample += (rtpTs, frame) =>
-            {
-                pc.SendVideo(rtpTs, frame);
-                int n = System.Threading.Interlocked.Increment(ref videoSrcCount);
-                if (n % 15 == 0)
-                {
-                    // Log the current RTP sequence number alongside the
-                    // packet count so the wrap-around boundary
-                    // (65535 -> 0) is visible in the trace.  Hypothesis
-                    // being tested: audio/video stream loss correlates
-                    // with the 16-bit RTP sequence number wrapping for
-                    // the affected stream, suggesting an SRTP rollover-
-                    // counter bug somewhere in SIPSorcery's send path
-                    // (or BouncyCastle's wrapper of it).  Note the
-                    // SeqNum reported here is the *next* number the
-                    // track will assign (one ahead of what was just
-                    // sent), so the wrap shows as the value going from
-                    // ~65535 to a small number around the failure time.
-                    var seq = pc.VideoStream?.LocalTrack?.SeqNum;
-                    logger.LogInformation("video src: {Count} frames seq~{Seq} (~{Sec:F0}s at 15 fps)", n, seq, n / 15.0);
-                }
-            };
-
-            audioSource.OnAudioSourceEncodedSample += (rtpTs, sample) =>
-            {
-                pc.SendAudio(rtpTs, sample);
-                int n = System.Threading.Interlocked.Increment(ref audioSrcCount);
-                if (n % 50 == 0)
-                {
-                    var seq = pc.AudioStream?.LocalTrack?.SeqNum;
-                    logger.LogInformation("audio src: {Count} packets seq~{Seq} (~{Sec:F0}s at 50 pps)", n, seq, n / 50.0);
-                }
-            };
-
-            // Hook outgoing RTCP Sender Reports. PacketCount is the
-            // cumulative count of RTP packets the local SIPSorcery
-            // send path has emitted on each stream. Compare against
-            // Chrome's inbound-rtp packetsReceived to see whether
-            // packets are getting lost between the .NET app and
-            // Chrome. SIPSorcery emits SRs every ~5 s by default.
-            pc.OnSendReport += (mediaType, compound) =>
-            {
-                var sr = compound?.SenderReport;
-                if (sr != null)
-                {
-                    logger.LogInformation("rtcp SR {Media}: SSRC={SSRC,10} PacketCount={Pkts} OctetCount={Octets}",
-                        mediaType, sr.SSRC, sr.PacketCount, sr.OctetCount);
-                }
-            };
+            testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
             pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
             pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());

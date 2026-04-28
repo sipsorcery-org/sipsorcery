@@ -7,18 +7,19 @@ This is a **living record** — kept up to date as further progress lands.
 ## Headline
 
 The fifth AI attempt at this task is the first to clear the wall the previous
-four ran into. `VP8Codec.EncodeVideo` no longer throws; it produces a
-syntactically valid VP8 keyframe that **Chrome accepts and renders frame after
-frame without dropping the WebRTC stream** (38+ seconds observed during a
-webcam test). For uniform / synthetic test inputs the encode → decode round
-trip is byte-exact (or within ±2 of source on chroma at the fixed default
-quantizer of Q=32). For real webcam content the picture is currently a
-field of macroblock-aligned, structurally consistent — but wrongly coloured —
-blocks. The bitstream is valid; the colours are wrong because of one known
-bug (see "Known issues" below).
+four ran into. `VP8Codec.EncodeVideo` produces a fully-decodable VP8 keyframe
+stream that Chrome renders correctly and continuously — **the
+WebRTCGetStartedVP8Net example streams audio + video to Chrome at the
+default Q=32 / 30 fps for 7+ minutes with no audio loss and no video
+artefacts** (running on the `srtp-per-ssrc-rollover-counter` branch — see
+"Followup work" below for why that branch matters).
 
-Compared to the prior four entries in this diary, the difference is not
-the model alone — it's the working method. See "What worked" below.
+Encoder primitives are individually bit-exact-verified against libvpx C
+reference output. The end-to-end stream against Chrome is the structural
+signal that the foundation port worked.
+
+Compared to the prior four entries in this diary, the difference is not the
+model alone — it's the working method. See "What worked" below.
 
 ## Reframing of the original task
 
@@ -45,6 +46,99 @@ the same workstream:
 | [#1569](https://github.com/sipsorcery-org/sipsorcery/pull/1569) | Quantizer table builder (PR 5 of N) | `quantizer_init.cs` — turns a Q index into the six per-block-type tables |
 | [#1570](https://github.com/sipsorcery-org/sipsorcery/pull/1570) | Per-macroblock encode pipeline (PR 6 of N) | `mb_encoder.EncodeMacroblockDcPred` ties together predict → residual → fdct → walsh → quantize → tokenize → reconstruct for one MB |
 | [#1571](https://github.com/sipsorcery-org/sipsorcery/pull/1571) | Frame orchestration + `EncodeVideo` wire-up + round-trip (PR 7 of N) | `frame_encoder.cs`, the `vp8_block2above` / `vp8_block2left` tables, and the `VP8Codec.EncodeVideo` wiring; first frame to round-trip and first frame Chrome accepts |
+
+## Followup work (Apr 26-27)
+
+After the seven-PR foundation series merged the diary's original "Known
+issues" section flagged the cross-MB entropy-context bug. Working the
+issue list end-to-end uncovered three more layers of problems beneath
+it that the original diary entry didn't anticipate. Each new layer was
+only visible after the one above was fixed, and the final answer
+turned out to be a SIPSorcery library bug, not a VP8.Net bug.
+
+### Encoder follow-ups
+
+| PR | Title | What it did |
+| --- | --- | --- |
+| [#1574](https://github.com/sipsorcery-org/sipsorcery/pull/1574) | VP8 encoder: thread entropy contexts at frame scope (cross-MB fix) | Fixes the bug the original diary flagged. Lifts above/left context arrays out of per-MB allocation into frame scope; `mb_encoder.EncodeMacroblockDcPred` now accepts them by reference. Webcam content stops looking like macroblock confetti. |
+| [#1575](https://github.com/sipsorcery-org/sipsorcery/pull/1575) | VP8 encoder: emit per-MB skip flag (mb_no_skip_coeff = 1) | For MBs whose 25 transformed blocks are all EOB-only, write a 1-bit skip flag and suppress the entire token stream in partition 1. Mirrors libvpx's per-MB skip optimisation. |
+| [#1576](https://github.com/sipsorcery-org/sipsorcery/pull/1576) | VP8 encoder: allocation hygiene pass — eliminate per-frame GC pressure | ~18 MB → 0.01 MB allocations per 640×480 frame. ThreadStatic per-thread state pool, prob-row caching in `tokenize.SliceProbRow`, MbEncoderScratch pool, stackalloc for inner buffers. **Zero Gen 2 GCs in 500 frames** under microbenchmark (vs 30+ before). |
+
+### Example-app follow-ups
+
+| PR | Title | What it did |
+| --- | --- | --- |
+| [#1577](https://github.com/sipsorcery-org/sipsorcery/pull/1577) | WebRTCGetStartedVP8Net: pass VP8Codec directly to test source | Profiling found ~42 MB/sec of `byte[]` allocations from a needless I420→BGR→I420 round-trip in the example's wiring (the `OnVideoSourceRawSample` event path). Fixed by passing the codec directly to `VideoTestPatternSource`'s constructor, which has always supported the direct path. **Eliminates 6 Gen 2 GCs/sec** observed on the live stream. |
+| [#1578](https://github.com/sipsorcery-org/sipsorcery/pull/1578) | VP8: tunable BaseQIndex + Q=96/15fps workaround in GetStartedVP8Net | Adds `VP8Codec.BaseQIndex` so apps can trade quality for bitrate. Workaround that survived ~3 minutes of audio (vs 15-45s without it) by reducing burst pressure. Later partially superseded by the SRTP fix below; the BaseQIndex API stays. |
+
+### SRTP rollover investigation (the actual root cause)
+
+After the encoder optimisations and example-wiring fix landed, the
+WebRTCGetStartedVP8Net stream still lost audio after a variable interval
+(15-45s at default Q=32/30fps; ~3 min at Q=96/15fps). Multiple
+hypotheses were tried and falsified:
+
+- **Burst pressure on the receiver** — disproved by an
+  experimental RTP pacer (#1579, reverted in #1580): pacing reduced
+  bursts by 6× but audio still died at 25-45 s. The non-linear scaling
+  of survival time vs frame rate didn't fit a burst-overflow model
+  either.
+- **Music-source EOF** — disproved by inspecting the embedded
+  `Macroform_-_Simplicity.raw` file: 200.6 s long at 8 kHz Int16,
+  whereas audio died at 165 s with 35 s of music remaining.
+- **Various Chrome-side renderer / decoder issues** — disproved by
+  webrtc-internals data: `packetsLost = 0` on both streams at the
+  failure moment. Chrome wasn't dropping packets; it just stopped
+  *counting* them.
+
+Diagnostics added in [#1581](https://github.com/sipsorcery-org/sipsorcery/pull/1581)
+(per-second source counters + RTCP SR `PacketCount`) and
+[#1582](https://github.com/sipsorcery-org/sipsorcery/pull/1582)
+(RTP sequence-number logging) captured the smoking-gun timeline:
+
+```
+10:22:46  video src: 1440 frames seq~65443  ← pre-wrap
+10:22:47  video src: 1455 frames seq~117    ← WRAP
+10:22:47  audio src: 4800 packets seq~41801 ← audio at 41801, nowhere near wrap
+          (Chrome stops counting audio at this exact moment;
+           jitterBufferFlushes increments to 1.)
+```
+
+Audio failed at the moment **video's** RTP sequence number wrapped —
+even though audio's own sequence was nowhere near 65535. Aaron pointed
+out (correctly) that under WebRTC bundle the audio and video share an
+SRTP context. Code review of `SrtpContext.cs` found a single shared
+`Roc` (rollover counter) field on the context, used and incremented
+in `ProtectRtp` regardless of which SSRC's packet was being encrypted.
+Per RFC 3711 §3.2.1 the ROC is per-SSRC; the shared field is a bug.
+Wrap on any one stream desynchronises the keystream for every other
+stream sharing the context.
+
+The asymmetry that made the bug observable: the receive path
+(`UnprotectRtp`) was correct — it derives ROC per-SSRC via
+`ssrcContext.S_l` from the existing per-SSRC `ReplayProtection`
+dictionary. So sender encrypted audio with `roc=1` (post video wrap),
+receiver decrypted with `roc=0` (audio's per-SSRC inferred ROC), HMAC
+mismatch, packet silently dropped. Sender-side counters and RTCP SR
+`PacketCount` kept incrementing, while Chrome's `packetsReceived`
+flatlined.
+
+| PR | Title | What it did |
+| --- | --- | --- |
+| [#1581](https://github.com/sipsorcery-org/sipsorcery/pull/1581) | Add per-second source + RTCP packet-count diagnostics | Per-second `src` counter + `pc.OnSendReport` logging. Decision matrix: `src grows / rtcp grows / packetsReceived stalls` ⇒ packets leave the .NET app but Chrome silently drops them. |
+| [#1582](https://github.com/sipsorcery-org/sipsorcery/pull/1582) | Log RTP sequence number alongside packet counter | Added `LocalTrack.SeqNum` to the per-second log so the wrap moment is visible in the trace. The line where seq jumps from ~65535 to a small number lined up exactly with audio's death timestamp at Chrome. |
+| [#1584](https://github.com/sipsorcery-org/sipsorcery/pull/1584) | SRTP (send): per-SSRC rollover counter (RFC 3711 §3.2.1) | The fix. Adds `OutboundRoc` per-SSRC on `SsrcSrtpContext`; `ProtectRtp` now reads / increments via `ReplayProtection.TryGetValue(ssrc, ...)` instead of `context.Roc`. Marks the legacy `Roc` property obsolete. Plus a regression test in `test/unit/net/SRTP/SrtpContextRolloverUnitTest.cs` that demonstrates the bug and its fix. |
+
+After #1584 the WebRTCGetStartedVP8Net example streams cleanly to
+Chrome at default settings for 7+ minutes (and counting). The bug was
+in SIPSorcery's SRTP path — affecting any multi-SSRC outbound RTP
+session, WebRTC bundle or otherwise. The reason VP8.Net surfaced it
+where the libvpx-based example doesn't is purely packet rate: VP8.Net's
+keyframe-only stream wraps the video sequence number every 30-50
+seconds; libvpx's mostly-P-frame stream wraps roughly an order of
+magnitude less often, so the bug is statistically much rarer to hit.
+
+## Capabilities of the encoder as it stands
 
 ## Capabilities of the encoder as it stands
 
@@ -76,31 +170,12 @@ clean starting list):
 
 ## Known issues
 
-**Cross-MB entropy-context propagation bug.** This is the one defect
-that's currently visible. Each macroblock's `above_context` /
-`left_context` state is correctly threaded *within* a macroblock, but
-it's reset to zero at each macroblock boundary instead of being threaded
-across macroblocks at frame scope. For uniform-pixel inputs that's
-invisible (every block reduces to a single EOB token, so context choice
-doesn't change which bits are written), which is exactly what the unit
-tests exercise. For real content with non-zero residuals everywhere, the
-decoder reads the encoder's bits with a different probability row from
-the one the encoder used, and every block past the first column / first
-row of each MB gets the wrong context.
-
-The visible symptom on a webcam stream is a stable, macroblock-aligned
-field of solid-coloured blocks with a vague spatial gradient — DC
-components survive (which is why the picture has the right rough
-brightness shape), but everything else is corrupted by the
-probability-row mismatch.
-
-The fix is mapped out: lift the contexts to frame scope (one
-`above_context` array indexed by MB column position, one `left_context`
-reset at the start of each MB row), thread them through
-`mb_encoder.EncodeMacroblockDcPred` instead of allocating fresh zero
-arrays per call. Add a checkerboard-pattern frame test that deliberately
-exercises non-uniform cross-MB content — that's the test the existing
-suite was missing.
+(All previously listed defects have been resolved. The original
+cross-MB entropy-context bug was fixed by #1574; the multi-second
+audio-loss-on-Chrome problem was traced to a SIPSorcery library bug
+in the SRTP send path and fixed by #1584. Anything remaining is in
+the "Roadmap" section below as a planned addition rather than a
+defect.)
 
 ## What worked (compared to the four prior attempts)
 
@@ -140,27 +215,25 @@ shape that broke that streak this time:
 
 ## Roadmap
 
-Immediate next PR (the bug fix):
+With the SRTP fix in place the encoder is functional for production
+streaming at default settings. Remaining items are quality / efficiency
+enhancements rather than correctness fixes:
 
-- Lift `above_context` / `left_context` to frame scope in
-  `frame_encoder.cs`; pass into `mb_encoder.EncodeMacroblockDcPred`
-  by reference instead of letting `mb_encoder` allocate its own.
-- Add `frame_encoder_unittest.cs` checkerboard test: 16×16 source with
-  a half-MB-wide vertical stripe at Y=64 vs Y=192, encode → decode →
-  assert mean-absolute-error < threshold. This test will fail on
-  current master and pass after the fix.
-
-Beyond that, the natural follow-up sequence:
-
-1. All other intra modes (V_PRED, H_PRED, TM_PRED for Y; the 4 UV
-   modes; B_PRED for 4×4 luma).
-2. A trivial mode picker — pick the one that minimises sum-of-squared
-   error on the residual.
-3. Inter / P-frames: motion vector entropy, `vp8_pack_mb_row` for
+1. **Other intra modes** (V_PRED, H_PRED, TM_PRED for Y; the 4 UV
+   modes; B_PRED for 4×4 luma). Improves compression on detailed
+   content; the current DC_PRED-only encoder is the lowest-quality
+   intra option.
+2. **A trivial mode picker** — pick the one that minimises
+   sum-of-squared error on the residual. Pairs with (1).
+3. **Inter / P-frames**: motion vector entropy, `vp8_pack_mb_row` for
    non-keyframe partitions, `last_frame` reference frame management,
    ZEROMV / NEAREST / NEAR / NEWMV. (This is where libvpx is biggest;
-   would itself span several PRs.)
-4. Optional: rate control loop.
+   would itself span several PRs.) Would drop the steady-state
+   bitrate by 10-100×, dramatically lowering bandwidth for typical
+   webcam content. No longer urgent now that the encoder works at
+   default settings.
+4. **Optional: rate control loop.** Useful only if production deployments
+   want guaranteed bitrate caps.
 
 Each of these is plausibly one PR of foundation-series scope.
 
