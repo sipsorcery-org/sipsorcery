@@ -78,9 +78,13 @@ await testPatternSource.StartVideo();
 
 The repository includes two end-to-end demos that use this package:
 
-- **[WebRTCGetStartedVP8Net](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStartedVP8Net)**
-  -- pure C# WebRTC server streaming an animated test pattern + audio
-  to a browser.
+- **[WebRTCGetStarted](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCGetStarted)**
+  -- the main repo getting-started demo. Pure C# WebRTC server
+  streaming an animated test pattern + audio to a browser, using
+  SIPSorcery.VP8 as the video encoder. (Originally
+  WebRTCGetStartedVP8Net; promoted to be the canonical getting-started
+  example now that the pure C# VP8 path is the default for in-tree
+  WebRTC video.)
 - **[WebRTCClientVP8Net](https://github.com/sipsorcery-org/sipsorcery/tree/master/examples/WebRTCExamples/WebRTCClientVP8Net)**
   -- pure C# WebRTC client receiving a VP8 stream from a browser and
   decoding it locally.
