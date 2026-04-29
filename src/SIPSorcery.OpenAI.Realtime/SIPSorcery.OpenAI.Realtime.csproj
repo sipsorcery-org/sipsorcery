@@ -29,7 +29,7 @@
     <Product>SIPSorcery.OpenAI.Realtime</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorcery.OpenAI.Realtime</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>

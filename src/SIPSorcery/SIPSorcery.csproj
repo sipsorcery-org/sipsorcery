@@ -14,7 +14,7 @@
     <EmbeddedResource Include="media\Macroform_-_Simplicity.raw" />
     <EmbeddedResource Include="media\testpattern.i420" />
     <None Include="icon.png" Pack="true" PackagePath="" />
-    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,7 +59,7 @@
     <PackageId>SIPSorcery</PackageId>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorcery</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
