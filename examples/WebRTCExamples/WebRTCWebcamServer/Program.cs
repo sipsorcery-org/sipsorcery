@@ -26,15 +26,19 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
 using SIPSorceryMedia.Windows;
+using Vpx.Net;
 using WebSocketSharp.Server;
 
 namespace demo
 {
     class Program
     {
+        private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
+
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
         //private const string WEBCAM_NAME = "Logitech QuickCam Pro 9000";
@@ -45,7 +49,6 @@ namespace demo
         static void Main()
         {
             Console.WriteLine("WebRTC Webcam Send Demo");
-            Console.WriteLine("Press ctrl-c to exit.");
 
             logger = AddConsoleLogger();
 
@@ -64,6 +67,16 @@ namespace demo
             //    throw new ApplicationException("Could not initialise video capture device.");
             //}
             //await winVideoEP.StartVideo();
+
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, logger);
+            }
+            else
+            {
+                FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+            }
+
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -94,12 +107,14 @@ namespace demo
             };
             var pc = new RTCPeerConnection(config);
 
-            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VP8Codec(), WEBCAM_NAME);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VP8Codec(), WEBCAM_NAME, 960, 720, 30);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME);
+            //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new VpxVideoEncoder(), WEBCAM_NAME, 1920, 1080, 30);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new FFmpegVideoEncoder(), WEBCAM_NAME);
+            WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(new FFmpegVideoEncoder(), WEBCAM_NAME, 1920, 1080, 30);
             //WindowsVideoEndPoint winVideoEP = new WindowsVideoEndPoint(WEBCAM_NAME, 1920, 1080, 30);
-            //winVideoEP.RestrictFormats(x => x.Codec == SIPSorceryMedia.Abstractions.V1.VideoCodecsEnum.H264);
-
-
+            winVideoEP.RestrictFormats(x => x.Codec == VideoCodecsEnum.H264);
 
             bool initResult = await winVideoEP.InitialiseVideoSourceDevice();
             if (!initResult)

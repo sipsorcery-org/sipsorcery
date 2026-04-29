@@ -16,6 +16,7 @@
   </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\src\SIPSOrcery.VP8\SIPSorcery.VP8.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
         <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
