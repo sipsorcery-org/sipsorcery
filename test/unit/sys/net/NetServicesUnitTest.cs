@@ -366,15 +366,17 @@ namespace SIPSorcery.Sys.UnitTests
 
                 // Note Ubuntu on Windows Subsystem for Linux (WSL2) does NOT throw a binding exception and allows
                 // the duplicate binding the same as Windows.
-                if (Environment.OSVersion.Platform == PlatformID.Unix &&
-                    !RuntimeInformation.OSDescription.Contains("Microsoft") &&  // WSL does not throw on duplicate bind attempt.
-                    !RuntimeInformation.OSDescription.Contains("Darwin"))       // MacOS does not throw. 
+                // Use RuntimeInformation.IsOSPlatform for reliable OS detection across .NET versions.
+                bool isLinuxNotWSL = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) &&
+                    !RuntimeInformation.OSDescription.Contains("Microsoft");  // WSL does not throw on duplicate bind attempt.
+                
+                if (isLinuxNotWSL)
                 {
                     Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
                 }
                 else
                 {
-                    // No exception on Windows or Ubuntu.
+                    // No exception on Windows, MacOS, or WSL.
                     socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
 
                     Assert.True(DoTestReceive(socket4Any, null));
