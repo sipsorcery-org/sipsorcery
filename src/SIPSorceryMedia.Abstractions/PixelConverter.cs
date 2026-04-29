@@ -561,7 +561,6 @@ namespace SIPSorceryMedia.Abstractions
                     var uv0 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, i * 2));
                     var uv1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, i * 2 + 32));
 
-                    // Narrow and widen to separate: 
                     // Use shuffle to de-interleave - extract even bytes (U) and odd bytes (V)
                     var (u0, v0) = DeinterleaveVector256(uv0);
                     var (u1, v1) = DeinterleaveVector256(uv1);
