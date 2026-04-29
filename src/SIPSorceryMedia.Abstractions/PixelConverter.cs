@@ -53,6 +53,8 @@ namespace SIPSorceryMedia.Abstractions
                     return PixelConverter.RGBAtoI420(sample, width, height, stride);
                 case VideoPixelFormatsEnum.Rgb:
                     return PixelConverter.RGBtoI420(sample, width, height, stride);
+                case VideoPixelFormatsEnum.NV12:
+                    return PixelConverter.NV12toI420(sample, width, height);
                 default:
                     throw new ApplicationException($"Pixel format {pixelFormat} does not have an I420 conversion implemented.");
             }
@@ -471,6 +473,108 @@ namespace SIPSorceryMedia.Abstractions
             });
 
             return bgr;
+        }
+
+        /// <summary>
+        /// Converts an NV12 sample to an I420 formatted sample.
+        /// NV12: Y plane followed by interleaved UV plane (UVUVUV...).
+        /// I420: Y plane followed by U plane, then V plane (planar format).
+        /// </summary>
+        /// <param name="nv12">The NV12 image sample.</param>
+        /// <param name="width">The width in pixels of the NV12 sample.</param>
+        /// <param name="height">The height in pixels of the NV12 sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
+        /// <returns>An I420 buffer representing the source image.</returns>
+        public static byte[] NV12toI420(byte[] nv12, int width, int height, int dop = 1)
+        {
+            int ySize = width * height;
+            int uvWidth = (width + 1) / 2;
+            int uvHeight = (height + 1) / 2;
+            int uvSize = uvWidth * uvHeight * 2;
+
+            if (nv12 == null || nv12.Length < (ySize + uvSize))
+            {
+                throw new ApplicationException($"NV12 buffer supplied to NV12toI420 was too small, expected {ySize + uvSize} but got {nv12?.Length}.");
+            }
+
+            byte[] i420 = new byte[ySize + uvSize];
+
+            // Copy Y plane (same layout in both formats).
+            Buffer.BlockCopy(nv12, 0, i420, 0, ySize);
+
+            int nv12UvOffset = ySize;
+            int i420UOffset = ySize;
+            int i420VOffset = ySize + uvWidth * uvHeight;
+
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            // De-interleave UV plane: NV12 has UV interleaved, I420 has separate U and V planes.
+            Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
+            {
+                for (int col = 0; col < uvWidth; col++)
+                {
+                    int nv12Posn = nv12UvOffset + row * uvWidth * 2 + col * 2;
+                    int i420UPosn = i420UOffset + row * uvWidth + col;
+                    int i420VPosn = i420VOffset + row * uvWidth + col;
+
+                    i420[i420UPosn] = nv12[nv12Posn];       // U
+                    i420[i420VPosn] = nv12[nv12Posn + 1];   // V
+                }
+            });
+
+            return i420;
+        }
+
+        /// <summary>
+        /// Converts an I420 sample to an NV12 formatted sample.
+        /// I420: Y plane followed by U plane, then V plane (planar format).
+        /// NV12: Y plane followed by interleaved UV plane (UVUVUV...).
+        /// </summary>
+        /// <param name="i420">The I420 image sample.</param>
+        /// <param name="width">The width in pixels of the I420 sample.</param>
+        /// <param name="height">The height in pixels of the I420 sample.</param>
+        /// <param name="dop">The degree of parallelism for converting.</param>
+        /// <returns>An NV12 buffer representing the source image.</returns>
+        public static byte[] I420toNV12(byte[] i420, int width, int height, int dop = 1)
+        {
+            int ySize = width * height;
+            int uvWidth = (width + 1) / 2;
+            int uvHeight = (height + 1) / 2;
+            int uvSize = uvWidth * uvHeight * 2;
+
+            if (i420 == null || i420.Length < (ySize + uvSize))
+            {
+                throw new ApplicationException($"I420 buffer supplied to I420toNV12 was too small, expected {ySize + uvSize} but got {i420?.Length}.");
+            }
+
+            byte[] nv12 = new byte[ySize + uvSize];
+
+            // Copy Y plane (same layout in both formats).
+            Buffer.BlockCopy(i420, 0, nv12, 0, ySize);
+
+            int i420UOffset = ySize;
+            int i420VOffset = ySize + uvWidth * uvHeight;
+            int nv12UvOffset = ySize;
+
+            if (!_optDOP.ContainsKey(dop))
+                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+
+            // Interleave UV plane: I420 has separate U and V planes, NV12 has UV interleaved.
+            Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
+            {
+                for (int col = 0; col < uvWidth; col++)
+                {
+                    int i420UPosn = i420UOffset + row * uvWidth + col;
+                    int i420VPosn = i420VOffset + row * uvWidth + col;
+                    int nv12Posn = nv12UvOffset + row * uvWidth * 2 + col * 2;
+
+                    nv12[nv12Posn] = i420[i420UPosn];       // U
+                    nv12[nv12Posn + 1] = i420[i420VPosn];   // V
+                }
+            });
+
+            return nv12;
         }
     }
 }

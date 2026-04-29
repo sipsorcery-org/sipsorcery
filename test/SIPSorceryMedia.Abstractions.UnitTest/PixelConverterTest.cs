@@ -277,6 +277,189 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             }
         }
 
+        /// <summary>
+        /// Tests that a known NV12 image can be converted to I420 and the resulting
+        /// image can be rendered to a bitmap.
+        /// </summary>
+        [Fact]
+        public unsafe void ConvertNV12ToI420Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            int width = 640;
+            int height = 480;
+
+            byte[] nv12 = File.ReadAllBytes("img/ref-nv12.yuv");
+            byte[] i420 = PixelConverter.NV12toI420(nv12, width, height);
+
+            Assert.NotNull(i420);
+            // I420 and NV12 have the same size: Y + UV = width*height + (width/2)*(height/2)*2
+            Assert.Equal(nv12.Length, i420.Length);
+
+            // Convert the I420 to BGR for visual verification.
+            byte[] bgr = PixelConverter.I420toBGR(i420, width, height, out int stride);
+
+            fixed (byte* s = bgr)
+            {
+                Bitmap bmp = new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                bmp.Save("ConvertNV12ToI420Test.bmp");
+                bmp.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Tests that a known I420 image can be converted to NV12 and the resulting
+        /// image can be rendered to a bitmap.
+        /// </summary>
+        [Fact]
+        public unsafe void ConvertI420ToNV12Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            int width = 640;
+            int height = 480;
+            int stride = width * 3;
+
+            byte[] i420 = File.ReadAllBytes("img/ref-i420.yuv");
+            byte[] nv12 = PixelConverter.I420toNV12(i420, width, height);
+
+            Assert.NotNull(nv12);
+            // I420 and NV12 have the same size: Y + UV = width*height + (width/2)*(height/2)*2
+            Assert.Equal(i420.Length, nv12.Length);
+
+            // Convert the NV12 to BGR for visual verification.
+            byte[] bgr = PixelConverter.NV12toBGR(nv12, width, height, stride);
+
+            fixed (byte* s = bgr)
+            {
+                Bitmap bmp = new Bitmap(width, height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                bmp.Save("ConvertI420ToNV12Test.bmp");
+                bmp.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Tests that an NV12 buffer can be round tripped to I420 and back to NV12.
+        /// </summary>
+        [Fact]
+        public void RoundtripNV12ToI420Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            int width = 640;
+            int height = 480;
+
+            byte[] originalNv12 = File.ReadAllBytes("img/ref-nv12.yuv");
+            byte[] i420 = PixelConverter.NV12toI420(originalNv12, width, height);
+            byte[] roundtripNv12 = PixelConverter.I420toNV12(i420, width, height);
+
+            Assert.Equal(originalNv12.Length, roundtripNv12.Length);
+
+            // The round-tripped NV12 should be identical to the original.
+            for (int i = 0; i < originalNv12.Length; i++)
+            {
+                Assert.Equal(originalNv12[i], roundtripNv12[i]);
+            }
+        }
+
+        /// <summary>
+        /// Tests that an I420 buffer can be round tripped to NV12 and back to I420.
+        /// </summary>
+        [Fact]
+        public void RoundtripI420ToNV12Test()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            int width = 640;
+            int height = 480;
+
+            byte[] originalI420 = File.ReadAllBytes("img/ref-i420.yuv");
+            byte[] nv12 = PixelConverter.I420toNV12(originalI420, width, height);
+            byte[] roundtripI420 = PixelConverter.NV12toI420(nv12, width, height);
+
+            Assert.Equal(originalI420.Length, roundtripI420.Length);
+
+            // The round-tripped I420 should be identical to the original.
+            for (int i = 0; i < originalI420.Length; i++)
+            {
+                Assert.Equal(originalI420[i], roundtripI420[i]);
+            }
+        }
+
+        /// <summary>
+        /// Tests that NV12 to I420 conversion works with odd dimensions.
+        /// </summary>
+        [Fact]
+        public void ConvertOddDimensionNV12ToI420Test()
+        {
+            int width = 5;
+            int height = 3;
+            int ySize = width * height;
+            int uvWidth = (width + 1) / 2;
+            int uvHeight = (height + 1) / 2;
+            int uvSize = uvWidth * uvHeight * 2;
+
+            byte[] nv12 = new byte[ySize + uvSize];
+            byte[] i420 = PixelConverter.NV12toI420(nv12, width, height);
+
+            Assert.NotNull(i420);
+            Assert.Equal(nv12.Length, i420.Length);
+        }
+
+        /// <summary>
+        /// Tests that I420 to NV12 conversion works with odd dimensions.
+        /// </summary>
+        [Fact]
+        public void ConvertOddDimensionI420ToNV12Test()
+        {
+            int width = 5;
+            int height = 3;
+            int ySize = width * height;
+            int uvWidth = (width + 1) / 2;
+            int uvHeight = (height + 1) / 2;
+            int uvSize = uvWidth * uvHeight * 2;
+
+            byte[] i420 = new byte[ySize + uvSize];
+            byte[] nv12 = PixelConverter.I420toNV12(i420, width, height);
+
+            Assert.NotNull(nv12);
+            Assert.Equal(i420.Length, nv12.Length);
+        }
+
+        /// <summary>
+        /// Tests that an NV12 buffer with less than the required data throws an exception.
+        /// </summary>
+        [Fact]
+        public void WrongSizeNV12ToI420Test()
+        {
+            int width = 720;
+            int height = 480;
+            int expectedSize = width * height * 3 / 2;
+
+            // Provide a buffer that is too small.
+            byte[] nv12 = new byte[expectedSize - 1];
+            Assert.Throws<ApplicationException>(() => PixelConverter.NV12toI420(nv12, width, height));
+        }
+
+        /// <summary>
+        /// Tests that an I420 buffer with less than the required data throws an exception.
+        /// </summary>
+        [Fact]
+        public void WrongSizeI420ToNV12Test()
+        {
+            int width = 720;
+            int height = 480;
+            int expectedSize = width * height * 3 / 2;
+
+            // Provide a buffer that is too small.
+            byte[] i420 = new byte[expectedSize - 1];
+            Assert.Throws<ApplicationException>(() => PixelConverter.I420toNV12(i420, width, height));
+        }
+
         private static byte[] BitmapToBuffer(Bitmap bitmap, out int stride)
         {
             BitmapData bmpdata = null;
