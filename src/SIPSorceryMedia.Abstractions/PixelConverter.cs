@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+#if NET8_0_OR_GREATER
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+#endif
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions
@@ -506,6 +511,10 @@ namespace SIPSorceryMedia.Abstractions
             int i420UOffset = ySize;
             int i420VOffset = ySize + uvWidth * uvHeight;
 
+#if NET8_0_OR_GREATER
+            // Use SIMD for de-interleaving UV plane when available
+            DeinterleaveUVSimd(nv12, nv12UvOffset, i420, i420UOffset, i420VOffset, uvWidth, uvHeight);
+#else
             if (!_optDOP.ContainsKey(dop))
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
 
@@ -522,9 +531,120 @@ namespace SIPSorceryMedia.Abstractions
                     i420[i420VPosn] = nv12[nv12Posn + 1];   // V
                 }
             });
+#endif
 
             return i420;
         }
+
+#if NET8_0_OR_GREATER
+        /// <summary>
+        /// SIMD-optimized de-interleave of UV plane from NV12 format (UVUVUV...) to I420 format (separate U and V planes).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void DeinterleaveUVSimd(byte[] src, int srcOffset, byte[] dst, int dstUOffset, int dstVOffset, int uvWidth, int uvHeight)
+        {
+            int totalUV = uvWidth * uvHeight;
+            int i = 0;
+
+            ref byte srcRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcOffset);
+            ref byte dstURef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstUOffset);
+            ref byte dstVRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstVOffset);
+
+            // Process 32 UV pairs at a time (64 bytes) using Vector256
+            if (Vector256.IsHardwareAccelerated)
+            {
+                // Indices for de-interleaving: extract U values (even positions) and V values (odd positions)
+                // For byte pairs: [U0,V0,U1,V1,U2,V2,...] -> U: [U0,U1,U2,...], V: [V0,V1,V2,...]
+                for (; i <= totalUV - 32; i += 32)
+                {
+                    // Load 64 bytes (32 UV pairs)
+                    var uv0 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, i * 2));
+                    var uv1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, i * 2 + 32));
+
+                    // Narrow and widen to separate: 
+                    // Use shuffle to de-interleave - extract even bytes (U) and odd bytes (V)
+                    var (u0, v0) = DeinterleaveVector256(uv0);
+                    var (u1, v1) = DeinterleaveVector256(uv1);
+
+                    // Combine into 256-bit vectors
+                    var u = Vector256.Create(u0, u1);
+                    var v = Vector256.Create(v0, v1);
+
+                    u.StoreUnsafe(ref Unsafe.Add(ref dstURef, i));
+                    v.StoreUnsafe(ref Unsafe.Add(ref dstVRef, i));
+                }
+            }
+
+            // Process 16 UV pairs at a time (32 bytes) using Vector128
+            if (Vector128.IsHardwareAccelerated)
+            {
+                for (; i <= totalUV - 16; i += 16)
+                {
+                    // Load 32 bytes (16 UV pairs)
+                    var uv0 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, i * 2));
+                    var uv1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, i * 2 + 16));
+
+                    var (u0, v0) = DeinterleaveVector128(uv0);
+                    var (u1, v1) = DeinterleaveVector128(uv1);
+
+                    var u = Vector128.Create(u0, u1);
+                    var v = Vector128.Create(v0, v1);
+
+                    u.StoreUnsafe(ref Unsafe.Add(ref dstURef, i));
+                    v.StoreUnsafe(ref Unsafe.Add(ref dstVRef, i));
+                }
+            }
+
+            // Handle remaining elements with scalar code
+            for (; i < totalUV; i++)
+            {
+                Unsafe.Add(ref dstURef, i) = Unsafe.Add(ref srcRef, i * 2);
+                Unsafe.Add(ref dstVRef, i) = Unsafe.Add(ref srcRef, i * 2 + 1);
+            }
+        }
+
+        /// <summary>
+        /// De-interleave 16 byte pairs from a Vector256 into two Vector128 containing U and V values.
+        /// Input: [U0,V0,U1,V1,U2,V2,...,U15,V15]
+        /// Output: U=[U0,U1,...,U15], V=[V0,V1,...,V15]
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static (Vector128<byte> u, Vector128<byte> v) DeinterleaveVector256(Vector256<byte> uv)
+        {
+            // Extract low and high 128-bit halves
+            var low = uv.GetLower();   // [U0,V0,U1,V1,U2,V2,U3,V3,U4,V4,U5,V5,U6,V6,U7,V7]
+            var high = uv.GetUpper();  // [U8,V8,U9,V9,U10,V10,U11,V11,U12,V12,U13,V13,U14,V14,U15,V15]
+
+            var (uLow, vLow) = DeinterleaveVector128(low);
+            var (uHigh, vHigh) = DeinterleaveVector128(high);
+
+            // Combine halves
+            var u = Vector128.Create(uLow, uHigh);
+            var v = Vector128.Create(vLow, vHigh);
+
+            return (u, v);
+        }
+
+        /// <summary>
+        /// De-interleave 8 byte pairs from a Vector128 into two Vector64 containing U and V values.
+        /// Input: [U0,V0,U1,V1,U2,V2,U3,V3,U4,V4,U5,V5,U6,V6,U7,V7]
+        /// Output: U=[U0,U1,U2,U3,U4,U5,U6,U7], V=[V0,V1,V2,V3,V4,V5,V6,V7]
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static (Vector64<byte> u, Vector64<byte> v) DeinterleaveVector128(Vector128<byte> uv)
+        {
+            // Shuffle bytes to gather all U values in low 64 bits and V values in high 64 bits
+            // This shuffle pattern extracts even indices (U) to the first 8 bytes and odd indices (V) to the last 8 bytes
+            var shuffleIndices = Vector128.Create(
+                (byte)0, 2, 4, 6, 8, 10, 12, 14,  // U indices (even positions)
+                1, 3, 5, 7, 9, 11, 13, 15         // V indices (odd positions)
+            );
+
+            var shuffled = Vector128.Shuffle(uv, shuffleIndices);
+
+            return (shuffled.GetLower(), shuffled.GetUpper());
+        }
+#endif
 
         /// <summary>
         /// Converts an I420 sample to an NV12 formatted sample.
@@ -557,6 +677,10 @@ namespace SIPSorceryMedia.Abstractions
             int i420VOffset = ySize + uvWidth * uvHeight;
             int nv12UvOffset = ySize;
 
+#if NET8_0_OR_GREATER
+            // Use SIMD for interleaving U and V planes when available
+            InterleaveUVSimd(i420, i420UOffset, i420VOffset, nv12, nv12UvOffset, uvWidth, uvHeight);
+#else
             if (!_optDOP.ContainsKey(dop))
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
 
@@ -573,8 +697,129 @@ namespace SIPSorceryMedia.Abstractions
                     nv12[nv12Posn + 1] = i420[i420VPosn];   // V
                 }
             });
+#endif
 
             return nv12;
         }
+
+#if NET8_0_OR_GREATER
+        /// <summary>
+        /// SIMD-optimized interleave of separate U and V planes from I420 format to NV12 format (UVUVUV...).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InterleaveUVSimd(byte[] src, int srcUOffset, int srcVOffset, byte[] dst, int dstOffset, int uvWidth, int uvHeight)
+        {
+            int totalUV = uvWidth * uvHeight;
+            int i = 0;
+
+            ref byte srcURef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcUOffset);
+            ref byte srcVRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcVOffset);
+            ref byte dstRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstOffset);
+
+            // Process 32 U/V values at a time using Vector256
+            if (Vector256.IsHardwareAccelerated)
+            {
+                for (; i <= totalUV - 32; i += 32)
+                {
+                    // Load 32 U values and 32 V values
+                    var u = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcURef, i));
+                    var v = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcVRef, i));
+
+                    // Interleave U and V values
+                    var (uv0, uv1) = InterleaveVector256(u, v);
+
+                    // Store 64 bytes (32 UV pairs)
+                    uv0.StoreUnsafe(ref Unsafe.Add(ref dstRef, i * 2));
+                    uv1.StoreUnsafe(ref Unsafe.Add(ref dstRef, i * 2 + 32));
+                }
+            }
+
+            // Process 16 U/V values at a time using Vector128
+            if (Vector128.IsHardwareAccelerated)
+            {
+                for (; i <= totalUV - 16; i += 16)
+                {
+                    // Load 16 U values and 16 V values
+                    var u = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcURef, i));
+                    var v = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcVRef, i));
+
+                    // Interleave U and V values
+                    var (uv0, uv1) = InterleaveVector128(u, v);
+
+                    // Store 32 bytes (16 UV pairs)
+                    uv0.StoreUnsafe(ref Unsafe.Add(ref dstRef, i * 2));
+                    uv1.StoreUnsafe(ref Unsafe.Add(ref dstRef, i * 2 + 16));
+                }
+            }
+
+            // Handle remaining elements with scalar code
+            for (; i < totalUV; i++)
+            {
+                Unsafe.Add(ref dstRef, i * 2) = Unsafe.Add(ref srcURef, i);
+                Unsafe.Add(ref dstRef, i * 2 + 1) = Unsafe.Add(ref srcVRef, i);
+            }
+        }
+
+        /// <summary>
+        /// Interleave two Vector256 of U and V values into two Vector256 of interleaved UV pairs.
+        /// Input: U=[U0,U1,...,U31], V=[V0,V1,...,V31]
+        /// Output: UV0=[U0,V0,U1,V1,...,U15,V15], UV1=[U16,V16,...,U31,V31]
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static (Vector256<byte> uv0, Vector256<byte> uv1) InterleaveVector256(Vector256<byte> u, Vector256<byte> v)
+        {
+            // Get low and high halves
+            var uLow = u.GetLower();   // U0-U15
+            var uHigh = u.GetUpper();  // U16-U31
+            var vLow = v.GetLower();   // V0-V15
+            var vHigh = v.GetUpper();  // V16-V31
+
+            // Interleave low halves -> first 32 bytes
+            var (uv0Low, uv0High) = InterleaveVector128ToTwo(uLow, vLow);
+            var uv0 = Vector256.Create(uv0Low, uv0High);
+
+            // Interleave high halves -> second 32 bytes
+            var (uv1Low, uv1High) = InterleaveVector128ToTwo(uHigh, vHigh);
+            var uv1 = Vector256.Create(uv1Low, uv1High);
+
+            return (uv0, uv1);
+        }
+
+        /// <summary>
+        /// Interleave two Vector128 of U and V values into two Vector128 of interleaved UV pairs.
+        /// Input: U=[U0,U1,...,U15], V=[V0,V1,...,V15]
+        /// Output: UV0=[U0,V0,U1,V1,...,U7,V7], UV1=[U8,V8,...,U15,V15]
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static (Vector128<byte> uv0, Vector128<byte> uv1) InterleaveVector128(Vector128<byte> u, Vector128<byte> v)
+        {
+            return InterleaveVector128ToTwo(u, v);
+        }
+
+        /// <summary>
+        /// Interleave two Vector128 of 16 bytes each into two Vector128 of interleaved pairs.
+        /// Input: A=[A0,A1,...,A15], B=[B0,B1,...,B15]
+        /// Output: Out0=[A0,B0,A1,B1,...,A7,B7], Out1=[A8,B8,...,A15,B15]
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static (Vector128<byte> out0, Vector128<byte> out1) InterleaveVector128ToTwo(Vector128<byte> a, Vector128<byte> b)
+        {
+            // Create interleave shuffle patterns for low and high halves
+            // Low: takes elements 0-7 from A and B, interleaves them
+            // Pattern for first 8 pairs: A0,B0,A1,B1,A2,B2,A3,B3,A4,B4,A5,B5,A6,B6,A7,B7
+            var shuffleLowA = Vector128.Create((byte)0, 255, 1, 255, 2, 255, 3, 255, 4, 255, 5, 255, 6, 255, 7, 255);
+            var shuffleLowB = Vector128.Create((byte)255, 0, 255, 1, 255, 2, 255, 3, 255, 4, 255, 5, 255, 6, 255, 7);
+            
+            // Pattern for second 8 pairs: A8,B8,A9,B9,...,A15,B15
+            var shuffleHighA = Vector128.Create((byte)8, 255, 9, 255, 10, 255, 11, 255, 12, 255, 13, 255, 14, 255, 15, 255);
+            var shuffleHighB = Vector128.Create((byte)255, 8, 255, 9, 255, 10, 255, 11, 255, 12, 255, 13, 255, 14, 255, 15);
+
+            // Shuffle and OR to combine
+            var out0 = Vector128.Shuffle(a, shuffleLowA) | Vector128.Shuffle(b, shuffleLowB);
+            var out1 = Vector128.Shuffle(a, shuffleHighA) | Vector128.Shuffle(b, shuffleHighB);
+
+            return (out0, out1);
+        }
+#endif
     }
 }
