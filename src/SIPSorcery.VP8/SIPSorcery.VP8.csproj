@@ -20,7 +20,7 @@ A .NET library that implements the VP8 video codec. This package is intended to 
     <Product>SIPSorcery.VP8</Product>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorcery.VP8</PackageProjectUrl>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>

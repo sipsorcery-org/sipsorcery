@@ -26,6 +26,7 @@
     <Product>SIPSorceryMedia.Windows</Product>
     <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.Windows</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
     <Version>10.0.6</Version>

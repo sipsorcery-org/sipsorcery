@@ -36,7 +36,8 @@
 		<Product>SIPSorceryMedia.FFmpeg</Product>
 		<PackageId>SIPSorceryMedia.FFmpeg</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+		<PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.FFmpeg</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
 		<PackageIcon>icon.png</PackageIcon>
 		<RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
@@ -75,4 +76,8 @@
 		<FileVersion>10.0.6</FileVersion>
 	</PropertyGroup>
 
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 </Project>

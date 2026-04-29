@@ -1,22 +1,91 @@
 # SIPSorceryMedia.Abstractions
 
-This project provides the logic for the interfaces required by the [SIPSorcery](https://github.com/sipsorcery-org/sipsorcery) real-time communications library and the components that provide functions such as:
+[![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions)
+[![NuGet downloads](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions)
 
- - Access to audio or video devices (example [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows)).
- - Access to codecs from native libraries (examples [SIPSorceryMedia.Encoders](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders) and [SIPSorceryMedia.FFmpeg](https://github.com/sipsorcery-org/SIPSorceryMedia.FFmpeg)).
+Shared interfaces, enums, and helper types that connect the
+[SIPSorcery](https://www.nuget.org/packages/SIPSorcery) real-time
+communications library to media-device and codec implementations.
 
-# Important Interfaces
+This package is a small dependency-free abstraction layer. You normally
+don't reference it directly -- it comes in transitively via the main
+SIPSorcery package and via media end-point implementations such as
+[SIPSorceryMedia.Windows](https://www.nuget.org/packages/SIPSorceryMedia.Windows)
+or [SIPSorceryMedia.FFmpeg](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg).
+You only reference it explicitly when you're writing your own media
+end-point or codec wrapper.
 
-The most important interfacs contained in this library are:
+## Installation
 
-  - IAudioEncoder: Needs to be implemented by classes that provide audio decoding and/or encoding. An example is the [AudioEncoder](https://github.com/sipsorcery-org/sipsorcery/blob/master/src/app/Media/Codecs/AudioEncoder.cs) class.
- 
-  - IVideoEncoder: Needs to be implemented by classes that provide video decoding and/or encoding. An example is the [VpxVideoEncoder](https://github.com/sipsorcery-org/SIPSorceryMedia.Encoders/blob/master/src/VpxVideoEncoder.cs#L25) class.
-  
-  - IAudioSource: Needs to be implemented by classes that act as a source of raw audio samples. Typically a microphone. An example is the [WindowsAudioEndPoint](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows/blob/master/src/WindowsAudioEndPoint.cs#L32) class.
-  
-  - IAudioSink: Needs to be implemented by classes that act as a sink for raw audio samples. Typically an audio speaker. An example is the [WindowsAudioEndPoint](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows/blob/master/src/WindowsAudioEndPoint.cs#L32) class.
-   
-  - IVideoSource: Needs to be implemented by classes that act as a source of raw video frames. Typically a webcam. An examples is the [WindowsVideoEndPoint](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows/blob/master/src/WindowsVideoEndPoint.cs#L48).
-  
-  - IVideoSink: Needs to be implemented by classes that act as a sink for raw video frames. The video sink is usually a bitmap or some kind of graphics surface. An examples is the [WindowsVideoEndPoint](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows/blob/master/src/WindowsVideoEndPoint.cs#L48).
+```bash
+dotnet add package SIPSorceryMedia.Abstractions
+```
+
+## What is in here
+
+The package defines the contracts that every audio / video source, sink
+and codec implements so the SIPSorcery library can interoperate with
+them generically.
+
+### Codec interfaces
+
+| Interface | Implement when... | Reference implementation |
+|---|---|---|
+| `IAudioEncoder` | You provide audio encoding / decoding (G711, G722, G729, Opus, ...) | [`AudioEncoder`](https://github.com/sipsorcery-org/sipsorcery/blob/master/src/app/Media/Codecs/AudioEncoder.cs) in the main SIPSorcery package |
+| `IVideoEncoder` | You provide video encoding / decoding (VP8, H.264, ...) | [`Vp8NetVideoEncoder`](https://github.com/sipsorcery-org/sipsorcery/blob/master/src/SIPSorcery.VP8/Vp8NetVideoEncoderEndPoint.cs) (pure C#); FFmpeg wrappers in `SIPSorceryMedia.FFmpeg` |
+
+### Audio source / sink interfaces
+
+| Interface | Implement when... | Reference implementation |
+|---|---|---|
+| `IAudioSource` | Your class is a source of raw audio samples (microphone, file player, signal generator) | [`WindowsAudioEndPoint`](https://github.com/sipsorcery-org/sipsorcery/blob/master/src/SIPSorceryMedia.Windows/WindowsAudioEndPoint.cs) |
+| `IAudioSink`   | Your class consumes raw audio samples (speaker, recorder, RTP transmit) | [`WindowsAudioEndPoint`](https://github.com/sipsorcery-org/sipsorcery/blob/master/src/SIPSorceryMedia.Windows/WindowsAudioEndPoint.cs) |
+| `IAudioEndPoint` | Your class is both a source and a sink (full-duplex device) | `WindowsAudioEndPoint`, `FFmpegAudioEndPoint` |
+
+### Video source / sink interfaces
+
+| Interface | Implement when... | Reference implementation |
+|---|---|---|
+| `IVideoSource` | Your class is a source of raw video frames (webcam, file player, test pattern) | [`WindowsVideoEndPoint`](https://github.com/sipsorcery-org/sipsorcery/blob/master/src/SIPSorceryMedia.Windows/WindowsVideoEndPoint.cs); `VideoTestPatternSource` in the main SIPSorcery package |
+| `IVideoSink`   | Your class consumes raw video frames (display, recorder) | `WindowsVideoEndPoint`, `FFmpegVideoEndPoint` |
+| `IVideoEndPoint` | Both a source and a sink for video | various |
+
+### Common types and helpers
+
+The package also contains shared types referenced from across the
+ecosystem:
+
+- `AudioFormat`, `VideoFormat` -- describe a codec / sample-rate /
+  channel-layout combination negotiated over SDP.
+- `AudioSamplingRatesEnum`, `VideoPixelFormatsEnum`,
+  `VideoCodecsEnum`, `AudioCodecsEnum`.
+- `RawImage` -- header + pinned byte buffer wrapper used to pass
+  decoded video frames between encoders and sinks without copying.
+- `PixelConverter` -- conversion helpers between common pixel
+  formats (I420, NV12, BGR, RGB, YUV).
+
+## Versioning and compatibility
+
+`SIPSorceryMedia.Abstractions` shares a major version line with the
+main SIPSorcery package. A binary-incompatible change to any of the
+interfaces would land as a major version bump on both packages
+together; minor versions add new interfaces or new types but never
+modify existing ones in breaking ways.
+
+## Related packages
+
+- **[SIPSorcery](https://www.nuget.org/packages/SIPSorcery)** -- the
+  main real-time communications library that consumes these
+  abstractions.
+- **[SIPSorceryMedia.Windows](https://www.nuget.org/packages/SIPSorceryMedia.Windows)**
+  -- Windows-specific implementations of the audio / video end-point
+  interfaces.
+- **[SIPSorceryMedia.FFmpeg](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg)**
+  -- cross-platform implementations using FFmpeg native libraries.
+- **[SIPSorcery.VP8](https://www.nuget.org/packages/SIPSorcery.VP8)** --
+  pure C# `IVideoEncoder` implementation for VP8.
+
+## License
+
+BSD 3-Clause License. See [LICENSE](https://github.com/sipsorcery-org/sipsorcery/blob/master/LICENSE) at the
+repo root.
