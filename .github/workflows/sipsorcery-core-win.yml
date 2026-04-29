@@ -10,7 +10,7 @@ on:
       
 jobs:
   build:
-    runs-on: windows-2026
+    runs-on: windows-latest
     name: dotnet windows sipsorcery core
     steps:
     - uses: actions/checkout@v2
