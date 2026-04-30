@@ -11,7 +11,7 @@
 
  <ItemGroup>
     <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
-	<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+	<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
   </ItemGroup>
 
     <ItemGroup>

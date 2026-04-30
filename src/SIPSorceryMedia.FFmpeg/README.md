@@ -72,7 +72,7 @@ target machine's library load path. Typical setups:
 The simplest path is `winget`:
 
 ```ps1
-winget install "FFmpeg (Shared)" --version 7.0
+winget install "FFmpeg (Shared)" --version 8.1
 ```
 
 That puts the DLLs somewhere SIPSorceryMedia.FFmpeg can find them.
@@ -100,7 +100,7 @@ brew install mono-libgdiplus    # for the test apps that draw bitmaps
 
 ### FFmpeg version compatibility
 
-This package targets the FFmpeg 7.0 ABI via FFmpeg.AutoGen 7.0.0. Older
+This package targets the FFmpeg 8.1 ABI via FFmpeg.AutoGen 8.1.0. Older
 or much newer FFmpeg installations may load with PInvoke errors. If
 you see `EntryPointNotFoundException` or `DllNotFoundException` at
 startup, the most common cause is an FFmpeg version mismatch.

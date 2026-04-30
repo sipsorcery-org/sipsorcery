@@ -172,7 +172,7 @@ namespace Vpx.Net
                         (ySize + 2 * cSize) + " for " + width + "x" + height + ".");
                 }
 
-                if (_srcY == null || _srcY.Length < ySize) _srcY = new byte[ySize];
+                if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
                 if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
                 Buffer.BlockCopy(i420, 0,             _srcY, 0, ySize);
                 Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);

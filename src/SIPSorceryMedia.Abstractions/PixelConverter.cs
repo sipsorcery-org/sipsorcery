@@ -100,7 +100,9 @@ namespace SIPSorceryMedia.Abstractions
             byte[] buffer = new byte[ySize + uvSize];
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -161,7 +163,9 @@ namespace SIPSorceryMedia.Abstractions
             byte[] buffer = new byte[ySize + uvSize];
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -221,7 +225,9 @@ namespace SIPSorceryMedia.Abstractions
             byte[] buffer = new byte[ySize + uvSize];
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -274,7 +280,9 @@ namespace SIPSorceryMedia.Abstractions
             byte[] buffer = new byte[ySize + uvSize];
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -336,7 +344,9 @@ namespace SIPSorceryMedia.Abstractions
             //int posn = 0;
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -395,7 +405,9 @@ namespace SIPSorceryMedia.Abstractions
             //int posn = 0;
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -452,7 +464,9 @@ namespace SIPSorceryMedia.Abstractions
             //int posn = 0;
 
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             Parallel.For(0, height, _optDOP[dop], (row) =>
             {
@@ -516,7 +530,9 @@ namespace SIPSorceryMedia.Abstractions
             DeinterleaveUVSimd(nv12, nv12UvOffset, i420, i420UOffset, i420VOffset, uvWidth, uvHeight);
 #else
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             // De-interleave UV plane: NV12 has UV interleaved, I420 has separate U and V planes.
             Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
@@ -681,7 +697,9 @@ namespace SIPSorceryMedia.Abstractions
             InterleaveUVSimd(i420, i420UOffset, i420VOffset, nv12, nv12UvOffset, uvWidth, uvHeight);
 #else
             if (!_optDOP.ContainsKey(dop))
+            {
                 _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
+            }
 
             // Interleave UV plane: I420 has separate U and V planes, NV12 has UV interleaved.
             Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
