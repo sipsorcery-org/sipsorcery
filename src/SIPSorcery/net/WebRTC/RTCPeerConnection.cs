@@ -1311,6 +1311,34 @@ namespace SIPSorcery.Net
 
             if (buffer?.Length > 0)
             {
+                // ICE source-address filter (issue #1559). Non-STUN packets are
+                // only forwarded to DTLS / RTP if their source matches the
+                // currently nominated ICE candidate pair's remote endpoint.
+                // Mirrors what libwebrtc does in
+                // webrtc/p2p/base/connection.cc (Connection::OnReadPacket only
+                // signals when the packet is from remote_candidate_.address())
+                // and what pion does in pion/ice/agent.go (handleInbound
+                // silently drops non-STUN packets that don't originate from
+                // the selected pair).
+                //
+                // Without this filter an attacker who can guess the local
+                // port can flood DTLS ClientHello packets to interfere with
+                // a genuine handshake. STUN packets are filtered out earlier
+                // in the RTP channel and aren't subject to this check
+                // (consent freshness / ICE restart / new pair nomination
+                // still happen via the STUN path).
+                if (!IsFromSelectedIceCandidate(remoteEP))
+                {
+                    if (logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
+                    {
+                        var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
+                        logger.LogDebug(
+                            "Dropped {ByteCount} byte non-STUN packet from {RemoteEndPoint}; nominated ICE remote is {NominatedEndPoint} (issue #1559).",
+                            buffer.Length, remoteEP, nominatedEP);
+                    }
+                    return;
+                }
+
                 try
                 {
                     if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
@@ -1336,6 +1364,31 @@ namespace SIPSorcery.Net
                     logger.LogError(excp, "Exception RTCPeerConnection.OnRTPDataReceived {ErrorMessage}", excp.Message);
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="remoteEP"/> matches the address +
+        /// port of the currently nominated ICE candidate pair's remote
+        /// candidate. Returns false when no pair has been nominated yet, or
+        /// when the source endpoint does not match.
+        ///
+        /// Used by <see cref="OnRTPDataReceived"/> to filter incoming
+        /// non-STUN traffic, mirroring the source-check libwebrtc and pion
+        /// apply at the ICE layer (issue #1559).
+        ///
+        /// For TURN-relayed candidates the receive path in
+        /// <see cref="RTPChannel"/> already rewrites the remote endpoint
+        /// from the TURN server's address to the peer's apparent address
+        /// (XOR-PEER-ADDRESS in the Data indication), so the comparison
+        /// here works the same way for host and relay pairs.
+        /// </summary>
+        internal bool IsFromSelectedIceCandidate(IPEndPoint remoteEP)
+        {
+            if (remoteEP == null) return false;
+            var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
+            if (nominatedEP == null) return false;
+            return nominatedEP.Port == remoteEP.Port
+                && nominatedEP.Address.Equals(remoteEP.Address);
         }
 
         /// <summary>
