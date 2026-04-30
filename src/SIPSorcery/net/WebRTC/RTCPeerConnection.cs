@@ -1384,9 +1384,9 @@ namespace SIPSorcery.Net
         /// </summary>
         internal bool IsFromSelectedIceCandidate(IPEndPoint remoteEP)
         {
-            if (remoteEP == null) return false;
+            if (remoteEP == null) { return false; }
             var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
-            if (nominatedEP == null) return false;
+            if (nominatedEP == null) { return false; }
 
             // Map IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) to pure IPv4 before comparison.
             // This handles the case where the nominated endpoint was stored as IPv4 but

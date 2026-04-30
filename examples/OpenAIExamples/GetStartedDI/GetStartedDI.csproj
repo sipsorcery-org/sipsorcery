@@ -17,11 +17,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-	<PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
   </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
+        <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
     </ItemGroup>
 
 </Project>
