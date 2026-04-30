@@ -119,6 +119,76 @@ namespace SIPSorcery.Net.UnitTests
             Assert.False(pc.IsFromSelectedIceCandidate(null));
         }
 
+        /// <summary>
+        /// When the nominated endpoint is an IPv4 address and the received
+        /// packet source is an IPv4-mapped IPv6 address (::ffff:x.x.x.x),
+        /// the filter should still accept the packet. This is the typical
+        /// scenario when using dual-stack sockets on Linux/Windows.
+        /// </summary>
+        [Fact]
+        public void IsFromSelectedIceCandidate_IPv4MappedIPv6RemoteMatchesIPv4Nominated_ReturnsTrue()
+        {
+            var pc = new RTCPeerConnection(null);
+            // Nominated endpoint uses regular IPv4.
+            var nominatedEP = new IPEndPoint(IPAddress.Parse("192.168.1.123"), 57256);
+            // Incoming packet appears as IPv4-mapped IPv6 (as often happens on dual-stack sockets).
+            var mappedEP = new IPEndPoint(IPAddress.Parse("::ffff:192.168.1.123"), 57256);
+            InjectNominatedRemoteEndpoint(pc, nominatedEP);
+
+            Assert.True(pc.IsFromSelectedIceCandidate(mappedEP),
+                "IPv4-mapped IPv6 source matching nominated IPv4 must pass the filter");
+        }
+
+        /// <summary>
+        /// When the nominated endpoint is an IPv4-mapped IPv6 address and the
+        /// received packet source is a regular IPv4 address, the filter should
+        /// still accept the packet. This is the inverse of the typical scenario.
+        /// </summary>
+        [Fact]
+        public void IsFromSelectedIceCandidate_IPv4RemoteMatchesIPv4MappedIPv6Nominated_ReturnsTrue()
+        {
+            var pc = new RTCPeerConnection(null);
+            // Nominated endpoint uses IPv4-mapped IPv6.
+            var nominatedEP = new IPEndPoint(IPAddress.Parse("::ffff:192.168.1.123"), 57256);
+            // Incoming packet appears as regular IPv4.
+            var regularEP = new IPEndPoint(IPAddress.Parse("192.168.1.123"), 57256);
+            InjectNominatedRemoteEndpoint(pc, nominatedEP);
+
+            Assert.True(pc.IsFromSelectedIceCandidate(regularEP),
+                "IPv4 source matching nominated IPv4-mapped IPv6 must pass the filter");
+        }
+
+        /// <summary>
+        /// When both endpoints are IPv4-mapped IPv6 addresses representing the
+        /// same underlying IPv4 address, they should match.
+        /// </summary>
+        [Fact]
+        public void IsFromSelectedIceCandidate_BothIPv4MappedIPv6Match_ReturnsTrue()
+        {
+            var pc = new RTCPeerConnection(null);
+            var nominatedEP = new IPEndPoint(IPAddress.Parse("::ffff:10.0.0.1"), 12345);
+            var remoteEP = new IPEndPoint(IPAddress.Parse("::ffff:10.0.0.1"), 12345);
+            InjectNominatedRemoteEndpoint(pc, nominatedEP);
+
+            Assert.True(pc.IsFromSelectedIceCandidate(remoteEP),
+                "matching IPv4-mapped IPv6 addresses must pass the filter");
+        }
+
+        /// <summary>
+        /// Different IPv4 addresses even when one is IPv4-mapped should not match.
+        /// </summary>
+        [Fact]
+        public void IsFromSelectedIceCandidate_DifferentIPv4AddressesOneIsMapped_ReturnsFalse()
+        {
+            var pc = new RTCPeerConnection(null);
+            var nominatedEP = new IPEndPoint(IPAddress.Parse("192.168.1.100"), 57256);
+            var mappedEP = new IPEndPoint(IPAddress.Parse("::ffff:192.168.1.200"), 57256);
+            InjectNominatedRemoteEndpoint(pc, nominatedEP);
+
+            Assert.False(pc.IsFromSelectedIceCandidate(mappedEP),
+                "different underlying IPv4 addresses must be rejected");
+        }
+
         // ---------- helpers ----------
 
         /// <summary>

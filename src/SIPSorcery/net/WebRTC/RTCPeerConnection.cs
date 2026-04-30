@@ -1387,8 +1387,20 @@ namespace SIPSorcery.Net
             if (remoteEP == null) return false;
             var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
             if (nominatedEP == null) return false;
+
+            // Map IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) to pure IPv4 before comparison.
+            // This handles the case where the nominated endpoint was stored as IPv4 but
+            // the received packet shows up as an IPv4-mapped IPv6 address (or vice-versa)
+            // when using dual-stack sockets.
+            var nominatedAddr = nominatedEP.Address.IsIPv4MappedToIPv6
+                ? nominatedEP.Address.MapToIPv4()
+                : nominatedEP.Address;
+            var remoteAddr = remoteEP.Address.IsIPv4MappedToIPv6
+                ? remoteEP.Address.MapToIPv4()
+                : remoteEP.Address;
+
             return nominatedEP.Port == remoteEP.Port
-                && nominatedEP.Address.Equals(remoteEP.Address);
+                && nominatedAddr.Equals(remoteAddr);
         }
 
         /// <summary>
