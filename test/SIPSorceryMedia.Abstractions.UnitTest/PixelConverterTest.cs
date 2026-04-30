@@ -460,6 +460,244 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             Assert.Throws<ApplicationException>(() => PixelConverter.I420toNV12(i420, width, height));
         }
 
+        /// <summary>
+        /// Tests that a BGR buffer can be converted to RGB and the values are correctly swapped.
+        /// </summary>
+        [Fact]
+        public void BGRtoRGBBasicTest()
+        {
+            // Create a simple 2x2 BGR image with known values
+            int width = 2;
+            int height = 2;
+            int stride = width * 3;
+
+            // BGR format: B,G,R for each pixel
+            byte[] bgr = new byte[]
+            {
+                // Row 0
+                10, 20, 30,  // Pixel (0,0): B=10, G=20, R=30
+                40, 50, 60,  // Pixel (1,0): B=40, G=50, R=60
+                // Row 1
+                70, 80, 90,  // Pixel (0,1): B=70, G=80, R=90
+                100, 110, 120 // Pixel (1,1): B=100, G=110, R=120
+            };
+
+            byte[] rgb = PixelConverter.BGRtoRGB(bgr, width, height, stride);
+
+            Assert.NotNull(rgb);
+
+            // Verify RGB output (R,G,B for each pixel)
+            // Note: stride may be padded, so we need to account for that
+            int outputStride = (width * 3 + 3) / 4 * 4;
+            
+            // Pixel (0,0): should be R=30, G=20, B=10
+            Assert.Equal(30, rgb[0]);
+            Assert.Equal(20, rgb[1]);
+            Assert.Equal(10, rgb[2]);
+            
+            // Pixel (1,0): should be R=60, G=50, B=40
+            Assert.Equal(60, rgb[3]);
+            Assert.Equal(50, rgb[4]);
+            Assert.Equal(40, rgb[5]);
+            
+            // Pixel (0,1): should be R=90, G=80, B=70
+            Assert.Equal(90, rgb[outputStride]);
+            Assert.Equal(80, rgb[outputStride + 1]);
+            Assert.Equal(70, rgb[outputStride + 2]);
+        }
+
+        /// <summary>
+        /// Tests that an RGB buffer can be converted to BGR and the values are correctly swapped.
+        /// </summary>
+        [Fact]
+        public void RGBtoBGRBasicTest()
+        {
+            // Create a simple 2x2 RGB image with known values
+            int width = 2;
+            int height = 2;
+            int stride = width * 3;
+
+            // RGB format: R,G,B for each pixel
+            byte[] rgb = new byte[]
+            {
+                // Row 0
+                30, 20, 10,  // Pixel (0,0): R=30, G=20, B=10
+                60, 50, 40,  // Pixel (1,0): R=60, G=50, B=40
+                // Row 1
+                90, 80, 70,  // Pixel (0,1): R=90, G=80, B=70
+                120, 110, 100 // Pixel (1,1): R=120, G=110, B=100
+            };
+
+            byte[] bgr = PixelConverter.RGBtoBGR(rgb, width, height, stride);
+
+            Assert.NotNull(bgr);
+
+            // Verify BGR output (B,G,R for each pixel)
+            int outputStride = (width * 3 + 3) / 4 * 4;
+            
+            // Pixel (0,0): should be B=10, G=20, R=30
+            Assert.Equal(10, bgr[0]);
+            Assert.Equal(20, bgr[1]);
+            Assert.Equal(30, bgr[2]);
+            
+            // Pixel (1,0): should be B=40, G=50, R=60
+            Assert.Equal(40, bgr[3]);
+            Assert.Equal(50, bgr[4]);
+            Assert.Equal(60, bgr[5]);
+        }
+
+        /// <summary>
+        /// Tests that BGR to RGB conversion can be round-tripped.
+        /// </summary>
+        [Fact]
+        public void RoundtripBGRtoRGBTest()
+        {
+            int width = 64;
+            int height = 48;
+            int stride = width * 3;
+            byte[] original = new byte[stride * height];
+
+            // Fill with test pattern
+            var random = new Random(42);
+            random.NextBytes(original);
+
+            byte[] rgb = PixelConverter.BGRtoRGB(original, width, height, stride);
+            byte[] roundtrip = PixelConverter.RGBtoBGR(rgb, width, height, (width * 3 + 3) / 4 * 4);
+
+            Assert.NotNull(roundtrip);
+
+            // Since we're using aligned strides, we need to compare pixel by pixel
+            int outputStride = (width * 3 + 3) / 4 * 4;
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width; col++)
+                {
+                    int srcIdx = row * stride + col * 3;
+                    int dstIdx = row * outputStride + col * 3;
+
+                    Assert.Equal(original[srcIdx], roundtrip[dstIdx]);
+                    Assert.Equal(original[srcIdx + 1], roundtrip[dstIdx + 1]);
+                    Assert.Equal(original[srcIdx + 2], roundtrip[dstIdx + 2]);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tests that BGR to RGB conversion works with odd dimensions.
+        /// </summary>
+        [Fact]
+        public void BGRtoRGBOddDimensionsTest()
+        {
+            int width = 5;
+            int height = 3;
+            int stride = width * 3;
+            byte[] bgr = new byte[stride * height];
+
+            // Fill with simple pattern
+            for (int i = 0; i < bgr.Length; i += 3)
+            {
+                bgr[i] = (byte)(i % 256);     // B
+                bgr[i + 1] = (byte)((i + 1) % 256); // G
+                bgr[i + 2] = (byte)((i + 2) % 256); // R
+            }
+
+            byte[] rgb = PixelConverter.BGRtoRGB(bgr, width, height, stride);
+
+            Assert.NotNull(rgb);
+
+            // Verify conversion
+            int outputStride = (width * 3 + 3) / 4 * 4;
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width; col++)
+                {
+                    int srcIdx = row * stride + col * 3;
+                    int dstIdx = row * outputStride + col * 3;
+
+                    // RGB should have R and B swapped compared to BGR
+                    Assert.Equal(bgr[srcIdx + 2], rgb[dstIdx]);     // R
+                    Assert.Equal(bgr[srcIdx + 1], rgb[dstIdx + 1]); // G
+                    Assert.Equal(bgr[srcIdx], rgb[dstIdx + 2]);     // B
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tests that an exception is thrown when buffer is too small.
+        /// </summary>
+        [Fact]
+        public void BGRtoRGBWrongSizeTest()
+        {
+            int width = 100;
+            int height = 100;
+            int stride = width * 3;
+            int expectedSize = stride * height;
+
+            // Provide a buffer that is too small
+            byte[] bgr = new byte[expectedSize - 1];
+            Assert.Throws<ApplicationException>(() => PixelConverter.BGRtoRGB(bgr, width, height, stride));
+        }
+
+        /// <summary>
+        /// Tests that an exception is thrown when buffer is too small for RGBtoBGR.
+        /// </summary>
+        [Fact]
+        public void RGBtoBGRWrongSizeTest()
+        {
+            int width = 100;
+            int height = 100;
+            int stride = width * 3;
+            int expectedSize = stride * height;
+
+            // Provide a buffer that is too small
+            byte[] rgb = new byte[expectedSize - 1];
+            Assert.Throws<ApplicationException>(() => PixelConverter.RGBtoBGR(rgb, width, height, stride));
+        }
+
+        /// <summary>
+        /// Tests BGR to RGB conversion with a large image to exercise SIMD paths.
+        /// </summary>
+        [Fact]
+        public void BGRtoRGBLargeImageTest()
+        {
+            int width = 640;
+            int height = 480;
+            int stride = width * 3;
+            byte[] bgr = new byte[stride * height];
+
+            // Fill with gradient pattern
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width; col++)
+                {
+                    int idx = row * stride + col * 3;
+                    bgr[idx] = (byte)(col % 256);     // B varies with column
+                    bgr[idx + 1] = (byte)(row % 256); // G varies with row
+                    bgr[idx + 2] = (byte)((row + col) % 256); // R varies with both
+                }
+            }
+
+            byte[] rgb = PixelConverter.BGRtoRGB(bgr, width, height, stride);
+
+            Assert.NotNull(rgb);
+            int outputStride = (width * 3 + 3) / 4 * 4;
+            Assert.Equal(outputStride * height, rgb.Length);
+
+            // Verify a sample of pixels
+            for (int row = 0; row < height; row += 50)
+            {
+                for (int col = 0; col < width; col += 50)
+                {
+                    int srcIdx = row * stride + col * 3;
+                    int dstIdx = row * outputStride + col * 3;
+
+                    Assert.Equal(bgr[srcIdx + 2], rgb[dstIdx]);     // R
+                    Assert.Equal(bgr[srcIdx + 1], rgb[dstIdx + 1]); // G
+                    Assert.Equal(bgr[srcIdx], rgb[dstIdx + 2]);     // B
+                }
+            }
+        }
+
         private static byte[] BitmapToBuffer(Bitmap bitmap, out int stride)
         {
             BitmapData bmpdata = null;

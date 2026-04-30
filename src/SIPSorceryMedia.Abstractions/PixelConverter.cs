@@ -423,6 +423,108 @@ namespace SIPSorceryMedia.Abstractions
             return bgr;
         }
 
+        /// <summary>
+        /// Converts a BGR formatted sample to an RGB formatted sample by swapping the red and blue channels.
+        /// </summary>
+        /// <param name="bgr">The BGR image sample.</param>
+        /// <param name="width">The width in pixels of the image.</param>
+        /// <param name="height">The height in pixels of the image.</param>
+        /// <returns>An RGB buffer representing the source image.</returns>
+        public static byte[] BGRtoRGB(byte[] bgr, int width, int height)
+        {
+            return BGRtoRGB(bgr, width, height, width * 3);
+        }
+
+        /// <summary>
+        /// Converts a BGR formatted sample to an RGB formatted sample by swapping the red and blue channels.
+        /// </summary>
+        /// <param name="bgr">The BGR image sample.</param>
+        /// <param name="width">The width in pixels of the image.</param>
+        /// <param name="height">The height in pixels of the image.</param>
+        /// <param name="stride">The stride of the BGR sample.</param>
+        /// <returns>An RGB buffer representing the source image.</returns>
+        public static byte[] BGRtoRGB(byte[] bgr, int width, int height, int stride)
+        {
+            if (bgr == null || bgr.Length < stride * height)
+            {
+                throw new ApplicationException($"BGR buffer supplied to BGRtoRGB was too small, expected {stride * height} but got {bgr?.Length}.");
+            }
+
+            int rgbStride = (width * 3 + 3) / 4 * 4;
+            byte[] rgb = new byte[height * rgbStride];
+
+#if NET8_0_OR_GREATER
+            SwapRBChannelsSimd(bgr, rgb, width, height, stride, rgbStride);
+#else
+            SwapRBChannelsScalar(bgr, rgb, width, height, stride, rgbStride);
+#endif
+
+            return rgb;
+        }
+
+        /// <summary>
+        /// Converts an RGB formatted sample to a BGR formatted sample by swapping the red and blue channels.
+        /// </summary>
+        /// <param name="rgb">The RGB image sample.</param>
+        /// <param name="width">The width in pixels of the image.</param>
+        /// <param name="height">The height in pixels of the image.</param>
+        /// <returns>A BGR buffer representing the source image.</returns>
+        public static byte[] RGBtoBGR(byte[] rgb, int width, int height)
+        {
+            return RGBtoBGR(rgb, width, height, width * 3);
+        }
+
+        /// <summary>
+        /// Converts an RGB formatted sample to a BGR formatted sample by swapping the red and blue channels.
+        /// </summary>
+        /// <param name="rgb">The RGB image sample.</param>
+        /// <param name="width">The width in pixels of the image.</param>
+        /// <param name="height">The height in pixels of the image.</param>
+        /// <param name="stride">The stride of the RGB sample.</param>
+        /// <returns>A BGR buffer representing the source image.</returns>
+        public static byte[] RGBtoBGR(byte[] rgb, int width, int height, int stride)
+        {
+            if (rgb == null || rgb.Length < stride * height)
+            {
+                throw new ApplicationException($"RGB buffer supplied to RGBtoBGR was too small, expected {stride * height} but got {rgb?.Length}.");
+            }
+
+            int bgrStride = (width * 3 + 3) / 4 * 4;
+            byte[] bgr = new byte[height * bgrStride];
+
+#if NET8_0_OR_GREATER
+            SwapRBChannelsSimd(rgb, bgr, width, height, stride, bgrStride);
+#else
+            SwapRBChannelsScalar(rgb, bgr, width, height, stride, bgrStride);
+#endif
+
+            return bgr;
+        }
+
+        /// <summary>
+        /// Swaps the red and blue channels in a 24-bit RGB/BGR image using scalar operations.
+        /// This method is used for converting between BGR and RGB formats.
+        /// </summary>
+        private static void SwapRBChannelsScalar(byte[] src, byte[] dst, int width, int height, int srcStride, int dstStride)
+        {
+            for (int row = 0; row < height; row++)
+            {
+                int srcRowOffset = row * srcStride;
+                int dstRowOffset = row * dstStride;
+
+                for (int col = 0; col < width; col++)
+                {
+                    int srcPixelOffset = srcRowOffset + col * 3;
+                    int dstPixelOffset = dstRowOffset + col * 3;
+
+                    // Swap R and B channels
+                    dst[dstPixelOffset] = src[srcPixelOffset + 2];     // B (from src) -> position 0 (R in dst)
+                    dst[dstPixelOffset + 1] = src[srcPixelOffset + 1]; // G stays in place
+                    dst[dstPixelOffset + 2] = src[srcPixelOffset];     // R (from src) -> position 2 (B in dst)
+                }
+            }
+        }
+
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] NV12toBGR(byte[] data, int width, int height)
         {
@@ -818,6 +920,139 @@ namespace SIPSorceryMedia.Abstractions
             var out1 = Vector128.Shuffle(a, shuffleHighA) | Vector128.Shuffle(b, shuffleHighB);
 
             return (out0, out1);
+        }
+
+        /// <summary>
+        /// SIMD-optimized swap of R and B channels for converting between BGR and RGB formats.
+        /// Processes pixels in batches using Vector128 operations where possible.
+        /// </summary>
+        private static void SwapRBChannelsSimd(byte[] src, byte[] dst, int width, int height, int srcStride, int dstStride)
+        {
+            for (int row = 0; row < height; row++)
+            {
+                int srcRowOffset = row * srcStride;
+                int dstRowOffset = row * dstStride;
+                SwapRBChannelsRowSimd(src, dst, srcRowOffset, dstRowOffset, width);
+            }
+        }
+
+        /// <summary>
+        /// SIMD swap of R and B channels for a single row.
+        /// Uses Vector128 operations to process 16 pixels (48 bytes) at a time.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SwapRBChannelsRowSimd(byte[] src, byte[] dst, int srcOffset, int dstOffset, int width)
+        {
+            int pixelBytes = width * 3;
+            int i = 0;
+
+            ref byte srcRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcOffset);
+            ref byte dstRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstOffset);
+
+            // Process 16 pixels at a time (48 bytes) using Vector128
+            // Since 48 bytes spans 3 Vector128 chunks (16 bytes each), we process all 3 together
+            if (Vector128.IsHardwareAccelerated)
+            {
+                // Pre-computed shuffle patterns for swapping R and B channels across 3 Vector128 chunks
+                // These patterns handle the cross-boundary shuffling required for 3-byte pixels
+
+                // Output 0 (bytes 0-15): needs pixels 0-4 swapped, plus B5 from v1
+                // Pixel 0: swap v0[0,1,2] -> out[2,1,0]
+                // Pixel 1: swap v0[3,4,5] -> out[5,4,3]
+                // Pixel 2: swap v0[6,7,8] -> out[8,7,6]
+                // Pixel 3: swap v0[9,10,11] -> out[11,10,9]
+                // Pixel 4: swap v0[12,13,14] -> out[14,13,12]
+                // Position 15: B5 = v1[1] (input byte 17 = v1[1])
+                var shuf0FromV0 = Vector128.Create(
+                    (byte)2, 1, 0,   // Pixel 0: B,G,R
+                    5, 4, 3,         // Pixel 1
+                    8, 7, 6,         // Pixel 2
+                    11, 10, 9,       // Pixel 3
+                    14, 13, 12,      // Pixel 4
+                    128              // B5 from v1
+                );
+                var shuf0FromV1 = Vector128.Create(
+                    (byte)128, 128, 128, 128, 128, 128, 128, 128,
+                    128, 128, 128, 128, 128, 128, 128, 1  // B5 at position 15
+                );
+
+                // Output 1 (bytes 16-31): needs G5, R5, then pixels 6-9 swapped, plus B10, G10 from v2
+                // Position 0: G5 = v1[0] (input byte 16)
+                // Position 1: R5 = v0[15] (input byte 15)
+                // Pixel 6: swap v1[2,3,4] -> out[4,3,2]
+                // Pixel 7: swap v1[5,6,7] -> out[7,6,5]
+                // Pixel 8: swap v1[8,9,10] -> out[10,9,8]
+                // Pixel 9: swap v1[11,12,13] -> out[13,12,11]
+                // Position 14: B10 = v2[0] (input byte 32)
+                // Position 15: G10 = v1[15] (input byte 31)
+                var shuf1FromV0 = Vector128.Create(
+                    (byte)128, 15,   // R5 at position 1
+                    128, 128, 128,
+                    128, 128, 128,
+                    128, 128, 128,
+                    128, 128, 128,
+                    128, 128
+                );
+                var shuf1FromV1 = Vector128.Create(
+                    (byte)0, 128,    // G5 at position 0
+                    4, 3, 2,         // Pixel 6
+                    7, 6, 5,         // Pixel 7
+                    10, 9, 8,        // Pixel 8
+                    13, 12, 11,      // Pixel 9
+                    128, 15          // G10 at position 15
+                );
+                var shuf1FromV2 = Vector128.Create(
+                    (byte)128, 128, 128, 128, 128, 128, 128, 128,
+                    128, 128, 128, 128, 128, 128, 0, 128  // B10 at position 14
+                );
+
+                // Output 2 (bytes 32-47): needs R10, then pixels 11-15 swapped
+                // Position 0: R10 = v1[14] (input byte 30)
+                // Pixel 11: swap v2[1,2,3] -> out[3,2,1]
+                // Pixel 12: swap v2[4,5,6] -> out[6,5,4]
+                // Pixel 13: swap v2[7,8,9] -> out[9,8,7]
+                // Pixel 14: swap v2[10,11,12] -> out[12,11,10]
+                // Pixel 15: swap v2[13,14,15] -> out[15,14,13]
+                var shuf2FromV1 = Vector128.Create(
+                    (byte)14,        // R10 at position 0
+                    128, 128, 128,
+                    128, 128, 128,
+                    128, 128, 128,
+                    128, 128, 128,
+                    128, 128, 128
+                );
+                var shuf2FromV2 = Vector128.Create(
+                    (byte)128,       // R10 from v1
+                    3, 2, 1,         // Pixel 11
+                    6, 5, 4,         // Pixel 12
+                    9, 8, 7,         // Pixel 13
+                    12, 11, 10,      // Pixel 14
+                    15, 14, 13       // Pixel 15
+                );
+
+                for (; i <= pixelBytes - 48; i += 48)
+                {
+                    var v0 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, i));
+                    var v1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, i + 16));
+                    var v2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, i + 32));
+
+                    var result0 = Vector128.Shuffle(v0, shuf0FromV0) | Vector128.Shuffle(v1, shuf0FromV1);
+                    var result1 = Vector128.Shuffle(v0, shuf1FromV0) | Vector128.Shuffle(v1, shuf1FromV1) | Vector128.Shuffle(v2, shuf1FromV2);
+                    var result2 = Vector128.Shuffle(v1, shuf2FromV1) | Vector128.Shuffle(v2, shuf2FromV2);
+
+                    result0.StoreUnsafe(ref Unsafe.Add(ref dstRef, i));
+                    result1.StoreUnsafe(ref Unsafe.Add(ref dstRef, i + 16));
+                    result2.StoreUnsafe(ref Unsafe.Add(ref dstRef, i + 32));
+                }
+            }
+
+            // Handle remaining bytes with scalar code
+            for (; i < pixelBytes - 2; i += 3)
+            {
+                Unsafe.Add(ref dstRef, i) = Unsafe.Add(ref srcRef, i + 2);
+                Unsafe.Add(ref dstRef, i + 1) = Unsafe.Add(ref srcRef, i + 1);
+                Unsafe.Add(ref dstRef, i + 2) = Unsafe.Add(ref srcRef, i);
+            }
         }
 #endif
     }
