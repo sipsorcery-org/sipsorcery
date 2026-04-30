@@ -517,10 +517,10 @@ namespace SIPSorceryMedia.Abstractions
                     int srcPixelOffset = srcRowOffset + col * 3;
                     int dstPixelOffset = dstRowOffset + col * 3;
 
-                    // Swap R and B channels
-                    dst[dstPixelOffset] = src[srcPixelOffset + 2];     // B (from src) -> position 0 (R in dst)
-                    dst[dstPixelOffset + 1] = src[srcPixelOffset + 1]; // G stays in place
-                    dst[dstPixelOffset + 2] = src[srcPixelOffset];     // R (from src) -> position 2 (B in dst)
+                    // Swap first and third byte (swaps R/B channels regardless of direction)
+                    dst[dstPixelOffset] = src[srcPixelOffset + 2];     // Third byte -> position 0
+                    dst[dstPixelOffset + 1] = src[srcPixelOffset + 1]; // Middle byte stays in place
+                    dst[dstPixelOffset + 2] = src[srcPixelOffset];     // First byte -> position 2
                 }
             }
         }
