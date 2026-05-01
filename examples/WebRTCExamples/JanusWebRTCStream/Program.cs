@@ -196,7 +196,7 @@ namespace demo
             {
                 //RestClient signalingClient = new RestClient($"{WEBRTC_SIGNALING_JANUS_URL}?duration=15");
                 RestClient signalingClient = new RestClient($"{WEBRTC_SIGNALING_JANUS_URL}");
-                var echoTestReq = new RestRequest(string.Empty, Method.POST, DataFormat.Json);
+                var echoTestReq = new RestRequest(string.Empty, Method.Post);
                 echoTestReq.AddJsonBody(pc.localDescription.sdp.ToString());
                 var echoTestResp = await signalingClient.ExecutePostAsync<string>(echoTestReq).ConfigureAwait(false);
 

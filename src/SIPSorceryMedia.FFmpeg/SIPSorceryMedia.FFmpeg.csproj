@@ -13,7 +13,7 @@
   </PropertyGroup>
  
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="7.0.0" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="8.1.0" />
   </ItemGroup>
   
   <ItemGroup>
