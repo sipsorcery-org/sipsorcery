@@ -296,16 +296,22 @@ namespace WebRTCNostrSignalling
                         continue;
                     }
                     
-                    // Check if content looks like valid JSON (must start with '{')
-                    // Skip encrypted (NIP-04/NIP-44) content which starts with base64 characters
-                    var trimmedContent = nostrEvent.Content.TrimStart();
-                    if (!trimmedContent.StartsWith("{"))
+                    // Content is hex-encoded JSON (see SendSignalMessage for why).
+                    // Anything that doesn't decode as hex is foreign traffic on this
+                    // kind and gets skipped silently.
+                    string jsonContent;
+                    try
                     {
-                        logger.LogDebug($"Nostr event content is not JSON (possibly encrypted), skipping: {nostrEvent.Content[..Math.Min(20, nostrEvent.Content.Length)]}...");
+                        var jsonBytes = Convert.FromHexString(nostrEvent.Content);
+                        jsonContent = System.Text.Encoding.UTF8.GetString(jsonBytes);
+                    }
+                    catch (FormatException)
+                    {
+                        logger.LogDebug($"Nostr event content is not hex-encoded, skipping: {nostrEvent.Content[..Math.Min(20, nostrEvent.Content.Length)]}...");
                         continue;
                     }
-                    
-                    var message = JsonSerializer.Deserialize<NostrSignalMessage>(nostrEvent.Content);
+
+                    var message = JsonSerializer.Deserialize<NostrSignalMessage>(jsonContent);
                     
                     if (message == null)
                     {
@@ -466,7 +472,24 @@ namespace WebRTCNostrSignalling
 
             logger.LogDebug($"Sending {message.Type} to peer {message.TargetPeerId}...");
 
-            var content = JsonSerializer.Serialize(message);
+            // Hex-encode the inner JSON before putting it on the wire.
+            //
+            // NNostr.Client (every version up to and including master) has a
+            // canonicalisation bug: the id-preimage path uses its own
+            // JavaScriptStringEncode (which does NOT escape <, >, ', &, +, or
+            // non-ASCII), but the publish path uses System.Text.Json's
+            // WriteStringValue with JavaScriptEncoder.Default (which DOES
+            // escape all of those). For any content containing one of those
+            // characters -- e.g. the "+" that's all over a typical SDP
+            // (ice-pwd, fingerprint, etc.) -- the id we hash differs from
+            // the JSON we publish, the relay re-computes the id, and we get
+            // back "OK ... false ... invalid: bad event id".
+            //
+            // Workaround: hex-encode the content so the on-the-wire string
+            // is purely [0-9a-f]. Both encoders pass that through untouched
+            // and the ids match. The receiver hex-decodes before parsing.
+            var jsonBytes = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+            var content = Convert.ToHexString(jsonBytes).ToLowerInvariant();
 
             // Build the event with a "p" tag addressing the recipient. The matching
             // subscription on the recipient side (ReferencedPublicKeys) only forwards
