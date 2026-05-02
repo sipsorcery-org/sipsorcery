@@ -173,10 +173,18 @@ namespace WebRTCNostrSignalling
                 Kinds = new[] { WEBRTC_SIGNAL_KIND }
             };
 
-            // Fire and forget - this call doesn't need to be awaited
-#pragma warning disable CS4014
-            nostrClient.CreateSubscription("webrtc-signal", new[] { filter });
-#pragma warning restore CS4014
+            // Start subscription - this doesn't need to block, but we handle errors asynchronously
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await nostrClient.CreateSubscription("webrtc-signal", new[] { filter });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Failed to create Nostr subscription: {ex.Message}");
+                }
+            });
             logger.LogDebug("Subscribed to WebRTC signalling events");
         }
 
@@ -199,8 +207,18 @@ namespace WebRTCNostrSignalling
 
                     logger.LogDebug($"Received {message.Type} from peer {message.PeerId}");
 
-                    // Process the message
-                    _ = ProcessSignalMessage(message);
+                    // Process the message asynchronously with error handling
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await ProcessSignalMessage(message);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError($"Failed to process signal message: {ex.Message}");
+                        }
+                    });
                 }
                 catch (Exception ex)
                 {

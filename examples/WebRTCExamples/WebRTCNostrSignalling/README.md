@@ -80,7 +80,10 @@ Open `nostr-webrtc.html` in a browser to use a browser-based peer:
 
 - This is a prototype/demonstration application
 - In production, use proper Nostr key management instead of randomly generated keys
-- The browser HTML file uses a simplified signing approach that may not work with all relays
+- **Browser HTML Limitations**: The browser-based peer (`nostr-webrtc.html`) uses simplified key generation and signing that may not be accepted by all Nostr relays:
+  - Uses SHA-256 hash instead of proper secp256k1 public key derivation
+  - Uses a placeholder signature (all zeros) instead of proper Schnorr signatures
+  - For full browser compatibility, consider using a JavaScript secp256k1 library like `nostr-tools`
 - Consider encrypting signalling messages for privacy (NIP-04 or NIP-44)
 
 ## Related NIPs
