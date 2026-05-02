@@ -264,7 +264,7 @@ namespace WebRTCNostrSignalling
                     var evt = JsonSerializer.Deserialize<NostrEvent>(root[2].GetRawText());
                     if (evt == null) return;
 
-                    OnNostrEventsReceived(this, (subId, new[] { evt }));
+                    OnNostrEventsReceived(sender, (subId, new[] { evt }));
                 }
                 catch (Exception ex)
                 {
