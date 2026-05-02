@@ -264,6 +264,15 @@ namespace WebRTCNostrSignalling
                         continue;
                     }
                     
+                    // Check if content looks like valid JSON (must start with '{')
+                    // Skip encrypted (NIP-04/NIP-44) content which starts with base64 characters
+                    var trimmedContent = nostrEvent.Content.TrimStart();
+                    if (!trimmedContent.StartsWith("{"))
+                    {
+                        logger.LogDebug($"Nostr event content is not JSON (possibly encrypted), skipping: {nostrEvent.Content[..Math.Min(20, nostrEvent.Content.Length)]}...");
+                        continue;
+                    }
+                    
                     var message = JsonSerializer.Deserialize<NostrSignalMessage>(nostrEvent.Content);
                     
                     if (message == null)
@@ -296,9 +305,14 @@ namespace WebRTCNostrSignalling
                         }
                     });
                 }
+                catch (JsonException ex)
+                {
+                    // JSON parsing error - likely encrypted content or malformed JSON
+                    logger.LogDebug($"Skipping Nostr event with invalid JSON: {ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    logger.LogWarning($"Failed to parse Nostr event: {ex.Message}");
+                    logger.LogWarning($"Failed to process Nostr event: {ex.Message}");
                 }
             }
         }
