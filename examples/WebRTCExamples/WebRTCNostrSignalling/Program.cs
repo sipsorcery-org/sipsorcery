@@ -176,32 +176,49 @@ namespace WebRTCNostrSignalling
             };
             nostrClient.EoseReceived += (sender, subscriptionId) =>
                 logger.LogDebug($"Nostr end of stored events for subscription: {subscriptionId}");
+            
+            // Monitor connection state changes
+            nostrClient.StateChanged += (sender, state) =>
+            {
+                logger.LogInformation($"Nostr connection state changed to: {state}");
+            };
+            
+            // Monitor raw messages for debugging
+            nostrClient.MessageReceived += (sender, message) =>
+            {
+                // Truncate long messages for logging
+                var truncatedMessage = message.Length > 200 ? message[..200] + "..." : message;
+                logger.LogDebug($"Nostr raw message received: {truncatedMessage}");
+            };
+            
+            nostrClient.InvalidMessageReceived += (sender, message) =>
+            {
+                logger.LogWarning($"Nostr invalid message received: {message}");
+            };
 
             logger.LogDebug($"Connecting to Nostr relay at {NOSTR_RELAY_URL}...");
             
-            // Start the connection (returns a task that completes when disconnected)
-            var connectionTask = nostrClient.Connect();
-            
-            // Wait until connected
-            await nostrClient.WaitUntilConnected();
-            
-            logger.LogInformation($"Connected to Nostr relay: {NOSTR_RELAY_URL}");
-
-            // IMPORTANT: Start listening for messages from the relay
-            // This must be called after connecting for the client to receive events
-            _ = Task.Run(async () =>
+            // Connect() internally calls ConnectAndWaitUntilConnected which:
+            // 1. Creates and opens the WebSocket connection
+            // 2. Waits until the connection is open
+            // 3. Automatically starts ListenForMessages() in the background
+            // Note: Do NOT call ListenForMessages() manually as it will return immediately
+            // due to the internal _listening flag being already set
+            try
             {
-                try
-                {
-                    logger.LogDebug("Starting to listen for Nostr messages...");
-                    await nostrClient.ListenForMessages();
-                    logger.LogDebug("Nostr message listener stopped");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError($"Nostr message listener error: {ex.Message}");
-                }
-            });
+                await nostrClient.Connect();
+                logger.LogInformation($"Connected to Nostr relay: {NOSTR_RELAY_URL}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Failed to connect to Nostr relay: {ex.Message}");
+                throw;
+            }
+            
+            logger.LogDebug($"Nostr connection state: {nostrClient.State}");
+            
+            // Give the message listener time to fully initialize
+            await Task.Delay(100);
 
             // Subscribe to WebRTC signalling events
             // We're interested in events tagged with our peer ID
@@ -216,6 +233,7 @@ namespace WebRTCNostrSignalling
                 logger.LogDebug($"Creating Nostr subscription for kind {WEBRTC_SIGNAL_KIND}...");
                 await nostrClient.CreateSubscription("webrtc-signal", new[] { filter });
                 logger.LogDebug("Subscribed to WebRTC signalling events");
+                logger.LogDebug($"Nostr connection state after subscription: {nostrClient.State}");
             }
             catch (Exception ex)
             {
