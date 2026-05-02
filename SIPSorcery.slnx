@@ -107,6 +107,7 @@
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedLibvpx/WebRTCGetStartedLibvpx.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCNoSignalling/WebRTCNoSignalling.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCNostrSignalling/WebRTCNostrSignalling.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCOpenGL/WebRTCOpenGL.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCOpenGLSource/WebRTCOpenGLSource.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCReceiveAudio/WebRTCReceiveAudio.csproj" />
