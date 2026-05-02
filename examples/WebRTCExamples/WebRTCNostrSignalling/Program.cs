@@ -65,15 +65,29 @@ namespace WebRTCNostrSignalling
         private const string NOSTR_RELAY_URL = "wss://nos.lol";
         private const string STUN_URL = "stun:stun.cloudflare.com";
         
-        // Use a custom Nostr event kind for WebRTC signalling
-        // This is not an official NIP, but follows community conventions
-        private const int WEBRTC_SIGNAL_KIND = 24133;
+        // Custom ephemeral Nostr event kind used for WebRTC signalling.
+        // 24133 is NIP-46 NostrConnect which is busy and encrypted-by-spec on
+        // public relays -- using it for plaintext signalling collides with every
+        // NostrConnect signer on the relay (those events arrive looking like
+        // base64 encrypted blobs in the receive log). We pick an unused
+        // ephemeral kind in the 20000-29999 range instead.
+        private const int WEBRTC_SIGNAL_KIND = 25555;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
         private static NostrClient? nostrClient;
         private static RTCPeerConnection? peerConnection;
         private static string? localPeerId;
         private static string? remotePeerId;
+
+        // Nostr identity for this process. Generated once at startup and
+        // reused for every published event so peers can be correlated by
+        // their pubkey across the offer / answer / ICE candidate exchange.
+        // Replacing this with a fresh keypair per send (the original code)
+        // means every event arrives at the answerer from a different pubkey,
+        // breaking subscription filtering and consent.
+        private static ECPrivKey? localPrivateKey;
+        private static string? localPubKeyHex;
+        private static string? remotePubKeyHex;
         private static bool isOfferer = false;
         private static bool signallingStarted = false; // Track if offer/answer exchange has started
 
@@ -85,9 +99,20 @@ namespace WebRTCNostrSignalling
 
             logger = AddConsoleLogger();
 
-            // Generate a unique peer ID for this session
-            localPeerId = Guid.NewGuid().ToString("N")[..8];
-            Console.WriteLine($"Your Peer ID: {localPeerId}");
+            // Generate a Nostr keypair for this session. The displayed Peer ID
+            // is the FULL hex public key (64 chars) -- inconvenient to read but
+            // copy-pasteable, and unambiguous so the answerer can target the
+            // offerer (and vice versa) via a Nostr-level "p" tag without
+            // needing a separate discovery channel. The 8-char short prefix
+            // is shown alongside for at-a-glance identification in logs.
+            var localPrivKeyBytes = new byte[32];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(localPrivKeyBytes);
+            localPrivateKey = ECPrivKey.Create(localPrivKeyBytes);
+            localPubKeyHex = localPrivateKey.CreateXOnlyPubKey().ToHex();
+            localPeerId = localPubKeyHex[..8];
+            Console.WriteLine($"Your Peer ID (short): {localPeerId}");
+            Console.WriteLine($"Your Peer ID (full):  {localPubKeyHex}");
+            Console.WriteLine("(give the full Peer ID to the other peer to connect)");
             Console.WriteLine();
 
             // Determine role
@@ -97,14 +122,15 @@ namespace WebRTCNostrSignalling
 
             if (!isOfferer)
             {
-                Console.Write("Enter the Peer ID of the offerer to connect to: ");
-                remotePeerId = Console.ReadLine()?.Trim();
-                
-                if (string.IsNullOrEmpty(remotePeerId))
+                Console.Write("Enter the Peer ID (full 64 hex chars) of the offerer to connect to: ");
+                var input = Console.ReadLine()?.Trim();
+                if (string.IsNullOrEmpty(input) || input.Length != 64)
                 {
-                    Console.WriteLine("Error: Remote Peer ID is required for answerer role.");
+                    Console.WriteLine("Error: a full 64-char hex Peer ID is required for answerer role.");
                     return;
                 }
+                remotePubKeyHex = input.ToLowerInvariant();
+                remotePeerId = remotePubKeyHex[..8];
             }
 
             // Connect to Nostr relay
@@ -125,15 +151,16 @@ namespace WebRTCNostrSignalling
                 Console.WriteLine("Press Enter when the other peer is ready, or Ctrl+C to exit...");
                 Console.ReadLine();
                 
-                Console.Write("Enter the Peer ID of the peer you want to connect to: ");
-                remotePeerId = Console.ReadLine()?.Trim();
-                
-                if (string.IsNullOrEmpty(remotePeerId))
+                Console.Write("Enter the Peer ID (full 64 hex chars) of the peer you want to connect to: ");
+                var input = Console.ReadLine()?.Trim();
+                if (string.IsNullOrEmpty(input) || input.Length != 64)
                 {
-                    Console.WriteLine("Error: Remote Peer ID is required.");
+                    Console.WriteLine("Error: a full 64-char hex Peer ID is required.");
                     peerConnection.Close("No remote peer specified");
                     return;
                 }
+                remotePubKeyHex = input.ToLowerInvariant();
+                remotePeerId = remotePubKeyHex[..8];
 
                 // Create and send offer
                 await CreateAndSendOffer();
@@ -225,11 +252,16 @@ namespace WebRTCNostrSignalling
             // Give the message listener time to fully initialize
             await Task.Delay(100);
 
-            // Subscribe to WebRTC signalling events
-            // We're interested in events tagged with our peer ID
+            // Subscribe only to WebRTC-signalling events that are tagged for us
+            // (NIP-01 "p" tag). Without the ReferencedPublicKeys filter the
+            // relay sends every event of this kind from every other client on
+            // the relay -- which on a public relay is a firehose of unrelated
+            // traffic. With the filter we only receive events whose author has
+            // explicitly tagged our pubkey as the recipient.
             var filter = new NostrSubscriptionFilter
             {
-                Kinds = new[] { WEBRTC_SIGNAL_KIND }
+                Kinds = new[] { WEBRTC_SIGNAL_KIND },
+                ReferencedPublicKeys = new[] { localPubKeyHex! }
             };
 
             // Create subscription
@@ -421,38 +453,89 @@ namespace WebRTCNostrSignalling
                 logger.LogError("Cannot send signal message: Nostr client is null");
                 return;
             }
+            if (localPrivateKey == null || localPubKeyHex == null)
+            {
+                logger.LogError("Cannot send signal message: local Nostr keypair not initialised.");
+                return;
+            }
+            if (string.IsNullOrEmpty(remotePubKeyHex))
+            {
+                logger.LogError("Cannot send signal message: remote Nostr pubkey is unknown.");
+                return;
+            }
 
             logger.LogDebug($"Sending {message.Type} to peer {message.TargetPeerId}...");
 
             var content = JsonSerializer.Serialize(message);
 
-            // Create a new Nostr event
-            // Note: In production, you would sign this with a proper private key
+            // Build the event with a "p" tag addressing the recipient. The matching
+            // subscription on the recipient side (ReferencedPublicKeys) only forwards
+            // events whose "p" tag contains its pubkey, so this is the relay-side
+            // routing primitive. Ensures Tags is non-null which (separately) avoids
+            // an id-preimage / publish-JSON canonicalisation mismatch in some NNostr
+            // versions that surfaces as the relay rejecting the event with
+            // "invalid: bad event id".
             var nostrEvent = new NostrEvent
             {
                 Kind = WEBRTC_SIGNAL_KIND,
                 Content = content,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAt = DateTimeOffset.UtcNow,
+                Tags = new List<NostrEventTag>
+                {
+                    new NostrEventTag
+                    {
+                        TagIdentifier = "p",
+                        Data = new List<string> { remotePubKeyHex! }
+                    }
+                }
             };
 
-            // Generate a random private key for signing (in production, use persistent keys)
-            var privateKeyBytes = new byte[32];
-            System.Security.Cryptography.RandomNumberGenerator.Fill(privateKeyBytes);
-            var privateKey = ECPrivKey.Create(privateKeyBytes);
-            
-            await nostrEvent.ComputeIdAndSignAsync(privateKey);
+            await nostrEvent.ComputeIdAndSignAsync(localPrivateKey);
 
-            logger.LogDebug($"Nostr event created: id={nostrEvent.Id?[..8]}..., kind={nostrEvent.Kind}");
+            logger.LogDebug($"Nostr event created: id={nostrEvent.Id?[..8]}..., kind={nostrEvent.Kind}, pubkey={nostrEvent.PublicKey?[..8]}...");
 
+            // Wire up an OK-frame listener BEFORE sending so we don't miss the
+            // relay's accept / reject response. SendEventsAndWaitUntilReceived
+            // returns once any OK frame for our event id arrives but doesn't
+            // distinguish accept (true) from reject (false) -- so we observe
+            // the OkReceived event ourselves and surface a real error if the
+            // relay rejected the event (the typical reason being "invalid:
+            // bad event id" which means our id-preimage didn't match what
+            // the relay re-computed from our published JSON).
+            var ackTcs = new System.Threading.Tasks.TaskCompletionSource<(bool ok, string? message)>();
+            EventHandler<(string eventId, bool success, string message)> onOk = (s, args) =>
+            {
+                if (args.eventId == nostrEvent.Id)
+                {
+                    ackTcs.TrySetResult((args.success, args.message));
+                }
+            };
+            nostrClient.OkReceived += onOk;
             try
             {
                 await nostrClient.SendEventsAndWaitUntilReceived(new[] { nostrEvent }, CancellationToken.None);
-                logger.LogDebug($"Nostr event sent and acknowledged");
+
+                // Give the OK frame up to 1s to arrive (it usually arrives essentially
+                // instantly; SendEventsAndWaitUntilReceived returns on OK or on the
+                // event being echoed back via subscription, whichever happens first).
+                using var cts = new System.Threading.CancellationTokenSource(System.TimeSpan.FromSeconds(1));
+                cts.Token.Register(() => ackTcs.TrySetResult((true, "(no OK frame within 1s; assuming accepted)")));
+                var (ok, relayMessage) = await ackTcs.Task;
+                if (!ok)
+                {
+                    logger.LogError($"Relay rejected Nostr event {nostrEvent.Id?[..8]}...: {relayMessage}");
+                    throw new InvalidOperationException($"Relay rejected event: {relayMessage}");
+                }
+                logger.LogDebug($"Nostr event acknowledged by relay: {relayMessage}");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is InvalidOperationException))
             {
                 logger.LogError($"Failed to send Nostr event: {ex.Message}");
                 throw;
+            }
+            finally
+            {
+                nostrClient.OkReceived -= onOk;
             }
         }
 
