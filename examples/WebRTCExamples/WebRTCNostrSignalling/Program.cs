@@ -215,12 +215,61 @@ namespace WebRTCNostrSignalling
                 logger.LogInformation($"Nostr connection state changed to: {state}");
             };
             
-            // Monitor raw messages for debugging
+            // Monitor raw messages for debugging AND short-circuit EVENT
+            // messages on our subscription past NNostr.Client's Verify gate.
+            //
+            // NostrClient.HandleIncomingMessage drops any EVENT for which
+            // evt.Verify() returns false. Verify() rebuilds the id-preimage
+            // using NNostr's JavaScriptStringEncode, then SHA-256s it, and
+            // requires the result to equal evt.Id. The relay computes Id
+            // from the JSON we publish (System.Text.Json's WriteStringValue
+            // with JavaScriptEncoder.Default). Those two encoders disagree
+            // on <, >, ', &, +, and non-ASCII -- the same bug we patched on
+            // the SEND side with hex-encoding.
+            //
+            // We hex-encode our own content so OUR events round-trip
+            // through Verify, but a peer's event arrives with the relay's
+            // id (computed from the relay's view of the JSON) and Verify
+            // re-hashes using NNostr's encoder, often producing a different
+            // value -- so the event is silently dropped and EventsReceived
+            // never fires.
+            //
+            // Workaround: parse EVENT messages off MessageReceived
+            // ourselves and dispatch to OnNostrEventsReceived directly,
+            // skipping the buggy Verify. This is acceptable for a
+            // prototype because the relay-side "#p" filter already
+            // ensures the events are addressed to us, and the application-
+            // level TargetPeerId check in OnNostrEventsReceived rejects
+            // anything that slipped through.
             nostrClient.MessageReceived += (sender, message) =>
             {
-                // Truncate long messages for logging
                 var truncatedMessage = message.Length > 200 ? message[..200] + "..." : message;
                 logger.LogDebug($"Nostr raw message received: {truncatedMessage}");
+
+                try
+                {
+                    using var doc = JsonDocument.Parse(message);
+                    var root = doc.RootElement;
+                    if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() < 3) return;
+                    var msgType = root[0].GetString();
+                    if (!string.Equals(msgType, "EVENT", StringComparison.OrdinalIgnoreCase)) return;
+
+                    var subId = root[1].GetString();
+                    if (subId != "webrtc-signal") return;
+
+                    // Deserialize the event payload using NNostr's own
+                    // converters, but skip Verify(). Use JsonElement.GetRawText
+                    // -> Deserialize<NostrEvent> so we go through the same
+                    // converters NNostr would use internally.
+                    var evt = JsonSerializer.Deserialize<NostrEvent>(root[2].GetRawText());
+                    if (evt == null) return;
+
+                    OnNostrEventsReceived(this, (subId, new[] { evt }));
+                }
+                catch (Exception ex)
+                {
+                    logger.LogDebug($"Nostr message bypass-parse failed: {ex.Message}");
+                }
             };
             
             nostrClient.InvalidMessageReceived += (sender, message) =>
