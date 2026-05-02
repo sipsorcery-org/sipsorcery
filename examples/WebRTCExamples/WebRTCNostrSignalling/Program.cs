@@ -70,6 +70,7 @@ namespace WebRTCNostrSignalling
         private static string? localPeerId;
         private static string? remotePeerId;
         private static bool isOfferer = false;
+        private static bool signallingStarted = false; // Track if offer/answer exchange has started
 
         static async Task Main(string[] args)
         {
@@ -157,14 +158,50 @@ namespace WebRTCNostrSignalling
         {
             nostrClient = new NostrClient(new Uri(NOSTR_RELAY_URL));
             
+            // Set up event handlers for diagnostics
             nostrClient.EventsReceived += OnNostrEventsReceived;
             nostrClient.NoticeReceived += (sender, notice) => 
-                logger.LogDebug($"Nostr notice: {notice}");
+                logger.LogWarning($"Nostr relay notice: {notice}");
+            nostrClient.OkReceived += (sender, args) =>
+            {
+                var (eventId, success, message) = args;
+                if (success)
+                {
+                    logger.LogDebug($"Nostr event {eventId[..8]}... published successfully");
+                }
+                else
+                {
+                    logger.LogError($"Nostr event {eventId[..8]}... failed to publish: {message}");
+                }
+            };
+            nostrClient.EoseReceived += (sender, subscriptionId) =>
+                logger.LogDebug($"Nostr end of stored events for subscription: {subscriptionId}");
 
-            _ = nostrClient.Connect();
+            logger.LogDebug($"Connecting to Nostr relay at {NOSTR_RELAY_URL}...");
+            
+            // Start the connection (returns a task that completes when disconnected)
+            var connectionTask = nostrClient.Connect();
+            
+            // Wait until connected
             await nostrClient.WaitUntilConnected();
             
             logger.LogInformation($"Connected to Nostr relay: {NOSTR_RELAY_URL}");
+
+            // IMPORTANT: Start listening for messages from the relay
+            // This must be called after connecting for the client to receive events
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    logger.LogDebug("Starting to listen for Nostr messages...");
+                    await nostrClient.ListenForMessages();
+                    logger.LogDebug("Nostr message listener stopped");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Nostr message listener error: {ex.Message}");
+                }
+            });
 
             // Subscribe to WebRTC signalling events
             // We're interested in events tagged with our peer ID
@@ -173,39 +210,55 @@ namespace WebRTCNostrSignalling
                 Kinds = new[] { WEBRTC_SIGNAL_KIND }
             };
 
-            // Start subscription - this doesn't need to block, but we handle errors asynchronously
-            _ = Task.Run(async () =>
+            // Create subscription
+            try
             {
-                try
-                {
-                    await nostrClient.CreateSubscription("webrtc-signal", new[] { filter });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError($"Failed to create Nostr subscription: {ex.Message}");
-                }
-            });
-            logger.LogDebug("Subscribed to WebRTC signalling events");
+                logger.LogDebug($"Creating Nostr subscription for kind {WEBRTC_SIGNAL_KIND}...");
+                await nostrClient.CreateSubscription("webrtc-signal", new[] { filter });
+                logger.LogDebug("Subscribed to WebRTC signalling events");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Failed to create Nostr subscription: {ex.Message}");
+            }
         }
 
         private static void OnNostrEventsReceived(object? sender, (string subscriptionId, NostrEvent[] events) args)
         {
+            logger.LogDebug($"Nostr events received: subscription={args.subscriptionId}, count={args.events.Length}");
+            
             if (args.subscriptionId != "webrtc-signal") return;
 
             foreach (var nostrEvent in args.events)
             {
                 try
                 {
-                    if (string.IsNullOrEmpty(nostrEvent.Content)) continue;
+                    logger.LogDebug($"Processing Nostr event: id={nostrEvent.Id?[..8]}..., kind={nostrEvent.Kind}");
+                    
+                    if (string.IsNullOrEmpty(nostrEvent.Content))
+                    {
+                        logger.LogDebug("Nostr event has empty content, skipping");
+                        continue;
+                    }
                     
                     var message = JsonSerializer.Deserialize<NostrSignalMessage>(nostrEvent.Content);
                     
-                    if (message == null) continue;
+                    if (message == null)
+                    {
+                        logger.LogDebug("Failed to deserialize Nostr event content");
+                        continue;
+                    }
+
+                    logger.LogDebug($"Parsed signal message: type={message.Type}, from={message.PeerId}, to={message.TargetPeerId}");
 
                     // Check if this message is for us
-                    if (message.TargetPeerId != localPeerId) continue;
+                    if (message.TargetPeerId != localPeerId)
+                    {
+                        logger.LogDebug($"Message not for us (target={message.TargetPeerId}, local={localPeerId}), skipping");
+                        continue;
+                    }
 
-                    logger.LogDebug($"Received {message.Type} from peer {message.PeerId}");
+                    logger.LogInformation($"Received {message.Type} from peer {message.PeerId}");
 
                     // Process the message asynchronously with error handling
                     _ = Task.Run(async () =>
@@ -235,6 +288,7 @@ namespace WebRTCNostrSignalling
                     if (!isOfferer && peerConnection != null)
                     {
                         remotePeerId = message.PeerId;
+                        signallingStarted = true; // Mark signalling as started when we receive the offer
                         logger.LogInformation($"Received offer from peer {remotePeerId}");
                         
                         var offerSdp = new RTCSessionDescriptionInit
@@ -307,6 +361,8 @@ namespace WebRTCNostrSignalling
         {
             if (peerConnection == null) return;
 
+            signallingStarted = true; // Mark that signalling has started
+            
             var offerSdp = peerConnection.createOffer();
             await peerConnection.setLocalDescription(offerSdp);
 
@@ -323,7 +379,13 @@ namespace WebRTCNostrSignalling
 
         private static async Task SendSignalMessage(NostrSignalMessage message)
         {
-            if (nostrClient == null) return;
+            if (nostrClient == null)
+            {
+                logger.LogError("Cannot send signal message: Nostr client is null");
+                return;
+            }
+
+            logger.LogDebug($"Sending {message.Type} to peer {message.TargetPeerId}...");
 
             var content = JsonSerializer.Serialize(message);
 
@@ -343,7 +405,18 @@ namespace WebRTCNostrSignalling
             
             await nostrEvent.ComputeIdAndSignAsync(privateKey);
 
-            await nostrClient.SendEventsAndWaitUntilReceived(new[] { nostrEvent }, CancellationToken.None);
+            logger.LogDebug($"Nostr event created: id={nostrEvent.Id?[..8]}..., kind={nostrEvent.Kind}");
+
+            try
+            {
+                await nostrClient.SendEventsAndWaitUntilReceived(new[] { nostrEvent }, CancellationToken.None);
+                logger.LogDebug($"Nostr event sent and acknowledged");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Failed to send Nostr event: {ex.Message}");
+                throw;
+            }
         }
 
         private static RTCPeerConnection CreatePeerConnection()
@@ -370,12 +443,19 @@ namespace WebRTCNostrSignalling
             pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
             pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
 
-            // ICE candidate handling
+            // ICE candidate handling - only send after signalling has started
             pc.onicecandidate += async (iceCandidate) =>
             {
+                // Don't send ICE candidates until the offer/answer exchange has started
+                if (!signallingStarted)
+                {
+                    logger.LogDebug("Skipping ICE candidate - signalling not yet started");
+                    return;
+                }
+                
                 if (remotePeerId != null && nostrClient != null)
                 {
-                    logger.LogDebug("Sending ICE candidate to peer");
+                    logger.LogDebug($"Sending ICE candidate to peer {remotePeerId}");
                     await SendSignalMessage(new NostrSignalMessage
                     {
                         Type = NostrSignalType.IceCandidate,
@@ -385,6 +465,10 @@ namespace WebRTCNostrSignalling
                         SdpMid = iceCandidate.sdpMid,
                         SdpMLineIndex = iceCandidate.sdpMLineIndex
                     });
+                }
+                else
+                {
+                    logger.LogDebug($"Cannot send ICE candidate: remotePeerId={remotePeerId}, nostrClient={(nostrClient != null ? "set" : "null")}");
                 }
             };
 
