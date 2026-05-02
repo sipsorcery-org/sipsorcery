@@ -57,7 +57,12 @@ namespace WebRTCNostrSignalling
 
     class Program
     {
-        private const string NOSTR_RELAY_URL = "wss://nostr.net";
+        // Note: Use a well-known public Nostr relay. Some options:
+        // - wss://nos.lol (reliable, fast)
+        // - wss://relay.damus.io (popular, Damus official)
+        // - wss://relay.snort.social (Snort official)
+        // - wss://nostr.mom (public, well maintained)
+        private const string NOSTR_RELAY_URL = "wss://nos.lol";
         private const string STUN_URL = "stun:stun.cloudflare.com";
         
         // Use a custom Nostr event kind for WebRTC signalling
