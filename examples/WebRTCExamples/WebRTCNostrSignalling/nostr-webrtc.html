@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -16,61 +16,60 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        h2 {
-            margin-top: 0;
-        }
-        input[type="text"] {
-            width: 200px;
-            padding: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        #status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 3px;
-        }
+        h2 { margin-top: 0; }
+        input[type="text"] { width: 600px; padding: 5px; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #status { padding: 10px; margin: 10px 0; border-radius: 3px; }
         .connected { background-color: #d4edda; }
         .disconnected { background-color: #f8d7da; }
         .connecting { background-color: #fff3cd; }
         #log {
-            height: 200px;
+            height: 300px;
             overflow-y: auto;
             background-color: #f8f9fa;
             padding: 10px;
             font-family: monospace;
             font-size: 12px;
             border: 1px solid #ddd;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
-        video {
-            background-color: #000;
-            max-width: 100%;
+        video { background-color: #000; max-width: 100%; }
+        .id-display {
+            font-family: monospace;
+            background: #eef;
+            padding: 4px 8px;
+            border-radius: 3px;
+            user-select: all;
         }
+        .id-short { color: #06c; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>WebRTC Nostr Signalling - Browser Peer</h1>
-    
+    <h1>WebRTC Nostr Signalling -- Browser Peer</h1>
+
     <div class="section">
         <h2>Configuration</h2>
         <div>
             <label>Nostr Relay URL: </label>
-            <input type="text" id="relayUrl" value="wss://nostr.net" />
+            <input type="text" id="relayUrl" value="wss://nos.lol" />
         </div>
         <div style="margin-top: 10px;">
-            <label>Your Peer ID: </label>
-            <strong id="localPeerId"></strong>
+            <label>Your Peer ID (short): </label>
+            <span class="id-short" id="localPeerIdShort"></span>
         </div>
+        <div style="margin-top: 6px;">
+            <label>Your Peer ID (full):&nbsp; </label>
+            <span class="id-display" id="localPeerIdFull"></span>
+        </div>
+        <small>(give the full Peer ID to the other peer to connect)</small>
     </div>
 
     <div class="section">
         <h2>Connection</h2>
         <div>
-            <label>Remote Peer ID: </label>
-            <input type="text" id="remotePeerId" placeholder="Enter peer ID" />
+            <label>Remote Peer ID (full 64 hex chars): </label>
+            <input type="text" id="remotePeerId" placeholder="64-char hex pubkey of the other peer" />
         </div>
         <div style="margin-top: 10px;">
             <button id="connectRelay">Connect to Relay</button>
@@ -90,27 +89,77 @@
         <div id="log"></div>
     </div>
 
-    <script>
-        // WebRTC Signalling over Nostr
-        const WEBRTC_SIGNAL_KIND = 24133;
-        
-        let localPeerId = generatePeerId();
-        let remotePeerId = null;
+    <script type="module">
+        // ----------------------------------------------------------------------
+        // WebRTC Signalling over Nostr -- browser peer.
+        //
+        // Wire format matches the C# console app in this folder:
+        //   * Custom ephemeral kind 25555 (chosen to avoid colliding with
+        //     NIP-46 NostrConnect on kind 24133).
+        //   * Each peer is identified by its FULL 64-hex secp256k1 pubkey.
+        //   * Routing is done at the Nostr level via a ["p", recipientPubkey]
+        //     tag plus a {"#p":[localPubkey]} subscription filter, so the
+        //     relay only forwards events tagged for us.
+        //   * The signalling JSON uses PascalCase property names and an
+        //     integer Type field (Offer=0, Answer=1, IceCandidate=2) to
+        //     match what System.Text.Json on the C# side produces.
+        //   * Event content is HEX-ENCODED to dodge a canonicalisation bug
+        //     in the .NET NNostr.Client library. The C# code does the same
+        //     so we round-trip bit-exact.
+        //
+        // We use nostr-tools from esm.sh for real BIP-340 Schnorr signing
+        // (the previous version of this file sent fake signatures, which
+        // most public relays reject).
+        // ----------------------------------------------------------------------
+
+        import {
+            generateSecretKey,
+            getPublicKey,
+            finalizeEvent,
+            verifyEvent,
+        } from 'https://esm.sh/nostr-tools@2.7.2/pure';
+
+        const WEBRTC_SIGNAL_KIND = 25555;
+
+        // Integer values match the C# NostrSignalType enum declaration order.
+        const SignalType = { Offer: 0, Answer: 1, IceCandidate: 2 };
+        const signalTypeName = (n) =>
+            ({ 0: 'Offer', 1: 'Answer', 2: 'IceCandidate' }[n] || `Unknown(${n})`);
+
+        // ---- state ----
+        let localSecretKey = null;     // Uint8Array(32)
+        let localPubKeyHex = null;     // 64-char hex (x-only schnorr pubkey)
+        let localPeerIdShort = null;   // first 8 hex chars of localPubKeyHex
+        let remotePubKeyHex = null;    // full hex pubkey of the other peer
+        let remotePeerIdShort = null;
         let nostrWs = null;
         let pc = null;
-        let privateKey = null;
-        let publicKey = null;
+        // Buffer for ICE candidates that arrive before the remote description
+        // is set. Drained as soon as setRemoteDescription succeeds.
+        let pendingRemoteCandidates = [];
+        let remoteDescriptionApplied = false;
 
-        document.getElementById('localPeerId').textContent = localPeerId;
+        // ---- helpers ----
+        const enc = new TextEncoder();
+        const dec = new TextDecoder();
 
-        function generatePeerId() {
-            return Math.random().toString(36).substring(2, 10);
+        function bytesToHex(bytes) {
+            return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
         }
+        function hexToBytes(hex) {
+            const out = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < out.length; i++) {
+                out[i] = parseInt(hex.substr(i * 2, 2), 16);
+            }
+            return out;
+        }
+        function utf8ToHex(s) { return bytesToHex(enc.encode(s)); }
+        function hexToUtf8(hex) { return dec.decode(hexToBytes(hex)); }
 
         function log(message) {
             const logDiv = document.getElementById('log');
             const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
             logDiv.scrollTop = logDiv.scrollHeight;
             console.log(message);
         }
@@ -121,80 +170,79 @@
             statusDiv.className = className;
         }
 
-        // Simple secp256k1 key generation (for prototype only - use a proper library in production)
-        async function generateNostrKeys() {
-            // Generate random 32 bytes for private key
-            privateKey = new Uint8Array(32);
-            crypto.getRandomValues(privateKey);
-            
-            // For a real implementation, you'd use secp256k1 to derive the public key
-            // This is a placeholder that just hashes the private key
-            const hash = await crypto.subtle.digest('SHA-256', privateKey);
-            publicKey = Array.from(new Uint8Array(hash))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-            
-            log(`Generated Nostr keys (public key: ${publicKey.substring(0, 16)}...)`);
+        // Generate a fresh secp256k1 keypair at startup.
+        function generateNostrIdentity() {
+            localSecretKey = generateSecretKey();
+            localPubKeyHex = getPublicKey(localSecretKey);
+            localPeerIdShort = localPubKeyHex.slice(0, 8);
+            document.getElementById('localPeerIdShort').textContent = localPeerIdShort;
+            document.getElementById('localPeerIdFull').textContent = localPubKeyHex;
+            log(`Generated Nostr keypair. Pubkey ${localPubKeyHex}`);
         }
+        generateNostrIdentity();
 
-        async function computeEventId(event) {
-            const serialized = JSON.stringify([
-                0,
-                event.pubkey,
-                event.created_at,
-                event.kind,
-                event.tags,
-                event.content
-            ]);
-            const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(serialized));
-            return Array.from(new Uint8Array(hash))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-        }
+        // ----------------------------------------------------------------------
+        // Nostr connection + subscription
+        // ----------------------------------------------------------------------
 
-        document.getElementById('connectRelay').onclick = async function() {
-            const relayUrl = document.getElementById('relayUrl').value;
-            
+        document.getElementById('connectRelay').onclick = function () {
+            const relayUrl = document.getElementById('relayUrl').value.trim();
             log(`Connecting to Nostr relay: ${relayUrl}`);
             setStatus('Connecting to relay...', 'connecting');
-            
-            await generateNostrKeys();
-            
+
             nostrWs = new WebSocket(relayUrl);
-            
-            nostrWs.onopen = function() {
+
+            nostrWs.onopen = function () {
                 log('Connected to Nostr relay');
                 setStatus('Connected to relay', 'connected');
-                
+
                 document.getElementById('createOffer').disabled = false;
                 document.getElementById('disconnect').disabled = false;
                 document.getElementById('connectRelay').disabled = true;
-                
-                // Subscribe to WebRTC signalling events
-                const subscriptionId = 'webrtc-signal-' + localPeerId;
-                const filter = { kinds: [WEBRTC_SIGNAL_KIND] };
+
+                // Subscribe only to events tagged for us. Without the "#p"
+                // filter the relay would send us every kind-25555 event from
+                // every other client.
+                const subscriptionId = 'webrtc-signal';
+                const filter = {
+                    kinds: [WEBRTC_SIGNAL_KIND],
+                    '#p': [localPubKeyHex],
+                };
                 nostrWs.send(JSON.stringify(['REQ', subscriptionId, filter]));
-                log('Subscribed to WebRTC signalling events');
+                log(`Subscribed to kind ${WEBRTC_SIGNAL_KIND} for our pubkey only.`);
             };
-            
-            nostrWs.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                
+
+            nostrWs.onmessage = function (event) {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    log(`Bad JSON from relay: ${e.message}`);
+                    return;
+                }
+
                 if (data[0] === 'EVENT') {
                     handleNostrEvent(data[2]);
                 } else if (data[0] === 'NOTICE') {
                     log(`Nostr notice: ${data[1]}`);
                 } else if (data[0] === 'OK') {
-                    log(`Event ${data[1].substring(0, 8)}... published: ${data[2]}`);
+                    const [, eventId, success, msg] = data;
+                    if (success) {
+                        log(`Event ${eventId.slice(0, 8)}... accepted by relay${msg ? ': ' + msg : ''}`);
+                    } else {
+                        log(`Event ${eventId.slice(0, 8)}... REJECTED by relay: ${msg}`);
+                    }
+                } else if (data[0] === 'EOSE') {
+                    log(`End of stored events for subscription: ${data[1]}`);
                 }
             };
-            
-            nostrWs.onerror = function(error) {
-                log(`WebSocket error: ${error}`);
+
+            nostrWs.onerror = function (error) {
+                log(`WebSocket error: ${error.message || error}`);
                 setStatus('Connection error', 'disconnected');
             };
-            
-            nostrWs.onclose = function() {
+
+            nostrWs.onclose = function () {
                 log('Disconnected from Nostr relay');
                 setStatus('Disconnected', 'disconnected');
                 resetUI();
@@ -203,116 +251,193 @@
 
         function handleNostrEvent(nostrEvent) {
             try {
-                const message = JSON.parse(nostrEvent.content);
-                
-                // Check if this message is for us
-                if (message.targetPeerId !== localPeerId) return;
-                
-                log(`Received ${message.type} from peer ${message.peerId}`);
-                
-                switch (message.type) {
-                    case 'Offer':
-                        handleOffer(message);
-                        break;
-                    case 'Answer':
-                        handleAnswer(message);
-                        break;
-                    case 'IceCandidate':
-                        handleIceCandidate(message);
-                        break;
+                // The C# side does NOT verify the Nostr signature on incoming
+                // events because of an upstream library bug; for robustness
+                // and parity we make verification best-effort here. Some
+                // browsers will reject the signature if upstream re-encoded
+                // anything; if so we still try to process the event.
+                let sigOk = false;
+                try { sigOk = verifyEvent(nostrEvent); } catch { /* ignore */ }
+                if (!sigOk) {
+                    log(`Event ${nostrEvent.id?.slice(0, 8)}... did not verify; processing anyway (relay-side "#p" filter is the trust gate).`);
+                }
+
+                if (typeof nostrEvent.content !== 'string') return;
+
+                // Content is hex-encoded JSON (matches what the C# side
+                // emits to dodge the NNostr canonicalisation bug).
+                let json;
+                try {
+                    json = hexToUtf8(nostrEvent.content);
+                } catch (e) {
+                    log(`Skipping non-hex event content: ${nostrEvent.content.slice(0, 30)}...`);
+                    return;
+                }
+
+                let message;
+                try {
+                    message = JSON.parse(json);
+                } catch (e) {
+                    log(`Skipping malformed JSON in event content: ${e.message}`);
+                    return;
+                }
+
+                // Defensive check: relay-side filter should have ensured this
+                // already, but verify the application-level routing too.
+                if (message.TargetPeerId !== localPeerIdShort) {
+                    log(`Skipping message not for us (TargetPeerId=${message.TargetPeerId} localPeerId=${localPeerIdShort}).`);
+                    return;
+                }
+
+                log(`Received ${signalTypeName(message.Type)} from peer ${message.PeerId}`);
+
+                switch (message.Type) {
+                    case SignalType.Offer: handleOffer(message, nostrEvent); break;
+                    case SignalType.Answer: handleAnswer(message); break;
+                    case SignalType.IceCandidate: handleIceCandidate(message); break;
+                    default: log(`Unknown message type: ${message.Type}`);
                 }
             } catch (e) {
-                log(`Error parsing Nostr event: ${e.message}`);
+                log(`Error handling Nostr event: ${e.message}`);
             }
         }
 
-        async function handleOffer(message) {
-            remotePeerId = message.peerId;
-            document.getElementById('remotePeerId').value = remotePeerId;
-            
+        // ----------------------------------------------------------------------
+        // WebRTC handlers
+        // ----------------------------------------------------------------------
+
+        async function handleOffer(message, nostrEvent) {
+            // Learn the offerer's full pubkey from the EVENT pubkey field --
+            // we need it to address our Answer back via the "p" tag.
+            remotePubKeyHex = nostrEvent.pubkey;
+            remotePeerIdShort = remotePubKeyHex.slice(0, 8);
+            document.getElementById('remotePeerId').value = remotePubKeyHex;
+
             log('Creating peer connection for incoming call...');
             createPeerConnection();
-            
-            await pc.setRemoteDescription(new RTCSessionDescription({
-                type: 'offer',
-                sdp: message.sdp
-            }));
-            
+
+            await pc.setRemoteDescription({ type: 'offer', sdp: message.Sdp });
+            remoteDescriptionApplied = true;
+            await drainPendingRemoteCandidates();
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            
+
             await sendSignalMessage({
-                type: 'Answer',
-                peerId: localPeerId,
-                targetPeerId: remotePeerId,
-                sdp: answer.sdp
+                Type: SignalType.Answer,
+                PeerId: localPeerIdShort,
+                TargetPeerId: remotePeerIdShort,
+                Sdp: answer.sdp,
             });
-            
-            log('Sent answer to peer');
+
+            log('Sent answer to peer.');
         }
 
         async function handleAnswer(message) {
-            log('Received answer from peer');
-            await pc.setRemoteDescription(new RTCSessionDescription({
-                type: 'answer',
-                sdp: message.sdp
-            }));
+            log('Applying answer SDP...');
+            await pc.setRemoteDescription({ type: 'answer', sdp: message.Sdp });
+            remoteDescriptionApplied = true;
+            await drainPendingRemoteCandidates();
+            log('Remote description (answer) applied successfully.');
         }
 
         async function handleIceCandidate(message) {
-            if (pc && message.candidate) {
-                await pc.addIceCandidate(new RTCIceCandidate({
-                    candidate: message.candidate,
-                    sdpMid: message.sdpMid,
-                    sdpMLineIndex: message.sdpMLineIndex
-                }));
-                log('Added ICE candidate');
+            if (!pc || !message.Candidate) return;
+
+            const cand = {
+                candidate: message.Candidate,
+                sdpMid: message.SdpMid,
+                sdpMLineIndex: message.SdpMLineIndex ?? 0,
+            };
+
+            if (!remoteDescriptionApplied) {
+                pendingRemoteCandidates.push(cand);
+                log(`Buffered remote ICE candidate (no remote description yet)`);
+                return;
+            }
+
+            try {
+                await pc.addIceCandidate(cand);
+                log('Added remote ICE candidate.');
+            } catch (e) {
+                log(`addIceCandidate failed: ${e.message}`);
             }
         }
 
-        async function sendSignalMessage(message) {
-            const event = {
-                kind: WEBRTC_SIGNAL_KIND,
-                content: JSON.stringify(message),
-                created_at: Math.floor(Date.now() / 1000),
-                tags: [],
-                pubkey: publicKey
-            };
-            
-            event.id = await computeEventId(event);
-            // Note: In production, you'd need to properly sign the event
-            // For this prototype, we send without a valid signature (may not work with all relays)
-            event.sig = '0'.repeat(128);
-            
-            nostrWs.send(JSON.stringify(['EVENT', event]));
+        async function drainPendingRemoteCandidates() {
+            if (pendingRemoteCandidates.length === 0) return;
+            log(`Draining ${pendingRemoteCandidates.length} buffered remote ICE candidate(s).`);
+            for (const cand of pendingRemoteCandidates) {
+                try { await pc.addIceCandidate(cand); }
+                catch (e) { log(`addIceCandidate failed during drain: ${e.message}`); }
+            }
+            pendingRemoteCandidates = [];
         }
+
+        // ----------------------------------------------------------------------
+        // Send + sign a signalling message via Nostr
+        // ----------------------------------------------------------------------
+
+        async function sendSignalMessage(message) {
+            if (!nostrWs || nostrWs.readyState !== WebSocket.OPEN) {
+                log('Cannot send: relay socket not open.');
+                return;
+            }
+            if (!remotePubKeyHex) {
+                log('Cannot send: remote pubkey not known.');
+                return;
+            }
+
+            const innerJson = JSON.stringify(message);
+            const hexContent = utf8ToHex(innerJson);
+
+            const eventTemplate = {
+                kind: WEBRTC_SIGNAL_KIND,
+                content: hexContent,
+                created_at: Math.floor(Date.now() / 1000),
+                // Address the recipient via the "p" tag so their "#p" filter
+                // accepts the event and the relay forwards it to them.
+                tags: [['p', remotePubKeyHex]],
+            };
+
+            // finalizeEvent computes id, signs with BIP-340 Schnorr, and
+            // returns a complete event object.
+            const evt = finalizeEvent(eventTemplate, localSecretKey);
+
+            log(`Publishing ${signalTypeName(message.Type)} event ${evt.id.slice(0, 8)}...`);
+            nostrWs.send(JSON.stringify(['EVENT', evt]));
+        }
+
+        // ----------------------------------------------------------------------
+        // RTCPeerConnection wiring
+        // ----------------------------------------------------------------------
 
         function createPeerConnection() {
             const config = {
-                iceServers: [{ urls: 'stun:stun.cloudflare.com' }]
+                iceServers: [{ urls: 'stun:stun.cloudflare.com' }],
             };
-            
             pc = new RTCPeerConnection(config);
-            
-            pc.ontrack = function(event) {
-                log('Received remote track');
+            pendingRemoteCandidates = [];
+            remoteDescriptionApplied = false;
+
+            pc.ontrack = function (event) {
+                log('Received remote track.');
                 document.getElementById('remoteVideo').srcObject = event.streams[0];
             };
-            
-            pc.onicecandidate = async function(event) {
-                if (event.candidate && remotePeerId) {
-                    await sendSignalMessage({
-                        type: 'IceCandidate',
-                        peerId: localPeerId,
-                        targetPeerId: remotePeerId,
-                        candidate: event.candidate.candidate,
-                        sdpMid: event.candidate.sdpMid,
-                        sdpMLineIndex: event.candidate.sdpMLineIndex
-                    });
-                }
+
+            pc.onicecandidate = async function (event) {
+                if (!event.candidate || !remotePubKeyHex) return;
+                await sendSignalMessage({
+                    Type: SignalType.IceCandidate,
+                    PeerId: localPeerIdShort,
+                    TargetPeerId: remotePeerIdShort,
+                    Candidate: event.candidate.candidate,
+                    SdpMid: event.candidate.sdpMid,
+                    SdpMLineIndex: event.candidate.sdpMLineIndex,
+                });
             };
-            
-            pc.onconnectionstatechange = function() {
+
+            pc.onconnectionstatechange = function () {
                 log(`Connection state: ${pc.connectionState}`);
                 if (pc.connectionState === 'connected') {
                     setStatus('WebRTC Connected!', 'connected');
@@ -320,54 +445,61 @@
                     setStatus('Connection failed/disconnected', 'disconnected');
                 }
             };
-            
-            pc.oniceconnectionstatechange = function() {
+
+            pc.oniceconnectionstatechange = function () {
                 log(`ICE connection state: ${pc.iceConnectionState}`);
+            };
+
+            pc.onsignalingstatechange = function () {
+                log(`Signalling state: ${pc.signalingState}`);
             };
         }
 
-        document.getElementById('createOffer').onclick = async function() {
-            remotePeerId = document.getElementById('remotePeerId').value.trim();
-            
-            if (!remotePeerId) {
-                alert('Please enter the remote peer ID');
+        // ----------------------------------------------------------------------
+        // UI: Create Offer
+        // ----------------------------------------------------------------------
+
+        document.getElementById('createOffer').onclick = async function () {
+            const remoteInput = document.getElementById('remotePeerId').value.trim();
+            if (!remoteInput || remoteInput.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(remoteInput)) {
+                alert('Please enter the remote peer\'s full 64-char hex Peer ID.');
                 return;
             }
-            
-            log(`Creating offer for peer ${remotePeerId}...`);
+            remotePubKeyHex = remoteInput.toLowerCase();
+            remotePeerIdShort = remotePubKeyHex.slice(0, 8);
+
+            log(`Creating offer for peer ${remotePeerIdShort} (${remotePubKeyHex})...`);
             setStatus('Creating offer...', 'connecting');
-            
+
             createPeerConnection();
-            
-            // Add transceivers for receiving media
+
+            // Receive-only video + audio for the demo.
             pc.addTransceiver('video', { direction: 'recvonly' });
             pc.addTransceiver('audio', { direction: 'recvonly' });
-            
+
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
-            
+
             await sendSignalMessage({
-                type: 'Offer',
-                peerId: localPeerId,
-                targetPeerId: remotePeerId,
-                sdp: offer.sdp
+                Type: SignalType.Offer,
+                PeerId: localPeerIdShort,
+                TargetPeerId: remotePeerIdShort,
+                Sdp: offer.sdp,
             });
-            
-            log(`Sent offer to peer ${remotePeerId}`);
+
+            log(`Sent offer to peer ${remotePeerIdShort}.`);
             setStatus('Waiting for answer...', 'connecting');
         };
 
-        document.getElementById('disconnect').onclick = function() {
-            if (pc) {
-                pc.close();
-                pc = null;
-            }
-            if (nostrWs) {
-                nostrWs.close();
-                nostrWs = null;
-            }
+        // ----------------------------------------------------------------------
+        // UI: Disconnect / reset
+        // ----------------------------------------------------------------------
+
+        document.getElementById('disconnect').onclick = function () {
+            if (pc) { pc.close(); pc = null; }
+            if (nostrWs) { nostrWs.close(); nostrWs = null; }
             resetUI();
-            log('Disconnected');
+            log('Disconnected.');
         };
 
         function resetUI() {
