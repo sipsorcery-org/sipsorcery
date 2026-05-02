@@ -278,9 +278,34 @@ namespace WebRTCNostrSignalling
             }
         }
 
+        // Pending remote ICE candidates received before the remote description
+        // has been applied. They get drained once setRemoteDescription
+        // succeeds. Without buffering, an IceCandidate that arrives at the
+        // offerer before the Answer (Nostr does not preserve ordering across
+        // events) would be applied to a peer connection with no remote
+        // description and the ICE checks against the answerer would never
+        // start.
+        private static readonly System.Collections.Generic.List<RTCIceCandidateInit> pendingRemoteCandidates = new();
+        private static bool remoteDescriptionApplied = false;
+
+        private static void DrainPendingRemoteCandidates()
+        {
+            if (peerConnection == null) return;
+            lock (pendingRemoteCandidates)
+            {
+                if (pendingRemoteCandidates.Count == 0) return;
+                logger.LogInformation($"Draining {pendingRemoteCandidates.Count} buffered remote ICE candidate(s).");
+                foreach (var cand in pendingRemoteCandidates)
+                {
+                    peerConnection.addIceCandidate(cand);
+                }
+                pendingRemoteCandidates.Clear();
+            }
+        }
+
         private static void OnNostrEventsReceived(object? sender, (string subscriptionId, NostrEvent[] events) args)
         {
-            logger.LogDebug($"Nostr events received: subscription={args.subscriptionId}, count={args.events.Length}");
+            logger.LogInformation($"Nostr events received: subscription={args.subscriptionId}, count={args.events.Length}");
             
             if (args.subscriptionId != "webrtc-signal") return;
 
@@ -372,7 +397,13 @@ namespace WebRTCNostrSignalling
                             sdp = message.Sdp
                         };
 
-                        var result = peerConnection.setRemoteDescription(offerSdp);
+                        var setResult = peerConnection.setRemoteDescription(offerSdp);
+                        if (setResult == SetDescriptionResultEnum.OK)
+                        {
+                            remoteDescriptionApplied = true;
+                            DrainPendingRemoteCandidates();
+                        }
+                        var result = setResult;
                         if (result != SetDescriptionResultEnum.OK)
                         {
                             logger.LogError($"Failed to set remote description: {result}");
@@ -398,7 +429,7 @@ namespace WebRTCNostrSignalling
                 case NostrSignalType.Answer:
                     if (isOfferer && peerConnection != null)
                     {
-                        logger.LogInformation($"Received answer from peer {message.PeerId}");
+                        logger.LogInformation($"Received answer from peer {message.PeerId}, applying...");
                         
                         var answerSdp = new RTCSessionDescriptionInit
                         {
@@ -411,14 +442,18 @@ namespace WebRTCNostrSignalling
                         {
                             logger.LogError($"Failed to set remote description: {result}");
                         }
+                        else
+                        {
+                            logger.LogInformation("Remote description (answer) applied successfully");
+                            remoteDescriptionApplied = true;
+                            DrainPendingRemoteCandidates();
+                        }
                     }
                     break;
 
                 case NostrSignalType.IceCandidate:
                     if (peerConnection != null && !string.IsNullOrEmpty(message.Candidate))
                     {
-                        logger.LogDebug($"Received ICE candidate from peer {message.PeerId}");
-                        
                         var iceCandidate = new RTCIceCandidateInit
                         {
                             candidate = message.Candidate,
@@ -426,7 +461,19 @@ namespace WebRTCNostrSignalling
                             sdpMLineIndex = message.SdpMLineIndex ?? 0
                         };
 
-                        peerConnection.addIceCandidate(iceCandidate);
+                        if (!remoteDescriptionApplied)
+                        {
+                            lock (pendingRemoteCandidates)
+                            {
+                                pendingRemoteCandidates.Add(iceCandidate);
+                            }
+                            logger.LogInformation($"Buffered remote ICE candidate from {message.PeerId} (no remote description yet)");
+                        }
+                        else
+                        {
+                            logger.LogInformation($"Adding remote ICE candidate from {message.PeerId}: {message.Candidate}");
+                            peerConnection.addIceCandidate(iceCandidate);
+                        }
                     }
                     break;
             }
