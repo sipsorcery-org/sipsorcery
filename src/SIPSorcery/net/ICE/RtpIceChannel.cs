@@ -2542,28 +2542,28 @@ namespace SIPSorcery.Net
             }
 
 
+            // Default fallback: do an actual mDNS query via Makaretu.Dns.Multicast.
+            // Dns.GetHostAddressesAsync delegates to the OS resolver which on Windows
+            // does not reliably handle .local lookups (depends on whether the OS-level
+            // mDNS resolver is enabled, the multicast packet round-trips through the
+            // firewall in time, etc.). Without a real mDNS query Chrome-published
+            // .local candidates almost never resolve and ICE never gets to a
+            // succeeded pair.
             IPAddress[] addresses;
             try
             {
-                addresses = await Dns.GetHostAddressesAsync(candidate.address).ConfigureAwait(false);
+                addresses = await MdnsResolver.ResolveAsync(candidate.address).ConfigureAwait(false);
             }
-            catch (SocketException e)
+            catch (Exception e)
             {
                 logger.LogError(e, "Error resolving mDNS hostname {Name}", candidate.address);
-                return Array.Empty<IPAddress>();
-            }
-            catch (ArgumentException e)
-            {
-                logger.LogError(e, "Unsupported mDNS hostname {Name}", candidate.address);
                 return Array.Empty<IPAddress>();
             }
 
             if (addresses.Length == 0)
             {
-                logger.LogWarning("RTP ICE channel has no MDNS resolver set, and the system can not resolve remote candidate with MDNS hostname {CandidateAddress}.", candidate.address);
-                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
-                // support is coming to .Net Core soon (AC 12 Jun 2020).
-                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
+                logger.LogWarning("RTP ICE channel mDNS resolver returned no answers for {CandidateAddress} within the timeout.", candidate.address);
+                OnIceCandidateError?.Invoke(candidate, $"mDNS hostname {candidate.address} did not resolve within the query timeout.");
             }
             return addresses;
         }
