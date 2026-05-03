@@ -248,7 +248,12 @@ namespace SIPSorcery.Media
                         {
                             uint fps = (_frameSpacing > 0) ? 1000 / (uint)_frameSpacing : DEFAULT_FRAMES_PER_SECOND;
                             uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                            OnVideoSourceEncodedSample.Invoke(durationRtpTS, encodedBuffer);
+                            // Use ?.Invoke so the null-check and the call are
+                            // a single atomic delegate read. Without this a
+                            // subscriber unsubscribing on another thread
+                            // between the outer null-check and this Invoke
+                            // produced a NullReferenceException.
+                            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
                         }
                     }
 
