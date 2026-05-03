@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
 // Description: A prototype WebRTC application that uses Nostr protocol and 
@@ -250,19 +250,19 @@ namespace WebRTCNostrSignalling
                 {
                     using var doc = JsonDocument.Parse(message);
                     var root = doc.RootElement;
-                    if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() < 3) return;
+                    if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() < 3) { return; }
                     var msgType = root[0].GetString();
-                    if (!string.Equals(msgType, "EVENT", StringComparison.OrdinalIgnoreCase)) return;
+                    if (!string.Equals(msgType, "EVENT", StringComparison.OrdinalIgnoreCase)) { return; }
 
                     var subId = root[1].GetString();
-                    if (subId != "webrtc-signal") return;
+                    if (subId != "webrtc-signal") { return; }
 
                     // Deserialize the event payload using NNostr's own
                     // converters, but skip Verify(). Use JsonElement.GetRawText
                     // -> Deserialize<NostrEvent> so we go through the same
                     // converters NNostr would use internally.
                     var evt = JsonSerializer.Deserialize<NostrEvent>(root[2].GetRawText());
-                    if (evt == null) return;
+                    if (evt == null) { return; }
 
                     OnNostrEventsReceived(sender, (subId, new[] { evt }));
                 }
@@ -339,10 +339,10 @@ namespace WebRTCNostrSignalling
 
         private static void DrainPendingRemoteCandidates()
         {
-            if (peerConnection == null) return;
+            if (peerConnection == null) { return; }
             lock (pendingRemoteCandidates)
             {
-                if (pendingRemoteCandidates.Count == 0) return;
+                if (pendingRemoteCandidates.Count == 0) { return; }
                 logger.LogInformation($"Draining {pendingRemoteCandidates.Count} buffered remote ICE candidate(s).");
                 foreach (var cand in pendingRemoteCandidates)
                 {
@@ -355,8 +355,8 @@ namespace WebRTCNostrSignalling
         private static void OnNostrEventsReceived(object? sender, (string subscriptionId, NostrEvent[] events) args)
         {
             logger.LogInformation($"Nostr events received: subscription={args.subscriptionId}, count={args.events.Length}");
-            
-            if (args.subscriptionId != "webrtc-signal") return;
+
+            if (args.subscriptionId != "webrtc-signal") { return; }
 
             foreach (var nostrEvent in args.events)
             {
@@ -530,7 +530,7 @@ namespace WebRTCNostrSignalling
 
         private static async Task CreateAndSendOffer()
         {
-            if (peerConnection == null) return;
+            if (peerConnection == null) { return; }
 
             signallingStarted = true; // Mark that signalling has started
             
@@ -757,12 +757,12 @@ namespace WebRTCNostrSignalling
                 logger.LogDebug($"ICE connection state changed to {state}");
 
             // Diagnostics
-            pc.OnReceiveReport += (re, media, rr) => 
-                logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            pc.OnSendReport += (media, sr) => 
-                logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => 
-                logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}");
+            //pc.OnReceiveReport += (re, media, rr) => 
+            //    logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            //pc.OnSendReport += (media, sr) => 
+            //    logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+            //pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => 
+            //    logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}");
 
             return pc;
         }
