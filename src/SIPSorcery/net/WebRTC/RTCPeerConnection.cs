@@ -1853,10 +1853,24 @@ namespace SIPSorcery.Net
         {
             if (alertType == TlsAlertTypesEnum.CloseNotify)
             {
-                logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
+                logger.LogDebug("Closing peer connection as a result of DTLS close notification.");
 
-                // No point keeping the SCTP association open if there is no DTLS transport available.
-                sctp?.Close();
+                // A DTLS close_notify from the remote peer means the secure
+                // channel is gone -- the entire peer connection is no longer
+                // usable. Per the WebRTC spec the RTCDtlsTransport state moves
+                // to "closed" which propagates to the RTCPeerConnection.
+                // libwebrtc, Firefox and pion all close the whole peer
+                // connection at this point.
+                //
+                // Without this Close() call the SCTP association alone is
+                // closed but the underlying RTP/UDP socket keeps running and
+                // continues to send periodic STUN consent freshness checks +
+                // RTP/RTCP packets at the now-gone remote port. The remote
+                // OS responds with ICMP "port unreachable" for each one,
+                // which surfaces as a tight loop of
+                //   SocketException UdpReceiver.EndReceiveFrom (ConnectionReset)
+                // warnings until the application shuts itself down.
+                Close("Remote DTLS close notification received");
             }
             else
             {
