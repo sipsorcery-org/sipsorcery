@@ -51,8 +51,13 @@ namespace SIPSorcery.Net
     /// <see cref="RtpIceChannel.MdnsGetAddresses"/> /
     /// <see cref="RtpIceChannel.MdnsResolve"/> hook.
     /// </summary>
-    internal static class MdnsResolver
+    internal sealed class MdnsResolver
     {
+        // Helper-only class with all static members; prevent instantiation.
+        // Cannot be 'static class' because LogFactory.CreateLogger<T>()
+        // requires T to be a non-static type (CS0718).
+        private MdnsResolver() { }
+
         /// <summary>
         /// Default time to wait for any answer to arrive after the query
         /// is sent. mDNS responses on a healthy LAN typically arrive in
