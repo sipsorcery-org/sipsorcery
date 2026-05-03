@@ -671,9 +671,20 @@ namespace WebRTCNostrSignalling
             var testPatternSource = new VideoTestPatternSource(vp8Codec);
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            // Tracks are SendOnly because the C# side only ever sources
+            // media (a video test pattern + a music audio source) and has no
+            // sink to render received media into. SendRecv would generate an
+            // answer SDP whose direction is incompatible with a browser
+            // offer that sets the transceivers as recvonly:
+            //
+            //   InvalidAccessError: Failed to set remote answer sdp:
+            //   Incompatible send direction
+            //
+            // SendOnly answers the browser cleanly and also produces a
+            // self-consistent offer when the C# side initiates the call.
+            MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
-            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(audioTrack);
 
             testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
