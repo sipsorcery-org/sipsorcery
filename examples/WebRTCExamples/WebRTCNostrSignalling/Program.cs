@@ -748,6 +748,21 @@ namespace WebRTCNostrSignalling
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
+                    // Detach the encoded-sample event handlers BEFORE awaiting
+                    // CloseVideo/CloseAudio. The audio source in particular
+                    // produces a packet every ~20 ms and there are typically
+                    // a handful already in flight when the peer connection
+                    // transitions to closed. Without this detach each one
+                    // racing past the close boundary fires
+                    //   pc.SendAudio -> RTPSession.SendRtpRaw
+                    //     -> [WRN] SendRtpRaw was called for a audio packet
+                    //              on a closed RTP session.
+                    // Video happens to be quieter (a frame every 33 ms at
+                    // 30 fps) so the symptom is mostly visible on audio,
+                    // but unsubscribe both for symmetry.
+                    testPatternSource.OnVideoSourceEncodedSample -= pc.SendVideo;
+                    audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
+
                     await testPatternSource.CloseVideo();
                     await audioSource.CloseAudio();
                 }
