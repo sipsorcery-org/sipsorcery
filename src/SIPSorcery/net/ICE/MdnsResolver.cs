@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public static TimeSpan DefaultTimeout { get; set; } = TimeSpan.FromSeconds(2);
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger logger = LogFactory.CreateLogger<MdnsResolver>();
 
         // Single shared MulticastService instance per process. Starting
         // and stopping the service per query would re-bind the multicast
