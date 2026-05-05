@@ -340,6 +340,16 @@ namespace SIPSorcery.Sys
 
             if (success)
             {
+                // On Windows, suppress ICMP "Port Unreachable" errors from being delivered to UDP sockets.
+                // Without this, sending a UDP packet to a destination that's not listening causes the next
+                // ReceiveFromAsync to fail with SocketException (ConnectionReset). During WebRTC ICE/DTLS
+                // negotiation this creates a tight error loop that delays connection establishment.
+                if (protocolType == ProtocolType.Udp && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    const int SIO_UDP_CONNRESET = -1744830452;
+                    socket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+                }
+            
                 return socket;
             }
             else
