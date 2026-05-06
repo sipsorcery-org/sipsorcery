@@ -360,10 +360,6 @@ namespace SIPSorcery.Sys
                     {
                         logger.LogWarning(excp, "CreateBoundSocket does not support disabling UDP connection reset handling on {logEp}. Continuing with bound socket.", logEp);
                     }
-                    catch (PlatformNotSupportedException excp)
-                    {
-                        logger.LogWarning(excp, "CreateBoundSocket platform does not support disabling UDP connection reset handling on {logEp}. Continuing with bound socket.", logEp);
-                    }
                 }
             
                 return socket;
