@@ -347,7 +347,23 @@ namespace SIPSorcery.Sys
                 if (protocolType == ProtocolType.Udp && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     const int SIO_UDP_CONNRESET = -1744830452;
-                    socket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+
+                    try
+                    {
+                        socket.IOControl(SIO_UDP_CONNRESET, new byte[] { 0, 0, 0, 0 }, null);
+                    }
+                    catch (SocketException excp)
+                    {
+                        logger.LogWarning(excp, "CreateBoundSocket was unable to disable UDP connection reset handling on {logEp}. Continuing with bound socket.", logEp);
+                    }
+                    catch (NotSupportedException excp)
+                    {
+                        logger.LogWarning(excp, "CreateBoundSocket does not support disabling UDP connection reset handling on {logEp}. Continuing with bound socket.", logEp);
+                    }
+                    catch (PlatformNotSupportedException excp)
+                    {
+                        logger.LogWarning(excp, "CreateBoundSocket platform does not support disabling UDP connection reset handling on {logEp}. Continuing with bound socket.", logEp);
+                    }
                 }
             
                 return socket;
