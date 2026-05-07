@@ -4,8 +4,8 @@ using Vpx.Net;
 namespace SIPSorcery.VP8.Benchmarks;
 
 /// <summary>
-/// E2E-ish pipeline timings (Release, warmed BDN). Example host: Apple M1 Max, .NET 10 —
-/// <see cref="Keyframe_Optimized_1280x720"/> mean ~132 ms (DefaultJob); 640×480 <see cref="Keyframe_Optimized"/> is several times faster in wall time.
+/// E2E-ish pipeline timings (Release, warmed BDN). Example host: Apple M1 Max, .NET 10.0.3 —
+/// <see cref="Keyframe_Optimized_1280x720"/> mean ~78 ms (DefaultJob); 640×480 <see cref="Keyframe_Optimized"/> mean ~26 ms.
 /// Run <c>dotnet run -c Release --project test/SIPSorcery.VP8.Benchmarks -- -f *Keyframe_Optimized* -j short</c> on your machine.
 /// <c>Program --dump-profiler</c> prints wall vs scoped-sum for 640×480 and 1280×720 with <see cref="EncodeProfiler"/> enabled (slower; for bucket attribution).
 /// </summary>

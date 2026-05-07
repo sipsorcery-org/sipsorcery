@@ -170,31 +170,33 @@ namespace Vpx.Net.UnitTest
             // Start the existing decoder bool reader at byte 10, feeding it
             // the bytes produced by our encoder bool coder.
             BOOL_DECODER br = new BOOL_DECODER();
-            // Take a copy because vp8dx_start_decode pins the input pointer.
             byte[] partition = new byte[total - 10 + 8];  // pad for the decoder's lookahead
             System.Array.Copy(buf, 10, partition, 0, total - 10);
 
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
+            fixed (byte* pPart = partition)
+            {
+                dboolhuff.vp8dx_start_decode(ref br, pPart, (uint)partition.Length, null, null);
 
-            int colorSpace        = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int clampType         = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int segmentation      = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int filterType        = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int filterLevel       = dboolhuff.vp8_decode_value(ref br, 6);
-            int sharpnessLevel    = dboolhuff.vp8_decode_value(ref br, 3);
-            int modeRefLfDelta    = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int log2NumPartitions = dboolhuff.vp8_decode_value(ref br, 2);
-            int baseQindex        = dboolhuff.vp8_decode_value(ref br, 7);
+                int colorSpace        = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int clampType         = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int segmentation      = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int filterType        = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int filterLevel       = dboolhuff.vp8_decode_value(ref br, 6);
+                int sharpnessLevel    = dboolhuff.vp8_decode_value(ref br, 3);
+                int modeRefLfDelta    = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int log2NumPartitions = dboolhuff.vp8_decode_value(ref br, 2);
+                int baseQindex        = dboolhuff.vp8_decode_value(ref br, 7);
 
-            Assert.Equal(cfg.ColorSpace,    colorSpace);
-            Assert.Equal(cfg.ClampType,     clampType);
-            Assert.Equal(0,                 segmentation);   // we always emit 0
-            Assert.Equal(cfg.FilterType,    filterType);
-            Assert.Equal(cfg.FilterLevel,   filterLevel);
-            Assert.Equal(cfg.SharpnessLevel, sharpnessLevel);
-            Assert.Equal(0,                 modeRefLfDelta); // we always emit 0
-            Assert.Equal(cfg.Log2NumberOfTokenPartitions, log2NumPartitions);
-            Assert.Equal(cfg.BaseQindex,    baseQindex);
+                Assert.Equal(cfg.ColorSpace,    colorSpace);
+                Assert.Equal(cfg.ClampType,     clampType);
+                Assert.Equal(0,                 segmentation);   // we always emit 0
+                Assert.Equal(cfg.FilterType,    filterType);
+                Assert.Equal(cfg.FilterLevel,   filterLevel);
+                Assert.Equal(cfg.SharpnessLevel, sharpnessLevel);
+                Assert.Equal(0,                 modeRefLfDelta); // we always emit 0
+                Assert.Equal(cfg.Log2NumberOfTokenPartitions, log2NumPartitions);
+                Assert.Equal(cfg.BaseQindex,    baseQindex);
+            }
         }
 
         // ---------- helper ----------

@@ -61,14 +61,13 @@ namespace Vpx.Net
         /// </summary>
         public const int VP8_LOTS_OF_BITS = 0x40000000;
 
-        public unsafe static int vp8dx_start_decode(ref BOOL_DECODER br, in byte[] source, uint source_sz)
-        {
-            fixed (byte* pSrc = source)
-            {
-                return vp8dx_start_decode(ref br, pSrc, source_sz, null, null);
-            }
-        }
-
+        /// <summary>
+        /// Initialise a bool decoder reading from <paramref name="source"/>.
+        /// The memory at <c>[source, source + source_sz)</c> must stay valid until
+        /// decoding is finished. For managed <c>byte[]</c>, call this only inside
+        /// <c>fixed (byte* p = array)</c> that spans all <see cref="vp8dx_decode_bool"/> /
+        /// <see cref="vp8_decode_value"/> calls.
+        /// </summary>
         public static int vp8dx_start_decode(ref BOOL_DECODER br, in byte* source,
                        uint source_sz, vpx_decrypt_cb decrypt_cb,
                        void* decrypt_state)

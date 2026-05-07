@@ -48,8 +48,16 @@ namespace Vpx.Net
         [ThreadStatic] private static long tPhase1ScalarCtx;
         [ThreadStatic] private static long tPhase2FirstPart;
 
-        /// <summary>When false (default), <see cref="Scope"/> no-ops.</summary>
-        public static bool Enabled { get; set; }
+        [ThreadStatic] private static bool tEnabled;
+
+        /// <summary>When false (default), <see cref="Scope"/> no-ops on this thread.</summary>
+        /// <remarks>Thread-local so parallel unit tests (or parallel encodes) do not inherit
+        /// profiling from another thread.</remarks>
+        public static bool Enabled
+        {
+            get => tEnabled;
+            set => tEnabled = value;
+        }
 
         public static void Reset()
         {

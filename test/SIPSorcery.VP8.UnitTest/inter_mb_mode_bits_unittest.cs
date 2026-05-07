@@ -81,10 +81,13 @@ namespace Vpx.Net.UnitTest
             byte[] partition = FinishAndCopy(ref bc, buf);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
+            fixed (byte* p = partition)
+            {
+                dboolhuff.vp8dx_start_decode(ref br, p, (uint)partition.Length, null, null);
 
-            int decoded = treereader.vp8_treed_read(ref br, entropymode.vp8_mv_ref_tree, probs);
-            Assert.Equal((int)mode, decoded);
+                int decoded = treereader.vp8_treed_read(ref br, entropymode.vp8_mv_ref_tree, probs);
+                Assert.Equal((int)mode, decoded);
+            }
         }
 
         // ---------- WriteInterMbAsIntra ----------
@@ -98,10 +101,13 @@ namespace Vpx.Net.UnitTest
             byte[] partition = FinishAndCopy(ref bc, buf);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
+            fixed (byte* p = partition)
+            {
+                dboolhuff.vp8dx_start_decode(ref br, p, (uint)partition.Length, null, null);
 
-            int isInter = dboolhuff.vp8dx_decode_bool(ref br, probIntra);
-            Assert.Equal(0, isInter);
+                int isInter = dboolhuff.vp8dx_decode_bool(ref br, probIntra);
+                Assert.Equal(0, isInter);
+            }
         }
 
         // ---------- WriteInterMbRefAndMode round-trip ----------
@@ -147,28 +153,31 @@ namespace Vpx.Net.UnitTest
             byte[] partition = FinishAndCopy(ref bc, buf);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
-
-            // Mirror decodemv.read_mb_modes_mv ref-frame parsing.
-            int isInter = dboolhuff.vp8dx_decode_bool(ref br, probIntra);
-            Assert.Equal(1, isInter);
-
-            int notLast = dboolhuff.vp8dx_decode_bool(ref br, probLast);
-            int decodedRef;
-            if (notLast == 0)
+            fixed (byte* p = partition)
             {
-                decodedRef = (int)MV_REFERENCE_FRAME.LAST_FRAME;
-            }
-            else
-            {
-                int isAlt = dboolhuff.vp8dx_decode_bool(ref br, probGf);
-                decodedRef = 2 + isAlt;
-            }
-            Assert.Equal((int)refFrame, decodedRef);
+                dboolhuff.vp8dx_start_decode(ref br, p, (uint)partition.Length, null, null);
 
-            int decodedMode = treereader.vp8_treed_read(
-                ref br, entropymode.vp8_mv_ref_tree, modeProbs);
-            Assert.Equal((int)mode, decodedMode);
+                // Mirror decodemv.read_mb_modes_mv ref-frame parsing.
+                int isInter = dboolhuff.vp8dx_decode_bool(ref br, probIntra);
+                Assert.Equal(1, isInter);
+
+                int notLast = dboolhuff.vp8dx_decode_bool(ref br, probLast);
+                int decodedRef;
+                if (notLast == 0)
+                {
+                    decodedRef = (int)MV_REFERENCE_FRAME.LAST_FRAME;
+                }
+                else
+                {
+                    int isAlt = dboolhuff.vp8dx_decode_bool(ref br, probGf);
+                    decodedRef = 2 + isAlt;
+                }
+                Assert.Equal((int)refFrame, decodedRef);
+
+                int decodedMode = treereader.vp8_treed_read(
+                    ref br, entropymode.vp8_mv_ref_tree, modeProbs);
+                Assert.Equal((int)mode, decodedMode);
+            }
         }
 
         [Fact]
@@ -206,17 +215,20 @@ namespace Vpx.Net.UnitTest
             for (int j = 0; j < 4; j++) modeProbs[j] = (byte)modecont.vp8_mode_contexts[0, j];
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
+            fixed (byte* p = partition)
+            {
+                dboolhuff.vp8dx_start_decode(ref br, p, (uint)partition.Length, null, null);
 
-            int isInter = dboolhuff.vp8dx_decode_bool(ref br, probIntra);
-            Assert.Equal(1, isInter);
+                int isInter = dboolhuff.vp8dx_decode_bool(ref br, probIntra);
+                Assert.Equal(1, isInter);
 
-            int notLast = dboolhuff.vp8dx_decode_bool(ref br, probLast);
-            Assert.Equal(0, notLast);   // LAST -> 0
+                int notLast = dboolhuff.vp8dx_decode_bool(ref br, probLast);
+                Assert.Equal(0, notLast);   // LAST -> 0
 
-            int decodedMode = treereader.vp8_treed_read(
-                ref br, entropymode.vp8_mv_ref_tree, modeProbs);
-            Assert.Equal((int)MB_PREDICTION_MODE.ZEROMV, decodedMode);
+                int decodedMode = treereader.vp8_treed_read(
+                    ref br, entropymode.vp8_mv_ref_tree, modeProbs);
+                Assert.Equal((int)MB_PREDICTION_MODE.ZEROMV, decodedMode);
+            }
         }
 
         // ---------- vp8_treed_write byte-shape regression ----------

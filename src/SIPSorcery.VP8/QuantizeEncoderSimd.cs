@@ -93,6 +93,15 @@ namespace Vpx.Net
             return eob + 1;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void StoreInt4Unaligned(int* dst, Vector128<int> v)
+        {
+            dst[0] = v.GetElement(0);
+            dst[1] = v.GetElement(1);
+            dst[2] = v.GetElement(2);
+            dst[3] = v.GetElement(3);
+        }
+
         // ----------------- SSE4.1 pre-compute -----------------
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -129,11 +138,11 @@ namespace Vpx.Net
                 var dq = Sse41.ConvertToVector128Int32(Sse2.LoadScalarVector128((double*)dqp).AsInt16());
                 var dqv = Sse41.MultiplyLow(xs, dq);
 
-                Sse2.Store(absX + g * 4, ax);
-                Sse2.Store(sign + g * 4, sz);
-                Sse2.Store(yRaw + g * 4, y);
-                Sse2.Store(xSigned + g * 4, xs);
-                Sse2.Store(dqValue + g * 4, dqv);
+                StoreInt4Unaligned(absX + g * 4, ax);
+                StoreInt4Unaligned(sign + g * 4, sz);
+                StoreInt4Unaligned(yRaw + g * 4, y);
+                StoreInt4Unaligned(xSigned + g * 4, xs);
+                StoreInt4Unaligned(dqValue + g * 4, dqv);
             }
         }
 
@@ -171,11 +180,11 @@ namespace Vpx.Net
                 var dq = AdvSimd.SignExtendWideningLower(AdvSimd.LoadVector64(dqp));
                 var dqv = AdvSimd.Multiply(xs, dq);
 
-                AdvSimd.Store(absX + g * 4, ax);
-                AdvSimd.Store(sign + g * 4, sz);
-                AdvSimd.Store(yRaw + g * 4, y);
-                AdvSimd.Store(xSigned + g * 4, xs);
-                AdvSimd.Store(dqValue + g * 4, dqv);
+                StoreInt4Unaligned(absX + g * 4, ax);
+                StoreInt4Unaligned(sign + g * 4, sz);
+                StoreInt4Unaligned(yRaw + g * 4, y);
+                StoreInt4Unaligned(xSigned + g * 4, xs);
+                StoreInt4Unaligned(dqValue + g * 4, dqv);
             }
         }
 

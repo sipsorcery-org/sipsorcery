@@ -248,60 +248,64 @@ namespace Vpx.Net.UnitTest
             System.Array.Copy(packed, padded, packed.Length);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, padded, (uint)padded.Length);
-
             var result = new List<(int, int)>(reference.Count);
-            for (int idx = 0; idx < reference.Count; idx++)
+            fixed (byte* pPad = padded)
             {
-                var refTok = reference[idx];
-                byte[] probs = tokenize.GetCoefProbRowForPack(coefProbs, refTok.CoefProbRowIndex);
+                dboolhuff.vp8dx_start_decode(ref br, pPad, (uint)padded.Length, null, null);
 
-                // Walk vp8_coef_tree until terminal (negative).
-                int i = (refTok.skip_eob_node != 0) ? 2 : 0;
-                int token;
-                while (true)
+                for (int idx = 0; idx < reference.Count; idx++)
                 {
-                    int bit = dboolhuff.vp8dx_decode_bool(ref br, probs[i >> 1]);
-                    int next = entropy.vp8_coef_tree[i + bit];
-                    if (next <= 0)
-                    {
-                        token = -next;
-                        break;
-                    }
-                    i = next;
-                }
+                    var refTok = reference[idx];
+                    byte[] probs = tokenize.GetCoefProbRowForPack(coefProbs, refTok.CoefProbRowIndex);
 
-                int extra = 0;
-                var b = entropy.vp8_extra_bits[token];
-                if (b.base_val != 0)
-                {
-                    // Walk the per-category extra-bit tree to reconstruct
-                    // the magnitude bits, then read the sign.
-                    int magnitude = 0;
-                    if (b.Len != 0)
+                    // Walk vp8_coef_tree until terminal (negative).
+                    int i = (refTok.skip_eob_node != 0) ? 2 : 0;
+                    int token;
+                    while (true)
                     {
-                        int j = 0;
-                        for (int step = 0; step < b.Len; step++)
+                        int bit = dboolhuff.vp8dx_decode_bool(ref br, probs[i >> 1]);
+                        int next = entropy.vp8_coef_tree[i + bit];
+                        if (next <= 0)
                         {
-                            int bit = dboolhuff.vp8dx_decode_bool(ref br, b.prob[j >> 1]);
-                            magnitude = (magnitude << 1) | bit;
-                            int next = b.tree[j + bit];
-                            if (next == 0) break;
-                            j = next;
+                            token = -next;
+                            break;
                         }
+                        i = next;
                     }
-                    int sign = dboolhuff.vp8dx_decode_bool(ref br, 128);
-                    extra = (magnitude << 1) | sign;
-                }
 
-                result.Add((token, extra));
+                    int extra = 0;
+                    var b = entropy.vp8_extra_bits[token];
+                    if (b.base_val != 0)
+                    {
+                        // Walk the per-category extra-bit tree to reconstruct
+                        // the magnitude bits, then read the sign.
+                        int magnitude = 0;
+                        if (b.Len != 0)
+                        {
+                            int j = 0;
+                            for (int step = 0; step < b.Len; step++)
+                            {
+                                int bit = dboolhuff.vp8dx_decode_bool(ref br, b.prob[j >> 1]);
+                                magnitude = (magnitude << 1) | bit;
+                                int next = b.tree[j + bit];
+                                if (next == 0) break;
+                                j = next;
+                            }
+                        }
+                        int sign = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                        extra = (magnitude << 1) | sign;
+                    }
 
-                if (token == entropy.DCT_EOB_TOKEN)
-                {
-                    // continue — the test feeds in everything after EOB too,
-                    // which mirrors how the encoder serialised them.
+                    result.Add((token, extra));
+
+                    if (token == entropy.DCT_EOB_TOKEN)
+                    {
+                        // continue — the test feeds in everything after EOB too,
+                        // which mirrors how the encoder serialised them.
+                    }
                 }
             }
+
             return result;
         }
     }

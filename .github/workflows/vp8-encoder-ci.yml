@@ -2,8 +2,6 @@
 # Excludes:
 # - Two tests that require System.Drawing/GDI+ to write BMP artifacts; migrate those to
 #   ImageSharp (or similar) to run the full suite here.
-# - encode_profiler_unittest: enables global EncodeProfiler during a full parallel run and can
-#   abort the test host on CI; run that class locally or in a dedicated job if needed.
 name: vp8-encoder
 
 on:
@@ -31,4 +29,4 @@ jobs:
       - name: Test
         run: |
           dotnet test test/SIPSorcery.VP8.UnitTest/SIPSorcery.VP8.UnitTest.csproj -c Release -f net10.0 --no-restore --verbosity normal \
-            --filter 'FullyQualifiedName!=Vpx.Net.UnitTest.VP8CodecUnitTest.DecodeKeyFrame&FullyQualifiedName!=Vpx.Net.UnitTest.vpx_decoder_unittest.DecodeKeyFrameFromFileTest&FullyQualifiedName!~Vpx.Net.UnitTest.encode_profiler_unittest'
+            --filter 'FullyQualifiedName!=Vpx.Net.UnitTest.VP8CodecUnitTest.DecodeKeyFrame&FullyQualifiedName!=Vpx.Net.UnitTest.vpx_decoder_unittest.DecodeKeyFrameFromFileTest'
