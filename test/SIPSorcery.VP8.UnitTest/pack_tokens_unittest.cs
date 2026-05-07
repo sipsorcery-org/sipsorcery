@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: pack_tokens_unittest.cs
 //
 // Description: Unit tests for the VP8 token bitstream writer (encoder side,
@@ -22,19 +22,30 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using Xunit;
+
+using vp8_prob = System.Byte;
 
 namespace Vpx.Net.UnitTest
 {
     public unsafe class pack_tokens_unittest
     {
-        // A flat 11-element prob row of 128s, used for the libvpx reference
-        // captures so the boolean-coder math is independent of any specific
-        // probability context (every node has the same "fair coin" prob).
-        // Real encodes use the per-(type,band,ctx) probability rows.
-        private static readonly byte[] s_flatProbs =
-            { 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
+        // All-128 coef table: every row matches the flat 11×128 reference
+        // captures. Any CoefProbRowIndex 0..95 is valid for these tests.
+        private static readonly vp8_prob[,,,] s_all128Coef = CreateAll128CoefTable();
+
+        private static vp8_prob[,,,] CreateAll128CoefTable()
+        {
+            var t = new vp8_prob[4, 8, 3, 11];
+            for (int i = 0; i < t.GetLength(0); i++)
+                for (int j = 0; j < t.GetLength(1); j++)
+                    for (int k = 0; k < t.GetLength(2); k++)
+                        for (int n = 0; n < t.GetLength(3); n++)
+                            t[i, j, k, n] = 128;
+            return t;
+        }
 
         // ---------- Bit-exact reference checks against libvpx ----------
 
@@ -46,9 +57,7 @@ namespace Vpx.Net.UnitTest
         public void PackTokens_EobOnly_MatchesLibvpxReference()
         {
             byte[] expected = { 0x00, 0x00 };
-            AssertPackedBytes(expected, new[] {
-                Eob(),
-            });
+            AssertPackedBytes(expected, new[] { Eob() }, s_all128Coef);
         }
 
         /// <summary>
@@ -62,7 +71,7 @@ namespace Vpx.Net.UnitTest
             AssertPackedBytes(expected, new[] {
                 Tok(entropy.ONE_TOKEN, extra: 0),
                 Eob(),
-            });
+            }, s_all128Coef);
         }
 
         /// <summary>
@@ -85,7 +94,7 @@ namespace Vpx.Net.UnitTest
                 Tok(entropy.ZERO_TOKEN,   0, skip: 0),
                 Tok(entropy.ONE_TOKEN,    1, skip: 1),
                 Eob(),
-            });
+            }, s_all128Coef);
         }
 
         /// <summary>
@@ -102,7 +111,7 @@ namespace Vpx.Net.UnitTest
                 Tok(entropy.DCT_VAL_CATEGORY4, extra: 12),
                 Tok(entropy.DCT_VAL_CATEGORY2, extra: 3),
                 Eob(),
-            });
+            }, s_all128Coef);
         }
 
         // ---------- Round-trip: tokenize -> pack -> bool-decode -> token reconstruction ----------
@@ -124,27 +133,65 @@ namespace Vpx.Net.UnitTest
             short[] q = new short[16];
             q[0] = 1; q[1] = 0; q[4] = 0; q[8] = -3; q[5] = 0; q[2] = 2; q[3] = 0; q[6] = -1;
 
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             tokenize.vp8_tokenize_block(
                 q, firstCoeffIndex: 0, eob: 8,
                 blockType: 3, initialContext: 0,
                 coefProbs: default_coef_probs_c.default_coef_probs,
                 output: tokens);
 
-            byte[] packed = PackToBytes(tokens);
+            byte[] packed = PackToBytes(tokens.AsSpan(), default_coef_probs_c.default_coef_probs);
 
-            // Decode back. We need the same probability rows the encoder
-            // used; for a per-(type, band, ctx) decode we'd recompute them
-            // identically — but in this round-trip the encoder embedded
-            // them in TOKENEXTRA.context_tree, so we can just read them
-            // from there as we walk.
-            var decoded = DecodeTokens(packed, tokens);
+            var decoded = DecodeTokens(packed, tokens, default_coef_probs_c.default_coef_probs);
             Assert.Equal(tokens.Count, decoded.Count);
             for (int i = 0; i < tokens.Count; i++)
             {
                 Assert.Equal(tokens[i].Token, decoded[i].Token);
                 Assert.Equal(tokens[i].Extra, decoded[i].Extra);
             }
+        }
+
+        /// <summary>
+        /// GetCoefProbRowForPack uses a per-thread RowsFor cache; concurrent
+        /// threads with different coef tables must not see cross-wired rows.
+        /// </summary>
+        [Fact]
+        public void GetCoefProbRowForPack_TwoThreadsDistinctTables_RowMatchesTable()
+        {
+            var tableA = CreateAll128CoefTable();
+            var tableB = CreateAll128CoefTable();
+            tableB[0, 0, 0, 0] = 42;
+
+            const byte rowIndex = 0;
+            const int iterations = 8000;
+            object gate = new object();
+            Exception first = null;
+
+            void Work(vp8_prob[,,,] t)
+            {
+                byte expect = t[0, 0, 0, 0];
+                try
+                {
+                    for (int i = 0; i < iterations; i++)
+                    {
+                        var row = tokenize.GetCoefProbRowForPack(t, rowIndex);
+                        Assert.Equal(expect, row[0]);
+                    }
+                }
+                catch (Exception e)
+                {
+                    lock (gate) { first ??= e; }
+                }
+            }
+
+            var thA = new System.Threading.Thread(() => Work(tableA));
+            var thB = new System.Threading.Thread(() => Work(tableB));
+            thA.Start();
+            thB.Start();
+            thA.Join();
+            thB.Join();
+            if (first != null)
+                throw first;
         }
 
         // ---------- helpers ----------
@@ -156,7 +203,7 @@ namespace Vpx.Net.UnitTest
                 Token = (byte)token,
                 Extra = (short)extra,
                 skip_eob_node = (byte)skip,
-                context_tree = s_flatProbs,
+                CoefProbRowIndex = 0,
             };
         }
 
@@ -165,14 +212,14 @@ namespace Vpx.Net.UnitTest
             return Tok(entropy.DCT_EOB_TOKEN, 0);
         }
 
-        private static byte[] PackToBytes(IList<TOKENEXTRA> tokens)
+        private static byte[] PackToBytes(ReadOnlySpan<TOKENEXTRA> tokens, vp8_prob[,,,] coefProbs)
         {
             byte[] buf = new byte[256];
             BOOL_CODER bc = new BOOL_CODER();
             fixed (byte* p = buf)
             {
                 boolhuff.vp8_start_encode(ref bc, p, p + buf.Length);
-                bitstream.vp8_pack_tokens(ref bc, tokens);
+                bitstream.vp8_pack_tokens(ref bc, tokens, coefProbs);
                 boolhuff.vp8_stop_encode(ref bc);
             }
             byte[] result = new byte[bc.pos];
@@ -180,9 +227,9 @@ namespace Vpx.Net.UnitTest
             return result;
         }
 
-        private static void AssertPackedBytes(byte[] expected, IList<TOKENEXTRA> tokens)
+        private static void AssertPackedBytes(byte[] expected, ReadOnlySpan<TOKENEXTRA> tokens, vp8_prob[,,,] coefProbs)
         {
-            byte[] got = PackToBytes(tokens);
+            byte[] got = PackToBytes(tokens, coefProbs);
             Assert.Equal(expected.Length, got.Length);
             for (int i = 0; i < expected.Length; i++)
             {
@@ -193,75 +240,72 @@ namespace Vpx.Net.UnitTest
 
         // Walk the same coef tree + per-category extra-bit trees the encoder
         // used, reading bits from the existing decoder's bool reader to
-        // reconstruct each (Token, Extra) pair. We use the encoder's
-        // TOKENEXTRA stream as the "schedule" telling us when EOB-skip and
-        // which prob row to read with — exactly the information a real
-        // decoder reconstructs from its own state machine.
-        private static List<(int Token, int Extra)> DecodeTokens(byte[] packed, IList<TOKENEXTRA> reference)
+        // reconstruct each (Token, Extra) pair.
+        private static List<(int Token, int Extra)> DecodeTokens(byte[] packed, TokenStreamBuffer reference, vp8_prob[,,,] coefProbs)
         {
             // Pad with zeros for the bool reader's lookahead.
             byte[] padded = new byte[packed.Length + 8];
             System.Array.Copy(packed, padded, packed.Length);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, padded, (uint)padded.Length);
-
             var result = new List<(int, int)>(reference.Count);
-            for (int idx = 0; idx < reference.Count; idx++)
+            fixed (byte* pPad = padded)
             {
-                var refTok = reference[idx];
-                byte[] probs = refTok.context_tree;
+                dboolhuff.vp8dx_start_decode(ref br, pPad, (uint)padded.Length, null, null);
 
-                // Walk vp8_coef_tree until terminal (negative).
-                int i = (refTok.skip_eob_node != 0) ? 2 : 0;
-                int token;
-                while (true)
+                for (int idx = 0; idx < reference.Count; idx++)
                 {
-                    int bit = dboolhuff.vp8dx_decode_bool(ref br, probs[i >> 1]);
-                    int next = entropy.vp8_coef_tree[i + bit];
-                    if (next <= 0)
-                    {
-                        token = -next;
-                        break;
-                    }
-                    i = next;
-                }
+                    var refTok = reference[idx];
+                    byte[] probs = tokenize.GetCoefProbRowForPack(coefProbs, refTok.CoefProbRowIndex);
 
-                int extra = 0;
-                var b = entropy.vp8_extra_bits[token];
-                if (b.base_val != 0)
-                {
-                    // Walk the per-category extra-bit tree to reconstruct
-                    // the magnitude bits, then read the sign.
-                    int magnitude = 0;
-                    if (b.Len != 0)
+                    // Walk vp8_coef_tree until terminal (negative).
+                    int i = (refTok.skip_eob_node != 0) ? 2 : 0;
+                    int token;
+                    while (true)
                     {
-                        int j = 0;
-                        for (int step = 0; step < b.Len; step++)
+                        int bit = dboolhuff.vp8dx_decode_bool(ref br, probs[i >> 1]);
+                        int next = entropy.vp8_coef_tree[i + bit];
+                        if (next <= 0)
                         {
-                            int bit = dboolhuff.vp8dx_decode_bool(ref br, b.prob[j >> 1]);
-                            magnitude = (magnitude << 1) | bit;
-                            int next = b.tree[j + bit];
-                            if (next == 0) break;
-                            j = next;
+                            token = -next;
+                            break;
                         }
+                        i = next;
                     }
-                    int sign = dboolhuff.vp8dx_decode_bool(ref br, 128);
-                    extra = (magnitude << 1) | sign;
-                }
 
-                result.Add((token, extra));
+                    int extra = 0;
+                    var b = entropy.vp8_extra_bits[token];
+                    if (b.base_val != 0)
+                    {
+                        // Walk the per-category extra-bit tree to reconstruct
+                        // the magnitude bits, then read the sign.
+                        int magnitude = 0;
+                        if (b.Len != 0)
+                        {
+                            int j = 0;
+                            for (int step = 0; step < b.Len; step++)
+                            {
+                                int bit = dboolhuff.vp8dx_decode_bool(ref br, b.prob[j >> 1]);
+                                magnitude = (magnitude << 1) | bit;
+                                int next = b.tree[j + bit];
+                                if (next == 0) break;
+                                j = next;
+                            }
+                        }
+                        int sign = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                        extra = (magnitude << 1) | sign;
+                    }
 
-                // Stop decoding after EOB so we don't read past the meaningful
-                // bits (the round-trip test passes the full reference list,
-                // so we won't actually terminate here, but a real decoder
-                // would).
-                if (token == entropy.DCT_EOB_TOKEN)
-                {
-                    // continue — the test feeds in everything after EOB too,
-                    // which mirrors how the encoder serialised them.
+                    result.Add((token, extra));
+
+                    if (token == entropy.DCT_EOB_TOKEN)
+                    {
+                        // continue — the test feeds in everything after EOB too,
+                        // which mirrors how the encoder serialised them.
+                    }
                 }
             }
+
             return result;
         }
     }

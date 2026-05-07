@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: bitstream.cs
 //
 // Description: Keyframe header writer for the VP8 encoder. Port of the
@@ -36,6 +36,10 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+using vp8_prob = System.Byte;
 
 namespace Vpx.Net
 {
@@ -343,7 +347,7 @@ namespace Vpx.Net
             if ((uint)cfg.BaseQindex > 0x7F) throw new ArgumentOutOfRangeException(nameof(cfg.BaseQindex), cfg.BaseQindex, "BaseQindex must be 0..127.");
             if ((uint)cfg.FilterLevel > 0x3F) throw new ArgumentOutOfRangeException(nameof(cfg.FilterLevel), cfg.FilterLevel, "FilterLevel must be 0..63.");
             if ((uint)cfg.SharpnessLevel > 0x07) throw new ArgumentOutOfRangeException(nameof(cfg.SharpnessLevel), cfg.SharpnessLevel, "SharpnessLevel must be 0..7.");
-            if ((uint)cfg.Log2NumberOfTokenPartitions > 2) throw new ArgumentOutOfRangeException(nameof(cfg.Log2NumberOfTokenPartitions), cfg.Log2NumberOfTokenPartitions, "Log2NumberOfTokenPartitions must be 0..2.");
+            if ((uint)cfg.Log2NumberOfTokenPartitions > 3) throw new ArgumentOutOfRangeException(nameof(cfg.Log2NumberOfTokenPartitions), cfg.Log2NumberOfTokenPartitions, "Log2NumberOfTokenPartitions must be 0..3.");
             int dqRange = 0x1F;
             if (Math.Abs(cfg.Y1DcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y1DcDeltaQ), cfg.Y1DcDeltaQ, "Y1DcDeltaQ must be -15..15.");
             if (Math.Abs(cfg.Y2DcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y2DcDeltaQ), cfg.Y2DcDeltaQ, "Y2DcDeltaQ must be -15..15.");
@@ -531,7 +535,7 @@ namespace Vpx.Net
             if ((uint)cfg.BaseQindex > 0x7F) throw new ArgumentOutOfRangeException(nameof(cfg.BaseQindex), cfg.BaseQindex, "BaseQindex must be 0..127.");
             if ((uint)cfg.FilterLevel > 0x3F) throw new ArgumentOutOfRangeException(nameof(cfg.FilterLevel), cfg.FilterLevel, "FilterLevel must be 0..63.");
             if ((uint)cfg.SharpnessLevel > 0x07) throw new ArgumentOutOfRangeException(nameof(cfg.SharpnessLevel), cfg.SharpnessLevel, "SharpnessLevel must be 0..7.");
-            if ((uint)cfg.Log2NumberOfTokenPartitions > 2) throw new ArgumentOutOfRangeException(nameof(cfg.Log2NumberOfTokenPartitions), cfg.Log2NumberOfTokenPartitions, "Log2NumberOfTokenPartitions must be 0..2.");
+            if ((uint)cfg.Log2NumberOfTokenPartitions > 3) throw new ArgumentOutOfRangeException(nameof(cfg.Log2NumberOfTokenPartitions), cfg.Log2NumberOfTokenPartitions, "Log2NumberOfTokenPartitions must be 0..3.");
             if (Math.Abs(cfg.Y1DcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y1DcDeltaQ), cfg.Y1DcDeltaQ, "Y1DcDeltaQ must be -15..15.");
             if (Math.Abs(cfg.Y2DcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y2DcDeltaQ), cfg.Y2DcDeltaQ, "Y2DcDeltaQ must be -15..15.");
             if (Math.Abs(cfg.Y2AcDeltaQ) > 0xF) throw new ArgumentOutOfRangeException(nameof(cfg.Y2AcDeltaQ), cfg.Y2AcDeltaQ, "Y2AcDeltaQ must be -15..15.");
@@ -562,13 +566,201 @@ namespace Vpx.Net
         /// </summary>
         /// <param name="bc">Open boolean coder to write into.</param>
         /// <param name="tokens">Tokens to write, in order.</param>
-        public static void vp8_pack_tokens(ref BOOL_CODER bc, System.Collections.Generic.IList<TOKENEXTRA> tokens)
+        /// <param name="coefProbs">Same coefficient probability table used when the tokens were produced.</param>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, ReadOnlySpan<TOKENEXTRA> tokens, vp8_prob[,,,] coefProbs)
+        {
+            if (coefProbs == null) throw new ArgumentNullException(nameof(coefProbs));
+            if (tokens.IsEmpty) return;
+            vp8_pack_tokens_fast(ref bc, tokens, coefProbs);
+        }
+
+        /// <summary>
+        /// Fast-path token packer: hoists the entire <see cref="BOOL_CODER"/>
+        /// state into locals once across the whole token list and inlines the
+        /// per-bit body of <see cref="boolhuff.vp8_encode_bool"/>. Bit-exact
+        /// with the slow <see cref="vp8_pack_one_token"/> dispatch.
+        ///
+        /// The motivation is that <c>BOOL_CODER</c> contains a value-typed
+        /// <see cref="vpx_internal_error_info"/> field with a managed string
+        /// inside, so the JIT cannot fully promote a <c>ref BOOL_CODER</c>
+        /// argument's hot fields into registers across <see cref="boolhuff.vp8_encode_bool"/>
+        /// invocations. By copying lowvalue/range/count/pos/buffer once, the
+        /// per-bit inner loop becomes register-resident.
+        /// </summary>
+        public static unsafe void vp8_pack_tokens_fast(ref BOOL_CODER bc, ReadOnlySpan<TOKENEXTRA> tokens, vp8_prob[,,,] coefProbs)
+        {
+            if (coefProbs == null) throw new ArgumentNullException(nameof(coefProbs));
+            if (tokens.IsEmpty) return;
+
+            uint lowvalue = bc.lowvalue;
+            uint range    = bc.range;
+            int  count    = bc.count;
+            uint pos      = bc.pos;
+            byte* buffer  = bc.buffer;
+            byte* end     = bc.buffer_end;
+
+            byte[] norm = entropy.vp8_norm;
+            sbyte[] coefTree = entropy.vp8_coef_tree;
+            entropy.vp8_token[] coefEnc = entropy.vp8_coef_encodings;
+            entropy.vp8_extra_bit_struct[] extraBits = entropy.vp8_extra_bits;
+
+            ref TOKENEXTRA r0 = ref MemoryMarshal.GetReference(tokens);
+            int nTokens = tokens.Length;
+            for (int ti = 0; ti < nTokens; ti++)
+            {
+                ref readonly TOKENEXTRA p = ref Unsafe.Add(ref r0, ti);
+                int t = p.Token;
+                ref readonly entropy.vp8_token a = ref coefEnc[t];
+                ref readonly entropy.vp8_extra_bit_struct b = ref extraBits[t];
+                int v = a.value;
+                int np = a.Len;
+                int i = 0;
+
+                if (p.skip_eob_node != 0)
+                {
+                    np--;
+                    i = 2;
+                }
+
+                byte[] pp = tokenize.GetCoefProbRowForPack(coefProbs, p.CoefProbRowIndex);
+                do
+                {
+                    int bb = (v >> --np) & 1;
+                    EncodeBoolInline(ref lowvalue, ref range, ref count, ref pos,
+                        buffer, end, ref bc, norm, bb, pp[i >> 1]);
+                    i = coefTree[i + bb];
+                } while (np != 0);
+
+                if (b.base_val != 0)
+                {
+                    int e = p.Extra;
+                    int L = b.Len;
+
+                    if (L != 0)
+                    {
+                        byte[] proba = b.prob;
+                        sbyte[] tree = b.tree;
+                        int v2 = e >> 1;
+                        int n2 = L;
+                        int i2 = 0;
+                        do
+                        {
+                            int bb = (v2 >> --n2) & 1;
+                            EncodeBoolInline(ref lowvalue, ref range, ref count, ref pos,
+                                buffer, end, ref bc, norm, bb, proba[i2 >> 1]);
+                            i2 = tree[i2 + bb];
+                        } while (n2 != 0);
+                    }
+
+                    EncodeBoolInline(ref lowvalue, ref range, ref count, ref pos,
+                        buffer, end, ref bc, norm, e & 1, VP8_PROB_HALF);
+                }
+            }
+
+            bc.lowvalue = lowvalue;
+            bc.range    = range;
+            bc.count    = count;
+            bc.pos      = pos;
+        }
+
+        /// <summary>
+        /// Inlined body of <see cref="boolhuff.vp8_encode_bool"/>. Bit-exact
+        /// copy that operates on locals (lowvalue / range / count / pos)
+        /// instead of dereferencing <c>ref BOOL_CODER</c> fields. The
+        /// <paramref name="bc"/> reference is only used on the rare
+        /// truncated-buffer error path.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void EncodeBoolInline(
+            ref uint lowvalue, ref uint range, ref int count, ref uint pos,
+            byte* buffer, byte* end, ref BOOL_CODER bc, byte[] norm,
+            int bit, int probability)
+        {
+            uint r = range;
+            uint lv = lowvalue;
+            int c = count;
+            uint po = pos;
+
+            uint split = (uint)(1 + (((r - 1) * probability) >> 8));
+            uint newRange = split;
+            if (bit > 0)
+            {
+                lv += split;
+                newRange = r - split;
+            }
+
+            int shift = norm[newRange];
+            newRange <<= shift;
+            c += shift;
+
+            if (c >= 0)
+            {
+                int offset = shift - c;
+
+                if (((lv << (offset - 1)) & 0x80000000u) > 0)
+                {
+                    int x = (int)po - 1;
+
+                    while (x >= 0 && buffer[x] == 0xff)
+                    {
+                        buffer[x] = 0;
+                        x--;
+                    }
+
+                    buffer[x] += 1;
+                }
+
+                if (buffer + po + 1 > end)
+                {
+                    vpx_codec.vpx_internal_error(ref bc.error, vpx_codec_err_t.VPX_CODEC_CORRUPT_FRAME,
+                        "Truncated packet or corrupt partition ");
+                }
+
+                buffer[po++] = (byte)((lv >> (24 - offset)) & 0xff);
+
+                lv <<= offset;
+                shift = c;
+                lv &= 0xffffff;
+                c -= 8;
+            }
+
+            lv <<= shift;
+
+            range = newRange;
+            lowvalue = lv;
+            count = c;
+            pos = po;
+        }
+
+        /// <inheritdoc cref="vp8_pack_tokens(ref BOOL_CODER, ReadOnlySpan{TOKENEXTRA}, vp8_prob[,,,])"/>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, ReadOnlySpan<TOKENEXTRA> tokens) =>
+            vp8_pack_tokens(ref bc, tokens, default_coef_probs_c.default_coef_probs);
+
+        /// <summary>Packs tokens from a fixed buffer without boxing or interface dispatch.</summary>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, TokenStreamBuffer tokens, vp8_prob[,,,] coefProbs) =>
+            vp8_pack_tokens(ref bc, tokens.AsSpan(), coefProbs);
+
+        /// <summary>Packs tokens from a fixed buffer without boxing or interface dispatch.</summary>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, TokenStreamBuffer tokens) =>
+            vp8_pack_tokens(ref bc, tokens.AsSpan());
+
+        /// <param name="tokens">Tokens to write, in order.</param>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, System.Collections.Generic.IList<TOKENEXTRA> tokens, vp8_prob[,,,] coefProbs)
         {
             if (tokens == null) return;
+            if (coefProbs == null) throw new ArgumentNullException(nameof(coefProbs));
 
             for (int idx = 0; idx < tokens.Count; idx++)
-            {
-                TOKENEXTRA p = tokens[idx];
+                vp8_pack_one_token(ref bc, tokens[idx], coefProbs);
+        }
+
+        /// <inheritdoc cref="vp8_pack_tokens(ref BOOL_CODER, System.Collections.Generic.IList{TOKENEXTRA}, vp8_prob[,,,])"/>
+        public static void vp8_pack_tokens(ref BOOL_CODER bc, System.Collections.Generic.IList<TOKENEXTRA> tokens) =>
+            vp8_pack_tokens(ref bc, tokens, default_coef_probs_c.default_coef_probs);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void vp8_pack_one_token(ref BOOL_CODER bc, TOKENEXTRA p, vp8_prob[,,,] coefProbs)
+        {
                 int t = p.Token;
                 entropy.vp8_token a = entropy.vp8_coef_encodings[t];
                 entropy.vp8_extra_bit_struct b = entropy.vp8_extra_bits[t];
@@ -587,7 +779,7 @@ namespace Vpx.Net
                 }
 
                 // Walk the coefficient encoding tree, one bit per node.
-                byte[] pp = p.context_tree;
+                byte[] pp = tokenize.GetCoefProbRowForPack(coefProbs, p.CoefProbRowIndex);
                 do
                 {
                     int bb = (v >> --n) & 1;
@@ -621,7 +813,6 @@ namespace Vpx.Net
                     // Sign bit (LSB of Extra) at probability 128.
                     boolhuff.vp8_encode_bool(ref bc, e & 1, VP8_PROB_HALF);
                 }
-            }
         }
 
         // -----------------------------------------------------------------

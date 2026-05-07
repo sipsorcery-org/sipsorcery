@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: quantize.cs
 //
 // Description: Forward quantization for the VP8 encoder. Port of:
@@ -36,10 +36,71 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
+
 namespace Vpx.Net
 {
     public static unsafe class quantize
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ClearBlockOutputs(short* qcoeff, short* dqcoeff)
+        {
+            // Bit-identical to memset 32 bytes per output buffer; use vector stores when available.
+            if (Avx2.IsSupported)
+            {
+                var z = Vector256<short>.Zero;
+                Unsafe.WriteUnaligned(ref *(byte*)qcoeff, z);
+                Unsafe.WriteUnaligned(ref *(byte*)dqcoeff, z);
+            }
+            else if (Sse2.IsSupported || AdvSimd.IsSupported)
+            {
+                var z = Vector128<short>.Zero;
+                Unsafe.WriteUnaligned(ref *(byte*)qcoeff, z);
+                Unsafe.WriteUnaligned(ref *(byte*)(qcoeff + 8), z);
+                Unsafe.WriteUnaligned(ref *(byte*)dqcoeff, z);
+                Unsafe.WriteUnaligned(ref *(byte*)(dqcoeff + 8), z);
+            }
+            else
+            {
+                new Span<short>(qcoeff, 16).Clear();
+                new Span<short>(dqcoeff, 16).Clear();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector128<short> Upper8ShortsToLower4(Vector128<short> eightShorts) =>
+            Sse2.ShiftRightLogical128BitLane(eightShorts.AsByte(), 8).AsInt16();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WidenCoeffRaster16ToInt32(short* coeff, int* dst)
+        {
+            if (Avx2.IsSupported)
+            {
+                var w0 = Avx2.ConvertToVector256Int32(Sse2.LoadVector128(coeff));
+                var w1 = Avx2.ConvertToVector256Int32(Sse2.LoadVector128(coeff + 8));
+                Unsafe.WriteUnaligned(ref *(byte*)dst, w0);
+                Unsafe.WriteUnaligned(ref *(byte*)(dst + 8), w1);
+            }
+            else if (Sse41.IsSupported)
+            {
+                var s0 = Sse2.LoadVector128(coeff);
+                var s1 = Sse2.LoadVector128(coeff + 8);
+                Unsafe.WriteUnaligned(ref *(byte*)dst, Sse41.ConvertToVector128Int32(s0));
+                Unsafe.WriteUnaligned(ref *(byte*)(dst + 4), Sse41.ConvertToVector128Int32(Upper8ShortsToLower4(s0)));
+                Unsafe.WriteUnaligned(ref *(byte*)(dst + 8), Sse41.ConvertToVector128Int32(s1));
+                Unsafe.WriteUnaligned(ref *(byte*)(dst + 12), Sse41.ConvertToVector128Int32(Upper8ShortsToLower4(s1)));
+            }
+            else
+            {
+                for (int j = 0; j < 16; j++)
+                    dst[j] = coeff[j];
+            }
+        }
+
         /// <summary>
         /// Bit-exact port of libvpx vp8_regular_quantize_b_c.
         ///
@@ -75,12 +136,15 @@ namespace Vpx.Net
             int zbin_boost_idx = 0;
 
             // Zero out outputs (libvpx uses memset(_, 0, 32) — 32 bytes == 16 shorts).
-            for (int j = 0; j < 16; j++) { qcoeff[j] = 0; dqcoeff[j] = 0; }
+            ClearBlockOutputs(qcoeff, dqcoeff);
+
+            int* coeff32 = stackalloc int[16];
+            WidenCoeffRaster16ToInt32(coeff, coeff32);
 
             for (int i = 0; i < 16; ++i)
             {
                 int rc = entropy.vp8_default_zig_zag1d[i];
-                int z = coeff[rc];
+                int z = coeff32[rc];
 
                 int zbin_thr = zbin[rc] + zrun_zbin_boost[zbin_boost_idx] + zbin_extra;
                 zbin_boost_idx++;

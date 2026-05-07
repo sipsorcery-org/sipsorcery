@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: dct_unittest.cs
 //
 // Description: Unit tests for the VP8 forward DCT (encoder side, src/dct.cs).
@@ -94,6 +94,82 @@ namespace Vpx.Net.UnitTest
         /// 4x4 DCT/IDCT pair. Uses prediction = 128 so [0,255] clipping in
         /// vp8_short_idct4x4llm_c does not engage.
         /// </summary>
+        [Fact]
+        public void Fdct8x4_MatchesTwoSideBySideFdct4x4_ReferenceLayout()
+        {
+            // Layout matches libvpx vp8_short_fdct8x4_c: two 4×4 column groups in one 8×4
+            // input region; pitch between rows is 16 bytes (8 shorts per row).
+            short* input = stackalloc short[32];
+            var rng = new System.Random(42);
+            for (int i = 0; i < 32; i++)
+                input[i] = (short)rng.Next(-32, 33);
+
+            short* out8 = stackalloc short[32];
+            short* outL = stackalloc short[16];
+            short* outR = stackalloc short[16];
+
+            dct.vp8_short_fdct8x4_c(input, out8, pitch: 16);
+            dct.vp8_short_fdct4x4_c(input, outL, pitch: 16);
+            dct.vp8_short_fdct4x4_c(input + 4, outR, pitch: 16);
+
+            for (int i = 0; i < 16; i++)
+            {
+                Assert.True(out8[i] == outL[i], $"left 4×4 mismatch at i={i}: batch={out8[i]} ref={outL[i]}");
+                Assert.True(out8[i + 16] == outR[i], $"right 4×4 mismatch at i={i}: batch={out8[i + 16]} ref={outR[i]}");
+            }
+        }
+
+        /// <summary>
+        /// Random 8×4 residuals with pitch 16 (libvpx block layout): SIMD row path must stay bit-identical to scalar reference.
+        /// </summary>
+        [Fact]
+        public unsafe void Fdct8x4_Pitch16_MatchesPiecewise4x4_ManySeeds()
+        {
+            var rng = new System.Random(2026);
+            short* strip = stackalloc short[32];
+            short* expected = stackalloc short[32];
+            short* got = stackalloc short[32];
+            for (int iter = 0; iter < 256; iter++)
+            {
+                for (int i = 0; i < 32; i++)
+                    strip[i] = (short)rng.Next(-64, 65);
+
+                dct.vp8_short_fdct8x4_c(strip, expected, pitch: 16);
+                dct.vp8_short_fdct4x4_c(strip, got, pitch: 16);
+                dct.vp8_short_fdct4x4_c(strip + 4, got + 16, pitch: 16);
+                for (int i = 0; i < 32; i++)
+                    Assert.True(expected[i] == got[i], $"iter {iter} i={i} expected={expected[i]} got={got[i]}");
+            }
+        }
+
+        /// <summary>
+        /// Row then column passes (as used internally) must match the monolithic reference
+        /// for dense random residuals (contiguous 4×4, pitch 8).
+        /// </summary>
+        [Fact]
+        public unsafe void Fdct4x4_SplitRowColumn_MatchesMonolithic_ManySeeds()
+        {
+            var rng = new System.Random(777);
+            short* input = stackalloc short[16];
+            short* expected = stackalloc short[16];
+            short* got = stackalloc short[16];
+            for (int iter = 0; iter < 512; iter++)
+            {
+                for (int i = 0; i < 16; i++)
+                    input[i] = (short)rng.Next(-512, 513);
+
+                dct.vp8_short_fdct4x4_c(input, expected, 8);
+                dct.vp8_fdct4x4_row_pass(input, got, 8);
+                dct.vp8_fdct4x4_column_pass_inplace(got);
+
+                for (int i = 0; i < 16; i++)
+                {
+                    Assert.True(expected[i] == got[i],
+                        $"iter {iter} i={i} expected={expected[i]} got={got[i]}");
+                }
+            }
+        }
+
         [Fact]
         public void Fdct4x4_RoundTripWithIdct_RecoversInputWithinTolerance()
         {

@@ -3,7 +3,8 @@
     "path": "SIPSorcery.slnx",
     "projects": [
       "src\\SIPSorcery.VP8\\SIPSorcery.VP8.csproj",
-      "test\\SIPSorcery.VP8.UnitTest\\SIPSorcery.VP8.UnitTest.csproj"
+      "test\\SIPSorcery.VP8.UnitTest\\SIPSorcery.VP8.UnitTest.csproj",
+      "test\\SIPSorcery.VP8.Benchmarks\\SIPSorcery.VP8.Benchmarks.csproj"
     ]
   }
 }

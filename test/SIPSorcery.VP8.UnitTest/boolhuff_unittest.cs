@@ -83,28 +83,28 @@ namespace Vpx.Net.UnitTest
                     }
 
                     BOOL_DECODER br = new BOOL_DECODER();
-                    //encrypt_buffer(bw_buffer, kBufferSize);
-                    //vp8dx_start_decode(&br, bw_buffer, kBufferSize, test_decrypt_cb,
-                    //  reinterpret_cast<void*>(bw_buffer));
-                    dboolhuff.vp8dx_start_decode(ref br, bw_buffer, kBufferSize);
-
-                    //bit_rnd.Reset(random_seed);
-                    rnd = new Random(random_seed);
-                    for (int i = 0; i < kBitsToTest; ++i)
+                    fixed (byte* pBuf = bw_buffer)
                     {
-                        if (bit_method == 2)
-                        {
-                            bit = (i & 1);
-                        }
-                        else if (bit_method == 3)
-                        {
-                            bit = rnd.Next(0, 1);
-                        }
-                        /*GTEST_ASSERT_EQ(vp8dx_decode_bool(&br, probas[i]), bit)
-                          << "pos: " << i << " / " << kBitsToTest
-                          << " bit_method: " << bit_method << " method: " << method;*/
+                        dboolhuff.vp8dx_start_decode(ref br, pBuf, (uint)kBufferSize, null, null);
 
-                        Assert.Equal(dboolhuff.vp8dx_decode_bool(ref br, probas[i]), bit);
+                        //bit_rnd.Reset(random_seed);
+                        rnd = new Random(random_seed);
+                        for (int i = 0; i < kBitsToTest; ++i)
+                        {
+                            if (bit_method == 2)
+                            {
+                                bit = (i & 1);
+                            }
+                            else if (bit_method == 3)
+                            {
+                                bit = rnd.Next(0, 1);
+                            }
+                            /*GTEST_ASSERT_EQ(vp8dx_decode_bool(&br, probas[i]), bit)
+                              << "pos: " << i << " / " << kBitsToTest
+                              << " bit_method: " << bit_method << " method: " << method;*/
+
+                            Assert.Equal(dboolhuff.vp8dx_decode_bool(ref br, probas[i]), bit);
+                        }
                     }
                 }
             }

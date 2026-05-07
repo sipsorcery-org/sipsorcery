@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: quantize_unittest.cs
 //
 // Description: Unit tests for the VP8 forward quantizer (encoder side,
@@ -20,6 +20,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Vpx.Net;
 using Xunit;
 
 namespace Vpx.Net.UnitTest
@@ -114,7 +115,111 @@ namespace Vpx.Net.UnitTest
             Assert.Equal(expectedDq, dqcoeff);
         }
 
+        /// <summary>
+        /// Non-zero <c>zrun_zbin_boost</c> table: still bit-identical to scalar widening-only reference.
+        /// </summary>
+        [Fact]
+        public void Quantize_NonUniformZrunBoost_MatchesScalarReference()
+        {
+            short[] coeff;
+            short[] zbin = Repeat16((short)4);
+            short[] zboost = new short[16];
+            for (int i = 0; i < 16; i++)
+                zboost[i] = (short)(i * 3);
+            short[] round = Repeat16((short)4);
+            short[] quant = Repeat16((short)1);
+            short[] quantShift = Repeat16((short)8192);
+            short[] dequant = Repeat16((short)8);
+
+            var rng = new System.Random(321);
+            for (int t = 0; t < 64; t++)
+            {
+                coeff = new short[16];
+                for (int i = 0; i < 16; i++)
+                    coeff[i] = (short)rng.Next(-120, 121);
+
+                int eSimd = RunQuantizeTables(coeff, zbin, zboost, round, quant, quantShift, dequant, out short[] qS, out short[] dqS);
+                int eRef = RunQuantizeTablesScalarRef(coeff, zbin, zboost, round, quant, quantShift, dequant, out short[] qR, out short[] dqR);
+
+                Assert.Equal(eRef, eSimd);
+                Assert.Equal(qR, qS);
+                Assert.Equal(dqR, dqS);
+            }
+        }
+
         // ---------- helpers ----------
+
+        private static int RunQuantizeTables(
+            short[] coeff, short[] zbin, short[] zrunBoost, short[] round, short[] quant, short[] quantShift, short[] dequant,
+            out short[] qcoeff, out short[] dqcoeff)
+        {
+            qcoeff = new short[16];
+            dqcoeff = new short[16];
+
+            fixed (short* coefP = coeff)
+            fixed (short* zbinP = zbin)
+            fixed (short* zboostP = zrunBoost)
+            fixed (short* roundP = round)
+            fixed (short* quantP = quant)
+            fixed (short* quantShiftP = quantShift)
+            fixed (short* dequantP = dequant)
+            fixed (short* qcoeffP = qcoeff)
+            fixed (short* dqcoeffP = dqcoeff)
+            {
+                return quantize.vp8_regular_quantize_b_arrays(
+                    coefP, zbinP, zboostP, roundP, quantP, quantShiftP, dequantP,
+                    qcoeffP, dqcoeffP, zbin_extra: 0);
+            }
+        }
+
+        /// <summary>Pure C# duplicate of the quantize loop (no SIMD in widen/clear) for regression checks.</summary>
+        private static int RunQuantizeTablesScalarRef(
+            short[] coeff, short[] zbin, short[] zrunBoost, short[] round, short[] quant, short[] quantShift, short[] dequant,
+            out short[] qcoeff, out short[] dqcoeff)
+        {
+            qcoeff = new short[16];
+            dqcoeff = new short[16];
+            for (int i = 0; i < 16; i++)
+            {
+                qcoeff[i] = 0;
+                dqcoeff[i] = 0;
+            }
+
+            int eob = -1;
+            int zbin_boost_idx = 0;
+            int[] coeff32 = new int[16];
+            for (int j = 0; j < 16; j++)
+                coeff32[j] = coeff[j];
+
+            for (int i = 0; i < 16; ++i)
+            {
+                int rc = entropy.vp8_default_zig_zag1d[i];
+                int z = coeff32[rc];
+
+                int zbin_thr = zbin[rc] + zrunBoost[zbin_boost_idx] + 0;
+                zbin_boost_idx++;
+
+                int sz = (z >> 31);
+                int x = (z ^ sz) - sz;
+
+                if (x >= zbin_thr)
+                {
+                    x += round[rc];
+                    int y = ((((x * quant[rc]) >> 16) + x) * quantShift[rc]) >> 16;
+                    x = (y ^ sz) - sz;
+                    qcoeff[rc] = (short)x;
+                    dqcoeff[rc] = (short)(x * dequant[rc]);
+
+                    if (y != 0)
+                    {
+                        eob = i;
+                        zbin_boost_idx = 0;
+                    }
+                }
+            }
+
+            return eob + 1;
+        }
 
         private static int RunQuantize(short[] coeff, out short[] qcoeff, out short[] dqcoeff)
         {

@@ -132,53 +132,56 @@ namespace Vpx.Net.UnitTest
             System.Array.Copy(buf, boolStart, partition, 0, total - boolStart);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
+            fixed (byte* pPart = partition)
+            {
+                dboolhuff.vp8dx_start_decode(ref br, pPart, (uint)partition.Length, null, null);
 
-            // Read the same fields the writer emitted, in the same order.
-            int segmentation       = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int filterType         = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int filterLevel        = dboolhuff.vp8_decode_value(ref br, 6);
-            int sharpnessLevel     = dboolhuff.vp8_decode_value(ref br, 3);
-            int modeRefLfDelta     = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int log2NumPartitions  = dboolhuff.vp8_decode_value(ref br, 2);
-            int baseQindex         = dboolhuff.vp8_decode_value(ref br, 7);
-            // 5x put_delta_q. With all delta-q values zero, each one
-            // emits a single 0 bit (no delta).
-            int dqY1Dc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int dqY2Dc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int dqY2Ac   = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int dqUvDc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int dqUvAc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            // Inter-only fields.
-            int refreshGolden      = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int refreshAltRef      = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int copyBufferToGf     = dboolhuff.vp8_decode_value(ref br, 2);   // refreshGolden==0 -> read 2 bits
-            int copyBufferToArf    = dboolhuff.vp8_decode_value(ref br, 2);   // refreshAltRef==0 -> read 2 bits
-            int signBiasGolden     = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int signBiasAltRef     = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int refreshEntropy     = dboolhuff.vp8dx_decode_bool(ref br, 128);
-            int refreshLastFrame   = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                // Read the same fields the writer emitted, in the same order.
+                int segmentation       = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int filterType         = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int filterLevel        = dboolhuff.vp8_decode_value(ref br, 6);
+                int sharpnessLevel     = dboolhuff.vp8_decode_value(ref br, 3);
+                int modeRefLfDelta     = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int log2NumPartitions  = dboolhuff.vp8_decode_value(ref br, 2);
+                int baseQindex         = dboolhuff.vp8_decode_value(ref br, 7);
+                // 5x put_delta_q. With all delta-q values zero, each one
+                // emits a single 0 bit (no delta).
+                int dqY1Dc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int dqY2Dc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int dqY2Ac   = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int dqUvDc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int dqUvAc   = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                // Inter-only fields.
+                int refreshGolden      = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int refreshAltRef      = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int copyBufferToGf     = dboolhuff.vp8_decode_value(ref br, 2);   // refreshGolden==0 -> read 2 bits
+                int copyBufferToArf    = dboolhuff.vp8_decode_value(ref br, 2);   // refreshAltRef==0 -> read 2 bits
+                int signBiasGolden     = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int signBiasAltRef     = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int refreshEntropy     = dboolhuff.vp8dx_decode_bool(ref br, 128);
+                int refreshLastFrame   = dboolhuff.vp8dx_decode_bool(ref br, 128);
 
-            Assert.Equal(0,                  segmentation);
-            Assert.Equal(cfg.FilterType,     filterType);
-            Assert.Equal(cfg.FilterLevel,    filterLevel);
-            Assert.Equal(cfg.SharpnessLevel, sharpnessLevel);
-            Assert.Equal(0,                  modeRefLfDelta);
-            Assert.Equal(cfg.Log2NumberOfTokenPartitions, log2NumPartitions);
-            Assert.Equal(cfg.BaseQindex,     baseQindex);
-            Assert.Equal(0,                  dqY1Dc);
-            Assert.Equal(0,                  dqY2Dc);
-            Assert.Equal(0,                  dqY2Ac);
-            Assert.Equal(0,                  dqUvDc);
-            Assert.Equal(0,                  dqUvAc);
-            Assert.Equal(0,                  refreshGolden);
-            Assert.Equal(0,                  refreshAltRef);
-            Assert.Equal(0,                  copyBufferToGf);
-            Assert.Equal(0,                  copyBufferToArf);
-            Assert.Equal(0,                  signBiasGolden);
-            Assert.Equal(0,                  signBiasAltRef);
-            Assert.Equal(1,                  refreshEntropy);
-            Assert.Equal(1,                  refreshLastFrame);
+                Assert.Equal(0,                  segmentation);
+                Assert.Equal(cfg.FilterType,     filterType);
+                Assert.Equal(cfg.FilterLevel,    filterLevel);
+                Assert.Equal(cfg.SharpnessLevel, sharpnessLevel);
+                Assert.Equal(0,                  modeRefLfDelta);
+                Assert.Equal(cfg.Log2NumberOfTokenPartitions, log2NumPartitions);
+                Assert.Equal(cfg.BaseQindex,     baseQindex);
+                Assert.Equal(0,                  dqY1Dc);
+                Assert.Equal(0,                  dqY2Dc);
+                Assert.Equal(0,                  dqY2Ac);
+                Assert.Equal(0,                  dqUvDc);
+                Assert.Equal(0,                  dqUvAc);
+                Assert.Equal(0,                  refreshGolden);
+                Assert.Equal(0,                  refreshAltRef);
+                Assert.Equal(0,                  copyBufferToGf);
+                Assert.Equal(0,                  copyBufferToArf);
+                Assert.Equal(0,                  signBiasGolden);
+                Assert.Equal(0,                  signBiasAltRef);
+                Assert.Equal(1,                  refreshEntropy);
+                Assert.Equal(1,                  refreshLastFrame);
+            }
         }
 
         [Fact]
@@ -216,30 +219,33 @@ namespace Vpx.Net.UnitTest
             System.Array.Copy(buf, boolStart, partition, 0, total - boolStart);
 
             BOOL_DECODER br = new BOOL_DECODER();
-            dboolhuff.vp8dx_start_decode(ref br, partition, (uint)partition.Length);
+            fixed (byte* pPart = partition)
+            {
+                dboolhuff.vp8dx_start_decode(ref br, pPart, (uint)partition.Length, null, null);
 
-            // Skip past the fields before delta-q.
-            dboolhuff.vp8dx_decode_bool(ref br, 128);            // segmentation
-            dboolhuff.vp8dx_decode_bool(ref br, 128);            // filterType
-            dboolhuff.vp8_decode_value(ref br, 6);               // filterLevel
-            dboolhuff.vp8_decode_value(ref br, 3);               // sharpness
-            dboolhuff.vp8dx_decode_bool(ref br, 128);            // modeRefLfDelta
-            dboolhuff.vp8_decode_value(ref br, 2);               // log2partitions
-            dboolhuff.vp8_decode_value(ref br, 7);               // baseQindex
+                // Skip past the fields before delta-q.
+                dboolhuff.vp8dx_decode_bool(ref br, 128);            // segmentation
+                dboolhuff.vp8dx_decode_bool(ref br, 128);            // filterType
+                dboolhuff.vp8_decode_value(ref br, 6);               // filterLevel
+                dboolhuff.vp8_decode_value(ref br, 3);               // sharpness
+                dboolhuff.vp8dx_decode_bool(ref br, 128);            // modeRefLfDelta
+                dboolhuff.vp8_decode_value(ref br, 2);               // log2partitions
+                dboolhuff.vp8_decode_value(ref br, 7);               // baseQindex
 
-            // Delta-q fields. Each is: 1 bit "is non-zero?" then
-            // (if non-zero) 4-bit magnitude + 1 bit sign.
-            int y1dc = ReadDeltaQ(ref br);
-            int y2dc = ReadDeltaQ(ref br);
-            int y2ac = ReadDeltaQ(ref br);
-            int uvdc = ReadDeltaQ(ref br);
-            int uvac = ReadDeltaQ(ref br);
+                // Delta-q fields. Each is: 1 bit "is non-zero?" then
+                // (if non-zero) 4-bit magnitude + 1 bit sign.
+                int y1dc = ReadDeltaQ(ref br);
+                int y2dc = ReadDeltaQ(ref br);
+                int y2ac = ReadDeltaQ(ref br);
+                int uvdc = ReadDeltaQ(ref br);
+                int uvac = ReadDeltaQ(ref br);
 
-            Assert.Equal(cfg.Y1DcDeltaQ, y1dc);
-            Assert.Equal(cfg.Y2DcDeltaQ, y2dc);
-            Assert.Equal(cfg.Y2AcDeltaQ, y2ac);
-            Assert.Equal(cfg.UvDcDeltaQ, uvdc);
-            Assert.Equal(cfg.UvAcDeltaQ, uvac);
+                Assert.Equal(cfg.Y1DcDeltaQ, y1dc);
+                Assert.Equal(cfg.Y2DcDeltaQ, y2dc);
+                Assert.Equal(cfg.Y2AcDeltaQ, y2ac);
+                Assert.Equal(cfg.UvDcDeltaQ, uvdc);
+                Assert.Equal(cfg.UvAcDeltaQ, uvac);
+            }
         }
 
         private static int ReadDeltaQ(ref BOOL_DECODER br)
