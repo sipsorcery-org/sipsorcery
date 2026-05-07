@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: tokenize_unittest.cs
 //
 // Description: Unit tests for the VP8 coefficient tokenizer (encoder side,
@@ -22,7 +22,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections.Generic;
 using Xunit;
 
 namespace Vpx.Net.UnitTest
@@ -105,7 +104,7 @@ namespace Vpx.Net.UnitTest
         [Fact]
         public void TokenizeBlock_AllZero_EmitsSingleEob()
         {
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             bool nonzero = tokenize.vp8_tokenize_block(
                 new short[16], firstCoeffIndex: 0, eob: 0,
                 blockType: 3, initialContext: 0,
@@ -124,7 +123,7 @@ namespace Vpx.Net.UnitTest
         public void TokenizeBlock_DcOnly_5_MatchesReference()
         {
             short[] q = new short[16]; q[0] = 5;
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             bool nonzero = tokenize.vp8_tokenize_block(
                 q, firstCoeffIndex: 0, eob: 1,
                 blockType: 3, initialContext: 0,
@@ -145,7 +144,7 @@ namespace Vpx.Net.UnitTest
         public void TokenizeBlock_DcAndOneAc_MatchesReference()
         {
             short[] q = new short[16]; q[0] = 5; q[1] = 2;
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             bool nonzero = tokenize.vp8_tokenize_block(
                 q, firstCoeffIndex: 0, eob: 2,
                 blockType: 3, initialContext: 0,
@@ -175,7 +174,7 @@ namespace Vpx.Net.UnitTest
         {
             short[] q = new short[16];
             q[0] = 1; q[1] = 0; q[4] = 0; q[8] = -3; q[5] = 0; q[2] = 2; q[3] = 0; q[6] = -1;
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             bool nonzero = tokenize.vp8_tokenize_block(
                 q, firstCoeffIndex: 0, eob: 8,
                 blockType: 3, initialContext: 0,
@@ -202,7 +201,7 @@ namespace Vpx.Net.UnitTest
         public void TokenizeBlock_YNoDc_OneAcCoefficient_MatchesReference()
         {
             short[] q = new short[16]; q[1] = 2;
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             bool nonzero = tokenize.vp8_tokenize_block(
                 q, firstCoeffIndex: 1, eob: 2,
                 blockType: 0, initialContext: 0,
@@ -224,7 +223,7 @@ namespace Vpx.Net.UnitTest
         public void TokenizeBlock_LargeCoefs_CategoryAndSign_MatchesReference()
         {
             short[] q = new short[16]; q[0] = 25; q[1] = -8;
-            var tokens = new List<TOKENEXTRA>();
+            var tokens = new TokenStreamBuffer();
             bool nonzero = tokenize.vp8_tokenize_block(
                 q, firstCoeffIndex: 0, eob: 2,
                 blockType: 3, initialContext: 0,
@@ -240,7 +239,7 @@ namespace Vpx.Net.UnitTest
 
         // ---------- helpers ----------
 
-        private static void AssertTokens(List<TOKENEXTRA> got, params (int token, int extra, int skipEob)[] expected)
+        private static void AssertTokens(TokenStreamBuffer got, params (int token, int extra, int skipEob)[] expected)
         {
             Assert.Equal(expected.Length, got.Count);
             for (int i = 0; i < expected.Length; i++)

@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: boolhuff.cs
 //
 // Description: Port of:
@@ -14,6 +14,8 @@
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+using System.Runtime.CompilerServices;
+
 namespace Vpx.Net
 {
     public unsafe struct BOOL_CODER
@@ -110,6 +112,10 @@ namespace Vpx.Net
             return 0;
         }
 
+        /// <summary>Arithmetic encoder for one bool. Uses an inline
+        /// one-byte room check before each partition write instead of the
+        /// older <see cref="validate_buffer"/> helper call (same error path).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe static void vp8_encode_bool(ref BOOL_CODER bc, int bit, int probability)
         {
             uint split;
@@ -150,7 +156,13 @@ namespace Vpx.Net
                     bc.buffer[x] += 1;
                 }
 
-                validate_buffer(bc.buffer + bc.pos, 1, bc.buffer_end, ref bc.error);
+                // Single inline guard (avoids a non-inline helper call per byte).
+                if (bc.buffer + bc.pos + 1 > bc.buffer_end)
+                {
+                    vpx_codec.vpx_internal_error(ref bc.error, vpx_codec_err_t.VPX_CODEC_CORRUPT_FRAME,
+                        "Truncated packet or corrupt partition ");
+                }
+
                 bc.buffer[bc.pos++] = (byte)(lowvalue >> (24 - offset) & 0xff);
 
                 lowvalue <<= offset;

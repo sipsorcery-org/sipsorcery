@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: reconintra.cs
 //
 // Description: Port of:
@@ -29,6 +29,7 @@ using System.Runtime.CompilerServices;
 using ptrdiff_t = System.Int64;
 
 [assembly: InternalsVisibleTo("SIPSorcery.VP8.UnitTest")]
+[assembly: InternalsVisibleTo("SIPSorcery.VP8.Benchmarks")]
 
 namespace Vpx.Net
 {

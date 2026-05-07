@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: VP8Codec.cs
 //
 // Description: Implements a VP8 video encoder and decoder.
@@ -42,18 +42,39 @@ namespace Vpx.Net
         private Object _encoderLock = new object();
 
         /// <summary>
-        /// Creates a new video encoder can encode and decode samples.
+        /// Creates a new encoder/decoder using the <see cref="Vp8EncodePipelineKind.Optimized"/> pipeline
+        /// when <see cref="Vp8EncodeSimdCapabilities.HasResidualAcceleration"/> is true; otherwise uses
+        /// the legacy encoder path (same as <see cref="Vp8EncodePipelineKind.Legacy"/>).
         /// </summary>
-        public VP8Codec()
-        { }
+        public VP8Codec() : this(Vp8EncodePipelineKind.Optimized) { }
 
-        // Pooled per-instance plane-split buffers, reused across calls.
-        // Resized lazily when the input dimensions change. Allocating these
-        // afresh each frame was a major chunk of the encoder's GC pressure
-        // (~440 KB per 640x480 frame).
-        private byte[] _srcY;
-        private byte[] _srcU;
-        private byte[] _srcV;
+        /// <summary>
+        /// True when the machine supports AVX2, SSE2, or AdvSimd residual kernels; matches whether
+        /// <see cref="Vp8EncodePipelineKind.Optimized"/> selects the span/SIMD pipeline.
+        /// </summary>
+        public static bool IsOptimizedHardwareAvailable => Vp8EncodeSimdCapabilities.HasResidualAcceleration;
+
+        /// <param name="encodePipeline">Core encode memory strategy (legacy vs span/SIMD when hardware allows).</param>
+        public VP8Codec(Vp8EncodePipelineKind encodePipeline) : this(encodePipeline, log2NumTokenPartitions: 0) { }
+
+        /// <summary>
+        /// Creates a new encoder/decoder using the specified pipeline kind and the
+        /// requested number of token partitions (<c>1 &lt;&lt; log2NumTokenPartitions</c>).
+        /// </summary>
+        /// <param name="encodePipeline">Core encode memory strategy (legacy vs span/SIMD when hardware allows).</param>
+        /// <param name="log2NumTokenPartitions">log2 of the number of token partitions
+        /// (0 -> 1 partition / single-threaded pack-tokens, default; 1 -> 2; 2 -> 4; 3 -> 8).
+        /// Higher values enable parallel token packing across multiple partitions for faster
+        /// per-frame encode time at the cost of a small per-frame stitch step. The output
+        /// stays a valid VP8 bitstream that any conforming decoder accepts. Pooled internal
+        /// encode paths return a slice over <see cref="FrameEncoderBuffers.OutBuf"/> (no copy of
+        /// the compressed frame bytes); other small encode-time allocations may still occur.</param>
+        public VP8Codec(Vp8EncodePipelineKind encodePipeline, int log2NumTokenPartitions)
+        {
+            _encodePipeline = Vp8FrameEncodePipelineFactory.Create(encodePipeline, log2NumTokenPartitions);
+        }
+
+        private readonly IVp8FrameEncodePipeline _encodePipeline;
 
         public void ForceKeyFrame() => _forceKeyFrame = true;
         public bool IsSupported(VideoCodecsEnum codec) => codec == VideoCodecsEnum.VP8;
@@ -172,17 +193,6 @@ namespace Vpx.Net
                         (ySize + 2 * cSize) + " for " + width + "x" + height + ".");
                 }
 
-                if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
-                if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
-                Buffer.BlockCopy(i420, 0,             _srcY, 0, ySize);
-                Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);
-                Buffer.BlockCopy(i420, ySize + cSize, _srcV, 0, cSize);
-
-                // Decide keyframe vs inter for this call.
-                // - Forced keyframe (via ForceKeyFrame()): always keyframe.
-                // - Frame counter reached interval: keyframe.
-                // - First frame of stream / no valid reference: keyframe.
-                // - Otherwise: inter (ZEROMV LAST_FRAME).
                 bool forceKey = _forceKeyFrame
                               || _framesSinceLastKeyframe == 0
                               || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
@@ -191,16 +201,12 @@ namespace Vpx.Net
                 byte[] result;
                 if (forceKey)
                 {
-                    result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
+                    result = _encodePipeline.EncodeKeyframeContiguousI420(i420, width, height, _baseQIndex, _frameBuffers);
                     _framesSinceLastKeyframe = 1;
                 }
                 else
                 {
-                    // Inter (P) frame: ZEROMV referencing LAST_FRAME for
-                    // every macroblock. The reference frame is the
-                    // reconstruction of the previous keyframe / inter
-                    // frame, cached on the per-thread FrameEncoderBuffers.
-                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
+                    result = _encodePipeline.EncodeInterFrameContiguousI420(i420, width, height, _baseQIndex, _frameBuffers);
                     _framesSinceLastKeyframe++;
                 }
                 return result;

@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: mb_encoder.cs
 //
 // Description: Per-macroblock encode pipeline for an intra-only DC_PRED
@@ -73,10 +73,37 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Vpx.Net
 {
+    /// <summary>
+    /// When set, macroblock reconstruction is written directly into the frame&apos;s
+    /// last-reference planes at the given MB position (skips per-MB <see cref="MbEncodeResult.ReconY"/> scratch for idct).
+    /// </summary>
+    internal readonly struct LastFrameFuseTarget
+    {
+        public LastFrameFuseTarget(byte[] lastY, byte[] lastU, byte[] lastV, int width, int chromaW, int mbCol, int mbRow)
+        {
+            LastY = lastY ?? throw new ArgumentNullException(nameof(lastY));
+            LastU = lastU ?? throw new ArgumentNullException(nameof(lastU));
+            LastV = lastV ?? throw new ArgumentNullException(nameof(lastV));
+            Width = width;
+            ChromaW = chromaW;
+            MbCol = mbCol;
+            MbRow = mbRow;
+        }
+
+        public byte[] LastY { get; }
+        public byte[] LastU { get; }
+        public byte[] LastV { get; }
+        public int Width { get; }
+        public int ChromaW { get; }
+        public int MbCol { get; }
+        public int MbRow { get; }
+    }
+
     /// <summary>
     /// Single-macroblock encode result: token streams (one list per of the
     /// 25 transformed blocks the decoder reconstructs) plus the
@@ -95,10 +122,10 @@ namespace Vpx.Net
         // the backing array. Reset() clears all 25 lists in place without
         // releasing the storage — designed for pool-based reuse from
         // frame_encoder so per-MB encoding doesn't allocate.
-        public List<TOKENEXTRA>[] YBlocks  = new List<TOKENEXTRA>[16];
-        public List<TOKENEXTRA>[] UBlocks  = new List<TOKENEXTRA>[4];
-        public List<TOKENEXTRA>[] VBlocks  = new List<TOKENEXTRA>[4];
-        public List<TOKENEXTRA>  Y2Block  = new List<TOKENEXTRA>(17);
+        public TokenStreamBuffer[] YBlocks  = new TokenStreamBuffer[16];
+        public TokenStreamBuffer[] UBlocks  = new TokenStreamBuffer[4];
+        public TokenStreamBuffer[] VBlocks  = new TokenStreamBuffer[4];
+        public TokenStreamBuffer  Y2Block  = new TokenStreamBuffer();
 
         /// <summary>Reconstructed 16x16 luma pixels, raster order.</summary>
         public byte[] ReconY = new byte[16 * 16];
@@ -111,9 +138,9 @@ namespace Vpx.Net
 
         public MbEncodeResult()
         {
-            for (int i = 0; i < 16; i++) YBlocks[i] = new List<TOKENEXTRA>(17);
-            for (int i = 0; i < 4;  i++) UBlocks[i] = new List<TOKENEXTRA>(17);
-            for (int i = 0; i < 4;  i++) VBlocks[i] = new List<TOKENEXTRA>(17);
+            for (int i = 0; i < 16; i++) YBlocks[i] = new TokenStreamBuffer();
+            for (int i = 0; i < 4;  i++) UBlocks[i] = new TokenStreamBuffer();
+            for (int i = 0; i < 4;  i++) VBlocks[i] = new TokenStreamBuffer();
         }
 
         /// <summary>Clear all 25 token lists in place. Backing arrays are
@@ -171,28 +198,6 @@ namespace Vpx.Net
     {
         /// <summary>
         /// Encode one 16x16 macroblock as keyframe-only, DC_PRED-only intra.
-        ///
-        /// Inputs:
-        ///   srcY:   16*16 luma source bytes, raster order (row major).
-        ///   srcU:   8*8 chroma U, raster order.
-        ///   srcV:   8*8 chroma V, raster order.
-        ///   aboveY: 16 luma bytes from the row immediately above this MB,
-        ///           or null if this is the top row of the frame.
-        ///   leftY:  16 luma bytes from the column immediately left of this
-        ///           MB, or null if this is the left column.
-        ///   aboveU/leftU/aboveV/leftV: the 8-byte chroma equivalents.
-        ///   fq:     quantizer tables built by quantizer_init.BuildForQIndex.
-        ///   aboveCtx, leftCtx: optional 9-byte entropy-context arrays
-        ///           (4 Y + 2 U + 2 V + 1 Y2 slots). When null, fresh
-        ///           zero-filled arrays are allocated for this single MB
-        ///           and discarded after — the per-MB-isolation behaviour
-        ///           used by mb_encoder unit tests. When non-null, the
-        ///           caller (typically frame_encoder) maintains them at
-        ///           frame scope and threads them across MBs: this method
-        ///           reads each block's initial context from them and
-        ///           writes the resulting non-zero/zero flag back, in
-        ///           place. See the comment block inside the method for
-        ///           the threading rules.
         /// </summary>
         public static MbEncodeResult EncodeMacroblockDcPred(
             byte[] srcY, byte[] srcU, byte[] srcV,
@@ -203,7 +208,22 @@ namespace Vpx.Net
             byte[] aboveCtx = null,
             byte[] leftCtx = null,
             MbEncodeResult result = null,
-            MbEncoderScratch scratch = null)
+            MbEncoderScratch scratch = null) =>
+            EncodeMacroblockDcPredImpl(srcY, srcU, srcV, aboveY, leftY, aboveU, leftU, aboveV, leftV,
+                fq, aboveCtx, leftCtx, result, scratch, LegacyEncoderMemoryOps.Instance, fuseToLast: null);
+
+        internal static MbEncodeResult EncodeMacroblockDcPredImpl(
+            byte[] srcY, byte[] srcU, byte[] srcV,
+            byte[] aboveY, byte[] leftY,
+            byte[] aboveU, byte[] leftU,
+            byte[] aboveV, byte[] leftV,
+            FrameQuantizer fq,
+            byte[] aboveCtx,
+            byte[] leftCtx,
+            MbEncodeResult result,
+            MbEncoderScratch scratch,
+            IEncoderMemoryOps memoryOps,
+            LastFrameFuseTarget? fuseToLast = null)
         {
             if (srcY == null || srcY.Length != 256) throw new ArgumentException("srcY must be 16*16");
             if (srcU == null || srcU.Length != 64)  throw new ArgumentException("srcU must be 8*8");
@@ -229,53 +249,60 @@ namespace Vpx.Net
             if (scratch == null) scratch = new MbEncoderScratch();
 
             // ---- Step 1: DC predictions ----
-            byte yPred = DcPred16x16(aboveY, leftY);
-            byte uPred = DcPred8x8(aboveU, leftU);
-            byte vPred = DcPred8x8(aboveV, leftV);
+            // The pipeline-level flag below replaces the previous CPU-feature
+            // gate so the Legacy pipeline runs strictly scalar code, even on
+            // a SIMD-capable host (regression: tiers 1–6 had bled into
+            // Legacy through Xxx.IsSupported gating).
+            bool useSimd = memoryOps.UseSimdEncoderKernels;
+            byte yPred = DcPred16x16(aboveY, leftY, useSimd);
+            byte uPred = DcPred8x8(aboveU, leftU, useSimd);
+            byte vPred = DcPred8x8(aboveV, leftV, useSimd);
 
             // ---- Step 2: residual = source - prediction ----
             short[] residY = scratch.ResidY;
             short[] residU = scratch.ResidU;
             short[] residV = scratch.ResidV;
-            SubtractFlatInto(srcY, yPred, residY);
-            SubtractFlatInto(srcU, uPred, residU);
-            SubtractFlatInto(srcV, vPred, residV);
+            SubtractFlatInto(srcY, yPred, residY, memoryOps);
+            SubtractFlatInto(srcU, uPred, residU, memoryOps);
+            SubtractFlatInto(srcV, vPred, residV, memoryOps);
 
             // ---- Step 3: forward DCT for each 4x4 block ----
-            // Y: 16 blocks of 4x4 carved out of the 16x16 plane.
             short[][] yCoef = scratch.YCoef;
-            for (int by = 0; by < 4; by++)
-            for (int bx = 0; bx < 4; bx++)
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Fdct))
             {
-                int blkIdx = by * 4 + bx;
-                Fdct4x4FromPlaneInto(residY, srcStride: 16,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
-                    coef: yCoef[blkIdx]);
+                for (int by = 0; by < 4; by++)
+                for (int bx = 0; bx < 4; bx += 2)
+                {
+                    int b0 = by * 4 + bx;
+                    int b1 = b0 + 1;
+                    Fdct8x4FromPlaneInto(residY, srcStride: 16, blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                        yCoef[b0], yCoef[b1], useSimd);
+                }
             }
             // U / V: 4 blocks of 4x4 each.
             short[][] uCoef = scratch.UCoef;
             short[][] vCoef = scratch.VCoef;
-            for (int by = 0; by < 2; by++)
-            for (int bx = 0; bx < 2; bx++)
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Fdct))
             {
-                int blkIdx = by * 2 + bx;
-                Fdct4x4FromPlaneInto(residU, srcStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
-                    coef: uCoef[blkIdx]);
-                Fdct4x4FromPlaneInto(residV, srcStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
-                    coef: vCoef[blkIdx]);
+                for (int by = 0; by < 2; by++)
+                for (int bx = 0; bx < 2; bx++)
+                {
+                    int blkIdx = by * 2 + bx;
+                    Fdct4x4FromPlaneInto(residU, srcStride: 8,
+                        blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                        coef: uCoef[blkIdx], useSimd: useSimd);
+                    Fdct4x4FromPlaneInto(residV, srcStride: 8,
+                        blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                        coef: vCoef[blkIdx], useSimd: useSimd);
+                }
             }
 
             // ---- Step 4: build Y2 block from the 16 Y DCs and Walsh-transform ----
-            // For 16x16 intra modes (DC_PRED, V_PRED, H_PRED, TM_PRED) the
-            // 16 Y DC coefficients are themselves transformed by a 4x4 Walsh
-            // and then quantized as a "Y2" second-order block. The 16 Y AC
-            // blocks then drop their DC (zero out coef[0]).
             short[] y2In = scratch.Y2In;
             for (int i = 0; i < 16; i++) y2In[i] = yCoef[i][0];
             short[] y2Coef = scratch.Y2Coef;
-            Walsh4x4Into(y2In, y2Coef);
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Walsh))
+                Walsh4x4Into(y2In, y2Coef, useSimd);
 
             // Zero out the DC of each Y AC block.
             for (int i = 0; i < 16; i++) yCoef[i][0] = 0;
@@ -284,25 +311,27 @@ namespace Vpx.Net
             short[][] yQ = scratch.YQ;
             short[][] yDQ = scratch.YDQ;
             int[] yEob = scratch.YEob;
-            for (int i = 0; i < 16; i++)
-            {
-                yEob[i] = QuantizeBlock(yCoef[i], fq.Y1, yQ[i], yDQ[i]);
-            }
-
             short[] y2Q = scratch.Y2Q;
             short[] y2DQ = scratch.Y2DQ;
-            int y2Eob = QuantizeBlock(y2Coef, fq.Y2, y2Q, y2DQ);
-
             short[][] uQ = scratch.UQ;
             short[][] uDQ = scratch.UDQ;
             short[][] vQ = scratch.VQ;
             short[][] vDQ = scratch.VDQ;
             int[] uEob = scratch.UEob;
             int[] vEob = scratch.VEob;
-            for (int i = 0; i < 4; i++)
+            int y2Eob;
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Quantize))
             {
-                uEob[i] = QuantizeBlock(uCoef[i], fq.UV, uQ[i], uDQ[i]);
-                vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i]);
+                for (int i = 0; i < 16; i++)
+                    yEob[i] = QuantizeBlock(yCoef[i], fq.Y1, yQ[i], yDQ[i], useSimd);
+
+                y2Eob = QuantizeBlock(y2Coef, fq.Y2, y2Q, y2DQ, useSimd);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    uEob[i] = QuantizeBlock(uCoef[i], fq.UV, uQ[i], uDQ[i], useSimd);
+                    vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i], useSimd);
+                }
             }
 
             // ---- Step 6: tokenize, with per-block above/left entropy contexts ----
@@ -346,6 +375,8 @@ namespace Vpx.Net
             if (aboveCtx == null) aboveCtx = new byte[9];
             if (leftCtx == null) leftCtx = new byte[9];
 
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Tokenize))
+            {
             // Block type per libvpx:
             //   type 0 = Y AC (firstCoeffIndex = 1; DC went to Y2)
             //   type 1 = Y2
@@ -406,34 +437,50 @@ namespace Vpx.Net
                     output: result.VBlocks[i]);
                 aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
             }
+            }
 
             // ---- Step 7: reconstruct ----
             // Inverse Walsh on the Y2 block to recover the (quantized) DC of
             // each Y block. We write directly into the existing y2In scratch
             // buffer (now holding the recovered DCs) — y2In is no longer
             // needed for its phase-4 role at this point.
-            InverseWalsh4x4Into(y2DQ, y2In);
-            for (int i = 0; i < 16; i++)
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Reconstruct))
             {
-                yDQ[i][0] = y2In[i];
-            }
+                InverseWalsh4x4Into(y2DQ, y2In, useSimd);
+                for (int i = 0; i < 16; i++)
+                    yDQ[i][0] = y2In[i];
 
-            // For each Y block: idct(dq) + prediction -> reconstructed.
-            for (int by = 0; by < 4; by++)
-            for (int bx = 0; bx < 4; bx++)
-            {
-                int blkIdx = by * 4 + bx;
-                IdctAndAddToPlane(yDQ[blkIdx], yPred, result.ReconY,
-                    dstStride: 16, blockOffsetX: bx * 4, blockOffsetY: by * 4);
-            }
-            for (int by = 0; by < 2; by++)
-            for (int bx = 0; bx < 2; bx++)
-            {
-                int blkIdx = by * 2 + bx;
-                IdctAndAddToPlane(uDQ[blkIdx], uPred, result.ReconU,
-                    dstStride: 8, blockOffsetX: bx * 4, blockOffsetY: by * 4);
-                IdctAndAddToPlane(vDQ[blkIdx], vPred, result.ReconV,
-                    dstStride: 8, blockOffsetX: bx * 4, blockOffsetY: by * 4);
+                byte[] yOut = fuseToLast.HasValue ? fuseToLast.Value.LastY : result.ReconY;
+                int yStride = fuseToLast.HasValue ? fuseToLast.Value.Width : 16;
+                int yOffX = fuseToLast.HasValue ? fuseToLast.Value.MbCol * 16 : 0;
+                int yOffY = fuseToLast.HasValue ? fuseToLast.Value.MbRow * 16 : 0;
+
+                for (int by = 0; by < 4; by++)
+                for (int bx = 0; bx < 4; bx++)
+                {
+                    int blkIdx = by * 4 + bx;
+                    IdctAndAddToPlane(yDQ[blkIdx], yPred, yOut,
+                        dstStride: yStride, blockOffsetX: yOffX + bx * 4, blockOffsetY: yOffY + by * 4,
+                        useSimd: useSimd);
+                }
+
+                byte[] uOut = fuseToLast.HasValue ? fuseToLast.Value.LastU : result.ReconU;
+                byte[] vOut = fuseToLast.HasValue ? fuseToLast.Value.LastV : result.ReconV;
+                int cStride = fuseToLast.HasValue ? fuseToLast.Value.ChromaW : 8;
+                int cOffX = fuseToLast.HasValue ? fuseToLast.Value.MbCol * 8 : 0;
+                int cOffY = fuseToLast.HasValue ? fuseToLast.Value.MbRow * 8 : 0;
+
+                for (int by = 0; by < 2; by++)
+                for (int bx = 0; bx < 2; bx++)
+                {
+                    int blkIdx = by * 2 + bx;
+                    IdctAndAddToPlane(uDQ[blkIdx], uPred, uOut,
+                        dstStride: cStride, blockOffsetX: cOffX + bx * 4, blockOffsetY: cOffY + by * 4,
+                        useSimd: useSimd);
+                    IdctAndAddToPlane(vDQ[blkIdx], vPred, vOut,
+                        dstStride: cStride, blockOffsetX: cOffX + bx * 4, blockOffsetY: cOffY + by * 4,
+                        useSimd: useSimd);
+                }
             }
 
             return result;
@@ -441,30 +488,7 @@ namespace Vpx.Net
 
         /// <summary>
         /// Encode one 16x16 macroblock as an inter MB using ZEROMV with
-        /// LAST_FRAME as the reference. The prediction is the same-position
-        /// 16x16 Y + 8x8 U + 8x8 V samples from the previous frame's
-        /// reconstruction (motion vector = (0, 0)). Residual = source -
-        /// prediction; the rest of the pipeline is identical to
-        /// EncodeMacroblockDcPred (forward DCT + Walsh on Y DCs +
-        /// quantize + tokenize + reconstruct).
-        ///
-        /// PR 3 of the P-frame foundation series. The caller (frame_encoder
-        /// in PR 5) supplies the per-MB prediction by extracting the
-        /// relevant 16x16 / 8x8 / 8x8 samples from the FrameEncoderBuffers
-        /// last-frame reference (added in PR 1).
-        ///
-        /// Inputs:
-        ///   srcY:   16*16 luma source bytes, raster order.
-        ///   srcU:   8*8 chroma U source, raster order.
-        ///   srcV:   8*8 chroma V source, raster order.
-        ///   predY:  16*16 luma prediction (same position from last frame).
-        ///   predU:  8*8 chroma U prediction.
-        ///   predV:  8*8 chroma V prediction.
-        ///   fq:     quantizer tables built by quantizer_init.BuildForQIndex.
-        ///   aboveCtx, leftCtx: optional 9-byte entropy-context arrays as
-        ///           per EncodeMacroblockDcPred.
-        ///   result, scratch: optional pooled buffers (see
-        ///           EncodeMacroblockDcPred for the pooling contract).
+        /// LAST_FRAME as the reference.
         /// </summary>
         public static MbEncodeResult EncodeMacroblockZeroMvLast(
             byte[] srcY, byte[] srcU, byte[] srcV,
@@ -473,7 +497,20 @@ namespace Vpx.Net
             byte[] aboveCtx = null,
             byte[] leftCtx = null,
             MbEncodeResult result = null,
-            MbEncoderScratch scratch = null)
+            MbEncoderScratch scratch = null) =>
+            EncodeMacroblockZeroMvLastImpl(srcY, srcU, srcV, predY, predU, predV, fq,
+                aboveCtx, leftCtx, result, scratch, LegacyEncoderMemoryOps.Instance, fuseToLast: null);
+
+        internal static MbEncodeResult EncodeMacroblockZeroMvLastImpl(
+            byte[] srcY, byte[] srcU, byte[] srcV,
+            byte[] predY, byte[] predU, byte[] predV,
+            FrameQuantizer fq,
+            byte[] aboveCtx,
+            byte[] leftCtx,
+            MbEncodeResult result,
+            MbEncoderScratch scratch,
+            IEncoderMemoryOps memoryOps,
+            LastFrameFuseTarget? fuseToLast = null)
         {
             if (srcY == null  || srcY.Length  != 256) throw new ArgumentException("srcY must be 16*16");
             if (srcU == null  || srcU.Length  != 64)  throw new ArgumentException("srcU must be 8*8");
@@ -502,6 +539,8 @@ namespace Vpx.Net
             if (aboveCtx == null) aboveCtx = new byte[9];
             if (leftCtx == null) leftCtx = new byte[9];
 
+            bool useSimd = memoryOps.UseSimdEncoderKernels;
+
             // ---- Step 1: residual = source - prediction ----
             //
             // ZEROMV LAST_FRAME means the prediction is the *exact*
@@ -512,44 +551,46 @@ namespace Vpx.Net
             short[] residY = scratch.ResidY;
             short[] residU = scratch.ResidU;
             short[] residV = scratch.ResidV;
-            SubtractPerPixelInto(srcY, predY, residY);
-            SubtractPerPixelInto(srcU, predU, residU);
-            SubtractPerPixelInto(srcV, predV, residV);
+            SubtractPerPixelInto(srcY, predY, residY, memoryOps);
+            SubtractPerPixelInto(srcU, predU, residU, memoryOps);
+            SubtractPerPixelInto(srcV, predV, residV, memoryOps);
 
             // ---- Step 2: forward DCT for each 4x4 block ----
-            // Same code path as DC_PRED: 16 Y blocks (4x4 carved from
-            // the 16x16 residual plane), 4 U blocks, 4 V blocks.
             short[][] yCoef = scratch.YCoef;
-            for (int by = 0; by < 4; by++)
-            for (int bx = 0; bx < 4; bx++)
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Fdct))
             {
-                int blkIdx = by * 4 + bx;
-                Fdct4x4FromPlaneInto(residY, srcStride: 16,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
-                    coef: yCoef[blkIdx]);
+                for (int by = 0; by < 4; by++)
+                for (int bx = 0; bx < 4; bx += 2)
+                {
+                    int b0 = by * 4 + bx;
+                    int b1 = b0 + 1;
+                    Fdct8x4FromPlaneInto(residY, srcStride: 16, blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                        yCoef[b0], yCoef[b1], useSimd);
+                }
             }
             short[][] uCoef = scratch.UCoef;
             short[][] vCoef = scratch.VCoef;
-            for (int by = 0; by < 2; by++)
-            for (int bx = 0; bx < 2; bx++)
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Fdct))
             {
-                int blkIdx = by * 2 + bx;
-                Fdct4x4FromPlaneInto(residU, srcStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
-                    coef: uCoef[blkIdx]);
-                Fdct4x4FromPlaneInto(residV, srcStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4,
-                    coef: vCoef[blkIdx]);
+                for (int by = 0; by < 2; by++)
+                for (int bx = 0; bx < 2; bx++)
+                {
+                    int blkIdx = by * 2 + bx;
+                    Fdct4x4FromPlaneInto(residU, srcStride: 8,
+                        blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                        coef: uCoef[blkIdx], useSimd: useSimd);
+                    Fdct4x4FromPlaneInto(residV, srcStride: 8,
+                        blockOffsetX: bx * 4, blockOffsetY: by * 4,
+                        coef: vCoef[blkIdx], useSimd: useSimd);
+                }
             }
 
             // ---- Step 3: Y2 (Walsh) on the 16 Y DCs + zero Y AC DCs ----
-            // Same as DC_PRED. ZEROMV is a 16x16 inter mode so the Y2
-            // second-order block is enabled and the Y AC blocks have
-            // their DC dropped (firstCoeffIndex = 1 in tokenize).
             short[] y2In = scratch.Y2In;
             for (int i = 0; i < 16; i++) y2In[i] = yCoef[i][0];
             short[] y2Coef = scratch.Y2Coef;
-            Walsh4x4Into(y2In, y2Coef);
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Walsh))
+                Walsh4x4Into(y2In, y2Coef, useSimd);
 
             for (int i = 0; i < 16; i++) yCoef[i][0] = 0;
 
@@ -557,36 +598,32 @@ namespace Vpx.Net
             short[][] yQ = scratch.YQ;
             short[][] yDQ = scratch.YDQ;
             int[] yEob = scratch.YEob;
-            for (int i = 0; i < 16; i++)
-            {
-                yEob[i] = QuantizeBlock(yCoef[i], fq.Y1, yQ[i], yDQ[i]);
-            }
-
             short[] y2Q = scratch.Y2Q;
             short[] y2DQ = scratch.Y2DQ;
-            int y2Eob = QuantizeBlock(y2Coef, fq.Y2, y2Q, y2DQ);
-
             short[][] uQ = scratch.UQ;
             short[][] uDQ = scratch.UDQ;
             short[][] vQ = scratch.VQ;
             short[][] vDQ = scratch.VDQ;
             int[] uEob = scratch.UEob;
             int[] vEob = scratch.VEob;
-            for (int i = 0; i < 4; i++)
+            int y2Eob;
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Quantize))
             {
-                uEob[i] = QuantizeBlock(uCoef[i], fq.UV, uQ[i], uDQ[i]);
-                vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i]);
+                for (int i = 0; i < 16; i++)
+                    yEob[i] = QuantizeBlock(yCoef[i], fq.Y1, yQ[i], yDQ[i], useSimd);
+
+                y2Eob = QuantizeBlock(y2Coef, fq.Y2, y2Q, y2DQ, useSimd);
+
+                for (int i = 0; i < 4; i++)
+                {
+                    uEob[i] = QuantizeBlock(uCoef[i], fq.UV, uQ[i], uDQ[i], useSimd);
+                    vEob[i] = QuantizeBlock(vCoef[i], fq.UV, vQ[i], vDQ[i], useSimd);
+                }
             }
 
-            // ---- Step 5: tokenize, with per-block above/left contexts ----
-            // Same context-handling rules as EncodeMacroblockDcPred (see
-            // the long comment block there explaining
-            // VP8_COMBINEENTROPYCONTEXTS and the cross-MB threading
-            // requirement). Inter MBs share the same coef-prob table as
-            // intra MBs of equivalent type, so default_coef_probs is
-            // re-used here.
-
-            // -- Y2 block (block index 24) --
+            // ---- Step 5: tokenize ----
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Tokenize))
+            {
             int slot = entropy.vp8_block2above[24];
             int slotL = entropy.vp8_block2left[24];
             bool y2NonZero = tokenize.vp8_tokenize_block(y2Q,
@@ -640,38 +677,52 @@ namespace Vpx.Net
                     output: result.VBlocks[i]);
                 aboveCtx[s] = leftCtx[sL] = (byte)(nz ? 1 : 0);
             }
+            }
 
             // ---- Step 6: reconstruct ----
-            // Inverse Walsh recovers the per-block DC. Then per-block
-            // IDCT + add the per-pixel prediction (vs DC_PRED's flat
-            // single-byte prediction).
-            InverseWalsh4x4Into(y2DQ, y2In);
-            for (int i = 0; i < 16; i++)
+            using (new EncodeProfiler.Scope(Vp8EncodeProfilePhase.Reconstruct))
             {
-                yDQ[i][0] = y2In[i];
-            }
+                InverseWalsh4x4Into(y2DQ, y2In, useSimd);
+                for (int i = 0; i < 16; i++)
+                    yDQ[i][0] = y2In[i];
 
-            for (int by = 0; by < 4; by++)
-            for (int bx = 0; bx < 4; bx++)
-            {
-                int blkIdx = by * 4 + bx;
-                IdctAndAddBlockToPlane(yDQ[blkIdx],
-                    predPlane: predY, predStride: 16,
-                    dstPlane: result.ReconY, dstStride: 16,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
-            }
-            for (int by = 0; by < 2; by++)
-            for (int bx = 0; bx < 2; bx++)
-            {
-                int blkIdx = by * 2 + bx;
-                IdctAndAddBlockToPlane(uDQ[blkIdx],
-                    predPlane: predU, predStride: 8,
-                    dstPlane: result.ReconU, dstStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
-                IdctAndAddBlockToPlane(vDQ[blkIdx],
-                    predPlane: predV, predStride: 8,
-                    dstPlane: result.ReconV, dstStride: 8,
-                    blockOffsetX: bx * 4, blockOffsetY: by * 4);
+                byte[] yOut = fuseToLast.HasValue ? fuseToLast.Value.LastY : result.ReconY;
+                int yStride = fuseToLast.HasValue ? fuseToLast.Value.Width : 16;
+                int yOffX = fuseToLast.HasValue ? fuseToLast.Value.MbCol * 16 : 0;
+                int yOffY = fuseToLast.HasValue ? fuseToLast.Value.MbRow * 16 : 0;
+
+                for (int by = 0; by < 4; by++)
+                for (int bx = 0; bx < 4; bx++)
+                {
+                    int blkIdx = by * 4 + bx;
+                    IdctAndAddBlockToPlane(yDQ[blkIdx],
+                        predPlane: predY, predStride: 16, predOffsetX: bx * 4, predOffsetY: by * 4,
+                        dstPlane: yOut, dstStride: yStride,
+                        dstOffsetX: yOffX + bx * 4, dstOffsetY: yOffY + by * 4,
+                        useSimd: useSimd);
+                }
+
+                byte[] uOut = fuseToLast.HasValue ? fuseToLast.Value.LastU : result.ReconU;
+                byte[] vOut = fuseToLast.HasValue ? fuseToLast.Value.LastV : result.ReconV;
+                int cStride = fuseToLast.HasValue ? fuseToLast.Value.ChromaW : 8;
+                int cOffX = fuseToLast.HasValue ? fuseToLast.Value.MbCol * 8 : 0;
+                int cOffY = fuseToLast.HasValue ? fuseToLast.Value.MbRow * 8 : 0;
+
+                for (int by = 0; by < 2; by++)
+                for (int bx = 0; bx < 2; bx++)
+                {
+                    int blkIdx = by * 2 + bx;
+                    IdctAndAddBlockToPlane(uDQ[blkIdx],
+                        predPlane: predU, predStride: 8, predOffsetX: bx * 4, predOffsetY: by * 4,
+                        dstPlane: uOut, dstStride: cStride,
+                        dstOffsetX: cOffX + bx * 4, dstOffsetY: cOffY + by * 4,
+                        useSimd: useSimd);
+                    IdctAndAddBlockToPlane(vDQ[blkIdx],
+                        predPlane: predV, predStride: 8, predOffsetX: bx * 4, predOffsetY: by * 4,
+                        dstPlane: vOut, dstStride: cStride,
+                        dstOffsetX: cOffX + bx * 4, dstOffsetY: cOffY + by * 4,
+                        useSimd: useSimd);
+                }
             }
 
             return result;
@@ -684,26 +735,82 @@ namespace Vpx.Net
         /// available, the prediction is the mean of the 32 boundary
         /// samples; when only one is available, just that 16; when neither,
         /// 128. The averages are rounded to nearest with the libvpx-style
-        /// "+= half" rounding.
+        /// "+= half" rounding. Inner sums use the SIMD reduce in
+        /// <see cref="DcPredSumKernels"/> only on the Optimized pipeline
+        /// (<paramref name="useSimd"/>=true); the Legacy pipeline runs the
+        /// scalar accumulator below.
         /// </summary>
-        private static byte DcPred16x16(byte[] above, byte[] left)
+        private static unsafe byte DcPred16x16(byte[] above, byte[] left, bool useSimd)
         {
             int avgAbove = 0, avgLeft = 0;
             int count = 0;
-            if (above != null) { for (int i = 0; i < 16; i++) avgAbove += above[i]; count += 16; }
-            if (left  != null) { for (int i = 0; i < 16; i++) avgLeft  += left[i];  count += 16; }
+            if (above != null)
+            {
+                if (useSimd)
+                {
+                    fixed (byte* p = above) { avgAbove = DcPredSumKernels.Sum16(p); }
+                }
+                else
+                {
+                    int s = 0;
+                    for (int i = 0; i < 16; i++) s += above[i];
+                    avgAbove = s;
+                }
+                count += 16;
+            }
+            if (left != null)
+            {
+                if (useSimd)
+                {
+                    fixed (byte* p = left) { avgLeft = DcPredSumKernels.Sum16(p); }
+                }
+                else
+                {
+                    int s = 0;
+                    for (int i = 0; i < 16; i++) s += left[i];
+                    avgLeft = s;
+                }
+                count += 16;
+            }
             if (count == 0) return 128;
             int sum = avgAbove + avgLeft;
             return (byte)((sum + count / 2) / count);
         }
 
-        /// <summary>8x8 DC_PRED — same rules as the 16x16 case.</summary>
-        private static byte DcPred8x8(byte[] above, byte[] left)
+        /// <summary>8x8 DC_PRED — same rules as the 16x16 case.
+        /// SIMD is used only when <paramref name="useSimd"/> is true.</summary>
+        private static unsafe byte DcPred8x8(byte[] above, byte[] left, bool useSimd)
         {
             int avgAbove = 0, avgLeft = 0;
             int count = 0;
-            if (above != null) { for (int i = 0; i < 8; i++) avgAbove += above[i]; count += 8; }
-            if (left  != null) { for (int i = 0; i < 8; i++) avgLeft  += left[i];  count += 8; }
+            if (above != null)
+            {
+                if (useSimd)
+                {
+                    fixed (byte* p = above) { avgAbove = DcPredSumKernels.Sum8(p); }
+                }
+                else
+                {
+                    int s = 0;
+                    for (int i = 0; i < 8; i++) s += above[i];
+                    avgAbove = s;
+                }
+                count += 8;
+            }
+            if (left != null)
+            {
+                if (useSimd)
+                {
+                    fixed (byte* p = left) { avgLeft = DcPredSumKernels.Sum8(p); }
+                }
+                else
+                {
+                    int s = 0;
+                    for (int i = 0; i < 8; i++) s += left[i];
+                    avgLeft = s;
+                }
+                count += 8;
+            }
             if (count == 0) return 128;
             int sum = avgAbove + avgLeft;
             return (byte)((sum + count / 2) / count);
@@ -712,56 +819,113 @@ namespace Vpx.Net
         /// <summary>Subtracts a flat prediction value from each source byte
         /// into <paramref name="dst"/>. <paramref name="dst"/> must be at
         /// least as long as <paramref name="src"/>.</summary>
-        private static void SubtractFlatInto(byte[] src, byte pred, short[] dst)
+        private static void SubtractFlatInto(byte[] src, byte pred, short[] dst, IEncoderMemoryOps ops)
         {
-            for (int i = 0; i < src.Length; i++) dst[i] = (short)(src[i] - pred);
+            ops.SubtractFlat(src, pred, dst);
         }
 
         /// <summary>Per-pixel subtract: dst[i] = src[i] - pred[i]. Used by
         /// the ZEROMV inter path where the prediction is a same-position
         /// MB from the last frame's reconstruction. Lengths must match.</summary>
-        private static void SubtractPerPixelInto(byte[] src, byte[] pred, short[] dst)
+        private static void SubtractPerPixelInto(byte[] src, byte[] pred, short[] dst, IEncoderMemoryOps ops)
         {
-            for (int i = 0; i < src.Length; i++) dst[i] = (short)(src[i] - pred[i]);
+            ops.SubtractPerPixel(src, pred, dst);
         }
 
         /// <summary>
-        /// Extract a 4x4 sub-block from <paramref name="plane"/> (raster order
-        /// at <paramref name="srcStride"/>) and forward-DCT it into the
-        /// provided <paramref name="coef"/> buffer (must be at least 16
-        /// shorts long). The intermediate 4x4 input block is stack-
-        /// allocated so this entire helper does no heap allocation.
+        /// 8x4 forward DCT for two adjacent 4x4 blocks. Optimized pipeline
+        /// (<paramref name="useSimd"/>=true) folds the gather into a strided
+        /// SIMD load via <see cref="FdctEncoderSimd.Fdct8x4Split"/>; Legacy
+        /// pipeline uses the original stackalloc gather + scalar
+        /// <see cref="dct.vp8_short_fdct4x4_c"/> baseline so the two
+        /// pipelines differ end-to-end.
         /// </summary>
-        private static unsafe void Fdct4x4FromPlaneInto(short[] plane, int srcStride, int blockOffsetX, int blockOffsetY, short[] coef)
+        private static unsafe void Fdct8x4FromPlaneInto(short[] plane, int srcStride, int blockOffsetX, int blockOffsetY,
+            short[] coefLeft, short[] coefRight, bool useSimd)
         {
+            if (useSimd && FdctEncoderSimd.IsSupported)
+            {
+                int rowOffset = blockOffsetY * srcStride + blockOffsetX;
+                fixed (short* planeP = plane)
+                fixed (short* outL = coefLeft)
+                fixed (short* outR = coefRight)
+                {
+                    FdctEncoderSimd.Fdct8x4Split(planeP + rowOffset, outL, outR, pitch: srcStride * 2);
+                }
+                return;
+            }
+
+            // Legacy: stack-gather each 4x4 half and call the scalar fdct twice.
+            Span<short> blockL = stackalloc short[16];
+            Span<short> blockR = stackalloc short[16];
+            for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+            {
+                int planeIdx = (blockOffsetY + r) * srcStride + (blockOffsetX + c);
+                blockL[r * 4 + c] = plane[planeIdx];
+                blockR[r * 4 + c] = plane[planeIdx + 4];
+            }
+
+            fixed (short* inL = blockL) fixed (short* outL = coefLeft)
+                dct.vp8_short_fdct4x4_c(inL, outL, pitch: 8);
+            fixed (short* inR = blockR) fixed (short* outR = coefRight)
+                dct.vp8_short_fdct4x4_c(inR, outR, pitch: 8);
+        }
+
+        /// <summary>
+        /// 4x4 forward DCT. Optimized pipeline uses
+        /// <see cref="FdctEncoderSimd.Fdct4x4"/> with strided load; Legacy
+        /// pipeline gathers a 16-short block on the stack and calls the
+        /// scalar <see cref="dct.vp8_short_fdct4x4_c"/>.
+        /// </summary>
+        private static unsafe void Fdct4x4FromPlaneInto(short[] plane, int srcStride, int blockOffsetX, int blockOffsetY,
+            short[] coef, bool useSimd)
+        {
+            if (useSimd && FdctEncoderSimd.IsSupported)
+            {
+                int rowOffset = blockOffsetY * srcStride + blockOffsetX;
+                fixed (short* planeP = plane)
+                fixed (short* outP = coef)
+                {
+                    FdctEncoderSimd.Fdct4x4(planeP + rowOffset, outP, pitch: srcStride * 2);
+                }
+                return;
+            }
+
             Span<short> block = stackalloc short[16];
             for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
                 block[r * 4 + c] = plane[(blockOffsetY + r) * srcStride + (blockOffsetX + c)];
-
-            fixed (short* inP = block)
-            fixed (short* outP = coef)
-            {
+            fixed (short* inP = block) fixed (short* outP = coef)
                 dct.vp8_short_fdct4x4_c(inP, outP, pitch: 8);
-            }
         }
 
         /// <summary>4x4 Walsh-Hadamard from <paramref name="input"/> into
-        /// the supplied <paramref name="outBuf"/>. No allocation.</summary>
-        private static unsafe void Walsh4x4Into(short[] input, short[] outBuf)
+        /// the supplied <paramref name="outBuf"/>. No allocation. SIMD is
+        /// used only when <paramref name="useSimd"/> is true (Optimized
+        /// pipeline) and <see cref="WalshEncoderSimd.IsSupported"/>.</summary>
+        private static unsafe void Walsh4x4Into(short[] input, short[] outBuf, bool useSimd)
         {
             fixed (short* inP = input)
             fixed (short* outP = outBuf)
             {
-                dct.vp8_short_walsh4x4_c(inP, outP, pitch: 8);
+                if (useSimd && WalshEncoderSimd.IsSupported)
+                {
+                    WalshEncoderSimd.Walsh4x4(inP, outP, pitch: 8);
+                }
+                else
+                {
+                    dct.vp8_short_walsh4x4_c(inP, outP, pitch: 8);
+                }
             }
         }
 
         /// <summary>
         /// Quantize a 16-coefficient block using the supplied tables, with
-        /// zbin_extra = 0. Returns the EOB.
+        /// zbin_extra = 0. Returns the EOB. SIMD is used only when
+        /// <paramref name="useSimd"/> is true (Optimized pipeline).
         /// </summary>
-        private static unsafe int QuantizeBlock(short[] coef, QuantizerTables t, short[] qcoeff, short[] dqcoeff)
+        private static unsafe int QuantizeBlock(short[] coef, QuantizerTables t, short[] qcoeff, short[] dqcoeff, bool useSimd)
         {
             fixed (short* coefP = coef)
             fixed (short* zbinP = t.zbin)
@@ -773,6 +937,13 @@ namespace Vpx.Net
             fixed (short* qP = qcoeff)
             fixed (short* dqP = dqcoeff)
             {
+                if (useSimd && QuantizeEncoderSimd.IsSupported)
+                {
+                    return QuantizeEncoderSimd.RegularQuantizeB(
+                        coefP, zbinP, zboostP, roundP, quantP, qshiftP, dequantP,
+                        qP, dqP, zbin_extra: 0);
+                }
+
                 return quantize.vp8_regular_quantize_b_arrays(
                     coefP, zbinP, zboostP, roundP, quantP, qshiftP, dequantP,
                     qP, dqP, zbin_extra: 0);
@@ -784,10 +955,21 @@ namespace Vpx.Net
         /// (the second-order inverse Walsh used in 16x16 intra modes).
         /// libvpx writes into an MB-wide dqcoeff buffer; we write into the
         /// supplied <paramref name="outBuf"/>. The 16-element row-pass
-        /// scratch is stack-allocated. No heap allocation.
+        /// scratch is stack-allocated. No heap allocation. SIMD is used
+        /// only when <paramref name="useSimd"/> is true (Optimized pipeline).
         /// </summary>
-        private static void InverseWalsh4x4Into(short[] input, short[] outBuf)
+        private static unsafe void InverseWalsh4x4Into(short[] input, short[] outBuf, bool useSimd)
         {
+            if (useSimd && WalshEncoderSimd.IsSupported)
+            {
+                fixed (short* inP = input)
+                fixed (short* outP = outBuf)
+                {
+                    WalshEncoderSimd.InverseWalsh4x4(inP, outP);
+                }
+                return;
+            }
+
             Span<int> tmp = stackalloc int[16];
             int a1, b1, c1, d1, a2, b2, c2, d2;
 
@@ -827,16 +1009,27 @@ namespace Vpx.Net
 
         /// <summary>
         /// Inverse-DCT a 16-element block, add a flat prediction, write the
-        /// resulting bytes to a 4x4 sub-block of <paramref name="dstPlane"/>.
-        /// Reuses the existing decoder-side idctllm.vp8_short_idct4x4llm_c.
-        /// The 4x4 prediction and output buffers are stack-allocated.
+        /// resulting bytes directly into a 4x4 sub-block of
+        /// <paramref name="dstPlane"/>. SIMD is used only when
+        /// <paramref name="useSimd"/> is true (Optimized pipeline) and
+        /// <see cref="IdctEncoderSimd.IsSupported"/>; otherwise the scalar
+        /// pred-fill + scalar copy-back path is used. Bit-exact with
+        /// idctllm.vp8_short_idct4x4llm_c followed by add+clamp.
         /// </summary>
         private static unsafe void IdctAndAddToPlane(short[] dqcoeff, byte pred,
-            byte[] dstPlane, int dstStride, int blockOffsetX, int blockOffsetY)
+            byte[] dstPlane, int dstStride, int blockOffsetX, int blockOffsetY, bool useSimd)
         {
-            // The decoder's idct adds to a prediction buffer and clamps to
-            // [0, 255]. Build a 4x4 prediction buffer (all = pred), call
-            // idct, then copy back to the destination plane.
+            if (useSimd && IdctEncoderSimd.IsSupported)
+            {
+                fixed (short* coefP = dqcoeff)
+                fixed (byte* dstBase = dstPlane)
+                {
+                    IdctEncoderSimd.Idct4x4AddFlat(coefP, pred,
+                        dstBase + blockOffsetY * dstStride + blockOffsetX, dstStride);
+                }
+                return;
+            }
+
             byte* predBuf = stackalloc byte[16];
             for (int i = 0; i < 16; i++) predBuf[i] = pred;
             byte* dstBuf = stackalloc byte[16];
@@ -852,21 +1045,35 @@ namespace Vpx.Net
         }
 
         /// <summary>
-        /// Per-pixel-prediction variant of IdctAndAddToPlane. Extracts the
-        /// relevant 4x4 sub-block of <paramref name="predPlane"/> as the
-        /// prediction buffer (vs the flat-byte version used by DC_PRED),
-        /// then runs the same inverse-DCT + clamp-and-add through the
-        /// existing decoder-side idctllm.vp8_short_idct4x4llm_c.
+        /// Per-pixel-prediction variant of IdctAndAddToPlane. When SIMD is
+        /// enabled (<paramref name="useSimd"/>=true) and supported, reads the
+        /// 4x4 prediction directly from <paramref name="predPlane"/> at
+        /// <paramref name="predStride"/> and writes the clamped result
+        /// directly into <paramref name="dstPlane"/> — no intermediate 4x4
+        /// stack pred buffer or copy-back. Legacy pipeline always takes the
+        /// scalar gather + idctllm + scatter path.
         /// </summary>
         private static unsafe void IdctAndAddBlockToPlane(short[] dqcoeff,
-            byte[] predPlane, int predStride,
-            byte[] dstPlane, int dstStride,
-            int blockOffsetX, int blockOffsetY)
+            byte[] predPlane, int predStride, int predOffsetX, int predOffsetY,
+            byte[] dstPlane, int dstStride, int dstOffsetX, int dstOffsetY, bool useSimd)
         {
+            if (useSimd && IdctEncoderSimd.IsSupported)
+            {
+                fixed (short* coefP = dqcoeff)
+                fixed (byte* predBase = predPlane)
+                fixed (byte* dstBase = dstPlane)
+                {
+                    IdctEncoderSimd.Idct4x4AddBlock(coefP,
+                        predBase + predOffsetY * predStride + predOffsetX, predStride,
+                        dstBase + dstOffsetY * dstStride + dstOffsetX, dstStride);
+                }
+                return;
+            }
+
             byte* predBuf = stackalloc byte[16];
             for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
-                predBuf[r * 4 + c] = predPlane[(blockOffsetY + r) * predStride + (blockOffsetX + c)];
+                predBuf[r * 4 + c] = predPlane[(predOffsetY + r) * predStride + (predOffsetX + c)];
 
             byte* dstBuf = stackalloc byte[16];
 
@@ -877,7 +1084,7 @@ namespace Vpx.Net
 
             for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
-                dstPlane[(blockOffsetY + r) * dstStride + (blockOffsetX + c)] = dstBuf[r * 4 + c];
+                dstPlane[(dstOffsetY + r) * dstStride + (dstOffsetX + c)] = dstBuf[r * 4 + c];
         }
 
         /// <summary>
