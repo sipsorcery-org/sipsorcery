@@ -396,6 +396,7 @@ namespace SIPSorcery.Net
                             string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
                             logger.LogWarning("SCTP packet ABORT chunk received from remote party, reason {AbortReason}.", abortReason);
                             _wasAborted = true;
+                            _dataSender?.Close();
                             OnAbortReceived?.Invoke(abortReason);
                             break;
 
@@ -537,6 +538,7 @@ namespace SIPSorcery.Net
 
                         case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
                             // TODO: Check outstanding data chunks.
+                            _dataSender?.Close();
                             var shutdownAck = new SctpChunk(SctpChunkType.SHUTDOWN_ACK);
                             SendChunk(shutdownAck);
                             SetState(SctpAssociationState.ShutdownAckSent);
