@@ -263,11 +263,14 @@ namespace SIPSorcery.Net
                 lock (_renegotiationLock)
                 {
                     _requireRenegotiation = value;
-                    //Remove Remote Description
-                    if (_requireRenegotiation)
-                    {
-                        RemoteDescription = null;
-                    }
+
+                    // RemoteDescription is intentionally preserved during renegotiation.
+                    // createBaseSdp() needs it to maintain the m-line order from the
+                    // previous offer/answer exchange (RFC 3264 §8).
+                    // if (_requireRenegotiation)
+                    // {
+                    //     RemoteDescription = null;
+                    // }
                 }
 
                 //Remove NegotiationTask when state not stable
@@ -1162,9 +1165,13 @@ namespace SIPSorcery.Net
             };
 
             // Media announcements must be in the same order in the offer and answer.
+            // Existing media types reuse their index from the previous answer; new types
+            // (not present in RemoteDescription) are appended after all existing m-lines
+            // per RFC 3264 §8.
             int mediaIndex = 0;
             int audioMediaIndex = 0;
             int videoMediaIndex = 0;
+            int nextNewMLineIndex = RemoteDescription?.Media.Count ?? 0;
             foreach (var mediaStream in mediaStreamList)
             {
                 int mindex = 0;
@@ -1192,9 +1199,14 @@ namespace SIPSorcery.Net
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
-                    logger.LogWarning("Media announcement for {Kind} omitted due to no reciprocal remote announcement.", mediaStream.LocalTrack.Kind);
+                    // New media type added after the initial offer/answer — append it
+                    // after all existing m-lines so the ordering of previously negotiated
+                    // m-lines is preserved (RFC 3264 §8).
+                    mindex = nextNewMLineIndex;
+                    midTag = nextNewMLineIndex.ToString();
+                    nextNewMLineIndex++;
                 }
-                else
+
                 {
                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
                      mediaStream.LocalTrack.Kind,
