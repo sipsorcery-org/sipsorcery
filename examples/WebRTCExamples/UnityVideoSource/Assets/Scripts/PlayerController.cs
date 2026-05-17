@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using TMPro;
+//using UnityEngine.InputSystem;
+//using TMPro;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorceryMedia.Abstractions;
@@ -15,7 +15,7 @@ public class PlayerController : MonoBehaviour
     private const int FRAMES_PER_SECOND = 30; // TODO: Measure instead of hard coding.
 
     public float speed = 0f;
-    public TextMeshProUGUI countText;
+    //public TextMeshProUGUI countText;
     public GameObject winTextObject;
 
     private Rigidbody rb;
@@ -53,17 +53,17 @@ public class PlayerController : MonoBehaviour
         await _webRtcPeer.Start();
     }
 
-    void OnMove(InputValue movementValue)
-    {
-        Vector2 movementVector = movementValue.Get<Vector2>();
+    //void OnMove(InputValue movementValue)
+    //{
+    //    Vector2 movementVector = movementValue.Get<Vector2>();
 
-        movementX = movementVector.x;
-        movementY = movementVector.y;
-    }
+    //    movementX = movementVector.x;
+    //    movementY = movementVector.y;
+    //}
 
     void SetCountText()
     {
-        countText.text = "Count: " + count.ToString();
+        //countText.text = "Count: " + count.ToString();
 
         if (count >= 10)
         {

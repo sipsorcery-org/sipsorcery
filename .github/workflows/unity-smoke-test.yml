@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         unityVersion:
-          - 6000.0.32f1
+          - 6000.4.7f1
         testMode:
           - playmode
     steps:
@@ -48,19 +48,78 @@ jobs:
 
       - name: Build SIPSorcery and stage Unity plugin DLLs
         if: steps.license_check.outputs.has_license == 'true'
+        env:
+          PLUGINS_DIR: test/Unity/SipSorceryUnitySmokeTest/Assets/Plugins
         run: |
           set -euo pipefail
-          mkdir -p staging
+          mkdir -p staging "$PLUGINS_DIR"
           dotnet publish src/SIPSorcery/SIPSorcery.csproj \
             --configuration Release \
             --framework netstandard2.1 \
             --output staging
-          mkdir -p test/Unity/SipSorceryUnitySmokeTest/Assets/Plugins
-          # Copy SIPSorcery + its transitive deps into Assets/Plugins so the
-          # Unity project picks them up automatically. .pdb/.xml are excluded
-          # to keep the Unity import lean.
-          find staging -maxdepth 1 -type f -name '*.dll' \
-            -exec cp -v {} test/Unity/SipSorceryUnitySmokeTest/Assets/Plugins/ \;
+          # Copy DLLs into Assets/Plugins, excluding ones Unity already
+          # provides as built-in reference assemblies (the duplicates cause
+          # CS1703 "Multiple assemblies with equivalent identity").
+          unity_provided=(
+            Microsoft.CSharp.dll
+          )
+          for dll in staging/*.dll; do
+            name=$(basename "$dll")
+            skip=false
+            for provided in "${unity_provided[@]}"; do
+              if [ "$name" = "$provided" ]; then skip=true; break; fi
+            done
+            if [ "$skip" = "false" ]; then
+              cp -v "$dll" "$PLUGINS_DIR/"
+            else
+              echo "Skipping Unity-provided $name"
+            fi
+          done
+
+      - name: Generate plugin .meta files
+        if: steps.license_check.outputs.has_license == 'true'
+        env:
+          PLUGINS_DIR: test/Unity/SipSorceryUnitySmokeTest/Assets/Plugins
+        # Without these, Unity defaults validateReferences=true and refuses
+        # to load plugins with unresolved transitive refs (notably
+        # Makaretu.Dns.Multicast -> Tmds.LibC). Pre-authoring the .meta
+        # files lets the smoke test run in a single Unity invocation.
+        run: |
+          set -euo pipefail
+          for dll in "$PLUGINS_DIR"/*.dll; do
+            meta="$dll.meta"
+            if [ -f "$meta" ]; then continue; fi
+            guid=$(printf "%s" "$(basename "$dll")" | md5sum | cut -c1-32)
+            cat > "$meta" <<EOF
+          fileFormatVersion: 2
+          guid: $guid
+          PluginImporter:
+            externalObjects: {}
+            serializedVersion: 3
+            iconMap: {}
+            executionOrder: {}
+            defineConstraints: []
+            isPreloaded: 0
+            isOverridable: 0
+            isExplicitlyReferenced: 0
+            validateReferences: 0
+            platformData:
+              Any:
+                enabled: 1
+                settings: {}
+              Editor:
+                enabled: 1
+                settings:
+                  DefaultValueInitialized: true
+              WindowsStoreApps:
+                enabled: 0
+                settings:
+                  CPU: AnyCPU
+            userData:
+            assetBundleName:
+            assetBundleVariant:
+          EOF
+          done
 
       - name: Cache Unity Library
         if: steps.license_check.outputs.has_license == 'true'
