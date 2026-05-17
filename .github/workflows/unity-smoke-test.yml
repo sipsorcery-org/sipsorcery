@@ -1,0 +1,95 @@
+name: unity-smoke-test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'src/SIPSorcery/sys/Net/**'
+      - 'test/Unity/**'
+      - '.github/workflows/unity-smoke-test.yml'
+
+jobs:
+  smoke-test:
+    name: Unity ${{ matrix.unityVersion }} PlayMode smoke test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unityVersion:
+          - 6000.0.32f1
+        testMode:
+          - playmode
+    steps:
+      - name: Check for Unity license secret
+        id: license_check
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "has_license=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE secret is not set; skipping Unity smoke test. See test/Unity/README.md for setup."
+          else
+            echo "has_license=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.license_check.outputs.has_license == 'true'
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Setup .NET
+        if: steps.license_check.outputs.has_license == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build SIPSorcery and stage Unity plugin DLLs
+        if: steps.license_check.outputs.has_license == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p staging
+          dotnet publish src/SIPSorcery/SIPSorcery.csproj \
+            --configuration Release \
+            --framework netstandard2.1 \
+            --output staging
+          mkdir -p test/Unity/SipSorceryUnitySmokeTest/Assets/Plugins
+          # Copy SIPSorcery + its transitive deps into Assets/Plugins so the
+          # Unity project picks them up automatically. .pdb/.xml are excluded
+          # to keep the Unity import lean.
+          find staging -maxdepth 1 -type f -name '*.dll' \
+            -exec cp -v {} test/Unity/SipSorceryUnitySmokeTest/Assets/Plugins/ \;
+
+      - name: Cache Unity Library
+        if: steps.license_check.outputs.has_license == 'true'
+        uses: actions/cache@v4
+        with:
+          path: test/Unity/SipSorceryUnitySmokeTest/Library
+          key: Library-SipSorceryUnitySmokeTest-${{ matrix.unityVersion }}-${{ hashFiles('test/Unity/SipSorceryUnitySmokeTest/Packages/manifest.json', 'test/Unity/SipSorceryUnitySmokeTest/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            Library-SipSorceryUnitySmokeTest-${{ matrix.unityVersion }}-
+            Library-SipSorceryUnitySmokeTest-
+
+      - name: Run Unity ${{ matrix.testMode }} tests
+        if: steps.license_check.outputs.has_license == 'true'
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: test/Unity/SipSorceryUnitySmokeTest
+          unityVersion: ${{ matrix.unityVersion }}
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: test/Unity/SipSorceryUnitySmokeTest/artifacts
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Unity ${{ matrix.testMode }} results
+
+      - name: Upload test results
+        if: always() && steps.license_check.outputs.has_license == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-test-results-${{ matrix.unityVersion }}-${{ matrix.testMode }}
+          path: test/Unity/SipSorceryUnitySmokeTest/artifacts

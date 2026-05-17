@@ -98,6 +98,9 @@ publish/
 # NuGet Packages Directory
 ## TODO: If you have NuGet Package Restore enabled, uncomment the next line
 packages/
+# Unity uses a top-level Packages/ folder for its own manifest; keep those tracked.
+!test/Unity/**/Packages/
+!test/Unity/**/Packages/**
 *.nupkg
 
 # Windows Azure Build Output
@@ -288,6 +291,8 @@ PublishScripts/
 # The packages folder can be ignored because of Package Restore
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
+# Keep Unity test-project package manifests tracked.
+!test/Unity/**/Packages/*
 *.nuget.props
 *.nuget.targets
 
