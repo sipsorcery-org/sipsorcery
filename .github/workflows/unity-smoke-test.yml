@@ -294,6 +294,7 @@ jobs:
 
       - name: Run Unity PlayMode tests
         if: steps.license_check.outputs.has_license == 'true'
+        timeout-minutes: 30
         shell: pwsh
         run: |
           $proj = "$env:GITHUB_WORKSPACE\test\Unity\SipSorceryUnitySmokeTest"
@@ -305,14 +306,21 @@ jobs:
           $results = "$proj\artifacts\playmode-results.xml"
           $log = "$proj\artifacts\playmode.log"
           Write-Host "Running: $unity"
-          & $unity `
-            -batchmode `
-            -projectPath $proj `
-            -runTests `
-            -testPlatform PlayMode `
-            -testResults $results `
-            -logFile $log
-          $unityExit = $LASTEXITCODE
+          # Unity.exe is a Windows-subsystem app, so PowerShell's call
+          # operator (`&`) returns immediately without waiting. Use
+          # Start-Process -Wait -PassThru to actually block on it and
+          # capture the exit code.
+          $unityArgs = @(
+            '-batchmode',
+            '-projectPath', $proj,
+            '-runTests',
+            '-testPlatform', 'PlayMode',
+            '-testResults', $results,
+            '-logFile', $log
+          )
+          $proc = Start-Process -FilePath $unity -ArgumentList $unityArgs `
+                                -NoNewWindow -PassThru -Wait
+          $unityExit = $proc.ExitCode
           Write-Host "Unity process exit code: $unityExit"
 
           if (-not (Test-Path $results)) {
