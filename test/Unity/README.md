@@ -9,6 +9,24 @@ where SIPSorcery's static initializers throw on Unity's Mono runtime.
 The project is intentionally tiny: one PlayMode test that constructs an
 `RTCPeerConnection` and asserts no exception is raised.
 
+## Two jobs, two reasons
+
+The workflow runs two jobs in parallel:
+
+- **`smoke-test` (Linux)** — fast canary. Uses GameCI's Docker image on
+  `ubuntu-latest`. Proves the SIPSorcery DLLs load on Unity's Linux Mono
+  and the `NetServices` type initializer doesn't crash there. Catches
+  general init regressions but **does not reproduce #1614**, because
+  the bug is in Unity's Windows-shipped Mono (`NetworkChange` is
+  unsupported on Win32 Mono but works on Linux Mono).
+- **`smoke-test-windows`** — reproduction job. Runs on `windows-latest`
+  with a native Unity Editor install via
+  [`RageAgainstThePixel/unity-setup`](https://github.com/RageAgainstThePixel/unity-setup)
+  and license activation via
+  [`RageAgainstThePixel/activate-unity-license`](https://github.com/RageAgainstThePixel/activate-unity-license).
+  This is the job that actually fails when #1614 is open and turns
+  green when it's fixed.
+
 ## Layout
 
 ```
@@ -74,14 +92,26 @@ action does this for you in CI.)
 
 ## CI setup (one-time)
 
-The workflow runs only if a `UNITY_LICENSE` secret is configured on the
-repository. To activate one against a personal Unity account, follow
-[GameCI's activation guide](https://game.ci/docs/github/activation/),
-then add the resulting `Unity_v*.ulf` contents as `UNITY_LICENSE`. If
-you use a Plus/Pro seat, additionally set `UNITY_EMAIL` and
-`UNITY_PASSWORD`.
+The two jobs need different combinations of secrets, both gated by an
+early `license_check` step that logs a warning and skips the job (no
+build failure) when secrets are missing.
 
-Until the secret is set, the workflow logs a warning and exits without
+| Secret | Used by | Required for |
+| --- | --- | --- |
+| `UNITY_LICENSE` | Linux job (GameCI) | the `.ulf` file contents |
+| `UNITY_EMAIL` | both | the Unity ID email |
+| `UNITY_PASSWORD` | both | the Unity ID password |
+| `UNITY_SERIAL` | — | only needed if you switch the Windows job to a Pro/Plus license |
+
+For a Personal Unity account, follow
+[GameCI's activation guide](https://game.ci/docs/github/activation/) to
+generate the `Unity_v*.ulf` and paste its contents into `UNITY_LICENSE`.
+Add `UNITY_EMAIL` and `UNITY_PASSWORD` from the Unity ID account that
+owns that license. The Windows job uses email+password directly via
+[`RageAgainstThePixel/activate-unity-license`](https://github.com/RageAgainstThePixel/activate-unity-license),
+so it doesn't need the `.ulf` file at all.
+
+Until the secrets are set, each job logs a warning and exits without
 failing the build, so PRs are not blocked.
 
 ## Triggers
