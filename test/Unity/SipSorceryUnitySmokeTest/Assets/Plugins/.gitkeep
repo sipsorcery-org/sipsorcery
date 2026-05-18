@@ -1,0 +1,2 @@
+SIPSorcery DLLs are dropped into this folder by the unity-smoke-test workflow
+before Unity opens the project. Do not commit DLLs here.

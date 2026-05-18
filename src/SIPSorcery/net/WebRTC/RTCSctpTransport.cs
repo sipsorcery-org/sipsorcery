@@ -199,6 +199,12 @@ namespace SIPSorcery.Net
                     {
                         RTCSctpAssociation?.Shutdown();
                     }
+                    else
+                    {
+                        // If not connected (e.g. still in Connecting state), Shutdown() won't be called
+                        // which means the data sender thread won't be stopped. Abort ensures cleanup.
+                        RTCSctpAssociation?.Abort(new SctpErrorUserInitiatedAbort { AbortReason = "SCTP transport closing." });
+                    }
                     _isClosed = true;
                 }
             }

@@ -103,14 +103,31 @@ namespace SIPSorcery.Sys
 
         static NetServices()
         {
-            NetworkChange.NetworkAddressChanged += (_, _) =>
+            try
             {
-                // Clear cached addresses if the state of the local network interfaces change.
-                m_localAddressTable.Clear();
-                _localIPAddresses = null;
-                _internetDefaultAddress = null;
-                _internetDefaultIPv6Address = null;
-            };
+                NetworkChange.NetworkAddressChanged += OnNetworkAddressChanged;
+            }
+            catch (PlatformNotSupportedException ex)
+            {
+                // Some runtimes (notably Unity's Windows-shipped Mono, see
+                // issue #1614) implement the NetworkChange type but throw
+                // when anything subscribes. Without this guard the static
+                // ctor — and therefore the first RTCPeerConnection() — fails
+                // with TypeInitializationException. The behavioural cost is
+                // that m_localAddressTable will not be invalidated when
+                // adapters come and go on those runtimes; entries stay
+                // cached for the process lifetime.
+                logger.LogWarning(ex, "NetworkChange.NetworkAddressChanged is not supported on this runtime; the local-address cache will not auto-invalidate on adapter changes.");
+            }
+        }
+
+        private static void OnNetworkAddressChanged(object sender, EventArgs e)
+        {
+            // Clear cached addresses if the state of the local network interfaces change.
+            m_localAddressTable.Clear();
+            _localIPAddresses = null;
+            _internetDefaultAddress = null;
+            _internetDefaultIPv6Address = null;
         }
 
         /// <summary>
