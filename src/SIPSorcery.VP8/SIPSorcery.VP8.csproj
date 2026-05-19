@@ -36,6 +36,19 @@ A .NET library that implements the VP8 video codec. This package is intended to 
     <FileVersion>10.0.7</FileVersion>
   </PropertyGroup>
 
+    <PropertyGroup Label="SourceLink">
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    
   <ItemGroup>
      <None Include="icon.png" Pack="true" PackagePath="" />
      <None Include="README.md" Pack="true" PackagePath="" />
