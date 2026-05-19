@@ -2,13 +2,12 @@ name: unity-smoke-test
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
       - master
-    paths:
-      - 'src/SIPSorcery/sys/Net/**'
-      - 'test/Unity/**'
-      - '.github/workflows/unity-smoke-test.yml'
 
 jobs:
   smoke-test:
