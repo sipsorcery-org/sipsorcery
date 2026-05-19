@@ -27,14 +27,28 @@ A .NET library that implements the VP8 video codec. This package is intended to 
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIPSorcery Video-Encoding VP8</PackageTags>
-    <PackageReleaseNotes>-v10.0.6: Initial release.
+    <PackageReleaseNotes>-v10.0.7: Updated for main sipsorcery library release.
+-v10.0.6: Initial release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.6</Version>
-    <AssemblyVersion>10.0.6</AssemblyVersion>
-    <FileVersion>10.0.6</FileVersion>
+    <Version>10.0.7</Version>
+    <AssemblyVersion>10.0.7</AssemblyVersion>
+    <FileVersion>10.0.7</FileVersion>
   </PropertyGroup>
 
+    <PropertyGroup Label="SourceLink">
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    
   <ItemGroup>
      <None Include="icon.png" Pack="true" PackagePath="" />
      <None Include="README.md" Pack="true" PackagePath="" />
