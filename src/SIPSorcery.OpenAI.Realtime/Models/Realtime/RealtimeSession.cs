@@ -9,6 +9,15 @@ namespace SIPSorcery.OpenAI.Realtime.Models;
 public class RealtimeSession
 {
     /// <summary>
+    /// Required session discriminator in the GA Realtime API. Always
+    /// "realtime" for the WebRTC/WebSocket Realtime session. The GA server
+    /// uses this to validate the session.update payload — without it the
+    /// session is effectively unconfigured and the model will not respond.
+    /// </summary>
+    [JsonPropertyName("type")]
+    public string Type => "realtime";
+
+    /// <summary>
     /// Unique identifier for the session (e.g., sess_1234567890abcdef).
     /// </summary>
     [JsonPropertyName("id")]
@@ -33,10 +42,39 @@ public class RealtimeSession
     public RealtimeModelsEnum? Model { get; set; }
 
     /// <summary>
-    /// The voice used to respond, once audio output is engaged.
+    /// Nested audio configuration (GA shape). Populated automatically when
+    /// <see cref="Voice"/> is assigned; callers can also build it directly
+    /// for finer-grained control.
     /// </summary>
-    [JsonPropertyName("voice")]
-    public RealtimeVoicesEnum? Voice { get; set; }
+    [JsonPropertyName("audio")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RealtimeAudio? Audio { get; set; }
+
+    /// <summary>
+    /// The voice used to respond, once audio output is engaged. Public API
+    /// retained for backward compatibility: writes are routed into
+    /// <see cref="Audio"/>.<see cref="RealtimeAudio.Output"/>.<see cref="RealtimeAudioOutput.Voice"/>
+    /// (the GA location) and JSON serialisation skips this flat property.
+    /// </summary>
+    [JsonIgnore]
+    public RealtimeVoicesEnum? Voice
+    {
+        get => Audio?.Output?.Voice;
+        set
+        {
+            if (value == null)
+            {
+                if (Audio?.Output != null)
+                {
+                    Audio.Output.Voice = null;
+                }
+                return;
+            }
+            Audio ??= new RealtimeAudio();
+            Audio.Output ??= new RealtimeAudioOutput();
+            Audio.Output.Voice = value;
+        }
+    }
 
     /// <summary>
     /// Input audio format.
