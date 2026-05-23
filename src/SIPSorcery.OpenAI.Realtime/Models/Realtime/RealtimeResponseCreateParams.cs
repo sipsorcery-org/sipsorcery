@@ -22,10 +22,39 @@ public class RealtimeResponseCreateParams
     public string? Instructions { get; set; }
 
     /// <summary>
-    /// The voice the model will use to respond. Cannot change once audio response has begun.
+    /// Nested audio configuration (GA shape). Populated automatically when
+    /// <see cref="Voice"/> is assigned; callers can also build it directly
+    /// for finer-grained control.
     /// </summary>
-    [JsonPropertyName("voice")]
-    public RealtimeVoicesEnum? Voice { get; set; }
+    [JsonPropertyName("audio")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RealtimeAudio? Audio { get; set; }
+
+    /// <summary>
+    /// The voice the model will use to respond. Cannot change once audio
+    /// response has begun. Public API retained for backward compatibility:
+    /// writes are routed into <see cref="Audio"/>.<see cref="RealtimeAudio.Output"/>.<see cref="RealtimeAudioOutput.Voice"/>
+    /// (the GA location) and JSON serialisation skips this flat property.
+    /// </summary>
+    [JsonIgnore]
+    public RealtimeVoicesEnum? Voice
+    {
+        get => Audio?.Output?.Voice;
+        set
+        {
+            if (value == null)
+            {
+                if (Audio?.Output != null)
+                {
+                    Audio.Output.Voice = null;
+                }
+                return;
+            }
+            Audio ??= new RealtimeAudio();
+            Audio.Output ??= new RealtimeAudioOutput();
+            Audio.Output.Voice = value;
+        }
+    }
 
     /// <summary>
     /// Audio format to use for responses.

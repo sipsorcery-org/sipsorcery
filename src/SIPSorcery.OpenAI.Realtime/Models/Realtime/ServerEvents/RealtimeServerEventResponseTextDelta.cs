@@ -7,7 +7,11 @@ namespace SIPSorcery.OpenAI.Realtime.Models;
 /// </summary>
 public class RealtimeServerEventResponseTextDelta : RealtimeEventBase
 {
-    public const string TypeName = "response.text.delta";
+    /// <summary>
+    /// The fixed event type string: "response.output_text.delta".
+    /// Renamed in the GA Realtime API from the beta "response.text.delta".
+    /// </summary>
+    public const string TypeName = "response.output_text.delta";
 
     [JsonPropertyName("type")]
     public override string? Type => TypeName;
