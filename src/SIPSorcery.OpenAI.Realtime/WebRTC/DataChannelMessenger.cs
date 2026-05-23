@@ -142,6 +142,9 @@ public class DataChannelMessenger
     /// Handles any incoming raw data from the WebRTC data channel. Parses the JSON,
     /// turns it into the appropriate <see cref="RealtimeEventBase"/> subtype, and
     /// then invokes the endpoint's <see cref="IWebRTCEndPoint.OnDataChannelMessage"/> event.
+    /// Unrecognised event types are surfaced as <see cref="RealtimeUnknown"/> with the
+    /// original JSON intact, so callers can handle events SIPSorcery does not yet have
+    /// a typed class for (e.g. when OpenAI ships a new Realtime event type).
     /// </summary>
     public void HandleIncomingData(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data)
     {
@@ -158,12 +161,17 @@ public class DataChannelMessenger
 
         if (baseEvent is RealtimeUnknown unknownEvent)
         {
-            _logger.LogWarning("Unexpected event type '{Type}' received on OpenAI data channel.", unknownEvent.OriginalType);
+            _logger.LogWarning(
+                "Unrecognised event type '{Type}' on OpenAI data channel; forwarding as RealtimeUnknown with original JSON in OriginalJson.",
+                unknownEvent.OriginalType);
         }
-        else
-        {
-            _endpoint.InvokeOnDataChannelMessage(dc, baseEvent);
-        }
+
+        // Always raise the event, including for RealtimeUnknown — callers can inspect
+        // OriginalType / OriginalJson on the unknown variant to handle new event types
+        // before SIPSorcery has typed support for them. Previously RealtimeUnknown was
+        // silently dropped, which made OpenAI Realtime API renames (e.g. the GA event
+        // type changes) appear as a total data-channel blackout to consumers.
+        _endpoint.InvokeOnDataChannelMessage(dc, baseEvent);
     }
 
     /// <summary>

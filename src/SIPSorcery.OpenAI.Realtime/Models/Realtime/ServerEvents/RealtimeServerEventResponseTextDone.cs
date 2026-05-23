@@ -8,7 +8,11 @@ namespace SIPSorcery.OpenAI.Realtime.Models;
 /// </summary>
 public class RealtimeServerEventResponseTextDone : RealtimeEventBase
 {
-    public const string TypeName = "response.text.done";
+    /// <summary>
+    /// The fixed event type string: "response.output_text.done".
+    /// Renamed in the GA Realtime API from the beta "response.text.done".
+    /// </summary>
+    public const string TypeName = "response.output_text.done";
 
     [JsonPropertyName("type")]
     public override string? Type => TypeName;
