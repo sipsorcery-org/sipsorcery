@@ -363,7 +363,8 @@ namespace SIPSorcery.Net
 
         private async Task HandleTcpClientAsync(TcpClient tcpClient)
         {
-            var clientId = tcpClient.Client.RemoteEndPoint?.ToString() ?? "unknown";
+            var clientEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+            var clientId = clientEndPoint?.ToString() ?? "unknown";
             var stream = tcpClient.GetStream();
             TurnAllocation allocation = null;
 
@@ -414,7 +415,7 @@ namespace SIPSorcery.Net
                             continue;
                         }
 
-                        ProcessMessage(stunMsg, clientId,
+                        ProcessMessage(stunMsg, clientId, clientEndPoint,
                             (responseBytes) => SendTcpResponseAsync(stream, responseBytes),
                             ref allocation,
                             stream, null, null);
@@ -519,7 +520,7 @@ namespace SIPSorcery.Net
             TurnAllocation udpAllocation = null;
             _allocations.TryGetValue(clientId, out udpAllocation);
 
-            ProcessMessage(stunMsg, clientId,
+            ProcessMessage(stunMsg, clientId, remoteEndPoint,
                 (responseBytes) => SendUdpResponseAsync(remoteEndPoint, responseBytes),
                 ref udpAllocation,
                 null, remoteEndPoint, _udpSocket);
@@ -550,6 +551,7 @@ namespace SIPSorcery.Net
         private void ProcessMessage(
             STUNMessage msg,
             string clientId,
+            IPEndPoint clientEndPoint,
             Func<byte[], Task> sendResponse,
             ref TurnAllocation allocation,
             NetworkStream tcpStream,
@@ -563,7 +565,7 @@ namespace SIPSorcery.Net
             {
                 case STUNMessageTypesEnum.BindingRequest:
                     {
-                        var response = HandleBindingRequest(msg);
+                        var response = HandleBindingRequest(msg, clientEndPoint);
                         var bytes = response.ToByteBuffer(null, false);
                         _ = sendResponse(bytes);
                     }
@@ -571,7 +573,7 @@ namespace SIPSorcery.Net
 
                 case STUNMessageTypesEnum.Allocate:
                     {
-                        var (response, signingKey) = HandleAllocate(msg, clientId,
+                        var (response, signingKey) = HandleAllocate(msg, clientId, clientEndPoint,
                             tcpStream, udpClientEndPoint, udpControlSocket,
                             ref allocation);
                         var bytes = signingKey != null
@@ -615,11 +617,16 @@ namespace SIPSorcery.Net
             }
         }
 
-        private STUNMessage HandleBindingRequest(STUNMessage request)
+        private STUNMessage HandleBindingRequest(STUNMessage request, IPEndPoint clientEndPoint)
         {
             var response = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
             response.Header.TransactionId = request.Header.TransactionId;
-            response.AddXORMappedAddressAttribute(_relayAddress, _config.Port);
+            // The whole point of a Binding response is to tell the client its reflexive
+            // transport address as seen by the server — not the server's own address.
+            if (clientEndPoint != null)
+            {
+                response.AddXORMappedAddressAttribute(clientEndPoint.Address, clientEndPoint.Port);
+            }
             return response;
         }
 
@@ -696,6 +703,7 @@ namespace SIPSorcery.Net
         private (STUNMessage response, byte[] signingKey) HandleAllocate(
             STUNMessage request,
             string clientId,
+            IPEndPoint clientEndPoint,
             NetworkStream tcpStream,
             IPEndPoint udpClientEndPoint,
             UdpClient udpControlSocket,
@@ -790,12 +798,17 @@ namespace SIPSorcery.Net
                 _relayAddress,
                 request.Header.TransactionId));
 
-            // XOR-MAPPED-ADDRESS
-            response.Attributes.Add(new STUNXORAddressAttribute(
-                STUNAttributeTypesEnum.XORMappedAddress,
-                _config.Port,
-                _relayAddress,
-                request.Header.TransactionId));
+            // XOR-MAPPED-ADDRESS — per RFC 5766 §6.3, this is the client's reflexive
+            // transport address (the source of the Allocate request as the server saw it),
+            // not the server's own address.
+            if (clientEndPoint != null)
+            {
+                response.Attributes.Add(new STUNXORAddressAttribute(
+                    STUNAttributeTypesEnum.XORMappedAddress,
+                    clientEndPoint.Port,
+                    clientEndPoint.Address,
+                    request.Header.TransactionId));
+            }
 
             // LIFETIME
             response.Attributes.Add(new STUNAttribute(
