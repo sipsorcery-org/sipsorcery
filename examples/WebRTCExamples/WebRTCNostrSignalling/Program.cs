@@ -82,9 +82,12 @@ namespace WebRTCNostrSignalling
         // Nostr identity for this process. Generated once at startup and
         // reused for every published event so peers can be correlated by
         // their pubkey across the offer / answer / ICE candidate exchange.
-        private static ECPrivKey? localPrivateKey;
-        private static string? localPubKeyHex;
-        private static string? remotePubKeyHex;
+        //private static ECPrivKey? localPrivateKey;
+        //private static string? localPubKeyHex;
+        static ECPrivKey localPrivateKey = Context.Instance.CreateECPrivKey(Convert.FromHexString("3856fd69b3ce60f003e01449bbae71f5a3fdfd8b4ed483910ab6fd16e2dcf8d0"));
+        static string localPubKeyHex = localPrivateKey.CreateXOnlyPubKey().ToHex();
+
+        private static string remotePubKeyHex = "7bce0c795c5a9465b6c4c62517dab36a194fab389b8fba0efe09269ba18c5710";
         private static bool isOfferer = false;
         private static bool signallingStarted = false; // Track if offer/answer exchange has started
 
@@ -102,33 +105,34 @@ namespace WebRTCNostrSignalling
             // offerer (and vice versa) via a Nostr-level "p" tag without
             // needing a separate discovery channel. The 8-char short prefix
             // is shown alongside for at-a-glance identification in logs.
-            var localPrivKeyBytes = new byte[32];
-            System.Security.Cryptography.RandomNumberGenerator.Fill(localPrivKeyBytes);
-            localPrivateKey = ECPrivKey.Create(localPrivKeyBytes);
-            localPubKeyHex = localPrivateKey.CreateXOnlyPubKey().ToHex();
+            //var localPrivKeyBytes = new byte[32];
+            //System.Security.Cryptography.RandomNumberGenerator.Fill(localPrivKeyBytes);
+            //localPrivateKey = ECPrivKey.Create(localPrivKeyBytes);
+            //localPubKeyHex = localPrivateKey.CreateXOnlyPubKey().ToHex();
             localPeerId = localPubKeyHex[..8];
             Console.WriteLine($"Your Peer ID (short): {localPeerId}");
             Console.WriteLine($"Your Peer ID (full):  {localPubKeyHex}");
-            Console.WriteLine("(give the full Peer ID to the other peer to connect)");
-            Console.WriteLine();
+            Console.WriteLine($"Private key: {localPrivateKey.ToHex()}");
+            //Console.WriteLine("(give the full Peer ID to the other peer to connect)");
+            //Console.WriteLine();
 
             // Determine role
-            Console.Write("Are you the offerer? (y/n): ");
-            var roleInput = Console.ReadLine()?.Trim().ToLower();
-            isOfferer = roleInput == "y" || roleInput == "yes";
+            //Console.Write("Are you the offerer? (y/n): ");
+            //var roleInput = Console.ReadLine()?.Trim().ToLower();
+            //isOfferer = roleInput == "y" || roleInput == "yes";
 
-            if (!isOfferer)
-            {
-                Console.Write("Enter the Peer ID (full 64 hex chars) of the offerer to connect to: ");
-                var input = Console.ReadLine()?.Trim();
-                if (string.IsNullOrEmpty(input) || input.Length != 64)
-                {
-                    Console.WriteLine("Error: a full 64-char hex Peer ID is required for answerer role.");
-                    return;
-                }
-                remotePubKeyHex = input.ToLowerInvariant();
-                remotePeerId = remotePubKeyHex[..8];
-            }
+            //if (!isOfferer)
+            //{
+            //    Console.Write("Enter the Peer ID (full 64 hex chars) of the offerer to connect to: ");
+            //    var input = Console.ReadLine()?.Trim();
+            //    if (string.IsNullOrEmpty(input) || input.Length != 64)
+            //    {
+            //        Console.WriteLine("Error: a full 64-char hex Peer ID is required for answerer role.");
+            //        return;
+            //    }
+            //    remotePubKeyHex = input.ToLowerInvariant();
+            //    remotePeerId = remotePubKeyHex[..8];
+            //}
 
             // Connect to Nostr relay
             Console.WriteLine($"Connecting to Nostr relay at {NOSTR_RELAY_URL}...");
@@ -137,35 +141,35 @@ namespace WebRTCNostrSignalling
             // Create the peer connection
             peerConnection = CreatePeerConnection();
 
-            if (isOfferer)
-            {
-                Console.WriteLine();
-                Console.WriteLine("Waiting for a peer to connect...");
-                Console.WriteLine($"Share your Peer ID ({localPeerId}) with the other peer.");
-                Console.WriteLine();
+            //if (isOfferer)
+            //{
+            //    Console.WriteLine();
+            //    Console.WriteLine("Waiting for a peer to connect...");
+            //    Console.WriteLine($"Share your Peer ID ({localPeerId}) with the other peer.");
+            //    Console.WriteLine();
                 
-                // Wait for an answer or for the user to initiate
-                Console.WriteLine("Press Enter when the other peer is ready, or Ctrl+C to exit...");
-                Console.ReadLine();
+            //    // Wait for an answer or for the user to initiate
+            //    Console.WriteLine("Press Enter when the other peer is ready, or Ctrl+C to exit...");
+            //    Console.ReadLine();
                 
-                Console.Write("Enter the Peer ID (full 64 hex chars) of the peer you want to connect to: ");
-                var input = Console.ReadLine()?.Trim();
-                if (string.IsNullOrEmpty(input) || input.Length != 64)
-                {
-                    Console.WriteLine("Error: a full 64-char hex Peer ID is required.");
-                    peerConnection.Close("No remote peer specified");
-                    return;
-                }
-                remotePubKeyHex = input.ToLowerInvariant();
-                remotePeerId = remotePubKeyHex[..8];
+            //    Console.Write("Enter the Peer ID (full 64 hex chars) of the peer you want to connect to: ");
+            //    var input = Console.ReadLine()?.Trim();
+            //    if (string.IsNullOrEmpty(input) || input.Length != 64)
+            //    {
+            //        Console.WriteLine("Error: a full 64-char hex Peer ID is required.");
+            //        peerConnection.Close("No remote peer specified");
+            //        return;
+            //    }
+            //    remotePubKeyHex = input.ToLowerInvariant();
+            //    remotePeerId = remotePubKeyHex[..8];
 
-                // Create and send offer
-                await CreateAndSendOffer();
-            }
-            else
-            {
+            //    // Create and send offer
+            //    await CreateAndSendOffer();
+            //}
+            //else
+            //{
                 Console.WriteLine($"Waiting for offer from peer {remotePeerId}...");
-            }
+            //}
 
             // Ctrl-c will gracefully exit
             ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -191,6 +195,7 @@ namespace WebRTCNostrSignalling
             nostrClient.EventsReceived += OnNostrEventsReceived;
             nostrClient.NoticeReceived += (sender, notice) => 
                 logger.LogWarning($"Nostr relay notice: {notice}");
+
             nostrClient.OkReceived += (sender, args) =>
             {
                 var (eventId, success, message) = args;
@@ -203,6 +208,7 @@ namespace WebRTCNostrSignalling
                     logger.LogError($"Nostr event {eventId[..8]}... failed to publish: {message}");
                 }
             };
+
             nostrClient.EoseReceived += (sender, subscriptionId) =>
                 logger.LogDebug($"Nostr end of stored events for subscription: {subscriptionId}");
             
@@ -211,64 +217,7 @@ namespace WebRTCNostrSignalling
             {
                 logger.LogInformation($"Nostr connection state changed to: {state}");
             };
-            
-            // Monitor raw messages for debugging AND short-circuit EVENT
-            // messages on our subscription past NNostr.Client's Verify gate.
-            //
-            // NostrClient.HandleIncomingMessage drops any EVENT for which
-            // evt.Verify() returns false. Verify() rebuilds the id-preimage
-            // using NNostr's JavaScriptStringEncode, then SHA-256s it, and
-            // requires the result to equal evt.Id. The relay computes Id
-            // from the JSON we publish (System.Text.Json's WriteStringValue
-            // with JavaScriptEncoder.Default). Those two encoders disagree
-            // on <, >, ', &, +, and non-ASCII -- the same bug we patched on
-            // the SEND side with hex-encoding.
-            //
-            // We hex-encode our own content so OUR events round-trip
-            // through Verify, but a peer's event arrives with the relay's
-            // id (computed from the relay's view of the JSON) and Verify
-            // re-hashes using NNostr's encoder, often producing a different
-            // value -- so the event is silently dropped and EventsReceived
-            // never fires.
-            //
-            // Workaround: parse EVENT messages off MessageReceived
-            // ourselves and dispatch to OnNostrEventsReceived directly,
-            // skipping the buggy Verify. This is acceptable for a
-            // prototype because the relay-side "#p" filter already
-            // ensures the events are addressed to us, and the application-
-            // level TargetPeerId check in OnNostrEventsReceived rejects
-            // anything that slipped through.
-            nostrClient.MessageReceived += (sender, message) =>
-            {
-                var truncatedMessage = message.Length > 200 ? message[..200] + "..." : message;
-                logger.LogDebug($"Nostr raw message received: {truncatedMessage}");
-
-                try
-                {
-                    using var doc = JsonDocument.Parse(message);
-                    var root = doc.RootElement;
-                    if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() < 3) { return; }
-                    var msgType = root[0].GetString();
-                    if (!string.Equals(msgType, "EVENT", StringComparison.OrdinalIgnoreCase)) { return; }
-
-                    var subId = root[1].GetString();
-                    if (subId != "webrtc-signal") { return; }
-
-                    // Deserialize the event payload using NNostr's own
-                    // converters, but skip Verify(). Use JsonElement.GetRawText
-                    // -> Deserialize<NostrEvent> so we go through the same
-                    // converters NNostr would use internally.
-                    var evt = JsonSerializer.Deserialize<NostrEvent>(root[2].GetRawText());
-                    if (evt == null) { return; }
-
-                    OnNostrEventsReceived(sender, (subId, new[] { evt }));
-                }
-                catch (Exception ex)
-                {
-                    logger.LogDebug($"Nostr message bypass-parse failed: {ex.Message}");
-                }
-            };
-            
+                       
             nostrClient.InvalidMessageReceived += (sender, message) =>
             {
                 logger.LogWarning($"Nostr invalid message received: {message}");
@@ -276,12 +225,6 @@ namespace WebRTCNostrSignalling
 
             logger.LogDebug($"Connecting to Nostr relay at {NOSTR_RELAY_URL}...");
             
-            // Connect() internally calls ConnectAndWaitUntilConnected which:
-            // 1. Creates and opens the WebSocket connection
-            // 2. Waits until the connection is open
-            // 3. Automatically starts ListenForMessages() in the background
-            // Note: Do NOT call ListenForMessages() manually as it will return immediately
-            // due to the internal _listening flag being already set
             try
             {
                 await nostrClient.Connect();
@@ -367,9 +310,7 @@ namespace WebRTCNostrSignalling
                         continue;
                     }
                     
-                    // Content is hex-encoded JSON (see SendSignalMessage for why).
-                    // Anything that doesn't decode as hex is foreign traffic on this
-                    // kind and gets skipped silently.
+
                     string jsonContent;
                     try
                     {
@@ -523,26 +464,6 @@ namespace WebRTCNostrSignalling
                     }
                     break;
             }
-        }
-
-        private static async Task CreateAndSendOffer()
-        {
-            if (peerConnection == null) { return; }
-
-            signallingStarted = true; // Mark that signalling has started
-            
-            var offerSdp = peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offerSdp);
-
-            await SendSignalMessage(new NostrSignalMessage
-            {
-                Type = NostrSignalType.Offer,
-                PeerId = localPeerId,
-                TargetPeerId = remotePeerId,
-                Sdp = offerSdp.sdp
-            });
-
-            logger.LogInformation($"Sent offer to peer {remotePeerId}");
         }
 
         private static async Task SendSignalMessage(NostrSignalMessage message)

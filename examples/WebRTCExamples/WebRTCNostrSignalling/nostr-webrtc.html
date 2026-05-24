@@ -69,7 +69,9 @@
         <h2>Connection</h2>
         <div>
             <label>Remote Peer ID (full 64 hex chars): </label>
-            <input type="text" id="remotePeerId" placeholder="64-char hex pubkey of the other peer" />
+            <input type="text" id="remotePeerId"
+                   placeholder="64-char hex pubkey of the other peer"
+                   value="64f89d1551ec0d0f541575a8d39db408d18b19208d3f2951972dc3d738c79c96" />
         </div>
         <div style="margin-top: 10px;">
             <button id="connectRelay">Connect to Relay</button>
@@ -113,13 +115,28 @@
         // ----------------------------------------------------------------------
 
         import {
-            generateSecretKey,
             getPublicKey,
             finalizeEvent,
             verifyEvent,
         } from 'https://esm.sh/nostr-tools@2.7.2/pure';
 
         const WEBRTC_SIGNAL_KIND = 25555;
+
+        // ----------------------------------------------------------------------
+        // DEMO ONLY -- hard-coded keys.
+        //
+        // Both peers (this browser page and the matching C# console app in
+        // Program.cs) use fixed Nostr keypairs so the demo can be launched
+        // without copy/pasting freshly-generated pubkeys back and forth on
+        // every run. Do NOT reuse these keys for anything real -- the
+        // private key is visible to anyone who views the page source.
+        //
+        // The C# app's matching keys are pinned in Program.cs:
+        //   private hex: 3856fd69b3ce60f003e01449bbae71f5a3fdfd8b4ed483910ab6fd16e2dcf8d0
+        //   pubkey  hex: 64f89d1551ec0d0f541575a8d39db408d18b19208d3f2951972dc3d738c79c96
+        // ----------------------------------------------------------------------
+        const BROWSER_PRIVATE_KEY_HEX =
+            'd459231a949d367b79b45b3f5c1670c2aaa30e696b9f4337fa8e9b7900b8e7e3';
 
         // Integer values match the C# NostrSignalType enum declaration order.
         const SignalType = { Offer: 0, Answer: 1, IceCandidate: 2 };
@@ -170,16 +187,18 @@
             statusDiv.className = className;
         }
 
-        // Generate a fresh secp256k1 keypair at startup.
-        function generateNostrIdentity() {
-            localSecretKey = generateSecretKey();
+        // Load the hard-coded demo keypair at startup. (Was generateSecretKey()
+        // -- intentionally replaced with a fixed key so the C# peer can be
+        // pre-configured to address us without a per-run copy/paste step.)
+        function loadNostrIdentity() {
+            localSecretKey = hexToBytes(BROWSER_PRIVATE_KEY_HEX);
             localPubKeyHex = getPublicKey(localSecretKey);
             localPeerIdShort = localPubKeyHex.slice(0, 8);
             document.getElementById('localPeerIdShort').textContent = localPeerIdShort;
             document.getElementById('localPeerIdFull').textContent = localPubKeyHex;
-            log(`Generated Nostr keypair. Pubkey ${localPubKeyHex}`);
+            log(`Loaded hard-coded Nostr keypair. Pubkey ${localPubKeyHex}`);
         }
-        generateNostrIdentity();
+        loadNostrIdentity();
 
         // ----------------------------------------------------------------------
         // Nostr connection + subscription
@@ -251,11 +270,6 @@
 
         function handleNostrEvent(nostrEvent) {
             try {
-                // The C# side does NOT verify the Nostr signature on incoming
-                // events because of an upstream library bug; for robustness
-                // and parity we make verification best-effort here. Some
-                // browsers will reject the signature if upstream re-encoded
-                // anything; if so we still try to process the event.
                 let sigOk = false;
                 try { sigOk = verifyEvent(nostrEvent); } catch { /* ignore */ }
                 if (!sigOk) {
