@@ -413,3 +413,4 @@ MigrationBackup/
 
 # Image files
 *.bmp
+/src/SIPSorcery/Directory.Build.props
