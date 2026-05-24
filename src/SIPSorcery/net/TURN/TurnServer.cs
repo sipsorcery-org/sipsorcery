@@ -80,6 +80,28 @@ namespace SIPSorcery.Net
         /// Default allocation lifetime in seconds. Default is 600 (10 minutes).
         /// </summary>
         public int DefaultLifetimeSeconds { get; set; } = 600;
+
+        /// <summary>
+        /// Optional shared secret enabling REST-style ephemeral credentials
+        /// (draft-uberti-behave-turn-rest, also referenced by RFC 8489 Section 9.2).
+        /// When set, <see cref="Username"/> / <see cref="Password"/> are ignored. Clients must
+        /// present <c>USERNAME = "{unix-expiry}:{userId}"</c> and
+        /// <c>PASSWORD = base64(HMAC-SHA1(StaticAuthSecret, "USERNAME:REALM"))</c>. The expiry
+        /// is enforced and expired credentials are rejected with 401 Unauthorized.
+        /// </summary>
+        public string StaticAuthSecret { get; set; }
+
+        /// <summary>
+        /// Inclusive lower bound for the relay UDP port. If both <see cref="RelayPortMin"/>
+        /// and <see cref="RelayPortMax"/> are zero (the default) the relay socket is bound to
+        /// an ephemeral port chosen by the OS.
+        /// </summary>
+        public int RelayPortMin { get; set; } = 0;
+
+        /// <summary>
+        /// Inclusive upper bound for the relay UDP port. See <see cref="RelayPortMin"/>.
+        /// </summary>
+        public int RelayPortMax { get; set; } = 0;
     }
 
     /// <summary>
@@ -123,6 +145,11 @@ namespace SIPSorcery.Net
         // Internal: cancellation for the relay loop.
         internal CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
 
+        // Internal: HMAC key used to sign responses for this allocation. Pre-computed once at
+        // allocation time so REST/ephemeral creds (per-user key) and long-term creds (shared
+        // key) can be handled uniformly without re-deriving on every message.
+        internal byte[] HmacKey { get; set; }
+
         public void Dispose()
         {
             try { Cts.Cancel(); } catch { }
@@ -140,8 +167,10 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// <para><strong>Known limitations (contributions welcome):</strong></para>
     /// <list type="bullet">
-    ///   <item>Single static credential (one username/password pair) — no per-user credential
-    ///         database or REST API-based ephemeral credentials (RFC 8489 Section 9.2).</item>
+    ///   <item>Two credential modes: a single long-term username/password, or REST-style
+    ///         ephemeral credentials (draft-uberti-behave-turn-rest /
+    ///         RFC 8489 Section 9.2) when <see cref="TurnServerConfig.StaticAuthSecret"/> is
+    ///         set. There is no per-user credential database for non-REST deployments.</item>
     ///   <item>No nonce validation/expiry — nonces are generated but never verified on subsequent
     ///         requests, so replay attacks are possible within the allocation lifetime.</item>
     ///   <item>No rate limiting or per-IP allocation caps — a misbehaving client can exhaust
@@ -214,15 +243,24 @@ namespace SIPSorcery.Net
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _relayAddress = config.RelayAddress ?? config.ListenAddress;
 
-            // Long-term credential: HMAC key = MD5(username:realm:password)
+            if (string.IsNullOrEmpty(_config.StaticAuthSecret))
+            {
+                // Long-term credential mode: HMAC key = MD5(username:realm:password)
+                _hmacKey = DeriveLongTermKey(_config.Username, _config.Realm, _config.Password);
+            }
+            // REST mode (StaticAuthSecret set): _hmacKey stays null; the per-request key is
+            // derived from the USERNAME attribute when an Allocate request arrives.
+        }
+
+        private static byte[] DeriveLongTermKey(string username, string realm, string password)
+        {
+            var input = Encoding.UTF8.GetBytes($"{username}:{realm}:{password}");
 #if NET5_0_OR_GREATER
-            _hmacKey = MD5.HashData(
-                Encoding.UTF8.GetBytes($"{_config.Username}:{_config.Realm}:{_config.Password}"));
+            return MD5.HashData(input);
 #else
             using (var md5 = MD5.Create())
             {
-                _hmacKey = md5.ComputeHash(
-                    Encoding.UTF8.GetBytes($"{_config.Username}:{_config.Realm}:{_config.Password}"));
+                return md5.ComputeHash(input);
             }
 #endif
         }
@@ -533,11 +571,11 @@ namespace SIPSorcery.Net
 
                 case STUNMessageTypesEnum.Allocate:
                     {
-                        var (response, needsAuth) = HandleAllocate(msg, clientId,
+                        var (response, signingKey) = HandleAllocate(msg, clientId,
                             tcpStream, udpClientEndPoint, udpControlSocket,
                             ref allocation);
-                        var bytes = needsAuth
-                            ? response.ToByteBuffer(_hmacKey, true)
+                        var bytes = signingKey != null
+                            ? response.ToByteBuffer(signingKey, true)
                             : response.ToByteBuffer(null, false);
                         _ = sendResponse(bytes);
                     }
@@ -546,7 +584,7 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.Refresh:
                     {
                         var response = HandleRefresh(msg, clientId, ref allocation);
-                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        var bytes = SignResponse(response, allocation);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -554,7 +592,7 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.CreatePermission:
                     {
                         var response = HandleCreatePermission(msg, allocation);
-                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        var bytes = SignResponse(response, allocation);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -562,7 +600,7 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.ChannelBind:
                     {
                         var response = HandleChannelBind(msg, allocation);
-                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        var bytes = SignResponse(response, allocation);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -585,7 +623,77 @@ namespace SIPSorcery.Net
             return response;
         }
 
-        private (STUNMessage response, bool needsAuth) HandleAllocate(
+        /// <summary>
+        /// Serialize a response, signing it with the allocation's cached HMAC key when
+        /// available, falling back to the server's static key (long-term cred mode). In REST
+        /// mode without a known allocation the response goes out unsigned — the client will
+        /// retry with fresh credentials anyway.
+        /// </summary>
+        private byte[] SignResponse(STUNMessage response, TurnAllocation allocation)
+        {
+            var key = allocation?.HmacKey ?? _hmacKey;
+            return key != null
+                ? response.ToByteBuffer(key, true)
+                : response.ToByteBuffer(null, false);
+        }
+
+        /// <summary>
+        /// In REST mode, derive the per-user long-term HMAC key from the USERNAME in the
+        /// request and validate the embedded expiry. Returns false (with rejectReason
+        /// populated) when the credential is malformed or expired.
+        /// </summary>
+        private bool TryDeriveRestKey(STUNMessage request, out byte[] key, out string rejectReason)
+        {
+            key = null;
+            rejectReason = null;
+
+            var usernameAttr = request.Attributes.FirstOrDefault(
+                a => a.AttributeType == STUNAttributeTypesEnum.Username);
+            if (usernameAttr?.Value == null || usernameAttr.Value.Length == 0)
+            {
+                rejectReason = "missing USERNAME";
+                return false;
+            }
+
+            var username = Encoding.UTF8.GetString(usernameAttr.Value);
+            var colonIdx = username.IndexOf(':');
+            if (colonIdx <= 0)
+            {
+                rejectReason = "USERNAME not in '<expiry>:<user>' form";
+                return false;
+            }
+
+            if (!long.TryParse(username.Substring(0, colonIdx), out var expiryUnix))
+            {
+                rejectReason = "USERNAME expiry is not a unix timestamp";
+                return false;
+            }
+
+            var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (expiryUnix <= nowUnix)
+            {
+                rejectReason = "credential expired";
+                return false;
+            }
+
+            // Compute the REST password: base64(HMAC-SHA1(staticAuthSecret, "USERNAME:REALM"))
+            var secretBytes = Encoding.UTF8.GetBytes(_config.StaticAuthSecret);
+            var msgBytes = Encoding.UTF8.GetBytes($"{username}:{_config.Realm}");
+            string password;
+#if NET6_0_OR_GREATER
+            password = Convert.ToBase64String(HMACSHA1.HashData(secretBytes, msgBytes));
+#else
+            using (var hmac = new HMACSHA1(secretBytes))
+            {
+                password = Convert.ToBase64String(hmac.ComputeHash(msgBytes));
+            }
+#endif
+
+            key = DeriveLongTermKey(username, _config.Realm, password);
+            return true;
+        }
+
+        private (STUNMessage response, byte[] signingKey) HandleAllocate(
             STUNMessage request,
             string clientId,
             NetworkStream tcpStream,
@@ -600,23 +708,34 @@ namespace SIPSorcery.Net
             if (!hasIntegrity)
             {
                 // Send 401 Unauthorized with REALM and NONCE (unsigned)
-                var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
-                errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
-                errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
-                    Encoding.UTF8.GetBytes(_config.Realm)));
-                errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
-                    Encoding.UTF8.GetBytes(GenerateNonce())));
-                return (errResponse, false);
+                return (BuildAuthChallenge(request), null);
             }
 
-            if (!request.CheckIntegrity(_hmacKey))
+            // Derive the HMAC key for this request. In long-term cred mode this is the static
+            // _hmacKey; in REST mode it depends on the USERNAME attribute (and we also
+            // validate the embedded expiry timestamp here).
+            byte[] requestKey;
+            if (!string.IsNullOrEmpty(_config.StaticAuthSecret))
+            {
+                if (!TryDeriveRestKey(request, out requestKey, out var reason))
+                {
+                    logger.LogWarning("TURN Allocate: REST credential rejected from {Client}: {Reason}.",
+                        clientId, reason);
+                    return (BuildAuthChallenge(request), null);
+                }
+            }
+            else
+            {
+                requestKey = _hmacKey;
+            }
+
+            if (!request.CheckIntegrity(requestKey))
             {
                 logger.LogWarning("TURN Allocate: integrity check failed from {Client}.", clientId);
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
                 errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
-                return (errResponse, false);
+                return (errResponse, null);
             }
 
             // Check if there's already an allocation for this client
@@ -625,11 +744,19 @@ namespace SIPSorcery.Net
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
                 errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
-                return (errResponse, true);
+                return (errResponse, requestKey);
             }
 
-            // Create UDP relay socket
-            var relaySocket = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            // Create the UDP relay socket — within the configured port range if set, else any.
+            if (!TryBindRelaySocket(out var relaySocket))
+            {
+                logger.LogWarning("TURN Allocate: no free relay port in [{Min}..{Max}] for {Client}.",
+                    _config.RelayPortMin, _config.RelayPortMax, clientId);
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(508, "Insufficient Capacity"));
+                return (errResponse, requestKey);
+            }
             var relayEndpoint = (IPEndPoint)relaySocket.Client.LocalEndPoint;
 
             allocation = new TurnAllocation
@@ -641,6 +768,7 @@ namespace SIPSorcery.Net
                 TcpStream = tcpStream,
                 UdpClientEndPoint = udpClientEndPoint,
                 UdpControlSocket = udpControlSocket,
+                HmacKey = requestKey,
             };
 
             _allocations[clientId] = allocation;
@@ -673,7 +801,48 @@ namespace SIPSorcery.Net
             response.Attributes.Add(new STUNAttribute(
                 STUNAttributeTypesEnum.Lifetime, (uint)_config.DefaultLifetimeSeconds));
 
-            return (response, true);
+            return (response, requestKey);
+        }
+
+        private STUNMessage BuildAuthChallenge(STUNMessage request)
+        {
+            var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
+            errResponse.Header.TransactionId = request.Header.TransactionId;
+            errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
+            errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                Encoding.UTF8.GetBytes(_config.Realm)));
+            errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes(GenerateNonce())));
+            return errResponse;
+        }
+
+        /// <summary>
+        /// Bind the relay UDP socket. If a relay port range is configured walk it in order
+        /// and bind to the first free port; if no range is set let the OS pick an ephemeral
+        /// port. Returns false when a range was set but every port in it is occupied.
+        /// </summary>
+        private bool TryBindRelaySocket(out UdpClient socket)
+        {
+            socket = null;
+            if (_config.RelayPortMin <= 0 || _config.RelayPortMax < _config.RelayPortMin)
+            {
+                socket = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+                return true;
+            }
+
+            for (int port = _config.RelayPortMin; port <= _config.RelayPortMax; port++)
+            {
+                try
+                {
+                    socket = new UdpClient(new IPEndPoint(IPAddress.Any, port));
+                    return true;
+                }
+                catch (SocketException)
+                {
+                    // Port in use — try the next one.
+                }
+            }
+            return false;
         }
 
         private STUNMessage HandleRefresh(STUNMessage request, string clientId, ref TurnAllocation allocation)
