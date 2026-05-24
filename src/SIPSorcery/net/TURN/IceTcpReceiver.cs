@@ -194,7 +194,7 @@ public class IceTcpReceiver : UdpReceiver
             var isFragmented = true;
             var recvRemainingSegment = new ArraySegment<byte>(m_recvBuffer, 0, bytesRead);
 
-            while (recvRemainingSegment.Count > STUNHeader.STUN_HEADER_LENGTH)
+            while (recvRemainingSegment.Count >= STUNHeader.STUN_HEADER_LENGTH)
             {
                 isFragmented = false;
                 STUNHeader header = null;
@@ -227,7 +227,7 @@ public class IceTcpReceiver : UdpReceiver
 
                         var newOffset = recvRemainingSegment.Offset + stunMsgBytes;
                         var newCount = recvRemainingSegment.Count - stunMsgBytes;
-                        if (newCount > STUNHeader.STUN_HEADER_LENGTH && newOffset >= 0)
+                        if (newCount >= STUNHeader.STUN_HEADER_LENGTH && newOffset >= 0)
                         {
                             recvRemainingSegment = new ArraySegment<byte>(recvRemainingSegment.Array, newOffset, newCount);
                         }

@@ -53,7 +53,7 @@ public static class TurnClientExtensions
                 RemotePeerRelayEndPoint = relayDestinationEndPoint
             };
 
-            var createPermissionResult = turnClient.CreatePermission(new IPEndPoint(remotePeerIPAddress, 0));
+            turnClient.CreatePermission(new IPEndPoint(remotePeerIPAddress, 0));
         }
 
         return mediaStream;

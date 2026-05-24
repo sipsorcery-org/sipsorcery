@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -220,6 +219,10 @@ namespace SIPSorcery.Net
         private readonly TurnServerConfig _config;
         private readonly byte[] _hmacKey;
         private readonly IPAddress _relayAddress;
+        private readonly bool _useStaticAuthSecret;
+        private readonly byte[] _realmBytes;
+        private readonly byte[] _staticAuthSecretBytes;
+        private int _nextRelayPortOffset = -1;
 
         private TcpListener _tcpListener;
         private UdpClient _udpSocket;
@@ -242,8 +245,14 @@ namespace SIPSorcery.Net
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _relayAddress = config.RelayAddress ?? config.ListenAddress;
+            _useStaticAuthSecret = !string.IsNullOrEmpty(_config.StaticAuthSecret);
+            _realmBytes = Encoding.UTF8.GetBytes(_config.Realm);
 
-            if (string.IsNullOrEmpty(_config.StaticAuthSecret))
+            if (_useStaticAuthSecret)
+            {
+                _staticAuthSecretBytes = Encoding.UTF8.GetBytes(_config.StaticAuthSecret);
+            }
+            else
             {
                 // Long-term credential mode: HMAC key = MD5(username:realm:password)
                 _hmacKey = DeriveLongTermKey(_config.Username, _config.Realm, _config.Password);
@@ -366,6 +375,8 @@ namespace SIPSorcery.Net
             var clientEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
             var clientId = clientEndPoint?.ToString() ?? "unknown";
             var stream = tcpClient.GetStream();
+            var header = new byte[4];
+            var paddingBuffer = new byte[3];
             TurnAllocation allocation = null;
 
             try
@@ -373,7 +384,6 @@ namespace SIPSorcery.Net
                 while (_running && tcpClient.Connected)
                 {
                     // TCP framing: read first 4 bytes to determine STUN message vs ChannelData.
-                    var header = new byte[4];
                     if (!await ReadExactAsync(stream, header, 0, 4).ConfigureAwait(false))
                         break;
 
@@ -391,11 +401,11 @@ namespace SIPSorcery.Net
                         var padding = (4 - (dataLength % 4)) % 4;
                         if (padding > 0)
                         {
-                            var padBuf = new byte[padding];
-                            await ReadExactAsync(stream, padBuf, 0, padding).ConfigureAwait(false);
+                            if (!await ReadExactAsync(stream, paddingBuffer, 0, padding).ConfigureAwait(false))
+                                break;
                         }
 
-                        HandleChannelData(allocation, channelNumber, data);
+                        HandleChannelData(allocation, channelNumber, data, 0, data.Length);
                     }
                     else
                     {
@@ -498,13 +508,10 @@ namespace SIPSorcery.Net
 
                 if (data.Length >= 4 + dataLength)
                 {
-                    var payload = new byte[dataLength];
-                    Buffer.BlockCopy(data, 4, payload, 0, dataLength);
-
                     // Find the allocation for this client
                     if (_allocations.TryGetValue(clientId, out var allocation))
                     {
-                        HandleChannelData(allocation, channelNumber, payload);
+                        HandleChannelData(allocation, channelNumber, data, 4, dataLength);
                     }
                 }
                 return;
@@ -517,19 +524,12 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            TurnAllocation udpAllocation = null;
-            _allocations.TryGetValue(clientId, out udpAllocation);
+            _allocations.TryGetValue(clientId, out var udpAllocation);
 
             ProcessMessage(stunMsg, clientId, remoteEndPoint,
                 (responseBytes) => SendUdpResponseAsync(remoteEndPoint, responseBytes),
                 ref udpAllocation,
                 null, remoteEndPoint, _udpSocket);
-
-            // Update the dictionary if a new allocation was created
-            if (udpAllocation != null && !_allocations.ContainsKey(clientId))
-            {
-                _allocations[clientId] = udpAllocation;
-            }
         }
 
         private async Task SendUdpResponseAsync(IPEndPoint remoteEndPoint, byte[] data)
@@ -654,8 +654,7 @@ namespace SIPSorcery.Net
             key = null;
             rejectReason = null;
 
-            var usernameAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.Username);
+            var usernameAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.Username);
             if (usernameAttr?.Value == null || usernameAttr.Value.Length == 0)
             {
                 rejectReason = "missing USERNAME";
@@ -684,13 +683,12 @@ namespace SIPSorcery.Net
             }
 
             // Compute the REST password: base64(HMAC-SHA1(staticAuthSecret, "USERNAME:REALM"))
-            var secretBytes = Encoding.UTF8.GetBytes(_config.StaticAuthSecret);
             var msgBytes = Encoding.UTF8.GetBytes($"{username}:{_config.Realm}");
             string password;
 #if NET6_0_OR_GREATER
-            password = Convert.ToBase64String(HMACSHA1.HashData(secretBytes, msgBytes));
+            password = Convert.ToBase64String(HMACSHA1.HashData(_staticAuthSecretBytes, msgBytes));
 #else
-            using (var hmac = new HMACSHA1(secretBytes))
+            using (var hmac = new HMACSHA1(_staticAuthSecretBytes))
             {
                 password = Convert.ToBase64String(hmac.ComputeHash(msgBytes));
             }
@@ -710,8 +708,7 @@ namespace SIPSorcery.Net
             ref TurnAllocation allocation)
         {
             // Check for MESSAGE-INTEGRITY — first request won't have it
-            var hasIntegrity = request.Attributes.Any(
-                a => a.AttributeType == STUNAttributeTypesEnum.MessageIntegrity);
+            var hasIntegrity = HasAttribute(request, STUNAttributeTypesEnum.MessageIntegrity);
 
             if (!hasIntegrity)
             {
@@ -723,7 +720,7 @@ namespace SIPSorcery.Net
             // _hmacKey; in REST mode it depends on the USERNAME attribute (and we also
             // validate the embedded expiry timestamp here).
             byte[] requestKey;
-            if (!string.IsNullOrEmpty(_config.StaticAuthSecret))
+            if (_useStaticAuthSecret)
             {
                 if (!TryDeriveRestKey(request, out requestKey, out var reason))
                 {
@@ -823,7 +820,7 @@ namespace SIPSorcery.Net
             errResponse.Header.TransactionId = request.Header.TransactionId;
             errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
             errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
-                Encoding.UTF8.GetBytes(_config.Realm)));
+                _realmBytes));
             errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
                 Encoding.UTF8.GetBytes(GenerateNonce())));
             return errResponse;
@@ -843,8 +840,12 @@ namespace SIPSorcery.Net
                 return true;
             }
 
-            for (int port = _config.RelayPortMin; port <= _config.RelayPortMax; port++)
+            var portCount = _config.RelayPortMax - _config.RelayPortMin + 1;
+            var startOffset = (uint)Interlocked.Increment(ref _nextRelayPortOffset);
+
+            for (int i = 0; i < portCount; i++)
             {
+                var port = _config.RelayPortMin + (int)((startOffset + (uint)i) % (uint)portCount);
                 try
                 {
                     socket = new UdpClient(new IPEndPoint(IPAddress.Any, port));
@@ -869,8 +870,7 @@ namespace SIPSorcery.Net
             }
 
             // Extract requested lifetime
-            var lifetimeAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.Lifetime);
+            var lifetimeAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.Lifetime);
             uint lifetime = (uint)_config.DefaultLifetimeSeconds;
             if (lifetimeAttr?.Value != null && lifetimeAttr.Value.Length >= 4)
             {
@@ -906,14 +906,19 @@ namespace SIPSorcery.Net
                 return errResponse;
             }
 
-            foreach (var attr in request.Attributes.Where(
-                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress))
+            var permissionExpiry = DateTime.UtcNow.AddSeconds(PERMISSION_LIFETIME_SECONDS);
+            foreach (var attr in request.Attributes)
             {
+                if (attr.AttributeType != STUNAttributeTypesEnum.XORPeerAddress)
+                {
+                    continue;
+                }
+
                 var xorAddr = new STUNXORAddressAttribute(
                     STUNAttributeTypesEnum.XORPeerAddress,
                     attr.Value, request.Header.TransactionId);
                 var peerIp = xorAddr.Address.ToString();
-                allocation.Permissions[peerIp] = DateTime.UtcNow.AddSeconds(PERMISSION_LIFETIME_SECONDS);
+                allocation.Permissions[peerIp] = permissionExpiry;
                 logger.LogDebug("TURN permission added: {Address} (expires in {Seconds}s).",
                     peerIp, PERMISSION_LIFETIME_SECONDS);
             }
@@ -933,8 +938,7 @@ namespace SIPSorcery.Net
                 return errResponse;
             }
 
-            var channelAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.ChannelNumber);
+            var channelAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.ChannelNumber);
             if (channelAttr?.Value == null || channelAttr.Value.Length < 2)
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
@@ -945,8 +949,7 @@ namespace SIPSorcery.Net
 
             var channelNumber = (ushort)((channelAttr.Value[0] << 8) | channelAttr.Value[1]);
 
-            var peerAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress);
+            var peerAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.XORPeerAddress);
             if (peerAttr?.Value == null)
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
@@ -974,10 +977,8 @@ namespace SIPSorcery.Net
         {
             if (allocation == null) return;
 
-            var peerAttr = msg.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress);
-            var dataAttr = msg.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.Data);
+            var peerAttr = GetFirstAttribute(msg, STUNAttributeTypesEnum.XORPeerAddress);
+            var dataAttr = GetFirstAttribute(msg, STUNAttributeTypesEnum.Data);
 
             if (peerAttr?.Value == null || dataAttr?.Value == null) return;
 
@@ -1003,7 +1004,12 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void HandleChannelData(TurnAllocation allocation, ushort channelNumber, byte[] data)
+        private void HandleChannelData(
+            TurnAllocation allocation,
+            ushort channelNumber,
+            byte[] data,
+            int offset,
+            int length)
         {
             if (allocation == null) return;
 
@@ -1011,7 +1017,15 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    allocation.RelaySocket.Send(data, data.Length, peer);
+                    if (offset == 0 && length == data.Length)
+                    {
+                        allocation.RelaySocket.Send(data, length, peer);
+                    }
+                    else
+                    {
+                        allocation.RelaySocket.Client.SendTo(
+                            data, offset, length, SocketFlags.None, peer);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1038,11 +1052,12 @@ namespace SIPSorcery.Net
                     catch (ObjectDisposedException) { break; }
                     catch (SocketException) { break; }
 
+                    var now = DateTime.UtcNow;
                     var senderIp = result.RemoteEndPoint.Address.ToString();
                     var senderKey = result.RemoteEndPoint.ToString();
 
                     // Enforce permissions: drop if sender IP not permitted (RFC 5766 Section 8)
-                    if (!HasPermission(allocation, senderIp))
+                    if (!HasPermission(allocation, senderIp, now))
                     {
                         logger.LogDebug("TURN relay dropped packet from {Sender}: no permission.", senderKey);
                         continue;
@@ -1097,11 +1112,47 @@ namespace SIPSorcery.Net
 
         private static bool HasPermission(TurnAllocation allocation, string peerIp)
         {
+            return HasPermission(allocation, peerIp, DateTime.UtcNow);
+        }
+
+        private static bool HasPermission(TurnAllocation allocation, string peerIp, DateTime now)
+        {
             if (allocation.Permissions.TryGetValue(peerIp, out var expiry))
             {
-                return DateTime.UtcNow < expiry;
+                if (now < expiry)
+                {
+                    return true;
+                }
+
+                allocation.Permissions.TryRemove(peerIp, out _);
             }
             return false;
+        }
+
+        private static bool HasAttribute(STUNMessage message, STUNAttributeTypesEnum attributeType)
+        {
+            foreach (var attribute in message.Attributes)
+            {
+                if (attribute.AttributeType == attributeType)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static STUNAttribute GetFirstAttribute(STUNMessage message, STUNAttributeTypesEnum attributeType)
+        {
+            foreach (var attribute in message.Attributes)
+            {
+                if (attribute.AttributeType == attributeType)
+                {
+                    return attribute;
+                }
+            }
+
+            return null;
         }
 
         private static byte[] BuildChannelData(ushort channelNumber, byte[] data)
