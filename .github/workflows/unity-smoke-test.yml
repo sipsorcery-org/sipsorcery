@@ -160,6 +160,12 @@ jobs:
     # throws PlatformNotSupportedException), and the GameCI Linux container
     # runs Linux Mono where the same code path works. Without this job the
     # smoke test passes even when the bug is present.
+    #
+    # Manual-only: this job runs ~20 min on a cold Unity install, is flaky
+    # against the unity-setup cache, and burns Windows runner minutes on
+    # every PR / push. Gate it behind workflow_dispatch so it only fires
+    # when a maintainer explicitly triggers it from the Actions tab.
+    if: github.event_name == 'workflow_dispatch'
     name: Unity ${{ matrix.unityVersion }} PlayMode smoke test (Windows)
     runs-on: windows-latest
     strategy:
