@@ -107,6 +107,7 @@
     <Project Path="examples/WebRTCExamples/WebRTCGetStartedLibvpx/WebRTCGetStartedLibvpx.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCNoSignalling/WebRTCNoSignalling.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCNostrSignalling/WebRTCNostrSignalling.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCOpenGL/WebRTCOpenGL.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCOpenGLSource/WebRTCOpenGLSource.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCReceiveAudio/WebRTCReceiveAudio.csproj" />
@@ -138,6 +139,7 @@
     <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
     <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
   </Folder>
+  <Project Path="../NNostr/NNostr.Client/NNostr.Client.csproj" />
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">
     <Property Name="CategoryFile" Value="SIPSorcery-Core.vsmdi" />
   </Properties>
