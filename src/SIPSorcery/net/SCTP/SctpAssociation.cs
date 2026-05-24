@@ -589,7 +589,9 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        /// <param name="offset">The offset in <paramref name="data"/> at which to begin sending. Defaults to 0.</param>
+        /// <param name="count">The number of bytes to send. Defaults to -1, meaning all bytes from <paramref name="offset"/> to the end of the array.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data, int offset = 0, int count = -1)
         {
             if (_wasAborted)
             {
@@ -603,7 +605,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                _dataSender.SendData(streamID, ppid, data);
+                _dataSender.SendData(streamID, ppid, data, offset, count);
             }
         }
 
