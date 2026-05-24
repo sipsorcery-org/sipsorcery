@@ -304,8 +304,12 @@ namespace SIPSorcery.Net
         /// <param name="streamID">The stream ID to sent the data on.</param>
         /// <param name="ppid">The payload protocol ID for the data.</param>
         /// <param name="data">The byte data to send.</param>
-        public void SendData(ushort streamID, uint ppid, byte[] data)
+        /// <param name="offset">The offset in <paramref name="data"/> at which to begin sending. Defaults to 0.</param>
+        /// <param name="count">The number of bytes to send. Defaults to -1, meaning all bytes from <paramref name="offset"/> to the end of the array.</param>
+        public void SendData(ushort streamID, uint ppid, byte[] data, int offset = 0, int count = -1)
         {
+            int dataCount = count < 0 ? data.Length - offset : count;
+
             lock (_sendQueue)
             {
                 ushort seqnum = 0;
@@ -323,17 +327,17 @@ namespace SIPSorcery.Net
                     _streamSeqnums.Add(streamID, 0);
                 }
 
-                for (int index = 0; index * _defaultMTU < data.Length; index++)
+                for (int index = 0; index * _defaultMTU < dataCount; index++)
                 {
-                    int offset = (index == 0) ? 0 : (index * _defaultMTU);
-                    int payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
+                    int chunkOffset = index * _defaultMTU;
+                    int payloadLength = (chunkOffset + _defaultMTU < dataCount) ? _defaultMTU : dataCount - chunkOffset;
 
                     // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
                     byte[] payload = new byte[payloadLength];
-                    Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
+                    Buffer.BlockCopy(data, offset + chunkOffset, payload, 0, payloadLength);
 
                     bool isBegining = index == 0;
-                    bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;
+                    bool isEnd = ((chunkOffset + payloadLength) >= dataCount) ? true : false;
 
                     SctpDataChunk dataChunk = new SctpDataChunk(
                         false,
