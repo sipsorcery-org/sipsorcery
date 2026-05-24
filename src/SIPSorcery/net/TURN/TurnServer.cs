@@ -162,10 +162,6 @@ namespace SIPSorcery.Net
     ///         real credentials; defaults are intentionally weak to encourage replacement.</item>
     ///   <item>Default listen address is loopback — safe by default, but if bound to a public
     ///         interface without TLS, credentials travel in cleartext.</item>
-    ///   <item>The manual HMAC verification and error-code construction are workarounds for bugs in
-    ///         <c>STUNMessage.CheckIntegrity()</c> (#1510) and <c>STUNErrorCodeAttribute</c>
-    ///         (#1509); once those are merged, TurnServer should be updated to use the fixed
-    ///         library methods.</item>
     ///   <item>No input validation on allocation count or relay port range — in production you
     ///         would want to bound these.</item>
     /// </list>
@@ -380,7 +376,7 @@ namespace SIPSorcery.Net
                             continue;
                         }
 
-                        ProcessMessage(stunMsg, fullMsg, clientId,
+                        ProcessMessage(stunMsg, clientId,
                             (responseBytes) => SendTcpResponseAsync(stream, responseBytes),
                             ref allocation,
                             stream, null, null);
@@ -485,7 +481,7 @@ namespace SIPSorcery.Net
             TurnAllocation udpAllocation = null;
             _allocations.TryGetValue(clientId, out udpAllocation);
 
-            ProcessMessage(stunMsg, data, clientId,
+            ProcessMessage(stunMsg, clientId,
                 (responseBytes) => SendUdpResponseAsync(remoteEndPoint, responseBytes),
                 ref udpAllocation,
                 null, remoteEndPoint, _udpSocket);
@@ -515,7 +511,6 @@ namespace SIPSorcery.Net
 
         private void ProcessMessage(
             STUNMessage msg,
-            byte[] rawBytes,
             string clientId,
             Func<byte[], Task> sendResponse,
             ref TurnAllocation allocation,
@@ -538,7 +533,7 @@ namespace SIPSorcery.Net
 
                 case STUNMessageTypesEnum.Allocate:
                     {
-                        var (response, needsAuth) = HandleAllocate(msg, rawBytes, clientId,
+                        var (response, needsAuth) = HandleAllocate(msg, clientId,
                             tcpStream, udpClientEndPoint, udpControlSocket,
                             ref allocation);
                         var bytes = needsAuth
@@ -592,7 +587,6 @@ namespace SIPSorcery.Net
 
         private (STUNMessage response, bool needsAuth) HandleAllocate(
             STUNMessage request,
-            byte[] rawBytes,
             string clientId,
             NetworkStream tcpStream,
             IPEndPoint udpClientEndPoint,
@@ -608,7 +602,7 @@ namespace SIPSorcery.Net
                 // Send 401 Unauthorized with REALM and NONCE (unsigned)
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(401, "Unauthorized"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
                 errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
                     Encoding.UTF8.GetBytes(_config.Realm)));
                 errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
@@ -616,16 +610,12 @@ namespace SIPSorcery.Net
                 return (errResponse, false);
             }
 
-            // Verify MESSAGE-INTEGRITY manually on the raw bytes.
-            // SIPSorcery's CheckIntegrity() requires a valid FINGERPRINT as the last attribute
-            // (isFingerprintValid guard), which browsers may not send for TURN messages.
-            // See: https://github.com/sipsorcery-org/sipsorcery/pull/1510
-            if (!VerifyMessageIntegrity(rawBytes, _hmacKey))
+            if (!request.CheckIntegrity(_hmacKey))
             {
                 logger.LogWarning("TURN Allocate: integrity check failed from {Client}.", clientId);
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(401, "Unauthorized"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
                 return (errResponse, false);
             }
 
@@ -634,7 +624,7 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return (errResponse, true);
             }
 
@@ -692,7 +682,7 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.RefreshErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return errResponse;
             }
 
@@ -730,7 +720,7 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.CreatePermissionErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return errResponse;
             }
 
@@ -757,7 +747,7 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return errResponse;
             }
 
@@ -767,7 +757,7 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(400, "Bad Request"));
                 return errResponse;
             }
 
@@ -779,7 +769,7 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(400, "Bad Request"));
                 return errResponse;
             }
 
@@ -930,99 +920,6 @@ namespace SIPSorcery.Net
                 return DateTime.UtcNow < expiry;
             }
             return false;
-        }
-
-        /// <summary>
-        /// Build an ERROR-CODE attribute manually (RFC 5389 Section 15.6).
-        /// Workaround: SIPSorcery's STUNErrorCodeAttribute(int, string) constructor has a bug
-        /// where it reads the ErrorCode property (which depends on ErrorClass) before ErrorClass
-        /// is assigned, and also doesn't populate the base Value field.
-        /// See: https://github.com/sipsorcery-org/sipsorcery/pull/1509
-        /// </summary>
-        internal static STUNAttribute BuildErrorCodeAttribute(int errorCode, string reasonPhrase)
-        {
-            var reasonBytes = Encoding.UTF8.GetBytes(reasonPhrase);
-            var value = new byte[4 + reasonBytes.Length];
-            value[2] = (byte)(errorCode / 100);
-            value[3] = (byte)(errorCode % 100);
-            Buffer.BlockCopy(reasonBytes, 0, value, 4, reasonBytes.Length);
-            return new STUNAttribute(STUNAttributeTypesEnum.ErrorCode, value);
-        }
-
-        /// <summary>
-        /// Verify MESSAGE-INTEGRITY directly on raw STUN bytes per RFC 5389 Section 15.4.
-        /// Workaround: SIPSorcery's CheckIntegrity() requires a valid FINGERPRINT attribute,
-        /// which browsers may not send for TURN messages.
-        /// See: https://github.com/sipsorcery-org/sipsorcery/pull/1510
-        /// </summary>
-        internal bool VerifyMessageIntegrity(byte[] rawBytes, byte[] hmacKey)
-        {
-            if (rawBytes.Length < 24) return false; // minimum: 20-byte header + 4-byte attr header
-
-            // Walk attributes in the raw bytes to find MESSAGE-INTEGRITY (type 0x0008)
-            int offset = 20; // skip STUN header
-            int totalLength = rawBytes.Length;
-
-            while (offset + 4 <= totalLength)
-            {
-                ushort attrType = (ushort)((rawBytes[offset] << 8) | rawBytes[offset + 1]);
-                ushort attrLength = (ushort)((rawBytes[offset + 2] << 8) | rawBytes[offset + 3]);
-                int paddedLength = (attrLength + 3) & ~3;
-
-                if (attrType == 0x0008) // MESSAGE-INTEGRITY
-                {
-                    if (attrLength != 20) return false; // HMAC-SHA1 is always 20 bytes
-                    if (offset + 4 + 20 > totalLength) return false;
-
-                    // Extract the stored HMAC value
-                    var storedHmac = new byte[20];
-                    Buffer.BlockCopy(rawBytes, offset + 4, storedHmac, 0, 20);
-
-                    // Build the pre-image: raw bytes up to MESSAGE-INTEGRITY
-                    var preImage = new byte[offset];
-                    Buffer.BlockCopy(rawBytes, 0, preImage, 0, offset);
-
-                    // Patch MessageLength field: must reflect message as if MI were the last attribute
-                    ushort adjustedLength = (ushort)(offset - 20 + 24);
-                    preImage[2] = (byte)(adjustedLength >> 8);
-                    preImage[3] = (byte)(adjustedLength & 0xFF);
-
-                    // Compute HMAC-SHA1
-#if NET6_0_OR_GREATER
-                    byte[] computed = HMACSHA1.HashData(hmacKey, preImage);
-#else
-                    byte[] computed;
-                    using (var hmac = new HMACSHA1(hmacKey))
-                    {
-                        computed = hmac.ComputeHash(preImage);
-                    }
-#endif
-
-                    // Constant-time comparison
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-                    bool match = CryptographicOperations.FixedTimeEquals(computed, storedHmac);
-#else
-                    if (computed.Length != storedHmac.Length) return false;
-                    int diff = 0;
-                    for (int i = 0; i < computed.Length; i++)
-                    {
-                        diff |= computed[i] ^ storedHmac[i];
-                    }
-                    bool match = diff == 0;
-#endif
-
-                    if (!match)
-                    {
-                        logger.LogDebug("TURN integrity mismatch.");
-                    }
-
-                    return match;
-                }
-
-                offset += 4 + paddedLength;
-            }
-
-            return false; // No MESSAGE-INTEGRITY attribute found
         }
 
         private static byte[] BuildChannelData(ushort channelNumber, byte[] data)
