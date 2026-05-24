@@ -347,6 +347,10 @@ namespace SIPSorcery.Net
             {
                 _configuration = configuration;
 
+                //test turns:
+                //_configuration.iceTransportPolicy = RTCIceTransportPolicy.relay;
+                //_configuration.iceServers = _configuration.iceServers.Where(p => p.urls.StartsWith("turns")).ToList();
+
                 if (!InitializeCertificates(configuration))
                 {
                     logger.LogDebug("No DTLS certificate is provided in the configuration");
@@ -999,11 +1003,12 @@ namespace SIPSorcery.Net
                         {
                             foreach (var remoteExtension in remoteHeaderExtensions)
                             {
-                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
                                 if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
                                     // We must ensure to use same Id by extension
                                     localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
 
                                     logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
                                     ann.HeaderExtensions.Add(localExtension.Id, localExtension);
@@ -1023,11 +1028,12 @@ namespace SIPSorcery.Net
                         {
                             foreach (var remoteExtension in remoteHeaderExtensions)
                             {
-                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.Uri == remoteExtension.Uri);
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
                                 if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                                 {
                                     // We must ensure to use same Id by extension
                                     localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri; // Keep same Uri as remote
 
                                     logger.LogDebug("[createAnswer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
                                     ann.HeaderExtensions.Add(localExtension.Id, localExtension);

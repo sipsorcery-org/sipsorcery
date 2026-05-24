@@ -165,11 +165,15 @@ namespace SIPSorcery.Net
         /// Sends a binary data payload on the data channel.
         /// </summary>
         /// <param name="data">The data to send.</param>
-        public void send(byte[] data)
+        /// <param name="offset">The offset in <paramref name="data"/> at which to begin sending. Defaults to 0.</param>
+        /// <param name="count">The number of bytes to send. Defaults to -1, meaning all bytes from <paramref name="offset"/> to the end of the array.</param>
+        public void send(byte[] data, int offset = 0, int count = -1)
         {
-            if (data.Length > _transport.maxMessageSize)
+            int effectiveCount = count < 0 ? data.Length - offset : count;
+
+            if (effectiveCount > _transport.maxMessageSize)
             {
-                throw new ApplicationException($"Data channel {label} was requested to send data of length {data.Length} " +
+                throw new ApplicationException($"Data channel {label} was requested to send data of length {effectiveCount} " +
                     $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
             else if (_transport.state != RTCSctpTransportState.Connected)
@@ -180,7 +184,7 @@ namespace SIPSorcery.Net
             {
                 lock (this)
                 {
-                    if (data?.Length == 0)
+                    if (effectiveCount == 0)
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty,
@@ -190,7 +194,7 @@ namespace SIPSorcery.Net
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary,
-                           data);
+                            data, offset, effectiveCount);
                     }
                 }
             }

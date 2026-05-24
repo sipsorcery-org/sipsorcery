@@ -68,9 +68,8 @@ public class IceServerResolver
                     continue;
                 }
 
-                // Filter out TLS or policy excluded entries
-                if (stunUri.Scheme is STUNSchemesEnum.stuns or STUNSchemesEnum.turns ||
-                    (policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun))
+                // Filter out policy excluded entries (TURNS/STUNS are now supported via TLS)
+                if (policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun)
                 {
                     logger.LogWarning("{caller} ignoring ICE server {stunUri} (scheme {scheme})", nameof(IceServerResolver), stunUri, stunUri.Scheme);
                     continue;
@@ -117,7 +116,12 @@ public class IceServerResolver
 
         if (_iceServers.ContainsKey(key))
         {
-            _iceServers[key].DnsLookupSentAt = DateTime.UtcNow;
+            // NOTE: must use DateTime.Now (not UtcNow) because RtpIceChannel.CheckIceServers
+            // measures the elapsed time with DateTime.Now.Subtract(DnsLookupSentAt). Using
+            // UtcNow here makes the timeout fire ~immediately in any non-UTC timezone (the
+            // sign of the local offset determines whether the channel gives up before DNS
+            // resolves or never times out at all).
+            _iceServers[key].DnsLookupSentAt = DateTime.Now;
         }
 
         logger.LogDebug("{caller} starting DNS lookup for ICE server {Uri}", nameof(IceServerResolver), key);
