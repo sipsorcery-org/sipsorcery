@@ -2523,7 +2523,7 @@ namespace SIPSorcery.Net
         /// allocation messages share a 20-byte header where bytes 2-3 are the body length in
         /// big-endian; TURN channel-data messages instead use a 4-byte header in the
         /// 0x4000-0x7FFF channel-number range. We accumulate bytes until we have a full
-        /// message and then dispatch it via <see cref="OnRTPPacketReceived"/>.
+        /// message and then dispatch it via OnRTPPacketReceived (inherited from RTPChannel).
         /// </summary>
         private async Task StartTlsReadLoop(STUNUri uri, SslStream sslStream, IPEndPoint remoteEndPoint)
         {
