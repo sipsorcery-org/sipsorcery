@@ -119,6 +119,7 @@
             finalizeEvent,
             verifyEvent,
         } from 'https://esm.sh/nostr-tools@2.7.2/pure';
+        import { nip44 } from 'https://esm.sh/nostr-tools@2.7.2';
 
         const WEBRTC_SIGNAL_KIND = 25555;
 
@@ -155,6 +156,11 @@
         // is set. Drained as soon as setRemoteDescription succeeds.
         let pendingRemoteCandidates = [];
         let remoteDescriptionApplied = false;
+        // Cached NIP-44 v2 conversation key (ECDH-derived from our secret
+        // and the remote pubkey). Recomputed if the remote pubkey changes.
+        // Format: Uint8Array(32) per the NIP-44 spec.
+        let cachedConversationKey = null;
+        let cachedConversationKeyForRemote = null;
 
         // ---- helpers ----
         const enc = new TextEncoder();
@@ -172,6 +178,21 @@
         }
         function utf8ToHex(s) { return bytesToHex(enc.encode(s)); }
         function hexToUtf8(hex) { return dec.decode(hexToBytes(hex)); }
+
+        // Compute (or return cached) NIP-44 v2 ConversationKey for the
+        // current remote pubkey. Throws if either key is missing. The
+        // cache invalidates if the remote pubkey changes — important if
+        // the same page is later reused against a different C# peer.
+        function getConversationKey() {
+            if (!localSecretKey) { throw new Error('Local secret key not loaded.'); }
+            if (!remotePubKeyHex) { throw new Error('Remote pubkey not known yet.'); }
+            if (cachedConversationKey && cachedConversationKeyForRemote === remotePubKeyHex) {
+                return cachedConversationKey;
+            }
+            cachedConversationKey = nip44.v2.utils.getConversationKey(localSecretKey, remotePubKeyHex);
+            cachedConversationKeyForRemote = remotePubKeyHex;
+            return cachedConversationKey;
+        }
 
         function log(message) {
             const logDiv = document.getElementById('log');
@@ -278,13 +299,17 @@
 
                 if (typeof nostrEvent.content !== 'string') return;
 
-                // Content is hex-encoded JSON (matches what the C# side
-                // emits to dodge the NNostr canonicalisation bug).
+                // event.content is the NIP-44 v2 base64 ciphertext.
+                if (!remotePubKeyHex && typeof nostrEvent.pubkey === 'string') {
+                    remotePubKeyHex = nostrEvent.pubkey;
+                    remotePeerIdShort = remotePubKeyHex.slice(0, 8);
+                }
+
                 let json;
                 try {
-                    json = hexToUtf8(nostrEvent.content);
+                    json = nip44.v2.decrypt(nostrEvent.content, getConversationKey());
                 } catch (e) {
-                    log(`Skipping non-hex event content: ${nostrEvent.content.slice(0, 30)}...`);
+                    log(`NIP-44 decrypt failed for event ${nostrEvent.id?.slice(0, 8)}...: ${e.message}`);
                     return;
                 }
 
@@ -402,8 +427,11 @@
                 return;
             }
 
+            // Encrypt with NIP-44 v2 and put the base64 ciphertext directly
+            // on the wire — standard NIP-44 wire format, decryptable by any
+            // Nostr client that has the right keys.
             const innerJson = JSON.stringify(message);
-            const hexContent = utf8ToHex(innerJson);
+            const hexContent = nip44.v2.encrypt(innerJson, getConversationKey());
 
             const eventTemplate = {
                 kind: WEBRTC_SIGNAL_KIND,
