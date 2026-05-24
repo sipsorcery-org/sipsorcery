@@ -347,6 +347,10 @@ namespace SIPSorcery.Net
             {
                 _configuration = configuration;
 
+                //test turns:
+                //_configuration.iceTransportPolicy = RTCIceTransportPolicy.relay;
+                //_configuration.iceServers = _configuration.iceServers.Where(p => p.urls.StartsWith("turns")).ToList();
+
                 if (!InitializeCertificates(configuration))
                 {
                     logger.LogDebug("No DTLS certificate is provided in the configuration");
