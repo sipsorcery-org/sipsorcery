@@ -82,9 +82,6 @@ namespace WebRTCNostrSignalling
         // Nostr identity for this process. Generated once at startup and
         // reused for every published event so peers can be correlated by
         // their pubkey across the offer / answer / ICE candidate exchange.
-        // Replacing this with a fresh keypair per send (the original code)
-        // means every event arrives at the answerer from a different pubkey,
-        // breaking subscription filtering and consent.
         private static ECPrivKey? localPrivateKey;
         private static string? localPubKeyHex;
         private static string? remotePubKeyHex;
