@@ -18,7 +18,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -232,10 +234,88 @@ namespace SIPSorcery.Net
         private readonly ConcurrentDictionary<string, TurnAllocation> _allocations =
             new ConcurrentDictionary<string, TurnAllocation>();
 
+        // Cache of local interface IPv4 addresses, used by TranslateLocalSource to
+        // recognize hairpinned relay packets. Refreshed lazily — interfaces don't change
+        // often enough to warrant locking on the hot path.
+        private HashSet<IPAddress> _localIPv4Cache;
+        private DateTime _localIPv4CacheExpiry = DateTime.MinValue;
+
         /// <summary>
         /// Gets a read-only view of current allocations.
         /// </summary>
         public IReadOnlyDictionary<string, TurnAllocation> Allocations => _allocations;
+
+        /// <summary>
+        /// Translates a packet's observed source endpoint into the advertised relay endpoint
+        /// when the source is one of this server's own relay sockets. Returns <c>null</c> if
+        /// the endpoint isn't recognized as a local relay.
+        ///
+        /// This is the hook that makes hairpinning work when a peer on the same machine as
+        /// the TURN server uses one of its allocations: the OS picks a local interface
+        /// address as the source IP, which differs from the public IP advertised in
+        /// <c>XOR-RELAYED-ADDRESS</c>. Wiring this method into
+        /// <c>RTCPeerConnection.RemoteEndpointTranslator</c> lets the ICE source filter and
+        /// candidate matcher reconcile the two views.
+        /// </summary>
+        public IPEndPoint TranslateLocalSource(IPEndPoint observedSource)
+        {
+            if (observedSource == null)
+            {
+                return null;
+            }
+
+            // Normalize IPv4-mapped IPv6 addresses to pure IPv4 for the comparison.
+            var addr = observedSource.Address.IsIPv4MappedToIPv6
+                ? observedSource.Address.MapToIPv4()
+                : observedSource.Address;
+
+            if (!IsLocalIPv4(addr))
+            {
+                return null;
+            }
+
+            // Does the port match one of our current allocations' relay ports?
+            // Iteration is fine — allocation counts in the small-scale deployments this
+            // server targets are well under the threshold where a hashed index would matter.
+            foreach (var alloc in _allocations.Values)
+            {
+                if (alloc.RelayEndPoint?.Port == observedSource.Port)
+                {
+                    return new IPEndPoint(_relayAddress, observedSource.Port);
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsLocalIPv4(IPAddress address)
+        {
+            if (IPAddress.IsLoopback(address))
+            {
+                return true;
+            }
+
+            // Refresh the cache every 60 seconds to pick up interface changes (VPNs, etc).
+            if (_localIPv4Cache == null || DateTime.UtcNow > _localIPv4CacheExpiry)
+            {
+                try
+                {
+                    _localIPv4Cache = new HashSet<IPAddress>(
+                        NetworkInterface.GetAllNetworkInterfaces()
+                            .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                            .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                            .Where(uni => uni.Address.AddressFamily == AddressFamily.InterNetwork)
+                            .Select(uni => uni.Address));
+                }
+                catch
+                {
+                    _localIPv4Cache = new HashSet<IPAddress>();
+                }
+                _localIPv4CacheExpiry = DateTime.UtcNow.AddSeconds(60);
+            }
+
+            return _localIPv4Cache.Contains(address);
+        }
 
         /// <summary>
         /// Creates a new TURN server with the specified configuration.
@@ -654,7 +734,7 @@ namespace SIPSorcery.Net
             key = null;
             rejectReason = null;
 
-            var usernameAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.Username);
+            var usernameAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.Username);
             if (usernameAttr?.Value == null || usernameAttr.Value.Length == 0)
             {
                 rejectReason = "missing USERNAME";
@@ -870,7 +950,7 @@ namespace SIPSorcery.Net
             }
 
             // Extract requested lifetime
-            var lifetimeAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.Lifetime);
+            var lifetimeAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime);
             uint lifetime = (uint)_config.DefaultLifetimeSeconds;
             if (lifetimeAttr?.Value != null && lifetimeAttr.Value.Length >= 4)
             {
@@ -938,7 +1018,7 @@ namespace SIPSorcery.Net
                 return errResponse;
             }
 
-            var channelAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.ChannelNumber);
+            var channelAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.ChannelNumber);
             if (channelAttr?.Value == null || channelAttr.Value.Length < 2)
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
@@ -949,7 +1029,7 @@ namespace SIPSorcery.Net
 
             var channelNumber = (ushort)((channelAttr.Value[0] << 8) | channelAttr.Value[1]);
 
-            var peerAttr = GetFirstAttribute(request, STUNAttributeTypesEnum.XORPeerAddress);
+            var peerAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.XORPeerAddress);
             if (peerAttr?.Value == null)
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
@@ -977,8 +1057,8 @@ namespace SIPSorcery.Net
         {
             if (allocation == null) return;
 
-            var peerAttr = GetFirstAttribute(msg, STUNAttributeTypesEnum.XORPeerAddress);
-            var dataAttr = GetFirstAttribute(msg, STUNAttributeTypesEnum.Data);
+            var peerAttr = msg.GetFirstAttribute(STUNAttributeTypesEnum.XORPeerAddress);
+            var dataAttr = msg.GetFirstAttribute(STUNAttributeTypesEnum.Data);
 
             if (peerAttr?.Value == null || dataAttr?.Value == null) return;
 
@@ -1140,19 +1220,6 @@ namespace SIPSorcery.Net
             }
 
             return false;
-        }
-
-        private static STUNAttribute GetFirstAttribute(STUNMessage message, STUNAttributeTypesEnum attributeType)
-        {
-            foreach (var attribute in message.Attributes)
-            {
-                if (attribute.AttributeType == attributeType)
-                {
-                    return attribute;
-                }
-            }
-
-            return null;
         }
 
         private static byte[] BuildChannelData(ushort channelNumber, byte[] data)

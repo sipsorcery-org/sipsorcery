@@ -211,6 +211,23 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Returns the first attribute of the requested type, or <c>null</c> if none is
+        /// present. Plain <c>foreach</c> rather than LINQ so this stays cheap on the hot
+        /// path — STUN messages routinely carry only a handful of attributes.
+        /// </summary>
+        public STUNAttribute GetFirstAttribute(STUNAttributeTypesEnum attributeType)
+        {
+            foreach (var attribute in Attributes)
+            {
+                if (attribute.AttributeType == attributeType)
+                {
+                    return attribute;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Check that the message integrity attribute is correct.
         /// </summary>
         /// <param name="messageIntegrityKey">The message integrity key that was used to generate

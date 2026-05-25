@@ -208,21 +208,21 @@ public class TurnClient
 
                 logger.LogDebug("TURN allocate success response received for ICE server check to {Uri}.", _iceServer.Uri);
 
-                var mappedAddrAttr = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.XORMappedAddress);
+                var mappedAddrAttr = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.XORMappedAddress);
 
                 if (mappedAddrAttr != null)
                 {
                     _iceServer.ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
                 }
 
-                var mappedRelayAddrAttr = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.XORRelayedAddress);
+                var mappedRelayAddrAttr = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.XORRelayedAddress);
 
                 if (mappedRelayAddrAttr != null)
                 {
                     _iceServer.RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
                 }
 
-                var lifetime = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.Lifetime);
+                var lifetime = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime);
 
                 ScheduleAllocateRefresh(lifetime);
             }
@@ -232,10 +232,10 @@ public class TurnClient
 
                 _iceServer.ErrorResponseCount++;
 
-                var errCodeAttribute = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                var errCodeAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
                 if (errCodeAttribute != null)
                 {
-                    var alternateServerAttribute = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.AlternateServer) as STUNAddressAttribute;
+                    var alternateServerAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.AlternateServer) as STUNAddressAttribute;
 
                     if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
                     {
@@ -276,7 +276,7 @@ public class TurnClient
             {
                 logger.LogInformation("TURN client received a success response for a CreatePermission request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
 
-                var permissionLifetime = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.Lifetime);
+                var permissionLifetime = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime);
                 TimeSpan permissionDuration = TimeSpan.FromSeconds(PERMISSION_DEFAULT_LIFETIME_SECONDS);
 
                 if (permissionLifetime != null)
@@ -308,7 +308,7 @@ public class TurnClient
 
                 _iceServer.ErrorResponseCount++;
 
-                var errCodeAttribute = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+                var errCodeAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
                 if (errCodeAttribute != null)
                 {
                     if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
@@ -339,7 +339,7 @@ public class TurnClient
             {
                 logger.LogInformation("TURN client received a success response for a Refresh request to {Uri} from {remoteEP}.", _iceServer.Uri, remoteEndPoint);
 
-                ScheduleAllocateRefresh(GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.Lifetime));
+                ScheduleAllocateRefresh(stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime));
             }
             else
             {
@@ -394,10 +394,10 @@ public class TurnClient
     private void SetAuthenticationFields(STUNMessage stunResponse)
     {
         // Set the authentication properties authenticate.
-        var nonceAttribute = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.Nonce);
+        var nonceAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Nonce);
         _iceServer.Nonce = nonceAttribute?.Value;
 
-        var realmAttribute = GetFirstAttribute(stunResponse, STUNAttributeTypesEnum.Realm);
+        var realmAttribute = stunResponse.GetFirstAttribute(STUNAttributeTypesEnum.Realm);
         _iceServer.Realm = realmAttribute?.Value;
     }
 
@@ -582,19 +582,6 @@ public class TurnClient
 
         _allocateRenewalTimer?.Dispose();
         _permissionsRenewalTimer?.Dispose();
-    }
-
-    private static STUNAttribute GetFirstAttribute(STUNMessage message, STUNAttributeTypesEnum attributeType)
-    {
-        foreach (var attribute in message.Attributes)
-        {
-            if (attribute.AttributeType == attributeType)
-            {
-                return attribute;
-            }
-        }
-
-        return null;
     }
 
     private static int GetTimerDueTimeMilliseconds(TimeSpan dueTime)

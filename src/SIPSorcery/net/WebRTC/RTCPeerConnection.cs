@@ -383,6 +383,12 @@ namespace SIPSorcery.Net
 
             _rtpIceChannel = GetRtpChannel();
 
+            // Propagate any translator that was set before the channel existed.
+            if (_remoteEndpointTranslator != null)
+            {
+                _rtpIceChannel.RemoteEndpointTranslator = _remoteEndpointTranslator;
+            }
+
             _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
@@ -1406,6 +1412,13 @@ namespace SIPSorcery.Net
             var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
             if (nominatedEP == null) { return false; }
 
+            // Apply the optional source translator first. This lets callers reconcile
+            // observed source endpoints with advertised ones for hairpin scenarios (a
+            // peer on the same machine as the TURN server hitting one of its own
+            // allocations — the OS picks a local interface IP as source which won't
+            // match the public IP advertised in XOR-RELAYED-ADDRESS).
+            var effectiveRemoteEP = RemoteEndpointTranslator?.Invoke(remoteEP) ?? remoteEP;
+
             // Map IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) to pure IPv4 before comparison.
             // This handles the case where the nominated endpoint was stored as IPv4 but
             // the received packet shows up as an IPv4-mapped IPv6 address (or vice-versa)
@@ -1413,12 +1426,42 @@ namespace SIPSorcery.Net
             var nominatedAddr = nominatedEP.Address.IsIPv4MappedToIPv6
                 ? nominatedEP.Address.MapToIPv4()
                 : nominatedEP.Address;
-            var remoteAddr = remoteEP.Address.IsIPv4MappedToIPv6
-                ? remoteEP.Address.MapToIPv4()
-                : remoteEP.Address;
+            var remoteAddr = effectiveRemoteEP.Address.IsIPv4MappedToIPv6
+                ? effectiveRemoteEP.Address.MapToIPv4()
+                : effectiveRemoteEP.Address;
 
-            return nominatedEP.Port == remoteEP.Port
+            return nominatedEP.Port == effectiveRemoteEP.Port
                 && nominatedAddr.Equals(remoteAddr);
+        }
+
+        private Func<IPEndPoint, IPEndPoint> _remoteEndpointTranslator;
+
+        /// <summary>
+        /// Optional hook to normalize the source endpoint of received traffic before it's
+        /// compared against ICE candidates and the nominated pair. Used to reconcile the
+        /// address an in-process TURN relay socket uses when sending to a local destination
+        /// (a local interface IP) with the advertised relay address (typically a public IP
+        /// in <c>XOR-RELAYED-ADDRESS</c>).
+        ///
+        /// The delegate receives the observed source endpoint and returns either a
+        /// translated endpoint (when it recognizes the source as a known relay socket)
+        /// or <c>null</c> / the input unchanged when no translation applies.
+        ///
+        /// Setting this property also propagates the value to the underlying
+        /// <see cref="RtpIceChannel"/> so peer-reflexive candidate creation honours the
+        /// same mapping. When unset, behaviour is identical to prior versions.
+        /// </summary>
+        public Func<IPEndPoint, IPEndPoint> RemoteEndpointTranslator
+        {
+            get => _remoteEndpointTranslator;
+            set
+            {
+                _remoteEndpointTranslator = value;
+                if (_rtpIceChannel != null)
+                {
+                    _rtpIceChannel.RemoteEndpointTranslator = value;
+                }
+            }
         }
 
         /// <summary>
