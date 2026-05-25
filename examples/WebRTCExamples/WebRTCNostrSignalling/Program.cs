@@ -77,7 +77,6 @@ namespace WebRTCNostrSignalling
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
         private static NostrClient? nostrClient;
         private static RTCPeerConnection? peerConnection;
-        private static string? localPeerId;
         private static string? remotePeerId;
 
         // Nostr identity for this process.
@@ -92,6 +91,16 @@ namespace WebRTCNostrSignalling
             ECXOnlyPubKey.Create(Convert.FromHexString(remotePubKeyHex));
         private static bool isOfferer = false;
         private static bool signallingStarted = false; // Track if offer/answer exchange has started
+
+        // Pending remote ICE candidates received before the remote description
+        // has been applied. They get drained once setRemoteDescription
+        // succeeds. Without buffering, an IceCandidate that arrives at the
+        // offerer before the Answer (Nostr does not preserve ordering across
+        // events) would be applied to a peer connection with no remote
+        // description and the ICE checks against the answerer would never
+        // start.
+        private static readonly List<RTCIceCandidateInit> pendingRemoteCandidates = new();
+        private static bool remoteDescriptionApplied = false;
 
         static async Task Main(string[] args)
         {
@@ -112,10 +121,7 @@ namespace WebRTCNostrSignalling
             //localPrivateKey = ECPrivKey.Create(localPrivKeyBytes);
             //localPubKeyHex = localPrivateKey.CreateXOnlyPubKey().ToHex();
 
-            localPeerId = localPubKeyHex[..8];
-            Console.WriteLine($"Your Peer ID (short): {localPeerId}");
             Console.WriteLine($"Your Peer ID (full):  {localPubKeyHex}");
-            Console.WriteLine($"Private key: {localPrivateKey.ToHex()}");
 
             // Connect to Nostr relay
             Console.WriteLine($"Connecting to Nostr relay at {NOSTR_RELAY_URL}...");
@@ -205,7 +211,7 @@ namespace WebRTCNostrSignalling
             var filter = new NostrSubscriptionFilter
             {
                 Kinds = new[] { WEBRTC_SIGNAL_KIND },
-                ReferencedPublicKeys = new[] { localPubKeyHex! }
+                ReferencedPublicKeys = new[] { localPubKeyHex }
             };
 
             // Create subscription
@@ -221,16 +227,6 @@ namespace WebRTCNostrSignalling
                 logger.LogError($"Failed to create Nostr subscription: {ex.Message}");
             }
         }
-
-        // Pending remote ICE candidates received before the remote description
-        // has been applied. They get drained once setRemoteDescription
-        // succeeds. Without buffering, an IceCandidate that arrives at the
-        // offerer before the Answer (Nostr does not preserve ordering across
-        // events) would be applied to a peer connection with no remote
-        // description and the ICE checks against the answerer would never
-        // start.
-        private static readonly System.Collections.Generic.List<RTCIceCandidateInit> pendingRemoteCandidates = new();
-        private static bool remoteDescriptionApplied = false;
 
         private static void DrainPendingRemoteCandidates()
         {
@@ -257,14 +253,13 @@ namespace WebRTCNostrSignalling
             {
                 try
                 {
-                    logger.LogDebug($"Processing Nostr event: id={nostrEvent.Id?[..8]}..., kind={nostrEvent.Kind}");
+                    logger.LogDebug($"Processing Nostr event: id={nostrEvent.Id}..., kind={nostrEvent.Kind}");
 
                     if (string.IsNullOrEmpty(nostrEvent.Content))
                     {
                         logger.LogDebug("Nostr event has empty content, skipping");
                         continue;
                     }
-
 
                     // event.Content is the NIP-44 v2 base64 ciphertext.
                     // Inverse of the publish path: NIP-44 decrypt -> json.
@@ -276,7 +271,7 @@ namespace WebRTCNostrSignalling
                     catch (Exception decryptEx)
                     {
                         logger.LogWarning(decryptEx,
-                            $"NIP-44 decrypt failed (event may be from a different peer or use a different key); skipping event {nostrEvent.Id?[..8]}...");
+                            $"NIP-44 decrypt failed (event may be from a different peer or use a different key); skipping event {nostrEvent.Id}...");
                         continue;
                     }
 
@@ -289,15 +284,6 @@ namespace WebRTCNostrSignalling
                     }
 
                     logger.LogDebug($"Parsed signal message: type={message.Type}, from={message.PeerId}, to={message.TargetPeerId}");
-
-                    // Check if this message is for us
-                    if (message.TargetPeerId != localPeerId)
-                    {
-                        logger.LogDebug($"Message not for us (target={message.TargetPeerId}, local={localPeerId}), skipping");
-                        continue;
-                    }
-
-                    logger.LogInformation($"Received {message.Type} from peer {message.PeerId}");
 
                     // Process the message asynchronously with error handling
                     _ = Task.Run(async () =>
@@ -319,7 +305,7 @@ namespace WebRTCNostrSignalling
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning($"Failed to process Nostr event: {ex.Message}");
+                    logger.LogWarning($"Failed to process Nostr event {nostrEvent.Id}: {ex.Message}");
                 }
             }
         }
@@ -361,7 +347,6 @@ namespace WebRTCNostrSignalling
                         await SendSignalMessage(new NostrSignalMessage
                         {
                             Type = NostrSignalType.Answer,
-                            PeerId = localPeerId,
                             TargetPeerId = remotePeerId,
                             Sdp = answerSdp.sdp
                         });
@@ -467,7 +452,7 @@ namespace WebRTCNostrSignalling
                     new NostrEventTag
                     {
                         TagIdentifier = "p",
-                        Data = new List<string> { remotePubKeyHex! }
+                        Data = new List<string> { remotePubKeyHex }
                     }
                 }
             };
@@ -534,17 +519,6 @@ namespace WebRTCNostrSignalling
             var testPatternSource = new VideoTestPatternSource(vp8Codec);
             var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-            // Tracks are SendOnly because the C# side only ever sources
-            // media (a video test pattern + a music audio source) and has no
-            // sink to render received media into. SendRecv would generate an
-            // answer SDP whose direction is incompatible with a browser
-            // offer that sets the transceivers as recvonly:
-            //
-            //   InvalidAccessError: Failed to set remote answer sdp:
-            //   Incompatible send direction
-            //
-            // SendOnly answers the browser cleanly and also produces a
-            // self-consistent offer when the C# side initiates the call.
             MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
@@ -572,7 +546,6 @@ namespace WebRTCNostrSignalling
                     await SendSignalMessage(new NostrSignalMessage
                     {
                         Type = NostrSignalType.IceCandidate,
-                        PeerId = localPeerId,
                         TargetPeerId = remotePeerId,
                         Candidate = iceCandidate.candidate,
                         SdpMid = iceCandidate.sdpMid,
@@ -611,18 +584,6 @@ namespace WebRTCNostrSignalling
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
-                    // Detach the encoded-sample event handlers BEFORE awaiting
-                    // CloseVideo/CloseAudio. The audio source in particular
-                    // produces a packet every ~20 ms and there are typically
-                    // a handful already in flight when the peer connection
-                    // transitions to closed. Without this detach each one
-                    // racing past the close boundary fires
-                    //   pc.SendAudio -> RTPSession.SendRtpRaw
-                    //     -> [WRN] SendRtpRaw was called for a audio packet
-                    //              on a closed RTP session.
-                    // Video happens to be quieter (a frame every 33 ms at
-                    // 30 fps) so the symptom is mostly visible on audio,
-                    // but unsubscribe both for symmetry.
                     testPatternSource.OnVideoSourceEncodedSample -= pc.SendVideo;
                     audioSource.OnAudioSourceEncodedSample -= pc.SendAudio;
 
