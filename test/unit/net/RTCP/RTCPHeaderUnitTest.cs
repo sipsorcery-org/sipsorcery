@@ -15,6 +15,7 @@
 
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -32,8 +33,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetRTCPHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPHeader rtcpHeader = new RTCPHeader(RTCPReportTypesEnum.SR, 1);
             byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
@@ -49,8 +50,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RTCPHeaderRoundTripTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPHeader src = new RTCPHeader(RTCPReportTypesEnum.SR, 1);
             byte[] headerBuffer = src.GetHeader(17, 54443);

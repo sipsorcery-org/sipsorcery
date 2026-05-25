@@ -21,6 +21,7 @@ using DnsClient;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
@@ -43,8 +44,8 @@ namespace SIPSorcery.Net.IntegrationTests
         //[Fact]
         public async Task LookupAnyRecordTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 100, null, false, false);
             var result = await SIPDns.LookupClient.QueryAsync("dns.google", QueryType.ANY);
@@ -75,8 +76,8 @@ namespace SIPSorcery.Net.IntegrationTests
         //[Fact]
         public async Task LookupAnyRecordAsyncCacheTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //1.queue dns lookup for async resolution
             //DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 1, null, false, true);
@@ -112,8 +113,8 @@ namespace SIPSorcery.Net.IntegrationTests
         //[Fact(Skip = "Need to investigate why this fails on Appveyor Windows CI.")]
         public async Task LookupARecordMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DNSResponse result = DNSManager.Lookup("www.sipsorcery.com", QType.A, 10, null, false, false);
             var result = await SIPDns.LookupClient.QueryAsync("www.sipsorcery.com", QueryType.A);
@@ -135,8 +136,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupAAAARecordMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DNSResponse result = DNSManager.Lookup("www.google.com", QType.AAAA, 10, null, false, false);
             var result = await SIPDns.LookupClient.QueryAsync("www.google.com", QueryType.AAAA);
@@ -171,8 +172,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task LookupSrvRecordMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DNSResponse result = DNSManager.Lookup(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QType.SRV, 10, null, false, false);
             var result = await SIPDns.LookupClient.QueryAsync(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QueryType.SRV);
@@ -192,8 +193,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void LookupCurrentHostNameMethod()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string localHostname = System.Net.Dns.GetHostName();
 

@@ -16,6 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.IntegrationTests
@@ -41,8 +42,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CreateSelfSignedCertifcateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
 
@@ -58,8 +59,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GetCertifcateFingerprintUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             (var tlsCert, var pvtKey) = DtlsUtils.CreateSelfSignedTlsCert(crypto);
             Assert.NotNull(tlsCert);
@@ -81,8 +82,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void LoadSecretFromArchiveUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
 #if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -110,8 +111,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void BouncyCertFromCoreFxCert()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
 #if NETCOREAPP
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

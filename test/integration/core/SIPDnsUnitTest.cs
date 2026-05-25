@@ -20,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DnsClient;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.IntegrationTests
@@ -40,8 +41,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveHostFromServiceTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -58,8 +59,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task LookupLocalHostnameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -84,8 +85,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         {
             try
             {
-                logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-                logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+                logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+                logger.BeginScope(TestHelper.GetCurrentMethodName());
 
                 //SIPDNSManager.UseNAPTRLookups = true;
 
@@ -117,8 +118,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveNoSRVFromCacheTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -148,8 +149,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveWithSRVFromCacheTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -175,8 +176,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveSIPServiceAsyncTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
             //var result = await SIPDNSManager.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
@@ -195,8 +196,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveHostFromSecureSIPURITest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -216,8 +217,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task ResolveNonExistentServiceTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var result = await SIPDns.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sipsorceryx.com"), false, cts.Token);
@@ -231,8 +232,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task NonRespondingDNSServerTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var originalClient = SIPDns.LookupClient;
 
@@ -265,8 +266,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task LookupCNAMETest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             CancellationTokenSource cts = new CancellationTokenSource();
 

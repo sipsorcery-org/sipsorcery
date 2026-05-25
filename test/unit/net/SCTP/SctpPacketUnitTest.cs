@@ -16,6 +16,7 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -395,8 +396,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseUsrSctpAbortPacket()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = {
                 0x00, 0x07, 0x11, 0x5c, 0x93, 0xc9, 0xd9, 0x8a, 0x19, 0x82, 0x31, 0xc1, 0x06, 0x00, 0x00, 0x3b,

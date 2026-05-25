@@ -15,6 +15,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -35,8 +36,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CreateChannelUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var udpChan = new SIPUDPChannel(IPAddress.Any, 0);
 
@@ -53,8 +54,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public async Task InterChannelCommsUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var udpChan1 = new SIPUDPChannel(IPAddress.Any, 0);
             logger.LogDebug("Listening end point {ListeningSIPEndPoint}.", udpChan1.ListeningSIPEndPoint);
@@ -115,8 +116,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetDefaultContactURIUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var udpChan = new SIPUDPChannel(IPAddress.Any, 0);
 

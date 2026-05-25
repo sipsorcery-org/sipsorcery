@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionRenegotiationUnitTest.cs
 //
 // Description: Unit tests for WebRTC SDP renegotiation — adding tracks after
@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -41,8 +42,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RenegotiationOfferPreservesVideoMLineAndAppendsAudio()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPeerConnection offerer = new RTCPeerConnection(null);
             var videoTrack = new MediaStreamTrack(
@@ -122,8 +123,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RenegotiationOfferPreservesAudioMLineAndAppendsVideo()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPeerConnection offerer = new RTCPeerConnection(null);
             offerer.addTrack(new MediaStreamTrack(
@@ -190,8 +191,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RemoteDescriptionPreservedAfterAddTrack()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTCPeerConnection offerer = new RTCPeerConnection(null);
             offerer.addTrack(new MediaStreamTrack(
@@ -250,8 +251,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void MultiplexedDestinationEndPointPreservedOnRenegotiation()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPSession rtpSession = new RTPSession(new RtpSessionConfig
             {

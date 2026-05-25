@@ -38,8 +38,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public async Task CreateDialogueFromUasTxUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -96,8 +96,8 @@ dummy";
         [Fact]
         public async Task CheckRemoteSocketProxyReceivedUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -154,8 +154,8 @@ dummy";
         [Fact]
         public async Task CreateDialogueFromUacTxUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
@@ -214,8 +214,8 @@ dummy";
         [Fact]
         public async Task UacTxCheckRemoteSocketProxyReceivedUnitTestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 

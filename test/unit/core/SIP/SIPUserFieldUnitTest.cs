@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -27,8 +28,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParamsInUserPortionURITest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPUserField userField = SIPUserField.ParseSIPUserField("<sip:C=on;t=DLPAN@10.0.0.1:5060;lr>");
 
@@ -44,8 +45,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseSIPUserFieldUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var userField = SIPUserField.ParseSIPUserField("\"Jane Doe\" <sip:jane@doe.com>");
 
@@ -61,8 +62,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseSIPUserFieldNoAnglesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var userField = SIPUserField.ParseSIPUserField("sip:jane@doe.com");
 
@@ -78,8 +79,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseWithHeaderParametersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var userField = SIPUserField.ParseSIPUserField("\"Jane Doe\" <sip:jane@doe.com>p=1;q=2");
 
@@ -98,8 +99,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseWithHeaderAndURIParametersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var userField = SIPUserField.ParseSIPUserField("\"Jane Doe\" <sip:jane@doe.com;a=x;b=y;c=z>p=1;q=2");
 

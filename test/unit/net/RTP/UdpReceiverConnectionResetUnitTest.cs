@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: UdpReceiverConnectionResetUnitTest.cs
 //
 // Description: Unit tests verifying that a ConnectionReset (ICMP port
@@ -21,6 +21,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -110,8 +111,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ReceiveLoopSurvivesConnectionReset()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var recvSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             recvSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));

@@ -11,6 +11,7 @@
 
 using System;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -28,8 +29,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParsePortFromSocketTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int port = IPSocket.ParsePortFromSocket("localhost:5060");
             logger.LogDebug("port={Port}", port);
@@ -39,8 +40,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseHostFromSocketTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string host = IPSocket.ParseHostFromSocket("localhost:5060");
             logger.LogDebug("host={Host}", host);
@@ -50,8 +51,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void Test172IPRangeIsPrivate()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             Assert.False(IPSocket.IsPrivateAddress("172.15.1.1"), "Public IP address was mistakenly identified as private.");
             Assert.True(IPSocket.IsPrivateAddress("172.16.1.1"), "Private IP address was not correctly identified.");
@@ -62,8 +63,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string host = null;
             int port = 0;
@@ -159,8 +160,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseEndpointTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             System.Net.IPEndPoint ep = null;
 

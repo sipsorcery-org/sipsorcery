@@ -20,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -41,8 +42,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CreateInstanceUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPSession rtpSession = new RTPSession(true, true, true);
 
@@ -61,8 +62,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GetHostCandidatesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
 
@@ -86,8 +87,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void GetHostCandidatesForRTPBindUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var localAddress = NetServices.InternetDefaultAddress;
             var rtpIceChannel = new RtpIceChannel(localAddress, RTCIceComponent.rtp, null);
@@ -113,8 +114,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void SortChecklistUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
             rtpIceChannel.StartGathering();
@@ -145,8 +146,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task ChecklistConstructionUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
             rtpIceChannel.StartGathering();
@@ -181,8 +182,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task ChecklistProcessingUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
             rtpIceChannel.StartGathering();
@@ -216,8 +217,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task ChecklistProcessingToFailStateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannel = new RtpIceChannel(null, RTCIceComponent.rtp, null);
             rtpIceChannel.StartGathering();
@@ -257,8 +258,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task CheckSuccessfulConnectionForHostCandidatesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannelA = new RtpIceChannel();
             rtpIceChannelA.IsController = true;
@@ -308,8 +309,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task CheckStunServerGetServerRefelxiveCandidateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
@@ -354,8 +355,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task CheckTurnServerGetRelayCandidateUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             using (MockTurnServer mockTurnServer = new MockTurnServer())
             {
@@ -401,8 +402,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void CheckSuccessfulConnectionForRelayCandidatesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             using (MockTurnServer mockTurnServer = new MockTurnServer())
             {
@@ -472,8 +473,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task CheckPeerReflexiveReplacedByHostCandidatesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var rtpIceChannelA = new RtpIceChannel();
             rtpIceChannelA.IsController = true;
@@ -550,8 +551,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public async Task CheckIPAddressOnlyStunServerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
@@ -597,8 +598,8 @@ namespace SIPSorcery.Net.IntegrationTests
         [Fact]
         public void AddMulitpleIceServersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var iceServers = new List<RTCIceServer> 
             {

@@ -31,8 +31,8 @@ namespace SIPSorcery.SIP.UnitTests
         //[ExpectedException(typeof(XmlSchemaValidationException))]
         //public void InvalidXMLUnitTest()
         //{
-        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+        //    logger.BeginScope(TestHelper.GetCurrentMethodName());
 
         //    if (m_presenceSchema == null)
         //    {
@@ -70,8 +70,8 @@ namespace SIPSorcery.SIP.UnitTests
         ////[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
         //public void ValidXMLUnitTest()
         //{
-        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+        //    logger.BeginScope(TestHelper.GetCurrentMethodName());
 
         //    if (m_presenceSchema == null)
         //    {
@@ -113,8 +113,8 @@ namespace SIPSorcery.SIP.UnitTests
         //[Fact]
         //public void GetAsXMLStringUnitTest()
         //{
-        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+        //    logger.BeginScope(TestHelper.GetCurrentMethodName());
 
         //    SIPEventPresence presence = new SIPEventPresence(SIPURI.ParseSIPURI("sip:me@somewhere.com"));
         //    presence.Tuples.Add(new SIPEventPresenceTuple("1234", SIPEventPresenceStateEnum.open, SIPURI.ParseSIPURIRelaxed("test@test.com"), 0.8M));
@@ -130,8 +130,8 @@ namespace SIPSorcery.SIP.UnitTests
         //[Fact]
         //public void ParseFromXMLStringUnitTest()
         //{
-        //    logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+        //    logger.BeginScope(TestHelper.GetCurrentMethodName());
 
         //    string presenceXMLStr = "<?xml version='1.0' encoding='utf-16'?>" +
         //         "<presence entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:pidf'>" +

@@ -12,6 +12,7 @@
 using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -29,8 +30,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HasStringUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
@@ -42,8 +43,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void NotBeforeEndUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
@@ -55,8 +56,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringPositionWithEmptyFindUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0\r\n" +
@@ -81,8 +82,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0\r\n" +
@@ -107,8 +108,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexSIPInviteUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                  "INVITE sip:12345@sip.domain.com:5060;TCID-0 SIP/2.0\r\n" +
@@ -152,8 +153,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexNotFoundUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0\r\n" +
@@ -178,8 +179,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HexStrUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = new byte[] { 1, 2, 3 };
 
@@ -191,8 +192,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HexStrWithSeparatorUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = new byte[] { 1, 2, 3 };
 
