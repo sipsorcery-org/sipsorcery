@@ -23,8 +23,8 @@ namespace SIPSorcery.UnitTests.Net
             //  - the static method AbsSendTime() used by AbsSendTimeExtension.Marshal()
             //  - and a specific DateTimeOffset value
 
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             
             var extensionId = 2; // Id / Extmap of the extension
 
@@ -42,8 +42,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void RTPHeaderExtensionAudioLevel()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var extensionId = 2; // Id / Extmap of the extension
             var extension = new AudioLevelExtension(extensionId);
@@ -71,8 +71,8 @@ namespace SIPSorcery.UnitTests.Net
         [Fact]
         public void RTPHeaderExtensionCVO()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var extensionId = 2; // Id / Extmap of the extension
             var extension = new CVOExtension(extensionId);

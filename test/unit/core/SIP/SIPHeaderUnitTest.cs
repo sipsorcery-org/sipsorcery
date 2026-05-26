@@ -11,6 +11,7 @@
 
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -30,8 +31,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseXTenHeadersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenInviteHeaders =
                 "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
@@ -78,8 +79,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskRecordRouteHeadersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenInviteHeaders =
                 "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A=" + m_CRLF +
@@ -111,8 +112,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAMulitLineHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string mulitLineHeader =
                 "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A=" + m_CRLF +
@@ -155,8 +156,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAuthenticationRequiredHeadersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string authReqdHeaders =
                 "SIP/2.0 407 Proxy Authentication Required" + m_CRLF +
@@ -185,8 +186,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseNoViaHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string noViaHeaders =
                 "SIP/2.0 407 Proxy Authentication Required" + m_CRLF +
@@ -212,8 +213,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LowerCaseExpiresUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "Via: SIP/2.0/UDP 192.168.1.32:10254;branch=z9hG4bK-d87543-eb7c9f44883c5955-1--d87543-;rport;received=89.100.104.191" + m_CRLF +
@@ -241,8 +242,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void HuaweiRegisterUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
@@ -273,8 +274,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleContactHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
@@ -306,8 +307,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ExtractHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "From: <sip:10000579@200.170.136.196>;tag=0477183750" + m_CRLF +
@@ -338,8 +339,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "\"User\" <sip:user@domain.com>;tag=abcdef";
 
@@ -356,8 +357,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoTagTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "User <sip:user@domain.com>";
 
@@ -371,8 +372,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderSocketDomainTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "User <sip:user@127.0.0.1:5090>";
 
@@ -386,8 +387,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderSocketDomainAndTagTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "User <sip:user@127.0.0.1:5090>;tag=abcdef";
 
@@ -401,8 +402,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoNameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "<sip:user@domaintest.com>";
 
@@ -416,8 +417,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoAngleBracketsTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "sip:user@domaintest.com";
 
@@ -431,8 +432,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoSpaceTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "UNAVAILABLE<sip:user@domaintest.com:5060>;tag=abcd";
 
@@ -446,8 +447,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseFromHeaderNoUserTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testFromHeader = "<sip:sip.domain.com>;tag=as6900b876";
 
@@ -461,8 +462,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "User <sip:user@domain.com>;tag=abcdef";
 
@@ -476,8 +477,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMSCToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "sip:xxx@127.0.110.30;tag=AZHf2-ZMfDX0";
 
@@ -493,8 +494,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ToStringToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "User <sip:user@domain.com>;tag=abcdef";
 
@@ -513,8 +514,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ChangeTagToHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testToHeader = "User <sip:user@domain.com>;tag=abcdef";
 
@@ -534,8 +535,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseByeToHeader()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testHeader = "\"Joe Bloggs\" <sip:joe@sip.blueface.ie>;tag=0013c339acec34652d988c7e-4fddcdef";
 
@@ -551,8 +552,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAuthHeaderUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPAuthenticationHeader authHeader = SIPAuthenticationHeader.ParseSIPAuthenticationHeader(SIPAuthorisationHeadersEnum.ProxyAuthorization, "Digest realm=\"o-fone.com\",nonce=\"mv1keFTRX4yYVsHb/E+rviOflIurIw\",algorithm=MD5,qop=\"auth\",username=\"joe.bloggs\", response=\"1234\",uri=\"sip:o-fone.com\"");
 
@@ -569,8 +570,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MissingBracketsRouteTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute newRoute = new SIPRoute("sip:127.0.0.1:5060");
 
@@ -582,8 +583,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("<sip:127.0.0.1:5060;lr>");
 
@@ -597,8 +598,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SetLooseRouteTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("<sip:127.0.0.1:5060>");
             route.IsStrictRouter = false;
@@ -613,8 +614,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RemoveLooseRouterTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("<sip:127.0.0.1:5060;lr>");
             route.IsStrictRouter = true;
@@ -629,8 +630,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteWithDisplayNameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("12345656 <sip:127.0.0.1:5060;lr>");
 
@@ -646,8 +647,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteWithDoubleQuotedDisplayNameTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPRoute route = SIPRoute.ParseSIPRoute("\"Joe Bloggs\" <sip:127.0.0.1:5060;lr>");
 
@@ -661,8 +662,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRouteWithUserPortionTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string routeStr = "<sip:0033820600000@127.0.0.1:5060;lr;transport=udp>";
             SIPRoute route = SIPRoute.ParseSIPRoute(routeStr);
@@ -681,8 +682,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseSIPRouteSetTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string routeSetString = "<sip:127.0.0.1:5434;lr>,<sip:10.0.0.1>,<sip:192.168.0.1;ftag=12345;lr=on>";
             SIPRouteSet routeSet = SIPRouteSet.ParseSIPRouteSet(routeSetString);
@@ -705,8 +706,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AdjustReceivedViaHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -734,8 +735,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AdjustReceivedCorrectAlreadyViaHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -762,8 +763,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRequireAndSupportedExtensionsTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteHeaders =
                 "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
@@ -795,8 +796,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRSeqHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string ringResponse =
                 "SIP/2.0 180 Ringing" + m_CRLF +
@@ -823,8 +824,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseRAckHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string prackRequest =
                 "PRACK sip:127.0.0.1 SIP/2.0" + m_CRLF +
@@ -850,8 +851,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseServerHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
             var expectedServerValue = "SomeServerValue";
 
             string inviteWithServerHeader =

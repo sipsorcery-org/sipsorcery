@@ -27,6 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.IntegrationTests
@@ -50,8 +51,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Trait("Category", "IPv6")]
         public async Task IPv6LoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             if (!Socket.OSSupportsIPv6)
             {
@@ -107,8 +108,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IPv4LoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -158,8 +159,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Trait("Category", "IPv6")]
         public async Task IPv6TcpLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             if (!Socket.OSSupportsIPv6)
             {
@@ -213,8 +214,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IPv4TcpLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -269,8 +270,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IPv4TcpLoopbackConsecutiveSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // This test fails on WSL and Linux due to closed TCP sockets going into the TIME_WAIT state.
             // See comment in SIPTCPChannel.OnSIPStreamDisconnected for additional info.
@@ -332,8 +333,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Trait("Category", "IPv6")]
         public async Task IPv6TlsLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             if (!Socket.OSSupportsIPv6)
             {
@@ -407,8 +408,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IPv4TlsLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -486,8 +487,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task TcpTrickleReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -591,8 +592,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task WebSocketLoopbackSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9000);
             var clientChannel = new SIPClientWebSocketChannel();
@@ -636,8 +637,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task WebSocketLoopbackLargeSendReceiveTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9001);
             var clientChannel = new SIPClientWebSocketChannel();
@@ -690,8 +691,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         public async Task TlsDoesNotGetStuckOnIncompleteTcpConnection()
         {
             // Arrange
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();

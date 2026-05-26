@@ -11,6 +11,7 @@
 
 using System.Net;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -29,8 +30,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CreateTransactionUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipRequestStr =
                 "INVITE sip:023434211@213.200.94.182;switchtag=902888 SIP/2.0" + m_CRLF +

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionRenegotiationUnitTest.cs
 //
 // Description: Unit tests for SDP renegotiation scenarios, specifically
@@ -17,6 +17,7 @@ using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
+using SIPSorcery.UnitTests;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
@@ -43,8 +44,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void VideoRejectedByReInviteClosesRtcpSession()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // --- Local session with audio + video ---
             RTPSession rtpSession = new RTPSession(false, false, false);
@@ -127,8 +128,8 @@ a=rtpmap:96 VP8/90000";
         [Fact]
         public void BothStreamsActiveAfterReInviteKeepsRtcpRunning()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             RTPSession rtpSession = new RTPSession(false, false, false);
 

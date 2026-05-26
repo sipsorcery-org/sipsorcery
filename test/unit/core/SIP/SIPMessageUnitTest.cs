@@ -12,6 +12,7 @@
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -31,8 +32,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseResponseUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + CRLF +
@@ -57,8 +58,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseResponseWithBodyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + CRLF +
@@ -100,8 +101,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseResponseNoEndDoubleCRLFUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + CRLF +
@@ -126,8 +127,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseCiscoOptionsResponseUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + CRLF +
@@ -168,8 +169,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -200,8 +201,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestExtraSpacingTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -232,8 +233,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -265,8 +266,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestExtraSpacingTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -295,8 +296,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveNoContentLengthHeaderRequestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -323,8 +324,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveSingleRequestTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -430,8 +431,8 @@ CRLF +
         [Fact]
         public void ParseMultiRequestAndResponseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testReceive =
             "SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -497,8 +498,8 @@ CRLF +
         [Fact]
         public void ParseRequestOneByteMissingTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testReceive =
             "SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -528,8 +529,8 @@ CRLF +
         [Fact]
         public void ParseRequestOneByteExtraTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testReceive =
             "SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -561,8 +562,8 @@ CRLF +
         [Fact]
         public void ParseRequestBytesReadShortTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testReceive =
             "SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -592,8 +593,8 @@ CRLF +
         [Fact]
         public void ParseRequestWithLeadingNATKeepAliveBytesTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testReceive =
             "    SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -628,8 +629,8 @@ CRLF +
         [Fact]
         public void TestProcessRecevieWithBytesToSkipTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -660,8 +661,8 @@ CRLF +
         [Fact]
         public void IsPingUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] buffer = new byte[] { 0x0d, 0x0a };//"\r\n"
             Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer \\r\\n is not a Ping message.");
@@ -699,8 +700,8 @@ CRLF +
         [Fact]
         public void ParseWithDefaultEncodingPersistsEndPoints()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
     "SIP/2.0 100 Trying" + CRLF +

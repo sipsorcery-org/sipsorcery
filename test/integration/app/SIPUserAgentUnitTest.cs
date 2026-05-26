@@ -51,8 +51,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task BlindTransferUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
@@ -106,8 +106,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task BlindTransferCancelUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
@@ -165,8 +165,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task HangupUserAgentUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             MockSIPChannel mockChannel = new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0));
@@ -232,8 +232,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IncomingCallNoSdpUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
@@ -272,8 +272,8 @@ namespace SIPSorcery.SIP.IntegrationTests
         [Fact]
         public async Task IncomingCallNoSdpWithACKUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
@@ -337,8 +337,8 @@ a=sendrecv" + m_CRLF + m_CRLF;
         [Fact]
         public async Task AnswerAudioOnlyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             SIPUserAgent userAgent = new SIPUserAgent(transport, null);
@@ -378,8 +378,8 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -422,8 +422,8 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithEmptyContentUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -468,8 +468,8 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithWrongContentFailsUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -512,8 +512,8 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithCustomContentUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -563,8 +563,8 @@ a=sendrecv";
         [Fact]
         public async Task PlaceCallUsingSDPDescriptorWithCustomMultiPartContentUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -632,8 +632,8 @@ Content-type: text/plain; charset=us-ascii
         [Fact]
         public async Task PlaceCallMismatchedCapabilitiesUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -676,8 +676,8 @@ Content-type: text/plain; charset=us-ascii
         [Fact]
         public async Task HandleMissingAudioTrackOnAnswerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             SIPUserAgent userAgent = new SIPUserAgent(transport, null);
@@ -723,8 +723,8 @@ a=sendrecv";
         [Fact]
         public async Task HandleInvalidSdpPortOnAnswerUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport transport = new SIPTransport();
             SIPUserAgent userAgent = new SIPUserAgent(transport, null);
@@ -771,8 +771,8 @@ a=sendrecv";
         [Fact]
         public async Task CheckCanPlaceCallUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // This transport will act as the call receiver. It allows the test to provide a 
             // tailored response to an incoming call.
@@ -838,8 +838,8 @@ a=sendrecv";
         [Fact]
         public async Task HandleInvalidSdpPortOnPlaceCallUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // This transport will act as the call receiver. It allows the test to provide a 
             // tailored response to an incoming call.
@@ -914,8 +914,8 @@ a=sendrecv";
         [Fact]
         public async Task AttendedTransfereeUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // User agents A and B can use the same transport as they don't auto-answer incoming calls.
             SIPTransport sipTransportCaller = new SIPTransport();
@@ -1000,8 +1000,8 @@ a=sendrecv";
         [Fact]
         public async Task CancelCallUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport aliceTransport = new SIPTransport();
             aliceTransport.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
@@ -1037,8 +1037,8 @@ a=sendrecv";
         [Fact]
         public async Task HangupOutgoingCallUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -1086,8 +1086,8 @@ a=sendrecv";
         [Fact]
         public async Task HangupIncomingCallUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport serverTransport = new SIPTransport();
             SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);

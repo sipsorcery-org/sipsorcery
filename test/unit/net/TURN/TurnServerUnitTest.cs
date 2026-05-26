@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: TurnServerUnitTest.cs
 //
 // Description: Unit tests for TurnServer (RFC 5766).
@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -160,7 +161,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task AllocateReturns401WithoutCredentials()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -200,7 +201,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task AuthenticatedAllocateSucceeds()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -245,7 +246,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task WrongPasswordFails()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -277,7 +278,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RefreshExtendsLifetime()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -312,7 +313,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task RefreshZeroDeletesAllocation()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -340,7 +341,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task CreatePermissionSucceeds()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -368,7 +369,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ChannelBindSucceeds()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -405,7 +406,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task SendIndicationRelaysData()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -449,7 +450,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ChannelDataRelaysViaBinding()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -500,7 +501,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task UdpRelayBackToClient()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -573,7 +574,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task BindingRequestReturnsAddress()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var (server, port) = CreateTurnServer();
             using var client = await ConnectTcpClient(port);
@@ -598,7 +599,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public async Task ExpiredAllocationCleanedUp()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             // Create server with very short lifetime
             int testPort;

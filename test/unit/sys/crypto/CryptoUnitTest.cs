@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -27,8 +28,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void SampleTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int initRandomNumber = Crypto.GetRandomInt();
             logger.LogDebug("Random int = {initRandomNumber}.", initRandomNumber);
@@ -38,8 +39,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void CallRandomNumberWebServiceUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             logger.LogDebug("Random number = {RandomNumber}", Crypto.GetRandomInt());
 
@@ -49,8 +50,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetRandomNumberTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             logger.LogDebug("Random number = {RandomNumber}", Crypto.GetRandomInt());
 
@@ -60,8 +61,8 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetOneHundredRandomNumbersTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             for (int index = 0; index < 100; index++)
             {

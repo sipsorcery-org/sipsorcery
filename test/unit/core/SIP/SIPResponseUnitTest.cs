@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Ocsp;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -40,8 +41,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskTRYINGUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + m_CRLF +
@@ -67,8 +68,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskOKUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -112,8 +113,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseOptionsBodyResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg = "SIP/2.0 200 OK" + m_CRLF +
                 "Via: SIP/2.0/UDP 213.168.225.133:5060;branch=z9hG4bK10a1fab0" + m_CRLF +
@@ -149,8 +150,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseForbiddenResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg = "SIP/2.0 403 Forbidden" + m_CRLF +
                 "Via: SIP/2.0/UDP 192.168.1.1;branch=z9hG4bKbcb78f72d221beec" + m_CRLF +
@@ -174,8 +175,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseOptionsResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
             "SIP/2.0 200 OK" + m_CRLF +
@@ -213,8 +214,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMissingCSeqOptionsResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -242,8 +243,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMSCOkResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -285,8 +286,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMultipleContactsResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -319,8 +320,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMultiLineRecordRouteResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -372,8 +373,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseMultiLineViaResponse()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -419,8 +420,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void BinarySerialisationRoundTripTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             SIPRequest req = SIPRequest.GetRequest(SIPMethodsEnum.MESSAGE, uri);
@@ -555,8 +556,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ChineseCharactersParseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipResponse =
                 "SIP/2.0 200 Ok" + m_CRLF +

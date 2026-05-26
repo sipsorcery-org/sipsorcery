@@ -17,6 +17,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -55,8 +56,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MatchOnRequestAndResponseTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
@@ -98,8 +99,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "txintegration")]
         public async Task AckRecognitionUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport clientTransport = null;
             SIPTransport serverTransport = null;
@@ -178,8 +179,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AckRecognitionIIUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;     // Client side of the INVITE.
@@ -226,8 +227,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CancelledInviteWithoutCancelledAt_ExpiresUsingCreatedFallback()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;
@@ -252,8 +253,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CancelledInviteWithRecentCancelledAt_IsNotExpired()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;

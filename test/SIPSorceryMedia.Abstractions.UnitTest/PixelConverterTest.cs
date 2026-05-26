@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: PixelConverterTest.cs
 //
 // Description: Unit tests for the pixel conversion methods.
@@ -110,7 +110,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         public unsafe void ConvertKnownNV12ToBGRTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
             int height = 480;
@@ -285,7 +285,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         public unsafe void ConvertNV12ToI420Test()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
             int height = 480;
@@ -316,7 +316,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         public unsafe void ConvertI420ToNV12Test()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
             int height = 480;
@@ -347,7 +347,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         public void RoundtripNV12ToI420Test()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
             int height = 480;
@@ -372,7 +372,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         public void RoundtripI420ToNV12Test()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
             int height = 480;

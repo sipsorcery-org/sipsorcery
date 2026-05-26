@@ -37,8 +37,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseXtenINVITEUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -88,8 +88,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MalformedContactHeaderUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
             "REGISTER sip:sip.sipsorcery.com SIP/2.0" + m_CRLF +
@@ -112,8 +112,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskACKUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "ACK sip:303@213.168.225.133 SIP/2.0" + m_CRLF +
@@ -142,8 +142,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseCiscoACKUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "ACK sip:303@213.168.225.133:5061 SIP/2.0" + m_CRLF +
@@ -175,8 +175,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseXtenByeUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "BYE sip:303@213.168.225.133 SIP/2.0" + m_CRLF +
@@ -205,8 +205,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseAsteriskBYEUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "BYE sip:bluesipd@192.168.1.2:5065 SIP/2.0" + m_CRLF +
@@ -235,8 +235,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void TopRouteUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "BYE sip:bluesipd@192.168.1.2:5065 SIP/2.0" + m_CRLF +
@@ -262,8 +262,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SubscribeRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SUBSCRIBE sip:0123456@127.0.0.1 SIP/2.0" + m_CRLF +
@@ -293,8 +293,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SpaceInNamesRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0" + m_CRLF +
@@ -323,8 +323,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void DodgyAastraRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -347,8 +347,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void NetgearInviteRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:12345@sip.domain.com:5060;TCID-0 SIP/2.0" + m_CRLF +
@@ -393,8 +393,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RTCRegisterRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -419,8 +419,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CiscoRegisterRequest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:194.213.29.11 SIP/2.0" + m_CRLF +
@@ -442,8 +442,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AuthenticatedRegisterRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:blueface.ie SIP/2.0" + m_CRLF +
@@ -477,8 +477,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MicrosoftMessengerRegisterRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:aaronmsn SIP/2.0" + m_CRLF +
@@ -503,8 +503,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CreateBranchIdUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -537,8 +537,8 @@ namespace SIPSorcery.SIP.UnitTests
         /*[Test]
         public void LoopDetectUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
                
             string sipMsg = 
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -570,8 +570,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LooseRouteForProxyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -604,8 +604,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LooseRouteForProxyMultipleContactsUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -638,8 +638,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LooseRouteNotForProxyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -670,8 +670,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void StrictRoutePriorToProxyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:82.195.148.216:5062;lr SIP/2.0" + m_CRLF +
@@ -707,8 +707,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void StrictRouteAfterProxyUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -745,8 +745,8 @@ namespace SIPSorcery.SIP.UnitTests
         //[Ignore()]
         public void LooseRouteForProxyHostnameUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -778,8 +778,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SpuriousStartCharsInResponseUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             // This is an example of a malformed response received in the wild. It matches the bnf format for a request,
             // if the format of the SIP URI is not taken into account.
@@ -805,8 +805,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RegisterZeroExpiryUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "REGISTER sip:213.200.94.181 SIP/2.0" + m_CRLF +
@@ -831,8 +831,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AvayaInviteUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:194.213.29.100:5060 SIP/2.0" + m_CRLF +
@@ -892,8 +892,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void LocalphoneInviteUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:shebeen@sip.mysipswitch.com;switchtag=134308 SIP/2.0" + m_CRLF +
@@ -933,8 +933,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleRouteHeadersUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "BYE sip:bluesipd@192.168.1.2:5065 SIP/2.0" + m_CRLF +
@@ -975,8 +975,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SinologicInvalidInviteUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "INVITE sip:0447507533@69.59.142.213 SIP/2.0" + m_CRLF +
@@ -1003,8 +1003,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseACKWithDomainNameInViaTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "ACK sip:67.222.131.147 SIP/2.0" + m_CRLF +
@@ -1032,8 +1032,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ToStringSerialisationTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
@@ -1061,8 +1061,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CopyToStringSerialisationTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
@@ -1092,8 +1092,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParsedToStringSerialisationTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipRequestStr = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
@@ -1128,8 +1128,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void BinarySerialisationRoundTripTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             SIPRequest req = SIPRequest.GetRequest(SIPMethodsEnum.MESSAGE, uri);
@@ -1167,8 +1167,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AuthenticateInviteRequestUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:100@sipsorcery.cloud SIP/2.0
 Via: SIP/2.0/UDP 192.168.0.50:50508;branch=z9hG4bK990378180248496197e9b88881ea227c;rport
@@ -1212,8 +1212,8 @@ a=ssrc:172341600 cname:ee6f407e-d848-44b3-a451-e8cf2d0e22d9
         [Fact]
         public void SupportMultiplePAIHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
 Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
@@ -1249,8 +1249,8 @@ Content-Length: 0
         [Fact]
         public void SupportMultipleHistoryInfoHeaderWithCommaTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
 Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
@@ -1284,8 +1284,8 @@ Content-Length: 0
         [Fact]
         public void SupportMultiplePAIHeaderWithCommaTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
 Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
@@ -1320,8 +1320,8 @@ Content-Length: 0
         [Fact]
         public void GeneratePAIHeadersOnToStringTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
 
 
@@ -1364,8 +1364,8 @@ Content-Length: 0
         [Fact]
         public void HistoryInfoHeaderSortedTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
 Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
@@ -1401,8 +1401,8 @@ Content-Length: 0
         [Fact]
         public void GenerateHistoryInfoHeadersOnToStringTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
 
 
@@ -1442,8 +1442,8 @@ Content-Length: 0
         [Fact]
         public void DiversionHeaderTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
 Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
@@ -1479,8 +1479,8 @@ Content-Length: 0
         [Fact]
         public void DiversionHeaderInOneLineTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string inviteReq = @"INVITE sip:+4199999999@10.0.0.1;user=phone SIP/2.0
 Via: SIP/2.0/UDP 10.0.0.1:5060;branch=yxxxcvvvbbbnnmm1;X-DispMsg=1423
@@ -1515,8 +1515,8 @@ Content-Length: 0
         [Fact]
         public void GenerateDiversionHeadersOnToStringTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
 
 
@@ -1560,8 +1560,8 @@ Content-Length: 0
         [Fact]
         public void ParseSERVICEUnitTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sipMsg =
                 "SERVICE sip:user1@something.com SIP/2.0" + m_CRLF +

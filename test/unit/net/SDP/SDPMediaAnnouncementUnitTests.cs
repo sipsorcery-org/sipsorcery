@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.UnitTests;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -22,8 +23,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void InvalidPortInRemoteOfferTest()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             var remoteOffer = new SDP();
 

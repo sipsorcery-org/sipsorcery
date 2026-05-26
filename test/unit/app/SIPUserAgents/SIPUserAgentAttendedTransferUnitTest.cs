@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgentAttendedTransferUnitTest.cs
 //
 // Description: Unit tests for SIPUserAgent attended transfer handling, verifying
@@ -182,7 +182,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public async Task NonMatchingAgentIgnoresReplacesInvite()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var channelEndPoint = new IPEndPoint(IPAddress.Loopback, 6060);
             var channel = new RecordingMockSIPChannel(channelEndPoint);
@@ -257,7 +257,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public async Task MatchingAgentProcessesReplacesInvite()
         {
-            logger.LogDebug("--> {MethodName}", System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
             var channelEndPoint = new IPEndPoint(IPAddress.Loopback, 6061);
             var channel = new RecordingMockSIPChannel(channelEndPoint);
