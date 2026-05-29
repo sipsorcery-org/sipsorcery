@@ -25,22 +25,22 @@ namespace SIPSorcery.Sys
             if (number > 1000000000000)
             {
                 double teraNumber = Math.Round((double)(number / (double)100000000000), decimalPlaces);
-                return teraNumber.ToString() + "T";
+                return $"{teraNumber}T";
             }
             if (number > 1000000000)
             {
                 double gigaNumber = Math.Round((double)(number / (double)100000000), decimalPlaces);
-                return gigaNumber.ToString() + "G";
+                return $"{gigaNumber}G";
             }
             else if (number > 1000000)
             {
                 double kiloNumber = Math.Round((double)(number / (double)1000000), decimalPlaces);
-                return kiloNumber.ToString() + "M";
+                return $"{kiloNumber}M";
             }
             else if (number > 1000)
             {
                 double kiloNumber = Math.Round((double)(number / (double)1000), decimalPlaces);
-                return kiloNumber.ToString() + "k";
+                return $"{kiloNumber}k";
             }
             else
             {
@@ -53,26 +53,26 @@ namespace SIPSorcery.Sys
             if (number > 1099511627776)
             {
                 double teraNumber = Math.Round((double)(number / (double)1099511627776), decimalPlaces);
-                return teraNumber.ToString() + "T" + suffix;
+                return $"{teraNumber}T{suffix}";
             }
             if (number > 1073741824)
             {
                 double gigaNumber = Math.Round((double)(number / (double)1073741824), decimalPlaces);
-                return gigaNumber.ToString() + "G" + suffix;
+                return $"{gigaNumber}G{suffix}";
             }
             else if (number > 1048576)
             {
                 double kiloNumber = Math.Round((double)(number / (double)1048576), decimalPlaces);
-                return kiloNumber.ToString() + "M" + suffix;
+                return $"{kiloNumber}M{suffix}";
             }
             else if (number > 1024)
             {
                 double kiloNumber = Math.Round((double)(number / (double)1024), decimalPlaces);
-                return kiloNumber.ToString() + "K" + suffix;
+                return $"{kiloNumber}K{suffix}";
             }
             else
             {
-                return Math.Round((double)number, decimalPlaces).ToString() + suffix;
+                return $"{Math.Round((double)number, decimalPlaces)}{suffix}";
             }
         }
 
