@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Polyfills;
 using SIPSorcery.Sys;
 // ReSharper disable InconsistentNaming
 
@@ -160,8 +161,8 @@ namespace SIPSorcery.SIP
         public static bool IsAllowedScheme(string schemeType)
         {
             return Enum.TryParse<SIPSchemesEnum>(schemeType, true, out _);
-            }
-            }
+        }
+    }
 
     /// <summary>
     /// A list of the transport layer protocols that are supported (the network layers
@@ -206,7 +207,7 @@ namespace SIPSorcery.SIP
         public static bool IsAllowedProtocol(string protocol)
         {
             return Enum.TryParse<SIPProtocolsEnum>(protocol, true, out _);
-            }
+        }
 
         /// <summary>
         /// Returns true for connectionless transport protocols, such as UDP, and false for
@@ -621,33 +622,39 @@ namespace SIPSorcery.SIP
 
             if (String.IsNullOrEmpty(extensionList) == false)
             {
-                string[] extensions = extensionList.Trim().Split(',');
+                var extensions = extensionList.AsSpan().Trim();
 
-                foreach (string extension in extensions)
+                foreach (var extensionRange in extensions.Split(','))
                 {
-                    if (String.IsNullOrEmpty(extension) == false)
+                    var extension = extensions[extensionRange];
+
+                    if (!extension.IsEmpty)
                     {
-                        string trimmedExtension = extension.Trim().ToLower();
-                        switch (trimmedExtension)
+                        var trimmedExtension = extension.Trim();
+                        if (trimmedExtension.Equals(PRACK, StringComparison.OrdinalIgnoreCase))
                         {
-                            case PRACK:
-                                knownExtensions.Add(SIPExtensions.Prack);
-                                break;
-                            case NO_REFER_SUB:
-                                knownExtensions.Add(SIPExtensions.NoReferSub);
-                                break;
-                            case REPLACES:
-                                knownExtensions.Add(SIPExtensions.Replaces);
-                                break;
-                            case SIPREC:
-                                knownExtensions.Add(SIPExtensions.SipRec);
-                                break;
-                            case MULTIPLE_REFER:
-                                knownExtensions.Add(SIPExtensions.MultipleRefer);
-                                break;
-                            default:
-                                unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
-                                break;
+                            knownExtensions.Add(SIPExtensions.Prack);
+                        }
+                        else if (trimmedExtension.Equals(NO_REFER_SUB, StringComparison.OrdinalIgnoreCase))
+                        {
+                            knownExtensions.Add(SIPExtensions.NoReferSub);
+                        }
+                        else if (trimmedExtension.Equals(REPLACES, StringComparison.OrdinalIgnoreCase))
+                        {
+                            knownExtensions.Add(SIPExtensions.Replaces);
+                        }
+                        else if (trimmedExtension.Equals(SIPREC, StringComparison.OrdinalIgnoreCase))
+                        {
+                            knownExtensions.Add(SIPExtensions.SipRec);
+                        }
+                        else if (trimmedExtension.Equals(MULTIPLE_REFER, StringComparison.OrdinalIgnoreCase))
+                        {
+                            knownExtensions.Add(SIPExtensions.MultipleRefer);
+                        }
+                        else
+                        {
+                            var extensionValue = trimmedExtension.ToString();
+                            unknownExtensions += (unknownExtensions != null) ? $",{extensionValue}" : extensionValue;
                         }
                     }
                 }

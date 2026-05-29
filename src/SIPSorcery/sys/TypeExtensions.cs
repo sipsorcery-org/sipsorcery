@@ -206,12 +206,6 @@ namespace SIPSorcery.Sys
             return buffer.ToArray();
         }
 
-        public static void Deconstruct<T1, T2>(this KeyValuePair<T1, T2> tuple, out T1 key, out T2 value)
-        {
-            key = tuple.Key;
-            value = tuple.Value;
-        }
-
         public static bool IsPrivate(this IPAddress address)
         {
             return IPSocket.IsPrivateAddress(address.ToString());

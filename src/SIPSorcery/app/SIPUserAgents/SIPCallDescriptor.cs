@@ -160,7 +160,7 @@ namespace SIPSorcery.SIP.App
         public SIPCallDescriptor(ISIPAccount toSIPAccount, string uri, string fromHeader, string contentType, string content)
         {
             ToSIPAccount = toSIPAccount;
-            Uri = uri ?? toSIPAccount.SIPUsername + "@" + toSIPAccount.SIPDomain;
+            Uri = uri ?? $"{toSIPAccount.SIPUsername}@{toSIPAccount.SIPDomain}";
             From = fromHeader;
             ContentType = contentType;
             Content = content;
@@ -291,14 +291,14 @@ namespace SIPSorcery.SIP.App
                 options = options.Trim('[', ']');
 
                 // Parse delay time option.
-                Match delayCallMatch = Regex.Match(options, DELAY_CALL_OPTION_KEY + @"=(?<delaytime>\d+)");
+                Match delayCallMatch = Regex.Match(options, $@"{DELAY_CALL_OPTION_KEY}=(?<delaytime>\d+)");
                 if (delayCallMatch.Success)
                 {
                     int.TryParse(delayCallMatch.Result("${delaytime}"), out DelaySeconds);
                 }
 
                 // Parse redirect mode option.
-                Match redirectModeMatch = Regex.Match(options, REDIRECT_MODE_OPTION_KEY + @"=(?<redirectmode>\w)");
+                Match redirectModeMatch = Regex.Match(options, $@"{REDIRECT_MODE_OPTION_KEY}=(?<redirectmode>\w)");
                 if (redirectModeMatch.Success)
                 {
                     string redirectMode = redirectModeMatch.Result("${redirectmode}");
@@ -321,42 +321,42 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse call duration limit option.
-                Match callDurationMatch = Regex.Match(options, CALL_DURATION_OPTION_KEY + @"=(?<callduration>\d+)");
+                Match callDurationMatch = Regex.Match(options, $@"{CALL_DURATION_OPTION_KEY}=(?<callduration>\d+)");
                 if (callDurationMatch.Success)
                 {
                     int.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
                 }
 
                 // Parse the mangle option.
-                Match mangleMatch = Regex.Match(options, MANGLE_MODE_OPTION_KEY + @"=(?<mangle>\w+)");
+                Match mangleMatch = Regex.Match(options, $@"{MANGLE_MODE_OPTION_KEY}=(?<mangle>\w+)");
                 if (mangleMatch.Success)
                 {
                     bool.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
                 }
 
                 // Parse the From header display name option.
-                Match fromDisplayNameMatch = Regex.Match(options, FROM_DISPLAY_NAME_KEY + @"=(?<displayname>.+?)(,|$)");
+                Match fromDisplayNameMatch = Regex.Match(options, $@"{FROM_DISPLAY_NAME_KEY}=(?<displayname>.+?)(,|$)");
                 if (fromDisplayNameMatch.Success)
                 {
                     FromDisplayName = fromDisplayNameMatch.Result("${displayname}").Trim();
                 }
 
                 // Parse the From header URI username option.
-                Match fromUsernameNameMatch = Regex.Match(options, FROM_USERNAME_KEY + @"=(?<username>.+?)(,|$)");
+                Match fromUsernameNameMatch = Regex.Match(options, $@"{FROM_USERNAME_KEY}=(?<username>.+?)(,|$)");
                 if (fromUsernameNameMatch.Success)
                 {
                     FromURIUsername = fromUsernameNameMatch.Result("${username}").Trim();
                 }
 
                 // Parse the From header URI host option.
-                Match fromURIHostMatch = Regex.Match(options, FROM_HOST_KEY + @"=(?<host>.+?)(,|$)");
+                Match fromURIHostMatch = Regex.Match(options, $@"{FROM_HOST_KEY}=(?<host>.+?)(,|$)");
                 if (fromURIHostMatch.Success)
                 {
                     FromURIHost = fromURIHostMatch.Result("${host}").Trim();
                 }
 
                 // Parse the Transfer behaviour option.
-                Match transferMatch = Regex.Match(options, TRANSFER_MODE_OPTION_KEY + @"=(?<transfermode>.+?)(,|$)");
+                Match transferMatch = Regex.Match(options, $@"{TRANSFER_MODE_OPTION_KEY}=(?<transfermode>.+?)(,|$)");
                 if (transferMatch.Success)
                 {
                     string transferMode = transferMatch.Result("${transfermode}");
@@ -387,28 +387,28 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the request caller details option.
-                Match callerDetailsMatch = Regex.Match(options, REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
+                Match callerDetailsMatch = Regex.Match(options, $@"{REQUEST_CALLER_DETAILS}=(?<callerdetails>\w+)");
                 if (callerDetailsMatch.Success)
                 {
                     bool.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
                 }
 
                 // Parse the accountcode.
-                Match accountCodeMatch = Regex.Match(options, ACCOUNT_CODE_KEY + @"=(?<accountCode>\w+)");
+                Match accountCodeMatch = Regex.Match(options, $@"{ACCOUNT_CODE_KEY}=(?<accountCode>\w+)");
                 if (accountCodeMatch.Success)
                 {
                     AccountCode = accountCodeMatch.Result("${accountCode}");
                 }
 
                 // Parse the rate code.
-                Match rateCodeMatch = Regex.Match(options, RATE_CODE_KEY + @"=(?<rateCode>\w+)");
+                Match rateCodeMatch = Regex.Match(options, $@"{RATE_CODE_KEY}=(?<rateCode>\w+)");
                 if (rateCodeMatch.Success)
                 {
                     RateCode = rateCodeMatch.Result("${rateCode}");
                 }
 
                 // Parse the delayed reinvite option.
-                Match delayedReinviteMatch = Regex.Match(options, DELAYED_REINVITE_KEY + @"=(?<delayedReinvite>\d+)");
+                Match delayedReinviteMatch = Regex.Match(options, $@"{DELAYED_REINVITE_KEY}=(?<delayedReinvite>\d+)");
                 if (delayedReinviteMatch.Success)
                 {
                     int.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
@@ -457,7 +457,14 @@ namespace SIPSorcery.SIP.App
                                 //string headerName = customHeader.Substring(0, colonIndex).Trim();
                                 //string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
 
-                                if (Regex.Match(customHeader.Trim(), "^(Via|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
+                                var trimmedCustomHeader = customHeader.AsSpan().Trim();
+                                if (trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_VIA, StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_FROM, StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CONTACT, StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CSEQ, StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CALLID, StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_MAXFORWARDS, StringComparison.OrdinalIgnoreCase) ||
+                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CONTENTLENGTH, StringComparison.OrdinalIgnoreCase))
                                 {
                                     logger.LogWarning("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, {CustomHeader}.", customHeader);
                                     continue;

@@ -159,8 +159,7 @@ namespace SIPSorcery.Media
             {
                 if (value < AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN || value > AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX)
                 {
-                    throw new ApplicationException("Invalid value for the audio sample period. Must be between " +
-                        $"{AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN} and {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX}ms.");
+                    throw new ApplicationException($"Invalid value for the audio sample period. Must be between {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN} and {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX}ms.");
                 }
                 else
                 {

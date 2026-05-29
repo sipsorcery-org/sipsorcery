@@ -285,7 +285,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SIPNotifierClient Subscribe. {ErrorMessage}", excp.Message);
-                SubscriptionFailed?.Invoke(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, "Exception Subscribing. " + excp.Message);
+                SubscriptionFailed?.Invoke(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, $"Exception Subscribing. {excp.Message}");
                 m_waitForSubscribeResponse.Set();
             }
         }
@@ -311,21 +311,21 @@ namespace SIPSorcery.SIP.App
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.Forbidden)
                 {
                     // The subscription is never going to succeed so cancel it.
-                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, "A Forbidden response was received on a subscribe attempt to " + m_resourceURI.ToString() + " for user " + m_authUsername + ".");
+                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, $"A Forbidden response was received on a subscribe attempt to {m_resourceURI.ToString()} for user {m_authUsername}.");
                     m_exit = true;
                     m_waitForSubscribeResponse.Set();
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.BadEvent)
                 {
                     // The subscription is never going to succeed so cancel it.
-                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, "A BadEvent response was received on a subscribe attempt to " + m_resourceURI.ToString() + " for event package " + m_sipEventPackage.ToString() + ".");
+                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, $"A BadEvent response was received on a subscribe attempt to {m_resourceURI.ToString()} for event package {m_sipEventPackage.ToString()}.");
                     m_exit = true;
                     m_waitForSubscribeResponse.Set();
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist)
                 {
                     // The notifier server does not have a record for the existing subscription.
-                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, "Subscribe failed with response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, $"Subscribe failed with response {sipResponse.StatusCode} {sipResponse.ReasonPhrase}.");
                     m_waitForSubscribeResponse.Set();
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
@@ -388,7 +388,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, "Subscribe failed with response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+                    SubscriptionFailed?.Invoke(m_resourceURI, sipResponse.Status, $"Subscribe failed with response {sipResponse.StatusCode} {sipResponse.ReasonPhrase}.");
                     m_waitForSubscribeResponse.Set();
                 }
 
@@ -397,7 +397,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SubscribeTransactionFinalResponseReceived. {ErrorMessage}", excp.Message);
-                SubscriptionFailed?.Invoke(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, "Exception processing subscribe response. " + excp.Message);
+                SubscriptionFailed?.Invoke(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, $"Exception processing subscribe response. {excp.Message}");
                 m_waitForSubscribeResponse.Set();
 
                 return Task.FromResult(SocketError.Fault);

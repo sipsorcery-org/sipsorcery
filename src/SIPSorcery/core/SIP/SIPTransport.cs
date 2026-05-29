@@ -827,7 +827,7 @@ namespace SIPSorcery.SIP
                     if (IPAddress.TryParse(ContactHost, out _))
                     {
                         // If the custom host is an IP address include the port number that's being used for the send.
-                        copy.Contact.Single().ContactURI.Host = ContactHost + ":" + sendFromEndPoint.Port.ToString();
+                        copy.Contact.Single().ContactURI.Host = $"{ContactHost}:{sendFromEndPoint.Port.ToString()}";
                     }
                     else
                     {
@@ -920,8 +920,8 @@ namespace SIPSorcery.SIP
                         // Treat all messages that don't match STUN requests as SIP.
                         if (buffer.Length > SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH)
                         {
-                            string rawErrorMessage = m_sipEncoding.GetString(buffer, 0, 1024) + "\r\n..truncated";
-                            SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
+                            string rawErrorMessage = $"{m_sipEncoding.GetString(buffer, 0, 1024)}\r\n..truncated";
+                            SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, $"SIP message too large, {buffer.Length} bytes, maximum allowed is {SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH} bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = SIPResponse.GetResponse(localEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             return SendResponseAsync(tooLargeResponse);
                         }
@@ -1012,7 +1012,7 @@ namespace SIPSorcery.SIP
                                                 }
                                                 else
                                                 {
-                                                    SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "ACK received on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
+                                                    SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, $"ACK received on {requestTransaction.TransactionState} transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
                                                 }
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.PRACK)
@@ -1107,7 +1107,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SIPMessageReceived. {ErrorMessage}", excp.Message);
-                SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
+                SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, $"Exception SIPTransport. {excp.Message}", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
                 return Task.FromResult(SocketError.Fault);
             }
         }
