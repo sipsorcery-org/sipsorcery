@@ -72,7 +72,7 @@ namespace Vpx.Net.UnitTest
                 // mode tree bits -- no token coefficients at all. It
                 // must be no larger than the corresponding keyframe.
                 Assert.True(interFrame.Length <= kf.Length + 4,
-                    "static inter frame (" + interFrame.Length + ") should not exceed keyframe size (" + kf.Length + ")");
+                    $"static inter frame ({interFrame.Length}) should not exceed keyframe size ({kf.Length})");
 
                 byte[] decoded = DecodeOne(ctx, interFrame, width, height);
                 AssertExact(keyDecoded, decoded);
@@ -118,8 +118,7 @@ namespace Vpx.Net.UnitTest
             double psnrInterVsInterSrc = ComputePSNR(interYuv, decInter);
             double psnrKeyVsInterSrc   = ComputePSNR(interYuv, decKey);
             Assert.True(psnrInterVsInterSrc > psnrKeyVsInterSrc + 5.0,
-                "inter encoding should bring the decoded frame substantially closer to the inter source than the reference. psnrInter=" +
-                psnrInterVsInterSrc.ToString("F2") + " psnrKey=" + psnrKeyVsInterSrc.ToString("F2"));
+                $"inter encoding should bring the decoded frame substantially closer to the inter source than the reference. psnrInter={psnrInterVsInterSrc.ToString("F2")} psnrKey={psnrKeyVsInterSrc.ToString("F2")}");
         }
 
         [Fact]
@@ -346,7 +345,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < expected.Length; i++)
             {
                 Assert.True(expected[i] == actual[i],
-                    "byte " + i + " differs: expected=" + expected[i] + " actual=" + actual[i]);
+                    $"byte {i} differs: expected={expected[i]} actual={actual[i]}");
             }
         }
 
@@ -367,7 +366,7 @@ namespace Vpx.Net.UnitTest
         {
             double psnr = ComputePSNR(expected, actual);
             Assert.True(psnr >= minPsnrDb,
-                "PSNR " + psnr.ToString("F2") + " dB below required " + minPsnrDb.ToString("F2") + " dB");
+                $"PSNR {psnr.ToString("F2")} dB below required {minPsnrDb.ToString("F2")} dB");
         }
     }
 }

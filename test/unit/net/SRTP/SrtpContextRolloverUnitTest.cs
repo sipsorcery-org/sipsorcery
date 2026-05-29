@@ -85,11 +85,7 @@ namespace SIPSorcery.Net.UnitTests
             // UnprotectRtp returns 0.
             int decryptResult = TryRoundTrip(sender, receiver, ssrcB, seq: 100);
             Assert.True(decryptResult == 0,
-                "Per-SSRC outbound ROC: SSRC B's encryption was corrupted by SSRC A's "
-                + "sequence wrap. UnprotectRtp returned " + decryptResult
-                + " (-3 = ERROR_HMAC_CHECK_FAILED).  Per RFC 3711 section 3.2.1 each SRTP "
-                + "stream maintains its own ROC; the SrtpContext must not share Roc "
-                + "across SSRCs.");
+                $"Per-SSRC outbound ROC: SSRC B's encryption was corrupted by SSRC A's sequence wrap. UnprotectRtp returned {decryptResult} (-3 = ERROR_HMAC_CHECK_FAILED).  Per RFC 3711 section 3.2.1 each SRTP stream maintains its own ROC; the SrtpContext must not share Roc across SSRCs.");
         }
 
         // ---- helpers ----
@@ -97,7 +93,7 @@ namespace SIPSorcery.Net.UnitTests
         private static void RoundTripOnePacket(SrtpContext sender, SrtpContext receiver, uint ssrc, ushort seq)
         {
             int rc = TryRoundTrip(sender, receiver, ssrc, seq);
-            Assert.True(rc == 0, "Round-trip failed on SSRC " + ssrc.ToString("x8") + " seq " + seq + " (rc=" + rc + ")");
+            Assert.True(rc == 0, $"Round-trip failed on SSRC {ssrc.ToString("x8")} seq {seq} (rc={rc})");
         }
 
         private static int TryRoundTrip(SrtpContext sender, SrtpContext receiver, uint ssrc, ushort seq)

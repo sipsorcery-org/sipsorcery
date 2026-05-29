@@ -247,11 +247,11 @@ namespace Vpx.Net.UnitTest
             {
                 var e = expected[i];
                 Assert.True(e.token == got[i].Token,
-                    "[" + i + "] Token: expected " + e.token + " got " + got[i].Token);
+                    $"[{i}] Token: expected {e.token} got {got[i].Token}");
                 Assert.True(e.extra == got[i].Extra,
-                    "[" + i + "] Extra: expected " + e.extra + " got " + got[i].Extra);
+                    $"[{i}] Extra: expected {e.extra} got {got[i].Extra}");
                 Assert.True(e.skipEob == got[i].skip_eob_node,
-                    "[" + i + "] skip_eob_node: expected " + e.skipEob + " got " + got[i].skip_eob_node);
+                    $"[{i}] skip_eob_node: expected {e.skipEob} got {got[i].skip_eob_node}");
             }
         }
     }

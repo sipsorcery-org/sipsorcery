@@ -105,7 +105,7 @@ class Program
 
                     if(bytes != null)
                     {
-                        Console.WriteLine($"VP8 encoded packet size {bytes.Length}, sha256: " + Convert.ToBase64String(SHA256.HashData(bytes)));
+                        Console.WriteLine($"VP8 encoded packet size {bytes.Length}, sha256: {Convert.ToBase64String(SHA256.HashData(bytes))}");
                     }
 
                     int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);

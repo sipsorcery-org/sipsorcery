@@ -92,7 +92,7 @@ namespace AudioScope
             //  going to throw an exception.
             if (_prog.GetLinkStatus(gl) == false)
             {
-                throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link shader program with ID {0}.", _prog.ShaderProgramObject), _prog.GetInfoLog(gl));
+                throw new SharpGL.Shaders.ShaderCompilationException($"Failed to link shader program with ID {_prog.ShaderProgramObject}.", _prog.GetInfoLog(gl));
             }
 
             // Load clear program.
@@ -118,7 +118,7 @@ namespace AudioScope
             // going to throw an exception.
             if (_clearProg.GetLinkStatus(gl) == false)
             {
-                throw new SharpGL.Shaders.ShaderCompilationException(string.Format("Failed to link the clear shader program with ID {0}.", _clearProg.ShaderProgramObject), _clearProg.GetInfoLog(gl));
+                throw new SharpGL.Shaders.ShaderCompilationException($"Failed to link the clear shader program with ID {_clearProg.ShaderProgramObject}.", _clearProg.GetInfoLog(gl));
             }
 
             _clearRectangle = new float[] { -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f };

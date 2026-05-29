@@ -124,8 +124,7 @@ namespace SIPSorcery.Demo
             Console.WriteLine($"Data channel open tasks completed in {connectSW.ElapsedMilliseconds:0.##}ms.");
             foreach (var pair in connectionPairs)
             {
-                Console.WriteLine($"PC pair {pair.Name} src datachannel {pair.DC.readyState} streamid {pair.DC.id}, " +
-                    $"dst datachannel {pair.PCDst.DataChannels.Single().readyState} streamid {pair.PCDst.DataChannels.Single().id}.");
+                Console.WriteLine($"PC pair {pair.Name} src datachannel {pair.DC.readyState} streamid {pair.DC.id}, dst datachannel {pair.PCDst.DataChannels.Single().readyState} streamid {pair.PCDst.DataChannels.Single().id}.");
 
                 char a = 'a';
                 for (int j = 1; j < TEST_DATACHANNELS_PER_PEER_CONNECTION; j++)
@@ -143,8 +142,7 @@ namespace SIPSorcery.Demo
                 {
                     var dstdc = pair.PCDst.DataChannels.SingleOrDefault(x => x.id == srcdc.id);
 
-                    Console.WriteLine($" {srcdc.label}: src status {srcdc.readyState} streamid {srcdc.id} <-> " +
-                        $"dst status {dstdc.readyState} streamid {dstdc.id}.");
+                    Console.WriteLine($" {srcdc.label}: src status {srcdc.readyState} streamid {srcdc.id} <-> dst status {dstdc.readyState} streamid {dstdc.id}.");
 
                     srcdc.onmessage += OnData;
                     dstdc.onmessage += OnData;

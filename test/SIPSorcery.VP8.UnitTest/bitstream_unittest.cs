@@ -213,7 +213,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < expected.Length; i++)
             {
                 Assert.True(expected[i] == buf[i],
-                    "byte " + i + " mismatch: expected=0x" + expected[i].ToString("x2") + " actual=0x" + buf[i].ToString("x2"));
+                    $"byte {i} mismatch: expected=0x{expected[i].ToString("x2")} actual=0x{buf[i].ToString("x2")}");
             }
         }
     }

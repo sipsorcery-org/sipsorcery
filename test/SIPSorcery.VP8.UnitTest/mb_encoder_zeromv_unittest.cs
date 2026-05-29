@@ -103,11 +103,11 @@ namespace Vpx.Net.UnitTest
             // step on Y is ~7-8; tolerance of 16 is comfortably above
             // that so we don't get false negatives from rounding noise.
             for (int i = 0; i < 256; i++)
-                AssertWithinTolerance(110, r.ReconY[i], 16, "Y[" + i + "]");
+                AssertWithinTolerance(110, r.ReconY[i], 16, $"Y[{i}]");
             for (int i = 0; i < 64;  i++)
-                AssertWithinTolerance(130, r.ReconU[i], 16, "U[" + i + "]");
+                AssertWithinTolerance(130, r.ReconU[i], 16, $"U[{i}]");
             for (int i = 0; i < 64;  i++)
-                AssertWithinTolerance(90,  r.ReconV[i], 16, "V[" + i + "]");
+                AssertWithinTolerance(90,  r.ReconV[i], 16, $"V[{i}]");
         }
 
         // ---------- Test 3: random source over flat prediction -> exercises coef path ----------
@@ -164,8 +164,7 @@ namespace Vpx.Net.UnitTest
                 if (err > maxErrY) maxErrY = err;
             }
             Assert.True(maxErrY < 100,
-                "Random-input Y plane recon max error " + maxErrY
-                + " is suspiciously large (> 100). The pipeline may have a sign/clip bug.");
+                $"Random-input Y plane recon max error {maxErrY} is suspiciously large (> 100). The pipeline may have a sign/clip bug.");
         }
 
         // ---------- helpers ----------
@@ -182,8 +181,7 @@ namespace Vpx.Net.UnitTest
             int err = actual - expected;
             if (err < 0) err = -err;
             Assert.True(err <= tol,
-                label + ": expected=" + expected + " actual=" + actual + " err=" + err
-                + " > tol=" + tol);
+                $"{label}: expected={expected} actual={actual} err={err} > tol={tol}");
         }
     }
 }

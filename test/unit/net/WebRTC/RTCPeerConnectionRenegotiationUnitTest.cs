@@ -12,6 +12,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -102,13 +103,13 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(SDPMediaTypesEnum.video, renegSdp.Media[0].Media);
             Assert.Equal("0", renegSdp.Media[0].MediaID);
             Assert.Contains(renegSdp.Media[0].MediaFormats.Values,
-                f => f.Name().ToUpper() == "VP8");
+                f => string.Equals(f.Name(), "VP8", StringComparison.OrdinalIgnoreCase));
 
             // Audio must be appended after video.
             Assert.Equal(SDPMediaTypesEnum.audio, renegSdp.Media[1].Media);
             Assert.Equal("1", renegSdp.Media[1].MediaID);
             Assert.Contains(renegSdp.Media[1].MediaFormats.Values,
-                f => f.Name().ToUpper() == "PCMU");
+                f => string.Equals(f.Name(), "PCMU", StringComparison.OrdinalIgnoreCase));
 
             offerer.close();
             answerer.close();
@@ -168,12 +169,12 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(SDPMediaTypesEnum.audio, renegSdp.Media[0].Media);
             Assert.Equal("0", renegSdp.Media[0].MediaID);
             Assert.Contains(renegSdp.Media[0].MediaFormats.Values,
-                f => f.Name().ToUpper() == "PCMU");
+                f => string.Equals(f.Name(), "PCMU", StringComparison.OrdinalIgnoreCase));
 
             Assert.Equal(SDPMediaTypesEnum.video, renegSdp.Media[1].Media);
             Assert.Equal("1", renegSdp.Media[1].MediaID);
             Assert.Contains(renegSdp.Media[1].MediaFormats.Values,
-                f => f.Name().ToUpper() == "VP8");
+                f => string.Equals(f.Name(), "VP8", StringComparison.OrdinalIgnoreCase));
 
             offerer.close();
             answerer.close();

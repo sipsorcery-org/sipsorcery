@@ -47,52 +47,18 @@ namespace RtspToWebRtcRestreamer
                 switch (outputStream)
                 {
                     case StreamsEnum.videoAndAudio:
-                        return String.Format(commandTemplateDic[StreamsEnum.videoAndAudio],
-                            rtspUrl,
-                            vcodec,
-                            videoSsrc,
-                            serverIP,
-                            videoPort,
-                            acodec,
-                            audioSsrc,
-                            audioPort,
-                            sdpPath
-                            );
+                        return $"-use_wallclock_as_timestamps 1 -i {rtspUrl} -map 0:v -c:v {vcodec} -ssrc {videoSsrc} -f rtp rtp://{serverIP}:{videoPort} -map 0:a -c:a {acodec} -ssrc {audioSsrc} -f rtp rtp://{serverIP}:{audioPort}  -sdp_file {sdpPath} -y";
                     case StreamsEnum.videoAndAudioUdp:
-                        return String.Format(commandTemplateDic[StreamsEnum.videoAndAudioUdp],
-                            rtspUrl,
-                            vcodec,
-                            videoSsrc,
-                            serverIP,
-                            videoPort,
-                            acodec,
-                            audioSsrc,
-                            audioPort,
-                            sdpPath
-                            );
+                        return $"-use_wallclock_as_timestamps 1 -rtsp_transport udp -i {rtspUrl} -map 0:v -c:v {vcodec} -ssrc {videoSsrc} -f rtp rtp://{serverIP}:{videoPort} -map 0:a -c:a {acodec} -ssrc {audioSsrc} -f rtp rtp://{serverIP}:{audioPort} -sdp_file {sdpPath} -y";
                     case StreamsEnum.audio:
-                        return String.Format(commandTemplateDic[StreamsEnum.audio],
-                            rtspUrl,                            
-                            acodec,
-                            audioSsrc,
-                            serverIP,
-                            audioPort,
-                            sdpPath
-                            );
+                        return $"-re -i {rtspUrl} -vn -acodec {acodec} -ssrc {audioSsrc} -f rtp rtp://{serverIP}:{audioPort} -sdp_file {sdpPath}";
                     case StreamsEnum.video:
-                        return String.Format(commandTemplateDic[StreamsEnum.video],
-                            rtspUrl,
-                            vcodec,
-                            videoSsrc,
-                            serverIP,
-                            videoPort,
-                            sdpPath
-                            );
+                        return $"-re -i {rtspUrl} -an -vcodec {vcodec} -ssrc {videoSsrc} -f rtp rtp://{serverIP}:{videoPort} -sdp_file {sdpPath}";
                     default:
                         return "";
                 }
-                    
-                
+
+
             }
         }
     }

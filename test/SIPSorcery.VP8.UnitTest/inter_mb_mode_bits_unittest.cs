@@ -245,7 +245,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < outA.Length; i++)
             {
                 Assert.True(outA[i] == outB[i],
-                    "byte " + i + " mismatch: A=0x" + outA[i].ToString("x2") + " B=0x" + outB[i].ToString("x2"));
+                    $"byte {i} mismatch: A=0x{outA[i].ToString("x2")} B=0x{outB[i].ToString("x2")}");
             }
         }
 
@@ -274,7 +274,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < outA.Length; i++)
             {
                 Assert.True(outA[i] == outB[i],
-                    "byte " + i + " mismatch: A=0x" + outA[i].ToString("x2") + " B=0x" + outB[i].ToString("x2"));
+                    $"byte {i} mismatch: A=0x{outA[i].ToString("x2")} B=0x{outB[i].ToString("x2")}");
             }
         }
     }

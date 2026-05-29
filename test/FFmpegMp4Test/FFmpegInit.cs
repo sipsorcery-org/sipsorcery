@@ -110,7 +110,7 @@ namespace FFmpegMp4Test
                 string ffmpegExecutable = "ffmpeg";
                 string? path = Environment.GetEnvironmentVariable("PATH")?
                     .Split(';')
-                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, ffmpegExecutable  + ".exe")))
+                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, $"{ffmpegExecutable}.exe")))
                     .FirstOrDefault();
 
                 if (path != null)

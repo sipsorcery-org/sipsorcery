@@ -1,11 +1,11 @@
 ﻿//-----------------------------------------------------------------------------
 // Author(s):
 // Aaron Clauson
-// 
-// History:
-// 
 //
-// License: 
+// History:
+//
+//
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             byte[] stunReq = new byte[]{ 0x00, 0x01, 0x00, 0x60, 0x21, 0x12, 0xa4, 0x42, 0x66, 0x55, 0x55, 0x43, 0x4b, 0x48, 0x74, 0x73, 0x68, 0x4e, 0x71, 0x56,
-                                         // Att1: 
+                                         // Att1:
                                          0x00, 0x06, 0x00, 0x21,
                                          0x6d, 0x30, 0x71, 0x47, 0x77, 0x53, 0x71, 0x2f, 0x48, 0x56, 0x48, 0x71, 0x41, 0x62, 0x4b, 0x62, 0x3a, 0x73, 0x64, 0x43,
                                          0x48, 0x59, 0x6b, 0x35, 0x6e, 0x46, 0x34, 0x79, 0x44, 0x77, 0x55, 0x39, 0x53, 0x00, 0x00, 0x00,
@@ -365,8 +365,7 @@ namespace SIPSorcery.Net.UnitTests
             string icePassword = "DVJSBHBUIBFSZFKVECMPRISQ";
 
             byte[] buffer = TypeExtensions.ParseHexStr(
-                "0001003C2112A4424A5655444B44544753454455000600095A4C45423A4554454F00000000240" +
-                "008CC3A28000000000000080014B295EDA4BC88A0BC885D745644D36E51FE3CBD1880280004EDF60FF7");
+                $"0001003C2112A4424A5655444B44544753454455000600095A4C45423A4554454F00000000240008CC3A28000000000000080014B295EDA4BC88A0BC885D745644D36E51FE3CBD1880280004EDF60FF7");
 
             STUNMessage stunRequest = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
 
@@ -412,10 +411,10 @@ namespace SIPSorcery.Net.UnitTests
             var stunReq = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
 
             Assert.NotNull(stunReq);
-            Assert.Equal(1853882367U, 
+            Assert.Equal(1853882367U,
                 NetConvert.ParseUInt32(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.Priority).Value, 0));
             Assert.Equal(8, stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).PaddedLength);
-            Assert.Equal(0x27ff2a171b888ffeU, 
+            Assert.Equal(0x27ff2a171b888ffeU,
                 NetConvert.ParseUInt64(stunReq.Attributes.Single(x => x.AttributeType == STUNAttributeTypesEnum.IceControlled).Value, 0));
         }
 

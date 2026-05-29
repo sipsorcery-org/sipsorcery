@@ -176,7 +176,7 @@ namespace SIPSorcery.Net.IntegrationTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             //DNSResponse result = DNSManager.Lookup(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QType.SRV, 10, null, false, false);
-            var result = await SIPDns.LookupClient.QueryAsync(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QueryType.SRV);
+            var result = await SIPDns.LookupClient.QueryAsync($"{SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX}sipsorcery.com", QueryType.SRV);
 
             foreach (var srvResult in result.Answers?.SrvRecords())
             {

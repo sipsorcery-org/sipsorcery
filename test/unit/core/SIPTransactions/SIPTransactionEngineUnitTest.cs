@@ -62,31 +62,12 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransport sipTransport = new SIPTransport();
             SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
 
-            SIPRequest inviteRequest = SIPRequest.ParseSIPRequest("INVITE sip:dummy@127.0.0.1:12014 SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27" + m_CRLF +
-                "To: <sip:dummy@127.0.0.1:12014>" + m_CRLF +
-                "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
-                "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
-                "CSeq: 1 INVITE" + m_CRLF +
-                "Contact: <sip:127.0.0.1:1234>" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "User-Agent: unittest" + m_CRLF +
-                "Content-Length: 5" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                m_CRLF +
-                "dummy");
+            SIPRequest inviteRequest = SIPRequest.ParseSIPRequest($"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27{m_CRLF}To: <sip:dummy@127.0.0.1:12014>{m_CRLF}From: <sip:unittest@mysipswitch.com>;tag=2062917371{m_CRLF}Call-ID: 8ae45c15425040179a4285d774ccbaf6{m_CRLF}CSeq: 1 INVITE{m_CRLF}Contact: <sip:127.0.0.1:1234>{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: unittest{m_CRLF}Content-Length: 5{m_CRLF}Content-Type: application/sdp{m_CRLF}{m_CRLF}dummy");
 
             SIPTransaction tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
             transactionEngine.AddTransaction(tx);
 
-            SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
-                "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013" + m_CRLF +
-                "To: <sip:dummy@127.0.0.1:12014>" + m_CRLF +
-                "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
-                "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
-                "CSeq: 1 INVITE" + m_CRLF +
-                "Content-Length: 0" + m_CRLF +
-                m_CRLF);
+            SIPResponse sipResponse = SIPResponse.ParseSIPResponse($"SIP/2.0 603 Nothing listening{m_CRLF}Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013{m_CRLF}To: <sip:dummy@127.0.0.1:12014>{m_CRLF}From: <sip:unittest@mysipswitch.com>;tag=2062917371{m_CRLF}Call-ID: 8ae45c15425040179a4285d774ccbaf6{m_CRLF}CSeq: 1 INVITE{m_CRLF}Content-Length: 0{m_CRLF}{m_CRLF}");
 
             Assert.True(transactionEngine.GetTransaction(sipResponse) != null, "Transaction should have matched, check the hashing mechanism.");
         }
@@ -186,17 +167,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransactionEngine engine = sipTransport.m_transactionEngine;     // Client side of the INVITE.
 
             string inviteRequestStr =
-                "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 INVITE" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "Content-Type: application/sdp" + m_CRLF +
-                "User-Agent: Dummy" + m_CRLF +
-                m_CRLF;
+                $"INVITE sip:303@sip.blueface.ie SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}User-Agent: Dummy{m_CRLF}{m_CRLF}";
 
             SIPRequest inviteRequest = SIPRequest.ParseSIPRequest(inviteRequestStr);
 
@@ -206,16 +177,7 @@ namespace SIPSorcery.SIP.UnitTests
             engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =
-                "ACK sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
-                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
-                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
-                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
-                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
-                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
-                "CSeq: 49429 ACK" + m_CRLF +
-                "Max-Forwards: 70" + m_CRLF +
-                "User-Agent: Dummy" + m_CRLF +
-                m_CRLF;
+                $"ACK sip:303@sip.blueface.ie SIP/2.0{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 ACK{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: Dummy{m_CRLF}{m_CRLF}";
 
             SIPRequest ackRequest = SIPRequest.ParseSIPRequest(ackRequestStr);
 

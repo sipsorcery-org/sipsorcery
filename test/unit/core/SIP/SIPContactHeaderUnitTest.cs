@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Contact Header ContactParams = {ContactParams}", sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
-            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060;ftag=1233", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
+            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060;ftag=1233", $"The Contact header URI was not parsed correctly, parsed valued = {sipContactHeaderList[0].ContactURI.ToString()}.");
             Assert.True(sipContactHeaderList[0].ContactURI.Parameters.Get("ftag") == "1233", "The Contact header ftag URI parameter was not parsed correctly.");
         }
 
@@ -135,7 +135,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Contact = {Contact}", sipContactHeaderList[0].ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
-            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
+            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060", $"The Contact header URI was not parsed correctly, parsed valued = {sipContactHeaderList[0].ContactURI.ToString()}.");
             Assert.True(sipContactHeaderList[0].Expires == 60, "The Contact header Expires parameter was not parsed correctly.");
         }
 
@@ -154,7 +154,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Contact = {Contact}", sipContactHeaderList[0].ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
-            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
+            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060", $"The Contact header URI was not parsed correctly, parsed valued = {sipContactHeaderList[0].ContactURI.ToString()}.");
             Assert.True(sipContactHeaderList[0].Expires == 0, "The Contact header Expires parameter was not parsed correctly.");
         }
 
@@ -173,7 +173,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Contact Header ContactParams = {ContactParams}", sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == "Mr. Watson", "The Contact header name was not parsed correctly.");
-            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:watson@worcester.bell-telephone.com", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
+            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:watson@worcester.bell-telephone.com", $"The Contact header URI was not parsed correctly, parsed valued = {sipContactHeaderList[0].ContactURI.ToString()}.");
             Assert.True(sipContactHeaderList[0].Expires == 3600, "The Contact header Expires parameter was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].Q == "0.7", "The Contact header Q parameter was not parsed correctly.");
         }
@@ -193,7 +193,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Contact Header ContactParams = {ContactParams}", sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == "Mr. Watson", "The Contact header name was not parsed correctly.");
-            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:watson@worcester.bell-telephone.com;ftag=1232", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
+            Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:watson@worcester.bell-telephone.com;ftag=1232", $"The Contact header URI was not parsed correctly, parsed valued = {sipContactHeaderList[0].ContactURI.ToString()}.");
             Assert.True(sipContactHeaderList[0].Expires == 3600, "The Contact header Expires parameter was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].Q == "0.7", "The Contact header Q parameter was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.Parameters.Get("ftag") == "1232", "The Contact header URI ftag parameter was not parsed correctly.");

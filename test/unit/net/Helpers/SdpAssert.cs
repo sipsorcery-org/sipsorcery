@@ -147,8 +147,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
                 f.ID == payloadId
                 && string.Equals(f.Name(), codecName, System.StringComparison.OrdinalIgnoreCase));
             Assert.True(present,
-                $"Expected m={m.Media} to advertise {codecName} (PT {payloadId}). Got: " +
-                string.Join(", ", m.MediaFormats.Values.Select(f => f.Name() + "/" + f.ID)));
+                $"Expected m={m.Media} to advertise {codecName} (PT {payloadId}). Got: {string.Join(", ", m.MediaFormats.Values.Select(f => $"{f.Name()}/{f.ID}"))}");
         }
 
         public static void DoesNotHaveCodec(SDPMediaAnnouncement m, string codecName)

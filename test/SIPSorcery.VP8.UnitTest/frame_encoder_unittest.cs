@@ -324,7 +324,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < expected.Length; i++)
             {
                 Assert.True(expected[i] == actual[i],
-                    "Pixel " + i + " differs: src=" + expected[i] + " decoded=" + actual[i]);
+                    $"Pixel {i} differs: src={expected[i]} decoded={actual[i]}");
             }
         }
 
@@ -335,8 +335,7 @@ namespace Vpx.Net.UnitTest
             {
                 int d = actual[i] - expected[i];
                 Assert.True(d >= -tol && d <= tol,
-                    "Pixel " + i + " err " + d + " exceeds tolerance " + tol +
-                    " (src=" + expected[i] + " decoded=" + actual[i] + ")");
+                    $"Pixel {i} err {d} exceeds tolerance {tol} (src={expected[i]} decoded={actual[i]})");
             }
         }
     }
