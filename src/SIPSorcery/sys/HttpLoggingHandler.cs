@@ -38,7 +38,7 @@ namespace SIPSorcery.Sys;
 /// </summary>
 public class HttpLoggingHandler : DelegatingHandler
 {
-    private ILogger _logger = NullLogger.Instance;
+    private readonly ILogger _logger = NullLogger.Instance;
 
     // Sensitive headers to redact.
     private static readonly string[] SensitiveHeaders = ["Authorization"];
