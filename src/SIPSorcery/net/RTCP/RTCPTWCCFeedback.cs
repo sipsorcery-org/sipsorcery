@@ -188,36 +188,32 @@ namespace SIPSorcery.Net
 
         private void ParseRunLengthChunk(ushort chunk, List<TWCCPacketStatusType> statusSymbols, ref int remainingStatuses)
         {
-            // The status bits might be reversed from what we expect
-            int statusBits = (chunk >> 12) & 0x3;
-            TWCCPacketStatusType symbol;
-
-            switch (statusBits)
-            {
-                case 0: // 00
-                    symbol = TWCCPacketStatusType.NotReceived;
-                    break;
-                case 1: // 01
-                    symbol = TWCCPacketStatusType.ReceivedSmallDelta;
-                    break;
-                case 2: // 10
-                    symbol = TWCCPacketStatusType.ReceivedSmallDelta; // Changed from Large to Small
-                    break;
-                case 3: // 11
-                    symbol = TWCCPacketStatusType.ReceivedLargeDelta;
-                    break;
-                default:
-                    throw new ArgumentException($"Invalid status bits: {statusBits}");
-            }
-
-            ushort runLength = (ushort)(chunk & 0x0FFF);
+             // Per draft-holmer-rmcat-transport-wide-cc-extensions section 3.1.3, the
+             // Run Length Chunk layout is:
+             //
+             //   bit:  15  14 13  12 11 10  9  8  7  6  5  4  3  2  1  0
+             //         [T] [S(2)] [           Run Length (13 bits)           ]
+             //          =0   └ status ┘  └─────── 13-bit run ────────────────┘
+             //
+             // PREVIOUSLY this used `(chunk >> 12) & 0x3` for status (off by one — it
+             // read bits 13..12 instead of 14..13) and `chunk & 0x0FFF` for run length
+             // (one bit too narrow). The status bug made every Run Length status decode
+             // as LargeDelta on localhost, which then caused the delta-value parser to
+             // read 2 bytes instead of 1 and produced bogus ±8s arrival times.
+             ushort statusBits = (ushort)((chunk >> 13) & 0x3);
+             if (!BitsToStatus.TryGetValue(statusBits, out TWCCPacketStatusType symbol))
+             {
+                 throw new ArgumentException($"Invalid status bits in run length chunk: {statusBits}");
+             }
             
-            runLength = (ushort)Math.Min(runLength, remainingStatuses);
-            for (int i = 0; i < runLength; i++)
-            {
-                statusSymbols.Add(symbol);
-            }
-            remainingStatuses -= runLength;
+             ushort runLength = (ushort)(chunk & 0x1FFF);
+             runLength = (ushort)Math.Min(runLength, remainingStatuses);
+            
+             for (int i = 0; i < runLength; i++)
+             {
+                 statusSymbols.Add(symbol);
+             }
+             remainingStatuses -= runLength;
         }
 
         private void ValidatePacket(byte[] packet)
@@ -260,19 +256,32 @@ namespace SIPSorcery.Net
                 }
 
                 ushort chunk = ReadUInt16(packet, ref offset);
-                int chunkType = chunk >> 14;
-
-                switch (chunkType)
+                // Per draft-holmer-rmcat-transport-wide-cc-extensions:
+                //   bit 15 (T)  = 0 → Run Length Chunk (status in bits 14-13, run in bits 12-0)
+                //                = 1 → Status Vector Chunk; bit 14 (S) chooses symbol width:
+                //                        S=0 → 1-bit symbols (14 symbols, bits 13-0)
+                //                        S=1 → 2-bit symbols (7 symbols, bits 13-0)
+                //
+                // BEFORE this dispatch had two bugs:
+                //   1. Cases 2 and 3 were wired to the wrong vector parsers.
+                //   2. Case 1 (run-length with LargeDelta or Reserved status, i.e. S high
+                //      bit set) had no handler at all — those chunks were silently dropped.
+                // Both meant feedback decoded as garbage. Dispatch on T directly so case 1
+                // can't go missing.
+                if ((chunk & 0x8000) == 0)
                 {
-                    case 0: // Run Length Chunk
-                        ParseRunLengthChunk(chunk, statusSymbols, ref remainingStatuses);
-                        break;
-                    case 2: // Two-bit Status Vector
-                        ParseTwoBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
-                        break;
-                    case 3: // One-bit Status Vector
-                        ParseOneBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
-                        break;
+                    // T = 0 → Run Length Chunk. Status (any of the 4 values) is in bits 14-13.
+                    ParseRunLengthChunk(chunk, statusSymbols, ref remainingStatuses);
+                }
+                else if ((chunk & 0x4000) == 0)
+                {
+                    // T = 1, S = 0 → 1-bit symbol vector (14 symbols).
+                    ParseOneBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
+                }
+                else
+                {
+                    // T = 1, S = 1 → 2-bit symbol vector (7 symbols).
+                    ParseTwoBitStatusVector(chunk, statusSymbols, ref remainingStatuses);
                 }
             }
 
