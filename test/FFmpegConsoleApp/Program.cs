@@ -10,10 +10,10 @@ namespace FFmpegConsoleApp
     {
         // A valid to a video file - usefull if you want to test streaming of a video file
         // It's alo possible to set a remote file
-        const String VIDEO_FILE_PATH = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm"; 
+        const String VIDEO_FILE_PATH = @"https://upload.wikimedia.org/wikipedia/commons/3/36/Cosmos_Laundromat_-_First_Cycle_-_Official_Blender_Foundation_release.webm";
         //const String VIDEO_FILE_PATH = @"C:\media\big_buck_bunny.mp4";
         //const String VIDEO_FILE_PATH = @"C:\media\Armello_Trailer.webm";
-        
+
         static private AsciiFrame? asciiFrame = null;
 
         static void Main(string[] args)
@@ -58,7 +58,7 @@ namespace FFmpegConsoleApp
 
                 var keyConsole = Console.ReadKey();
                 if ( ( (keyConsole.KeyChar == 'c') && (cameras?.Count > 0) )
-                    || ( (keyConsole.KeyChar == 'm') && (monitors?.Count > 0)) 
+                    || ( (keyConsole.KeyChar == 'm') && (monitors?.Count > 0))
                     || (keyConsole.KeyChar == 'f'))
                 {
                     keyChar = keyConsole.KeyChar;
@@ -85,7 +85,7 @@ namespace FFmpegConsoleApp
                         Console.Out.Flush();
 
                         var keyConsole = Console.ReadKey();
-                        if (int.TryParse("" + keyConsole.KeyChar, out int keyValue) && keyValue < index && keyValue >= 0)
+                        if (int.TryParse($"{keyConsole.KeyChar}", out int keyValue) && keyValue < index && keyValue >= 0)
                         {
                             cameraIndex = keyValue;
                             break;
@@ -119,7 +119,7 @@ namespace FFmpegConsoleApp
                         Console.Out.Flush();
 
                         var keyConsole = Console.ReadKey();
-                        if (int.TryParse("" + keyConsole.KeyChar, out int keyValue) && keyValue < index && keyValue >= 0)
+                        if (int.TryParse($"{keyConsole.KeyChar}", out int keyValue) && keyValue < index && keyValue >= 0)
                         {
                             monitorIndex = keyValue;
                             break;

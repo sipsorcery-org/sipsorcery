@@ -261,7 +261,7 @@ public class UnityLogger : IDisposable, Microsoft.Extensions.Logging.ILogger
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
     {
-        Debug.Log("[" + eventId + "] " + formatter(state, exception));
+        Debug.Log($"[{eventId}] {formatter(state, exception)}");
         System.Diagnostics.Debug.WriteLine("[" + eventId + "] " + formatter(state, exception));
     }
 }

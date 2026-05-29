@@ -21,6 +21,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -77,7 +78,7 @@ a=sendrecv");
                     session.SetRemoteDescription(SdpType.offer, offer));
 
                 var voiceCaps = session.AudioStream.LocalTrack.Capabilities
-                    .Where(c => c.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE)
+                    .Where(c => !string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 Assert.Single(voiceCaps);
                 Assert.Equal("PCMA", voiceCaps[0].Name());
@@ -104,7 +105,7 @@ a=sendrecv");
                     session.SetRemoteDescription(SdpType.offer, offer));
 
                 bool hasTelephoneEvent = session.AudioStream.LocalTrack.Capabilities
-                    .Any(c => c.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                    .Any(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                 Assert.True(hasTelephoneEvent,
                     "Expected DefaultRTPEventFormat to be injected when neither side advertises telephone-event.");
             }
@@ -215,7 +216,7 @@ a=sendrecv");
 
                 // The local track's telephone-event should now use PT 100.
                 var teCap = session.AudioStream.LocalTrack.Capabilities
-                    .FirstOrDefault(c => c.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                    .FirstOrDefault(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                 Assert.False(teCap.IsEmpty());
                 Assert.Equal(100, teCap.ID);
 
@@ -248,7 +249,7 @@ a=sendrecv");
                     session.SetRemoteDescription(SdpType.offer, offer));
 
                 var teCap = session.AudioStream.LocalTrack.Capabilities
-                    .FirstOrDefault(c => c.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                    .FirstOrDefault(c => string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                 Assert.False(teCap.IsEmpty());
                 Assert.Equal(101, teCap.ID);
                 Assert.Equal(101, session.AudioStream.NegotiatedRtpEventPayloadID);
@@ -294,7 +295,7 @@ a=sendrecv");
                 // PCMA must lead the local capability list because the
                 // offerer (remote) put it first.
                 var caps = session.AudioStream.LocalTrack.Capabilities
-                    .Where(c => c.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE)
+                    .Where(c => !string.Equals(c.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 Assert.Equal(2, caps.Count);
                 Assert.Equal("PCMA", caps[0].Name());

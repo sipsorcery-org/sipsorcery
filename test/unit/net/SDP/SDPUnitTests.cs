@@ -41,18 +41,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendrecv";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendrecv";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -73,17 +62,8 @@ namespace SIPSorcery.Net.UnitTests
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
-            string sdpStr = 
-                "v=0" + 
-                "o=- 5 2 IN IP4 10.1.1.2" + m_CRLF +
-                "s=CounterPath Bria" + m_CRLF +
-                "c=IN IP4 144.137.16.240" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 34640 RTP/AVP 0 8 101" + m_CRLF +
-                "a=sendrecv" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-15" + m_CRLF +
-                "a=alt:1 1 : STu/ZtOu 7hiLQmUp 10.1.1.2 34640";
+            string sdpStr =
+                $"v=0o=- 5 2 IN IP4 10.1.1.2{m_CRLF}s=CounterPath Bria{m_CRLF}c=IN IP4 144.137.16.240{m_CRLF}t=0 0{m_CRLF}m=audio 34640 RTP/AVP 0 8 101{m_CRLF}a=sendrecv{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-15{m_CRLF}a=alt:1 1 : STu/ZtOu 7hiLQmUp 10.1.1.2 34640";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -105,18 +85,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                " v=0" + m_CRLF +
-                " o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                " s=session" + m_CRLF +
-                " c=IN IP4 10.0.0.4" + m_CRLF +
-                " t=0 0" + m_CRLF +
-                " m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                " a=rtpmap:0 PCMU/8000" + m_CRLF +
-                " a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                " a=fmtp:101 0-16" + m_CRLF +
-                " a=silenceSupp:off - - - -" + m_CRLF +
-                " a=ptime:20" + m_CRLF +
-                " a=sendrecv";
+                $" v=0{m_CRLF} o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF} s=session{m_CRLF} c=IN IP4 10.0.0.4{m_CRLF} t=0 0{m_CRLF} m=audio 12228 RTP/AVP 0 101{m_CRLF} a=rtpmap:0 PCMU/8000{m_CRLF} a=rtpmap:101 telephone-event/8000{m_CRLF} a=fmtp:101 0-16{m_CRLF} a=silenceSupp:off - - - -{m_CRLF} a=ptime:20{m_CRLF} a=sendrecv";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -155,19 +124,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-              "v=0" + m_CRLF +
-              "o=jdoe 2890844526 2890842807 IN IP4 10.0.1.1" + m_CRLF +
-              "s=" + m_CRLF +
-              "c=IN IP4 192.0.2.3" + m_CRLF +
-              "t=0 0" + m_CRLF +
-              "a=ice-pwd:asd88fgpdd777uzjYhagZg" + m_CRLF +
-              "a=ice-ufrag:8hhY" + m_CRLF +
-              "m=audio 45664 RTP/AVP 0" + m_CRLF +
-              "b=RS:0" + m_CRLF +
-              "b=RR:0" + m_CRLF +
-              "a=rtpmap:0 PCMU/8000" + m_CRLF +
-              "a=candidate:1 1 UDP 2130706431 10.0.1.1 8998 typ host" + m_CRLF +
-              "a=candidate:2 1 UDP 1694498815 192.0.2.3 45664 typ srflx raddr 10.0.1.1 rport 8998";
+              $"v=0{m_CRLF}o=jdoe 2890844526 2890842807 IN IP4 10.0.1.1{m_CRLF}s={m_CRLF}c=IN IP4 192.0.2.3{m_CRLF}t=0 0{m_CRLF}a=ice-pwd:asd88fgpdd777uzjYhagZg{m_CRLF}a=ice-ufrag:8hhY{m_CRLF}m=audio 45664 RTP/AVP 0{m_CRLF}b=RS:0{m_CRLF}b=RR:0{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=candidate:1 1 UDP 2130706431 10.0.1.1 8998 typ host{m_CRLF}a=candidate:2 1 UDP 1694498815 192.0.2.3 45664 typ srflx raddr 10.0.1.1 rport 8998";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -187,24 +144,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sdpStr = "v=0" + m_CRLF +
-                "o=- 13064410510996677 3 IN IP4 10.1.1.2" + m_CRLF +
-                "s=Bria 4 release 4.1.1 stamp 74246" + m_CRLF +
-                "c=IN IP4 10.1.1.2" + m_CRLF +
-                "b=AS:2064" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 49290 RTP/AVP 0" + m_CRLF +
-                "a=sendrecv" + m_CRLF +
-                "m=video 56674 RTP/AVP 96" + m_CRLF +
-                "b=TIAS:2000000" + m_CRLF +
-                "a=rtpmap:96 VP8/90000" + m_CRLF +
-                "a=sendrecv" + m_CRLF +
-                "a=rtcp-fb:* nack pli" + m_CRLF +
-                "m=text 60216 RTP/AVP 98" + m_CRLF +
-                "mid:1" + m_CRLF +
-                "a=rtpmap:98 T140/1000" + m_CRLF +
-                "a=sendrecv" + m_CRLF +
-                "a=ssrc:1679134341 cname:de431dae-58f3-4191-9efe-5d86c1235b60";
+            string sdpStr = $"v=0{m_CRLF}o=- 13064410510996677 3 IN IP4 10.1.1.2{m_CRLF}s=Bria 4 release 4.1.1 stamp 74246{m_CRLF}c=IN IP4 10.1.1.2{m_CRLF}b=AS:2064{m_CRLF}t=0 0{m_CRLF}m=audio 49290 RTP/AVP 0{m_CRLF}a=sendrecv{m_CRLF}m=video 56674 RTP/AVP 96{m_CRLF}b=TIAS:2000000{m_CRLF}a=rtpmap:96 VP8/90000{m_CRLF}a=sendrecv{m_CRLF}a=rtcp-fb:* nack pli{m_CRLF}m=text 60216 RTP/AVP 98{m_CRLF}mid:1{m_CRLF}a=rtpmap:98 T140/1000{m_CRLF}a=sendrecv{m_CRLF}a=ssrc:1679134341 cname:de431dae-58f3-4191-9efe-5d86c1235b60";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -225,19 +165,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sdpStr = "v=0" + m_CRLF +
-                "o=Cisco-SIPUA 6396 0 IN IP4 101.180.234.134" + m_CRLF +
-                "s=SIP Call" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 19586 RTP/AVP 0" + m_CRLF +
-                "c=IN IP4 101.180.234.134" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=sendrecv" + m_CRLF +
-                "m=video 0 RTP/AVP 96" + m_CRLF +
-                "c=IN IP4 10.0.0.10" + m_CRLF +
-                "m=text 11000 RTP/AVP 98 100" + m_CRLF +
-                "a=rtpmap:98 t140/1000" + m_CRLF +
-                "a=fmtp:100 98/98";
+            string sdpStr = $"v=0{m_CRLF}o=Cisco-SIPUA 6396 0 IN IP4 101.180.234.134{m_CRLF}s=SIP Call{m_CRLF}t=0 0{m_CRLF}m=audio 19586 RTP/AVP 0{m_CRLF}c=IN IP4 101.180.234.134{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=sendrecv{m_CRLF}m=video 0 RTP/AVP 96{m_CRLF}c=IN IP4 10.0.0.10{m_CRLF}m=text 11000 RTP/AVP 98 100{m_CRLF}a=rtpmap:98 t140/1000{m_CRLF}a=fmtp:100 98/98";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -258,14 +186,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sdpStr = "v=0" + m_CRLF +
-                "o=OfficeMasterDirectSIP 806542878 806542879 IN IP4 10.2.0.110" + m_CRLF +
-                "s=FOIP Call" + m_CRLF +
-                "c=IN IP4 10.2.0.110" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=image 50594 udptl t38" + m_CRLF +
-                "a=T38FaxRateManagement:transferredTCF" + m_CRLF +
-                "a=T38FaxVersion:0";
+            string sdpStr = $"v=0{m_CRLF}o=OfficeMasterDirectSIP 806542878 806542879 IN IP4 10.2.0.110{m_CRLF}s=FOIP Call{m_CRLF}c=IN IP4 10.2.0.110{m_CRLF}t=0 0{m_CRLF}m=image 50594 udptl t38{m_CRLF}a=T38FaxRateManagement:transferredTCF{m_CRLF}a=T38FaxVersion:0";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -287,32 +208,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sdpStr = "v=0" + m_CRLF +
-                "o=- 8028343537520473029 0 IN IP4 127.0.0.1" + m_CRLF +
-                "s=-" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "a=msid-semantic: WMS" + m_CRLF +
-                "a=group:BUNDLE audio" + m_CRLF +
-                "m=audio 7038 UDP/TLS/RTP/SAVPF 0" + m_CRLF +
-                "c=IN IP4 10.0.75.1" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtcp:9 IN IP4 0.0.0.0" + m_CRLF +
-                "a=setup:active" + m_CRLF +
-                "a=mid:audio" + m_CRLF +
-                "a=maxptime:60" + m_CRLF +
-                "a=recvonly" + m_CRLF +
-                "a=ice-ufrag:1Fs+" + m_CRLF +
-                "a=ice-pwd:oiLbCgce1c9xzyamdrWtn9Q/" + m_CRLF +
-                "a=fingerprint:sha-256 B0:1F:2C:72:8F:1A:14:CD:92:15:47:F0:C3:0A:69:F9:A9:43:35:EE:10:CB:F0:11:18:B8:0E:F9:A6:95:5F:B1" + m_CRLF +
-                "a=candidate:1 1 udp 2130706431 10.0.75.1 7038 typ host" + m_CRLF +
-                "a=candidate:2 1 udp 2130705919 172.22.240.1 31136 typ host" + m_CRLF +
-                "a=candidate:3 1 udp 2130705407 172.22.48.1 21390 typ host" + m_CRLF +
-                "a=candidate:4 1 udp 2130704895 192.168.11.50 26878 typ host" + m_CRLF +
-                "a=candidate:5 1 tcp 1684797439 10.0.75.1 7038 typ srflx raddr 10.0.75.1 rport 7038 tcptype active" + m_CRLF +
-                "a=rtcp-mux" + m_CRLF +
-                "m=video 0 UDP/TLS/RTP/SAVPF" + m_CRLF +
-                "c=IN IP4 0.0.0.0" + m_CRLF +
-                "a=inactive";
+            string sdpStr = $"v=0{m_CRLF}o=- 8028343537520473029 0 IN IP4 127.0.0.1{m_CRLF}s=-{m_CRLF}t=0 0{m_CRLF}a=msid-semantic: WMS{m_CRLF}a=group:BUNDLE audio{m_CRLF}m=audio 7038 UDP/TLS/RTP/SAVPF 0{m_CRLF}c=IN IP4 10.0.75.1{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtcp:9 IN IP4 0.0.0.0{m_CRLF}a=setup:active{m_CRLF}a=mid:audio{m_CRLF}a=maxptime:60{m_CRLF}a=recvonly{m_CRLF}a=ice-ufrag:1Fs+{m_CRLF}a=ice-pwd:oiLbCgce1c9xzyamdrWtn9Q/{m_CRLF}a=fingerprint:sha-256 B0:1F:2C:72:8F:1A:14:CD:92:15:47:F0:C3:0A:69:F9:A9:43:35:EE:10:CB:F0:11:18:B8:0E:F9:A6:95:5F:B1{m_CRLF}a=candidate:1 1 udp 2130706431 10.0.75.1 7038 typ host{m_CRLF}a=candidate:2 1 udp 2130705919 172.22.240.1 31136 typ host{m_CRLF}a=candidate:3 1 udp 2130705407 172.22.48.1 21390 typ host{m_CRLF}a=candidate:4 1 udp 2130704895 192.168.11.50 26878 typ host{m_CRLF}a=candidate:5 1 tcp 1684797439 10.0.75.1 7038 typ srflx raddr 10.0.75.1 rport 7038 tcptype active{m_CRLF}a=rtcp-mux{m_CRLF}m=video 0 UDP/TLS/RTP/SAVPF{m_CRLF}c=IN IP4 0.0.0.0{m_CRLF}a=inactive";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -334,16 +230,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sdpStr = "v=0" + m_CRLF +
-                "o=nasa1 971731711378798081 0 IN IP6 2201:056D::112E:144A:1E24" + m_CRLF +
-                "s=(Almost) live video feed from Mars-II satellite" + m_CRLF +
-                "p=+1 713 555 1234" + m_CRLF +
-                "c=IN IP6 FF1E:03AD::7F2E:172A:1E24" + m_CRLF +
-                "t=3338481189 3370017201" + m_CRLF +
-                "m=audio 6000 RTP/AVP 2" + m_CRLF +
-                "a=rtpmap:2 G726-32/8000" + m_CRLF +
-                "m=video 6024 RTP/AVP 107" + m_CRLF +
-                "a=rtpmap:107 H263-1998/90000";
+            string sdpStr = $"v=0{m_CRLF}o=nasa1 971731711378798081 0 IN IP6 2201:056D::112E:144A:1E24{m_CRLF}s=(Almost) live video feed from Mars-II satellite{m_CRLF}p=+1 713 555 1234{m_CRLF}c=IN IP6 FF1E:03AD::7F2E:172A:1E24{m_CRLF}t=3338481189 3370017201{m_CRLF}m=audio 6000 RTP/AVP 2{m_CRLF}a=rtpmap:2 G726-32/8000{m_CRLF}m=video 6024 RTP/AVP 107{m_CRLF}a=rtpmap:107 H263-1998/90000";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -363,18 +250,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendrecv";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendrecv";
 
             IPEndPoint audioRtpEndPoint = SDP.GetSDPRTPEndPoint(sdpStr);
 
@@ -391,16 +267,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sdpStr = "v=0" + m_CRLF +
-                "o=nasa1 971731711378798081 0 IN IP6 2201:056D::112E:144A:1E24" + m_CRLF +
-                "s=(Almost) live video feed from Mars-II satellite" + m_CRLF +
-                "p=+1 713 555 1234" + m_CRLF +
-                "c=IN IP6 FF1E:03AD::7F2E:172A:1E24" + m_CRLF +
-                "t=3338481189 3370017201" + m_CRLF +
-                "m=audio 6000 RTP/AVP 2" + m_CRLF +
-                "a=rtpmap:2 G726-32/8000" + m_CRLF +
-                "m=video 6024 RTP/AVP 107" + m_CRLF +
-                "a=rtpmap:107 H263-1998/90000";
+            string sdpStr = $"v=0{m_CRLF}o=nasa1 971731711378798081 0 IN IP6 2201:056D::112E:144A:1E24{m_CRLF}s=(Almost) live video feed from Mars-II satellite{m_CRLF}p=+1 713 555 1234{m_CRLF}c=IN IP6 FF1E:03AD::7F2E:172A:1E24{m_CRLF}t=3338481189 3370017201{m_CRLF}m=audio 6000 RTP/AVP 2{m_CRLF}a=rtpmap:2 G726-32/8000{m_CRLF}m=video 6024 RTP/AVP 107{m_CRLF}a=rtpmap:107 H263-1998/90000";
 
             IPEndPoint audioRtpEndPoint = SDP.GetSDPRTPEndPoint(sdpStr);
 
@@ -418,18 +285,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendrecv";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendrecv";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -447,18 +303,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendonly";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendonly";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -475,18 +320,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "a=recvonly" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}a=recvonly{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -505,19 +339,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "a=recvonly" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendonly";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}a=recvonly{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendonly";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -536,17 +358,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -564,18 +376,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendonly";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendonly";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -596,18 +397,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "a=recvonly" + m_CRLF +
-                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}a=recvonly{m_CRLF}m=audio 12228 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -638,7 +428,7 @@ c=IN IP4 127.0.0.1
 a=candidate:1988909849 1 udp 1124657401 192.168.11.50 11158 typ host generation 0
 a=candidate:1846148317 1 udp 2094219785 127.0.0.1 11158 typ host generation 0
 a=candidate:2012632329 1 udp 2122820711 172.30.224.1 11158 typ host generation 0
-a=end-of-candidates 
+a=end-of-candidates
 a=ice-ufrag:UWWAVCUMPZHPCLNIMZYA
 a=ice-pwd:IEUVYLWMXMQZKCMLTXQHZZVWXRCBLPPNUYFPCABK
 a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
@@ -652,7 +442,7 @@ c=IN IP4 127.0.0.1
 a=ice-ufrag:UWWAVCUMPZHPCLNIMZYA
 a=ice-pwd:IEUVYLWMXMQZKCMLTXQHZZVWXRCBLPPNUYFPCABK
 a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
-a=bundle-only 
+a=bundle-only
 a=setup:actpass
 a=sendonly
 a=rtcp-mux
@@ -915,7 +705,7 @@ a=max-message-size:262144";
         }
 
         /// <summary>
-        /// Tests that parsing an SDP offer from the Pion Go library that only contains a data channel media 
+        /// Tests that parsing an SDP offer from the Pion Go library that only contains a data channel media
         /// announcement gets parsed correctly.
         /// </summary>
         [Fact]
@@ -1273,14 +1063,7 @@ a=ssrc-group:FID 3366495178 777490417";
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=message 57102 TCP/MSRP *" + m_CRLF +
-                "a=accept-types:text/plain text/x-msrp-heartbeat" + m_CRLF +
-                "a=path:msrp://192.168.0.105:57102/10vMB2Ee;tcp";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=message 57102 TCP/MSRP *{m_CRLF}a=accept-types:text/plain text/x-msrp-heartbeat{m_CRLF}a=path:msrp://192.168.0.105:57102/10vMB2Ee;tcp";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
@@ -1335,18 +1118,7 @@ a=ssrc-group:FID 3366495178 777490417";
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             string sdpStr =
-                "v=0" + m_CRLF +
-                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" + m_CRLF +
-                "c=IN IP4 10.0.0.4" + m_CRLF +
-                "t=0 0" + m_CRLF +
-                "m=audio 12228/2 RTP/AVP 0 101" + m_CRLF +
-                "a=rtpmap:0 PCMU/8000" + m_CRLF +
-                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
-                "a=fmtp:101 0-16" + m_CRLF +
-                "a=silenceSupp:off - - - -" + m_CRLF +
-                "a=ptime:20" + m_CRLF +
-                "a=sendrecv";
+                $"v=0{m_CRLF}o=root 3285 3285 IN IP4 10.0.0.4{m_CRLF}s=session{m_CRLF}c=IN IP4 10.0.0.4{m_CRLF}t=0 0{m_CRLF}m=audio 12228/2 RTP/AVP 0 101{m_CRLF}a=rtpmap:0 PCMU/8000{m_CRLF}a=rtpmap:101 telephone-event/8000{m_CRLF}a=fmtp:101 0-16{m_CRLF}a=silenceSupp:off - - - -{m_CRLF}a=ptime:20{m_CRLF}a=sendrecv";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 

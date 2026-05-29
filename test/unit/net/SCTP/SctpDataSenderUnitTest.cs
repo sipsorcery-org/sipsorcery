@@ -155,10 +155,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(expectedAckTSN, receiver.CumulativeAckTSN);
             Assert.True(sw.ElapsedMilliseconds < 2000,
-                $"Throughput regression: {chunksToSend * mtu} bytes took {sw.ElapsedMilliseconds} ms " +
-                $"(effective {(double)(chunksToSend * mtu) / sw.ElapsedMilliseconds:F1} KB/s). " +
-                $"Expected under 2000 ms with SACK-wake race fix. Pre-fix throughput is " +
-                $"capped at ~104 KB/s by the Reset race, giving ~{chunksToSend * mtu / 104} ms.");
+                $"Throughput regression: {chunksToSend * mtu} bytes took {sw.ElapsedMilliseconds} ms (effective {(double)(chunksToSend * mtu) / sw.ElapsedMilliseconds:F1} KB/s). Expected under 2000 ms with SACK-wake race fix. Pre-fix throughput is capped at ~104 KB/s by the Reset race, giving ~{chunksToSend * mtu / 104} ms.");
         }
 
         /// <summary>

@@ -113,13 +113,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             // Minimal SDP body so Answer() can process the offer.
             string sdpBody =
-                "v=0\r\n" +
-                $"o=- 0 0 IN IP4 {channelEndPoint.Address}\r\n" +
-                "s=-\r\n" +
-                $"c=IN IP4 {channelEndPoint.Address}\r\n" +
-                "t=0 0\r\n" +
-                "m=audio 49170 RTP/AVP 0\r\n" +
-                "a=rtpmap:0 PCMU/8000\r\n";
+                $"v=0\r\no=- 0 0 IN IP4 {channelEndPoint.Address}\r\ns=-\r\nc=IN IP4 {channelEndPoint.Address}\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\n";
 
             request.Body = sdpBody;
 

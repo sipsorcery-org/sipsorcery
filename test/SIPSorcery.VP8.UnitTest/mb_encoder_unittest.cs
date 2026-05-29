@@ -166,14 +166,14 @@ namespace Vpx.Net.UnitTest
             {
                 int diff = r.ReconY[i] - srcY[i];
                 Assert.True(diff >= -kTol && diff <= kTol,
-                    "Y[" + i + "] recon err " + diff + " exceeds tolerance " + kTol);
+                    $"Y[{i}] recon err {diff} exceeds tolerance {kTol}");
             }
             for (int i = 0; i < 64; i++)
             {
                 int dU = r.ReconU[i] - srcU[i];
                 int dV = r.ReconV[i] - srcV[i];
-                Assert.True(dU >= -kTol && dU <= kTol, "U[" + i + "] recon err " + dU);
-                Assert.True(dV >= -kTol && dV <= kTol, "V[" + i + "] recon err " + dV);
+                Assert.True(dU >= -kTol && dU <= kTol, $"U[{i}] recon err {dU}");
+                Assert.True(dV >= -kTol && dV <= kTol, $"V[{i}] recon err {dV}");
             }
         }
 

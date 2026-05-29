@@ -6,11 +6,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 08 Jul 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -89,18 +89,16 @@ namespace SIPSorcery.Examples
 
             if (args?.Length > 0)
             {
-                switch(args[0].ToLower())
+                if (string.Equals(args[0], FFMPEG_VP8_CODEC, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[0], FFMPEG_VP9_CODEC, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[0], FFMPEG_H264_CODEC, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[0], FFMPEG_H265_CODEC, StringComparison.OrdinalIgnoreCase))
                 {
-                    case FFMPEG_VP8_CODEC:
-                    case FFMPEG_VP9_CODEC:
-                    case FFMPEG_H264_CODEC:
-                    case FFMPEG_H265_CODEC:
-                        videoCodec = args[0].ToLower();
-                        break;
-
-                    default:
-                        Console.WriteLine($"Video codec option not recognised. Valid values are {FFMPEG_VP8_CODEC}, {FFMPEG_VP9_CODEC} and {FFMPEG_H264_CODEC}. Using {videoCodec}.");
-                        break;
+                    videoCodec = args[0].ToLower();
+                }
+                else
+                {
+                    Console.WriteLine($"Video codec option not recognised. Valid values are {FFMPEG_VP8_CODEC}, {FFMPEG_VP9_CODEC} and {FFMPEG_H264_CODEC}. Using {videoCodec}.");
                 }
             }
 
@@ -108,7 +106,7 @@ namespace SIPSorcery.Examples
 
             logger = AddConsoleLogger();
 
-            string ffmpegCommand = String.Format(FFMPEG_DEFAULT_COMMAND, videoCodec, FFMPEG_DEFAULT_RTP_PORT, SSRC_REMOTE_VIDEO, FFMPEG_SDP_FILE);
+            string ffmpegCommand = $"ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=10 {videoCodec} -pix_fmt yuv420p -strict experimental -g 1 -ssrc {SSRC_REMOTE_VIDEO} -f rtp rtp://127.0.0.1:{FFMPEG_DEFAULT_RTP_PORT} -sdp_file {FFMPEG_SDP_FILE}";
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -294,7 +292,7 @@ namespace SIPSorcery.Examples
                 {
                     logger.LogDebug("ICE Candidate: " + message);
 
-                    if (string.IsNullOrWhiteSpace(message) || message.Trim().ToLower() == SDP.END_ICE_CANDIDATES_ATTRIBUTE)
+                    if (string.IsNullOrWhiteSpace(message) || message.AsSpan().Trim().Equals(SDP.END_ICE_CANDIDATES_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
                     {
                         logger.LogDebug("End of candidates message received.");
                     }

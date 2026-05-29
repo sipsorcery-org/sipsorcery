@@ -175,12 +175,12 @@ namespace Vpx.Net.UnitTest
         private static void AssertTablesMatch(string label, QuantizerTables t,
             short[] zbin, short[] round, short[] quant, short[] qshift, short[] dequant, short[] zrun)
         {
-            AssertArr(label + ".zbin", zbin, t.zbin);
-            AssertArr(label + ".round", round, t.round);
-            AssertArr(label + ".quant", quant, t.quant);
-            AssertArr(label + ".quant_shift", qshift, t.quant_shift);
-            AssertArr(label + ".dequant", dequant, t.dequant);
-            AssertArr(label + ".zrun_zbin_boost", zrun, t.zrun_zbin_boost);
+            AssertArr($"{label}.zbin", zbin, t.zbin);
+            AssertArr($"{label}.round", round, t.round);
+            AssertArr($"{label}.quant", quant, t.quant);
+            AssertArr($"{label}.quant_shift", qshift, t.quant_shift);
+            AssertArr($"{label}.dequant", dequant, t.dequant);
+            AssertArr($"{label}.zrun_zbin_boost", zrun, t.zrun_zbin_boost);
         }
 
         private static void AssertArr(string name, short[] expected, short[] actual)
@@ -189,7 +189,7 @@ namespace Vpx.Net.UnitTest
             for (int i = 0; i < expected.Length; i++)
             {
                 Assert.True(expected[i] == actual[i],
-                    name + "[" + i + "]: expected " + expected[i] + " got " + actual[i]);
+                    $"{name}[{i}]: expected {expected[i]} got {actual[i]}");
             }
         }
     }

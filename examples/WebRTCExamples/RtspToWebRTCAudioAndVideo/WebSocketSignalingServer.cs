@@ -158,7 +158,7 @@ namespace RtspToWebRtcRestreamer
                 {
                     _logger.LogInformation("ICE Candidate: " + message);
 
-                    if (string.IsNullOrWhiteSpace(message) || message.Trim().ToLower() == SDP.END_ICE_CANDIDATES_ATTRIBUTE)
+                    if (string.IsNullOrWhiteSpace(message) || message.AsSpan().Trim().Equals(SDP.END_ICE_CANDIDATES_ATTRIBUTE, StringComparison.OrdinalIgnoreCase))
                     {
                         _logger.LogDebug("End of candidates message received.");
                     }

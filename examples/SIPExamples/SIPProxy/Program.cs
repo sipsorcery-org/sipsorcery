@@ -129,7 +129,7 @@ namespace SIPSorcery.SIPProxy
             }
             catch (Exception excp)
             {
-                Console.WriteLine("Exception Main. " + excp);
+                Console.WriteLine($"Exception Main. {excp}");
             }
         }
 

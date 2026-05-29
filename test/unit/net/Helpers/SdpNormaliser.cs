@@ -114,26 +114,25 @@ namespace SIPSorcery.Net.UnitTests.Helpers
             string s = sdp.Replace("\r\n", "\n");
 
             s = s_oLine.Replace(s, m =>
-                "o=" + m.Groups["user"].Value + " <SID> <SVER> " +
-                m.Groups["net"].Value + " " + m.Groups["addr"].Value + " " + m.Groups["host"].Value);
+                $"o={m.Groups["user"].Value} <SID> <SVER> {m.Groups["net"].Value} {m.Groups["addr"].Value} {m.Groups["host"].Value}");
 
             s = s_mLine.Replace(s, m =>
-                "m=" + m.Groups["kind"].Value + " <PORT>" + m.Groups["rest"].Value);
+                $"m={m.Groups["kind"].Value} <PORT>{m.Groups["rest"].Value}");
 
             s = s_cLine.Replace(s, m =>
-                "c=" + m.Groups["net"].Value + " " + m.Groups["addr"].Value + " <IP>");
+                $"c={m.Groups["net"].Value} {m.Groups["addr"].Value} <IP>");
 
             s = s_iceUfrag.Replace(s, "a=ice-ufrag:<UFRAG>");
             s = s_icePwd.Replace(s, "a=ice-pwd:<PWD>");
 
             s = s_fingerprint.Replace(s, m =>
-                "a=fingerprint:" + m.Groups["alg"].Value + " <HASH>");
+                $"a=fingerprint:{m.Groups["alg"].Value} <HASH>");
 
             s = s_ssrc.Replace(s, m =>
-                "a=ssrc:<SSRC>" + m.Groups["rest"].Value);
+                $"a=ssrc:<SSRC>{m.Groups["rest"].Value}");
 
             s = s_ssrcGroup.Replace(s, m =>
-                "a=ssrc-group:" + m.Groups["sem"].Value + " <SSRC>");
+                $"a=ssrc-group:{m.Groups["sem"].Value} <SSRC>");
 
             s = s_candidate.Replace(s, "a=candidate:<CANDIDATE>");
 
