@@ -434,5 +434,81 @@ opaque=""FQhe/qaU925kfnzjCev0ciny7QMkPqMAFRtzCUYo5tdS""");
 
             Assert.True(authResult.Authenticated);
         }
+
+        /// <summary>
+        /// A base64 nonce that ends with '=' padding must be preserved verbatim. The header is split
+        /// on the first '=' only, so the padding characters in the value must not be lost or treated
+        /// as additional separators.
+        /// </summary>
+        [Fact]
+        public void ParseDigestWithBase64PaddedNonceTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            // Nonce and opaque both contain trailing '=' base64 padding.
+            string nonce = "MTYxMjM0NTY3OC4xMjM0NTY3OA==";
+            string opaque = "YWJjZGVmZ2hpamtsbW5vcA=";
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                $@"Digest realm=""example.com"",nonce=""{nonce}"",qop=""auth"",opaque=""{opaque}"",algorithm=MD5");
+
+            Assert.Equal("example.com", authRequest.Realm);
+            Assert.Equal(nonce, authRequest.Nonce);
+            Assert.Equal(opaque, authRequest.Opaque);
+            Assert.Equal("auth", authRequest.Qop);
+        }
+
+        /// <summary>
+        /// Round-trip: an auth header serialised via ToString() must re-parse into a digest with the
+        /// same field values.
+        /// </summary>
+        [Fact]
+        public void ParseDigestToStringRoundTripTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                @"Digest realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",qop=""auth"",opaque=""004533235332435434ffac663e"",algorithm=MD5");
+            authRequest.SetCredentials("user@aim.com", "password", "sip:01135312222222@sip.aol.com;transport=udp", "INVITE");
+            authRequest.Cnonce = "cf2e005f1801550717cc8c59193aa9f4";
+            authRequest.Response = authRequest.GetDigest();
+
+            string serialised = authRequest.ToString();
+            logger.LogDebug("Serialised auth header={serialised}.", serialised);
+
+            SIPAuthorisationDigest reparsed = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.Authorize, serialised);
+
+            Assert.Equal(authRequest.Realm, reparsed.Realm);
+            Assert.Equal(authRequest.Nonce, reparsed.Nonce);
+            Assert.Equal(authRequest.URI, reparsed.URI);
+            Assert.Equal(authRequest.Response, reparsed.Response);
+            Assert.Equal(authRequest.Cnonce, reparsed.Cnonce);
+            Assert.Equal(authRequest.Qop, reparsed.Qop);
+            Assert.Equal(authRequest.Opaque, reparsed.Opaque);
+        }
+
+        /// <summary>
+        /// The algorithm parameter must be parsed case-insensitively and unquoted SHA-256 must be
+        /// recognised.
+        /// </summary>
+        [Fact]
+        public void ParseDigestSHA256AlgorithmTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(
+                SIPAuthorisationHeadersEnum.WWWAuthenticate,
+                @"Digest realm=""example.com"",nonce=""abc123"",qop=""auth"",algorithm=SHA-256");
+
+            Assert.Equal(DigestAlgorithmsEnum.SHA256, authRequest.DigestAlgorithm);
+            Assert.Equal("example.com", authRequest.Realm);
+            Assert.Equal("abc123", authRequest.Nonce);
+        }
     }
 }
