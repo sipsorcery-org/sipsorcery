@@ -28,6 +28,177 @@ namespace SIPSorcery.SIP.UnitTests
 
         private const string m_CRLF = "\r\n";
 
+        /// <summary>
+        /// Regression test for the Route header serialisation bug introduced when SIPHeader.ToString()
+        /// started routing every header through a generic AppendHeader&lt;T&gt; helper. Because
+        /// SIPRouteSet.ToString() was declared with "new" (hiding) rather than "override", the generic
+        /// interpolation dispatched to object.ToString() and emitted the type name
+        /// ("SIPSorcery.SIP.SIPRouteSet") instead of the route list.
+        /// </summary>
+        [Fact]
+        public void RouteHeaderToStringRegressionTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKrouteregression{m_CRLF}" +
+                $"Route: <sip:10.0.0.1:5060;lr>,<sip:10.0.0.2:5060;lr>{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: route-regression@192.168.1.2{m_CRLF}" +
+                $"CSeq: 1 INVITE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            string serialised = sipHeader.ToString();
+            logger.LogDebug("Serialised headers:\n{Headers}", serialised);
+
+            // The type name must never leak into the serialised header.
+            Assert.DoesNotContain("SIPSorcery.SIP.SIPRouteSet", serialised);
+            Assert.Contains("Route: <sip:10.0.0.1:5060;lr>,<sip:10.0.0.2:5060;lr>", serialised);
+
+            // Round-trip: re-parse the serialised output and confirm both routes survive in order.
+            SIPHeader reparsed = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(serialised));
+            Assert.Equal(2, reparsed.Routes.Length);
+            Assert.Equal("10.0.0.1:5060", reparsed.Routes.PopRoute().Host);
+            Assert.Equal("10.0.0.2:5060", reparsed.Routes.PopRoute().Host);
+        }
+
+        /// <summary>
+        /// Regression test for the same bug as <see cref="RouteHeaderToStringRegressionTest"/> but for the
+        /// Record-Route header (also backed by a SIPRouteSet).
+        /// </summary>
+        [Fact]
+        public void RecordRouteHeaderToStringRegressionTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKrecordrouteregression{m_CRLF}" +
+                $"Record-Route: <sip:10.0.0.3:5060;lr>,<sip:10.0.0.4:5060;lr>{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: record-route-regression@192.168.1.2{m_CRLF}" +
+                $"CSeq: 1 INVITE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            string serialised = sipHeader.ToString();
+            logger.LogDebug("Serialised headers:\n{Headers}", serialised);
+
+            Assert.DoesNotContain("SIPSorcery.SIP.SIPRouteSet", serialised);
+            Assert.Contains("Record-Route: <sip:10.0.0.3:5060;lr>,<sip:10.0.0.4:5060;lr>", serialised);
+
+            SIPHeader reparsed = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(serialised));
+            Assert.Equal(2, reparsed.RecordRoutes.Length);
+            Assert.Equal("10.0.0.3:5060", reparsed.RecordRoutes.PopRoute().Host);
+            Assert.Equal("10.0.0.4:5060", reparsed.RecordRoutes.PopRoute().Host);
+        }
+
+        /// <summary>
+        /// Guards the SplitHeaders rewrite (Regex.Replace folding removed in favour of a hand written
+        /// NormalizeFoldedHeaderLines pass). A header value folded across two lines using a leading tab
+        /// must be unfolded into a single logical header.
+        /// </summary>
+        [Fact]
+        public void SplitHeadersUnfoldsTabContinuationTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKfold{m_CRLF}" +
+                $"Subject: first part{m_CRLF}\tsecond part{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: fold@192.168.1.2{m_CRLF}" +
+                $"CSeq: 1 INVITE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            string[] split = SIPHeader.SplitHeaders(headers);
+
+            // The folded continuation must have been merged back onto the Subject line.
+            Assert.Contains(split, h => h.StartsWith("Subject:") && h.Contains("first part") && h.Contains("second part"));
+            Assert.DoesNotContain(split, h => h.TrimStart().StartsWith("second part") && !h.Contains("first part"));
+        }
+
+        /// <summary>
+        /// Guards the NormalizeFoldedHeaderLines handling of the malformed "\r " (bare CR + space) line
+        /// terminator that some user agents emit instead of CRLF.
+        /// </summary>
+        [Fact]
+        public void SplitHeadersNormalisesBareCarriageReturnTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            // Two header lines separated by the malformed "\r " sequence rather than CRLF.
+            string headers = "Max-Forwards: 70\r Content-Length: 0\r ";
+
+            string[] split = SIPHeader.SplitHeaders(headers);
+
+            Assert.Contains(split, h => h.StartsWith("Max-Forwards:"));
+            Assert.Contains(split, h => h.StartsWith("Content-Length:"));
+            // The two headers must not have been collapsed onto a single line.
+            Assert.DoesNotContain(split, h => h.Contains("Max-Forwards") && h.Contains("Content-Length"));
+        }
+
+        /// <summary>
+        /// Guards the move from culture sensitive headerName.ToLower() comparisons to
+        /// string.Equals(..., OrdinalIgnoreCase). Header names supplied in unexpected casing must
+        /// still be recognised.
+        /// </summary>
+        [Fact]
+        public void HeaderNameCaseInsensitiveParsingTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"vIa: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKcase{m_CRLF}" +
+                $"fRoM: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"tO: <sip:bob@example.com>{m_CRLF}" +
+                $"CALL-ID: case@192.168.1.2{m_CRLF}" +
+                $"cseq: 42 INVITE{m_CRLF}" +
+                $"CONTENT-LENGTH: 7{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            Assert.Equal(42, sipHeader.CSeq);
+            Assert.Equal(SIPMethodsEnum.INVITE, sipHeader.CSeqMethod);
+            Assert.Equal(7, sipHeader.ContentLength);
+            Assert.Equal("case@192.168.1.2", sipHeader.CallId);
+            Assert.Single(sipHeader.Vias.Via);
+        }
+
+        /// <summary>
+        /// Guards the CSeq parsing rewrite (string.Split(' ') replaced by the span based
+        /// TryGetSpaceSeparatedToken helper). Both the sequence number and method must be extracted.
+        /// </summary>
+        [Fact]
+        public void CSeqWithMethodParsingTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            string headers =
+                $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKcseq{m_CRLF}" +
+                $"From: <sip:alice@example.com>;tag=abc123{m_CRLF}" +
+                $"To: <sip:bob@example.com>{m_CRLF}" +
+                $"Call-ID: cseq@192.168.1.2{m_CRLF}" +
+                $"CSeq: 9876 SUBSCRIBE{m_CRLF}" +
+                $"Content-Length: 0{m_CRLF}";
+
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(SIPHeader.SplitHeaders(headers));
+
+            Assert.Equal(9876, sipHeader.CSeq);
+            Assert.Equal(SIPMethodsEnum.SUBSCRIBE, sipHeader.CSeqMethod);
+        }
+
         [Fact]
         public void ParseXTenHeadersTest()
         {
