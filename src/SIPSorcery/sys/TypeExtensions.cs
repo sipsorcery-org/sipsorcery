@@ -55,7 +55,7 @@ namespace SIPSorcery.Sys
         /// </summary>    
         public static bool IsNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            if (s == null || s.AsSpan().Trim(WhiteSpaceChars).Length == 0)
             {
                 return true;
             }
@@ -65,7 +65,7 @@ namespace SIPSorcery.Sys
 
         public static bool NotNullOrBlank(this string s)
         {
-            if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
+            if (s == null || s.AsSpan().Trim(WhiteSpaceChars).Length == 0)
             {
                 return false;
             }
@@ -206,13 +206,11 @@ namespace SIPSorcery.Sys
             return buffer.ToArray();
         }
 
-        //#if NET472 || NETSTANDARD2_0
         public static void Deconstruct<T1, T2>(this KeyValuePair<T1, T2> tuple, out T1 key, out T2 value)
         {
             key = tuple.Key;
             value = tuple.Value;
         }
-        //#endif
 
         public static bool IsPrivate(this IPAddress address)
         {
