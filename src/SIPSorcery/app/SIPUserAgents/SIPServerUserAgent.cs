@@ -357,7 +357,7 @@ namespace SIPSorcery.SIP.App
                     {
                         //UASStateChanged?.Invoke(this, failureStatus, reasonPhrase);
 
-                        string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
+                        string failureReason = (!reasonPhrase.IsNullOrBlank()) ? $" and {reasonPhrase}" : null;
 
                         logger.LogWarning("UAS call failed with a response status of {FailureStatus}{FailureReason}.", (int)failureStatus, failureReason);
                         SIPResponse failureResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, failureStatus, reasonPhrase);

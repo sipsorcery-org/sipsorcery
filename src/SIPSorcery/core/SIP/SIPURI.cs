@@ -124,8 +124,8 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                string canonicalAddress = Scheme + ":";
-                canonicalAddress += !String.IsNullOrEmpty(User) ? User + "@" : null;
+                string canonicalAddress = $"{Scheme}:";
+                canonicalAddress += !String.IsNullOrEmpty(User) ? $"{User}@" : null;
 
                 // First expression is for IPv6 addresses with a port and tel: URIs.
                 // Second expression is for IPv4 addresses and hostnames with a port.
@@ -137,7 +137,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    canonicalAddress += Host + ":" + SIPConstants.GetDefaultPort(Protocol);
+                    canonicalAddress += $"{Host}:{SIPConstants.GetDefaultPort(Protocol)}";
                 }
 
                 return canonicalAddress;
@@ -182,7 +182,7 @@ namespace SIPSorcery.SIP
                 {
                     return MAddrOrHostAddress;
                 }
-                return MAddrOrHostAddress + ":" + this.HostPort;
+                return $"{MAddrOrHostAddress}:{this.HostPort}";
             }
         }
 
@@ -294,7 +294,7 @@ namespace SIPSorcery.SIP
                     {
                         // in case there is a ';' we check wheter there is a '=' in the first part,
                         // if so we assume there is nothing but params
-                        if (User.Substring(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
+                        if (User.AsSpan(0, UserParamsPosn).IndexOf(TAG_NAME_VALUE_SEPERATOR) != -1)
                         {
                             UserParameters = new SIPParameters(User, PARAM_TAG_DELIMITER);
                             UserWithoutParameters = "";
@@ -358,7 +358,7 @@ namespace SIPSorcery.SIP
                             }
                             catch
                             {
-                                throw new SIPValidationException(SIPValidationFieldsEnum.URI, SIPResponseStatusCodesEnum.UnsupportedURIScheme, "SIP scheme " + uri.Substring(0, colonPosn) + " was not understood");
+                                throw new SIPValidationException(SIPValidationFieldsEnum.URI, SIPResponseStatusCodesEnum.UnsupportedURIScheme, $"SIP scheme {uri.Substring(0, colonPosn)} was not understood");
                             }
 
                             string uriHostPortion = uri.Substring(colonPosn + 1);
@@ -448,15 +448,15 @@ namespace SIPSorcery.SIP
 
         public static SIPURI ParseSIPURIRelaxed(string partialURI)
         {
-            if (partialURI == null || partialURI.Trim().Length == 0)
+            if (string.IsNullOrWhiteSpace(partialURI))
             {
                 return null;
             }
             else
             {
-                string regexSchemePattern = "^(" + SIPSchemesEnum.sip + "|" + SIPSchemesEnum.sips + "):";
+                string regexSchemePattern = $"^({SIPSchemesEnum.sip}|{SIPSchemesEnum.sips}):";
 
-                if (Regex.Match(partialURI, regexSchemePattern + @"\S+").Success)
+                if (Regex.Match(partialURI, $@"{regexSchemePattern}\S+").Success)
                 {
                     // The partial uri is already valid.
                     return SIPURI.ParseSIPURI(partialURI);
@@ -577,7 +577,7 @@ namespace SIPSorcery.SIP
 
         private void ParseParamsAndHeaders(string paramsAndHeaders)
         {
-            if (paramsAndHeaders != null && paramsAndHeaders.Trim().Length > 0)
+            if (!string.IsNullOrWhiteSpace(paramsAndHeaders))
             {
                 int headerDelimPosn = paramsAndHeaders.IndexOf(HEADER_START_DELIMITER);
 

@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP.App
                         && pubaddr.AddressFamily == AddressFamily.InterNetworkV6
                         && addr.AddressFamily == AddressFamily.InterNetworkV6)
                     {
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))", "c=IN IP6" + publicIPAddress, RegexOptions.Singleline);
+                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))", $"c=IN IP6{publicIPAddress}", RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;
@@ -65,7 +65,7 @@ namespace SIPSorcery.SIP.App
                         && addr.AddressFamily == AddressFamily.InterNetwork)
                     {
                         //logger.LogDebug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN IP4 " + publicIPAddress, RegexOptions.Singleline);
+                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", $"c=IN IP4 {publicIPAddress}", RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;

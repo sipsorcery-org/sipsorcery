@@ -86,14 +86,14 @@ namespace SIPSorcery.SIP
                 string dialogueName = "L(??)";
                 if (LocalUserField != null && !LocalUserField.URI.User.IsNullOrBlank())
                 {
-                    dialogueName = "L(" + LocalUserField.URI.ToString() + ")";
+                    dialogueName = $"L({LocalUserField.URI.ToString()})";
                 }
 
                 dialogueName += "-";
 
                 if (RemoteUserField != null && !RemoteUserField.URI.User.IsNullOrBlank())
                 {
-                    dialogueName += "R(" + RemoteUserField.URI.ToString() + ")";
+                    dialogueName += $"R({RemoteUserField.URI.ToString()})";
                 }
                 else
                 {

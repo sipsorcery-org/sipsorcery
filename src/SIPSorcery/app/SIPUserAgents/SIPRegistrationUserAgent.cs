@@ -246,7 +246,7 @@ namespace SIPSorcery.SIP.App
 
                         if (!m_exit && RegistrationTemporaryFailure != null)
                         {
-                            RegistrationTemporaryFailure(m_sipAccountAOR, null, "Registration to " + m_registrarHost + " for " + m_sipAccountAOR.ToString() + " timed out.");
+                            RegistrationTemporaryFailure(m_sipAccountAOR, null, $"Registration to {m_registrarHost} for {m_sipAccountAOR.ToString()} timed out.");
                         }
                     }
 
@@ -414,7 +414,7 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError(excp, "Exception SendInitialRegister to {RegistrarHost}.", m_registrarHost);
-                RegistrationFailed?.Invoke(m_sipAccountAOR, null, "Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
+                RegistrationFailed?.Invoke(m_sipAccountAOR, null, $"Exception SendInitialRegister to {m_registrarHost}. {excp.Message}");
             }
         }
 
@@ -471,7 +471,7 @@ namespace SIPSorcery.SIP.App
                             {
                                 logger.LogWarning("SIPRegistrationAgent could not resolve {RegistrarHost}.", m_registrarHost);
 
-                                RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, "Could not resolve " + m_registrarHost + ".");
+                                RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, $"Could not resolve {m_registrarHost}.");
                             }
                             else
                             {
@@ -522,7 +522,7 @@ namespace SIPSorcery.SIP.App
 
                         logger.LogWarning("Registration unequivocal failure with {Status} for {SIPAccountAOR}. No further registration attempts will be made: {Exit}.", sipResponse.Status, m_sipAccountAOR, m_exit);
                         string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                        RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                        RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, $"Registration failed with {(int)sipResponse.Status} {reasonPhrase}.");
 
                         m_waitForRegistrationMRE.Set();
                     }
@@ -585,7 +585,7 @@ namespace SIPSorcery.SIP.App
 
                     logger.LogWarning("Registration unequivocal failure with {Status} for {SipAccountAOR}{Action}.", sipResponse.Status, m_sipAccountAOR, (m_exit ? " ,no further registration attempts will be made" : ""));
                     string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                    RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, $"Registration failed with {(int)sipResponse.Status} {reasonPhrase}.");
 
                     m_waitForRegistrationMRE.Set();
                 }
@@ -596,7 +596,7 @@ namespace SIPSorcery.SIP.App
 
                     logger.LogWarning("Registration unequivocal failure with {Status} for {SipAccountAOR}{Action}.", sipResponse.Status, m_sipAccountAOR, (m_exit ? " ,no further registration attempts will be made" : ""));
                     string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                    RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, "Registration failed with " + (int)sipResponse.Status + " " + reasonPhrase + ".");
+                    RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, $"Registration failed with {(int)sipResponse.Status} {reasonPhrase}.");
 
                     m_waitForRegistrationMRE.Set();
                 }
@@ -604,7 +604,7 @@ namespace SIPSorcery.SIP.App
                 {
                     logger.LogWarning("Registration failed with {Status} for {SipAccountAOR}.", sipResponse.Status, m_sipAccountAOR);
                     m_isRegistered = false;
-                    RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, sipResponse, "Registration failed with " + sipResponse.Status + ".");
+                    RegistrationTemporaryFailure?.Invoke(m_sipAccountAOR, sipResponse, $"Registration failed with {sipResponse.Status}.");
                     m_waitForRegistrationMRE.Set();
                 }
             }

@@ -19,7 +19,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
+using System.Text;
 using Microsoft.Extensions.Logging;
+using Polyfills;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -85,14 +87,125 @@ namespace SIPSorcery.SIP
         {
             TagDelimiter = delimiter;
 
-            string[] keyValuePairs = GetKeyValuePairsFromQuoted(sipString, delimiter);
-
-            if (keyValuePairs != null && keyValuePairs.Length > 0)
+            void AddKeyValuePair(ReadOnlySpan<char> keyValuePair, Span<Range> keyValueRange)
             {
-                foreach (string keyValuePair in keyValuePairs)
+                if (keyValuePair.Trim().Length > 0)
                 {
-                    AddKeyValuePair(keyValuePair, m_dictionary);
+                    if (keyValuePair.Split(keyValueRange, TAG_NAME_VALUE_SEPERATOR) == 2)
+                    {
+                        var keyName = keyValuePair[keyValueRange[0]].Trim().ToString();
+
+                        // If this is not the parameter that is being removed put it back on.
+                        if (!m_dictionary.ContainsKey(keyName))
+                        {
+                            m_dictionary.TryAdd(keyName, keyValuePair[keyValueRange[1]].Trim().ToString());
+                        }
+                    }
+                    else
+                    {
+                        // Keys with no values are valid in SIP so they get added to the collection with a null value.
+                        var keyName = keyValuePair.ToString();
+                        if (!m_dictionary.ContainsKey(keyName))
+                        {
+                            m_dictionary.TryAdd(keyName, null);
+                        }
+                    }
                 }
+            }
+
+            static int IndexOfDelimiterOrQuote(ReadOnlySpan<char> value, int startIndex, char delimiter)
+            {
+                var remaining = value.Slice(startIndex);
+                var delimiterIndex = remaining.IndexOf(delimiter);
+                var quoteIndex = remaining.IndexOf(QUOTE);
+
+                if (delimiterIndex == -1)
+                {
+                    return quoteIndex == -1 ? -1 : startIndex + quoteIndex;
+                }
+
+                if (quoteIndex == -1)
+                {
+                    return startIndex + delimiterIndex;
+                }
+
+                return startIndex + Math.Min(delimiterIndex, quoteIndex);
+            }
+
+            var sipParameters = sipString.AsSpan();
+            if (sipParameters.Trim().Length == 0)
+            {
+                return;
+            }
+
+            Span<Range> keyValueRange = stackalloc Range[2];
+            if (sipParameters.IndexOf(delimiter) == -1)
+            {
+                AddKeyValuePair(sipParameters, keyValueRange);
+                return;
+            }
+
+            var startParameterPosn = 0;
+            var inParameterPosn = 0;
+            var inQuotedStr = false;
+
+            while (inParameterPosn != -1 && inParameterPosn < sipParameters.Length)
+            {
+                inParameterPosn = IndexOfDelimiterOrQuote(sipParameters, inParameterPosn, delimiter);
+
+                // Determine if the delimiter position represents the end of the parameter or is in a quoted string.
+                if (inParameterPosn != -1)
+                {
+                    if (inParameterPosn <= startParameterPosn && sipParameters[inParameterPosn] == delimiter)
+                    {
+                        // Initial or doubled up Parameter delimiter character, ignore and move on.
+                        inQuotedStr = false;
+                        inParameterPosn++;
+                        startParameterPosn = inParameterPosn;
+                    }
+                    else if (sipParameters[inParameterPosn] == QUOTE)
+                    {
+                        if (inQuotedStr && inParameterPosn > 0 && sipParameters[inParameterPosn - 1] != BACK_SLASH)
+                        {
+                            // If in a quoted string and this quote has not been escaped close the quoted string.
+                            inQuotedStr = false;
+                        }
+                        else if (inQuotedStr && inParameterPosn > 0 && sipParameters[inParameterPosn - 1] == BACK_SLASH)
+                        {
+                            // Do nothing, quote has been escaped in a quoted string.
+                        }
+                        else if (!inQuotedStr)
+                        {
+                            // Start quoted string.
+                            inQuotedStr = true;
+                        }
+
+                        inParameterPosn++;
+                    }
+                    else
+                    {
+                        if (!inQuotedStr)
+                        {
+                            // Parameter delimiter found and not in quoted string therefore this is a parameter separator.
+                            AddKeyValuePair(sipParameters.Slice(startParameterPosn, inParameterPosn - startParameterPosn), keyValueRange);
+
+                            inParameterPosn++;
+                            startParameterPosn = inParameterPosn;
+                        }
+                        else
+                        {
+                            // Do nothing, separator character is within a quoted string.
+                            inParameterPosn++;
+                        }
+                    }
+                }
+            }
+
+            // Add the last parameter.
+            if (startParameterPosn < sipParameters.Length)
+            {
+                // Parameter delimiter found and not in quoted string therefore this is a parameter separator.
+                AddKeyValuePair(sipParameters.Slice(startParameterPosn), keyValueRange);
             }
         }
 
@@ -102,7 +215,7 @@ namespace SIPSorcery.SIP
             {
                 List<string> keyValuePairList = new List<string>();
 
-                if (quotedString == null || quotedString.Trim().Length == 0)
+                if (string.IsNullOrWhiteSpace(quotedString))
                 {
                     return null;
                 }
@@ -112,13 +225,32 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
+                    static int IndexOfDelimiterOrQuote(ReadOnlySpan<char> value, int startIndex, char delimiter)
+                    {
+                        var remaining = value.Slice(startIndex);
+                        var delimiterIndex = remaining.IndexOf(delimiter);
+                        var quoteIndex = remaining.IndexOf(QUOTE);
+
+                        if (delimiterIndex == -1)
+                        {
+                            return quoteIndex == -1 ? -1 : startIndex + quoteIndex;
+                        }
+
+                        if (quoteIndex == -1)
+                        {
+                            return startIndex + delimiterIndex;
+                        }
+
+                        return startIndex + Math.Min(delimiterIndex, quoteIndex);
+                    }
+
                     int startParameterPosn = 0;
                     int inParameterPosn = 0;
                     bool inQuotedStr = false;
 
                     while (inParameterPosn != -1 && inParameterPosn < quotedString.Length)
                     {
-                        inParameterPosn = quotedString.IndexOfAny(new char[] { delimiter, QUOTE }, inParameterPosn);
+                        inParameterPosn = IndexOfDelimiterOrQuote(quotedString.AsSpan(), inParameterPosn, delimiter);
 
                         // Determine if the delimiter position represents the end of the parameter or is in a quoted string.
                         if (inParameterPosn != -1)
@@ -184,32 +316,6 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError(excp, "Exception GetKeyValuePairsFromQuoted. {ErrorMessage}", excp.Message);
                 throw;
-            }
-        }
-
-        private void AddKeyValuePair(string keyValuePair, ConcurrentDictionary<string, string> dictionary)
-        {
-            if (keyValuePair != null && keyValuePair.Trim().Length > 0)
-            {
-                int seperatorPosn = keyValuePair.IndexOf(TAG_NAME_VALUE_SEPERATOR);
-                if (seperatorPosn != -1)
-                {
-                    string keyName = keyValuePair.Substring(0, seperatorPosn).Trim();
-
-                    // If this is not the parameter that is being removed put it back on.
-                    if (!dictionary.ContainsKey(keyName))
-                    {
-                        dictionary.TryAdd(keyName, keyValuePair.Substring(seperatorPosn + 1).Trim());
-                    }
-                }
-                else
-                {
-                    // Keys with no values are valid in SIP so they get added to the collection with a null value.
-                    if (!dictionary.ContainsKey(keyValuePair))
-                    {
-                        dictionary.TryAdd(keyValuePair, null);
-                    }
-                }
             }
         }
 
@@ -290,24 +396,23 @@ namespace SIPSorcery.SIP
 
         public override string ToString()
         {
-            string paramStr = null;
+            var paramStr = default(StringBuilder);
 
             if (m_dictionary != null)
             {
                 foreach (KeyValuePair<string, string> param in m_dictionary)
                 {
-                    if (param.Value != null && param.Value.Trim().Length > 0)
+                    paramStr ??= new StringBuilder();
+                    paramStr.Append(TagDelimiter).Append(param.Key);
+
+                    if (!string.IsNullOrWhiteSpace(param.Value))
                     {
-                        paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPURIParameterEscape(param.Value);
-                    }
-                    else
-                    {
-                        paramStr += TagDelimiter + param.Key;
+                        paramStr.Append(TAG_NAME_VALUE_SEPERATOR).Append(SIPEscape.SIPURIParameterEscape(param.Value));
                     }
                 }
             }
 
-            return paramStr;
+            return paramStr?.ToString();
         }
 
         public override int GetHashCode()
