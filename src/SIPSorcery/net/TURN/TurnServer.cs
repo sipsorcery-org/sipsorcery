@@ -20,6 +20,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -80,6 +81,28 @@ namespace SIPSorcery.Net
         /// Default allocation lifetime in seconds. Default is 600 (10 minutes).
         /// </summary>
         public int DefaultLifetimeSeconds { get; set; } = 600;
+
+        /// <summary>
+        /// Optional shared secret enabling REST-style ephemeral credentials
+        /// (draft-uberti-behave-turn-rest, also referenced by RFC 8489 Section 9.2).
+        /// When set, <see cref="Username"/> / <see cref="Password"/> are ignored. Clients must
+        /// present <c>USERNAME = "{unix-expiry}:{userId}"</c> and
+        /// <c>PASSWORD = base64(HMAC-SHA1(StaticAuthSecret, "USERNAME:REALM"))</c>. The expiry
+        /// is enforced and expired credentials are rejected with 401 Unauthorized.
+        /// </summary>
+        public string StaticAuthSecret { get; set; }
+
+        /// <summary>
+        /// Inclusive lower bound for the relay UDP port. If both <see cref="RelayPortMin"/>
+        /// and <see cref="RelayPortMax"/> are zero (the default) the relay socket is bound to
+        /// an ephemeral port chosen by the OS.
+        /// </summary>
+        public int RelayPortMin { get; set; } = 0;
+
+        /// <summary>
+        /// Inclusive upper bound for the relay UDP port. See <see cref="RelayPortMin"/>.
+        /// </summary>
+        public int RelayPortMax { get; set; } = 0;
     }
 
     /// <summary>
@@ -123,6 +146,11 @@ namespace SIPSorcery.Net
         // Internal: cancellation for the relay loop.
         internal CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
 
+        // Internal: HMAC key used to sign responses for this allocation. Pre-computed once at
+        // allocation time so REST/ephemeral creds (per-user key) and long-term creds (shared
+        // key) can be handled uniformly without re-deriving on every message.
+        internal byte[] HmacKey { get; set; }
+
         public void Dispose()
         {
             try { Cts.Cancel(); } catch { }
@@ -140,8 +168,10 @@ namespace SIPSorcery.Net
     /// <remarks>
     /// <para><strong>Known limitations (contributions welcome):</strong></para>
     /// <list type="bullet">
-    ///   <item>Single static credential (one username/password pair) — no per-user credential
-    ///         database or REST API-based ephemeral credentials (RFC 8489 Section 9.2).</item>
+    ///   <item>Two credential modes: a single long-term username/password, or REST-style
+    ///         ephemeral credentials (draft-uberti-behave-turn-rest /
+    ///         RFC 8489 Section 9.2) when <see cref="TurnServerConfig.StaticAuthSecret"/> is
+    ///         set. There is no per-user credential database for non-REST deployments.</item>
     ///   <item>No nonce validation/expiry — nonces are generated but never verified on subsequent
     ///         requests, so replay attacks are possible within the allocation lifetime.</item>
     ///   <item>No rate limiting or per-IP allocation caps — a misbehaving client can exhaust
@@ -162,10 +192,6 @@ namespace SIPSorcery.Net
     ///         real credentials; defaults are intentionally weak to encourage replacement.</item>
     ///   <item>Default listen address is loopback — safe by default, but if bound to a public
     ///         interface without TLS, credentials travel in cleartext.</item>
-    ///   <item>The manual HMAC verification and error-code construction are workarounds for bugs in
-    ///         <c>STUNMessage.CheckIntegrity()</c> (#1510) and <c>STUNErrorCodeAttribute</c>
-    ///         (#1509); once those are merged, TurnServer should be updated to use the fixed
-    ///         library methods.</item>
     ///   <item>No input validation on allocation count or relay port range — in production you
     ///         would want to bound these.</item>
     /// </list>
@@ -195,6 +221,10 @@ namespace SIPSorcery.Net
         private readonly TurnServerConfig _config;
         private readonly byte[] _hmacKey;
         private readonly IPAddress _relayAddress;
+        private readonly bool _useStaticAuthSecret;
+        private readonly byte[] _realmBytes;
+        private readonly byte[] _staticAuthSecretBytes;
+        private int _nextRelayPortOffset = -1;
 
         private TcpListener _tcpListener;
         private UdpClient _udpSocket;
@@ -204,10 +234,88 @@ namespace SIPSorcery.Net
         private readonly ConcurrentDictionary<string, TurnAllocation> _allocations =
             new ConcurrentDictionary<string, TurnAllocation>();
 
+        // Cache of local interface IPv4 addresses, used by TranslateLocalSource to
+        // recognize hairpinned relay packets. Refreshed lazily — interfaces don't change
+        // often enough to warrant locking on the hot path.
+        private HashSet<IPAddress> _localIPv4Cache;
+        private DateTime _localIPv4CacheExpiry = DateTime.MinValue;
+
         /// <summary>
         /// Gets a read-only view of current allocations.
         /// </summary>
         public IReadOnlyDictionary<string, TurnAllocation> Allocations => _allocations;
+
+        /// <summary>
+        /// Translates a packet's observed source endpoint into the advertised relay endpoint
+        /// when the source is one of this server's own relay sockets. Returns <c>null</c> if
+        /// the endpoint isn't recognized as a local relay.
+        ///
+        /// This is the hook that makes hairpinning work when a peer on the same machine as
+        /// the TURN server uses one of its allocations: the OS picks a local interface
+        /// address as the source IP, which differs from the public IP advertised in
+        /// <c>XOR-RELAYED-ADDRESS</c>. Wiring this method into
+        /// <c>RTCPeerConnection.RemoteEndpointTranslator</c> lets the ICE source filter and
+        /// candidate matcher reconcile the two views.
+        /// </summary>
+        public IPEndPoint TranslateLocalSource(IPEndPoint observedSource)
+        {
+            if (observedSource == null)
+            {
+                return null;
+            }
+
+            // Normalize IPv4-mapped IPv6 addresses to pure IPv4 for the comparison.
+            var addr = observedSource.Address.IsIPv4MappedToIPv6
+                ? observedSource.Address.MapToIPv4()
+                : observedSource.Address;
+
+            if (!IsLocalIPv4(addr))
+            {
+                return null;
+            }
+
+            // Does the port match one of our current allocations' relay ports?
+            // Iteration is fine — allocation counts in the small-scale deployments this
+            // server targets are well under the threshold where a hashed index would matter.
+            foreach (var alloc in _allocations.Values)
+            {
+                if (alloc.RelayEndPoint?.Port == observedSource.Port)
+                {
+                    return new IPEndPoint(_relayAddress, observedSource.Port);
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsLocalIPv4(IPAddress address)
+        {
+            if (IPAddress.IsLoopback(address))
+            {
+                return true;
+            }
+
+            // Refresh the cache every 60 seconds to pick up interface changes (VPNs, etc).
+            if (_localIPv4Cache == null || DateTime.UtcNow > _localIPv4CacheExpiry)
+            {
+                try
+                {
+                    _localIPv4Cache = new HashSet<IPAddress>(
+                        NetworkInterface.GetAllNetworkInterfaces()
+                            .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                            .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                            .Where(uni => uni.Address.AddressFamily == AddressFamily.InterNetwork)
+                            .Select(uni => uni.Address));
+                }
+                catch
+                {
+                    _localIPv4Cache = new HashSet<IPAddress>();
+                }
+                _localIPv4CacheExpiry = DateTime.UtcNow.AddSeconds(60);
+            }
+
+            return _localIPv4Cache.Contains(address);
+        }
 
         /// <summary>
         /// Creates a new TURN server with the specified configuration.
@@ -217,16 +325,31 @@ namespace SIPSorcery.Net
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _relayAddress = config.RelayAddress ?? config.ListenAddress;
+            _useStaticAuthSecret = !string.IsNullOrEmpty(_config.StaticAuthSecret);
+            _realmBytes = Encoding.UTF8.GetBytes(_config.Realm);
 
-            // Long-term credential: HMAC key = MD5(username:realm:password)
+            if (_useStaticAuthSecret)
+            {
+                _staticAuthSecretBytes = Encoding.UTF8.GetBytes(_config.StaticAuthSecret);
+            }
+            else
+            {
+                // Long-term credential mode: HMAC key = MD5(username:realm:password)
+                _hmacKey = DeriveLongTermKey(_config.Username, _config.Realm, _config.Password);
+            }
+            // REST mode (StaticAuthSecret set): _hmacKey stays null; the per-request key is
+            // derived from the USERNAME attribute when an Allocate request arrives.
+        }
+
+        private static byte[] DeriveLongTermKey(string username, string realm, string password)
+        {
+            var input = Encoding.UTF8.GetBytes($"{username}:{realm}:{password}");
 #if NET5_0_OR_GREATER
-            _hmacKey = MD5.HashData(
-                Encoding.UTF8.GetBytes($"{_config.Username}:{_config.Realm}:{_config.Password}"));
+            return MD5.HashData(input);
 #else
             using (var md5 = MD5.Create())
             {
-                _hmacKey = md5.ComputeHash(
-                    Encoding.UTF8.GetBytes($"{_config.Username}:{_config.Realm}:{_config.Password}"));
+                return md5.ComputeHash(input);
             }
 #endif
         }
@@ -329,8 +452,11 @@ namespace SIPSorcery.Net
 
         private async Task HandleTcpClientAsync(TcpClient tcpClient)
         {
-            var clientId = tcpClient.Client.RemoteEndPoint?.ToString() ?? "unknown";
+            var clientEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+            var clientId = clientEndPoint?.ToString() ?? "unknown";
             var stream = tcpClient.GetStream();
+            var header = new byte[4];
+            var paddingBuffer = new byte[3];
             TurnAllocation allocation = null;
 
             try
@@ -338,7 +464,6 @@ namespace SIPSorcery.Net
                 while (_running && tcpClient.Connected)
                 {
                     // TCP framing: read first 4 bytes to determine STUN message vs ChannelData.
-                    var header = new byte[4];
                     if (!await ReadExactAsync(stream, header, 0, 4).ConfigureAwait(false))
                         break;
 
@@ -356,11 +481,11 @@ namespace SIPSorcery.Net
                         var padding = (4 - (dataLength % 4)) % 4;
                         if (padding > 0)
                         {
-                            var padBuf = new byte[padding];
-                            await ReadExactAsync(stream, padBuf, 0, padding).ConfigureAwait(false);
+                            if (!await ReadExactAsync(stream, paddingBuffer, 0, padding).ConfigureAwait(false))
+                                break;
                         }
 
-                        HandleChannelData(allocation, channelNumber, data);
+                        HandleChannelData(allocation, channelNumber, data, 0, data.Length);
                     }
                     else
                     {
@@ -380,7 +505,7 @@ namespace SIPSorcery.Net
                             continue;
                         }
 
-                        ProcessMessage(stunMsg, fullMsg, clientId,
+                        ProcessMessage(stunMsg, clientId, clientEndPoint,
                             (responseBytes) => SendTcpResponseAsync(stream, responseBytes),
                             ref allocation,
                             stream, null, null);
@@ -463,13 +588,10 @@ namespace SIPSorcery.Net
 
                 if (data.Length >= 4 + dataLength)
                 {
-                    var payload = new byte[dataLength];
-                    Buffer.BlockCopy(data, 4, payload, 0, dataLength);
-
                     // Find the allocation for this client
                     if (_allocations.TryGetValue(clientId, out var allocation))
                     {
-                        HandleChannelData(allocation, channelNumber, payload);
+                        HandleChannelData(allocation, channelNumber, data, 4, dataLength);
                     }
                 }
                 return;
@@ -482,19 +604,12 @@ namespace SIPSorcery.Net
                 return;
             }
 
-            TurnAllocation udpAllocation = null;
-            _allocations.TryGetValue(clientId, out udpAllocation);
+            _allocations.TryGetValue(clientId, out var udpAllocation);
 
-            ProcessMessage(stunMsg, data, clientId,
+            ProcessMessage(stunMsg, clientId, remoteEndPoint,
                 (responseBytes) => SendUdpResponseAsync(remoteEndPoint, responseBytes),
                 ref udpAllocation,
                 null, remoteEndPoint, _udpSocket);
-
-            // Update the dictionary if a new allocation was created
-            if (udpAllocation != null && !_allocations.ContainsKey(clientId))
-            {
-                _allocations[clientId] = udpAllocation;
-            }
         }
 
         private async Task SendUdpResponseAsync(IPEndPoint remoteEndPoint, byte[] data)
@@ -515,8 +630,8 @@ namespace SIPSorcery.Net
 
         private void ProcessMessage(
             STUNMessage msg,
-            byte[] rawBytes,
             string clientId,
+            IPEndPoint clientEndPoint,
             Func<byte[], Task> sendResponse,
             ref TurnAllocation allocation,
             NetworkStream tcpStream,
@@ -530,7 +645,7 @@ namespace SIPSorcery.Net
             {
                 case STUNMessageTypesEnum.BindingRequest:
                     {
-                        var response = HandleBindingRequest(msg);
+                        var response = HandleBindingRequest(msg, clientEndPoint);
                         var bytes = response.ToByteBuffer(null, false);
                         _ = sendResponse(bytes);
                     }
@@ -538,11 +653,11 @@ namespace SIPSorcery.Net
 
                 case STUNMessageTypesEnum.Allocate:
                     {
-                        var (response, needsAuth) = HandleAllocate(msg, rawBytes, clientId,
+                        var (response, signingKey) = HandleAllocate(msg, clientId, clientEndPoint,
                             tcpStream, udpClientEndPoint, udpControlSocket,
                             ref allocation);
-                        var bytes = needsAuth
-                            ? response.ToByteBuffer(_hmacKey, true)
+                        var bytes = signingKey != null
+                            ? response.ToByteBuffer(signingKey, true)
                             : response.ToByteBuffer(null, false);
                         _ = sendResponse(bytes);
                     }
@@ -551,7 +666,7 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.Refresh:
                     {
                         var response = HandleRefresh(msg, clientId, ref allocation);
-                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        var bytes = SignResponse(response, allocation);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -559,7 +674,7 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.CreatePermission:
                     {
                         var response = HandleCreatePermission(msg, allocation);
-                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        var bytes = SignResponse(response, allocation);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -567,7 +682,7 @@ namespace SIPSorcery.Net
                 case STUNMessageTypesEnum.ChannelBind:
                     {
                         var response = HandleChannelBind(msg, allocation);
-                        var bytes = response.ToByteBuffer(_hmacKey, true);
+                        var bytes = SignResponse(response, allocation);
                         _ = sendResponse(bytes);
                     }
                     break;
@@ -582,51 +697,130 @@ namespace SIPSorcery.Net
             }
         }
 
-        private STUNMessage HandleBindingRequest(STUNMessage request)
+        private STUNMessage HandleBindingRequest(STUNMessage request, IPEndPoint clientEndPoint)
         {
             var response = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
             response.Header.TransactionId = request.Header.TransactionId;
-            response.AddXORMappedAddressAttribute(_relayAddress, _config.Port);
+            // The whole point of a Binding response is to tell the client its reflexive
+            // transport address as seen by the server — not the server's own address.
+            if (clientEndPoint != null)
+            {
+                response.AddXORMappedAddressAttribute(clientEndPoint.Address, clientEndPoint.Port);
+            }
             return response;
         }
 
-        private (STUNMessage response, bool needsAuth) HandleAllocate(
+        /// <summary>
+        /// Serialize a response, signing it with the allocation's cached HMAC key when
+        /// available, falling back to the server's static key (long-term cred mode). In REST
+        /// mode without a known allocation the response goes out unsigned — the client will
+        /// retry with fresh credentials anyway.
+        /// </summary>
+        private byte[] SignResponse(STUNMessage response, TurnAllocation allocation)
+        {
+            var key = allocation?.HmacKey ?? _hmacKey;
+            return key != null
+                ? response.ToByteBuffer(key, true)
+                : response.ToByteBuffer(null, false);
+        }
+
+        /// <summary>
+        /// In REST mode, derive the per-user long-term HMAC key from the USERNAME in the
+        /// request and validate the embedded expiry. Returns false (with rejectReason
+        /// populated) when the credential is malformed or expired.
+        /// </summary>
+        private bool TryDeriveRestKey(STUNMessage request, out byte[] key, out string rejectReason)
+        {
+            key = null;
+            rejectReason = null;
+
+            var usernameAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.Username);
+            if (usernameAttr?.Value == null || usernameAttr.Value.Length == 0)
+            {
+                rejectReason = "missing USERNAME";
+                return false;
+            }
+
+            var username = Encoding.UTF8.GetString(usernameAttr.Value);
+            var colonIdx = username.IndexOf(':');
+            if (colonIdx <= 0)
+            {
+                rejectReason = "USERNAME not in '<expiry>:<user>' form";
+                return false;
+            }
+
+            if (!long.TryParse(username.Substring(0, colonIdx), out var expiryUnix))
+            {
+                rejectReason = "USERNAME expiry is not a unix timestamp";
+                return false;
+            }
+
+            var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (expiryUnix <= nowUnix)
+            {
+                rejectReason = "credential expired";
+                return false;
+            }
+
+            // Compute the REST password: base64(HMAC-SHA1(staticAuthSecret, "USERNAME:REALM"))
+            var msgBytes = Encoding.UTF8.GetBytes($"{username}:{_config.Realm}");
+            string password;
+#if NET6_0_OR_GREATER
+            password = Convert.ToBase64String(HMACSHA1.HashData(_staticAuthSecretBytes, msgBytes));
+#else
+            using (var hmac = new HMACSHA1(_staticAuthSecretBytes))
+            {
+                password = Convert.ToBase64String(hmac.ComputeHash(msgBytes));
+            }
+#endif
+
+            key = DeriveLongTermKey(username, _config.Realm, password);
+            return true;
+        }
+
+        private (STUNMessage response, byte[] signingKey) HandleAllocate(
             STUNMessage request,
-            byte[] rawBytes,
             string clientId,
+            IPEndPoint clientEndPoint,
             NetworkStream tcpStream,
             IPEndPoint udpClientEndPoint,
             UdpClient udpControlSocket,
             ref TurnAllocation allocation)
         {
             // Check for MESSAGE-INTEGRITY — first request won't have it
-            var hasIntegrity = request.Attributes.Any(
-                a => a.AttributeType == STUNAttributeTypesEnum.MessageIntegrity);
+            var hasIntegrity = HasAttribute(request, STUNAttributeTypesEnum.MessageIntegrity);
 
             if (!hasIntegrity)
             {
                 // Send 401 Unauthorized with REALM and NONCE (unsigned)
-                var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
-                errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(401, "Unauthorized"));
-                errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
-                    Encoding.UTF8.GetBytes(_config.Realm)));
-                errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
-                    Encoding.UTF8.GetBytes(GenerateNonce())));
-                return (errResponse, false);
+                return (BuildAuthChallenge(request), null);
             }
 
-            // Verify MESSAGE-INTEGRITY manually on the raw bytes.
-            // SIPSorcery's CheckIntegrity() requires a valid FINGERPRINT as the last attribute
-            // (isFingerprintValid guard), which browsers may not send for TURN messages.
-            // See: https://github.com/sipsorcery-org/sipsorcery/pull/1510
-            if (!VerifyMessageIntegrity(rawBytes, _hmacKey))
+            // Derive the HMAC key for this request. In long-term cred mode this is the static
+            // _hmacKey; in REST mode it depends on the USERNAME attribute (and we also
+            // validate the embedded expiry timestamp here).
+            byte[] requestKey;
+            if (_useStaticAuthSecret)
+            {
+                if (!TryDeriveRestKey(request, out requestKey, out var reason))
+                {
+                    logger.LogWarning("TURN Allocate: REST credential rejected from {Client}: {Reason}.",
+                        clientId, reason);
+                    return (BuildAuthChallenge(request), null);
+                }
+            }
+            else
+            {
+                requestKey = _hmacKey;
+            }
+
+            if (!request.CheckIntegrity(requestKey))
             {
                 logger.LogWarning("TURN Allocate: integrity check failed from {Client}.", clientId);
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(401, "Unauthorized"));
-                return (errResponse, false);
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
+                return (errResponse, null);
             }
 
             // Check if there's already an allocation for this client
@@ -634,12 +828,20 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
-                return (errResponse, true);
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
+                return (errResponse, requestKey);
             }
 
-            // Create UDP relay socket
-            var relaySocket = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            // Create the UDP relay socket — within the configured port range if set, else any.
+            if (!TryBindRelaySocket(out var relaySocket))
+            {
+                logger.LogWarning("TURN Allocate: no free relay port in [{Min}..{Max}] for {Client}.",
+                    _config.RelayPortMin, _config.RelayPortMax, clientId);
+                var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
+                errResponse.Header.TransactionId = request.Header.TransactionId;
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(508, "Insufficient Capacity"));
+                return (errResponse, requestKey);
+            }
             var relayEndpoint = (IPEndPoint)relaySocket.Client.LocalEndPoint;
 
             allocation = new TurnAllocation
@@ -651,6 +853,7 @@ namespace SIPSorcery.Net
                 TcpStream = tcpStream,
                 UdpClientEndPoint = udpClientEndPoint,
                 UdpControlSocket = udpControlSocket,
+                HmacKey = requestKey,
             };
 
             _allocations[clientId] = allocation;
@@ -672,18 +875,68 @@ namespace SIPSorcery.Net
                 _relayAddress,
                 request.Header.TransactionId));
 
-            // XOR-MAPPED-ADDRESS
-            response.Attributes.Add(new STUNXORAddressAttribute(
-                STUNAttributeTypesEnum.XORMappedAddress,
-                _config.Port,
-                _relayAddress,
-                request.Header.TransactionId));
+            // XOR-MAPPED-ADDRESS — per RFC 5766 §6.3, this is the client's reflexive
+            // transport address (the source of the Allocate request as the server saw it),
+            // not the server's own address.
+            if (clientEndPoint != null)
+            {
+                response.Attributes.Add(new STUNXORAddressAttribute(
+                    STUNAttributeTypesEnum.XORMappedAddress,
+                    clientEndPoint.Port,
+                    clientEndPoint.Address,
+                    request.Header.TransactionId));
+            }
 
             // LIFETIME
             response.Attributes.Add(new STUNAttribute(
                 STUNAttributeTypesEnum.Lifetime, (uint)_config.DefaultLifetimeSeconds));
 
-            return (response, true);
+            return (response, requestKey);
+        }
+
+        private STUNMessage BuildAuthChallenge(STUNMessage request)
+        {
+            var errResponse = new STUNMessage(STUNMessageTypesEnum.AllocateErrorResponse);
+            errResponse.Header.TransactionId = request.Header.TransactionId;
+            errResponse.Attributes.Add(new STUNErrorCodeAttribute(401, "Unauthorized"));
+            errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm,
+                _realmBytes));
+            errResponse.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce,
+                Encoding.UTF8.GetBytes(GenerateNonce())));
+            return errResponse;
+        }
+
+        /// <summary>
+        /// Bind the relay UDP socket. If a relay port range is configured walk it in order
+        /// and bind to the first free port; if no range is set let the OS pick an ephemeral
+        /// port. Returns false when a range was set but every port in it is occupied.
+        /// </summary>
+        private bool TryBindRelaySocket(out UdpClient socket)
+        {
+            socket = null;
+            if (_config.RelayPortMin <= 0 || _config.RelayPortMax < _config.RelayPortMin)
+            {
+                socket = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+                return true;
+            }
+
+            var portCount = _config.RelayPortMax - _config.RelayPortMin + 1;
+            var startOffset = (uint)Interlocked.Increment(ref _nextRelayPortOffset);
+
+            for (int i = 0; i < portCount; i++)
+            {
+                var port = _config.RelayPortMin + (int)((startOffset + (uint)i) % (uint)portCount);
+                try
+                {
+                    socket = new UdpClient(new IPEndPoint(IPAddress.Any, port));
+                    return true;
+                }
+                catch (SocketException)
+                {
+                    // Port in use — try the next one.
+                }
+            }
+            return false;
         }
 
         private STUNMessage HandleRefresh(STUNMessage request, string clientId, ref TurnAllocation allocation)
@@ -692,13 +945,12 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.RefreshErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return errResponse;
             }
 
             // Extract requested lifetime
-            var lifetimeAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.Lifetime);
+            var lifetimeAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.Lifetime);
             uint lifetime = (uint)_config.DefaultLifetimeSeconds;
             if (lifetimeAttr?.Value != null && lifetimeAttr.Value.Length >= 4)
             {
@@ -730,18 +982,23 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.CreatePermissionErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return errResponse;
             }
 
-            foreach (var attr in request.Attributes.Where(
-                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress))
+            var permissionExpiry = DateTime.UtcNow.AddSeconds(PERMISSION_LIFETIME_SECONDS);
+            foreach (var attr in request.Attributes)
             {
+                if (attr.AttributeType != STUNAttributeTypesEnum.XORPeerAddress)
+                {
+                    continue;
+                }
+
                 var xorAddr = new STUNXORAddressAttribute(
                     STUNAttributeTypesEnum.XORPeerAddress,
                     attr.Value, request.Header.TransactionId);
                 var peerIp = xorAddr.Address.ToString();
-                allocation.Permissions[peerIp] = DateTime.UtcNow.AddSeconds(PERMISSION_LIFETIME_SECONDS);
+                allocation.Permissions[peerIp] = permissionExpiry;
                 logger.LogDebug("TURN permission added: {Address} (expires in {Seconds}s).",
                     peerIp, PERMISSION_LIFETIME_SECONDS);
             }
@@ -757,29 +1014,27 @@ namespace SIPSorcery.Net
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(437, "Allocation Mismatch"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(437, "Allocation Mismatch"));
                 return errResponse;
             }
 
-            var channelAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.ChannelNumber);
+            var channelAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.ChannelNumber);
             if (channelAttr?.Value == null || channelAttr.Value.Length < 2)
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(400, "Bad Request"));
                 return errResponse;
             }
 
             var channelNumber = (ushort)((channelAttr.Value[0] << 8) | channelAttr.Value[1]);
 
-            var peerAttr = request.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress);
+            var peerAttr = request.GetFirstAttribute(STUNAttributeTypesEnum.XORPeerAddress);
             if (peerAttr?.Value == null)
             {
                 var errResponse = new STUNMessage(STUNMessageTypesEnum.ChannelBindErrorResponse);
                 errResponse.Header.TransactionId = request.Header.TransactionId;
-                errResponse.Attributes.Add(BuildErrorCodeAttribute(400, "Bad Request"));
+                errResponse.Attributes.Add(new STUNErrorCodeAttribute(400, "Bad Request"));
                 return errResponse;
             }
 
@@ -802,10 +1057,8 @@ namespace SIPSorcery.Net
         {
             if (allocation == null) return;
 
-            var peerAttr = msg.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.XORPeerAddress);
-            var dataAttr = msg.Attributes.FirstOrDefault(
-                a => a.AttributeType == STUNAttributeTypesEnum.Data);
+            var peerAttr = msg.GetFirstAttribute(STUNAttributeTypesEnum.XORPeerAddress);
+            var dataAttr = msg.GetFirstAttribute(STUNAttributeTypesEnum.Data);
 
             if (peerAttr?.Value == null || dataAttr?.Value == null) return;
 
@@ -831,7 +1084,12 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void HandleChannelData(TurnAllocation allocation, ushort channelNumber, byte[] data)
+        private void HandleChannelData(
+            TurnAllocation allocation,
+            ushort channelNumber,
+            byte[] data,
+            int offset,
+            int length)
         {
             if (allocation == null) return;
 
@@ -839,7 +1097,15 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    allocation.RelaySocket.Send(data, data.Length, peer);
+                    if (offset == 0 && length == data.Length)
+                    {
+                        allocation.RelaySocket.Send(data, length, peer);
+                    }
+                    else
+                    {
+                        allocation.RelaySocket.Client.SendTo(
+                            data, offset, length, SocketFlags.None, peer);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -866,11 +1132,12 @@ namespace SIPSorcery.Net
                     catch (ObjectDisposedException) { break; }
                     catch (SocketException) { break; }
 
+                    var now = DateTime.UtcNow;
                     var senderIp = result.RemoteEndPoint.Address.ToString();
                     var senderKey = result.RemoteEndPoint.ToString();
 
                     // Enforce permissions: drop if sender IP not permitted (RFC 5766 Section 8)
-                    if (!HasPermission(allocation, senderIp))
+                    if (!HasPermission(allocation, senderIp, now))
                     {
                         logger.LogDebug("TURN relay dropped packet from {Sender}: no permission.", senderKey);
                         continue;
@@ -925,104 +1192,34 @@ namespace SIPSorcery.Net
 
         private static bool HasPermission(TurnAllocation allocation, string peerIp)
         {
+            return HasPermission(allocation, peerIp, DateTime.UtcNow);
+        }
+
+        private static bool HasPermission(TurnAllocation allocation, string peerIp, DateTime now)
+        {
             if (allocation.Permissions.TryGetValue(peerIp, out var expiry))
             {
-                return DateTime.UtcNow < expiry;
+                if (now < expiry)
+                {
+                    return true;
+                }
+
+                allocation.Permissions.TryRemove(peerIp, out _);
             }
             return false;
         }
 
-        /// <summary>
-        /// Build an ERROR-CODE attribute manually (RFC 5389 Section 15.6).
-        /// Workaround: SIPSorcery's STUNErrorCodeAttribute(int, string) constructor has a bug
-        /// where it reads the ErrorCode property (which depends on ErrorClass) before ErrorClass
-        /// is assigned, and also doesn't populate the base Value field.
-        /// See: https://github.com/sipsorcery-org/sipsorcery/pull/1509
-        /// </summary>
-        internal static STUNAttribute BuildErrorCodeAttribute(int errorCode, string reasonPhrase)
+        private static bool HasAttribute(STUNMessage message, STUNAttributeTypesEnum attributeType)
         {
-            var reasonBytes = Encoding.UTF8.GetBytes(reasonPhrase);
-            var value = new byte[4 + reasonBytes.Length];
-            value[2] = (byte)(errorCode / 100);
-            value[3] = (byte)(errorCode % 100);
-            Buffer.BlockCopy(reasonBytes, 0, value, 4, reasonBytes.Length);
-            return new STUNAttribute(STUNAttributeTypesEnum.ErrorCode, value);
-        }
-
-        /// <summary>
-        /// Verify MESSAGE-INTEGRITY directly on raw STUN bytes per RFC 5389 Section 15.4.
-        /// Workaround: SIPSorcery's CheckIntegrity() requires a valid FINGERPRINT attribute,
-        /// which browsers may not send for TURN messages.
-        /// See: https://github.com/sipsorcery-org/sipsorcery/pull/1510
-        /// </summary>
-        internal bool VerifyMessageIntegrity(byte[] rawBytes, byte[] hmacKey)
-        {
-            if (rawBytes.Length < 24) return false; // minimum: 20-byte header + 4-byte attr header
-
-            // Walk attributes in the raw bytes to find MESSAGE-INTEGRITY (type 0x0008)
-            int offset = 20; // skip STUN header
-            int totalLength = rawBytes.Length;
-
-            while (offset + 4 <= totalLength)
+            foreach (var attribute in message.Attributes)
             {
-                ushort attrType = (ushort)((rawBytes[offset] << 8) | rawBytes[offset + 1]);
-                ushort attrLength = (ushort)((rawBytes[offset + 2] << 8) | rawBytes[offset + 3]);
-                int paddedLength = (attrLength + 3) & ~3;
-
-                if (attrType == 0x0008) // MESSAGE-INTEGRITY
+                if (attribute.AttributeType == attributeType)
                 {
-                    if (attrLength != 20) return false; // HMAC-SHA1 is always 20 bytes
-                    if (offset + 4 + 20 > totalLength) return false;
-
-                    // Extract the stored HMAC value
-                    var storedHmac = new byte[20];
-                    Buffer.BlockCopy(rawBytes, offset + 4, storedHmac, 0, 20);
-
-                    // Build the pre-image: raw bytes up to MESSAGE-INTEGRITY
-                    var preImage = new byte[offset];
-                    Buffer.BlockCopy(rawBytes, 0, preImage, 0, offset);
-
-                    // Patch MessageLength field: must reflect message as if MI were the last attribute
-                    ushort adjustedLength = (ushort)(offset - 20 + 24);
-                    preImage[2] = (byte)(adjustedLength >> 8);
-                    preImage[3] = (byte)(adjustedLength & 0xFF);
-
-                    // Compute HMAC-SHA1
-#if NET6_0_OR_GREATER
-                    byte[] computed = HMACSHA1.HashData(hmacKey, preImage);
-#else
-                    byte[] computed;
-                    using (var hmac = new HMACSHA1(hmacKey))
-                    {
-                        computed = hmac.ComputeHash(preImage);
-                    }
-#endif
-
-                    // Constant-time comparison
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-                    bool match = CryptographicOperations.FixedTimeEquals(computed, storedHmac);
-#else
-                    if (computed.Length != storedHmac.Length) return false;
-                    int diff = 0;
-                    for (int i = 0; i < computed.Length; i++)
-                    {
-                        diff |= computed[i] ^ storedHmac[i];
-                    }
-                    bool match = diff == 0;
-#endif
-
-                    if (!match)
-                    {
-                        logger.LogDebug("TURN integrity mismatch.");
-                    }
-
-                    return match;
+                    return true;
                 }
-
-                offset += 4 + paddedLength;
             }
 
-            return false; // No MESSAGE-INTEGRITY attribute found
+            return false;
         }
 
         private static byte[] BuildChannelData(ushort channelNumber, byte[] data)

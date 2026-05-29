@@ -464,6 +464,18 @@ namespace SIPSorcery.Net
         public bool IsController { get; internal set; }
 
         /// <summary>
+        /// Optional hook to normalize the source endpoint of received STUN binding requests
+        /// before they're matched against the remote candidate list / checklist. Used to
+        /// reconcile hairpin scenarios where a peer reaches this agent via a TURN relay
+        /// running on the same machine — the observed source IP is a local interface address
+        /// but the remote candidate was advertised with the relay's public IP. The delegate
+        /// returns the translated endpoint, or <c>null</c> / the input unchanged when no
+        /// translation applies. <see cref="RTCPeerConnection.RemoteEndpointTranslator"/>
+        /// forwards its value here.
+        /// </summary>
+        public Func<IPEndPoint, IPEndPoint> RemoteEndpointTranslator { get; set; }
+
+        /// <summary>
         /// The list of host ICE candidates that have been gathered for this peer.
         /// </summary>
         public List<RTCIceCandidate> Candidates
@@ -2062,23 +2074,35 @@ namespace SIPSorcery.Net
                 {
                     ChecklistEntry matchingChecklistEntry = null;
 
+                    // Apply the source translator if one is set. This reconciles hairpin
+                    // scenarios where a peer reaches us through a TURN relay running on the
+                    // same machine: the observed source IP is a local interface address but
+                    // the corresponding remote candidate was advertised with the relay's
+                    // public IP. Without translation we'd treat the address as a new prflx
+                    // and end up with a phantom candidate that doesn't have a return path.
+                    var canonicalEndPoint = RemoteEndpointTranslator?.Invoke(remoteEndPoint) ?? remoteEndPoint;
+
                     // Find the checklist entry for this remote candidate and update its status.
                     lock (_checklistLock)
                     {
                         // The matching checklist entry is chosen as:
                         // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
-                        // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is 
+                        // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is
                         //   also a relay type. It is possible for the same remote end point to send STUN requests directly and via a TURN server.
-                        matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) &&
+                        matchingChecklistEntry = _checklist.Where(x =>
+                            (x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) ||
+                             x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint)) &&
                          (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay)
                          ).FirstOrDefault();
                     }
 
                     if (matchingChecklistEntry == null &&
-                        (_remoteCandidates == null || !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint))))
+                        (_remoteCandidates == null ||
+                         (!_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)) &&
+                          !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint)))))
                     {
-                        // This STUN request has come from a socket not in the remote ICE candidates list. 
-                        // Add a new remote peer reflexive candidate. 
+                        // This STUN request has come from a socket not in the remote ICE candidates list.
+                        // Add a new remote peer reflexive candidate.
                         RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
                         peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
                         peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
@@ -2099,6 +2123,36 @@ namespace SIPSorcery.Net
 
                         AddChecklistEntry(entry);
 
+                        matchingChecklistEntry = entry;
+                    }
+                    else if (matchingChecklistEntry == null && !ReferenceEquals(canonicalEndPoint, remoteEndPoint))
+                    {
+                        // The canonical endpoint (post-translation) matches a remote candidate
+                        // but no checklist entry exists for it yet against this local candidate.
+                        // Find or create one so the nomination/connectivity check has somewhere
+                        // to live without inventing a prflx.
+                        var canonicalCandidate = _remoteCandidates.First(
+                            x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, canonicalEndPoint));
+
+                        ChecklistEntry entry;
+                        lock (_checklistLock)
+                        {
+                            entry = _checklist.FirstOrDefault(
+                                x => ReferenceEquals(x.RemoteCandidate, canonicalCandidate)
+                                     && (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay));
+                        }
+                        if (entry == null)
+                        {
+                            entry = new ChecklistEntry(wasRelayed ? _relayChecklistCandidate : _localChecklistCandidate,
+                                canonicalCandidate, IsController);
+                            entry.State = ChecklistEntryState.Waiting;
+                            if (wasRelayed)
+                            {
+                                entry.TurnPermissionsRequestSent = 1;
+                                entry.TurnPermissionsResponseAt = DateTime.Now;
+                            }
+                            AddChecklistEntry(entry);
+                        }
                         matchingChecklistEntry = entry;
                     }
 
