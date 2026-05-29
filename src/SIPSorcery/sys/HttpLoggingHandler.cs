@@ -43,7 +43,7 @@ public class HttpLoggingHandler : DelegatingHandler
     // Sensitive headers to redact.
     private static readonly string[] SensitiveHeaders = ["Authorization"];
 
-    private bool _logBody = false;
+    private readonly bool _logBody = false;
 
     public HttpLoggingHandler(ILogger<HttpLoggingHandler> logger, bool logBody = false)
     {
