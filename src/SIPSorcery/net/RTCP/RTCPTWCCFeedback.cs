@@ -149,6 +149,21 @@ namespace SIPSorcery.Net
         public int DeltaScale { get; set; } = 250;
 
         /// <summary>
+        /// The resolution multiplier for delta values (e.g. 250 µs per unit).
+        /// </summary>
+        public int DeltaScale { get; set; } = 250;
+        
+        private static readonly Dictionary<TWCCPacketStatusType, ushort> StatusToBits = new Dictionary<TWCCPacketStatusType, ushort>
+        {
+            { TWCCPacketStatusType.NotReceived, 0 },
+            { TWCCPacketStatusType.ReceivedSmallDelta, 1 },
+            { TWCCPacketStatusType.ReceivedLargeDelta, 2 },
+            { TWCCPacketStatusType.Reserved, 3 }
+        };
+        
+        private static readonly Dictionary<ushort, TWCCPacketStatusType> BitsToStatus = StatusToBits.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+
+        /// <summary>
         /// Constructs a TWCC feedback message from the raw RTCP packet.
         /// </summary>
         /// <param name="packet">The complete RTCP TWCC feedback packet.</param>
