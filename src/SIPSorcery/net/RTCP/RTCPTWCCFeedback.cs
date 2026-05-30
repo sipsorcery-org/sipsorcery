@@ -147,12 +147,7 @@ namespace SIPSorcery.Net
         /// The resolution multiplier for delta values (e.g. 250 µs per unit).
         /// </summary>
         public int DeltaScale { get; set; } = 250;
-
-        /// <summary>
-        /// The resolution multiplier for delta values (e.g. 250 µs per unit).
-        /// </summary>
-        public int DeltaScale { get; set; } = 250;
-        
+       
         private static readonly Dictionary<TWCCPacketStatusType, ushort> StatusToBits = new Dictionary<TWCCPacketStatusType, ushort>
         {
             { TWCCPacketStatusType.NotReceived, 0 },
