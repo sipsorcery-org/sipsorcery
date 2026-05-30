@@ -413,3 +413,5 @@ MigrationBackup/
 
 # Image files
 *.bmp
+
+.claude/

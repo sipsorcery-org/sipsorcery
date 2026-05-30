@@ -44,7 +44,6 @@
     <Project Path="examples/OpenAIExamples/LocalFunctions/LocalFunctions.csproj" />
   </Folder>
   <Folder Name="/examples/SIPExamples/">
-    <Project Path="examples/SIPExamples/AndroidSIPGetStarted/AndroidSIPGetStarted.csproj" />
     <Project Path="examples/SIPExamples/AsteriskIce/AsteriskIce.csproj" />
     <Project Path="examples/SIPExamples/AttendedTransfer/AttendedTransfer.csproj" />
     <Project Path="examples/SIPExamples/CallHoldAndTransfer/CallHoldAndTransfer.csproj" />
