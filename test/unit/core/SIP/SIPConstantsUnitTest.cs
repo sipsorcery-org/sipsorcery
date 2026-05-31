@@ -122,5 +122,39 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.NotNull(unknown);
             Assert.Contains("madeupext", unknown);
         }
+
+        /// <summary>
+        /// Regression guard: duplicate unknown extensions must be preserved verbatim in the unknown
+        /// extensions output (i.e. duplicates are not collapsed). The output is built by string
+        /// concatenation so each occurrence appears in order.
+        /// </summary>
+        [Fact]
+        public void ParseDuplicateUnknownExtensionsTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var known = SIPExtensionHeaders.ParseSIPExtensions("foo,foo", out string unknown);
+
+            Assert.Empty(known);
+            Assert.Equal("foo,foo", unknown);
+        }
+
+        /// <summary>
+        /// Regression guard: unknown extensions that differ only by case must both be preserved in
+        /// the unknown extensions output with their original casing (i.e. they are not de-duplicated
+        /// case-insensitively).
+        /// </summary>
+        [Fact]
+        public void ParseMixedCaseUnknownExtensionsTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var known = SIPExtensionHeaders.ParseSIPExtensions("Foo,foo", out string unknown);
+
+            Assert.Empty(known);
+            Assert.Equal("Foo,foo", unknown);
+        }
     }
 }
