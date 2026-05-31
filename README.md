@@ -29,13 +29,6 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/README.md) |
 | **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
 
-### FFmpeg Install
-
-See [SIPSorcery FFmpeg readme](src/SIPSorceryMedia.FFmpeg/README.md).
-
-For Windows the easiest option is:
-
-`winget install "FFmpeg (Shared)" --version 8.1`
 
 ### Examples
 
@@ -89,6 +82,14 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 ````ps1
 Install-Package SIPSorcery
 ````
+
+### FFmpeg Install
+
+See [SIPSorcery FFmpeg readme](src/SIPSorceryMedia.FFmpeg/README.md).
+
+For Windows the easiest option is:
+
+`winget install "FFmpeg (Shared)" --version 8.1`
 
 ## Documentation
 
