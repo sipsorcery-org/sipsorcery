@@ -83,13 +83,15 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 Install-Package SIPSorcery
 ````
 
-### FFmpeg Install
+**FFmpeg Install**
 
 See [SIPSorcery FFmpeg readme](src/SIPSorceryMedia.FFmpeg/README.md).
 
 For Windows the easiest option is:
 
-`winget install "FFmpeg (Shared)" --version 8.1`
+````ps1
+winget install "FFmpeg (Shared)" --version 8.1
+````
 
 ## Documentation
 
