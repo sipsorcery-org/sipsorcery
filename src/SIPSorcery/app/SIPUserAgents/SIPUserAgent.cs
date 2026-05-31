@@ -1400,7 +1400,7 @@ namespace SIPSorcery.SIP.App
                 reinviteRequest.Header.UserAgent = SIPConstants.SipUserAgentVersionString;
                 reinviteRequest.Header.ContentType = m_sdpContentType;
                 reinviteRequest.Body = sdp.ToString();
-                reinviteRequest.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB + ", " + SIPExtensionHeaders.PRACK;
+                reinviteRequest.Header.Supported = $"{SIPExtensionHeaders.REPLACES}, {SIPExtensionHeaders.NO_REFER_SUB}, {SIPExtensionHeaders.PRACK}";
 
                 if (m_uac != null)
                 {

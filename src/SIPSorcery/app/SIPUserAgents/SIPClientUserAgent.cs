@@ -286,7 +286,7 @@ namespace SIPSorcery.SIP.App
                     // If auth header is included inside INVITE request, we re-include them inside CANCEL request
                     if (m_serverTransaction.TransactionRequest.Header.HasAuthenticationHeader)
                     {
-                        string username = (m_sipCallDescriptor.AuthUsername == null || m_sipCallDescriptor.AuthUsername.Trim().Length <= 0 ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername);
+                        var username = string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername;
                         SIPAuthorisationDigest authDigest = m_serverTransaction.TransactionRequest.Header.AuthenticationHeaders.First().SIPDigest;
                         authDigest.SetCredentials(username, m_sipCallDescriptor.Password, m_sipCallDescriptor.Uri, SIPMethodsEnum.CANCEL.ToString());
 
@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP.App
                 //SIPRequest byeRequest = GetByeRequest(m_serverTransaction.TransactionFinalResponse, m_sipDialogue.RemoteTarget);
                 SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
                 byeRequest.SetSendFromHints(m_serverTransaction.TransactionRequest.LocalSIPEndPoint);
-                
+
                 if (!string.IsNullOrEmpty(reason))
                 {
                     // The REASON header gets pre-appended automatically in the SIPHeader class as "Reason: " when ToString() is called on the SIP Header class.
@@ -427,7 +427,7 @@ namespace SIPSorcery.SIP.App
                             m_serverAuthAttempts = 1;
 
                             // Resend INVITE with credentials.
-                            string username = (m_sipCallDescriptor.AuthUsername != null && m_sipCallDescriptor.AuthUsername.Trim().Length > 0) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
+                            var username = !string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.AuthUsername : m_sipCallDescriptor.Username;
                             var authRequest = m_serverTransaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
                                 username, m_sipCallDescriptor.Password);
 
@@ -529,7 +529,7 @@ namespace SIPSorcery.SIP.App
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
-                    string username = (m_sipCallDescriptor.AuthUsername == null || m_sipCallDescriptor.AuthUsername.Trim().Length <= 0 ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername);
+                    var username = string.IsNullOrWhiteSpace(m_sipCallDescriptor.AuthUsername) ? m_sipCallDescriptor.Username : m_sipCallDescriptor.AuthUsername;
                     var authRequest = transaction.TransactionRequest.DuplicateAndAuthenticate(sipResponse.Header.AuthenticationHeaders,
                         username, m_sipCallDescriptor.Password);
 
@@ -560,8 +560,9 @@ namespace SIPSorcery.SIP.App
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = SIPConstants.SipUserAgentVersionString;
             inviteHeader.Routes = routeSet;
-            inviteHeader.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
-                + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
+            inviteHeader.Supported = PrackSupported == true
+                ? $"{SIPExtensionHeaders.REPLACES}, {SIPExtensionHeaders.NO_REFER_SUB}, {SIPExtensionHeaders.PRACK}"
+                : $"{SIPExtensionHeaders.REPLACES}, {SIPExtensionHeaders.NO_REFER_SUB}";
 
             inviteRequest.Header = inviteHeader;
 
@@ -587,13 +588,17 @@ namespace SIPSorcery.SIP.App
                         {
                             continue;
                         }
-                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_USERAGENT))
+
+                        var customHeaderSpan = customHeader.AsSpan().Trim();
+                        if (customHeaderSpan.StartsWith(SIPHeaders.SIP_HEADER_USERAGENT, StringComparison.Ordinal))
                         {
-                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(":") + 1).Trim();
+                            inviteRequest.Header.UserAgent = customHeader.Substring(customHeader.IndexOf(':') + 1).Trim();
                         }
-                        else if (customHeader.Trim().StartsWith(SIPHeaders.SIP_HEADER_TO + ":"))
+                        else if (customHeaderSpan.StartsWith(SIPHeaders.SIP_HEADER_TO, StringComparison.Ordinal) &&
+                                 customHeaderSpan.Length > SIPHeaders.SIP_HEADER_TO.Length &&
+                                 customHeaderSpan[SIPHeaders.SIP_HEADER_TO.Length] == ':')
                         {
-                            var customToHeader = SIPUserField.ParseSIPUserField(customHeader.Substring(customHeader.IndexOf(":") + 1).Trim());
+                            var customToHeader = SIPUserField.ParseSIPUserField(customHeader.Substring(customHeader.IndexOf(':') + 1).Trim());
                             if (customToHeader != null)
                             {
                                 inviteRequest.Header.To.ToUserField = customToHeader;
