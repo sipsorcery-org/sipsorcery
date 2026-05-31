@@ -23,6 +23,8 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -51,53 +53,71 @@ public class HttpLoggingHandler : DelegatingHandler
         _logBody = logBody;
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        // Log request with better formatting
-        var requestId = Guid.NewGuid().ToString("N").Substring(0, 8); // Short ID for correlation
-
-        _logger.LogDebug("🚀 HTTP Request [{RequestId}]", requestId);
-        _logger.LogDebug("  Method: {Method}", request.Method);
-        _logger.LogDebug("  URL: {RequestUri}", request.RequestUri);
-
-        // Log headers in a more readable format
-        LogHeaders("  Request Headers:", request.Headers, SensitiveHeaders);
-
-        if (request.Content != null)
+        if (!_logger.IsEnabled(LogLevel.Information))
         {
-            LogHeaders("  Content Headers:", request.Content.Headers, null);
+            return base.SendAsync(request, cancellationToken);
+        }
 
-            if (_logBody)
+        return SendAsyncWithLogging(request, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendAsyncWithLogging(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var requestId = RandomNumberGenerator.GetHexString(8);
+
+        var logDebugEnabled = _logger.IsEnabled(LogLevel.Debug);
+
+        if (logDebugEnabled)
+        {
+            // Log request with better formatting.
+            _logger.LogDebug("🚀 HTTP Request [{RequestId}]", requestId);
+            _logger.LogDebug("  Method: {Method}", request.Method);
+            _logger.LogDebug("  URL: {RequestUri}", request.RequestUri);
+
+            // Log headers in a more readable format.
+            LogHeaders("  Request Headers:", request.Headers, SensitiveHeaders);
+
+            if (request.Content != null)
             {
-                var requestBody = await request.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(requestBody))
+                LogHeaders("  Content Headers:", request.Content.Headers, null);
+
+                if (_logBody)
                 {
-                    _logger.LogDebug("  Request Body:\n{RequestBody}", FormatBody(requestBody));
+                    var requestBody = await request.Content.ReadAsStringAsync();
+                    if (!string.IsNullOrEmpty(requestBody))
+                    {
+                        _logger.LogDebug("  Request Body:\n{RequestBody}", FormatBody(requestBody));
+                    }
                 }
             }
         }
 
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
         HttpResponseMessage response = await base.SendAsync(request, cancellationToken);
-        stopwatch.Stop();
+        var elapsedMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp);
 
-        // Log response with better formatting
+        // Log response with better formatting.
         var statusIcon = response.IsSuccessStatusCode ? "✅" : "❌";
         _logger.LogInformation("{StatusIcon} HTTP Response [{RequestId}] - {StatusCode} {ReasonPhrase} ({ElapsedMs}ms)",
-            statusIcon, requestId, (int)response.StatusCode, response.ReasonPhrase, stopwatch.ElapsedMilliseconds);
+            statusIcon, requestId, (int)response.StatusCode, response.ReasonPhrase, elapsedMilliseconds);
 
-        LogHeaders("  Response Headers:", response.Headers, null);
-
-        if (response.Content != null)
+        if (logDebugEnabled)
         {
-            LogHeaders("  Content Headers:", response.Content.Headers, SensitiveHeaders);
+            LogHeaders("  Response Headers:", response.Headers, null);
 
-            if (_logBody)
+            if (response.Content != null)
             {
-                var responseBody = await response.Content.ReadAsStringAsync();
-                if (!string.IsNullOrEmpty(responseBody))
+                LogHeaders("  Content Headers:", response.Content.Headers, SensitiveHeaders);
+
+                if (_logBody)
                 {
-                    _logger.LogDebug("  Response Body:\n{ResponseBody}", FormatBody(responseBody));
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    if (!string.IsNullOrEmpty(responseBody))
+                    {
+                        _logger.LogDebug("  Response Body:\n{ResponseBody}", FormatBody(responseBody));
+                    }
                 }
             }
         }
@@ -135,7 +155,8 @@ public class HttpLoggingHandler : DelegatingHandler
         // System.Text.Json that is not present for net462/netstandard2.0. TinyJson
         // returns null on parse failure rather than throwing, so an invalid body simply
         // falls through to the raw output below.
-        if (body.TrimStart().StartsWith("{") || body.TrimStart().StartsWith("["))
+        var trimmedBody = body.AsSpan().TrimStart();
+        if (!trimmedBody.IsEmpty && trimmedBody[0] is '{' or '[')
         {
             var parsed = body.FromJson<object>();
             if (parsed != null)
@@ -144,7 +165,20 @@ public class HttpLoggingHandler : DelegatingHandler
             }
         }
 
+        const int maxLoggedBodyChars = 500;
         // For non-JSON or if JSON parsing failed, add some basic formatting
-        return body.Length > 500 ? $"{body.Substring(0, 500)}... (truncated, {body.Length} total chars)" : body;
+        if (body.Length <= maxLoggedBodyChars)
+        {
+            return body;
+        }
+
+        var truncatedBody = new StringBuilder(maxLoggedBodyChars + 64);
+        truncatedBody
+            .Append(body, 0, maxLoggedBodyChars)
+            .Append("... (truncated, ")
+            .Append(body.Length)
+            .Append(" total chars)");
+
+        return truncatedBody.ToString();
     }
 }
