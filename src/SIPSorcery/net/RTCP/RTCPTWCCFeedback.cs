@@ -524,9 +524,7 @@ namespace SIPSorcery.Net
             var packetStatusInfo = string.Join(", ", PacketStatuses.Select(ps =>
                 $"Seq:{ps.SequenceNumber}({ps.Status}{(ps.Delta.HasValue ? $",Δ:{ps.Delta.Value}" : "")})"));
 
-            return $"TWCC Feedback: SenderSSRC={SenderSSRC}, MediaSSRC={MediaSSRC}, BaseSeq={BaseSequenceNumber}, " +
-                   $"StatusCount={PacketStatusCount}, RefTime={ReferenceTime} (1/64 sec), " +
-                   $"FbkPktCount={FeedbackPacketCount}, PacketStatuses=[{packetStatusInfo}]";
+            return $"TWCC Feedback: SenderSSRC={SenderSSRC}, MediaSSRC={MediaSSRC}, BaseSeq={BaseSequenceNumber}, StatusCount={PacketStatusCount}, RefTime={ReferenceTime} (1/64 sec), FbkPktCount={FeedbackPacketCount}, PacketStatuses=[{packetStatusInfo}]";
         }
 
         #region Helper Methods
