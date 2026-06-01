@@ -60,7 +60,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
+            string attrDescrStr = $"STUN ERROR_CODE_ADDRESS Attribute: error code={ErrorCode}, reason phrase={ReasonPhrase}.";
 
             return attrDescrStr;
         }
