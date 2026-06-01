@@ -172,23 +172,23 @@ namespace SIPSorcery.Net
 
             switch (Header)
             {
-                case var _ when Header.PacketType == RTCPReportTypesEnum.RTPFB && Header.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB && h.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     SENDER_PAYLOAD_SIZE = 8;
                     // PLI feedback reports do no have any additional parameters.
                     break;
-                case var _ when Header.PacketType == RTCPReportTypesEnum.RTPFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB:
                     SENDER_PAYLOAD_SIZE = 12;
                     PID = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 8));
                     BLP = BinaryPrimitives.ReadUInt16BigEndian(packet.AsSpan(payloadIndex + 10));
                     break;
 
-                case var _ when Header.PacketType == RTCPReportTypesEnum.PSFB && Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     SENDER_PAYLOAD_SIZE = 8;
                     break;
 
                 // We have a lot of different kind of extension messages
                 // In case below we will handle the specific REMB Message https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#page-3
-                case var _ when Header.PacketType == RTCPReportTypesEnum.PSFB && Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
 
                     // 0                   1                   2                   3
                     // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -267,7 +267,7 @@ namespace SIPSorcery.Net
 
             switch (Header)
             {
-                case var _ when Header.PacketType == RTCPReportTypesEnum.RTPFB && Header.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB && h.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     // PLI feedback reports do no have any additional parameters.
                     break;
                 case var _ when Header.PacketType == RTCPReportTypesEnum.RTPFB:
@@ -275,9 +275,9 @@ namespace SIPSorcery.Net
                     BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(payloadIndex + 10), BLP);
                     break;
 
-                case var _ when Header.PacketType == RTCPReportTypesEnum.PSFB && Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     break;
-                case var _ when Header.PacketType == RTCPReportTypesEnum.PSFB && Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.PSFB && h.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
 
                     // There's have a lot of different kind of extension messages
                     // In case below we will handle the specific REMB Message https://datatracker.ietf.org/doc/html/draft-alvestrand-rmcat-remb-03#page-3
