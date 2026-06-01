@@ -194,7 +194,7 @@ public class WebRTCWebSocketPeerAspNet
     private async Task OnMessage(WebSocketReceiveResult receiveResult, byte[] buffer)
     {
         string message = Encoding.UTF8.GetString(buffer, 0, receiveResult.Count);
-        _logger.LogDebug($"Received message: {message}");
+        _logger.LogDebug("Received message: {Message}", message);
 
         if (RTCIceCandidateInit.TryParse(message, out var iceCandidateInit))
         {
