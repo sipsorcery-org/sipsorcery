@@ -102,12 +102,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
+using System.Text;
 using Microsoft.Extensions.Logging;
+using Polyfills;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -153,7 +155,7 @@ namespace SIPSorcery.Net
         public string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
         public string Owner
         {
-            get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + AddressOrHost; }
+            get { return $"{Username} {SessionId} {AnnouncementVersion} {NetworkType} {AddressType} {AddressOrHost}"; }
         }
 
         public string SessionName = "sipsorcery";            // Common name of the session.
@@ -205,7 +207,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                if (sdpDescription != null && sdpDescription.Trim().Length > 0)
+                if (!string.IsNullOrWhiteSpace(sdpDescription))
                 {
                     SDP sdp = new SDP();
                     sdp.m_rawSdp = sdpDescription;
@@ -216,579 +218,811 @@ namespace SIPSorcery.Net
                     // in this dictionary. A dynamic media format type cannot be created without an rtpmap.
                     Dictionary<int, string> _pendingFmtp = new Dictionary<int, string>();
 
-                    //string[] sdpLines = Regex.Split(sdpDescription, CRLF);
-                    string[] sdpLines = sdpDescription.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    var sdpDescriptionSpan = sdpDescription.AsSpan();
+                    Span<Range> ownerFieldRanges = stackalloc Range[6];
+                    const StringSplitOptions TrimEntries = (StringSplitOptions)2;
+                    const StringSplitOptions RemoveEmptyAndTrimSplitOptions = StringSplitOptions.RemoveEmptyEntries | TrimEntries;
 
-                    foreach (string sdpLine in sdpLines)
+                    static bool StartsWithAttribute(ReadOnlySpan<char> line, string attributePrefix) =>
+                        line.StartsWith("a=", StringComparison.Ordinal) &&
+                        line.Slice(2).StartsWith(attributePrefix, StringComparison.Ordinal);
+
+                    static bool EqualsAttribute(ReadOnlySpan<char> line, string attribute) =>
+                        line.Length == attribute.Length + 2 &&
+                        line.StartsWith("a=", StringComparison.Ordinal) &&
+                        line.Slice(2).Equals(attribute.AsSpan(), StringComparison.Ordinal);
+
+                    static ReadOnlySpan<char> SliceAfterColon(ReadOnlySpan<char> line) =>
+                        line.Slice(line.IndexOf(':') + 1);
+
+                    static bool TryReadToken(ReadOnlySpan<char> value, ref int offset, out int tokenStart, out int tokenLength)
                     {
-                        string sdpLineTrimmed = sdpLine.Trim();
-
-                        switch (sdpLineTrimmed)
+                        while (offset < value.Length && char.IsWhiteSpace(value[offset]))
                         {
-                            case var l when l.StartsWith("v="):
-                                if (!Decimal.TryParse(sdpLineTrimmed.Substring(2), out sdp.Version))
-                                {
-                                    logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: {sdpLine}.", sdpLine);
-                                }
-                                break;
-
-                            case var l when l.StartsWith("o="):
-                                var ownerFields = sdpLineTrimmed.Substring(2).Split(new []{' '}, 6, StringSplitOptions.RemoveEmptyEntries);
-
-                                if (ownerFields.Length >= 5)
-                                {
-                                    sdp.Username = ownerFields[0];
-                                    sdp.SessionId = ownerFields[1];
-                                    sdp.AnnouncementVersion = UInt64.TryParse(ownerFields[2], out var version) ? version : 0;
-                                    sdp.NetworkType = ownerFields[3];
-                                    sdp.AddressType = ownerFields[4];
-                                    sdp.AddressOrHost = ownerFields.ElementAtOrDefault(5); // Safely handle missing elements
-                                }
-                                else
-                                {
-                                    logger.LogWarning("The SDP message had an invalid SDP line format for 'o=': {sdpLineTrimmed}", sdpLineTrimmed);
-                                }
-                                break;
-
-                            case var l when l.StartsWith("s="):
-                                sdp.SessionName = sdpLineTrimmed.Substring(2);
-                                break;
-
-                            case var l when l.StartsWith("i="):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.MediaDescription = sdpLineTrimmed.Substring(2);
-                                }
-                                else
-                                {
-                                    sdp.SessionDescription = sdpLineTrimmed.Substring(2);
-                                }
-
-                                break;
-
-                            case var l when l.StartsWith("c="):
-
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLineTrimmed);
-                                }
-                                else if (sdp.Connection == null)
-                                {
-                                    sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLineTrimmed);
-                                }
-                                else
-                                {
-                                    logger.LogWarning("The SDP message had a duplicate connection attribute which was ignored.");
-                                }
-
-                                break;
-
-                            case var l when l.StartsWith("b="):
-                                if (activeAnnouncement != null)
-                                {
-                                    if (l.StartsWith(SDPMediaAnnouncement.TIAS_BANDWIDTH_ATTRIBUE_PREFIX))
-                                    {
-                                        if (uint.TryParse(l.Substring(l.IndexOf(':') + 1), out uint tias))
-                                        {
-                                            activeAnnouncement.TIASBandwidth = tias;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        activeAnnouncement.BandwidthAttributes.Add(sdpLineTrimmed.Substring(2));
-                                    }
-                                }
-                                else
-                                {
-                                    sdp.BandwidthAttributes.Add(sdpLineTrimmed.Substring(2));
-                                }
-                                break;
-
-                            case var l when l.StartsWith("t="):
-                                sdp.Timing = sdpLineTrimmed.Substring(2);
-                                break;
-
-                            case var l when l.StartsWith("m="):
-                                Match mediaMatch = Regex.Match(
-                                        sdpLineTrimmed.Substring(2),
-                                        @"(?<type>\w+)\s+(?<port>\d+)(?:\/(?<portCount>\d+))?\s+(?<transport>\S+)\s*(?<formats>.*)$"
-                                    );
-                                if (mediaMatch.Success)
-                                {
-                                    SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();
-                                    announcement.MLineIndex = mLineIndex;
-                                    announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
-
-                                    // Parse the primary port.
-                                    int.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
-                                    if (mediaMatch.Groups["portCount"].Success)
-                                    {
-                                        int portCount;
-                                        if (Int32.TryParse(mediaMatch.Result("${portCount}"), out portCount))
-                                        {
-                                            announcement.PortCount = portCount;
-                                        }
-                                    }
-
-                                    announcement.Transport = mediaMatch.Result("${transport}");
-                                    announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
-                                    if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video || announcement.Media == SDPMediaTypesEnum.text)
-                                    {
-                                        announcement.MediaStreamStatus = sdp.SessionMediaStreamStatus != null ? sdp.SessionMediaStreamStatus.Value :
-                                            MediaStreamStatusEnum.SendRecv;
-                                    }
-                                    sdp.Media.Add(announcement);
-
-                                    activeAnnouncement = announcement;
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A media line in SDP was invalid: {sdpLine}.", sdpLineTrimmed.Substring(2));
-                                }
-
-                                mLineIndex++;
-                                break;
-
-                            case var x when x.StartsWith($"a={GROUP_ATRIBUTE_PREFIX}"):
-                                sdp.Group = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                break;
-                            case var x when x.StartsWith($"a={ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX}"):
-                                sdp.IceImplementation = IceImplementationEnum.lite;
-                                break;
-                            case var x when x.StartsWith($"a={ICE_UFRAG_ATTRIBUTE_PREFIX}"):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.IceUfrag = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                else
-                                {
-                                    sdp.IceUfrag = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                break;
-
-                            case var x when x.StartsWith($"a={ICE_PWD_ATTRIBUTE_PREFIX}"):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.IcePwd = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                else
-                                {
-                                    sdp.IcePwd = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                break;
-
-                            case var x when x.StartsWith($"a={ICE_SETUP_ATTRIBUTE_PREFIX}"):
-                                int colonIndex = sdpLineTrimmed.IndexOf(':');
-                                if (colonIndex != -1 && sdpLineTrimmed.Length > colonIndex)
-                                {
-                                    string iceRoleStr = sdpLineTrimmed.Substring(colonIndex + 1).Trim();
-                                    if (Enum.TryParse<IceRolesEnum>(iceRoleStr, true, out var iceRole))
-                                    {
-                                        if (activeAnnouncement != null)
-                                        {
-                                            activeAnnouncement.IceRole = iceRole;
-                                        }
-                                        else
-                                        {
-                                            sdp.IceRole = iceRole;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        logger.LogWarning("ICE role was not recognised from SDP attribute: {sdpLineTrimmed}.", sdpLineTrimmed);
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("ICE role SDP attribute was missing the mandatory colon: {sdpLineTrimmed}.", sdpLineTrimmed);
-                                }
-                                break;
-
-                            case var x when x.StartsWith($"a={DTLS_FINGERPRINT_ATTRIBUTE_PREFIX}"):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.DtlsFingerprint = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                else
-                                {
-                                    sdp.DtlsFingerprint = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                break;
-
-                            case var x when x.StartsWith($"a={ICE_CANDIDATE_ATTRIBUTE_PREFIX}"):
-                                if (activeAnnouncement != null)
-                                {
-                                    if (activeAnnouncement.IceCandidates == null)
-                                    {
-                                        activeAnnouncement.IceCandidates = new List<string>();
-                                    }
-                                    activeAnnouncement.IceCandidates.Add(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1));
-                                }
-                                else
-                                {
-                                    if (sdp.IceCandidates == null)
-                                    {
-                                        sdp.IceCandidates = new List<string>();
-                                    }
-                                    sdp.IceCandidates.Add(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1));
-                                }
-                                break;
-
-                            case var x when x == $"a={END_ICE_CANDIDATES_ATTRIBUTE}":
-                                // TODO: Set a flag.
-                                break;
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null) {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video) {
-                                         var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX + @"(?<id>\d+) (?<url>\S+)$");
-                                         if (formatAttributeMatch.Success) {
-                                             var extensionId = formatAttributeMatch.Result("${id}");
-                                             var uri = formatAttributeMatch.Result("${url}");
-                                             if (Int32.TryParse(extensionId, out var id)) {
-                                                var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(id, uri, activeAnnouncement.Media);
-                                                if ( (rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(id))
-                                                {
-                                                    activeAnnouncement.HeaderExtensions.Add(id, rtpExtension);
-                                                }
-                                             }
-                                             else {
-                                                 logger.LogWarning("Invalid id of header extension in " + SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX);
-                                             }
-                                         }
-                                    }
-                                }
-
-                                break;
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video || activeAnnouncement.Media == SDPMediaTypesEnum.text)
-                                    {
-                                        // Parse the rtpmap attribute for audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
-                                        if (formatAttributeMatch.Success)
-                                        {
-                                            string formatID = formatAttributeMatch.Result("${id}");
-                                            string rtpmap = formatAttributeMatch.Result("${attribute}");
-
-                                            if (Int32.TryParse(formatID, out int id))
-                                            {
-                                                if (activeAnnouncement.MediaFormats.ContainsKey(id))
-                                                {
-                                                    activeAnnouncement.MediaFormats[id] = activeAnnouncement.MediaFormats[id].WithUpdatedRtpmap(rtpmap);
-                                                }
-                                                else
-                                                {
-                                                    string fmtp = _pendingFmtp.ContainsKey(id) ? _pendingFmtp[id] : null;
-                                                    activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, rtpmap, fmtp));
-                                                }
-                                            }
-                                            else
-                                            {
-                                                logger.LogWarning("Non-numeric audio/video media format attribute in SDP: {sdpLine}", sdpLine);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            activeAnnouncement.AddExtra(sdpLineTrimmed);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // Parse the rtpmap attribute for NON audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
-                                        if (formatAttributeMatch.Success)
-                                        {
-                                            string formatID = formatAttributeMatch.Result("${id}");
-                                            string rtpmap = formatAttributeMatch.Result("${attribute}");
-
-                                            if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
-                                            {
-                                                activeAnnouncement.ApplicationMediaFormats[formatID] = activeAnnouncement.ApplicationMediaFormats[formatID].WithUpdatedRtpmap(rtpmap);
-                                            }
-                                            else
-                                            {
-                                                activeAnnouncement.ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID, rtpmap, null));
-                                            }
-                                        }
-                                        else
-                                        {
-                                            activeAnnouncement.AddExtra(sdpLineTrimmed);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("There was no active media announcement for a media format attribute, ignoring.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video || activeAnnouncement.Media == SDPMediaTypesEnum.text)
-                                    {
-                                        // Parse the fmtp attribute for audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
-                                        if (formatAttributeMatch.Success)
-                                        {
-                                            string avFormatID = formatAttributeMatch.Result("${id}");
-                                            string fmtp = formatAttributeMatch.Result("${attribute}");
-
-                                            if (Int32.TryParse(avFormatID, out int id))
-                                            {
-                                                if (activeAnnouncement.MediaFormats.ContainsKey(id))
-                                                {
-                                                    activeAnnouncement.MediaFormats[id] = activeAnnouncement.MediaFormats[id].WithUpdatedFmtp(fmtp);
-                                                }
-                                                else
-                                                {
-                                                    // Store the fmtp attribute for use when the rtpmap attribute turns up.
-                                                    if (_pendingFmtp.ContainsKey(id))
-                                                    {
-                                                        _pendingFmtp.Remove(id);
-                                                    }
-                                                    _pendingFmtp.Add(id, fmtp);
-                                                }
-                                            }
-                                            else
-                                            {
-                                                logger.LogWarning("Invalid media format parameter attribute in SDP: {sdpLine}", sdpLine);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            activeAnnouncement.AddExtra(sdpLineTrimmed);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // Parse the fmtp attribute for NON audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
-                                        if (formatAttributeMatch.Success)
-                                        {
-                                            string formatID = formatAttributeMatch.Result("${id}");
-                                            string fmtp = formatAttributeMatch.Result("${attribute}");
-
-                                            if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
-                                            {
-                                                activeAnnouncement.ApplicationMediaFormats[formatID] = activeAnnouncement.ApplicationMediaFormats[formatID].WithUpdatedFmtp(fmtp);
-                                            }
-                                            else
-                                            {
-                                                activeAnnouncement.ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID, null, fmtp));
-                                            }
-                                        }
-                                        else
-                                        {
-                                            activeAnnouncement.AddExtra(sdpLineTrimmed);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("There was no active media announcement for a media format parameter attribute, ignoring.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPSecurityDescription.CRYPTO_ATTRIBUE_PREFIX):
-                                //2018-12-21 rj2: add a=crypto
-                                if (activeAnnouncement != null)
-                                {
-                                    try
-                                    {
-                                        activeAnnouncement.AddCryptoLine(sdpLineTrimmed);
-                                    }
-                                    catch (FormatException fex)
-                                    {
-                                        logger.LogWarning("Error Parsing SDP-Line(a=crypto) {Exception}", fex);
-                                    }
-                                }
-                                break;
-
-                            case var x when x.StartsWith($"a={MEDIA_ID_ATTRIBUTE_PREFIX}"):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.MediaID = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A media ID can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    string[] fields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
-
-                                    // Set the ID.
-                                    if (fields.Length > 0)
-                                    {
-                                        activeAnnouncement.SsrcGroupID = fields[0];
-                                    }
-
-                                    // Add attributes for each of the SSRC values.
-                                    for (int i = 1; i < fields.Length; i++)
-                                    {
-                                        if (uint.TryParse(fields[i], out var ssrc))
-                                        {
-                                            activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null, activeAnnouncement.SsrcGroupID));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A ssrc-group ID can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    string[] ssrcFields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
-
-                                    if (ssrcFields.Length > 0 && uint.TryParse(ssrcFields[0], out var ssrc))
-                                    {
-                                        var ssrcAttribute = activeAnnouncement.SsrcAttributes.FirstOrDefault(x => x.SSRC == ssrc);
-                                        if (ssrcAttribute == null)
-                                        {
-                                            ssrcAttribute = new SDPSsrcAttribute(ssrc, null, null);
-                                            activeAnnouncement.SsrcAttributes.Add(ssrcAttribute);
-                                        }
-
-                                        if (ssrcFields.Length > 1)
-                                        {
-                                            if (ssrcFields[1].StartsWith(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX))
-                                            {
-                                                ssrcAttribute.Cname = ssrcFields[1].Substring(ssrcFields[1].IndexOf(':') + 1);
-                                            }
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("An ssrc attribute can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var x when MediaStreamStatusType.IsMediaStreamStatusAttribute(x, out var mediaStreamStatus):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.MediaStreamStatus = mediaStreamStatus;
-                                }
-                                else
-                                {
-                                    sdp.SessionMediaStreamStatus = mediaStreamStatus;
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.SctpMap = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-
-                                    (var sctpPortStr, _, var maxMessageSizeStr) = activeAnnouncement.SctpMap.Split(' ');
-
-                                    if (ushort.TryParse(sctpPortStr, out var sctpPort))
-                                    {
-                                        activeAnnouncement.SctpPort = sctpPort;
-                                    }
-                                    else
-                                    {
-                                        logger.LogWarning("An sctp-port value of {sctpPortStr} was not recognised as a valid port.", sctpPortStr);
-                                    }
-
-                                    if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
-                                    {
-                                        logger.LogWarning("A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.", maxMessageSizeStr);
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("An sctpmap attribute can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    string sctpPortStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-
-                                    if (ushort.TryParse(sctpPortStr, out var sctpPort))
-                                    {
-                                        activeAnnouncement.SctpPort = sctpPort;
-                                    }
-                                    else
-                                    {
-                                        logger.LogWarning("An sctp-port value of {sctpPortStr} was not recognised as a valid port.", sctpPortStr);
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("An sctp-port attribute can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    string maxMessageSizeStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                    if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
-                                    {
-                                        logger.LogWarning("A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.", maxMessageSizeStr);
-                                    }
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A max-message-size attribute can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    string acceptTypesStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                    var acceptTypesList = acceptTypesStr.Trim().Split(' ').ToList();
-                                    activeAnnouncement.MessageMediaFormat.AcceptTypes = acceptTypesList;
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A accept-types attribute can only be set on a media announcement.");
-                                }
-                                break;
-
-                            case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX):
-                                if (activeAnnouncement != null)
-                                {
-                                    string pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                    string pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
-                                    activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
-                                    
-                                    pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
-                                    activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
-                                    
-                                    pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
-                                    activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
-                                    
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A path attribute can only be set on a media announcement.");
-                                }
-                                break;
-
-                            default:
-                                if (activeAnnouncement != null)
-                                {
-                                    activeAnnouncement.AddExtra(sdpLineTrimmed);
-                                }
-                                else
-                                {
-                                    sdp.AddExtra(sdpLineTrimmed);
-                                }
-                                break;
+                            offset++;
                         }
+
+                        if (offset == value.Length)
+                        {
+                            tokenStart = 0;
+                            tokenLength = 0;
+                            return false;
+                        }
+
+                        tokenStart = offset;
+                        var endIndex = offset;
+                        while (endIndex < value.Length && !char.IsWhiteSpace(value[endIndex]))
+                        {
+                            endIndex++;
+                        }
+
+                        tokenLength = endIndex - tokenStart;
+                        offset = endIndex;
+                        return true;
+                    }
+
+                    static bool TrySplitAttributeValue(
+                        ReadOnlySpan<char> line,
+                        int prefixLength,
+                        out int idStart,
+                        out int idLength,
+                        out int attributeStart)
+                    {
+                        var offset = prefixLength;
+                        if (!TryReadToken(line, ref offset, out idStart, out idLength))
+                        {
+                            attributeStart = 0;
+                            return false;
+                        }
+
+                        while (offset < line.Length && char.IsWhiteSpace(line[offset]))
+                        {
+                            offset++;
+                        }
+
+                        attributeStart = offset;
+                        return attributeStart < line.Length;
+                    }
+
+                    static bool TryParseMediaLine(
+                        ReadOnlySpan<char> mediaLine,
+                        out int mediaTypeStart,
+                        out int mediaTypeLength,
+                        out int port,
+                        out int? portCount,
+                        out int transportStart,
+                        out int transportLength,
+                        out int formatsStart)
+                    {
+                        mediaTypeStart = 0;
+                        mediaTypeLength = 0;
+                        port = 0;
+                        portCount = null;
+                        transportStart = 0;
+                        transportLength = 0;
+                        formatsStart = 0;
+
+                        var offset = 0;
+                        if (!TryReadToken(mediaLine, ref offset, out mediaTypeStart, out mediaTypeLength) ||
+                            !TryReadToken(mediaLine, ref offset, out var portStart, out var portLength) ||
+                            !TryReadToken(mediaLine, ref offset, out transportStart, out transportLength))
+                        {
+                            return false;
+                        }
+
+                        var portToken = mediaLine.Slice(portStart, portLength);
+                        var slashIndex = portToken.IndexOf('/');
+                        var portSpan = slashIndex == -1 ? portToken : portToken.Slice(0, slashIndex);
+                        if (!int.TryParse(portSpan, out port))
+                        {
+                            return false;
+                        }
+
+                        if (slashIndex != -1)
+                        {
+                            var portCountSpan = portToken.Slice(slashIndex + 1);
+                            if (portCountSpan.IsEmpty || !int.TryParse(portCountSpan, out var parsedPortCount))
+                            {
+                                return false;
+                            }
+
+                            portCount = parsedPortCount;
+                        }
+
+                        while (offset < mediaLine.Length && char.IsWhiteSpace(mediaLine[offset]))
+                        {
+                            offset++;
+                        }
+
+                        formatsStart = offset;
+                        return true;
+                    }
+
+                    static bool TryParseExtensionMap(ReadOnlySpan<char> line, out int id, out int uriStart, out int uriLength)
+                    {
+                        id = 0;
+                        uriStart = 0;
+                        uriLength = 0;
+                        var offset = SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX.Length;
+
+                        if (!TryReadToken(line, ref offset, out var idStart, out var idLength) ||
+                            !int.TryParse(line.Slice(idStart, idLength), out id) ||
+                            !TryReadToken(line, ref offset, out uriStart, out uriLength))
+                        {
+                            return false;
+                        }
+
+                        while (offset < line.Length && char.IsWhiteSpace(line[offset]))
+                        {
+                            offset++;
+                        }
+
+                        return offset == line.Length;
+                    }
+
+                    static bool TryParseMediaStreamStatus(ReadOnlySpan<char> attribute, out MediaStreamStatusEnum mediaStreamStatus)
+                    {
+                        mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+
+                        if (attribute.Equals(MediaStreamStatusType.SEND_RECV_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+                            return true;
+                        }
+
+                        if (attribute.Equals(MediaStreamStatusType.SEND_ONLY_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
+                            return true;
+                        }
+
+                        if (attribute.Equals(MediaStreamStatusType.RECV_ONLY_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
+                            return true;
+                        }
+
+                        if (attribute.Equals(MediaStreamStatusType.INACTIVE_ATTRIBUTE.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            mediaStreamStatus = MediaStreamStatusEnum.Inactive;
+                            return true;
+                        }
+
+                        return false;
+                    }
+
+                    var sdpLineRangeBuffer = ArrayPool<Range>.Shared.Rent(sdpDescriptionSpan.Length + 1);
+                    try
+                    {
+                        var sdpLineRanges = sdpLineRangeBuffer.AsSpan(0, sdpDescriptionSpan.Length + 1);
+                        var sdpLineCount = sdpDescriptionSpan.SplitAny(
+                            sdpLineRanges,
+                            "\r\n".AsSpan(),
+                            RemoveEmptyAndTrimSplitOptions);
+
+                        for (var sdpLineIndex = 0; sdpLineIndex < sdpLineCount; sdpLineIndex++)
+                        {
+                            var sdpLineTrimmedSpan = sdpDescriptionSpan[sdpLineRanges[sdpLineIndex]];
+
+                            switch (sdpLineTrimmedSpan)
+                            {
+                                case var _ when sdpLineTrimmedSpan.StartsWith("v=", StringComparison.Ordinal):
+                                    if (!Decimal.TryParse(sdpLineTrimmedSpan.Slice(2), out sdp.Version))
+                                    {
+                                        logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: {sdpLine}.", sdpLineTrimmedSpan.ToString());
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith("o=", StringComparison.Ordinal):
+                                    var ownerFieldsSpan = sdpLineTrimmedSpan.Slice(2);
+                                    var ownerFieldCount = ownerFieldsSpan.Split(ownerFieldRanges, ' ', StringSplitOptions.RemoveEmptyEntries);
+
+                                    if (ownerFieldCount >= 5)
+                                    {
+                                        sdp.Username = ownerFieldsSpan[ownerFieldRanges[0]].ToString();
+                                        sdp.SessionId = ownerFieldsSpan[ownerFieldRanges[1]].ToString();
+                                        sdp.AnnouncementVersion = UInt64.TryParse(ownerFieldsSpan[ownerFieldRanges[2]].ToString(), out var version) ? version : 0;
+                                        sdp.NetworkType = ownerFieldsSpan[ownerFieldRanges[3]].ToString();
+                                        sdp.AddressType = ownerFieldsSpan[ownerFieldRanges[4]].ToString();
+                                        sdp.AddressOrHost = ownerFieldCount > 5 ? ownerFieldsSpan[ownerFieldRanges[5]].ToString() : null;
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("The SDP message had an invalid SDP line format for 'o=': {sdpLineTrimmed}", sdpLineTrimmedSpan.ToString());
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith("s=", StringComparison.Ordinal):
+                                    sdp.SessionName = sdpLineTrimmedSpan.Slice(2).ToString();
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith("i=", StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.MediaDescription = sdpLineTrimmedSpan.Slice(2).ToString();
+                                    }
+                                    else
+                                    {
+                                        sdp.SessionDescription = sdpLineTrimmedSpan.Slice(2).ToString();
+                                    }
+
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith("c=", StringComparison.Ordinal):
+
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLineTrimmedSpan.ToString());
+                                    }
+                                    else if (sdp.Connection == null)
+                                    {
+                                        sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLineTrimmedSpan.ToString());
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("The SDP message had a duplicate connection attribute which was ignored.");
+                                    }
+
+                                    break;
+
+                                case var l when l.StartsWith("b=", StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        if (l.StartsWith(SDPMediaAnnouncement.TIAS_BANDWIDTH_ATTRIBUE_PREFIX, StringComparison.Ordinal))
+                                        {
+                                            if (uint.TryParse(SliceAfterColon(l), out var tias))
+                                            {
+                                                activeAnnouncement.TIASBandwidth = tias;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            activeAnnouncement.BandwidthAttributes.Add(sdpLineTrimmedSpan.Slice(2).ToString());
+                                        }
+                                    }
+                                    else
+                                    {
+                                        sdp.BandwidthAttributes.Add(sdpLineTrimmedSpan.Slice(2).ToString());
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith("t=", StringComparison.Ordinal):
+                                    sdp.Timing = sdpLineTrimmedSpan.Slice(2).ToString();
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith("m=", StringComparison.Ordinal):
+                                    var mediaLine = sdpLineTrimmedSpan.Slice(2);
+                                    if (TryParseMediaLine(
+                                        mediaLine,
+                                        out var mediaTypeStart,
+                                        out var mediaTypeLength,
+                                        out var port,
+                                        out var portCount,
+                                        out var transportStart,
+                                        out var transportLength,
+                                        out var formatsStart))
+                                    {
+                                        var announcement = new SDPMediaAnnouncement();
+                                        announcement.MLineIndex = mLineIndex;
+                                        announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaLine.Slice(mediaTypeStart, mediaTypeLength).ToString());
+
+                                        // Parse the primary port.
+                                        announcement.Port = port;
+                                        if (portCount.HasValue)
+                                        {
+                                            announcement.PortCount = portCount.Value;
+                                        }
+
+                                        announcement.Transport = mediaLine.Slice(transportStart, transportLength).ToString();
+                                        announcement.ParseMediaFormats(mediaLine.Slice(formatsStart).ToString());
+                                        if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video || announcement.Media == SDPMediaTypesEnum.text)
+                                        {
+                                            announcement.MediaStreamStatus = sdp.SessionMediaStreamStatus != null ? sdp.SessionMediaStreamStatus.Value :
+                                                MediaStreamStatusEnum.SendRecv;
+                                        }
+                                        sdp.Media.Add(announcement);
+
+                                        activeAnnouncement = announcement;
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("A media line in SDP was invalid: {sdpLine}.", sdpLineTrimmedSpan.Slice(2).ToString());
+                                    }
+
+                                    mLineIndex++;
+                                    break;
+
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, GROUP_ATRIBUTE_PREFIX):
+                                    sdp.Group = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    break;
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX):
+                                    sdp.IceImplementation = IceImplementationEnum.lite;
+                                    break;
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, ICE_UFRAG_ATTRIBUTE_PREFIX):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.IceUfrag = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    else
+                                    {
+                                        sdp.IceUfrag = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    break;
+
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, ICE_PWD_ATTRIBUTE_PREFIX):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.IcePwd = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    else
+                                    {
+                                        sdp.IcePwd = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    break;
+
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, ICE_SETUP_ATTRIBUTE_PREFIX):
+                                    var colonIndex = sdpLineTrimmedSpan.IndexOf(':');
+                                    if (colonIndex != -1 && sdpLineTrimmedSpan.Length > colonIndex)
+                                    {
+                                        var iceRoleStr = sdpLineTrimmedSpan.Slice(colonIndex + 1).Trim().ToString();
+                                        if (Enum.TryParse<IceRolesEnum>(iceRoleStr, true, out var iceRole))
+                                        {
+                                            if (activeAnnouncement != null)
+                                            {
+                                                activeAnnouncement.IceRole = iceRole;
+                                            }
+                                            else
+                                            {
+                                                sdp.IceRole = iceRole;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning("ICE role was not recognised from SDP attribute: {sdpLineTrimmed}.", sdpLineTrimmedSpan.ToString());
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("ICE role SDP attribute was missing the mandatory colon: {sdpLineTrimmed}.", sdpLineTrimmedSpan.ToString());
+                                    }
+                                    break;
+
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, DTLS_FINGERPRINT_ATTRIBUTE_PREFIX):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.DtlsFingerprint = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    else
+                                    {
+                                        sdp.DtlsFingerprint = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    break;
+
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, ICE_CANDIDATE_ATTRIBUTE_PREFIX):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        if (activeAnnouncement.IceCandidates == null)
+                                        {
+                                            activeAnnouncement.IceCandidates = new List<string>();
+                                        }
+                                        activeAnnouncement.IceCandidates.Add(SliceAfterColon(sdpLineTrimmedSpan).ToString());
+                                    }
+                                    else
+                                    {
+                                        if (sdp.IceCandidates == null)
+                                        {
+                                            sdp.IceCandidates = new List<string>();
+                                        }
+                                        sdp.IceCandidates.Add(SliceAfterColon(sdpLineTrimmedSpan).ToString());
+                                    }
+                                    break;
+
+                                case var _ when EqualsAttribute(sdpLineTrimmedSpan, END_ICE_CANDIDATES_ATTRIBUTE):
+                                    // TODO: Set a flag.
+                                    break;
+                                case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null &&
+                                        (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video) &&
+                                        TryParseExtensionMap(l, out var extensionId, out var uriStart, out var uriLength))
+                                    {
+                                        var rtpExtension = RTPHeaderExtension.GetRTPHeaderExtension(extensionId, l.Slice(uriStart, uriLength).ToString(), activeAnnouncement.Media);
+                                        if ((rtpExtension != null) && !activeAnnouncement.HeaderExtensions.ContainsKey(extensionId))
+                                        {
+                                            activeAnnouncement.HeaderExtensions.Add(extensionId, rtpExtension);
+                                        }
+                                    }
+
+                                    break;
+                                case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video || activeAnnouncement.Media == SDPMediaTypesEnum.text)
+                                        {
+                                            // Parse the rtpmap attribute for audio/video announcements.
+                                            if (TrySplitAttributeValue(
+                                               l,
+                                               SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX.Length,
+                                               out var formatIDStart,
+                                               out var formatIDLength,
+                                               out var rtpmapStart))
+                                            {
+                                                var formatID = l.Slice(formatIDStart, formatIDLength);
+                                                if (int.TryParse(formatID, out var mediaFormatId))
+                                                {
+                                                    var rtpmap = l.Slice(rtpmapStart).ToString();
+                                                    if (activeAnnouncement.MediaFormats.ContainsKey(mediaFormatId))
+                                                    {
+                                                        activeAnnouncement.MediaFormats[mediaFormatId] = activeAnnouncement.MediaFormats[mediaFormatId].WithUpdatedRtpmap(rtpmap);
+                                                    }
+                                                    else
+                                                    {
+                                                        var fmtp = _pendingFmtp.ContainsKey(mediaFormatId) ? _pendingFmtp[mediaFormatId] : null;
+                                                        activeAnnouncement.MediaFormats.Add(mediaFormatId, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, mediaFormatId, rtpmap, fmtp));
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    logger.LogWarning("Non-numeric audio/video media format attribute in SDP: {sdpLine}", sdpLineTrimmedSpan.ToString());
+                                                }
+                                            }
+                                            else
+                                            {
+                                                activeAnnouncement.AddExtra(sdpLineTrimmedSpan.ToString());
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // Parse the rtpmap attribute for NON audio/video announcements.
+                                            if (TrySplitAttributeValue(
+                                                l,
+                                                SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUTE_PREFIX.Length,
+                                                out var formatIDStart,
+                                                out var formatIDLength,
+                                                out var rtpmapStart))
+                                            {
+                                                var formatID = l.Slice(formatIDStart, formatIDLength).ToString();
+                                                var rtpmap = l.Slice(rtpmapStart).ToString();
+
+                                                if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
+                                                {
+                                                    activeAnnouncement.ApplicationMediaFormats[formatID] = activeAnnouncement.ApplicationMediaFormats[formatID].WithUpdatedRtpmap(rtpmap);
+                                                }
+                                                else
+                                                {
+                                                    activeAnnouncement.ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID, rtpmap, null));
+                                                }
+                                            }
+                                            else
+                                            {
+                                                activeAnnouncement.AddExtra(sdpLineTrimmedSpan.ToString());
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("There was no active media announcement for a media format attribute, ignoring.");
+                                    }
+                                    break;
+
+                                case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video || activeAnnouncement.Media == SDPMediaTypesEnum.text)
+                                        {
+                                            // Parse the fmtp attribute for audio/video announcements.
+                                            if (TrySplitAttributeValue(
+                                                l,
+                                                SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX.Length,
+                                                out var avFormatIDStart,
+                                                out var avFormatIDLength,
+                                                out var fmtpStart))
+                                            {
+                                                var avFormatID = l.Slice(avFormatIDStart, avFormatIDLength);
+                                                if (int.TryParse(avFormatID, out var fmtpFormatId))
+                                                {
+                                                    var fmtp = l.Slice(fmtpStart).ToString();
+                                                    if (activeAnnouncement.MediaFormats.ContainsKey(fmtpFormatId))
+                                                    {
+                                                        activeAnnouncement.MediaFormats[fmtpFormatId] = activeAnnouncement.MediaFormats[fmtpFormatId].WithUpdatedFmtp(fmtp);
+                                                    }
+                                                    else
+                                                    {
+                                                        // Store the fmtp attribute for use when the rtpmap attribute turns up.
+                                                        if (_pendingFmtp.ContainsKey(fmtpFormatId))
+                                                        {
+                                                            _pendingFmtp.Remove(fmtpFormatId);
+                                                        }
+                                                        _pendingFmtp.Add(fmtpFormatId, fmtp);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    logger.LogWarning("Invalid media format parameter attribute in SDP: {sdpLine}", sdpLineTrimmedSpan.ToString());
+                                                }
+                                            }
+                                            else
+                                            {
+                                                activeAnnouncement.AddExtra(sdpLineTrimmedSpan.ToString());
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // Parse the fmtp attribute for NON audio/video announcements.
+                                            if (TrySplitAttributeValue(
+                                                l,
+                                                SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX.Length,
+                                                out var formatIDStart,
+                                                out var formatIDLength,
+                                                out var fmtpStart))
+                                            {
+                                                var formatID = l.Slice(formatIDStart, formatIDLength).ToString();
+                                                var fmtp = l.Slice(fmtpStart).ToString();
+
+                                                if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
+                                                {
+                                                    activeAnnouncement.ApplicationMediaFormats[formatID] = activeAnnouncement.ApplicationMediaFormats[formatID].WithUpdatedFmtp(fmtp);
+                                                }
+                                                else
+                                                {
+                                                    activeAnnouncement.ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID, null, fmtp));
+                                                }
+                                            }
+                                            else
+                                            {
+                                                activeAnnouncement.AddExtra(sdpLineTrimmedSpan.ToString());
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("There was no active media announcement for a media format parameter attribute, ignoring.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPSecurityDescription.CRYPTO_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    //2018-12-21 rj2: add a=crypto
+                                    if (activeAnnouncement != null)
+                                    {
+                                        try
+                                        {
+                                            activeAnnouncement.AddCryptoLine(sdpLineTrimmedSpan.ToString());
+                                        }
+                                        catch (FormatException fex)
+                                        {
+                                            logger.LogWarning("Error Parsing SDP-Line(a=crypto) {Exception}", fex);
+                                        }
+                                    }
+                                    break;
+
+                                case var _ when StartsWithAttribute(sdpLineTrimmedSpan, MEDIA_ID_ATTRIBUTE_PREFIX):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.MediaID = SliceAfterColon(sdpLineTrimmedSpan).ToString();
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("A media ID can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var fields = SliceAfterColon(sdpLineTrimmedSpan);
+                                        var fieldIndex = 0;
+
+                                        // Set the ID.
+                                        foreach (var fieldRange in fields.Split(' '))
+                                        {
+                                            var ssrcField = fields[fieldRange];
+                                            if (fieldIndex == 0)
+                                            {
+                                                activeAnnouncement.SsrcGroupID = ssrcField.ToString();
+                                            }
+                                            else if (uint.TryParse(ssrcField, out var ssrc))
+                                            {
+                                                // Add attributes for each of the SSRC values.
+                                                activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null, activeAnnouncement.SsrcGroupID));
+                                            }
+
+                                            fieldIndex++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("A ssrc-group ID can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var ssrcFields = SliceAfterColon(sdpLineTrimmedSpan);
+                                        var ssrcField = default(ReadOnlySpan<char>);
+                                        var cnameField = default(ReadOnlySpan<char>);
+                                        var fieldIndex = 0;
+
+                                        foreach (var fieldRange in ssrcFields.Split(' '))
+                                        {
+                                            if (fieldIndex == 0)
+                                            {
+                                                ssrcField = ssrcFields[fieldRange];
+                                            }
+                                            else if (fieldIndex == 1)
+                                            {
+                                                cnameField = ssrcFields[fieldRange];
+                                                break;
+                                            }
+
+                                            fieldIndex++;
+                                        }
+
+                                        if (uint.TryParse(ssrcField, out var ssrc))
+                                        {
+                                            var ssrcAttribute = activeAnnouncement.SsrcAttributes.FirstOrDefault(x => x.SSRC == ssrc);
+                                            if (ssrcAttribute == null)
+                                            {
+                                                ssrcAttribute = new SDPSsrcAttribute(ssrc, null, null);
+                                                activeAnnouncement.SsrcAttributes.Add(ssrcAttribute);
+                                            }
+
+                                            if (!cnameField.IsEmpty &&
+                                                cnameField.StartsWith(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX, StringComparison.Ordinal))
+                                            {
+                                                ssrcAttribute.Cname = cnameField.Slice(cnameField.IndexOf(':') + 1).ToString();
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("An ssrc attribute can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when TryParseMediaStreamStatus(sdpLineTrimmedSpan, out var mediaStreamStatus):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.MediaStreamStatus = mediaStreamStatus;
+                                    }
+                                    else
+                                    {
+                                        sdp.SessionMediaStreamStatus = mediaStreamStatus;
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var sctpMapFields = SliceAfterColon(sdpLineTrimmedSpan);
+                                        activeAnnouncement.SctpMap = sctpMapFields.ToString();
+
+                                        var sctpPortField = default(ReadOnlySpan<char>);
+                                        var maxMessageSizeField = default(ReadOnlySpan<char>);
+                                        var fieldIndex = 0;
+
+                                        foreach (var fieldRange in sctpMapFields.Split(' '))
+                                        {
+                                            if (fieldIndex == 0)
+                                            {
+                                                sctpPortField = sctpMapFields[fieldRange];
+                                            }
+                                            else if (fieldIndex == 2)
+                                            {
+                                                maxMessageSizeField = sctpMapFields[fieldRange];
+                                                break;
+                                            }
+
+                                            fieldIndex++;
+                                        }
+
+                                        if (ushort.TryParse(sctpPortField, out var sctpPort))
+                                        {
+                                            activeAnnouncement.SctpPort = sctpPort;
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning("An sctp-port value of {sctpPortStr} was not recognised as a valid port.", sctpPortField.ToString());
+                                        }
+
+                                        if (!long.TryParse(maxMessageSizeField, out activeAnnouncement.MaxMessageSize))
+                                        {
+                                            logger.LogWarning("A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.", maxMessageSizeField.ToString());
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("An sctpmap attribute can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var sctpPortStr = SliceAfterColon(sdpLineTrimmedSpan);
+
+                                        if (ushort.TryParse(sctpPortStr, out var sctpPort))
+                                        {
+                                            activeAnnouncement.SctpPort = sctpPort;
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning("An sctp-port value of {sctpPortStr} was not recognised as a valid port.", sctpPortStr.ToString());
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("An sctp-port attribute can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var maxMessageSizeStr = SliceAfterColon(sdpLineTrimmedSpan);
+                                        if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
+                                        {
+                                            logger.LogWarning("A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.", maxMessageSizeStr.ToString());
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("A max-message-size attribute can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var acceptTypes = SliceAfterColon(sdpLineTrimmedSpan).Trim();
+                                        var acceptTypesList = new List<string>();
+                                        foreach (var acceptTypeRange in acceptTypes.Split(' '))
+                                        {
+                                            acceptTypesList.Add(acceptTypes[acceptTypeRange].ToString());
+                                        }
+                                        activeAnnouncement.MessageMediaFormat.AcceptTypes = acceptTypesList;
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("A accept-types attribute can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                case var _ when sdpLineTrimmedSpan.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX, StringComparison.Ordinal):
+                                    if (activeAnnouncement != null)
+                                    {
+                                        var pathStr = SliceAfterColon(sdpLineTrimmedSpan);
+                                        var pathTrimmedStr = pathStr.Slice(pathStr.IndexOf(':') + 3);
+                                        activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Slice(0, pathTrimmedStr.IndexOf(':')).ToString();
+
+                                        pathTrimmedStr = pathTrimmedStr.Slice(pathTrimmedStr.IndexOf(':') + 1);
+                                        activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Slice(0, pathTrimmedStr.IndexOf('/')).ToString();
+
+                                        pathTrimmedStr = pathTrimmedStr.Slice(pathTrimmedStr.IndexOf('/') + 1);
+                                        activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr.ToString();
+
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("A path attribute can only be set on a media announcement.");
+                                    }
+                                    break;
+
+                                default:
+                                    if (activeAnnouncement != null)
+                                    {
+                                        activeAnnouncement.AddExtra(sdpLineTrimmedSpan.ToString());
+                                    }
+                                    else
+                                    {
+                                        sdp.AddExtra(sdpLineTrimmedSpan.ToString());
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        ArrayPool<Range>.Shared.Return(sdpLineRangeBuffer);
                     }
 
                     return sdp;
@@ -824,37 +1058,69 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string sdp =
-                "v=" + SDP_PROTOCOL_VERSION + CRLF +
-                "o=" + Owner + CRLF +
-                "s=" + SessionName + CRLF +
-                ((Connection != null) ? Connection.ToString() : null);
-            foreach (string bandwidth in BandwidthAttributes)
+            var sdp = new StringBuilder();
+            sdp.Append("v=").Append(SDP_PROTOCOL_VERSION).Append(CRLF)
+                .Append("o=").Append(Owner).Append(CRLF)
+                .Append("s=").Append(SessionName).Append(CRLF);
+
+            if (Connection != null)
             {
-                sdp += "b=" + bandwidth + CRLF;
+                sdp.Append(Connection);
             }
 
-            sdp += "t=" + Timing + CRLF;
+            foreach (string bandwidth in BandwidthAttributes)
+            {
+                sdp.Append("b=").Append(bandwidth).Append(CRLF);
+            }
 
-            sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
-            sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
-            sdp += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{CRLF}" : null;
-            sdp += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + CRLF : null;
+            sdp.Append("t=").Append(Timing).Append(CRLF);
+
+            if (!string.IsNullOrWhiteSpace(IceUfrag))
+            {
+                sdp.Append("a=").Append(ICE_UFRAG_ATTRIBUTE_PREFIX).Append(':').Append(IceUfrag).Append(CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(IcePwd))
+            {
+                sdp.Append("a=").Append(ICE_PWD_ATTRIBUTE_PREFIX).Append(':').Append(IcePwd).Append(CRLF);
+            }
+
+            if (IceRole != null)
+            {
+                sdp.Append("a=").Append(SDP.ICE_SETUP_ATTRIBUTE_PREFIX).Append(':').Append(IceRole).Append(CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
+            {
+                sdp.Append("a=").Append(DTLS_FINGERPRINT_ATTRIBUTE_PREFIX).Append(':').Append(DtlsFingerprint).Append(CRLF);
+            }
+
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    sdp += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{CRLF}";
+                    sdp.Append("a=").Append(SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX).Append(':').Append(candidate).Append(CRLF);
                 }
             }
-            sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
-            sdp += string.IsNullOrWhiteSpace(URI) ? null : "u=" + URI + CRLF;
+
+            if (!string.IsNullOrWhiteSpace(SessionDescription))
+            {
+                sdp.Append("i=").Append(SessionDescription).Append(CRLF);
+            }
+
+            if (!string.IsNullOrWhiteSpace(URI))
+            {
+                sdp.Append("u=").Append(URI).Append(CRLF);
+            }
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
             {
                 foreach (string originatorAddress in OriginatorEmailAddresses)
                 {
-                    sdp += string.IsNullOrWhiteSpace(originatorAddress) ? null : "e=" + originatorAddress + CRLF;
+                    if (!string.IsNullOrWhiteSpace(originatorAddress))
+                    {
+                        sdp.Append("e=").Append(originatorAddress).Append(CRLF);
+                    }
                 }
             }
 
@@ -862,29 +1128,41 @@ namespace SIPSorcery.Net
             {
                 foreach (string originatorNumber in OriginatorPhoneNumbers)
                 {
-                    sdp += string.IsNullOrWhiteSpace(originatorNumber) ? null : "p=" + originatorNumber + CRLF;
+                    if (!string.IsNullOrWhiteSpace(originatorNumber))
+                    {
+                        sdp.Append("p=").Append(originatorNumber).Append(CRLF);
+                    }
                 }
             }
 
-            sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
+            if (Group != null)
+            {
+                sdp.Append("a=").Append(GROUP_ATRIBUTE_PREFIX).Append(':').Append(Group).Append(CRLF);
+            }
 
             foreach (string extra in ExtraSessionAttributes)
             {
-                sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
+                if (!string.IsNullOrWhiteSpace(extra))
+                {
+                    sdp.Append(extra).Append(CRLF);
+                }
             }
 
             if (SessionMediaStreamStatus != null)
             {
-                sdp += MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value) + CRLF;
+                sdp.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Append(CRLF);
             }
 
             //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
-                sdp += (media == null) ? null : media.ToString();
+                if (media != null)
+                {
+                    sdp.Append(media);
+                }
             }
 
-            return sdp;
+            return sdp.ToString();
         }
 
         /// <summary>
@@ -901,7 +1179,7 @@ namespace SIPSorcery.Net
             {
                 return new IPEndPoint(IPAddress.Parse(sessionConnection.ConnectionAddress), firstMediaOffer.Port);
             }
-            else if(firstMediaOffer != null && firstMediaOffer.Connection != null)
+            else if (firstMediaOffer != null && firstMediaOffer.Connection != null)
             {
                 return new IPEndPoint(IPAddress.Parse(firstMediaOffer.Connection.ConnectionAddress), firstMediaOffer.Port);
             }

@@ -13,8 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Net;
 using System.Net.Sockets;
+using Polyfills;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -52,16 +55,34 @@ namespace SIPSorcery.Net
         public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
         {
             SDPConnectionInformation connectionInfo = new SDPConnectionInformation();
-            string[] connectionFields = connectionLine.Substring(2).Trim().Split(' ');
-            connectionInfo.ConnectionNetworkType = connectionFields[0].Trim();
-            connectionInfo.ConnectionAddressType = connectionFields[1].Trim();
-            connectionInfo.ConnectionAddress = connectionFields[2].Trim();
+            var connectionFields = connectionLine.AsSpan(2).Trim();
+            var fieldIndex = 0;
+            foreach (var fieldRange in connectionFields.Split(' '))
+            {
+                var field = connectionFields[fieldRange].Trim().ToString();
+                if (fieldIndex == 0)
+                {
+                    connectionInfo.ConnectionNetworkType = field;
+                }
+                else if (fieldIndex == 1)
+                {
+                    connectionInfo.ConnectionAddressType = field;
+                }
+                else if (fieldIndex == 2)
+                {
+                    connectionInfo.ConnectionAddress = field;
+                    break;
+                }
+
+                fieldIndex++;
+            }
+
             return connectionInfo;
         }
 
         public override string ToString()
         {
-            return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
+            return $"c={ConnectionNetworkType} {ConnectionAddressType} {ConnectionAddress}{m_CRLF}";
         }
     }
 }
