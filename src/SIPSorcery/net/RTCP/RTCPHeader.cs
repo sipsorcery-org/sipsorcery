@@ -177,7 +177,7 @@ namespace SIPSorcery.Net
         {
             if (receptionReportCount > MAX_RECEPTIONREPORT_COUNT)
             {
-                throw new ApplicationException("The Reception Report Count value cannot be larger than " + MAX_RECEPTIONREPORT_COUNT + ".");
+                throw new ApplicationException($"The Reception Report Count value cannot be larger than {MAX_RECEPTIONREPORT_COUNT}.");
             }
 
             ReceptionReportCount = receptionReportCount;
