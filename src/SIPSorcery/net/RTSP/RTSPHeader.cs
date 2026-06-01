@@ -17,8 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Polyfills;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -79,37 +79,60 @@ namespace SIPSorcery.Net
             {
                 transportHeader.RawHeader = header;
 
-                string[] fields = header.Split(';');
-
-                transportHeader.TransportSpecifier = fields[0];
-                transportHeader.BroadcastType = fields[1];
-
-                foreach (string field in fields.Where(x => x.Contains('=')))
+                var fields = header.AsSpan();
+                var fieldIndex = 0;
+                Span<Range> fieldKeyValueRange = stackalloc Range[3];
+                foreach (var fieldRange in fields.Split(';'))
                 {
-                    string fieldName = field.Split('=')[0];
-                    string fieldValue = field.Split('=')[1];
-
-                    switch (fieldName.ToLower())
+                    var field = fields[fieldRange];
+                    if (fieldIndex == 0)
                     {
-                        case CLIENT_RTP_PORT_FIELD_NAME:
-                            transportHeader.ClientRTPPortRange = fieldValue.Trim();
-                            break;
-                        case DESTINATION_FIELD_NAME:
-                            transportHeader.Destination = fieldValue.Trim();
-                            break;
-                        case SERVER_RTP_PORT_FIELD_NAME:
-                            transportHeader.ServerRTPPortRange = fieldValue.Trim();
-                            break;
-                        case SOURCE_FIELD_NAME:
-                            transportHeader.Source = fieldValue.Trim();
-                            break;
-                        case MODE_FIELD_NAME:
-                            transportHeader.Mode = fieldValue.Trim();
-                            break;
-                        default:
-                            logger.LogWarning("An RTSP Transport header parameter was not recognised: {Field}", field);
-                            break;
+                        transportHeader.TransportSpecifier = field.ToString();
+                        fieldIndex++;
+                        continue;
                     }
+
+                    if (fieldIndex == 1)
+                    {
+                        transportHeader.BroadcastType = field.ToString();
+                        fieldIndex++;
+                        continue;
+                    }
+
+                    if (field.Split(fieldKeyValueRange, '=') < 2)
+                    {
+                        continue;
+                    }
+
+                    var fieldName = field[fieldKeyValueRange[0]];
+                    var fieldValue = field[fieldKeyValueRange[1]];
+
+                    if (fieldName.Equals(CLIENT_RTP_PORT_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    {
+                        transportHeader.ClientRTPPortRange = fieldValue.Trim().ToString();
+                    }
+                    else if (fieldName.Equals(DESTINATION_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    {
+                        transportHeader.Destination = fieldValue.Trim().ToString();
+                    }
+                    else if (fieldName.Equals(SERVER_RTP_PORT_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    {
+                        transportHeader.ServerRTPPortRange = fieldValue.Trim().ToString();
+                    }
+                    else if (fieldName.Equals(SOURCE_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    {
+                        transportHeader.Source = fieldValue.Trim().ToString();
+                    }
+                    else if (fieldName.Equals(MODE_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    {
+                        transportHeader.Mode = fieldValue.Trim().ToString();
+                    }
+                    else
+                    {
+                        logger.LogWarning("An RTSP Transport header parameter was not recognised: {Field}", field.ToString());
+                    }
+
+                    fieldIndex++;
                 }
             }
 
@@ -124,11 +147,7 @@ namespace SIPSorcery.Net
         {
             if (ClientRTPPortRange.NotNullOrBlank())
             {
-                int clientRTPPort = 0;
-
-                var fields = ClientRTPPortRange.Split('-');
-
-                if (Int32.TryParse(fields[0], out clientRTPPort))
+                if (TryParsePortRange(ClientRTPPortRange.AsSpan(), true, out var clientRTPPort))
                 {
                     return clientRTPPort;
                 }
@@ -145,11 +164,7 @@ namespace SIPSorcery.Net
         {
             if (ClientRTPPortRange.NotNullOrBlank())
             {
-                int clientRTCPPort = 0;
-
-                var fields = ClientRTPPortRange.Split('-');
-
-                if (fields.Length > 1 && Int32.TryParse(fields[1], out clientRTCPPort))
+                if (TryParsePortRange(ClientRTPPortRange.AsSpan(), false, out var clientRTCPPort))
                 {
                     return clientRTCPPort;
                 }
@@ -167,11 +182,7 @@ namespace SIPSorcery.Net
         {
             if (ServerRTPPortRange.NotNullOrBlank())
             {
-                int serverRTPPort = 0;
-
-                var fields = ServerRTPPortRange.Split('-');
-
-                if (Int32.TryParse(fields[0], out serverRTPPort))
+                if (TryParsePortRange(ServerRTPPortRange.AsSpan(), true, out var serverRTPPort))
                 {
                     return serverRTPPort;
                 }
@@ -188,11 +199,7 @@ namespace SIPSorcery.Net
         {
             if (ServerRTPPortRange.NotNullOrBlank())
             {
-                int serverRtcpPort = 0;
-
-                var fields = ServerRTPPortRange.Split('-');
-
-                if (fields.Length > 0 && Int32.TryParse(fields[1], out serverRtcpPort))
+                if (TryParsePortRange(ServerRTPPortRange.AsSpan(), false, out var serverRtcpPort))
                 {
                     return serverRtcpPort;
                 }
@@ -201,36 +208,48 @@ namespace SIPSorcery.Net
             return 0;
         }
 
+        private static bool TryParsePortRange(ReadOnlySpan<char> portRange, bool useFirstPort, out int port)
+        {
+            port = 0;
+            portRange = portRange.Trim();
+            Span<Range> portRangeFields = stackalloc Range[3];
+            var portFieldCount = portRange.Split(portRangeFields, '-');
+            var portIndex = useFirstPort ? 0 : 1;
+
+            return portFieldCount > portIndex && int.TryParse(portRange[portRangeFields[portIndex]], out port);
+        }
+
         public override string ToString()
         {
-            string transportHeader = TransportSpecifier + ";" + BroadcastType;
+            var transportHeader = new StringBuilder();
+            transportHeader.Append(TransportSpecifier).Append(';').Append(BroadcastType);
 
             if (Destination.NotNullOrBlank())
             {
-                transportHeader += String.Format(";{0}={1}", DESTINATION_FIELD_NAME, Destination);
+                transportHeader.Append(';').Append(DESTINATION_FIELD_NAME).Append('=').Append(Destination);
             }
 
             if (Source.NotNullOrBlank())
             {
-                transportHeader += String.Format(";{0}={1}", SOURCE_FIELD_NAME, Source);
+                transportHeader.Append(';').Append(SOURCE_FIELD_NAME).Append('=').Append(Source);
             }
 
             if (ClientRTPPortRange.NotNullOrBlank())
             {
-                transportHeader += String.Format(";{0}={1}", CLIENT_RTP_PORT_FIELD_NAME, ClientRTPPortRange);
+                transportHeader.Append(';').Append(CLIENT_RTP_PORT_FIELD_NAME).Append('=').Append(ClientRTPPortRange);
             }
 
             if (ServerRTPPortRange.NotNullOrBlank())
             {
-                transportHeader += String.Format(";{0}={1}", SERVER_RTP_PORT_FIELD_NAME, ServerRTPPortRange);
+                transportHeader.Append(';').Append(SERVER_RTP_PORT_FIELD_NAME).Append('=').Append(ServerRTPPortRange);
             }
 
             if (Mode.NotNullOrBlank())
             {
-                transportHeader += String.Format(";{0}={1}", MODE_FIELD_NAME, Mode);
+                transportHeader.Append(';').Append(MODE_FIELD_NAME).Append('=').Append(Mode);
             }
 
-            return transportHeader;
+            return transportHeader.ToString();
         }
     }
 
@@ -272,13 +291,71 @@ namespace SIPSorcery.Net
 
         public static string[] SplitHeaders(string message)
         {
+            static string NormalizeFoldedHeaderLines(string headerBlock)
+            {
+                var normalised = default(StringBuilder);
+                var segmentStart = 0;
+                var position = 0;
+
+                while (position < headerBlock.Length)
+                {
+                    if (position + 2 < headerBlock.Length &&
+                        headerBlock[position] == '\r' &&
+                        headerBlock[position + 1] == '\n' &&
+                        char.IsWhiteSpace(headerBlock[position + 2]))
+                    {
+                        normalised ??= new StringBuilder(headerBlock.Length);
+                        normalised.Append(headerBlock, segmentStart, position - segmentStart);
+                        normalised.Append(' ');
+
+                        position += 2;
+                        while (position < headerBlock.Length && char.IsWhiteSpace(headerBlock[position]))
+                        {
+                            position++;
+                        }
+
+                        segmentStart = position;
+                        continue;
+                    }
+
+                    if (position + 1 < headerBlock.Length &&
+                        headerBlock[position] == '\r' &&
+                        headerBlock[position + 1] == ' ')
+                    {
+                        normalised ??= new StringBuilder(headerBlock.Length);
+                        normalised.Append(headerBlock, segmentStart, position - segmentStart);
+                        normalised.Append(m_CRLF);
+
+                        position += 2;
+                        segmentStart = position;
+                        continue;
+                    }
+
+                    position++;
+                }
+
+                if (normalised is null)
+                {
+                    return headerBlock;
+                }
+
+                normalised.Append(headerBlock, segmentStart, headerBlock.Length - segmentStart);
+                return normalised.ToString();
+            }
+
             // SIP headers can be extended across lines if the first character of the next line is at least on whitespace character.
-            message = Regex.Replace(message, m_CRLF + @"\s+", " ", RegexOptions.Singleline);
+            // Some user agents couldn't get the \r\n bit right; normalise those at the same time.
+            message = NormalizeFoldedHeaderLines(message);
 
-            // Some user agents couldn't get the \r\n bit right.
-            message = Regex.Replace(message, "\r ", m_CRLF, RegexOptions.Singleline);
+            var headers = new List<string>();
+            var messageSpan = message.AsSpan();
 
-            return Regex.Split(message, m_CRLF);
+            foreach (var headerRange in messageSpan.Split(m_CRLF.AsSpan()))
+            {
+                headers.Add(messageSpan[headerRange].ToString());
+            }
+
+            return headers.ToArray();
         }
 
         public static RTSPHeader ParseRTSPHeaders(string[] headersCollection)
@@ -293,7 +370,7 @@ namespace SIPSorcery.Net
                 {
                     string headerLine = headersCollection[lineIndex];
 
-                    if (headerLine == null || headerLine.Trim().Length == 0)
+                    if (string.IsNullOrWhiteSpace(headerLine))
                     {
                         // No point processing blank headers.
                         continue;
@@ -303,16 +380,17 @@ namespace SIPSorcery.Net
                     string headerValue = null;
 
                     // If the first character of a line is whitespace it's a continuation of the previous line.
-                    if (headerLine.StartsWith(" "))
+                    if (headerLine.StartsWith(" ", StringComparison.Ordinal))
                     {
                         headerName = lastHeader;
                         headerValue = headerLine.Trim();
                     }
                     else
                     {
-                        string[] headerParts = headerLine.Trim().Split(delimiterChars, 2);
+                        var headerLineSpan = headerLine.AsSpan().Trim();
+                        var delimiterIndex = headerLineSpan.IndexOf(':');
 
-                        if (headerParts == null || headerParts.Length < 2)
+                        if (delimiterIndex == -1)
                         {
                             logger.LogError("Invalid RTSP header, ignoring. header={HeaderLine}.", headerLine);
 
@@ -326,66 +404,64 @@ namespace SIPSorcery.Net
                             continue;
                         }
 
-                        headerName = headerParts[0].Trim();
-                        headerValue = headerParts[1].Trim();
+                        headerName = headerLineSpan.Slice(0, delimiterIndex).Trim().ToString();
+                        headerValue = headerLineSpan.Slice(delimiterIndex + 1).Trim().ToString();
                     }
 
                     try
                     {
-                        string headerNameLower = headerName.ToLower();
-
                         #region Accept
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_ACCEPT.ToLower())
+                        if (string.Equals(headerName, RTSPHeaders.RTSP_HEADER_ACCEPT, StringComparison.OrdinalIgnoreCase))
                         {
                             rtspHeader.Accept = headerValue;
                         }
                         #endregion
                         #region ContentType
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_CONTENTTYPE.ToLower())
+                        if (string.Equals(headerName, RTSPHeaders.RTSP_HEADER_CONTENTTYPE, StringComparison.OrdinalIgnoreCase))
                         {
                             rtspHeader.ContentType = headerValue;
                         }
                         #endregion
                         #region ContentLength
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_CONTENTLENGTH.ToLower())
+                        if (string.Equals(headerName, RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, StringComparison.OrdinalIgnoreCase))
                         {
                             rtspHeader.RawCSeq = headerValue;
 
-                            if (headerValue == null || headerValue.Trim().Length == 0)
+                            if (string.IsNullOrWhiteSpace(headerValue))
                             {
-                                logger.LogWarning("Invalid RTSP header, the " + RTSPHeaders.RTSP_HEADER_CONTENTLENGTH + " was empty.");
+                                logger.LogWarning("Invalid RTSP header, the {HeaderName} was empty.", RTSPHeaders.RTSP_HEADER_CONTENTLENGTH);
                             }
                             else if (!Int32.TryParse(headerValue.Trim(), out rtspHeader.ContentLength))
                             {
-                                logger.LogWarning("Invalid RTSP header, the " + RTSPHeaders.RTSP_HEADER_CONTENTLENGTH + " was not a valid 32 bit integer, {HeaderValue}.", headerValue);
+                                logger.LogWarning("Invalid RTSP header, the {HeaderName} was not a valid 32 bit integer, {HeaderValue}.", RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, headerValue);
                             }
                         }
                         #endregion
                         #region CSeq
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_CSEQ.ToLower())
+                        if (string.Equals(headerName, RTSPHeaders.RTSP_HEADER_CSEQ, StringComparison.OrdinalIgnoreCase))
                         {
                             rtspHeader.RawCSeq = headerValue;
 
-                            if (headerValue == null || headerValue.Trim().Length == 0)
+                            if (string.IsNullOrWhiteSpace(headerValue))
                             {
                                 rtspHeader.CSeqParserError = RTSPHeaderParserError.CSeqEmpty;
-                                logger.LogWarning("Invalid RTSP header, the " + RTSPHeaders.RTSP_HEADER_CSEQ + " was empty.");
+                                logger.LogWarning("Invalid RTSP header, the {HeaderName} was empty.", RTSPHeaders.RTSP_HEADER_CSEQ);
                             }
                             else if (!Int32.TryParse(headerValue.Trim(), out rtspHeader.CSeq))
                             {
                                 rtspHeader.CSeqParserError = RTSPHeaderParserError.CSeqNotValidInteger;
-                                logger.LogWarning("Invalid SIP header, the " + RTSPHeaders.RTSP_HEADER_CSEQ + " was not a valid 32 bit integer, {HeaderValue}.", headerValue);
+                                logger.LogWarning("Invalid SIP header, the {HeaderName} was not a valid 32 bit integer, {HeaderValue}.", RTSPHeaders.RTSP_HEADER_CSEQ, headerValue);
                             }
                         }
                         #endregion
                         #region Session
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_SESSION.ToLower())
+                        if (string.Equals(headerName, RTSPHeaders.RTSP_HEADER_SESSION, StringComparison.OrdinalIgnoreCase))
                         {
                             rtspHeader.Session = headerValue;
                         }
                         #endregion
                         #region Transport
-                        if (headerNameLower == RTSPHeaders.RTSP_HEADER_TRANSPORT.ToLower())
+                        if (string.Equals(headerName, RTSPHeaders.RTSP_HEADER_TRANSPORT, StringComparison.OrdinalIgnoreCase))
                         {
                             rtspHeader.Transport = RTSPTransportHeader.Parse(headerValue);
                         }
@@ -420,23 +496,50 @@ namespace SIPSorcery.Net
         }
 
 
-        public new string ToString()
+        public override string ToString()
         {
             try
             {
-                StringBuilder headersBuilder = new StringBuilder();
+                var headersBuilder = new StringBuilder();
 
-                headersBuilder.Append((CSeq > 0) ? RTSPHeaders.RTSP_HEADER_CSEQ + ": " + CSeq + m_CRLF : null);
-                headersBuilder.Append((Session != null) ? RTSPHeaders.RTSP_HEADER_SESSION + ": " + Session + m_CRLF : null);
-                headersBuilder.Append((Accept != null) ? RTSPHeaders.RTSP_HEADER_ACCEPT + ": " + Accept + m_CRLF : null);
-                headersBuilder.Append((ContentType != null) ? RTSPHeaders.RTSP_HEADER_CONTENTTYPE + ": " + ContentType + m_CRLF : null);
-                headersBuilder.Append((ContentLength != 0) ? RTSPHeaders.RTSP_HEADER_CONTENTLENGTH + ": " + ContentLength + m_CRLF : null);
-                headersBuilder.Append((Transport != null) ? RTSPHeaders.RTSP_HEADER_TRANSPORT + ": " + Transport.ToString() + m_CRLF : null);
+                void AppendHeader<T>(string headerName, T headerValue) =>
+                    headersBuilder.Append($"{headerName}: {headerValue}{m_CRLF}");
+
+                if (CSeq > 0)
+                {
+                    AppendHeader(RTSPHeaders.RTSP_HEADER_CSEQ, CSeq);
+                }
+
+                if (Session != null)
+                {
+                    AppendHeader(RTSPHeaders.RTSP_HEADER_SESSION, Session);
+                }
+
+                if (Accept != null)
+                {
+                    AppendHeader(RTSPHeaders.RTSP_HEADER_ACCEPT, Accept);
+                }
+
+                if (ContentType != null)
+                {
+                    AppendHeader(RTSPHeaders.RTSP_HEADER_CONTENTTYPE, ContentType);
+                }
+
+                if (ContentLength != 0)
+                {
+                    AppendHeader(RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, ContentLength);
+                }
+
+                if (Transport != null)
+                {
+                    AppendHeader(RTSPHeaders.RTSP_HEADER_TRANSPORT, Transport);
+                }
+
                 if (UnknownHeaders != null)
                 {
                     foreach (var unknownHeader in UnknownHeaders)
                     {
-                        headersBuilder.Append(unknownHeader + m_CRLF);
+                        headersBuilder.Append(unknownHeader).Append(m_CRLF);
                     }
                 }
 
