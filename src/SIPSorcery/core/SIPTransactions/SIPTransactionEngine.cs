@@ -141,7 +141,7 @@ namespace SIPSorcery.SIP
         public SIPTransaction GetTransaction(SIPRequest sipRequest)
         {
             // The branch is mandatory but it doesn't stop some UA's not setting it.
-            if (sipRequest.Header.Vias.TopViaHeader.Branch == null || sipRequest.Header.Vias.TopViaHeader.Branch.Trim().Length == 0)
+            if (string.IsNullOrWhiteSpace(sipRequest.Header.Vias.TopViaHeader.Branch))
             {
                 return null;
             }
@@ -231,7 +231,7 @@ namespace SIPSorcery.SIP
 
         public SIPTransaction GetTransaction(SIPResponse sipResponse)
         {
-            if (sipResponse.Header.Vias.TopViaHeader.Branch == null || sipResponse.Header.Vias.TopViaHeader.Branch.Trim().Length == 0)
+            if (string.IsNullOrWhiteSpace(sipResponse.Header.Vias.TopViaHeader.Branch))
             {
                 return null;
             }
