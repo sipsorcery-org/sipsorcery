@@ -1,28 +1,22 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example for working with the Cloudflare Realtime SFU API.
-// This example is an ASP.NET app that:
-//   1. Publishes a test pattern video and audio stream to the SFU on startup.
-//   2. Serves a browser subscriber page (wwwroot/index.html).
-//   3. Proxies the Cloudflare "pull tracks" + "renegotiate" calls server-side so
-//      the Cloudflare API token is NEVER sent to the browser, and the publisher
-//      session id never needs to be copied and pasted.
+// Description: An example for working with the Cloudflare Realtime TURN API.
 //
-// See: https://developers.cloudflare.com/realtime/sfu/https-api/
+// See: https://developers.cloudflare.com/realtime/turn/
 // API Reference: https://developers.cloudflare.com/realtime/static/realtime-api-2024-05-21.yaml
 //
-// To create the required Cloudflare Realtime SFU application and get the App ID and API token see:
-// https://developers.cloudflare.com/realtime/sfu/get-started/
+// To create the required Cloudflare Realtime TURN application and get the App ID and API token see:
+// https://developers.cloudflare.com/realtime/turn/generate-credentials/
 //
 // Kiota (https://github.com/microsoft/kiota) codegen command for Cloudlfare realtime API client:
-// kiota generate -l CSharp -d https://developers.cloudflare.com/realtime/static/calls-api-2024-05-21.yaml -c RealtimeSfuClient -n Cloudflare.Realtime.Sfu -o ./RealtimeSfu --exclude-backward-compatible --clean-output
+// kiota generate -l CSharp -d https://developers.cloudflare.com/realtime/static/calls-api-2024-05-21.yaml -c RealtimeTurnClient -n Cloudflare.Realtime.Turn -o ./RealtimeTurn --exclude-backward-compatible --clean-output
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 28 May 2026	Aaron Clauson	Created, Dublin, Ireland.
+// 31 May 2026	Aaron Clauson	Created, Wexford, Ireland.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -34,8 +28,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Cloudflare.Realtime.Sfu;
-using Cloudflare.Realtime.Sfu.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
