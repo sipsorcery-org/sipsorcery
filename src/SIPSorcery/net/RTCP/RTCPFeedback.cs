@@ -270,7 +270,7 @@ namespace SIPSorcery.Net
                 case var h when h.PacketType == RTCPReportTypesEnum.RTPFB && h.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     // PLI feedback reports do no have any additional parameters.
                     break;
-                case var _ when Header.PacketType == RTCPReportTypesEnum.RTPFB:
+                case var h when h.PacketType == RTCPReportTypesEnum.RTPFB:
                     BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(payloadIndex + 8), PID);
                     BinaryPrimitives.WriteUInt16BigEndian(buffer.AsSpan(payloadIndex + 10), BLP);
                     break;
