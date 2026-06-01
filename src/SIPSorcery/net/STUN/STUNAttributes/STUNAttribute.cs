@@ -220,7 +220,7 @@ namespace SIPSorcery.Net
 
                     attributes.Add(attribute);
 
-                    // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
+                    // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded.
                     int padding = (stunAttributeLength % 4 != 0) ? 4 - (stunAttributeLength % 4) : 0;
 
                     startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;
@@ -258,7 +258,7 @@ namespace SIPSorcery.Net
 
         public new virtual string ToString()
         {
-            string attrDescrString = "STUN Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
+            string attrDescrString = $"STUN Attribute: {AttributeType.ToString()}, length={PaddedLength}.";
 
             return attrDescrString;
         }

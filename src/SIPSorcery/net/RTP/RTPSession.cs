@@ -24,6 +24,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -666,35 +667,36 @@ namespace SIPSorcery.Net
 
         protected void LogRemoteSDPSsrcAttributes()
         {
-            string str = "Audio:[ ";
+            var stringBuilder = new StringBuilder("Audio:[ ");
             foreach (var audioRemoteSDPSsrcAttribute in audioRemoteSDPSsrcAttributes)
             {
                 foreach (var attr in audioRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    stringBuilder.Append(attr.SSRC).Append(" - ");
                 }
             }
-            str += "] \r\n Video: [ ";
+            stringBuilder.Append("] \r\n Video: [ ");
             foreach (var videoRemoteSDPSsrcAttribute in videoRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                stringBuilder.Append(" [");
                 foreach (var attr in videoRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    stringBuilder.Append(attr.SSRC).Append(" - ");
                 }
-                str += "] ";
+                stringBuilder.Append("] ");
             }
-            str += "] \r\n Text: [ ";
+            stringBuilder.Append("] \r\n Text: [ ");
             foreach (var textRemoteSDPSsrcAttribute in textRemoteSDPSsrcAttributes)
             {
-                str += " [";
+                stringBuilder.Append(" [");
                 foreach (var attr in textRemoteSDPSsrcAttribute)
                 {
-                    str += attr.SSRC + " - ";
+                    stringBuilder.Append(attr.SSRC).Append(" - ");
                 }
-                str += "] ";
+                stringBuilder.Append("] ");
             }
-            str += " ]";
+            stringBuilder.Append(" ]");
+            var str = stringBuilder.ToString();
             logger.LogDebug("LogRemoteSDPSsrcAttributes: {RemoteSDPSsrcAttributes}", str);
         }
 
@@ -1231,16 +1233,16 @@ namespace SIPSorcery.Net
                             // Adjust the local track's RTP event capability if the remote party has specified a different payload ID.
                             var currentLocalTrackCapabilities = currentMediaStream.LocalTrack.Capabilities;
                             SDPAudioVideoMediaFormat? localRTPEventCapabilities = null;
-                            if (currentLocalTrackCapabilities.Any(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE))
+                            if (currentLocalTrackCapabilities.Any(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)))
                             {
-                                localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                localRTPEventCapabilities = currentLocalTrackCapabilities.First(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                             }
                             else
                             {
                                 localRTPEventCapabilities = MediaStream.DefaultRTPEventFormat;
                             }
 
-                            currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).ToList();
+                            currentMediaStream.LocalTrack.Capabilities = capabilities.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).ToList();
                             if (localRTPEventCapabilities != null)
                             {
                                 currentMediaStream.LocalTrack.Capabilities.Add(localRTPEventCapabilities.Value);
@@ -1251,7 +1253,7 @@ namespace SIPSorcery.Net
                             if (!commonEventFormat.IsEmpty())
                             {
                                 currentMediaStream.NegotiatedRtpEventPayloadID = commonEventFormat.ID;
-                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => x.Name().ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+                                currentMediaStream.LocalTrack.Capabilities.RemoveAll(x => string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase));
                                 currentMediaStream.LocalTrack.Capabilities.Add(commonEventFormat);
                             }
                         }
@@ -1295,7 +1297,7 @@ namespace SIPSorcery.Net
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
-                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                        if (capabilities?.Where(x => !string.Equals(x.Name(), SDP.TELEPHONE_EVENT_ATTRIBUTE, StringComparison.OrdinalIgnoreCase)).Count() == 0)
                         {
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }

@@ -44,7 +44,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
+            string attrDescrStr = $"STUN CONNECTION_ID Attribute: value={ConnectionId}.";
 
             return attrDescrStr;
         }

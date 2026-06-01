@@ -1,0 +1,5 @@
+Chrome not able to get a lock on the video stream in the final encoder. Same behaviour as the previous attempt from ChatGPT on the 2nd of Feb.
+
+An early version of the PR did produce a static corrupted image on Chrome.
+
+The EncodeAndDecodeFrame unit test did not pass.

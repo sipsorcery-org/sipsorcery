@@ -17,6 +17,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Polyfills;
+using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -148,7 +150,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("H264");
+                return Rtpmap.AsSpan().Trim().StartsWith("H264", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -164,7 +166,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("JPEG");
+                return Rtpmap.AsSpan().Trim().StartsWith("JPEG", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -172,7 +174,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                return (Rtpmap ?? "").ToUpperInvariant().Trim().StartsWith("H265");
+                return Rtpmap.AsSpan().Trim().StartsWith("H265", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -194,18 +196,20 @@ namespace SIPSorcery.Net
 
         private static Dictionary<string, string> ParseWebRtcParameters(string input)
         {
-            var parameters = new Dictionary<string, string>();
+            var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrEmpty(input))
             {
                 return parameters;
             }
 
-            foreach (var pair in input.Split(';'))
+            Span<Range> keyValueRange = stackalloc Range[3];
+            var inputSpan = input.AsSpan();
+            foreach (var pairRange in inputSpan.Split(';'))
             {
-                var keyValue = pair.Split('=');
-                if (keyValue.Length == 2)
+                var pair = inputSpan[pairRange];
+                if (pair.Split(keyValueRange, '=') == 2)
                 {
-                    parameters[keyValue[0].Trim().ToLowerInvariant()] = keyValue[1].Trim();
+                    parameters[pair[keyValueRange[0]].Trim().ToString()] = pair[keyValueRange[1]].Trim().ToString();
                 }
             }
 
@@ -314,7 +318,7 @@ namespace SIPSorcery.Net
         {
             Kind = SDPMediaTypesEnum.text;
             ID = textFormat.FormatID;
-            Rtpmap = null;  
+            Rtpmap = null;
             Fmtp = textFormat.Parameters;
             _isEmpty = false;
 
@@ -458,7 +462,7 @@ namespace SIPSorcery.Net
             // rtpmap takes priority as well known format ID's can be overruled.
             if (format1.Rtpmap != null && format2.Rtpmap != null)
             {
-                if (string.Equals(format1.Rtpmap.Trim(), format2.Rtpmap.Trim(), StringComparison.OrdinalIgnoreCase))
+                if (format1.Rtpmap.AsSpan().Trim().Equals(format2.Rtpmap.AsSpan().Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -471,7 +475,7 @@ namespace SIPSorcery.Net
                 return true;
             }
             return false;
-            
+
         }
 
         /// <summary>
@@ -558,24 +562,46 @@ namespace SIPSorcery.Net
             }
             else
             {
-                string[] fields = rtpmap.Trim().Split('/');
+                var rtpmapSpan = rtpmap.AsSpan().Trim();
+                var nameSpan = default(ReadOnlySpan<char>);
+                var clockRateSpan = default(ReadOnlySpan<char>);
+                var channelsSpan = default(ReadOnlySpan<char>);
+                var fieldIndex = 0;
 
-                if (fields.Length >= 2)
+                foreach (var fieldRange in rtpmapSpan.Split('/'))
                 {
-                    name = fields[0].Trim();
-                    if (!int.TryParse(fields[1].Trim(), out clockRate))
+                    var field = rtpmapSpan[fieldRange].Trim();
+
+                    if (fieldIndex == 0)
+                    {
+                        nameSpan = field;
+                    }
+                    else if (fieldIndex == 1)
+                    {
+                        clockRateSpan = field;
+                    }
+                    else if (fieldIndex == 2)
+                    {
+                        channelsSpan = field;
+                        break;
+                    }
+
+                    fieldIndex++;
+                }
+
+                if (fieldIndex >= 1)
+                {
+                    if (!int.TryParse(clockRateSpan, out clockRate))
                     {
                         return false;
                     }
 
-                    if (fields.Length >= 3)
+                    if (!channelsSpan.IsEmpty && !int.TryParse(channelsSpan, out channels))
                     {
-                        if (!int.TryParse(fields[2].Trim(), out channels))
-                        {
-                            return false;
-                        }
+                        return false;
                     }
 
+                    name = nameSpan.ToString();
                     return true;
                 }
                 else
@@ -630,8 +656,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return formats.Any(x => x.Name()?.ToLower() == formatName?.ToLower()) ?
-                   formats.First(x => x.Name()?.ToLower() == formatName?.ToLower()) :
+                return formats.Any(x => string.Equals(x.Name(), formatName, StringComparison.OrdinalIgnoreCase)) ?
+                   formats.First(x => string.Equals(x.Name(), formatName, StringComparison.OrdinalIgnoreCase)) :
                    Empty;
             }
         }

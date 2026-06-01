@@ -37,14 +37,9 @@ namespace SIPSorcery.Net
 
         public override bool MatchesExtension(string uri)
         {
-            switch (uri.ToLower())
-            {
-                case RTP_HEADER_EXTENSION_URI:
-                case "urn:ietf:params:rtp-hdrext:transport-wide-cc": //official urn registered with IANA
-                case "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02":
-                    return true;
-            }
-            return false;
+            return string.Equals(uri, RTP_HEADER_EXTENSION_URI, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(uri, "urn:ietf:params:rtp-hdrext:transport-wide-cc", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(uri, "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02", StringComparison.OrdinalIgnoreCase);
         }
 
 

@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
+            string attrDescrStr = $"STUN Attribute: {base.AttributeType}, address={Address.ToString()}, port={Port}.";
 
             return attrDescrStr;
         }
