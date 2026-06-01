@@ -198,13 +198,13 @@ namespace SIPSorcery.Net
             return buffer;
         }
 
-        public new string ToString()
+        public override string ToString()
         {
-            string messageDescr = "STUN Message: " + Header.MessageType.ToString() + ", length=" + Header.MessageLength;
+            string messageDescr = $"STUN Message: {Header.MessageType.ToString()}, length={Header.MessageLength}";
 
             foreach (STUNAttribute attribute in Attributes)
             {
-                messageDescr += "\n " + attribute.ToString();
+                messageDescr += $"\n {attribute.ToString()}";
             }
 
             return messageDescr;

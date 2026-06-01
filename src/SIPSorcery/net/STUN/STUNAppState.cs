@@ -40,7 +40,7 @@ namespace SIPSorcery.Net
 
                 if (byteStr.Length == 1)
                 {
-                    bufferStr += "0" + byteStr;
+                    bufferStr += $"0{byteStr}";
                 }
                 else
                 {

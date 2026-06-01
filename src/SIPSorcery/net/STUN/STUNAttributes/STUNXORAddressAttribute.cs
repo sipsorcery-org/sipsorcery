@@ -133,7 +133,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
+            string attrDescrStr = $"STUN XOR_MAPPED_ADDRESS Attribute: {base.AttributeType}, address={Address.ToString()}, port={Port}.";
 
             return attrDescrStr;
         }
