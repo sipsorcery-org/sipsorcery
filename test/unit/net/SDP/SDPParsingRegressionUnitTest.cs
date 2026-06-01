@@ -26,7 +26,7 @@ namespace SIPSorcery.Net.UnitTests
     {
         private const string CRLF = "\r\n";
 
-        private Microsoft.Extensions.Logging.ILogger logger = null;
+        private readonly Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SDPParsingRegressionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
