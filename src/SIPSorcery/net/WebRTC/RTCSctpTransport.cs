@@ -380,8 +380,7 @@ namespace SIPSorcery.Net
         {
             if (length > maxMessageSize)
             {
-                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
-                    $" that exceeded the maximum allowed message size of {maxMessageSize}.");
+                throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length}  that exceeded the maximum allowed message size of {maxMessageSize}.");
             }
 
             if (!_isClosed)
