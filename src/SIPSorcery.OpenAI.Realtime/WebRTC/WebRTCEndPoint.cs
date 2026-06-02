@@ -86,7 +86,7 @@ public class WebRTCEndPoint : IWebRTCEndPoint, IDisposable
     /// <param name="loggerFactory">Logger factory to use for the end point.</param>
     public WebRTCEndPoint(string openAiKey, ILoggerFactory loggerFactory)
     {
-        var openAIHttpClientFactory = new HttpClientFactory(openAiKey, loggerFactory);
+        var openAIHttpClientFactory = new OpenAIRestClientFactory(openAiKey, loggerFactory);
         _openAIRealtimeRestClient = new WebRTCRestClient(openAIHttpClientFactory);
 
         _logger = loggerFactory.CreateLogger<DataChannelMessenger>();

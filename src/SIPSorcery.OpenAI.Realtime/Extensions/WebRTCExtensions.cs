@@ -21,7 +21,6 @@ using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 using System;
-using System.Net.Http.Headers;
 
 namespace SIPSorcery.OpenAI.Realtime;
 
@@ -30,8 +29,6 @@ namespace SIPSorcery.OpenAI.Realtime;
 /// </summary>
 public static class WebRTCServiceCollectionExtensions
 {
-    private const int OPENAI_HTTP_CLIENT_TIMEOUT_SECONDS = 5;
-
     /// <summary>
     /// Adds and configures the OpenAI Realtime REST and WebRTC endpoint clients.
     /// </summary>
@@ -51,9 +48,7 @@ public static class WebRTCServiceCollectionExtensions
         services
             .AddHttpClient(WebRTCRestClient.OPENAI_HTTP_CLIENT_NAME, client =>
             {
-                client.Timeout = TimeSpan.FromSeconds(OPENAI_HTTP_CLIENT_TIMEOUT_SECONDS);
-                client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", openAiKey);
+                OpenAIRestClientFactory.Configure(client, openAiKey);
             })
             .AddHttpMessageHandler<HttpLoggingHandler>();
 
