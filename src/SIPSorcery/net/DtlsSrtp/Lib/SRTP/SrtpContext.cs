@@ -109,6 +109,81 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             return true; /* out of order but good */
         }
 
+        /// <summary>
+        /// Read-only replay check. Returns whether <paramref name="sequenceNumber"/> (a 32-bit packet
+        /// index) is acceptable, WITHOUT mutating any state. Per RFC 3711 section 3.3 the replay list,
+        /// s_l and ROC MUST NOT be advanced until the packet has been authenticated, so callers must do
+        /// this read-only check before decryption and only call <see cref="UpdateReplayWindow"/> once
+        /// the packet has authenticated.
+        /// </summary>
+        /// <param name="sequenceNumber">RTP/RTCP 32-bit packet index.</param>
+        /// <returns>true if the packet is not a replay and is within the window; otherwise false.</returns>
+        /// <remarks>https://datatracker.ietf.org/doc/html/rfc2401 Appendix C</remarks>
+        public bool CheckReplayWindow(uint sequenceNumber)
+        {
+            if (sequenceNumber == 0)
+            {
+                return !S_l_set; /* index 0 only acceptable as the very first packet */
+            }
+
+            if (sequenceNumber > S_l)
+            {
+                return true; /* new larger index */
+            }
+
+            var diff = (int)(S_l - sequenceNumber);
+            if (diff >= REPLAY_WINDOW_SIZE)
+            {
+                return false; /* too old or wrapped */
+            }
+
+            if ((Bitmap & ((ulong)1 << diff)) == ((ulong)1 << diff))
+            {
+                return false; /* already seen */
+            }
+
+            return true; /* out of order but within the window and not yet seen */
+        }
+
+        /// <summary>
+        /// Advances the replay window / highest-index state for an index that has already passed
+        /// <see cref="CheckReplayWindow"/> AND been authenticated. Must only be called after the packet
+        /// authenticates, per RFC 3711 section 3.3, otherwise an unauthenticated packet could desync the
+        /// ROC for the whole stream.
+        /// </summary>
+        /// <param name="sequenceNumber">The 32-bit packet index that was authenticated.</param>
+        public void UpdateReplayWindow(uint sequenceNumber)
+        {
+            if (sequenceNumber == 0)
+            {
+                S_l_set = true;
+                return;
+            }
+
+            if (sequenceNumber > S_l)
+            {
+                var diff = (int)(sequenceNumber - S_l);
+                if (diff < REPLAY_WINDOW_SIZE)
+                {
+                    Bitmap = Bitmap << diff;
+                    Bitmap |= 1; /* set bit for this packet */
+                }
+                else
+                {
+                    Bitmap = 1; /* This packet has a "way larger" index */
+                }
+                S_l = sequenceNumber;
+                S_l_set = true;
+                return;
+            }
+
+            var d = (int)(S_l - sequenceNumber);
+            if (d < REPLAY_WINDOW_SIZE)
+            {
+                Bitmap |= ((ulong)1 << d); /* mark as seen */
+            }
+        }
+
         public void SetInitialSequence(uint sequenceNumber)
         {
             if (!S_l_set)
@@ -824,12 +899,16 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
             var offset = RtpReader.ReadHeaderLen(input);
 
-            if (!ssrcContext.CheckAndUpdateReplayWindow(index))
+            // Read-only replay check. The window/ROC state is NOT advanced here; that only happens once
+            // the packet has authenticated (UpdateReplayWindow below). RFC 3711 section 3.3.
+            if (!ssrcContext.CheckReplayWindow(index))
             {
                 outputBufferLength = 0;
                 return ERROR_REPLAY_CHECK_FAILED;
             }
 
+            try
+            {
             switch (context.Cipher)
             {
                 case SrtpCiphers.NULL:
@@ -970,6 +1049,20 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         return ERROR_UNSUPPORTED_CIPHER;
                     }
             }
+            }
+            catch (Org.BouncyCastle.Crypto.InvalidCipherTextException)
+            {
+                // AEAD (GCM/CCM) authentication failed. Drop the packet WITHOUT advancing the replay
+                // window / ROC, so a single unauthenticated, corrupted or reordered packet cannot desync
+                // the ROC and cause every subsequent packet to fail to decrypt. RFC 3711 section 3.3.
+                outputBufferLength = 0;
+                return ERROR_HMAC_CHECK_FAILED;
+            }
+
+            // The packet has now been authenticated (HMAC above for HMAC profiles, or the AEAD decrypt
+            // for GCM/CCM profiles). Only now is it safe to advance the replay window / ROC.
+            // RFC 3711 section 3.3.
+            ssrcContext.UpdateReplayWindow(index);
 
             // because of CCM/GCM, RTP headers must be unprotected only after the payload is unprotected and HMAC is verified
             // RFC6904
