@@ -35,8 +35,6 @@ public class WebRTCRestClient : IWebRTCRestClient
 
     public const RealtimeModelsEnum DEFAULT_REALTIME_MODEL = RealtimeModelsEnum.GptRealtime;
 
-    private const string OPENAI_REALTIME_BASE_URL = "https://api.openai.com/v1/realtime";
-
     private readonly IHttpClientFactory _factory;
 
     public WebRTCRestClient(IHttpClientFactory factory)
@@ -59,9 +57,9 @@ public class WebRTCRestClient : IWebRTCRestClient
     {
         var useModel = model ?? DEFAULT_REALTIME_MODEL;
 
-        var client = GetClient();
+        var client = _factory.CreateClient(OPENAI_HTTP_CLIENT_NAME);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "/v1/realtime/sessions");
+        using var req = new HttpRequestMessage(HttpMethod.Post, "sessions");
         req.Content = new StringContent(
             JsonSerializer.Serialize(new { model = useModel.ToEnumString(), voice }, JsonOptions.Default),
             Encoding.UTF8,
@@ -105,9 +103,9 @@ public class WebRTCRestClient : IWebRTCRestClient
         CancellationToken ct = default)
     {
         var useModel = model ?? DEFAULT_REALTIME_MODEL;
-        var client = GetClient();
+        var client = _factory.CreateClient(OPENAI_HTTP_CLIENT_NAME);
         //var url = $"?model={Uri.EscapeDataString(useModel.ToEnumString())}";
-        var url = $"/v1/realtime/calls?model={Uri.EscapeDataString(useModel.ToEnumString())}";
+        var url = $"calls?model={Uri.EscapeDataString(useModel.ToEnumString())}";
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
         req.Content = new StringContent(offerSdp, Encoding.UTF8);
@@ -122,15 +120,5 @@ public class WebRTCRestClient : IWebRTCRestClient
 
         var sdp = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
         return sdp;
-    }
-
-    private HttpClient GetClient()
-    {
-        var client = _factory.CreateClient(OPENAI_HTTP_CLIENT_NAME);
-        if (client.BaseAddress is null)
-        {
-            client.BaseAddress = new Uri(OPENAI_REALTIME_BASE_URL);
-        }
-        return client;
     }
 }
