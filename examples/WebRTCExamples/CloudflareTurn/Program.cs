@@ -4,13 +4,13 @@
 // Description: An example for working with the Cloudflare Realtime TURN API.
 //
 // See: https://developers.cloudflare.com/realtime/turn/
-// API Reference: https://developers.cloudflare.com/realtime/static/realtime-api-2024-05-21.yaml
+// API Reference: https://raw.githubusercontent.com/cloudflare/api-schemas/refs/heads/main/openapi.yaml
 //
 // To create the required Cloudflare Realtime TURN application and get the App ID and API token see:
 // https://developers.cloudflare.com/realtime/turn/generate-credentials/
 //
 // Kiota (https://github.com/microsoft/kiota) codegen command for Cloudlfare realtime API client:
-// kiota generate -l CSharp -d https://developers.cloudflare.com/realtime/static/calls-api-2024-05-21.yaml -c RealtimeTurnClient -n Cloudflare.Realtime.Turn -o ./RealtimeTurn --exclude-backward-compatible --clean-output
+// kiota generate -l CSharp -d https://raw.githubusercontent.com/cloudflare/api-schemas/refs/heads/main/openapi.yaml -c RealtimeTurnClient -n Cloudflare.Realtime.Turn -o ./RealtimeTurn --exclude-backward-compatible --clean-output
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
