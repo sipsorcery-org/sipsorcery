@@ -1,124 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cloudflare SFU Subscriber</title>
-    <style>
-        body { font-family: sans-serif; margin: 1rem; }
-        button { margin-top: 0.8rem; margin-right: 0.6rem; }
-        #status { margin-top: 0.8rem; white-space: pre-wrap; }
-        #publisher { margin-top: 0.6rem; color: #444; }
-        video { margin-top: 1rem; background: #000; }
-    </style>
     <script type="text/javascript">
-        let pc;
-        let inboundStream;
+        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+        const ICE_SERVERS_API_URL = "/api/cloudflare/iceservers"
 
-        function setStatus(msg) {
-            const el = document.querySelector("#status");
-            el.textContent += `${msg}\n`;
-            console.log(msg);
-        }
-
-        // The browser only ever talks to this app. The app holds the Cloudflare API token and
-        // the publisher session id, and proxies the SFU calls, so neither is exposed here.
-        async function api(path, body) {
-            const init = { method: "POST" };
-            if (body !== undefined) {
-                init.headers = { "Content-Type": "application/json" };
-                init.body = JSON.stringify(body);
-            }
-            const response = await fetch(path, init);
-            const text = await response.text();
-            if (!response.ok) {
-                throw new Error(`${path} -> HTTP ${response.status}: ${text}`);
-            }
-            return text ? JSON.parse(text) : {};
-        }
-
-        async function refreshPublisher() {
-            try {
-                const r = await fetch("/api/publisher");
-                const info = await r.json();
-                document.querySelector("#publisher").textContent =
-                    info.sessionId
-                        ? `Publisher session: ${info.sessionId} (audio: ${info.audioTrackName}, video: ${info.videoTrackName})`
-                        : "Publisher is not ready yet.";
-            } catch (err) {
-                document.querySelector("#publisher").textContent = `Could not load publisher info: ${err?.message || err}`;
-            }
-        }
+        var pc, ws;
 
         async function start() {
-            try {
-                document.querySelector("#status").textContent = "";
-
-                pc = new RTCPeerConnection({
-                    iceServers: [{ urls: "stun:stun.cloudflare.com" }]
-                });
-
-                inboundStream = new MediaStream();
-                document.querySelector("#videoCtl").srcObject = inboundStream;
-
-                pc.ontrack = (evt) => {
-                    setStatus(`Received ${evt.track.kind} track.`);
-                    inboundStream.addTrack(evt.track);
-                };
-
-                pc.oniceconnectionstatechange = () => setStatus(`ICE state: ${pc.iceConnectionState}`);
-                pc.onconnectionstatechange = () => setStatus(`PC state: ${pc.connectionState}`);
-
-                // Ask the app to create a subscriber session and pull the publisher's tracks.
-                // Cloudflare returns an offer for pulled tracks, which we answer below.
-                const sub = await api("/api/subscribe");
-                if (!sub.sdp) {
-                    throw new Error(`No offer SDP returned: ${JSON.stringify(sub)}`);
-                }
-                setStatus(`Subscriber session: ${sub.subscriberSessionId}`);
-
-                await pc.setRemoteDescription({ type: "offer", sdp: sub.sdp });
-
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-
-                await api("/api/renegotiate", {
-                    subscriberSessionId: sub.subscriberSessionId,
-                    sdp: pc.localDescription.sdp
-                });
-
-                setStatus("Subscription established.");
-            } catch (err) {
-                setStatus(`Start failed: ${err?.message || err}`);
+            const iceServersResponse = await fetch(ICE_SERVERS_API_URL);
+            if (!iceServersResponse.ok) {
+                throw new Error(`Failed to get ICE servers (${iceServersResponse.status}).`);
             }
-        }
+
+            const iceServers = await iceServersResponse.json();
+
+            console.log(iceServers);
+
+            pc = new RTCPeerConnection({ iceServers });
+
+            pc.ontrack = evt => {
+				console.log("Adding track to video control.");
+				document.querySelector('#videoCtl').srcObject = evt.streams[0];
+				
+				evt.streams[0].onunmute = () => {
+					console.log("Adding track to video control.");
+				};
+                    
+			   evt.streams[0].onended = () => {
+				  console.log("Track ended.");
+			   };
+			}
+			
+            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+			pc.onclose= () => {
+			   console.log("pc close");
+			};
+			
+            // ws = new WebSocket(document.querySelector('#websockurl').value, []);
+            // ws.onmessage = async function (evt) {
+            //     var obj = JSON.parse(evt.data);
+            //     if (obj?.candidate) {
+            //         pc.addIceCandidate(obj);
+            //     }
+            //     else if (obj?.sdp) {
+            //         await pc.setRemoteDescription(new RTCSessionDescription(obj));
+            //         pc.createAnswer()
+            //             .then((answer) => pc.setLocalDescription(answer))
+            //             .then(() => ws.send(JSON.stringify(pc.localDescription)));
+            //     }
+            // };
+        };
 
         async function closePeer() {
-            try {
-                if (pc) {
-                    pc.close();
-                    pc = null;
-                }
-                setStatus("Closed.");
-            } catch (err) {
-                setStatus(`Close failed: ${err?.message || err}`);
-            }
-        }
+            await pc?.close();
+            await ws?.close();
+        };
 
-        window.addEventListener("load", refreshPublisher);
+   	
+
     </script>
 </head>
 <body>
-    <h2>Cloudflare Realtime SFU Subscriber</h2>
 
-    <div id="publisher">Loading publisher info...</div>
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
 
     <div>
-        <button type="button" onclick="start();">Subscribe</button>
-        <button type="button" onclick="closePeer();">Close</button>
+        <input type="text" id="websockurl" size="40" />
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
     </div>
 
-    <div id="status"></div>
-    <video id="videoCtl" autoplay playsinline controls></video>
 </body>
-</html>
+
+<script>
+    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+</script>
