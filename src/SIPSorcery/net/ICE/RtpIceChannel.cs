@@ -1121,7 +1121,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception " + nameof(RefreshTurn) + ". {ErrorMessage}", excp);
+                logger.LogError(excp, "Exception in {Method}.", nameof(RefreshTurn));
             }
         }
 
@@ -1308,12 +1308,12 @@ namespace SIPSorcery.Net
         {
             if (localCandidate == null)
             {
-                logger.LogError(nameof(UpdateChecklist) + " the local candidate supplied to UpdateChecklist was null.");
+                logger.LogError("{Method} the local candidate supplied to UpdateChecklist was null.", nameof(UpdateChecklist));
                 return;
             }
             else if (remoteCandidate == null)
             {
-                logger.LogError(nameof(UpdateChecklist) + " the remote candidate supplied to UpdateChecklist was null.");
+                logger.LogError("{Method} the remote candidate supplied to UpdateChecklist was null.", nameof(UpdateChecklist));
                 return;
             }
 
@@ -1323,7 +1323,7 @@ namespace SIPSorcery.Net
                 // Attempt to resolve the remote candidate address.
                 if (!IPAddress.TryParse(remoteCandidate.address, out var remoteCandidateIPAddr))
                 {
-                    if (remoteCandidate.address.ToLower().EndsWith(MDNS_TLD))
+                    if (remoteCandidate.address.EndsWith(MDNS_TLD, StringComparison.OrdinalIgnoreCase))
                     {
                         var addresses = await ResolveMdnsName(remoteCandidate).ConfigureAwait(false);
                         if (addresses.Length == 0)
@@ -1418,7 +1418,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception " + nameof(UpdateChecklist) + ". {ErrorMessage}", excp);
+                logger.LogError(excp, "Exception in {Method}.", nameof(UpdateChecklist));
             }
         }
 
@@ -1760,7 +1760,7 @@ namespace SIPSorcery.Net
         {
             STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID);
-            stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
+            stunRequest.AddUsernameAttribute($"{RemoteIceUser}:{LocalIceUser}");
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority)));
 
             if (IsController)
@@ -2725,7 +2725,8 @@ namespace SIPSorcery.Net
             {
                 if (MdnsResolve != null)
                 {
-                    logger.LogWarning("RTP ICE channel has both "+ nameof(MdnsGetAddresses) + " and " + nameof(MdnsGetAddresses) + " set. Only " + nameof(MdnsGetAddresses) + " will be used.");
+                    logger.LogWarning("RTP ICE channel has both {PrimaryResolver} and {SecondaryResolver} set. Only {SelectedResolver} will be used.",
+                        nameof(MdnsGetAddresses), nameof(MdnsResolve), nameof(MdnsGetAddresses));
                 }
                 return await MdnsGetAddresses(candidate.address).ConfigureAwait(false);
             }
