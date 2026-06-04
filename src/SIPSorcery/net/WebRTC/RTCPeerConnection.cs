@@ -991,7 +991,8 @@ namespace SIPSorcery.Net
                 }
 
                 bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
-                var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+                bool waitForIceGatheringToComplete = options != null && options.X_WaitForIceGatheringToComplete;
+                var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates, waitForIceGatheringToComplete);
 
                 int indexAudioStream = 0;
                 int indexVideoStream = 0;
