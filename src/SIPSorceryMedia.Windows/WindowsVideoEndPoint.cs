@@ -231,11 +231,11 @@ namespace SIPSorceryMedia.Windows
 
                 if (vidDevice == null)
                 {
-                    logger.LogWarning($"Could not find video capture device for specified ID {_videoDeviceID}, using default device.");
+                    logger.LogWarning("Could not find video capture device for specified ID {VideoDeviceId}, using default device.", _videoDeviceID);
                 }
                 else
                 {
-                    logger.LogInformation($"Video capture device {vidDevice.Name} selected.");
+                    logger.LogInformation("Video capture device {VideoDeviceName} selected.", vidDevice.Name);
                     mediaCaptureSettings.VideoDeviceId = vidDevice.Id;
                 }
             }
@@ -277,7 +277,8 @@ namespace SIPSorceryMedia.Windows
             if (preferredFormat == null)
             {
                 // Still can't get what we want. Log a warning message and take the default.
-                logger.LogWarning($"The video capture device did not support the requested format (or better) {_width}x{_height} {fps}fps. Using default mode.");
+                logger.LogWarning("The video capture device did not support the requested format (or better) {Width}x{Height} {Fps}fps. Using default mode.",
+                    _width, _height, fps);
 
                 preferredFormat = colorFrameSource.SupportedFormats.First();
             }
@@ -455,7 +456,8 @@ namespace SIPSorceryMedia.Windows
                         var vidFmt = srcFmt.VideoFormat;
                         float vidFps = vidFmt.MediaFrameFormat.FrameRate.Numerator / vidFmt.MediaFrameFormat.FrameRate.Denominator;
                         string pixFmt = vidFmt.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : vidFmt.MediaFrameFormat.Subtype;
-                        logger.LogDebug($"Video Capture device {vidCapDevice.Name} format {vidFmt.Width}x{vidFmt.Height} {vidFps:0.##}fps {pixFmt}");
+                        logger.LogDebug("Video Capture device {VideoDeviceName} format {Width}x{Height} {Fps:0.##}fps {PixelFormat}",
+                            vidCapDevice.Name, vidFmt.Width, vidFmt.Height, vidFps, pixFmt);
                     }
                 }
             }
@@ -478,7 +480,7 @@ namespace SIPSorceryMedia.Windows
             var vidCapDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
             foreach (var vidCapDevice in vidCapDevices)
             {
-                if(vidCapDevice.Name.ToLower() == deviceName.ToLower())
+                if(string.Equals(vidCapDevice.Name, deviceName, StringComparison.OrdinalIgnoreCase))
                 {
                     var mediaCaptureSettings = new MediaCaptureInitializationSettings()
                     {
@@ -685,7 +687,8 @@ namespace SIPSorceryMedia.Windows
             string pixFmt = frameSource.CurrentFormat.Subtype;
             string deviceName = frameSource.Info.DeviceInformation.Name;
 
-            logger.LogInformation($"Video capture device {deviceName} successfully initialised: {width}x{height} {fps:0.##}fps pixel format {pixFmt}.");
+            logger.LogInformation("Video capture device {VideoDeviceName} successfully initialised: {Width}x{Height} {Fps:0.##}fps pixel format {PixelFormat}.",
+                deviceName, width, height, fps, pixFmt);
         }
 
         public void Dispose()
