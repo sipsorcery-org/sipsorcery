@@ -679,14 +679,24 @@ namespace SIPSorcery.Net
                 null,
                 0);
 
-            // Create TCP Socket to implement TURN Control
-            // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
-            // Ice Candidates returned by relay will always be UDP based.
+            // For TURN servers reached over TCP/TLS (turn:...?transport=tcp or turns:), open a TCP socket.
+            // The whole client<->TURN-server leg rides this single connection: Allocate/Refresh,
+            // CreatePermission, the ICE connectivity-check Binding requests, AND the relayed media itself
+            // (carried as Send/Data indications or ChannelData) - it's not just signalling.
+            // The relay candidate produced is still a UDP candidate, because the allocation requests UDP
+            // transport (REQUESTED-TRANSPORT=UDP), so the TURN-server<->peer leg is always UDP regardless
+            // of how we reached the server.
+            //
+            // Classify TCP ICE servers by the parsed transport protocol, not by string-matching the raw
+            // URL. This correctly includes secure schemes that imply TCP without an explicit
+            // "?transport=" parameter (e.g. "turns:host:443", which defaults to TLS over TCP per
+            // RFC 7064/7065). String-matching for "transport=tcp"/"transport=tls" would miss those.
             var tcpIceServers = _iceServers != null ?
                                     _iceServers.FindAll(a =>
                                        a != null &&
-                                       (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) ||
-                                       a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) :
+                                       a.urls != null &&
+                                       STUNUri.TryParse(a.urls, out var tcpUri) &&
+                                       tcpUri.Protocol == ProtocolType.Tcp) :
                                     new List<RTCIceServer>();
             var supportTcp = tcpIceServers != null && tcpIceServers.Count > 0;
             if (supportTcp)

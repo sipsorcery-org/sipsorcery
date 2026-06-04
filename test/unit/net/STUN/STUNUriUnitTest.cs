@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -117,6 +118,96 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal("[::1]", stunUri.Host);
             Assert.Equal(14478, stunUri.Port);
             Assert.True(stunUri.ExplicitPort);
+        }
+
+        /// <summary>
+        /// Tests that a "turns" URI with no explicit transport defaults to TCP (TLS over TCP), per
+        /// RFC 7065. Previously it incorrectly defaulted to UDP, which broke TLS/TCP TURN servers such
+        /// as turns:turn.cloudflare.com:443.
+        /// </summary>
+        [Fact]
+        public void ParseTurnsWithoutTransportDefaultsToTcpTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = STUNUri.TryParse("turns:turn.cloudflare.com:443", out var stunUri);
+
+            Assert.True(result);
+            Assert.Equal(STUNSchemesEnum.turns, stunUri.Scheme);
+            Assert.Equal("turn.cloudflare.com", stunUri.Host);
+            Assert.Equal(443, stunUri.Port);
+            Assert.Equal(STUNProtocolsEnum.tcp, stunUri.Transport);
+            Assert.Equal(ProtocolType.Tcp, stunUri.Protocol);
+        }
+
+        /// <summary>
+        /// Tests that a "stuns" URI with no explicit transport defaults to TCP (TLS over TCP), per RFC 7064.
+        /// </summary>
+        [Fact]
+        public void ParseStunsWithoutTransportDefaultsToTcpTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = STUNUri.TryParse("stuns:stun.sipsorcery.com:5349", out var stunUri);
+
+            Assert.True(result);
+            Assert.Equal(STUNSchemesEnum.stuns, stunUri.Scheme);
+            Assert.Equal(STUNProtocolsEnum.tcp, stunUri.Transport);
+            Assert.Equal(ProtocolType.Tcp, stunUri.Protocol);
+        }
+
+        /// <summary>
+        /// Tests that a non-secure "turn" URI with no explicit transport still defaults to UDP.
+        /// </summary>
+        [Fact]
+        public void ParseTurnWithoutTransportDefaultsToUdpTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = STUNUri.TryParse("turn:turn.cloudflare.com:3478", out var stunUri);
+
+            Assert.True(result);
+            Assert.Equal(STUNSchemesEnum.turn, stunUri.Scheme);
+            Assert.Equal(STUNProtocolsEnum.udp, stunUri.Transport);
+            Assert.Equal(ProtocolType.Udp, stunUri.Protocol);
+        }
+
+        /// <summary>
+        /// Tests that an explicit transport on a secure scheme is respected and overrides the
+        /// scheme-based default (e.g. turns + transport=udp selects DTLS over UDP).
+        /// </summary>
+        [Fact]
+        public void ParseTurnsExplicitUdpTransportOverridesSchemeDefaultTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = STUNUri.TryParse("turns:turn.cloudflare.com:5349?transport=udp", out var stunUri);
+
+            Assert.True(result);
+            Assert.Equal(STUNSchemesEnum.turns, stunUri.Scheme);
+            Assert.Equal(STUNProtocolsEnum.udp, stunUri.Transport);
+            Assert.Equal(ProtocolType.Udp, stunUri.Protocol);
+        }
+
+        /// <summary>
+        /// Tests that an explicit transport=tcp on a "turns" URI is respected (the known-working form).
+        /// </summary>
+        [Fact]
+        public void ParseTurnsExplicitTcpTransportTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            bool result = STUNUri.TryParse("turns:turn.cloudflare.com:443?transport=tcp", out var stunUri);
+
+            Assert.True(result);
+            Assert.Equal(STUNSchemesEnum.turns, stunUri.Scheme);
+            Assert.Equal(STUNProtocolsEnum.tcp, stunUri.Transport);
+            Assert.Equal(ProtocolType.Tcp, stunUri.Protocol);
         }
     }
 }

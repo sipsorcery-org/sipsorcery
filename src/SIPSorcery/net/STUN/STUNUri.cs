@@ -163,11 +163,13 @@ namespace SIPSorcery.Net
 
             ReadOnlySpan<char> uriSpan = uriStr.AsSpan();
             STUNProtocolsEnum transport = STUNProtocolsEnum.udp;
+            bool explicitTransport = false;
 
             // Handle transport protocol
             int transportIndex = uriSpan.IndexOf('?');
             if (transportIndex >= 0 && uriSpan.Slice(transportIndex, SCHEME_TRANSPORT_SEPARATOR.Length).SequenceEqual(SCHEME_TRANSPORT_SEPARATOR.AsSpan()))
             {
+                explicitTransport = true;
                 var protocolSpan = uriSpan.Slice(transportIndex + SCHEME_TRANSPORT_SEPARATOR.Length).Trim();
 #if NET6_0_OR_GREATER
                 if (!protocolSpan.IsEmpty && !Enum.TryParse(protocolSpan, true, out transport))
@@ -201,6 +203,15 @@ namespace SIPSorcery.Net
                     }
                     uriSpan = uriSpan.Slice(colonPosn + 1);
                 }
+            }
+
+            // RFC 7064 (STUN) / RFC 7065 (TURN): when no transport is specified the default depends on
+            // the scheme. stun/turn default to UDP; the secure schemes stuns/turns default to TCP
+            // (TLS runs over TCP). Without this a "turns:host:443" URI would default to UDP and the
+            // TURN allocation would be attempted over UDP against a TLS/TCP listener and fail.
+            if (!explicitTransport && (scheme == STUNSchemesEnum.turns || scheme == STUNSchemesEnum.stuns))
+            {
+                transport = STUNProtocolsEnum.tcp;
             }
 
             var explicitPort = false;
