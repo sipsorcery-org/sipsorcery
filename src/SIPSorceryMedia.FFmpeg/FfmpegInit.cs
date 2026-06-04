@@ -83,7 +83,7 @@ namespace SIPSorceryMedia.FFmpeg
 
             RegisterFFmpegBinaries(libPath);
 
-            logger.LogInformation($"FFmpeg version info: {ffmpeg.av_version_info()}");
+            logger.LogInformation("FFmpeg version info: {VersionInfo}", ffmpeg.av_version_info());
 
             if (logLevel.HasValue)
             {
@@ -105,10 +105,7 @@ namespace SIPSorceryMedia.FFmpeg
             catch (Exception e)
             {
                 throw new DllNotFoundException(
-                    "Check the dependencies of FFmpeg libraries and make sure they are " +
-                    "searchable by the operating system's library loader."
-                    + "\nOn linux you can use 'ldd' & 'strace'."
-                    + "\nOn Windows you can use 'Dependencies'."
+                    $"Check the dependencies of FFmpeg libraries and make sure they are searchable by the operating system's library loader.\nOn linux you can use 'ldd' & 'strace'.\nOn Windows you can use 'Dependencies'."
                     , e);
             }
         }
@@ -124,12 +121,12 @@ namespace SIPSorceryMedia.FFmpeg
                 string ffmpegExecutable = "ffmpeg";
                 string? path = Environment.GetEnvironmentVariable("PATH")?
                     .Split([';'], StringSplitOptions.RemoveEmptyEntries)
-                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, ffmpegExecutable  + ".exe")))
+                    .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, $"{ffmpegExecutable}.exe")))
                     .FirstOrDefault();
 
                 if (path != null)
                 {
-                    logger.LogInformation($"FFmpeg binaries found in system path at: {path}");
+                    logger.LogInformation("FFmpeg binaries found in system path at: {Path}", path);
                     SetFFmpegBinariesPath(path);
                     return;
                 }
@@ -142,7 +139,7 @@ namespace SIPSorceryMedia.FFmpeg
                     var ffmpegBinaryPath = Path.Combine(current, probe);
                     if (Directory.Exists(ffmpegBinaryPath))
                     {
-                        logger.LogInformation($"FFmpeg binaries found in: {ffmpegBinaryPath}");
+                        logger.LogInformation("FFmpeg binaries found in: {Path}", ffmpegBinaryPath);
                         SetFFmpegBinariesPath(ffmpegBinaryPath);
                         return;
                     }
@@ -154,7 +151,7 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 if (Directory.Exists(libPath))
                 {
-                    logger.LogInformation($"FFmpeg binaries path set to: {libPath}");
+                    logger.LogInformation("FFmpeg binaries path set to: {Path}", libPath);
                     SetFFmpegBinariesPath(libPath);
                     return;
                 }

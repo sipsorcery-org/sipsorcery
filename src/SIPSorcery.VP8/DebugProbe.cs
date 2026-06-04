@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Diagnostics;
+using System.Text;
 
 namespace Vpx.Net
 {
@@ -30,13 +31,14 @@ namespace Vpx.Net
 			Debug.WriteLine("Macro Block Modes:");
 			for (int i = 0; i < macroBlockRows + 1; i++)
 			{
-				string rowStr = $"Row {i} | ";
+                var rowBuilder = new StringBuilder().Append("Row ").Append(i).Append(" | ");
 				for (int j = 0; j < macroBlockCols + 1; j++)
 				{
 					byte yMode = mip[i * (macroBlockRows + 1) + j].mbmi.mode;
 					byte uvMode = mip[i * (macroBlockRows + 1) + j].mbmi.uv_mode;
-					rowStr += $"y={yMode}, uvMode={uvMode} | ";
+                    rowBuilder.Append("y=").Append(yMode).Append(", uvMode=").Append(uvMode).Append(" | ");
 				}
+                string rowStr = rowBuilder.ToString();
 				Debug.WriteLine(rowStr);
 			}
 
@@ -54,15 +56,20 @@ namespace Vpx.Net
 		public static string GetBModeInfoMatrix(b_mode_info[] bModes)
         {
 			// The array will always be 16 elements.
-			string matrixStr = null;
+            var matrixBuilder = new StringBuilder();
 
 			for(int row=0; row<4; row++)
             {
-				matrixStr += $"[{bModes[row * 4].mv.as_int},{bModes[row * 4 + 1].mv.as_int}" +
-							 $",{bModes[row * 4  +2].mv.as_int},{bModes[row * 4 + 3].mv.as_int}]\n"; 
+                matrixBuilder
+                    .Append('[')
+                    .Append(bModes[row * 4].mv.as_int).Append(',')
+                    .Append(bModes[row * 4 + 1].mv.as_int).Append(',')
+                    .Append(bModes[row * 4 + 2].mv.as_int).Append(',')
+                    .Append(bModes[row * 4 + 3].mv.as_int)
+                    .Append("]\n");
 			}
 
-			return matrixStr;
+            return matrixBuilder.ToString();
         }
 
 		public static unsafe void DumpMacroBlock(MACROBLOCKD macroBlock, int macroBlockIndex)
@@ -89,11 +96,12 @@ namespace Vpx.Net
             for(int i=0; i< macroBlock.block.Length; i++)
             {
                 var subBlock = macroBlock.block[i];
-                string qCoeff = null;
+                var qCoeffBuilder = new StringBuilder();
                 for(int j=subBlock.qcoeff.Index; j< subBlock.qcoeff.Index+16; j++)
                 {
-                    qCoeff += subBlock.qcoeff.src()[j].ToString() + ",";
+                    qCoeffBuilder.Append(subBlock.qcoeff.src()[j]).Append(',');
                 }
+                string qCoeff = qCoeffBuilder.ToString();
                 Debug.WriteLine($"block[{i}].qcoeff={qCoeff}");
             }
 
@@ -104,11 +112,12 @@ namespace Vpx.Net
             for (int i = 0; i < macroBlock.block.Length; i++)
             {
                 var subBlock = macroBlock.block[i];
-                string dqCoeff = null;
+                var dqCoeffBuilder = new StringBuilder();
                 for (int j = subBlock.dqcoeff.Index; j < subBlock.dqcoeff.Index + 16; j++)
                 {
-                    dqCoeff += subBlock.dqcoeff.src()[j].ToString() + ",";
+                    dqCoeffBuilder.Append(subBlock.dqcoeff.src()[j]).Append(',');
                 }
+                string dqCoeff = dqCoeffBuilder.ToString();
                 Debug.WriteLine($"block[{i}].dqcoeff={dqCoeff}");
             }
 
@@ -160,21 +169,21 @@ namespace Vpx.Net
 
         public unsafe static string ToHexStr(byte* buffer, int length, char? separator = null)
         {
-            string rv = string.Empty;
+            var builder = new StringBuilder(length * (separator == null ? 2 : 3));
 
             for (int i = 0; i < length; i++)
             {
                 var val = buffer[i];
-                rv += hexmap[val >> 4];
-                rv += hexmap[val & 15];
+                builder.Append(hexmap[val >> 4]);
+                builder.Append(hexmap[val & 15]);
 
                 if (separator != null && i != length - 1)
                 {
-                    rv += separator;
+                    builder.Append(separator);
                 }
             }
 
-            return rv.ToLower();
+            return builder.ToString().ToLower();
         }
     }
 }

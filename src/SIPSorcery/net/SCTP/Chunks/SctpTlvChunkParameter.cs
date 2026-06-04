@@ -211,8 +211,7 @@ namespace SIPSorcery.Net
                 // The buffer was not big enough to supply the specified chunk parameter.
                 int bytesRequired = paramLen;
                 int bytesAvailable = buffer.Length - posn;
-                throw new ApplicationException($"The SCTP chunk parameter buffer was too short. " +
-                    $"Required {bytesRequired} bytes but only {bytesAvailable} available.");
+                throw new ApplicationException($"The SCTP chunk parameter buffer was too short. Required {bytesRequired} bytes but only {bytesAvailable} available.");
             }
 
             return paramLen;
