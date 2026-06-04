@@ -22,9 +22,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Runtime.Intrinsics.Arm;
-using System.Security.Cryptography.Xml;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -32,6 +29,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Examples;
@@ -40,11 +38,20 @@ using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using Vpx.Net;
 
-const string ListenUrl = "http://localhost:8080";
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+
+const string LISTEN_URL = "http://localhost:8080";
 const int TURN_CREDENTIALS_TTL_SECONDS = 60;
+
+//const string CLOUDFLARE_TURN_URL = "turn:turn.cloudflare.com:3478?transport=udp";
+//const string CLOUDFLARE_TURN_URL = "turn:turn.cloudflare.com:3478?transport=tcp";
+const string CLOUDFLARE_TURN_URL = "turns:turn.cloudflare.com:443";
+//const string CLOUDFLARE_TURN_URL = "turns:turn.cloudflare.com:443?transport=tcp";
 
 var cloudflareAppID = Environment.GetEnvironmentVariable("CLOUDFLARE_APPID");
 var cloudflareAPIToken = Environment.GetEnvironmentVariable("CLOUDFLARE_API_TOKEN");
+
+ILogger logger = NullLogger.Instance;
 
 if (string.IsNullOrWhiteSpace(cloudflareAppID) || string.IsNullOrWhiteSpace(cloudflareAPIToken))
 {
@@ -57,10 +64,12 @@ var seriLogger = new LoggerConfiguration()
     .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
     .WriteTo.Console()
     .CreateLogger();
-SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(seriLogger));
+var seriLoggerFactory = new SerilogLoggerFactory(seriLogger);
+SIPSorcery.LogFactory.Set(seriLoggerFactory);
+logger = seriLoggerFactory.CreateLogger<Program>();
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(ListenUrl);
+builder.WebHost.UseUrls(LISTEN_URL);
 builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(seriLogger);
 
@@ -88,14 +97,14 @@ app.MapGet("/api/webrtc/offer", async (ICloudflareTurnApiClient cloudflareTurnAp
     return await (await cloudflareTurnApiClient.CreateCredentialsAsync(cloudflareAppID, TURN_CREDENTIALS_TTL_SECONDS)).MatchAsync(
       RightAsync: async credentials =>
       {
-          seriLogger.Debug($"Successfully retrieved TURN credentials: {JsonSerializer.Serialize(credentials, new JsonSerializerOptions { WriteIndented = true })}");
+          logger.LogDebug($"Successfully retrieved TURN credentials: {JsonSerializer.Serialize(credentials, new JsonSerializerOptions { WriteIndented = true })}");
 
           var (username, credential) = GetTurnCredentials(credentials);
 
           var pc = await CreatePeerConnection(new RTCConfiguration
           {
               iceTransportPolicy = RTCIceTransportPolicy.relay,
-              iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "turn:turn.cloudflare.com:3478?transport=udp", username = username, credential = credential } },
+              iceServers = new List<RTCIceServer> { new RTCIceServer { urls = CLOUDFLARE_TURN_URL, username = username, credential = credential } },
           });
 
           var offer = pc.createOffer(new RTCOfferOptions
@@ -115,14 +124,14 @@ app.MapGet("/api/webrtc/offer", async (ICloudflareTurnApiClient cloudflareTurnAp
               }
           };
 
-          seriLogger.Debug($"Created WebRTC offer for session {sessionId}.");
+          logger.LogDebug($"Created WebRTC offer for session {sessionId}.");
 
           // Return the session id alongside the offer SDP so the browser can echo it back with its answer.
           return Results.Json(new { id = sessionId, sdp = offer.sdp });
       },
       Left: error =>
       {
-          seriLogger.Error($"Failed to get TURN credentials: {error}");
+          logger.LogError($"Failed to get TURN credentials: {error}");
 
           return Results.Problem("Failed to get TURN credentials.");
       });
@@ -145,15 +154,15 @@ app.MapPost("/api/webrtc/answer", (AnswerRequest answer) =>
     var setAnswerResult = pc.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = answer.Sdp });
     if (setAnswerResult != SetDescriptionResultEnum.OK)
     {
-        seriLogger.Error($"Failed to set remote SDP answer for session {answer.Id}: {setAnswerResult}");
+        logger.LogError($"Failed to set remote SDP answer for session {answer.Id}: {setAnswerResult}");
         return Results.Problem("Failed to set remote SDP answer on peer connection.");
     }
 
-    seriLogger.Debug($"Remote answer applied for session {answer.Id}.");
+    logger.LogDebug($"Remote answer applied for session {answer.Id}.");
     return Results.Ok();
 });
 
-Console.WriteLine($"Cloudflare WebRTC TURN example. Browse to {ListenUrl} once publishing has started.");
+Console.WriteLine($"Cloudflare WebRTC TURN example. Browse to {LISTEN_URL} once publishing has started.");
 
 app.Run();
 
@@ -177,21 +186,21 @@ Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration config)
     pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
     pc.onsignalingstatechange += () =>
     {
-        seriLogger.Debug($"Signalling state change to {pc.signalingState}.");
+        logger.LogDebug($"Signalling state change to {pc.signalingState}.");
 
         if (pc.signalingState == RTCSignalingState.have_local_offer)
         {
-            seriLogger.Debug($"Local SDP offer:\n{pc.localDescription.sdp}");
+            logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
         }
         else if (pc.signalingState == RTCSignalingState.stable)
         {
-            seriLogger.Debug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
+            logger.LogDebug($"Remote SDP answer:\n{pc.remoteDescription.sdp}");
         }
     };
 
     pc.onconnectionstatechange += async (state) =>
     {
-        seriLogger.Debug($"Peer connection state change to {state}.");
+        logger.LogDebug($"Peer connection state change to {state}.");
 
         if (state == RTCPeerConnectionState.connected)
         {
