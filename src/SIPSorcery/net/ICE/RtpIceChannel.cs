@@ -682,11 +682,16 @@ namespace SIPSorcery.Net
             // Create TCP Socket to implement TURN Control
             // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
             // Ice Candidates returned by relay will always be UDP based.
+            // Classify TCP ICE servers by the parsed transport protocol, not by string-matching the raw
+            // URL. This correctly includes secure schemes that imply TCP without an explicit
+            // "?transport=" parameter (e.g. "turns:host:443", which defaults to TLS over TCP per
+            // RFC 7064/7065). String-matching for "transport=tcp"/"transport=tls" would miss those.
             var tcpIceServers = _iceServers != null ?
                                     _iceServers.FindAll(a =>
                                        a != null &&
-                                       (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) ||
-                                       a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) :
+                                       a.urls != null &&
+                                       STUNUri.TryParse(a.urls, out var tcpUri) &&
+                                       tcpUri.Protocol == ProtocolType.Tcp) :
                                     new List<RTCIceServer>();
             var supportTcp = tcpIceServers != null && tcpIceServers.Count > 0;
             if (supportTcp)
