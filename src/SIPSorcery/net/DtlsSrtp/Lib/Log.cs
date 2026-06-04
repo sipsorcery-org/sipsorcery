@@ -20,6 +20,8 @@
 // SOFTWARE.
 
 using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace SIPSorcery.Net.SharpSRTP
 {
@@ -53,6 +55,11 @@ namespace SIPSorcery.Net.SharpSRTP
             SinkDebug(message, ex);
         }
 
+        public static void Debug(string messageTemplate, params object[] args)
+        {
+            SinkDebug(FormatTemplate(messageTemplate, args), null);
+        }
+
         public static bool InfoEnabled { get; set; }
 #if DEBUG
             = true;
@@ -67,5 +74,19 @@ namespace SIPSorcery.Net.SharpSRTP
         public static Action<string, Exception> SinkTrace = new Action<string, Exception>((m, ex) => { System.Diagnostics.Debug.WriteLine(m); });
         public static Action<string, Exception> SinkDebug = new Action<string, Exception>((m, ex) => { System.Diagnostics.Debug.WriteLine(m); });
         public static Action<string, Exception> SinkInfo = new Action<string, Exception>((m, ex) => { System.Diagnostics.Debug.WriteLine(m); });
+
+        private static readonly Regex MessageTemplateRegex = new Regex(@"(?<!\{)\{[^{}]+\}(?!\})", RegexOptions.Compiled);
+
+        private static string FormatTemplate(string messageTemplate, object[] args)
+        {
+            if (string.IsNullOrEmpty(messageTemplate) || args == null || args.Length == 0)
+            {
+                return messageTemplate;
+            }
+
+            int index = 0;
+            string compositeFormat = MessageTemplateRegex.Replace(messageTemplate, _ => $"{{{index++}}}");
+            return string.Format(CultureInfo.InvariantCulture, compositeFormat, args);
+        }
     }
 }
