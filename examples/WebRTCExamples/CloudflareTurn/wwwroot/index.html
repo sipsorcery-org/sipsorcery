@@ -1,8 +1,8 @@
 ﻿<!DOCTYPE html>
 <head>
     <script type="text/javascript">
-        const ICE_SERVERS_API_URL = "/api/cloudflare/iceservers"
         const WEBRTC_OFFER_API_URL = "/api/webrtc/offer"
+        const WEBRTC_ANSWER_API_URL = "/api/webrtc/answer"
 
         var pc;
 
@@ -24,21 +24,11 @@
         }
 
         async function start() {
-            const iceServersResponse = await fetch(ICE_SERVERS_API_URL);
-            if (!iceServersResponse.ok) {
-                throw new Error(`Failed to get ICE servers (${iceServersResponse.status}).`);
-            }
 
-            const data = await iceServersResponse.json();
-
-            console.log(data);
-
-            pc = new RTCPeerConnection({
-                iceServers: data.iceServers,
-                iceTransportPolicy: "relay" // Want to test TURN servers, so tell the browser to only use relay candidates.
-            });
-
-            //pc = new RTCPeerConnection();
+            // STUN gives the browser a server reflexive (srflx) candidate with its public IP. The C# peer
+            // is the one holding the TURN relay, and its relay can only deliver to a public address, so the
+            // browser needs the srflx for the relay path to work.
+            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
 
             pc.ontrack = evt => {
 				console.log("Adding track to video control.");
@@ -71,28 +61,37 @@
             pc.addTransceiver("audio", { direction: "recvonly" });
             pc.addTransceiver("video", { direction: "recvonly" });
 
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-
-            // This example does not trickle ICE candidates, so wait for ICE gathering to complete
-            // before posting the offer. Otherwise the offer SDP would not include the browser's
-            // candidates and the connection could never establish.
-            await waitForIceGatheringComplete(pc);
-
             const offerResponse = await fetch(WEBRTC_OFFER_API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/sdp" },
-                body: pc.localDescription.sdp
+                method: "GET",
+                headers: { "Accept": "application/json" }
             });
 
             if (!offerResponse.ok) {
-                throw new Error(`Failed to post WebRTC offer (${offerResponse.status}).`);
+                throw new Error(`Failed to get WebRTC offer (${offerResponse.status}).`);
             }
 
-            const answerSdp = await offerResponse.text();
-            //console.log(answerSdp);
-            console.log("Answer SDP received, setting remote description...");
-            await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+            const { id, sdp: offerSdp } = await offerResponse.json();
+            console.log(`Offer SDP received for session ${id}:\n${offerSdp}`);
+            await pc.setRemoteDescription({ type: "offer", sdp: offerSdp });
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            // No trickle ICE in this example, so wait for gathering to complete before sending the
+            // answer; otherwise the answer SDP would not include the browser's ICE candidates.
+            await waitForIceGatheringComplete(pc);
+
+            const answerResponse = await fetch(WEBRTC_ANSWER_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, sdp: pc.localDescription.sdp })
+            });
+
+            if (!answerResponse.ok) {
+                throw new Error(`Failed to post WebRTC answer (${answerResponse.status}).`);
+            }
+
+            console.log(`Answer SDP sent to the C# peer for session ${id}.`);
         };
 
         async function closePeer() {

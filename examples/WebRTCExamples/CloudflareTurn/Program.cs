@@ -19,9 +19,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Net;
+using System.Runtime.Intrinsics.Arm;
+using System.Security.Cryptography.Xml;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -34,11 +37,9 @@ using Serilog.Extensions.Logging;
 using SIPSorcery.Examples;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using Vpx.Net;
 
-const string STUN_URL = "stun:stun.cloudflare.com";
 const string ListenUrl = "http://localhost:8080";
 const int TURN_CREDENTIALS_TTL_SECONDS = 60;
 
@@ -77,65 +78,87 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// Used by the browser client to request a new set of ephemeral Cloudflare TURN credentials.
-app.MapGet("/api/cloudflare/iceservers", async (ICloudflareTurnApiClient cloudflareTurnApiClient) => 
-    (await cloudflareTurnApiClient.CreateCredentialsAsync(cloudflareAppID, TURN_CREDENTIALS_TTL_SECONDS)).Match(
-        Right: credentials => {
-            seriLogger.Debug($"Successfully retrieved TURN credentials: {JsonSerializer.Serialize(credentials, new JsonSerializerOptions { WriteIndented = true })}");
-            return Results.Json(Filter(credentials));
-        },
-        Left: error =>
-        {
-            seriLogger.Error($"Failed to get TURN credentials: {error}");
-            return Results.Problem("Failed to get TURN credentials.");
-        }));
+// Peer connections created for a browser offer, keyed by a session id, so the browser's answer
+// (posted to /api/webrtc/answer) can be matched back to the correct peer connection. The dictionary
+// also keeps the peer connection referenced for the lifetime of the call so it isn't garbage collected.
+var peerConnections = new ConcurrentDictionary<string, RTCPeerConnection>();
 
-// Used by the browser client to post an SDP offer to initiate a WebRTC peer connection.
-// The offer is sent as the raw SDP in the request body (Content-Type: application/sdp) and the
-// answer SDP is returned as the response body, so both directions are plain SDP text.
-app.MapPost("/api/webrtc/offer", async (HttpRequest request) =>
+app.MapGet("/api/webrtc/offer", async (ICloudflareTurnApiClient cloudflareTurnApiClient) =>
 {
-    string sdpOffer;
-    using (var reader = new StreamReader(request.Body))
+    return await (await cloudflareTurnApiClient.CreateCredentialsAsync(cloudflareAppID, TURN_CREDENTIALS_TTL_SECONDS)).MatchAsync(
+      RightAsync: async credentials =>
+      {
+          seriLogger.Debug($"Successfully retrieved TURN credentials: {JsonSerializer.Serialize(credentials, new JsonSerializerOptions { WriteIndented = true })}");
+
+          var (username, credential) = GetTurnCredentials(credentials);
+
+          var pc = await CreatePeerConnection(new RTCConfiguration
+          {
+              iceTransportPolicy = RTCIceTransportPolicy.relay,
+              iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "turn:turn.cloudflare.com:3478?transport=udp", username = username, credential = credential } },
+          });
+
+          var offer = pc.createOffer(new RTCOfferOptions
+          { 
+              X_WaitForIceGatheringToComplete = true
+          });
+
+          await pc.setLocalDescription(new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offer.sdp });
+
+          var sessionId = Guid.NewGuid().ToString();
+          peerConnections[sessionId] = pc;
+          pc.onconnectionstatechange += state =>
+          {
+              if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.failed)
+              {
+                  peerConnections.TryRemove(sessionId, out _);
+              }
+          };
+
+          seriLogger.Debug($"Created WebRTC offer for session {sessionId}.");
+
+          // Return the session id alongside the offer SDP so the browser can echo it back with its answer.
+          return Results.Json(new { id = sessionId, sdp = offer.sdp });
+      },
+      Left: error =>
+      {
+          seriLogger.Error($"Failed to get TURN credentials: {error}");
+
+          return Results.Problem("Failed to get TURN credentials.");
+      });
+});
+
+// Receives the browser's SDP answer and applies it to the peer connection created for the matching
+// session id, completing the offer/answer negotiation.
+app.MapPost("/api/webrtc/answer", (AnswerRequest answer) =>
+{
+    if (answer is null || string.IsNullOrWhiteSpace(answer.Id) || !peerConnections.TryGetValue(answer.Id, out var pc))
     {
-        sdpOffer = await reader.ReadToEndAsync();
+        return Results.NotFound("Unknown or expired WebRTC session id.");
     }
 
-    if (string.IsNullOrWhiteSpace(sdpOffer))
+    if (string.IsNullOrWhiteSpace(answer.Sdp))
     {
-        return Results.Problem("An SDP offer must be supplied to initiate a WebRTC peer connection.");
+        return Results.Problem("An SDP answer must be supplied.");
     }
 
-    var pc = await CreatePeerConnection();
-    var setOfferResult = pc.SetRemoteDescription(SdpType.offer, SDP.ParseSDPDescription(sdpOffer));
-
-    if (setOfferResult != SetDescriptionResultEnum.OK)
+    var setAnswerResult = pc.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = answer.Sdp });
+    if (setAnswerResult != SetDescriptionResultEnum.OK)
     {
-        seriLogger.Error($"Failed to set remote SDP offer on peer connection: {setOfferResult}");
-        return Results.Problem("Failed to set remote SDP offer on peer connection.");
+        seriLogger.Error($"Failed to set remote SDP answer for session {answer.Id}: {setAnswerResult}");
+        return Results.Problem("Failed to set remote SDP answer on peer connection.");
     }
 
-    var rtcAnswerOptions = new RTCAnswerOptions
-    {
-        X_WaitForIceGatheringToComplete = true
-    };
-    var answer = pc.createAnswer(rtcAnswerOptions);
-    await pc.setLocalDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = answer.sdp });
-    seriLogger.Debug($"Successfully created WebRTC answer SDP:\n{answer.sdp}");
-
-    return Results.Text(answer.sdp, "application/sdp");
+    seriLogger.Debug($"Remote answer applied for session {answer.Id}.");
+    return Results.Ok();
 });
 
 Console.WriteLine($"Cloudflare WebRTC TURN example. Browse to {ListenUrl} once publishing has started.");
 
 app.Run();
 
-Task<RTCPeerConnection> CreatePeerConnection()
+Task<RTCPeerConnection> CreatePeerConnection(RTCConfiguration config)
 {
-    RTCConfiguration config = new RTCConfiguration
-    {
-        iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
-    };
     var pc = new RTCPeerConnection(config);
 
     var vp8Codec = new VP8Codec();
@@ -195,30 +218,16 @@ Task<RTCPeerConnection> CreatePeerConnection()
     return Task.FromResult(pc);
 }
 
-CloudflareIceServers Filter(CloudflareIceServers servers)
+(string username, string credential) GetTurnCredentials(CloudflareIceServers servers)
 {
-    // In a real application you would likely want to return all the TURN servers provided by Cloudflare, but this shows how you could filter the list if needed.
-    var filtered = new CloudflareIceServers
-    {
-        IceServers = 
-        {
-            new ()
-            {
-                Username = servers.IceServers.Where(x => !string.IsNullOrWhiteSpace(x.Username)).Select(x => x.Username).FirstOrDefault() ?? string.Empty,
-                Credential = servers.IceServers.Where(x => !string.IsNullOrWhiteSpace(x.Username)).Select(x => x.Credential).FirstOrDefault() ?? string.Empty,
-                Urls = [ "turn:turn.cloudflare.com:3478?transport=udp" ]
-            }
-        }
-    };
-    seriLogger.Debug($"Filtered TURN servers: {JsonSerializer.Serialize(filtered, new JsonSerializerOptions { WriteIndented = true })}");
-    return filtered;
+    var username = servers.IceServers.Where(x => !string.IsNullOrWhiteSpace(x.Username)).Select(x => x.Username).FirstOrDefault() ?? string.Empty;
+    var credential = servers.IceServers.Where(x => !string.IsNullOrWhiteSpace(x.Username)).Select(x => x.Credential).FirstOrDefault() ?? string.Empty;
+
+    return (username, credential);
 }
 
-//string FilerIceCandidates(string answerSdp)
-//{
-//    var sdp = SDP.ParseSDPDescription(answerSdp);
-
-//    sdp.Media.First().IceCandidates.RemoveAll(x => x.Contains("host"));
-
-//    return sdp.SessionDescription;
-//}
+/// <summary>
+/// Body for the /api/webrtc/answer endpoint. The browser echoes back the session id it received with
+/// the offer, along with its SDP answer. JSON property matching is case-insensitive (id/sdp map across).
+/// </summary>
+record AnswerRequest(string Id, string Sdp);
