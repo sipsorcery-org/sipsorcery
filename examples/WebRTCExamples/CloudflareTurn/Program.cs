@@ -20,32 +20,30 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
-using LanguageExt;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Examples;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using Vpx.Net;
 
+const string STUN_URL = "stun:stun.cloudflare.com";
 const string ListenUrl = "http://localhost:8080";
 const int TURN_CREDENTIALS_TTL_SECONDS = 60;
 
 var cloudflareAppID = Environment.GetEnvironmentVariable("CLOUDFLARE_APPID");
 var cloudflareAPIToken = Environment.GetEnvironmentVariable("CLOUDFLARE_API_TOKEN");
-
-Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
 if (string.IsNullOrWhiteSpace(cloudflareAppID) || string.IsNullOrWhiteSpace(cloudflareAPIToken))
 {
@@ -53,12 +51,17 @@ if (string.IsNullOrWhiteSpace(cloudflareAppID) || string.IsNullOrWhiteSpace(clou
     return;
 }
 
-logger = AddConsoleLogger();
+var seriLogger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+    .WriteTo.Console()
+    .CreateLogger();
+SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(seriLogger));
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls(ListenUrl);
-//builder.Logging.ClearProviders();
-//builder.Logging.AddSerilog((Serilog.ILogger)logger);
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(seriLogger);
 
 builder.Services
     .AddTransient<HttpLoggingHandler>()
@@ -74,21 +77,54 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// Used by the browser client to request a new set of ephemeral Cloudflare TURN credentials.
 app.MapGet("/api/cloudflare/iceservers", async (ICloudflareTurnApiClient cloudflareTurnApiClient) => 
     (await cloudflareTurnApiClient.CreateCredentialsAsync(cloudflareAppID, TURN_CREDENTIALS_TTL_SECONDS)).Match(
-        Right: credentials => Results.Json(credentials),
+        Right: credentials => {
+            seriLogger.Debug($"Successfully retrieved TURN credentials: {JsonSerializer.Serialize(credentials, new JsonSerializerOptions { WriteIndented = true })}");
+            return Results.Json(Filter(credentials));
+        },
         Left: error =>
         {
-            logger.LogError($"Failed to get TURN credentials: {error}");
+            seriLogger.Error($"Failed to get TURN credentials: {error}");
             return Results.Problem("Failed to get TURN credentials.");
         }));
- 
-// Accepts a WebRTC offer from the browser and responds with an answer containing the Cloudflare TURN server details.
-//app.MapPost("/api/webrtc", async (CloudflareService cloudflareService) =>
-//{
-//    //var (subscriberSessionId, sdp) = await sfu.SubscribeAsync();
-//    //return Results.Json(new { subscriberSessionId, sdp });
-//});
+
+// Used by the browser client to post an SDP offer to initiate a WebRTC peer connection.
+// The offer is sent as the raw SDP in the request body (Content-Type: application/sdp) and the
+// answer SDP is returned as the response body, so both directions are plain SDP text.
+app.MapPost("/api/webrtc/offer", async (HttpRequest request) =>
+{
+    string sdpOffer;
+    using (var reader = new StreamReader(request.Body))
+    {
+        sdpOffer = await reader.ReadToEndAsync();
+    }
+
+    if (string.IsNullOrWhiteSpace(sdpOffer))
+    {
+        return Results.Problem("An SDP offer must be supplied to initiate a WebRTC peer connection.");
+    }
+
+    var pc = await CreatePeerConnection();
+    var setOfferResult = pc.SetRemoteDescription(SdpType.offer, SDP.ParseSDPDescription(sdpOffer));
+
+    if (setOfferResult != SetDescriptionResultEnum.OK)
+    {
+        seriLogger.Error($"Failed to set remote SDP offer on peer connection: {setOfferResult}");
+        return Results.Problem("Failed to set remote SDP offer on peer connection.");
+    }
+
+    var rtcAnswerOptions = new RTCAnswerOptions
+    {
+        X_WaitForIceGatheringToComplete = true
+    };
+    var answer = pc.createAnswer(rtcAnswerOptions);
+    await pc.setLocalDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = answer.sdp });
+    seriLogger.Debug($"Successfully created WebRTC answer SDP:\n{answer.sdp}");
+
+    return Results.Text(answer.sdp, "application/sdp");
+});
 
 Console.WriteLine($"Cloudflare WebRTC TURN example. Browse to {ListenUrl} once publishing has started.");
 
@@ -96,15 +132,19 @@ app.Run();
 
 Task<RTCPeerConnection> CreatePeerConnection()
 {
-    var pc = new RTCPeerConnection(null);
+    RTCConfiguration config = new RTCConfiguration
+    {
+        iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } },
+    };
+    var pc = new RTCPeerConnection(config);
 
     var vp8Codec = new VP8Codec();
     var testPatternSource = new VideoTestPatternSource(vp8Codec);
     var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-    MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+    MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
     pc.addTrack(videoTrack);
-    MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+    MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
     pc.addTrack(audioTrack);
 
     testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
@@ -114,21 +154,21 @@ Task<RTCPeerConnection> CreatePeerConnection()
     pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
     pc.onsignalingstatechange += () =>
     {
-        logger.LogDebug($"Signalling state change to {pc.signalingState}.");
+        seriLogger.Debug($"Signalling state change to {pc.signalingState}.");
 
         if (pc.signalingState == RTCSignalingState.have_local_offer)
         {
-            logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
+            seriLogger.Debug($"Local SDP offer:\n{pc.localDescription.sdp}");
         }
         else if (pc.signalingState == RTCSignalingState.stable)
         {
-            logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
+            seriLogger.Debug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
         }
     };
 
     pc.onconnectionstatechange += async (state) =>
     {
-        logger.LogDebug($"Peer connection state change to {state}.");
+        seriLogger.Debug($"Peer connection state change to {state}.");
 
         if (state == RTCPeerConnectionState.connected)
         {
@@ -147,22 +187,38 @@ Task<RTCPeerConnection> CreatePeerConnection()
     };
 
     // Diagnostics.
-    pc.OnReceiveReport += (re, media, rr) => logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-    pc.OnSendReport += (media, sr) => logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
-    pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
-    pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+    pc.OnReceiveReport += (re, media, rr) => seriLogger.Debug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+    pc.OnSendReport += (media, sr) => seriLogger.Debug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
+    pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) => seriLogger.Debug($"STUN {msg.Header.MessageType} received from {ep}.");
+    pc.oniceconnectionstatechange += (state) => seriLogger.Debug($"ICE connection state change to {state}.");
 
     return Task.FromResult(pc);
 }
 
-Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
+CloudflareIceServers Filter(CloudflareIceServers servers)
 {
-    var seriLogger = new LoggerConfiguration()
-        .Enrich.FromLogContext()
-        .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-        .WriteTo.Console()
-        .CreateLogger();
-    var factory = new SerilogLoggerFactory(seriLogger);
-    SIPSorcery.LogFactory.Set(factory);
-    return factory.CreateLogger<Program>();
+    // In a real application you would likely want to return all the TURN servers provided by Cloudflare, but this shows how you could filter the list if needed.
+    var filtered = new CloudflareIceServers
+    {
+        IceServers = 
+        {
+            new ()
+            {
+                Username = servers.IceServers.Where(x => !string.IsNullOrWhiteSpace(x.Username)).Select(x => x.Username).FirstOrDefault() ?? string.Empty,
+                Credential = servers.IceServers.Where(x => !string.IsNullOrWhiteSpace(x.Username)).Select(x => x.Credential).FirstOrDefault() ?? string.Empty,
+                Urls = [ "turn:turn.cloudflare.com:3478?transport=udp" ]
+            }
+        }
+    };
+    seriLogger.Debug($"Filtered TURN servers: {JsonSerializer.Serialize(filtered, new JsonSerializerOptions { WriteIndented = true })}");
+    return filtered;
 }
+
+//string FilerIceCandidates(string answerSdp)
+//{
+//    var sdp = SDP.ParseSDPDescription(answerSdp);
+
+//    sdp.Media.First().IceCandidates.RemoveAll(x => x.Contains("host"));
+
+//    return sdp.SessionDescription;
+//}

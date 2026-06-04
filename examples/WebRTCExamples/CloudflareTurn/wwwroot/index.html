@@ -1,10 +1,27 @@
 ﻿<!DOCTYPE html>
 <head>
     <script type="text/javascript">
-        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
         const ICE_SERVERS_API_URL = "/api/cloudflare/iceservers"
+        const WEBRTC_OFFER_API_URL = "/api/webrtc/offer"
 
-        var pc, ws;
+        var pc;
+
+        function waitForIceGatheringComplete(peerConnection) {
+            if (peerConnection.iceGatheringState === "complete") {
+                return Promise.resolve();
+            }
+
+            return new Promise(resolve => {
+                const checkState = () => {
+                    if (peerConnection.iceGatheringState === "complete") {
+                        peerConnection.removeEventListener("icegatheringstatechange", checkState);
+                        resolve();
+                    }
+                };
+
+                peerConnection.addEventListener("icegatheringstatechange", checkState);
+            });
+        }
 
         async function start() {
             const iceServersResponse = await fetch(ICE_SERVERS_API_URL);
@@ -12,11 +29,16 @@
                 throw new Error(`Failed to get ICE servers (${iceServersResponse.status}).`);
             }
 
-            const iceServers = await iceServersResponse.json();
+            const data = await iceServersResponse.json();
 
-            console.log(iceServers);
+            console.log(data);
 
-            pc = new RTCPeerConnection({ iceServers });
+            pc = new RTCPeerConnection({
+                iceServers: data.iceServers,
+                iceTransportPolicy: "relay" // Want to test TURN servers, so tell the browser to only use relay candidates.
+            });
+
+            //pc = new RTCPeerConnection();
 
             pc.ontrack = evt => {
 				console.log("Adding track to video control.");
@@ -30,34 +52,52 @@
 				  console.log("Track ended.");
 			   };
 			}
-			
-            pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+
+            pc.oniceconnectionstatechange = () => {
+                console.log("ICE connection state change: ", pc.iceConnectionState);
+            };
+
+            pc.onconnectionstatechange = () => {
+                console.log("Connection state change: ", pc.connectionState);
+            };
+
+            //pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+            pc.onicecandidate = evt => console.log("New ICE candidate: ", evt.candidate);
 
 			pc.onclose= () => {
 			   console.log("pc close");
 			};
-			
-            // ws = new WebSocket(document.querySelector('#websockurl').value, []);
-            // ws.onmessage = async function (evt) {
-            //     var obj = JSON.parse(evt.data);
-            //     if (obj?.candidate) {
-            //         pc.addIceCandidate(obj);
-            //     }
-            //     else if (obj?.sdp) {
-            //         await pc.setRemoteDescription(new RTCSessionDescription(obj));
-            //         pc.createAnswer()
-            //             .then((answer) => pc.setLocalDescription(answer))
-            //             .then(() => ws.send(JSON.stringify(pc.localDescription)));
-            //     }
-            // };
+
+            pc.addTransceiver("audio", { direction: "recvonly" });
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            // This example does not trickle ICE candidates, so wait for ICE gathering to complete
+            // before posting the offer. Otherwise the offer SDP would not include the browser's
+            // candidates and the connection could never establish.
+            await waitForIceGatheringComplete(pc);
+
+            const offerResponse = await fetch(WEBRTC_OFFER_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/sdp" },
+                body: pc.localDescription.sdp
+            });
+
+            if (!offerResponse.ok) {
+                throw new Error(`Failed to post WebRTC offer (${offerResponse.status}).`);
+            }
+
+            const answerSdp = await offerResponse.text();
+            //console.log(answerSdp);
+            console.log("Answer SDP received, setting remote description...");
+            await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
         };
 
         async function closePeer() {
             await pc?.close();
-            await ws?.close();
         };
-
-   	
 
     </script>
 </head>
@@ -66,13 +106,9 @@
     <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
 
     <div>
-        <input type="text" id="websockurl" size="40" />
         <button type="button" class="btn btn-success" onclick="start();">Start</button>
         <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
     </div>
 
 </body>
 
-<script>
-    document.querySelector('#websockurl').value = WEBSOCKET_URL;
-</script>
