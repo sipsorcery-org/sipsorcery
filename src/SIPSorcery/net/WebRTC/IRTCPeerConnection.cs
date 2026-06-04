@@ -66,6 +66,14 @@ namespace SIPSorcery.Net
         /// and will be added to the offer SDP.
         /// </summary>
         public bool X_ExcludeIceCandidates;
+
+        /// <summary>
+        /// If set to true it indicates the generation of the SDP answer should wait until ICE gathering
+        /// is complete so the server reflexive (srflx) and relay ICE candidates can be included in the
+        /// SDP answer. This is required for non-trickle signalling (e.g. a single HTTP offer/answer
+        /// exchange) where there is no channel to deliver candidates after the answer has been sent.
+        /// </summary>
+        public bool X_WaitForIceGatheringToComplete;
     }
 
     public class RTCSessionDescription
