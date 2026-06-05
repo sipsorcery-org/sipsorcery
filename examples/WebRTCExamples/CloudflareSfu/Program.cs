@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
 // Description: An example for working with the Cloudflare Realtime SFU API.
@@ -16,7 +16,7 @@
 // https://developers.cloudflare.com/realtime/sfu/get-started/
 //
 // Kiota (https://github.com/microsoft/kiota) codegen command for Cloudlfare realtime API client:
-// kiota generate -l CSharp -d https://developers.cloudflare.com/realtime/static/calls-api-2024-05-21.yaml -c RealtimeSfuClient -n Cloudflare.Realtime.Sfu   -o ./RealtimeSfu --exclude-backward-compatible --clean-output
+// kiota generate -l CSharp -d https://developers.cloudflare.com/realtime/static/calls-api-2024-05-21.yaml -c RealtimeSfuClient -n Cloudflare.Realtime.Sfu -o ./RealtimeSfu --exclude-backward-compatible --clean-output
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<head>
+    <script type="text/javascript">
+        const WEBRTC_OFFER_API_URL = "/api/webrtc/offer"
+        const WEBRTC_ANSWER_API_URL = "/api/webrtc/answer"
+
+        var pc;
+
+        function waitForIceGatheringComplete(peerConnection) {
+            if (peerConnection.iceGatheringState === "complete") {
+                return Promise.resolve();
+            }
+
+            return new Promise(resolve => {
+                const checkState = () => {
+                    if (peerConnection.iceGatheringState === "complete") {
+                        peerConnection.removeEventListener("icegatheringstatechange", checkState);
+                        resolve();
+                    }
+                };
+
+                peerConnection.addEventListener("icegatheringstatechange", checkState);
+            });
+        }
+
+        async function start() {
+
+            // STUN gives the browser a server reflexive (srflx) candidate with its public IP. The C# peer
+            // is the one holding the TURN relay, and its relay can only deliver to a public address, so the
+            // browser needs the srflx for the relay path to work.
+            pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
+
+            pc.ontrack = evt => {
+				console.log("Adding track to video control.");
+				document.querySelector('#videoCtl').srcObject = evt.streams[0];
+				
+				evt.streams[0].onunmute = () => {
+					console.log("Adding track to video control.");
+				};
+                    
+			   evt.streams[0].onended = () => {
+				  console.log("Track ended.");
+			   };
+			}
+
+            pc.oniceconnectionstatechange = () => {
+                console.log("ICE connection state change: ", pc.iceConnectionState);
+            };
+
+            pc.onconnectionstatechange = () => {
+                console.log("Connection state change: ", pc.connectionState);
+            };
+
+            //pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
+            pc.onicecandidate = evt => console.log("New ICE candidate: ", evt.candidate);
+
+			pc.onclose= () => {
+			   console.log("pc close");
+			};
+
+            pc.addTransceiver("audio", { direction: "recvonly" });
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            const offerResponse = await fetch(WEBRTC_OFFER_API_URL, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+
+            if (!offerResponse.ok) {
+                throw new Error(`Failed to get WebRTC offer (${offerResponse.status}).`);
+            }
+
+            const { id, sdp: offerSdp } = await offerResponse.json();
+            console.log(`Offer SDP received for session ${id}:\n${offerSdp}`);
+            await pc.setRemoteDescription({ type: "offer", sdp: offerSdp });
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            // No trickle ICE in this example, so wait for gathering to complete before sending the
+            // answer; otherwise the answer SDP would not include the browser's ICE candidates.
+            await waitForIceGatheringComplete(pc);
+
+            const answerResponse = await fetch(WEBRTC_ANSWER_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, sdp: pc.localDescription.sdp })
+            });
+
+            if (!answerResponse.ok) {
+                throw new Error(`Failed to post WebRTC answer (${answerResponse.status}).`);
+            }
+
+            console.log(`Answer SDP sent to the C# peer for session ${id}.`);
+        };
+
+        async function closePeer() {
+            await pc?.close();
+        };
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+        <button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>
+
