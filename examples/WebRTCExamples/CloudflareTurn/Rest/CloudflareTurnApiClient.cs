@@ -68,14 +68,9 @@ public class CloudflareTurnApiClient : ICloudflareTurnApiClient
         {
             var iceServers = await res.Content.ReadFromJsonAsync<CloudflareIceServers>(cancellationToken: ct).ConfigureAwait(false);
 
-            if (iceServers != null)
-            {
-                return iceServers;
-            }
-            else
-            {
-                return Error.New("Failed to parse JSON response from Cloudflare TURN API.");
-            }
+            return iceServers != null
+                ? iceServers
+                : Error.New("Failed to parse JSON response from Cloudflare TURN API.");
         }
     }
 
