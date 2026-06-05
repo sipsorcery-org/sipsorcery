@@ -34,7 +34,7 @@ using WebSocketSharp.Server;
 
 namespace demo
 {
-    class Program
+    partial class Program
     {
         private const int WEBSOCKET_PORT = 8081;
         private const string STUN_URL = "stun:stun.sipsorcery.com";
@@ -46,6 +46,9 @@ namespace demo
 
         private static uint _loadTestPayloadSize = 0;
         private static int _loadTestCount = 0;
+
+        [GeneratedRegex(@"^\s*(?<sendSize>\d+)\s*x\s*(?<testCount>\d+)")]
+        private static partial Regex LoadTestCommandRegex();
 
         static void Main()
         {
@@ -114,7 +117,7 @@ namespace demo
                             var msg = Encoding.UTF8.GetString(data);
                             logger.LogInformation($"Data channel {datachan.label} message {type} received: {msg}.");
 
-                            var loadTestMatch = Regex.Match(msg, @"^\s*(?<sendSize>\d+)\s*x\s*(?<testCount>\d+)");
+                            var loadTestMatch = LoadTestCommandRegex().Match(msg);
 
                             if (loadTestMatch.Success)
                             {

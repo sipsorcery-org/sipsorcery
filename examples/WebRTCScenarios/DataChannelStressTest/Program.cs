@@ -22,7 +22,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -207,7 +206,10 @@ namespace SIPSorcery.Demo
             if (proto == DataChannelPayloadProtocols.WebRTC_String)
             {
                 Console.WriteLine($"{dc.label}: return recv stream id {dc.id}, send# {Encoding.UTF8.GetString(data)}");
-                int pairID = int.Parse(Regex.Match(dc.label, @".*-(?<id>\d+)-.*").Result("${id}"));
+                if (!TryParsePairId(dc.label, out var pairID))
+                {
+                    throw new FormatException($"Unable to parse data channel label '{dc.label}'.");
+                }
                 connectionPairs.Single(x => x.ID == pairID).StreamSendConfirmed[dc.id.Value].Set();
             }
             else if (proto == DataChannelPayloadProtocols.WebRTC_Binary)
@@ -244,6 +246,32 @@ namespace SIPSorcery.Demo
             {
                 Marshal.FreeHGlobal(ptr);
             }
+        }
+
+        private static bool TryParsePairId(string label, out int pairID)
+        {
+            pairID = 0;
+
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                return false;
+            }
+
+            var labelSpan = label.AsSpan();
+            var firstSeparatorIndex = labelSpan.IndexOf('-');
+            if (firstSeparatorIndex == -1)
+            {
+                return false;
+            }
+
+            labelSpan = labelSpan[(firstSeparatorIndex + 1)..];
+            var secondSeparatorIndex = labelSpan.IndexOf('-');
+            if (secondSeparatorIndex == -1)
+            {
+                return false;
+            }
+
+            return int.TryParse(labelSpan[..secondSeparatorIndex], out pairID);
         }
 
         /// <summary>

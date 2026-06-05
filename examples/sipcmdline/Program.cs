@@ -80,7 +80,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
@@ -365,7 +364,7 @@ namespace SIPSorcery
             SIPURI dstUri = null;
 
             // Don't attempt a SIP URI parse for serialised SIPEndPoints.
-            if (Regex.IsMatch(dst, "^(udp|tcp|tls|ws|wss)") == false && SIPURI.TryParse(dst, out var argUri))
+            if (!HasTransportPrefix(dst) && SIPURI.TryParse(dst, out var argUri))
             {
                 dstUri = argUri;
             }
@@ -376,6 +375,20 @@ namespace SIPSorcery
             }
 
             return dstUri;
+        }
+
+        private static bool HasTransportPrefix(string destination)
+        {
+            if (string.IsNullOrEmpty(destination))
+            {
+                return false;
+            }
+
+            return (destination.Length >= 3 && "udp".StartsWith(destination[..3], StringComparison.Ordinal)) ||
+                   (destination.Length >= 3 && "tcp".StartsWith(destination[..3], StringComparison.Ordinal)) ||
+                   (destination.Length >= 3 && "tls".StartsWith(destination[..3], StringComparison.Ordinal)) ||
+                   (destination.Length >= 2 && "ws".StartsWith(destination[..2], StringComparison.Ordinal)) ||
+                   (destination.Length >= 3 && "wss".StartsWith(destination[..3], StringComparison.Ordinal));
         }
 
         /// <summary>
