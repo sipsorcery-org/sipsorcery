@@ -26,7 +26,7 @@ namespace SIPSorcery.SIP
     /// Implements the SIP URI concept from the SIP RFC3261.
     /// </summary>
     [DataContract]
-    public class SIPURI
+    public partial class SIPURI
     {
         public static SIPURI None = new SIPURI();
 
@@ -37,9 +37,18 @@ namespace SIPSorcery.SIP
         private const char HEADER_TAG_DELIMITER = '&';
         private const char TAG_NAME_VALUE_SEPERATOR = '=';
 
-        private static ILogger logger = LogFactory.CreateLogger<SIPURI>();
+        private static readonly ILogger logger = LogFactory.CreateLogger<SIPURI>();
 
         private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
+        private const string SIP_SCHEME_REGEX_PATTERN = @"^(sip|sips):\S+";
+
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(SIP_SCHEME_REGEX_PATTERN)]
+        private static partial Regex SIPSchemeRegex();
+#else
+        private static readonly Regex m_sipSchemeRegex = new Regex(SIP_SCHEME_REGEX_PATTERN, RegexOptions.Compiled);
+        private static Regex SIPSchemeRegex() => m_sipSchemeRegex;
+#endif
 
         private static SIPProtocolsEnum m_defaultSIPTransport = SIPProtocolsEnum.udp;
         private static SIPSchemesEnum m_defaultSIPScheme = SIPSchemesEnum.sip;
@@ -454,9 +463,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                string regexSchemePattern = $"^({SIPSchemesEnum.sip}|{SIPSchemesEnum.sips}):";
-
-                if (Regex.Match(partialURI, $@"{regexSchemePattern}\S+").Success)
+                if (SIPSchemeRegex().IsMatch(partialURI))
                 {
                     // The partial uri is already valid.
                     return SIPURI.ParseSIPURI(partialURI);

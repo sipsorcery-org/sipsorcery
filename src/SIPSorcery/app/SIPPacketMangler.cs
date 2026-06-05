@@ -26,9 +26,25 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
-    public class SIPPacketMangler
+    public partial class SIPPacketMangler
     {
         private static readonly ILogger logger = LogFactory.CreateLogger<SIPPacketMangler>();
+        private const string SDP_IP6_REGEX_PATTERN = @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))";
+        private const string SDP_IP4_REGEX_PATTERN = @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)";
+
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(SDP_IP6_REGEX_PATTERN, RegexOptions.Singleline)]
+        private static partial Regex SdpIp6Regex();
+
+        [GeneratedRegex(SDP_IP4_REGEX_PATTERN, RegexOptions.Singleline)]
+        private static partial Regex SdpIp4Regex();
+#else
+        private static readonly Regex m_sdpIp6Regex = new Regex(SDP_IP6_REGEX_PATTERN, RegexOptions.Compiled | RegexOptions.Singleline);
+        private static readonly Regex m_sdpIp4Regex = new Regex(SDP_IP4_REGEX_PATTERN, RegexOptions.Compiled | RegexOptions.Singleline);
+
+        private static Regex SdpIp6Regex() => m_sdpIp6Regex;
+        private static Regex SdpIp4Regex() => m_sdpIp4Regex;
+#endif
 
         public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled)
         {
@@ -38,16 +54,9 @@ namespace SIPSorcery.SIP.App
             {
                 if (sdpBody != null && publicIPAddress != null)
                 {
-                    var sdpEndPoint = SDP.GetSDPRTPEndPoint(sdpBody);
-                    if(sdpEndPoint == null)
-                    {
-                        logger.LogWarning("SDP mangling failed to find a valid RTP endpoint in the SDP body.");
-                        return sdpBody;
-                    }
-
+                    IPAddress addr = SDP.GetSDPRTPEndPoint(sdpBody).Address;
                     //rj2: need to consider publicAddress and IPv6 for mangling
                     IPAddress pubaddr = IPAddress.Parse(publicIPAddress);
-                    var addr = sdpEndPoint.Address;
                     string sdpAddress = addr.ToString();
 
                     // Only mangle if there is something to change. For example the server could be on the same private subnet in which case it can't help.
@@ -55,7 +64,7 @@ namespace SIPSorcery.SIP.App
                         && pubaddr.AddressFamily == AddressFamily.InterNetworkV6
                         && addr.AddressFamily == AddressFamily.InterNetworkV6)
                     {
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))", $"c=IN IP6{publicIPAddress}", RegexOptions.Singleline);
+                        string mangledSDP = SdpIp6Regex().Replace(sdpBody, "c=IN IP6" + publicIPAddress);
                         wasMangled = true;
 
                         return mangledSDP;
@@ -65,7 +74,7 @@ namespace SIPSorcery.SIP.App
                         && addr.AddressFamily == AddressFamily.InterNetwork)
                     {
                         //logger.LogDebug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", $"c=IN IP4 {publicIPAddress}", RegexOptions.Singleline);
+                        string mangledSDP = SdpIp4Regex().Replace(sdpBody, "c=IN IP4 " + publicIPAddress);
                         wasMangled = true;
 
                         return mangledSDP;
