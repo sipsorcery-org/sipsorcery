@@ -19,8 +19,8 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Polyfills;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -35,6 +35,7 @@ namespace SIPSorcery.SIP
     /// it is optional."
     /// 
     /// The branch parameter on a Via therefore appears to be optionally mandatory?!
+    ///
     /// Any SIP application element that uses transactions depends on the branch parameter for transaction matching.
     /// Only the top Via header branch is used for transactions though so if the request has made it to this stack
     /// with missing branches then in theory it should be safe to proceed. It will be left up to the SIPTransaction
@@ -726,7 +727,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                throw new SIPValidationException(SIPValidationFieldsEnum.ContactHeader, "Contact header invalid, parse failed. " + excp.Message);
+                throw new SIPValidationException(SIPValidationFieldsEnum.ContactHeader, $"Contact header invalid, parse failed. {excp.Message}");
             }
         }
 
@@ -756,7 +757,7 @@ namespace SIPSorcery.SIP
                 {
                     foreach (string key in contact1Keys)
                     {
-                        if (key is EXPIRES_PARAMETER_KEY or QVALUE_PARAMETER_KEY)
+                        if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
                         {
                             continue;
                         }
@@ -774,7 +775,7 @@ namespace SIPSorcery.SIP
                 {
                     foreach (string key in contact2Keys)
                     {
-                        if (key is EXPIRES_PARAMETER_KEY or QVALUE_PARAMETER_KEY)
+                        if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
                         {
                             continue;
                         }
@@ -1152,6 +1153,7 @@ namespace SIPSorcery.SIP
             {
                 m_sipRoutes.RemoveAt(m_sipRoutes.Count - 1);
             }
+            ;
         }
 
         public SIPRouteSet Reversed()
@@ -1416,7 +1418,7 @@ namespace SIPSorcery.SIP
             }
             catch
             {
-                throw new SIPValidationException(SIPValidationFieldsEnum.Unknown, "One of the SIP SIPMultiUriHeaders was invalid, header: " + headerStr);
+                throw new SIPValidationException(SIPValidationFieldsEnum.Unknown, $"One of the SIP SIPMultiUriHeaders was invalid, header: {headerStr}");
             }
         }
 
@@ -1433,7 +1435,7 @@ namespace SIPSorcery.SIP
         public string FriendlyDescription()
         {
             string caller = URI.ToAOR();
-            caller = (!string.IsNullOrEmpty(Name)) ? Name + " " + caller : caller;
+            caller = (!string.IsNullOrEmpty(Name)) ? $"{Name} {caller}" : caller;
             return caller;
         }
     }
@@ -1442,34 +1444,12 @@ namespace SIPSorcery.SIP
     /// header  =  "header-name" HCOLON header-value *(COMMA header-value)
     /// field-name: field-value CRLF
     /// </bnf>
-    public partial class SIPHeader
+    public class SIPHeader
     {
         public const int DEFAULT_CSEQ = 100;
 
         private static readonly ILogger logger = LogFactory.CreateLogger<SIPHeader>();
         private static string m_CRLF = SIPConstants.CRLF;
-        private const string CRLF_WHITESPACE_REGEX_PATTERN = @"\r\n\s+";
-        private const string CR_SPACE_REGEX_PATTERN = @"\r ";
-        private const string CRLF_SPLIT_REGEX_PATTERN = @"\r\n";
-
-#if NET7_0_OR_GREATER
-        [GeneratedRegex(CRLF_WHITESPACE_REGEX_PATTERN, RegexOptions.Singleline)]
-        private static partial Regex CRLFWhitespaceRegex();
-
-        [GeneratedRegex(CR_SPACE_REGEX_PATTERN, RegexOptions.Singleline)]
-        private static partial Regex CRSpaceRegex();
-
-        [GeneratedRegex(CRLF_SPLIT_REGEX_PATTERN)]
-        private static partial Regex CRLFSplitRegex();
-#else
-        private static readonly Regex m_crlfWhitespaceRegex = new Regex(CRLF_WHITESPACE_REGEX_PATTERN, RegexOptions.Compiled | RegexOptions.Singleline);
-        private static readonly Regex m_crSpaceRegex = new Regex(CR_SPACE_REGEX_PATTERN, RegexOptions.Compiled | RegexOptions.Singleline);
-        private static readonly Regex m_crlfSplitRegex = new Regex(CRLF_SPLIT_REGEX_PATTERN, RegexOptions.Compiled);
-
-        private static Regex CRLFWhitespaceRegex() => m_crlfWhitespaceRegex;
-        private static Regex CRSpaceRegex() => m_crSpaceRegex;
-        private static Regex CRLFSplitRegex() => m_crlfSplitRegex;
-#endif
 
         // RFC SIP headers.
         public string Accept;
@@ -1610,7 +1590,7 @@ namespace SIPSorcery.SIP
             Contact = contact;
             CallId = callId;
 
-            if (cseq is >= 0 and < int.MaxValue)
+            if (cseq >= 0 && cseq < Int32.MaxValue)
             {
                 CSeq = cseq;
             }
@@ -1622,13 +1602,71 @@ namespace SIPSorcery.SIP
 
         public static string[] SplitHeaders(string message)
         {
+            static string NormalizeFoldedHeaderLines(string headerBlock)
+            {
+                var normalised = default(StringBuilder);
+                var segmentStart = 0;
+                var position = 0;
+
+                while (position < headerBlock.Length)
+                {
+                    if (position + 2 < headerBlock.Length &&
+                        headerBlock[position] == '\r' &&
+                        headerBlock[position + 1] == '\n' &&
+                        char.IsWhiteSpace(headerBlock[position + 2]))
+                    {
+                        normalised ??= new StringBuilder(headerBlock.Length);
+                        normalised.Append(headerBlock, segmentStart, position - segmentStart);
+                        normalised.Append(' ');
+
+                        position += 2;
+                        while (position < headerBlock.Length && char.IsWhiteSpace(headerBlock[position]))
+                        {
+                            position++;
+                        }
+
+                        segmentStart = position;
+                        continue;
+                    }
+
+                    if (position + 1 < headerBlock.Length &&
+                        headerBlock[position] == '\r' &&
+                        headerBlock[position + 1] == ' ')
+                    {
+                        normalised ??= new StringBuilder(headerBlock.Length);
+                        normalised.Append(headerBlock, segmentStart, position - segmentStart);
+                        normalised.Append(m_CRLF);
+
+                        position += 2;
+                        segmentStart = position;
+                        continue;
+                    }
+
+                    position++;
+                }
+
+                if (normalised is null)
+                {
+                    return headerBlock;
+                }
+
+                normalised.Append(headerBlock, segmentStart, headerBlock.Length - segmentStart);
+                return normalised.ToString();
+            }
+
             // SIP headers can be extended across lines if the first character of the next line is at least on whitespace character.
-            message = CRLFWhitespaceRegex().Replace(message, " ");
+            // Some user agents couldn't get the \r\n bit right; normalise those at the same time.
+            message = NormalizeFoldedHeaderLines(message);
 
-            // Some user agents couldn't get the \r\n bit right.
-            message = CRSpaceRegex().Replace(message, m_CRLF);
+            var headers = new List<string>();
+            var messageSpan = message.AsSpan();
 
-            return CRLFSplitRegex().Split(message);
+            foreach (var headerRange in messageSpan.Split(m_CRLF.AsSpan()))
+            {
+                headers.Add(messageSpan[headerRange].ToString());
+            }
+
+            return headers.ToArray();
         }
 
         public static SIPHeader ParseSIPHeaders(string[] headersCollection)
