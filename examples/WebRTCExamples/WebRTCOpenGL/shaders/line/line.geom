@@ -21,7 +21,7 @@ void emit_position(vec2 pos) {
 }
 
 float get_thickness(float len) {
-    float x = n * len;
+    float x = float(n) * len;
     return mix(min_thickness, thickness, 1.0 / (1.0 + thinning * x * x));
 }
 
@@ -78,7 +78,6 @@ void main() {
     vec2 miter_a = miter_a_norm * min(miter_a_length, max(thickness, miter_a_length_max));
     vec2 miter_b = miter_b_norm * min(miter_b_length, max(thickness, miter_b_length_max));
 
-    float n = n;
     position = gl_in[1].gl_Position.z;
     relative_length = length_a_;
     angle = angular_velocity[1];

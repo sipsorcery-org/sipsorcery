@@ -8,8 +8,7 @@ in vec4 vec;
 out vec2 angular_velocity;
 
 void main() {
-    float n = n;
-    float z = (gl_VertexID - 1) / (n - 2);
+    float z = (gl_VertexID - 1) / (float(n) - 2.0);
     if (window.y > window.x) {
         gl_Position = vec4(vec.x, vec.y, z, 1.0);
     } else {
