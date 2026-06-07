@@ -39,6 +39,11 @@ namespace SIPSorcery.Net
         public STUNAddressAttribute(byte[] attributeValue)
             : base(STUNAttributeTypesEnum.MappedAddress, attributeValue)
         {
+            if (attributeValue == null || attributeValue.Length < ADDRESS_ATTRIBUTE_IPV4_LENGTH)
+            {
+                throw new ArgumentException($"A STUN address attribute value must be at least {ADDRESS_ATTRIBUTE_IPV4_LENGTH} bytes.", nameof(attributeValue));
+            }
+
             Port = BinaryPrimitives.ReadUInt16BigEndian(attributeValue.AsSpan(2));
 
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
@@ -56,6 +61,11 @@ namespace SIPSorcery.Net
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
             : base(attributeType, attributeValue)
         {
+            if (attributeValue == null || attributeValue.Length < ADDRESS_ATTRIBUTE_IPV4_LENGTH)
+            {
+                throw new ArgumentException($"A STUN address attribute value must be at least {ADDRESS_ATTRIBUTE_IPV4_LENGTH} bytes.", nameof(attributeValue));
+            }
+
             Port = BinaryPrimitives.ReadUInt16BigEndian(attributeValue.AsSpan(2));
 
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });

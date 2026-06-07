@@ -238,8 +238,14 @@ public class UdpReceiver
         { }
         catch (Exception excp)
         {
+            // A non-socket exception here almost always originates from processing a single inbound
+            // packet (e.g. a malformed STUN/RTP/TURN packet throwing in the packet-received handler).
+            // A bad packet from any remote party - including an unauthenticated one during ICE
+            // connectivity checks - must not be allowed to tear down the media session. We log and
+            // drop the offending packet and let the finally block re-arm the receive loop. This
+            // mirrors the drop-and-continue behaviour of SIPUDPChannel.EndReceiveFrom. Genuine socket
+            // failures are handled by the SocketException/ObjectDisposedException catches above.
             logger.LogError(excp, "Exception UdpReceiver.EndReceiveFrom. {ErrorMessage}", excp.Message);
-            Close(excp.Message);
         }
         finally
         {
