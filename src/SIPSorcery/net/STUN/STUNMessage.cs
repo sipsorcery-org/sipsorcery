@@ -101,7 +101,14 @@ namespace SIPSorcery.Net
 
                 if (stunMessage.Header.MessageLength > 0)
                 {
-                    stunMessage.Attributes = STUNAttribute.ParseMessageAttributes(buffer, STUNHeader.STUN_HEADER_LENGTH, bufferLength, stunMessage.Header);
+                    // The header claims there are attributes, so attempt to parse them. ParseMessageAttributes
+                    // returns null (rather than an empty list) when the buffer is too short or malformed to
+                    // contain any attributes. The "?? stunMessage.Attributes" guards against that null: the
+                    // Attributes field is initialised to an empty list when the STUNMessage is constructed, so
+                    // on a null result we fall back to that empty list rather than overwriting it with null.
+                    // This keeps Attributes non-null so the "stunMessage.Attributes.Count" access below (and
+                    // any caller that enumerates Attributes) cannot throw a NullReferenceException.
+                    stunMessage.Attributes = STUNAttribute.ParseMessageAttributes(buffer, STUNHeader.STUN_HEADER_LENGTH, bufferLength, stunMessage.Header) ?? stunMessage.Attributes;
                 }
 
                 if (stunMessage.Attributes.Count > 0 && stunMessage.Attributes.Last().AttributeType == STUNAttributeTypesEnum.FingerPrint)

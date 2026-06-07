@@ -435,5 +435,92 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(stunRequest.isFingerprintValid);
             //Assert.True(stunRequest.CheckIntegrity(System.Text.Encoding.UTF8.GetBytes(icePassword)));
         }
+
+        /// <summary>
+        /// Regression test for a denial-of-service issue. A STUN message carrying an XOR address attribute
+        /// with a value shorter than the minimum required (0 to 7 bytes) used to throw while indexing the
+        /// untrusted value bytes (NullReferenceException for a zero-length value, IndexOutOfRange/
+        /// ArgumentOutOfRange for 1 to 7 bytes). Such an attribute must now be skipped rather than throw.
+        /// </summary>
+        [Theory]
+        [InlineData(0x0020)] // XOR-MAPPED-ADDRESS
+        [InlineData(0x0012)] // XOR-PEER-ADDRESS
+        [InlineData(0x0016)] // XOR-RELAYED-ADDRESS
+        public void ParseShortXorAddressAttributeDoesNotThrowUnitTest(int attributeType)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            for (int valueLength = 0; valueLength <= 7; valueLength++)
+            {
+                byte[] stun = BuildStunWithAttribute((ushort)attributeType, valueLength);
+
+                var ex = Record.Exception(() =>
+                {
+                    var msg = STUNMessage.ParseSTUNMessage(stun, stun.Length);
+                    // The malformed attribute should have been skipped, not parsed.
+                    Assert.DoesNotContain(msg.Attributes, a => a.AttributeType == STUNAttributeTypes.GetSTUNAttributeTypeForId((ushort)attributeType));
+                });
+
+                Assert.Null(ex);
+            }
+        }
+
+        /// <summary>
+        /// Regression test for a denial-of-service issue. A truncated STUN message whose header declares a
+        /// non-zero length but whose body is too short for any attributes used to dereference a null
+        /// attribute list. ParseSTUNMessage must return a message with an empty attribute list instead.
+        /// </summary>
+        [Fact]
+        public void ParseTruncatedStunMessageDoesNotThrowUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            // Valid 20 byte header declaring a message length of 8 but with no attribute bytes following.
+            byte[] stun =
+            {
+                0x00, 0x01,             // Binding Request.
+                0x00, 0x08,             // Message length > 0.
+                0x21, 0x12, 0xA4, 0x42, // Magic cookie.
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 // Transaction id.
+            };
+
+            var ex = Record.Exception(() =>
+            {
+                var msg = STUNMessage.ParseSTUNMessage(stun, stun.Length);
+                Assert.NotNull(msg);
+                Assert.NotNull(msg.Attributes);
+                Assert.Empty(msg.Attributes);
+            });
+
+            Assert.Null(ex);
+        }
+
+        /// <summary>
+        /// Builds a STUN binding request containing a single attribute of the supplied type whose value is
+        /// <paramref name="valueLength"/> bytes long, with enough trailing bytes for the attribute parse
+        /// loop to enter.
+        /// </summary>
+        private static byte[] BuildStunWithAttribute(ushort attributeType, int valueLength)
+        {
+            byte[] header =
+            {
+                0x00, 0x01,             // Binding Request.
+                0x00, 0x10,             // Message length (just needs to be > 0).
+                0x21, 0x12, 0xA4, 0x42, // Magic cookie.
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 // Transaction id.
+            };
+
+            int padding = (valueLength % 4 != 0) ? 4 - (valueLength % 4) : 0;
+
+            byte[] attribute = new byte[4 + valueLength + padding + 4]; // attr header + value + padding + trailing bytes.
+            attribute[0] = (byte)(attributeType >> 8);
+            attribute[1] = (byte)(attributeType & 0xff);
+            attribute[2] = (byte)(valueLength >> 8);
+            attribute[3] = (byte)(valueLength & 0xff);
+
+            return header.Concat(attribute).ToArray();
+        }
     }
 }
