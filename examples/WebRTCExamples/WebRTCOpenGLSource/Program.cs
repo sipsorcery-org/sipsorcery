@@ -52,6 +52,22 @@ class Program
     private const int WEBSOCKET_PORT = 8081;
     private const int AUDIO_PACKET_DURATION = 20; // 20ms of audio per RTP packet for PCMU & PCMA.
 
+    // The built-in "Music" source is 8 kHz telephone-quality broadband audio, which traces a jagged
+    // path on this phase-based scope. For a calmer demo we instead use the AudioExtrasSource "Pad"
+    // source (a soft, slowly-evolving chord) for what the peer hears, and drive the scope itself with
+    // a separate clean, bin-aligned carrier so it renders a smooth circle. The circle's radius follows
+    // the pad's loudness, so it still breathes in time with the audio. Set USE_SYNTH_AUDIO = false to
+    // fall back to visualising the raw decoded music instead.
+    private static readonly bool USE_SYNTH_AUDIO = true;
+    private const int SYNTH_SAMPLE_RATE = 8000;        // Scope carrier sample rate (matches the codec).
+    // The scope's analytic transform uses a 1024-point FFT at SYNTH_SAMPLE_RATE, so its bin spacing is
+    // 8000/1024 = 7.8125 Hz. A tone exactly on a bin is perfectly periodic in the FFT window and
+    // produces no spectral leakage, which is what keeps the trace a clean circle (off-bin tones leak
+    // and draw chords). 62.5 Hz = exactly bin 8, and low enough to give ~128 points per revolution.
+    private const double SYNTH_FUNDAMENTAL_HZ = 62.5;
+    private static double _synthPhase = 0.0;           // Scope carrier phase accumulator (continuous across packets).
+    private static double _scopeEnv = 0.0;             // Smoothed audio-loudness envelope driving the circle radius.
+
     private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
     private static FormAudioScope _audioScopeForm;
@@ -123,7 +139,9 @@ class Program
 
         var videoEncoderEndPoint = new VideoEncoderEndPoint();
         var audioEncoder = new AudioEncoder();
-        var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+        // Pad mode (USE_SYNTH_AUDIO) plays the soft, evolving ambient chord; otherwise the built-in music.
+        var audioSource = new AudioExtrasSource(new AudioEncoder(),
+            new AudioSourceOptions { AudioSource = USE_SYNTH_AUDIO ? AudioSourcesEnum.Pad : AudioSourcesEnum.Music });
 
         // For the sake of the demo stick to a basic audio format with a predictable sampling rate.
         var supportedAudioFormats = new List<AudioFormat>
@@ -159,21 +177,53 @@ class Program
 
         audioSource.OnAudioSourceEncodedSample += (uint durationRtpUnits, byte[] sample) =>
         {
-            //logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, payload {rtpPkt.Header.PayloadType}, SeqNum {rtpPkt.Header.SequenceNumber}.");
+            // Fires once per audio packet. The audio itself is produced and sent to the peer by the
+            // audio source above; here we only build the scope's input and render the video frame.
+            var decoded = audioEncoder.DecodeAudio(sample, pc.AudioStream.NegotiatedFormat.ToAudioFormat());
 
-                var decodedSample = audioEncoder.DecodeAudio(sample, pc.AudioStream.NegotiatedFormat.ToAudioFormat());
+            Complex[] samples;
 
-                var samples = decodedSample
-                    .Select(s => new Complex(s / 32768f, 0f))
-                    .ToArray();
+            if (USE_SYNTH_AUDIO)
+            {
+                // The pad chord would trace a wandering rosette rather than a circle, so the scope is
+                // driven by its own clean, bin-aligned carrier instead. The carrier amplitude follows
+                // the pad's loudness (a smoothed RMS envelope), so the circle still breathes with the
+                // audio while staying a smooth circle.
+                double sumSq = 0.0;
+                foreach (var s in decoded)
+                {
+                    double n = s / 32768.0;
+                    sumSq += n * n;
+                }
+                double rms = Math.Sqrt(sumSq / Math.Max(1, decoded.Length));
+                _scopeEnv += 0.25 * (rms - _scopeEnv);          // smooth across packets
+                double radius = 0.12 + 1.0 * _scopeEnv;          // map loudness to circle radius
 
-                var frame = _audioScopeForm.Invoke(() => _audioScopeForm.ProcessAudioSample(samples));
+                samples = new Complex[decoded.Length];
+                for (int i = 0; i < samples.Length; i++)
+                {
+                    _synthPhase += 2.0 * Math.PI * SYNTH_FUNDAMENTAL_HZ / SYNTH_SAMPLE_RATE;
+                    if (_synthPhase > 2.0 * Math.PI)
+                    {
+                        _synthPhase -= 2.0 * Math.PI;
+                    }
 
-                videoEncoderEndPoint.ExternalVideoSourceRawSample(AUDIO_PACKET_DURATION,
-                    FormAudioScope.AUDIO_SCOPE_WIDTH,
-                    FormAudioScope.AUDIO_SCOPE_HEIGHT,
-                    frame,
-                    VideoPixelFormatsEnum.Rgb);
+                    samples[i] = new Complex(radius * Math.Sin(_synthPhase), 0.0);
+                }
+            }
+            else
+            {
+                // Visualise the decoded music directly.
+                samples = decoded.Select(s => new Complex(s / 32768f, 0f)).ToArray();
+            }
+
+            var frame = _audioScopeForm.Invoke(() => _audioScopeForm.ProcessAudioSample(samples));
+
+            videoEncoderEndPoint.ExternalVideoSourceRawSample(AUDIO_PACKET_DURATION,
+                FormAudioScope.AUDIO_SCOPE_WIDTH,
+                FormAudioScope.AUDIO_SCOPE_HEIGHT,
+                frame,
+                VideoPixelFormatsEnum.Rgb);
         };
 
         pc.onconnectionstatechange += async (state) =>

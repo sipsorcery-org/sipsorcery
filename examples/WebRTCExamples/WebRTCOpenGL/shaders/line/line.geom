@@ -1,6 +1,6 @@
 #version 150
 
-uniform uint n;
+uniform int n;
 uniform vec2 window;
 uniform float thickness;
 uniform float min_thickness;
@@ -14,6 +14,8 @@ in vec2[] angular_velocity;
 out float relative_length;
 out vec2 angle;
 out float position;
+
+const float MITER_LIMIT = 2.0; // Cap on miter join length, in multiples of line thickness.
 
 void emit_position(vec2 pos) {
     gl_Position = vec4(pos / window, 0.0, 1.0);
@@ -75,8 +77,11 @@ void main() {
     float miter_a_length_max = abs(length_b / dot(miter_a_norm, v1));
     float miter_b_length = abs(thickness_b / dot(miter_b_norm, n1));
     float miter_b_length_max = abs(length_b / dot(miter_b_norm, v1));
-    vec2 miter_a = miter_a_norm * min(miter_a_length, max(thickness, miter_a_length_max));
-    vec2 miter_b = miter_b_norm * min(miter_b_length, max(thickness, miter_b_length_max));
+    // Cap the miter length. At sharp turns in the curve the miter projection blows up towards
+    // infinity, which shot long rectangular spikes out of the trace; clamping it to a small
+    // multiple of the line thickness clips those joins instead.
+    vec2 miter_a = miter_a_norm * min(min(miter_a_length, max(thickness, miter_a_length_max)), MITER_LIMIT * thickness_a);
+    vec2 miter_b = miter_b_norm * min(min(miter_b_length, max(thickness, miter_b_length_max)), MITER_LIMIT * thickness_b);
 
     position = gl_in[1].gl_Position.z;
     relative_length = length_a_;

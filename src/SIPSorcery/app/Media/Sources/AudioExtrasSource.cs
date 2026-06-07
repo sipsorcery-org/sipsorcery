@@ -66,6 +66,13 @@ namespace SIPSorcery.Media
         /// Don't generate any audio samples.
         /// </summary>
         None = 5,
+
+        /// <summary>
+        /// A soft, slowly-evolving ambient chord ("pad"). Several detuned sine partials voicing a
+        /// consonant chord, each gently swelling in and out, for a calm, continuous texture rather
+        /// than a static (and rather electrical-sounding) drone.
+        /// </summary>
+        Pad = 6,
     }
 
     public class AudioSourceOptions
@@ -107,6 +114,7 @@ namespace SIPSorcery.Media
         private MediaFormatManager<AudioFormat> _audioFormatManager;
         private BinaryReader _musicStreamReader;
         private SignalGenerator _signalGenerator;
+        private long _padSampleClock;                   // Running sample counter for the ambient pad source.
         private Timer _sendSampleTimer;
         private AudioSourceOptions _audioOpts;
         private bool _isStarted;
@@ -369,6 +377,11 @@ namespace SIPSorcery.Media
                         _sendSampleTimer = new Timer(SendMusicSample);
                         _sendSampleTimer.Change(0, _audioSamplePeriodMilliseconds);
                     }
+                    else if (_audioOpts.AudioSource == AudioSourcesEnum.Pad)
+                    {
+                        _sendSampleTimer = new Timer(SendPadSample);
+                        _sendSampleTimer.Change(0, _audioSamplePeriodMilliseconds);
+                    }
                 }
             }
         }
@@ -472,6 +485,72 @@ namespace SIPSorcery.Media
             {
                 Log.LogError(e, "Exception sending signal generator sample");
             }
+        }
+
+        /// <summary>
+        /// Sends a sample of a soft, slowly-evolving ambient chord ("pad"). The chord is built from
+        /// several detuned sine partials, each with its own slow amplitude swell, which gives a calm,
+        /// continuously-evolving texture rather than a static (and rather electrical-sounding) drone.
+        /// </summary>
+        private void SendPadSample(object state)
+        {
+            try
+            {
+                if (!_isClosed && !_streamSendInProgress && _sendSampleTimer != null)
+                {
+                    lock (_sendSampleTimer)
+                    {
+                        int rate = _audioFormatManager.SelectedFormat.ClockRate;
+                        int count = rate / 1000 * _audioSamplePeriodMilliseconds;
+                        short[] pcm = new short[count];
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            double t = _padSampleClock / (double)rate;
+                            pcm[i] = (short)(GetPadSample(t) * LINEAR_MAXIMUM);
+                            _padSampleClock++;
+                        }
+
+                        EncodeAndSend(pcm, rate);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.LogError(e, "Exception sending ambient pad sample.");
+            }
+        }
+
+        /// <summary>
+        /// Computes one sample (roughly in the range [-1, 1]) of the ambient pad at time
+        /// <paramref name="t"/> seconds. An open A-major chord; each note is two slightly detuned sine
+        /// oscillators (for a warm chorus) modulated by a slow, per-note amplitude swell so that the
+        /// partials rise and fade independently.
+        /// </summary>
+        private static double GetPadSample(double t)
+        {
+            //                       freq (Hz), swell rate (Hz), swell phase, level
+            // Deliberately no voice above E4 (~330 Hz): higher partials turn harsh through the 8 kHz
+            // codec, especially at peak level, which reads as a disconcerting high-frequency element.
+            double v =
+                PadVoice(t, 110.00, 0.021, 0.6, 0.6) +   // A2  - sub octave, adds warmth/body
+                PadVoice(t, 220.00, 0.024, 0.0, 1.0) +   // A3  - root
+                PadVoice(t, 277.18, 0.018, 1.7, 0.85) +  // C#4 - major third
+                PadVoice(t, 329.63, 0.030, 3.1, 0.85);   // E4  - fifth (top voice)
+
+            return v * 0.22;
+        }
+
+        /// <summary>
+        /// A single pad voice: two slightly detuned sine oscillators (gentle chorus) scaled by a slow
+        /// amplitude swell.
+        /// </summary>
+        private static double PadVoice(double t, double freq, double swellRate, double swellPhase, double level)
+        {
+            const double detune = 1.0015; // ~2.6 cents, for a gentle, slow chorus beat.
+            double swell = 0.5 + 0.5 * Math.Sin(2.0 * Math.PI * swellRate * t + swellPhase);
+            double osc = 0.5 * (Math.Sin(2.0 * Math.PI * freq * t) + Math.Sin(2.0 * Math.PI * freq * detune * t));
+            return level * swell * osc;
         }
 
         /// <summary>

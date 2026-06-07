@@ -1,7 +1,7 @@
 #version 150
 
 uniform vec2 window;
-uniform uint n;
+uniform int n;
 uniform float decay;
 
 in vec4 vec;
