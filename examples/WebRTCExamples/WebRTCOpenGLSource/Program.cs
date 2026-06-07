@@ -32,7 +32,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -58,7 +57,7 @@ class Program
     // a separate clean, bin-aligned carrier so it renders a smooth circle. The circle's radius follows
     // the pad's loudness, so it still breathes in time with the audio. Set USE_SYNTH_AUDIO = false to
     // fall back to visualising the raw decoded music instead.
-    private static readonly bool USE_SYNTH_AUDIO = true;
+    private static readonly bool USE_SYNTH_AUDIO = false;
     private const int SYNTH_SAMPLE_RATE = 8000;        // Scope carrier sample rate (matches the codec).
     // The scope's analytic transform uses a 1024-point FFT at SYNTH_SAMPLE_RATE, so its bin spacing is
     // 8000/1024 = 7.8125 Hz. A tone exactly on a bin is perfectly periodic in the FFT window and
@@ -70,7 +69,7 @@ class Program
 
     private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
 
-    private static FormAudioScope _audioScopeForm;
+    private static AudioScopeRenderer _renderer;
     private static RTCPeerConnection _pc;
 
     static void Main()
@@ -79,21 +78,8 @@ class Program
 
         logger = AddConsoleLogger();
 
-        // Spin up a dedicated STA thread to run WinForms.
-        Thread uiThread = new Thread(() =>
-        {
-            // WinForms initialization must be on an STA thread.
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
-            _audioScopeForm = new FormAudioScope(false);
-
-            Application.Run(_audioScopeForm);
-        });
-
-        uiThread.SetApartmentState(ApartmentState.STA);
-        uiThread.IsBackground = true;
-        uiThread.Start();
+        // The scope renders straight to an RGB buffer on the CPU - no window or GL context required.
+        _renderer = new AudioScopeRenderer();
 
         // Start web socket.
         Console.WriteLine("Starting web socket server...");
@@ -119,7 +105,7 @@ class Program
 
             _pc?.Close("User exit");
 
-            _audioScopeForm.Invoke(() => _audioScopeForm.Close());
+            _renderer?.Dispose();
 
             exitMre.Set();
         };
@@ -217,11 +203,11 @@ class Program
                 samples = decoded.Select(s => new Complex(s / 32768f, 0f)).ToArray();
             }
 
-            var frame = _audioScopeForm.Invoke(() => _audioScopeForm.ProcessAudioSample(samples));
+            var frame = _renderer.ProcessAudioSample(samples);
 
             videoEncoderEndPoint.ExternalVideoSourceRawSample(AUDIO_PACKET_DURATION,
-                FormAudioScope.AUDIO_SCOPE_WIDTH,
-                FormAudioScope.AUDIO_SCOPE_HEIGHT,
+                AudioScopeRenderer.Width,
+                AudioScopeRenderer.Height,
                 frame,
                 VideoPixelFormatsEnum.Rgb);
         };
