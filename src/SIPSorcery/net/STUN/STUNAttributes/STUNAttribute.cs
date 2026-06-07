@@ -227,7 +227,14 @@ namespace SIPSorcery.Net
                         }
                         else if (attributeType == STUNAttributeTypesEnum.XORMappedAddress || attributeType == STUNAttributeTypesEnum.XORPeerAddress || attributeType == STUNAttributeTypesEnum.XORRelayedAddress)
                         {
-                            attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header.TransactionId);
+                            if (header == null)
+                            {
+                                logger.LogWarning("A STUN {AttributeType} attribute requires a STUN header transaction ID but the header was null and the attribute was skipped.", attributeType);
+                            }
+                            else
+                            {
+                                attribute = new STUNXORAddressAttribute(attributeType, stunAttributeValue, header.TransactionId);
+                            }
                         }
                         else if(attributeType == STUNAttributeTypesEnum.ConnectionId)
                         {
@@ -238,7 +245,10 @@ namespace SIPSorcery.Net
                             attribute = new STUNAttribute(attributeType, stunAttributeValue);
                         }
 
-                        attributes.Add(attribute);
+                        if (attribute != null)
+                        {
+                            attributes.Add(attribute);
+                        }
                     }
 
                     // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded.
