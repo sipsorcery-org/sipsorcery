@@ -27,14 +27,15 @@ A .NET library that implements the VP8 video codec. This package is intended to 
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIPSorcery Video-Encoding VP8</PackageTags>
-    <PackageReleaseNotes>-v10.0.8: Full library release.
+    <PackageReleaseNotes>-v10.0.9: Updated for main sipsorcery library release.
+-v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
 -v10.0.6: Initial release.
     </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.8</Version>
-    <AssemblyVersion>10.0.8</AssemblyVersion>
-    <FileVersion>10.0.8</FileVersion>
+    <Version>10.0.9</Version>
+    <AssemblyVersion>10.0.9</AssemblyVersion>
+    <FileVersion>10.0.9</FileVersion>
   </PropertyGroup>
 
     <PropertyGroup Label="SourceLink">

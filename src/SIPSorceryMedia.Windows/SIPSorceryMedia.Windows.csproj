@@ -29,13 +29,14 @@
     <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.Windows</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>10.0.8</Version>
-    <AssemblyVersion>10.0.8</AssemblyVersion>
-    <FileVersion>10.0.8</FileVersion>
+    <Version>10.0.9</Version>
+    <AssemblyVersion>10.0.9</AssemblyVersion>
+    <FileVersion>10.0.9</FileVersion>
 	<RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Audio Video Codecs Encoders Decoders</PackageTags>
-	  <PackageReleaseNotes>-v10.0.8: Full library release.
+	  <PackageReleaseNotes>-v10.0.9: Updated for main sipsorcery library release.
+-v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
 -v10.0.6: Updated for main sipsorcery library release.
 -v10.0.5: Updated for main sipsorcery library release. Bumped target framework to net10.0.
