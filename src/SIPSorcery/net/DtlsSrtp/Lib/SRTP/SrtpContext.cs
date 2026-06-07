@@ -1285,7 +1285,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         case SrtpCiphers.SEED_128_CTR:
                             {
                                 var decLen = length - 4 - context.N_tag - mki.Length;
-                                SRTP.Encryption.CTR.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l, context.Iv16);
+                                SRTP.Encryption.CTR.GenerateMessageKeyIV(context.K_s, ssrc, index, context.Iv16);
                                 input.Slice(0, offset).CopyTo(output.Slice(0, offset));
                                 SRTP.Encryption.CTR.Encrypt(context.PayloadCTR, input.Slice(offset, decLen - offset), output.Slice(offset, decLen - offset), context.Iv16);
                                 outputBufferLength = decLen;
@@ -1299,7 +1299,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                         case SrtpCiphers.SEED_128_CCM:
                         case SrtpCiphers.SEED_128_GCM:
                             {
-                                SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, ssrcContext.S_l, context.Iv12);
+                                SRTP.Encryption.AEAD.GenerateMessageKeyIV(context.K_s, ssrc, index, context.Iv12);
                                 var associatedDataRented = ArrayPool<byte>.Shared.Rent(offset + 4);
                                 try
                                 {
@@ -1322,7 +1322,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
                                 // RTCP under Double AEAD is protected only with the outer layer
                                 var outerK_e = KeyParameter.Create(context.K_e.Slice(context.K_e.Length / 2));
                                 var outerK_s = context.K_s.AsSpan(context.K_s.Length / 2);
-                                SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, ssrcContext.S_l, context.Iv12);
+                                SRTP.Encryption.AEAD.GenerateMessageKeyIV(outerK_s, ssrc, index, context.Iv12);
                                 var associatedDataRented = ArrayPool<byte>.Shared.Rent(offset + 4);
                                 try
                                 {
