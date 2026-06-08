@@ -31,7 +31,7 @@ namespace SIPSorcery.Net;
 /// </summary>
 public class WebRTCWebSocketPeerAspNet
 {
-    private readonly ILogger _logger = LogFactory.CreateLogger<WebRTCWebSocketPeerAspNet>();
+    private static readonly ILogger _logger = LogFactory.CreateLogger<WebRTCWebSocketPeerAspNet>();
 
     private RTCConfiguration _peerConnectionConfig;
     private RTCPeerConnection _pc;
