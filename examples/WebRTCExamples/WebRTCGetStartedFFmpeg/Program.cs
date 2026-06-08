@@ -37,7 +37,7 @@ class Program
 
     private static string _stunUrl = string.Empty;
     private static string _turnUrl = string.Empty;
-    private static bool _waitForIceGatheringToSendOffer = false;
+    private static bool _waitForIceGatheringToSendOffer = true;
     private static int _webrtcBindPort = 0;
 
     private static Microsoft.Extensions.Logging.ILogger _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
