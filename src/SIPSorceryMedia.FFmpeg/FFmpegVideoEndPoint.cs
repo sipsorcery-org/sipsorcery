@@ -10,7 +10,7 @@
 // decodes incoming media using the same negotiated codec.
 //
 // Author(s):
-// Unknown
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 08 Jun 2026  Aaron Clauson   Added the missing IVideoSource interface and implementation.

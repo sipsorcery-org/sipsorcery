@@ -192,6 +192,7 @@ class Program
             {
                 await testPattern.CloseVideo();
                 await audioSource.CloseAudio();
+                await videoSource.CloseVideo();
             }
         };
 
