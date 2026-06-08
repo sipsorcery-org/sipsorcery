@@ -169,7 +169,7 @@ namespace SIPSorceryMedia.FFmpeg
             return true;
         }
 
-        public Boolean StartDecode()
+        public bool StartDecode()
         {
             if (!_isStarted)
             {
@@ -184,7 +184,7 @@ namespace SIPSorceryMedia.FFmpeg
             return _isStarted;
         }
 
-        public Boolean Pause()
+        public bool Pause()
         {
             if (!_isClosed)
             {
@@ -193,9 +193,9 @@ namespace SIPSorceryMedia.FFmpeg
             return _isPaused;
         }
 
-        public Boolean Resume()
+        public bool Resume()
         {
-            if (_isPaused && !_isClosed)
+            if (!_isClosed)
             {
                 _isPaused = false;
             }
@@ -247,12 +247,18 @@ namespace SIPSorceryMedia.FFmpeg
                         {
                             managePacket = false;
                             if (error == eagain)
+                            {
                                 ffmpeg.av_packet_unref(pkt);
+                            }
                             else
+                            {
                                 canContinue = false;
+                            }
                         }
                         else
+                        {
                             managePacket = true;
+                        }
 
                         if (managePacket)
                         {
@@ -280,7 +286,9 @@ namespace SIPSorceryMedia.FFmpeg
                                         {
                                             dpts = _videoTimebase * pts;
                                             if (firts_dpts == 0)
+                                            {
                                                 firts_dpts = dpts;
+                                            }
 
                                             dpts -= firts_dpts;
                                         }

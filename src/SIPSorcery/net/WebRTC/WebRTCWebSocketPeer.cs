@@ -87,6 +87,10 @@ namespace SIPSorcery.Net
                 if (result != SetDescriptionResultEnum.OK)
                 {
                     logger.LogWarning("Failed to set remote description, {Result}.", result);
+
+                    // No harm logging the SDP for a failed attempt. The cryptographic information is ephemeral.
+                    logger.LogTrace("Remote SDP was:\n{Description}", descriptionInit.sdp);
+
                     _pc.Close("failed to set remote description");
                     this.Close();
                 }
