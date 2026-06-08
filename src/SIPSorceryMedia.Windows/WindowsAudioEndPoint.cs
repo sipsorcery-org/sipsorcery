@@ -46,7 +46,7 @@ namespace SIPSorceryMedia.Windows
 
         public readonly static AudioSamplingRatesEnum DefaultAudioPlaybackRate = AudioSamplingRatesEnum.Rate8KHz;
 
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<WindowsAudioEndPoint>();
 
         private WaveFormat _waveSinkFormat;
         private WaveFormat _waveSourceFormat;
@@ -170,7 +170,9 @@ namespace SIPSorceryMedia.Windows
                 if (_waveSourceFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
                     // Reinitialise the audio capture device.
-                    logger.LogDebug($"Windows audio end point adjusting capture rate from {_waveSourceFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
+                    logger.LogDebug("Windows audio end point adjusting capture rate from {CurrentCaptureRate} to {SelectedCaptureRate}.",
+                        _waveSourceFormat.SampleRate,
+                        _audioFormatManager.SelectedFormat.ClockRate);
 
                     InitCaptureDevice(_audioInDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
                 }
@@ -186,7 +188,9 @@ namespace SIPSorceryMedia.Windows
                 if (_waveSinkFormat.SampleRate != _audioFormatManager.SelectedFormat.ClockRate)
                 {
                     // Reinitialise the audio output device.
-                    logger.LogDebug($"Windows audio end point adjusting playback rate from {_waveSinkFormat.SampleRate} to {_audioFormatManager.SelectedFormat.ClockRate}.");
+                    logger.LogDebug("Windows audio end point adjusting playback rate from {CurrentPlaybackRate} to {SelectedPlaybackRate}.",
+                        _waveSinkFormat.SampleRate,
+                        _audioFormatManager.SelectedFormat.ClockRate);
 
                     InitPlaybackDevice(_audioOutDeviceIndex, _audioFormatManager.SelectedFormat.ClockRate, _audioFormatManager.SelectedFormat.ChannelCount);
                 }
@@ -322,7 +326,9 @@ namespace SIPSorceryMedia.Windows
                 }
                 else
                 {
-                    logger.LogWarning($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
+                    logger.LogWarning("The requested audio input device index {AudioInputDeviceIndex} exceeds the maximum index of {MaximumDeviceIndex}.",
+                        audioInDeviceIndex,
+                        WaveInEvent.DeviceCount - 1);
                     OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
                 }
             }
