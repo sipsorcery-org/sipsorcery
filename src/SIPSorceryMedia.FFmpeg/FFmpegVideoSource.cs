@@ -321,7 +321,7 @@ namespace SIPSorceryMedia.FFmpeg
                 _isPaused = true;
                 if (_videoDecoder != null)
                 {
-                    _videoDecoder?.Pause();
+                    _videoDecoder.Pause();
                 }
             }
 
