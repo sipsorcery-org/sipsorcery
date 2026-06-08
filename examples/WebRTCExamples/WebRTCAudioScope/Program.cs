@@ -285,12 +285,9 @@ class Program
             {
                 pc.Close("ice disconnection");
             }
-            else if (state == RTCPeerConnectionState.closed)
+            else if (state == RTCPeerConnectionState.closed && audioSource != null)
             {
-                if (audioSource != null)
-                {
-                    await audioSource.CloseAudio();
-                }
+                await audioSource.CloseAudio();
             }
         };
 
