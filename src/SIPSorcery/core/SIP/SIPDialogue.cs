@@ -15,6 +15,7 @@
 
 using System;
 using System.Net;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -83,24 +84,28 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                string dialogueName = "L(??)";
-                if (LocalUserField != null && !LocalUserField.URI.User.IsNullOrBlank())
+                var dialogueNameBuilder = new StringBuilder();
+                if (LocalUserField?.URI is { } localUserFieldUri && !localUserFieldUri.User.IsNullOrBlank())
                 {
-                    dialogueName = $"L({LocalUserField.URI.ToString()})";
-                }
-
-                dialogueName += "-";
-
-                if (RemoteUserField != null && !RemoteUserField.URI.User.IsNullOrBlank())
-                {
-                    dialogueName += $"R({RemoteUserField.URI.ToString()})";
+                    dialogueNameBuilder.Append("L(").Append(localUserFieldUri).Append(')');
                 }
                 else
                 {
-                    dialogueName += "R(??)";
+                    dialogueNameBuilder.Append("L(??)");
                 }
 
-                return dialogueName;
+                dialogueNameBuilder.Append("-");
+
+                if (RemoteUserField?.URI is { } remoteUserFieldUri && !remoteUserFieldUri.User.IsNullOrBlank())
+                {
+                    dialogueNameBuilder.Append("R(").Append(remoteUserFieldUri).Append(')');
+                }
+                else
+                {
+                    dialogueNameBuilder.Append("R(??)");
+                }
+
+                return dialogueNameBuilder.ToString();
             }
         }
 
