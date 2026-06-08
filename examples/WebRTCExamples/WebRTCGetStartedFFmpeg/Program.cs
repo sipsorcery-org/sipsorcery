@@ -143,18 +143,20 @@ class Program
 
         var pc = new RTCPeerConnection(config, _webrtcBindPort);
 
-        var testPatternSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
+        var testPattern = new VideoTestPatternSource();
+        var videoSource = new FFmpegVideoEndPoint();
         var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-        MediaStreamTrack videoTrack = new MediaStreamTrack(testPatternSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+        MediaStreamTrack videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
         pc.addTrack(videoTrack);
         MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
         pc.addTrack(audioTrack);
 
-        testPatternSource.OnVideoSourceEncodedSample += pc.SendVideo;
+        testPattern.OnVideoSourceRawSample += videoSource.ExternalVideoSourceRawSample;
+        videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
         audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
-        pc.OnVideoFormatsNegotiated += (formats) => testPatternSource.SetVideoSourceFormat(formats.First());
+        pc.OnVideoFormatsNegotiated += (formats) => videoSource.SetVideoSourceFormat(formats.First());
         pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
         pc.onicegatheringstatechange += (state) => _logger.LogDebug($"ICE gathering state changed to {state}."); ;
         pc.oniceconnectionstatechange += (state) => _logger.LogDebug($"ICE connection state changed to {state}.");
@@ -180,7 +182,7 @@ class Program
             if (state == RTCPeerConnectionState.connected)
             {
                 await audioSource.StartAudio();
-                await testPatternSource.StartVideo();
+                await testPattern.StartVideo();
             }
             else if (state == RTCPeerConnectionState.failed)
             {
@@ -188,7 +190,7 @@ class Program
             }
             else if (state == RTCPeerConnectionState.closed)
             {
-                await testPatternSource.CloseVideo();
+                await testPattern.CloseVideo();
                 await audioSource.CloseAudio();
             }
         };
