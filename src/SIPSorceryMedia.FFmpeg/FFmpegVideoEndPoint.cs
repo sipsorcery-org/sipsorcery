@@ -1,4 +1,22 @@
-﻿using System;
+//-----------------------------------------------------------------------------
+// Filename: FFmpegVideoEndPoint.cs
+//
+// Description: A combined video source and sink backed by an FFmpeg codec. As a
+// sink it decodes full video frames received from the remote party; as a source
+// it encodes raw frames supplied by the application (via the
+// ExternalVideoSourceRawSample* methods) for transmission. A single
+// FFmpegVideoEncoder instance handles both directions (it maintains independent
+// encode and decode contexts internally), so the endpoint encodes outgoing and
+// decodes incoming media using the same negotiated codec.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -8,7 +26,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorceryMedia.FFmpeg
 {
-    public class FFmpegVideoEndPoint : IVideoSink, IDisposable
+    public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
     {
         public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
@@ -21,18 +39,30 @@ namespace SIPSorceryMedia.FFmpeg
         private bool _isPaused;
         private bool _isClosed;
 
-#pragma warning disable  CS0067, CS0414
-        private bool _forceKeyFrame;
+        // ---- Sink (decode) events ----
+
+#pragma warning disable CS0067
+        // Decoded frames are delivered via the faster RawImage event below. The byte[] variant is part of
+        // the IVideoSink contract but is not currently raised by this endpoint.
         public event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
-#pragma warning restore CS0067, CS0414
+#pragma warning restore CS0067
 
         public event VideoSinkSampleDecodedFasterDelegate? OnVideoSinkDecodedSampleFaster;
 
+        // ---- Source (encode) events ----
+
+        /// <summary>
+        /// Fired when a raw sample supplied via <see cref="ExternalVideoSourceRawSample"/> or
+        /// <see cref="ExternalVideoSourceRawSampleFaster"/> has been encoded and is ready to transmit.
+        /// </summary>
+        public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
+
 #pragma warning disable CS0067
-        //public event EncodedSampleDelegate? OnVideoSourceEncodedSample;
-        //public event RawExtVideoSampleDelegate? OnVideoSourceRawExtSample;
-        //public event RawVideoSampleDelegate? OnVideoSourceRawSample;
-        //public event SourceErrorDelegate? OnVideoSourceError;
+        // This endpoint only produces ENCODED video samples (it encodes raw input supplied via the
+        // ExternalVideoSourceRawSample* methods). It never emits raw source samples or source errors.
+        public event RawVideoSampleDelegate? OnVideoSourceRawSample;
+        public event RawVideoSampleFasterDelegate? OnVideoSourceRawSampleFaster;
+        public event SourceErrorDelegate? OnVideoSourceError;
 #pragma warning restore CS0067
 
         public FFmpegVideoEndPoint(Dictionary<string, string>? decoderOptions = null)
@@ -45,7 +75,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             return new MediaEndPoints
             {
-                //VideoSource = this,
+                VideoSource = this,
                 VideoSink = this
             };
         }
@@ -55,8 +85,8 @@ namespace SIPSorceryMedia.FFmpeg
         public void RestrictFormats(Func<VideoFormat, bool> filter) => _videoFormatManager.RestrictFormats(filter);
         public List<VideoFormat> GetVideoSourceFormats() => _videoFormatManager.GetSourceFormats();
         public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
-        public void ForceKeyFrame() => _forceKeyFrame = true;
-        public bool HasEncodedVideoSubscribers() => OnVideoSinkDecodedSampleFaster != null;
+        public void ForceKeyFrame() => _ffmpegEncoder.ForceKeyFrame();
+        public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public bool IsVideoSourcePaused() => _isPaused;
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
             throw new ApplicationException("The FFmpeg Video End Point requires full video frames rather than individual RTP packets.");
@@ -100,7 +130,7 @@ namespace SIPSorceryMedia.FFmpeg
                 if (_videoFormatManager.SelectedFormat.Codec != format.Codec)
                 {
                     if (_videoFormatManager.GetSourceFormats().Exists(f => f.Codec == format.Codec))
-                    { 
+                    {
                         logger.LogWarning("Video format {format} is not selected but supported, continuing by using it.", format.FormatName);
                         _videoFormatManager.SetSelectedFormat(format);
                     }
@@ -113,7 +143,7 @@ namespace SIPSorceryMedia.FFmpeg
 
                 AVCodecID? codecID = FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec);
                 if(codecID != null)
-                { 
+                {
                     var imageRawSamples = _ffmpegEncoder.DecodeFaster(codecID.Value, payload, out var width, out var height);
 
                     if (imageRawSamples == null || width == 0 || height == 0)
@@ -164,37 +194,47 @@ namespace SIPSorceryMedia.FFmpeg
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Encodes a raw video frame supplied by the application and raises <see cref="OnVideoSourceEncodedSample"/>
+        /// with the result, ready for the RTP transport.
+        /// </summary>
         public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
-            //if (!_isClosed)
-            //{
-            //    if (OnVideoSourceEncodedSample != null)
-            //    {
-            //        uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : Helper.DEFAULT_VIDEO_FRAME_RATE;
-            //        if(fps == 0)
-            //        {
-            //            fps = 1;
-            //        }
+            if (!_isClosed && OnVideoSourceEncodedSample != null)
+            {
+                var encodedBuffer = _ffmpegEncoder.EncodeVideo(width, height, sample, pixelFormat, _videoFormatManager.SelectedFormat.Codec);
+                RaiseEncodedSample(durationMilliseconds, encodedBuffer);
+            }
+        }
 
-            //        int stride = (pixelFormat == VideoPixelFormatsEnum.Bgra) ? 4 * width : 3 * width;
-            //        var i420Buffer = PixelConverter.ToI420(width, height, stride, sample, pixelFormat);
-            //        byte[]? encodedBuffer = _ffmpegEncoder. Encode(FFmpegConvert.GetAVCodecID(_videoFormatManager.SelectedFormat.Codec), i420Buffer, width, height, (int)fps, _forceKeyFrame);
+        /// <summary>
+        /// Encodes a raw video frame supplied by the application (zero-copy RawImage variant) and raises
+        /// <see cref="OnVideoSourceEncodedSample"/> with the result.
+        /// </summary>
+        public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage)
+        {
+            if (!_isClosed && OnVideoSourceEncodedSample != null)
+            {
+                var encodedBuffer = _ffmpegEncoder.EncodeVideoFaster(rawImage, _videoFormatManager.SelectedFormat.Codec);
+                RaiseEncodedSample(durationMilliseconds, encodedBuffer);
+            }
+        }
 
-            //        if (encodedBuffer != null)
-            //        {
-            //            //Console.WriteLine($"encoded buffer: {encodedBuffer.HexStr()}");
-            //            uint durationRtpTS = Helper.VIDEO_SAMPLING_RATE / fps;
+        private void RaiseEncodedSample(uint durationMilliseconds, byte[]? encodedBuffer)
+        {
+            if (encodedBuffer != null)
+            {
+                uint fps = (durationMilliseconds > 0) ? 1000 / durationMilliseconds : (uint)Helper.DEFAULT_VIDEO_FRAME_RATE;
+                if (fps == 0)
+                {
+                    fps = 1;
+                }
 
-            //            // Note the event handler can be removed while the encoding is in progress.
-            //            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
-            //        }
+                uint durationRtpTS = (uint)_videoFormatManager.SelectedFormat.ClockRate / fps;
 
-            //        if (_forceKeyFrame)
-            //        {
-            //            _forceKeyFrame = false;
-            //        }
-            //    }
-            //}
+                // Note the event handler can be removed while the encoding is in progress.
+                OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
+            }
         }
 
         public void Dispose()
