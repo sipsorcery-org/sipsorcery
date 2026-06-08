@@ -79,7 +79,7 @@ namespace Vpx.Net
 
         public void ForceKeyFrame() => _vp8Codec.ForceKeyFrame();
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
-            throw new ApplicationException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
+            throw new ApplicationException("The VP8 Video End Point requires full video frames rather than individual RTP packets.");
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public bool IsVideoSourcePaused() => false;
         public Task PauseVideo() => Task.CompletedTask;

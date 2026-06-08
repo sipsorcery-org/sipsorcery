@@ -3,12 +3,13 @@
 //
 // Description: Implementation of a Hilbert filter to visualise audio input.
 // Originally based on https://github.com/conundrumer/visual-music-workshop.
-
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 29 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 08 Jun 2026  Aaron Clauson   Converted from OpenGL implementation to C# version.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -72,6 +73,14 @@ namespace AudioScope
         public const int CIRCULAR_BUFFER_SAMPLES = 3;
         public const float CUTOFF_FREQ = 0.5f;
 
+        // Display radius soft-limit. The analytic signal can exceed the unit circle on loud passages,
+        // and a radius of 1.0 reaches the top/bottom edge of the scope, so anything louder clips
+        // against the viewport and draws straight "squarish" edges. Compressing the radius through
+        // tanh keeps the trace inside the circle: it is near-linear for small signals (quiet detail
+        // preserved) and gently rounds off loud transients instead of clipping.
+        private const double DISPLAY_GAIN = 1.0;   // Small-signal gain.
+        private const double DISPLAY_LIMIT = 0.9;  // Max radius (1.0 == touches the top/bottom edge).
+
         private const int DISPLAY_ARRAY_STRIDE = 4; // Each element sent to the display function needs to have 4 floats.
         private const int PREVIOUS_SAMPLES_LENGTH = 3 * DISPLAY_ARRAY_STRIDE;
 
@@ -81,7 +90,6 @@ namespace AudioScope
 
         private Complex[] _timeRingBuffer = new Complex[2 * FFT_SIZE];
         private int _timeIndex = 0;
-        private float[] _previousResults = new float[3 * 4];
         private Complex _prevInput = new Complex(0.0f, 0.0f);
         private Complex _prevDiff = new Complex(0.0f, 0.0f);
         private float[] _lastSample;
@@ -127,8 +135,25 @@ namespace AudioScope
 
             float scale = (float)FFT_SIZE;
 
-            var complexAnalyticBuffer = freqBuffer.Skip(FFT_SIZE - BUFFER_SIZE).Take(BUFFER_SIZE).ToArray();
-            var data = new float[BUFFER_SIZE * DISPLAY_ARRAY_STRIDE + PREVIOUS_SAMPLES_LENGTH];
+            // Draw a single contiguous slice of the analytic signal each frame. The displayed curve
+            // is BUFFER_SIZE points plus DISPLAY_ADJACENCY extra points at the start that act as the
+            // left neighbour required by GL_LINE_STRIP_ADJACENCY. Every vertex - adjacency included -
+            // comes from the same contiguous block, so there is no jump between points.
+            //
+            // The previous code wrote the computed points starting at index 0 but reserved the extra
+            // PREVIOUS_SAMPLES_LENGTH slots at the END of the array, leaving those vertices at the
+            // origin (0,0); it then overwrote the first few vertices with a "previous results" buffer
+            // that was itself copied from those never-written (zero) tail slots. The net effect was
+            // several vertices stuck at (0,0) at both ends of the strip, which drew radial "spokes"
+            // into the centre of the scope. One contiguous slice removes them.
+            //
+            // The slice is taken from the centre of the inverse-FFT block to stay away from the
+            // circular-convolution wrap-around at the block edges.
+            const int DISPLAY_ADJACENCY = PREVIOUS_SAMPLES_LENGTH / DISPLAY_ARRAY_STRIDE;
+            int displayCount = BUFFER_SIZE + DISPLAY_ADJACENCY;
+            int analyticOffset = (FFT_SIZE - displayCount) / 2;
+            var complexAnalyticBuffer = freqBuffer.Skip(analyticOffset).Take(displayCount).ToArray();
+            var data = new float[displayCount * DISPLAY_ARRAY_STRIDE];
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
             {
@@ -139,16 +164,27 @@ namespace AudioScope
                 _prevDiff = diff;
                 var output = _angleLowPass.Apply(angle);
 
-                data[k * DISPLAY_ARRAY_STRIDE] = (float)(complexAnalyticBuffer[k].Real / scale);
-                data[k * DISPLAY_ARRAY_STRIDE + 1] = (float)(complexAnalyticBuffer[k].Imaginary / scale);
+                double reX = complexAnalyticBuffer[k].Real / scale;
+                double imY = complexAnalyticBuffer[k].Imaginary / scale;
+
+                // Soft-limit the radius so loud passages stay inside the scope instead of clipping
+                // against the viewport edges (which draws straight, squarish lines).
+                double r = Math.Sqrt(reX * reX + imY * imY);
+                if (r > 1e-9)
+                {
+                    double compressed = DISPLAY_LIMIT * Math.Tanh(r * DISPLAY_GAIN / DISPLAY_LIMIT);
+                    double s = compressed / r;
+                    reX *= s;
+                    imY *= s;
+                }
+
+                data[k * DISPLAY_ARRAY_STRIDE] = (float)reX;
+                data[k * DISPLAY_ARRAY_STRIDE + 1] = (float)imY;
                 data[k * DISPLAY_ARRAY_STRIDE + 2] = (float)Math.Pow(2, output); // Smoothed angular velocity.
                 data[k * DISPLAY_ARRAY_STRIDE + 3] = _noiseLowPass.Apply((float)Math.Abs(angle - output)); // Average angular noise.
             }
 
-            Array.Copy(_previousResults, 0, data, 0, PREVIOUS_SAMPLES_LENGTH);
             _lastSample = data;
-
-            _previousResults = data.Skip(data.Length - PREVIOUS_SAMPLES_LENGTH).ToArray();
         }
 
         public static float GetAngle(Complex v, Complex u)
