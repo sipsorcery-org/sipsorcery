@@ -1,33 +1,62 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <head>
     <script type="text/javascript">
-        const WEBSOCKET_URL = "ws://127.0.0.1:8081/"
+        const BASE_WEBSOCKET_URL = "ws://127.0.0.1:8081";
 
-        var pc, ws;
+        // The three audio scope sources:
+        //  - music / synth : the server generates the audio and renders the scope (browser only receives).
+        //  - microphone    : the "reverse" mode - the browser sends its microphone audio to the server and
+        //                    the server renders a scope of that received audio back as the video stream.
+        const SCOPE_SOURCES = {
+            music:      { path: "/",           sendMic: false },
+            synth:      { path: "/synth",      sendMic: false },
+            microphone: { path: "/mic", sendMic: true  }
+        };
+
+        var pc, ws, micStream;
+
+        function updateUrl() {
+            const source = SCOPE_SOURCES[document.querySelector('#scopeSource').value];
+            document.querySelector('#websockurl').value = BASE_WEBSOCKET_URL + source.path;
+        }
 
         async function start() {
+
+            const source = SCOPE_SOURCES[document.querySelector('#scopeSource').value];
 
             pc = new RTCPeerConnection();
 
             pc.ontrack = evt => {
-				console.log("Adding track to video control.");
-				document.querySelector('#videoCtl').srcObject = evt.streams[0];
-				
-				evt.streams[0].onunmute = () => {
-					console.log("Adding track to video control.");
-				};
-                    
-			   evt.streams[0].onended = () => {
-				  console.log("Track ended.");
-			   };
-			}
-			
+                console.log("Adding track to video control.");
+                document.querySelector('#videoCtl').srcObject = evt.streams[0];
+
+                evt.streams[0].onunmute = () => {
+                    console.log("Track unmuted.");
+                };
+
+                evt.streams[0].onended = () => {
+                    console.log("Track ended.");
+                };
+            };
+
             pc.onicecandidate = evt => evt.candidate && ws.send(JSON.stringify(evt.candidate));
 
-			pc.onclose= () => {
-			   console.log("pc close");
-			};
-			
+            pc.onclose = () => {
+                console.log("pc close");
+            };
+
+            // Microphone (reverse) mode: capture the local microphone up front so it can be added
+            // to the peer connection and sent to the server.
+            micStream = null;
+            if (source.sendMic) {
+                try {
+                    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                } catch (e) {
+                    console.error("Could not get microphone access: " + e);
+                    return;
+                }
+            }
+
             ws = new WebSocket(document.querySelector('#websockurl').value, []);
             ws.onmessage = async function (evt) {
                 var obj = JSON.parse(evt.data);
@@ -36,6 +65,12 @@
                 }
                 else if (obj?.sdp) {
                     await pc.setRemoteDescription(new RTCSessionDescription(obj));
+
+                    // Attach the microphone track(s) so our audio is sent to the server before answering.
+                    if (micStream) {
+                        micStream.getTracks().forEach(track => pc.addTrack(track, micStream));
+                    }
+
                     pc.createAnswer()
                         .then((answer) => pc.setLocalDescription(answer))
                         .then(() => ws.send(JSON.stringify(pc.localDescription)));
@@ -44,17 +79,25 @@
         };
 
         async function closePeer() {
+            micStream?.getTracks().forEach(track => track.stop());
             await pc?.close();
             await ws?.close();
         };
-
-   	
 
     </script>
 </head>
 <body>
 
     <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+
+    <div>
+        <label for="scopeSource">Audio scope source:</label>
+        <select id="scopeSource" onchange="updateUrl();">
+            <option value="music">Music (server generated)</option>
+            <option value="synth">Synth (server generated)</option>
+            <option value="microphone">Microphone (your mic - reverse)</option>
+        </select>
+    </div>
 
     <div>
         <input type="text" id="websockurl" size="40" />
@@ -65,5 +108,5 @@
 </body>
 
 <script>
-    document.querySelector('#websockurl').value = WEBSOCKET_URL;
+    updateUrl();
 </script>

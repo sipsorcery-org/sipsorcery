@@ -106,6 +106,14 @@ class Program
             peer.CreatePeerConnection = () => CreatePeerConnection(AudioScopeSourceEnum.Synth);
             _pc = peer.RTCPeerConnection;
         });
+        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/mic", (peer) =>
+        {
+            // For the purposes of the demo only one peer connection at a time is managed.
+            // The "reverse" scope: the browser sends its microphone audio to us and we render a
+            // scope of that received audio back as the video stream.
+            peer.CreatePeerConnection = () => CreatePeerConnection(AudioScopeSourceEnum.Microphone);
+            _pc = peer.RTCPeerConnection;
+        });
         webSocketServer.Start();
 
         Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
@@ -143,8 +151,7 @@ class Program
         var videoEndPoint = new FFmpegVideoEndPoint();
         var audioEncoder = new AudioEncoder();
 
-        var audioSource = new AudioExtrasSource(new AudioEncoder(),
-            new AudioSourceOptions { AudioSource = audioScopeSource == AudioScopeSourceEnum.Synth ? AudioSourcesEnum.Pad : AudioSourcesEnum.Music });
+        bool isMicrophone = audioScopeSource == AudioScopeSourceEnum.Microphone;
 
         // For the sake of the demo stick to a basic audio format with a predictable sampling rate.
         var supportedAudioFormats = new List<AudioFormat>
@@ -153,39 +160,15 @@ class Program
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
         };
 
+        // The scope's video is always produced by this app and sent to the peer.
         MediaStreamTrack videoTrack = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
-        MediaStreamTrack audioTrack = new MediaStreamTrack(supportedAudioFormats, MediaStreamStatusEnum.SendOnly);
-        pc.addTrack(audioTrack);
-
         videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
-        audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-
         pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
-        pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
-        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
-        pc.onsignalingstatechange += () =>
+
+        // Renders one audio scope video frame from a block of decoded PCM samples.
+        void RenderScope(short[] decoded)
         {
-            logger.LogDebug($"Signalling state change to {pc.signalingState}.");
-
-            if (pc.signalingState == RTCSignalingState.have_local_offer)
-            {
-                logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
-            }
-            else if (pc.signalingState == RTCSignalingState.stable)
-            {
-                logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
-            }
-        };
-
-        audioSource.OnAudioSourceEncodedSample += (uint durationRtpUnits, byte[] sample) =>
-        {
-            // Fires once per audio packet. The audio itself is produced and sent to the peer by the
-            // audio source above; here we only build the scope's input and render the video frame.
-            // Note: In theory the need to decode the audio sample should be avoidable if the scope can be 
-            // driven directly from the raw unencoded audio samples.
-            var decoded = audioEncoder.DecodeAudio(sample, pc.AudioStream.NegotiatedFormat.ToAudioFormat());
-
             Complex[] samples;
 
             if (audioScopeSource == AudioScopeSourceEnum.Synth)
@@ -218,7 +201,7 @@ class Program
             }
             else
             {
-                // Visualise the decoded music directly.
+                // Visualise the decoded audio (music or microphone) directly.
                 samples = decoded.Select(s => new Complex(s / 32768f, 0f)).ToArray();
             }
 
@@ -229,6 +212,61 @@ class Program
                 AudioScopeRenderer.Height,
                 frame,
                 VideoPixelFormatsEnum.Rgb);
+        }
+
+        // For music/synth this app generates the audio; for microphone the audio comes from the peer.
+        AudioExtrasSource audioSource = null;
+
+        if (isMicrophone)
+        {
+            // "Reverse" scope: the browser sends its microphone audio to us (receive only audio m-line)
+            // and we render a scope of that received audio back as the video stream.
+            MediaStreamTrack audioTrack = new MediaStreamTrack(supportedAudioFormats, MediaStreamStatusEnum.RecvOnly);
+            pc.addTrack(audioTrack);
+
+            pc.OnAudioFrameReceived += (EncodedAudioFrame frame) =>
+            {
+                // Decode the received microphone audio and drive the scope from it.
+                var decoded = audioEncoder.DecodeAudio(frame.EncodedAudio, frame.AudioFormat);
+                RenderScope(decoded);
+            };
+        }
+        else
+        {
+            // Music / Synth: generate the audio, send it to the peer, and drive the scope from it.
+            audioSource = new AudioExtrasSource(new AudioEncoder(),
+                new AudioSourceOptions { AudioSource = audioScopeSource == AudioScopeSourceEnum.Synth ? AudioSourcesEnum.Pad : AudioSourcesEnum.Music });
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(supportedAudioFormats, MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(audioTrack);
+
+            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+            pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
+
+            audioSource.OnAudioSourceEncodedSample += (uint durationRtpUnits, byte[] sample) =>
+            {
+                // Fires once per audio packet. The audio itself is produced and sent to the peer by the
+                // audio source above; here we only build the scope's input and render the video frame.
+                // Note: In theory the need to decode the audio sample should be avoidable if the scope can be
+                // driven directly from the raw unencoded audio samples.
+                var decoded = audioEncoder.DecodeAudio(sample, pc.AudioStream.NegotiatedFormat.ToAudioFormat());
+                RenderScope(decoded);
+            };
+        }
+
+        pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
+        pc.onsignalingstatechange += () =>
+        {
+            logger.LogDebug($"Signalling state change to {pc.signalingState}.");
+
+            if (pc.signalingState == RTCSignalingState.have_local_offer)
+            {
+                logger.LogDebug($"Local SDP offer:\n{pc.localDescription.sdp}");
+            }
+            else if (pc.signalingState == RTCSignalingState.stable)
+            {
+                logger.LogDebug($"Remote SDP offer:\n{pc.remoteDescription.sdp}");
+            }
         };
 
         pc.onconnectionstatechange += async (state) =>
@@ -237,7 +275,11 @@ class Program
 
             if (state == RTCPeerConnectionState.connected)
             {
-                await audioSource.StartAudio();
+                // Only the music/synth modes have a local audio source to start.
+                if (audioSource != null)
+                {
+                    await audioSource.StartAudio();
+                }
             }
             else if (state == RTCPeerConnectionState.failed)
             {
@@ -245,7 +287,10 @@ class Program
             }
             else if (state == RTCPeerConnectionState.closed)
             {
-                await audioSource.CloseAudio();
+                if (audioSource != null)
+                {
+                    await audioSource.CloseAudio();
+                }
             }
         };
 
