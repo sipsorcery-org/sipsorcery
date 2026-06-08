@@ -821,6 +821,9 @@ namespace SIPSorcery.SIP
             // Contact header.
             if (header is { Contact: { Count: 1 } })
             {
+                Debug.Assert(header.Contact.Count == 1);
+                var contactHeader = header.Contact[0];
+
                 if (!string.IsNullOrEmpty(ContactHost))
                 {
                     // A custom ContactHost will always take precedence.
@@ -839,8 +842,6 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    Debug.Assert(header.Contact.Count == 1);
-                    var contactHeader = header.Contact[0];
                     if (contactHeader.ContactURI.Host.StartsWith(IPAddress.Any.ToString()) ||
                         contactHeader.ContactURI.Host.StartsWith(IPAddress.IPv6Any.ToString()))
                     {
@@ -848,16 +849,16 @@ namespace SIPSorcery.SIP
                         Debug.Assert(copy.Contact.Count == 1);
                         copy.Contact[0].ContactURI.Host = sendFromEndPoint.ToString();
                     }
+                }
 
-                    if (contactHeader.ContactURI.Scheme == SIPSchemesEnum.sip &&
-                        sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp &&
-                        header.CSeqMethod != SIPMethodsEnum.REGISTER)
-                    {
-                        // REGISTER requests need the option to overrule the scheme if the caller so chooses.
-                        copy = copy ?? header.Copy();
-                        Debug.Assert(copy.Contact.Count == 1);
-                        copy.Contact[0].ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
-                    }
+                if (contactHeader.ContactURI.Scheme == SIPSchemesEnum.sip &&
+                    sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp &&
+                    header.CSeqMethod != SIPMethodsEnum.REGISTER)
+                {
+                    // REGISTER requests need the option to overrule the scheme if the caller so chooses.
+                    copy = copy ?? header.Copy();
+                    Debug.Assert(copy.Contact.Count == 1);
+                    copy.Contact[0].ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
                 }
             }
 
