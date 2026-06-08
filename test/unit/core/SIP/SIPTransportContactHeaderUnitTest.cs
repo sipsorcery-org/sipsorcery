@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPTransportContactHeaderUnitTest.cs
 //
 // Description: Regression tests for SIPTransport.AdjustHeadersForEndPoint Contact
@@ -34,7 +34,6 @@
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
 using Xunit;
 
@@ -45,7 +44,7 @@ namespace SIPSorcery.SIP.UnitTests
     {
         private static readonly string m_CRLF = SIPConstants.CRLF;
 
-        private Microsoft.Extensions.Logging.ILogger logger = null;
+        private readonly Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPTransportContactHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
