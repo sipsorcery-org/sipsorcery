@@ -23,7 +23,7 @@ namespace Vpx.Net
 {
     public class VP8Codec : IVideoEncoder, IDisposable
     {
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<VP8Codec>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<VP8Codec>();
 
         private static readonly List<VideoFormat> _supportedFormats = new List<VideoFormat>
         {
