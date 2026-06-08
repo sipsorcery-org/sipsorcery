@@ -18,8 +18,8 @@
 // which silently dropped the transport parameter whenever ContactHost was set and
 // the send was over TCP/TLS/WS. RegressionGuard below fails against that change.
 //
-// AdjustHeadersForEndPoint is private but is a pure function of its arguments and
-// the ContactHost field (no I/O), so it is exercised directly via reflection.
+// AdjustHeadersForEndPoint is internal (InternalsVisibleTo SIPSorcery.UnitTests) and is a pure
+// function of its arguments and the ContactHost field (no I/O), so it is called directly.
 //
 // Author(s):
 // Aaron Clauson
@@ -32,7 +32,6 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
-using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -72,7 +71,7 @@ namespace SIPSorcery.SIP.UnitTests
                 var header = ParseRequest("INVITE", "<sip:alice@192.168.1.2:5065>").Header;
                 var sendFrom = new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 5060);
 
-                var adjusted = AdjustHeaders(transport, sendFrom, header);
+                var adjusted = transport.AdjustHeadersForEndPoint(sendFrom, header);
 
                 Assert.Single(adjusted.Contact);
                 // Host override applied (confirms the ContactHost branch executed).
@@ -102,7 +101,7 @@ namespace SIPSorcery.SIP.UnitTests
                 var header = ParseRequest("INVITE", "<sip:alice@192.168.1.2:5065>").Header;
                 var sendFrom = new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 5060);
 
-                var adjusted = AdjustHeaders(transport, sendFrom, header);
+                var adjusted = transport.AdjustHeadersForEndPoint(sendFrom, header);
 
                 Assert.Equal(SIPProtocolsEnum.tcp, adjusted.Contact[0].ContactURI.Protocol);
             }
@@ -129,7 +128,7 @@ namespace SIPSorcery.SIP.UnitTests
                 var header = ParseRequest("REGISTER", "<sip:alice@192.168.1.2:5065>").Header;
                 var sendFrom = new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 5060);
 
-                var adjusted = AdjustHeaders(transport, sendFrom, header);
+                var adjusted = transport.AdjustHeadersForEndPoint(sendFrom, header);
 
                 Assert.Equal("sipsorcery.example.com", adjusted.Contact[0].ContactURI.Host);
                 // REGISTER is excluded from the transport override, so it stays at the default udp.
@@ -157,7 +156,7 @@ namespace SIPSorcery.SIP.UnitTests
                 var header = ParseRequest("INVITE", "<sip:alice@192.168.1.2:5065>").Header;
                 var sendFrom = new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.Loopback, 5060);
 
-                var adjusted = AdjustHeaders(transport, sendFrom, header);
+                var adjusted = transport.AdjustHeadersForEndPoint(sendFrom, header);
 
                 Assert.Equal("sipsorcery.example.com", adjusted.Contact[0].ContactURI.Host);
                 Assert.Equal(SIPProtocolsEnum.udp, adjusted.Contact[0].ContactURI.Protocol);
@@ -184,17 +183,6 @@ namespace SIPSorcery.SIP.UnitTests
 
             var buffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             return SIPRequest.ParseSIPRequest(buffer);
-        }
-
-        private static SIPHeader AdjustHeaders(SIPTransport transport, SIPEndPoint sendFrom, SIPHeader header)
-        {
-            var method = typeof(SIPTransport).GetMethod(
-                "AdjustHeadersForEndPoint",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
-            Assert.NotNull(method);
-
-            return (SIPHeader)method.Invoke(transport, new object[] { sendFrom, header });
         }
     }
 }

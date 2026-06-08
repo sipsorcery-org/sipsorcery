@@ -788,7 +788,7 @@ namespace SIPSorcery.SIP
         /// <param name="sendFromSIPEndPoint">The IP end point the request or response is being sent from.</param>
         /// <param name="header">The SIP header object to apply the adjustments to. The header object will be updated
         /// in place with any header adjustments.</param>
-        private SIPHeader AdjustHeadersForEndPoint(SIPEndPoint sendFromSIPEndPoint, SIPHeader header)
+        internal SIPHeader AdjustHeadersForEndPoint(SIPEndPoint sendFromSIPEndPoint, SIPHeader header)
         {
             IPEndPoint sendFromEndPoint = sendFromSIPEndPoint.GetIPEndPoint();
 
