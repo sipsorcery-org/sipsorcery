@@ -98,7 +98,7 @@ namespace SIPSorcery.SIP
 
                 if (RemoteUserField?.URI is { } remoteUserFieldUri && !remoteUserFieldUri.User.IsNullOrBlank())
                 {
-                    dialogueNameBuilder.Append("R(").Append(RemoteUserField).Append(')');
+                    dialogueNameBuilder.Append("R(").Append(remoteUserFieldUri).Append(')');
                 }
                 else
                 {
