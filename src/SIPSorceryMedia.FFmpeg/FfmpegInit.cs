@@ -83,7 +83,11 @@ namespace SIPSorceryMedia.FFmpeg
 
             RegisterFFmpegBinaries(libPath);
 
-            logger.LogInformation("FFmpeg version info: {VersionInfo}", ffmpeg.av_version_info());
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                string versionInfo = ffmpeg.av_version_info();
+                logger.LogInformation("FFmpeg version info: {VersionInfo}", versionInfo);
+            }
 
             if (logLevel.HasValue)
             {

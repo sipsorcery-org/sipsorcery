@@ -122,7 +122,7 @@ namespace SIPSorcery.SIP
 
                     if (resultTask.IsFaulted)
                     {
-                        logger.LogWarning($"SIP TLS Channel failed to connect to remote host. The authentication handshake failed. Error: {resultTask.Exception?.Message} {resultTask.Exception?.InnerException?.Message} {resultTask.Exception?.StackTrace}");
+                        logger.LogWarning(resultTask.Exception, "SIP TLS Channel failed to connect to remote host. The authentication handshake failed.");
                         sslStream.Close();
                         return;
                     }

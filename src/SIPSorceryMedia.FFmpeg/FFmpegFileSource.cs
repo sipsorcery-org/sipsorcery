@@ -110,7 +110,10 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
     {
         if (_FFmpegAudioSource != null)
         {
-            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            logger.LogDebug("Setting audio source format to {FormatId}:{Codec} {ClockRate}.",
+                audioFormat.FormatID,
+                audioFormat.Codec,
+                audioFormat.ClockRate);
             _FFmpegAudioSource.SetAudioSourceFormat(audioFormat);
         }
     }
@@ -179,7 +182,10 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
     {
         if (_FFmpegVideoSource != null)
         {
-            logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+            logger.LogDebug("Setting video source format to {FormatId}:{Codec} {ClockRate}.",
+                videoFormat.FormatID,
+                videoFormat.Codec,
+                videoFormat.ClockRate);
             _FFmpegVideoSource.SetVideoSourceFormat(videoFormat);
         }
     }

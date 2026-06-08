@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SdpNormaliser.cs
 //
 // Description: Replaces the non-deterministic fields in a serialised SDP
@@ -44,62 +44,113 @@ namespace SIPSorcery.Net.UnitTests.Helpers
     /// Strips non-deterministic fields from a serialised SDP so the rest
     /// can be compared as a golden-master fixture. See file header.
     /// </summary>
-    public static class SdpNormaliser
+    public static partial class SdpNormaliser
     {
         // Capture the *positional* fields of an o= line; per RFC 4566:
         //   o=<username> <sess-id> <sess-version> <nettype> <addrtype> <unicast-address>
-        private static readonly Regex s_oLine = new Regex(
-            @"^o=(?<user>\S+)\s+\S+\s+\S+\s+(?<net>\S+)\s+(?<addr>\S+)\s+(?<host>\S+)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string OLinePattern = @"^o=(?<user>\S+)\s+\S+\s+\S+\s+(?<net>\S+)\s+(?<addr>\S+)\s+(?<host>\S+)$";
 
-        private static readonly Regex s_mLine = new Regex(
-            @"^m=(?<kind>\S+)\s+(?<port>\d+)(?<rest>(\s+.*)?)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string MLinePattern = @"^m=(?<kind>\S+)\s+(?<port>\d+)(?<rest>(\s+.*)?)$";
 
-        private static readonly Regex s_cLine = new Regex(
-            @"^c=(?<net>\S+)\s+(?<addr>\S+)\s+(?<host>\S+)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string CLinePattern = @"^c=(?<net>\S+)\s+(?<addr>\S+)\s+(?<host>\S+)$";
 
-        private static readonly Regex s_iceUfrag = new Regex(
-            @"^a=ice-ufrag:\S+$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string IceUfragPattern = @"^a=ice-ufrag:\S+$";
 
-        private static readonly Regex s_icePwd = new Regex(
-            @"^a=ice-pwd:\S+$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string IcePwdPattern = @"^a=ice-pwd:\S+$";
 
-        private static readonly Regex s_fingerprint = new Regex(
-            @"^a=fingerprint:(?<alg>\S+)\s+\S+$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string FingerprintPattern = @"^a=fingerprint:(?<alg>\S+)\s+\S+$";
 
-        private static readonly Regex s_ssrc = new Regex(
-            @"^a=ssrc:\d+(?<rest>(\s+.*)?)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string SsrcPattern = @"^a=ssrc:\d+(?<rest>(\s+.*)?)$";
 
-        private static readonly Regex s_ssrcGroup = new Regex(
-            @"^a=ssrc-group:(?<sem>\S+)(?<rest>(\s+\d+)+)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string SsrcGroupPattern = @"^a=ssrc-group:(?<sem>\S+)(?<rest>(\s+\d+)+)$";
 
-        private static readonly Regex s_candidate = new Regex(
-            @"^a=candidate:.+$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string CandidatePattern = @"^a=candidate:.+$";
 
         // a=crypto:<tag> <suite> inline:<key>|<lifetime>|<mki>
-        private static readonly Regex s_cryptoInline = new Regex(
-            @"^(a=crypto:\S+\s+\S+\s+inline:)\S+",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string CryptoInlinePattern = @"^(a=crypto:\S+\s+\S+\s+inline:)\S+";
 
         // cname:<guid|hash> shows up inside a=ssrc lines and (rarely) on
         // its own a=cname: line. CNAMEs are randomised per-session per RFC
         // 3550 so always volatile.
-        private static readonly Regex s_cname = new Regex(
-            @"cname:\S+",
-            RegexOptions.Compiled);
+        private const string CNamePattern = @"cname:\S+";
 
         // a=msid:<stream-id> <track-id> — both ids are volatile.
-        private static readonly Regex s_msid = new Regex(
-            @"^a=msid:\S+(?<rest>(\s+\S+)*)$",
-            RegexOptions.Multiline | RegexOptions.Compiled);
+        private const string MsidPattern = @"^a=msid:\S+(?<rest>(\s+\S+)*)$";
+
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(OLinePattern, RegexOptions.Multiline)]
+        private static partial Regex OLineRegex();
+
+        [GeneratedRegex(MLinePattern, RegexOptions.Multiline)]
+        private static partial Regex MLineRegex();
+
+        [GeneratedRegex(CLinePattern, RegexOptions.Multiline)]
+        private static partial Regex CLineRegex();
+
+        [GeneratedRegex(IceUfragPattern, RegexOptions.Multiline)]
+        private static partial Regex IceUfragRegex();
+
+        [GeneratedRegex(IcePwdPattern, RegexOptions.Multiline)]
+        private static partial Regex IcePwdRegex();
+
+        [GeneratedRegex(FingerprintPattern, RegexOptions.Multiline)]
+        private static partial Regex FingerprintRegex();
+
+        [GeneratedRegex(SsrcPattern, RegexOptions.Multiline)]
+        private static partial Regex SsrcRegex();
+
+        [GeneratedRegex(SsrcGroupPattern, RegexOptions.Multiline)]
+        private static partial Regex SsrcGroupRegex();
+
+        [GeneratedRegex(CandidatePattern, RegexOptions.Multiline)]
+        private static partial Regex CandidateRegex();
+
+        [GeneratedRegex(CryptoInlinePattern, RegexOptions.Multiline)]
+        private static partial Regex CryptoInlineRegex();
+
+        [GeneratedRegex(CNamePattern)]
+        private static partial Regex CNameRegex();
+
+        [GeneratedRegex(MsidPattern, RegexOptions.Multiline)]
+        private static partial Regex MsidRegex();
+#else
+        private static readonly Regex s_oLine = new Regex(OLinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_mLine = new Regex(MLinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_cLine = new Regex(CLinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_iceUfrag = new Regex(IceUfragPattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_icePwd = new Regex(IcePwdPattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_fingerprint = new Regex(FingerprintPattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_ssrc = new Regex(SsrcPattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_ssrcGroup = new Regex(SsrcGroupPattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_candidate = new Regex(CandidatePattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_cryptoInline = new Regex(CryptoInlinePattern, RegexOptions.Multiline | RegexOptions.Compiled);
+        private static readonly Regex s_cname = new Regex(CNamePattern, RegexOptions.Compiled);
+        private static readonly Regex s_msid = new Regex(MsidPattern, RegexOptions.Multiline | RegexOptions.Compiled);
+
+        private static Regex OLineRegex() => s_oLine;
+
+        private static Regex MLineRegex() => s_mLine;
+
+        private static Regex CLineRegex() => s_cLine;
+
+        private static Regex IceUfragRegex() => s_iceUfrag;
+
+        private static Regex IcePwdRegex() => s_icePwd;
+
+        private static Regex FingerprintRegex() => s_fingerprint;
+
+        private static Regex SsrcRegex() => s_ssrc;
+
+        private static Regex SsrcGroupRegex() => s_ssrcGroup;
+
+        private static Regex CandidateRegex() => s_candidate;
+
+        private static Regex CryptoInlineRegex() => s_cryptoInline;
+
+        private static Regex CNameRegex() => s_cname;
+
+        private static Regex MsidRegex() => s_msid;
+#endif
 
         /// <summary>
         /// Returns a normalised copy of the SDP with the volatile fields
@@ -113,36 +164,36 @@ namespace SIPSorcery.Net.UnitTests.Helpers
             // anchored so they don't bleed across lines.
             string s = sdp.Replace("\r\n", "\n");
 
-            s = s_oLine.Replace(s, m =>
+            s = OLineRegex().Replace(s, m =>
                 $"o={m.Groups["user"].Value} <SID> <SVER> {m.Groups["net"].Value} {m.Groups["addr"].Value} {m.Groups["host"].Value}");
 
-            s = s_mLine.Replace(s, m =>
+            s = MLineRegex().Replace(s, m =>
                 $"m={m.Groups["kind"].Value} <PORT>{m.Groups["rest"].Value}");
 
-            s = s_cLine.Replace(s, m =>
+            s = CLineRegex().Replace(s, m =>
                 $"c={m.Groups["net"].Value} {m.Groups["addr"].Value} <IP>");
 
-            s = s_iceUfrag.Replace(s, "a=ice-ufrag:<UFRAG>");
-            s = s_icePwd.Replace(s, "a=ice-pwd:<PWD>");
+            s = IceUfragRegex().Replace(s, "a=ice-ufrag:<UFRAG>");
+            s = IcePwdRegex().Replace(s, "a=ice-pwd:<PWD>");
 
-            s = s_fingerprint.Replace(s, m =>
+            s = FingerprintRegex().Replace(s, m =>
                 $"a=fingerprint:{m.Groups["alg"].Value} <HASH>");
 
-            s = s_ssrc.Replace(s, m =>
+            s = SsrcRegex().Replace(s, m =>
                 $"a=ssrc:<SSRC>{m.Groups["rest"].Value}");
 
-            s = s_ssrcGroup.Replace(s, m =>
+            s = SsrcGroupRegex().Replace(s, m =>
                 $"a=ssrc-group:{m.Groups["sem"].Value} <SSRC>");
 
-            s = s_candidate.Replace(s, "a=candidate:<CANDIDATE>");
+            s = CandidateRegex().Replace(s, "a=candidate:<CANDIDATE>");
 
-            s = s_cryptoInline.Replace(s, "$1<CRYPTO_KEY>");
+            s = CryptoInlineRegex().Replace(s, "$1<CRYPTO_KEY>");
 
-            s = s_cname.Replace(s, "cname:<CNAME>");
+            s = CNameRegex().Replace(s, "cname:<CNAME>");
 
             // msid keeps the structure (one or two tokens) but replaces
             // the random ids with stable labels so two runs match.
-            s = s_msid.Replace(s, m =>
+            s = MsidRegex().Replace(s, m =>
             {
                 // If the line has a track id (two tokens), keep both as placeholders.
                 if (!string.IsNullOrEmpty(m.Groups["rest"].Value))

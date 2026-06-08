@@ -9,7 +9,7 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public class FFmpegVideoDecoder : IDisposable
     {
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoDecoder>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoDecoder>();
 
         unsafe private AVInputFormat* _inputFormat = null;
 
@@ -82,8 +82,10 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     foreach (String key in decoderOptions.Keys)
                     {
-                        if(ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0) < 0)
-                            logger.LogWarning($"Cannot set option [{key}]=[{decoderOptions[key]}]");
+                        if (ffmpeg.av_dict_set(&options, key, decoderOptions[key], 0) < 0)
+                        {
+                            logger.LogWarning("Cannot set option [{OptionKey}]=[{OptionValue}]", key, decoderOptions[key]);
+                        }
                     }
                 }
 
@@ -114,7 +116,15 @@ namespace SIPSorceryMedia.FFmpeg
                     return false;
                 }
 
-                logger.LogDebug($"FFmpeg file source decoder [{ffmpeg.avcodec_get_name(vidCodec->id)}] video codec for stream [{_videoStreamIndex}] - url:[{_sourceUrl}].");
+                if (logger.IsEnabled(LogLevel.Debug))
+                {
+                    string codecName = ffmpeg.avcodec_get_name(vidCodec->id);
+                    logger.LogDebug("FFmpeg file source decoder [{CodecName}] video codec for stream [{VideoStreamIndex}] - url:[{SourceUrl}].",
+                        codecName,
+                        _videoStreamIndex,
+                        _sourceUrl);
+                }
+
                 _vidDecCtx = ffmpeg.avcodec_alloc_context3(vidCodec);
                 if (_vidDecCtx == null)
                 {
@@ -313,7 +323,7 @@ namespace SIPSorceryMedia.FFmpeg
                     }
                     else
                     {
-                        logger.LogDebug($"FFmpeg end of file for source {_sourceUrl}.");
+                        logger.LogDebug("FFmpeg end of file for source {SourceUrl}.", _sourceUrl);
 
                         if (!_isClosed && _repeat)
                         {

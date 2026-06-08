@@ -9,7 +9,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -180,7 +179,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Parameter 1={Parameter1}.", testParam1.ToString());
 
             Assert.True(testParam1.Has("emptykey"), "The empty parameter \"emptykey\" was not correctly extracted from the parameter string.");
-            Assert.True(Regex.Match(testParam1.ToString(), "emptykey").Success, "The emptykey name was not in the output parameter string.");
+            Assert.True(testParam1.ToString().Contains("emptykey"), "The emptykey name was not in the output parameter string.");
         }
 
         /// <summary>

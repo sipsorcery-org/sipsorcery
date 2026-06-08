@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WebSocketSharp.Server;
+﻿using WebSocketSharp.Server;
 using WebSocketSharp.Net.WebSockets;
 using System.Net;
 using SIPSorcery.Net;
 using DnsClient.Internal;
 using Microsoft.Extensions.Logging;
-using System.ComponentModel;
 
 namespace RtspToWebRtcRestreamer
 {
     internal class WebSocketSignalingServer : IDisposable
     {
-        private ILogger<WebSocketSignalingServer> _logger;
+        private static readonly ILogger<WebSocketSignalingServer> _logger = SIPSorcery.LogFactory.CreateLogger<WebSocketSignalingServer>();
         private int _port;
         private WebSocketServer _ws;
         private FFmpegListener _ffmpegListener;

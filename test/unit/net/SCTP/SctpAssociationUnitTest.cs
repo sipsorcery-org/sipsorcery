@@ -27,7 +27,7 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class SctpAssociationUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public SctpAssociationUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

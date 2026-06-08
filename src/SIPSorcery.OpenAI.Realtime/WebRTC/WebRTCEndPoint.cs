@@ -134,19 +134,19 @@ public class WebRTCEndPoint : IWebRTCEndPoint, IDisposable
         // This call is synchronous when the WebRTC connection is not yet connected.
         var dataChannel = pc.createDataChannel(OPENAI_DATACHANNEL_NAME).Result;
 
-        pc.onconnectionstatechange += state => _logger.LogDebug($"Peer connection connected changed to {state}.");
-        pc.OnTimeout += mediaType => _logger.LogDebug($"Timeout on media {mediaType}.");
-        pc.oniceconnectionstatechange += state => _logger.LogDebug($"ICE connection state changed to {state}.");
+        pc.onconnectionstatechange += state => _logger.LogDebug("Peer connection state changed to {ConnectionState}.", state);
+        pc.OnTimeout += mediaType => _logger.LogDebug("Timeout on media {MediaType}.", mediaType);
+        pc.oniceconnectionstatechange += state => _logger.LogDebug("ICE connection state changed to {IceConnectionState}.", state);
 
         pc.onsignalingstatechange += () =>
         {
             if (pc.signalingState == RTCSignalingState.have_local_offer)
             {
-                _logger.LogTrace($"Local SDP:\n{pc.localDescription.sdp}");
+                _logger.LogTrace("Local SDP:\n{LocalSdp}", pc.localDescription.sdp);
             }
             else if (pc.signalingState is RTCSignalingState.have_remote_offer or RTCSignalingState.stable)
             {
-                _logger.LogTrace($"Remote SDP:\n{pc.remoteDescription?.sdp}");
+                _logger.LogTrace("Remote SDP:\n{RemoteSdp}", pc.remoteDescription?.sdp);
             }
         };
 
@@ -197,10 +197,13 @@ public class WebRTCEndPoint : IWebRTCEndPoint, IDisposable
                     return;
                 }
 
-                _logger.LogDebug($"Sending initial response create to first call data channel {dc.label}.");
-                _logger.LogTrace(message.ToJson());
+                _logger.LogDebug("Sending initial response create to first call data channel {DataChannelLabel}.", dc.label);
 
-                dc.send(message.ToJson());
+                var messageJson = message.ToJson();
+
+                _logger.LogTrace("Data channel message payload: {MessageJson}", messageJson);
+
+                dc.send(messageJson);
             },
             () => _logger.LogError("No peer connection available to send data channel message.")
         );

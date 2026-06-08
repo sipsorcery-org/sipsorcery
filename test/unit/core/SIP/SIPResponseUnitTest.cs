@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Ocsp;
 using SIPSorcery.Sys;
@@ -292,7 +291,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("{Resp}", resp.ToString());
 
             Assert.Equal(0, resp.Header.CSeq);
-            Assert.True(Regex.Match(resp.ToString(), "CSeq: 0 OPTIONS", RegexOptions.Multiline).Success);
+            Assert.Contains("CSeq: 0 OPTIONS", resp.ToString());
         }
 
         [Fact]

@@ -29,7 +29,7 @@ using SIPSorceryMedia.Windows;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class SIPClient
+    public partial class SIPClient
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
@@ -45,6 +45,9 @@ namespace SIPSorcery.SoftPhone
         private CancellationTokenSource _cts = new CancellationTokenSource();
 
         private int m_audioOutDeviceIndex = SIPSoftPhoneState.AudioOutDeviceIndex;
+
+        [GeneratedRegex(@"^SIP/2\.0 (?<statusCode>\d{3})")]
+        private static partial Regex SipFragStatusCodeRegex();
 
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -382,7 +385,7 @@ namespace SIPSorcery.SoftPhone
             }
             else
             {
-                Match statusCodeMatch = Regex.Match(sipFrag, @"^SIP/2\.0 (?<statusCode>\d{3})");
+                var statusCodeMatch = SipFragStatusCodeRegex().Match(sipFrag);
                 if (statusCodeMatch.Success)
                 {
                     int statusCode = Int32.Parse(statusCodeMatch.Result("${statusCode}"));

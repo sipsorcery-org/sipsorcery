@@ -31,7 +31,7 @@ namespace SIPSorceryMedia.FFmpeg;
 
 public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
 {
-    public ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
+    public static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEndPoint>();
 
     public static readonly List<VideoFormat> _supportedFormats = Helper.GetSupportedVideoFormats();
 
@@ -151,7 +151,7 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
 
                 if (imageRawSamples == null || width == 0 || height == 0)
                 {
-                    logger.LogWarning($"Decode of video sample failed, width {width}, height {height}.");
+                    logger.LogWarning("Decode of video sample failed, width {Width}, height {Height}.", width, height);
                 }
                 else
                 {
