@@ -23,7 +23,7 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class SctpChunkUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public SctpChunkUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

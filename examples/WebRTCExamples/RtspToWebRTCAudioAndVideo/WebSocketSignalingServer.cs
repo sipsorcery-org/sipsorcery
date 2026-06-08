@@ -15,7 +15,7 @@ namespace RtspToWebRtcRestreamer
 {
     internal class WebSocketSignalingServer : IDisposable
     {
-        private ILogger<WebSocketSignalingServer> _logger;
+        private static readonly ILogger<WebSocketSignalingServer> _logger;
         private int _port;
         private WebSocketServer _ws;
         private FFmpegListener _ffmpegListener;

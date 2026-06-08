@@ -27,7 +27,7 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class SctpDataSendRecvUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public SctpDataSendRecvUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

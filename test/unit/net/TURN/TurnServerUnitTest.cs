@@ -29,7 +29,7 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class TurnServerUnitTest : IDisposable
     {
-        private ILogger logger = null;
+        private readonly ILogger logger = null;
         private readonly List<TurnServer> _servers = new List<TurnServer>();
 
         private const string TEST_USERNAME = "testuser";
