@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: AudioScopeRenderer.cs
 //
 // Description: Portable, dependency-free renderer for the audio scope. It draws
@@ -14,6 +14,9 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 08 Jun 2026	Aaron Clauson	Created, via CLaude Opus 4.8, Wexford, Ireland.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

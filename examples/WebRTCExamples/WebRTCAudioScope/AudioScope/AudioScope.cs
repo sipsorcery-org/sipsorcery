@@ -3,12 +3,13 @@
 //
 // Description: Implementation of a Hilbert filter to visualise audio input.
 // Originally based on https://github.com/conundrumer/visual-music-workshop.
-
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 29 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 08 Jun 2026  Aaron Clauson   Converted from OpenGL implementation to C# version.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

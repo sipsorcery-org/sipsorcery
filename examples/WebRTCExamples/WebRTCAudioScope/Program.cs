@@ -1,26 +1,26 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC server application that uses OpenGL to produce
-// a video stream for the remote peer. In this case OpenGL is used to process
-// a preset audio stream and generate a visual representation which is sent back
-// in a video stream.
-//
-// This sample differs from the WebRTCOpenGL sample by using a preset audio source
-// instead of the one received from the remote peer.
+// Description: An example WebRTC server application that uses a C# based "AudioScope"
+// (previously used an OpenGL version) to produce a video stream for the remote peer.
+// The AudioScope is used to process the audio stream and generate a visual representation
+// which is sent back in a video stream.
 //
 // The high level steps are:
 // 1. Establish a WebRTC peer connection with a remote peer with a receive only
 // audio stream and a send only video stream.
-// 2. Gnerate audio packets from a preset source and process them with the OpenGL
+// 2. Gnerate audio packets from the audio source and process them with the AudioScope
 // program to generate a visual representation of the audio samples.
 // 3. Send the visual representation back to the remote peer as a video stream.
+//
+// The AudioScope was originally based on https://github.com/conundrumer/visual-music-workshop.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 11 Jan 2026	Aaron Clauson	Created, Dublin, Ireland.
+// 08 Jun 2026  Aaron Clauson   Converted from OpenGL implementation to C# version.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -38,11 +38,11 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Encoders;
 using WebSocketSharp.Server;
 using AudioScope;
 using System.Numerics;
 using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.FFmpeg;
 
 namespace demo;
 
@@ -50,14 +50,8 @@ class Program
 {
     private const int WEBSOCKET_PORT = 8081;
     private const int AUDIO_PACKET_DURATION = 20; // 20ms of audio per RTP packet for PCMU & PCMA.
+    private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
 
-    // The built-in "Music" source is 8 kHz telephone-quality broadband audio, which traces a jagged
-    // path on this phase-based scope. For a calmer demo we instead use the AudioExtrasSource "Pad"
-    // source (a soft, slowly-evolving chord) for what the peer hears, and drive the scope itself with
-    // a separate clean, bin-aligned carrier so it renders a smooth circle. The circle's radius follows
-    // the pad's loudness, so it still breathes in time with the audio. Set USE_SYNTH_AUDIO = false to
-    // fall back to visualising the raw decoded music instead.
-    private static readonly bool USE_SYNTH_AUDIO = false;
     private const int SYNTH_SAMPLE_RATE = 8000;        // Scope carrier sample rate (matches the codec).
     // The scope's analytic transform uses a 1024-point FFT at SYNTH_SAMPLE_RATE, so its bin spacing is
     // 8000/1024 = 7.8125 Hz. A tone exactly on a bin is perfectly periodic in the FFT window and
@@ -72,11 +66,27 @@ class Program
     private static AudioScopeRenderer _renderer;
     private static RTCPeerConnection _pc;
 
+    private enum AudioScopeSourceEnum
+    {
+        Music,
+        Synth,
+        Microphone
+    }
+
     static void Main()
     {
         Console.WriteLine("WebRTC OpenGL Source Demo - Audio Scope");
 
         logger = AddConsoleLogger();
+
+        if (Environment.OSVersion.Platform == PlatformID.Unix)
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, logger);
+        }
+        else
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+        }
 
         // The scope renders straight to an RGB buffer on the CPU - no window or GL context required.
         _renderer = new AudioScopeRenderer();
@@ -87,7 +97,7 @@ class Program
         webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) =>
         {
             // For the purposes of the demo only one peer conenction at a time is managed.
-            peer.CreatePeerConnection = CreatePeerConnection;
+            peer.CreatePeerConnection = () => CreatePeerConnection(AudioScopeSourceEnum.Music);
             _pc = peer.RTCPeerConnection;
         });
         webSocketServer.Start();
@@ -114,7 +124,7 @@ class Program
         exitMre.WaitOne();
     }
 
-    private static Task<RTCPeerConnection> CreatePeerConnection()
+    private static Task<RTCPeerConnection> CreatePeerConnection(AudioScopeSourceEnum audioScopeSource)
     {
         RTCConfiguration config = new RTCConfiguration
         {
@@ -123,11 +133,12 @@ class Program
         };
         var pc = new RTCPeerConnection(config);
 
-        var videoEncoderEndPoint = new VideoEncoderEndPoint();
+        //var videoEncoderEndPoint = new Vp8NetVideoEncoderEndPoint();
+        var videoEncoderEndPoint = new FFmpegVideoSource();
         var audioEncoder = new AudioEncoder();
-        // Pad mode (USE_SYNTH_AUDIO) plays the soft, evolving ambient chord; otherwise the built-in music.
+
         var audioSource = new AudioExtrasSource(new AudioEncoder(),
-            new AudioSourceOptions { AudioSource = USE_SYNTH_AUDIO ? AudioSourcesEnum.Pad : AudioSourcesEnum.Music });
+            new AudioSourceOptions { AudioSource = audioScopeSource == AudioScopeSourceEnum.Synth ? AudioSourcesEnum.Pad : AudioSourcesEnum.Music });
 
         // For the sake of the demo stick to a basic audio format with a predictable sampling rate.
         var supportedAudioFormats = new List<AudioFormat>
@@ -165,11 +176,13 @@ class Program
         {
             // Fires once per audio packet. The audio itself is produced and sent to the peer by the
             // audio source above; here we only build the scope's input and render the video frame.
+            // Note: In theory the need to decode the audio sample should be avoidable if the scope can be 
+            // driven directly from the raw unencoded audio samples.
             var decoded = audioEncoder.DecodeAudio(sample, pc.AudioStream.NegotiatedFormat.ToAudioFormat());
 
             Complex[] samples;
 
-            if (USE_SYNTH_AUDIO)
+            if (audioScopeSource == AudioScopeSourceEnum.Synth)
             {
                 // The pad chord would trace a wandering rosette rather than a circle, so the scope is
                 // driven by its own clean, bin-aligned carrier instead. The carrier amplitude follows
@@ -183,7 +196,7 @@ class Program
                 }
                 double rms = Math.Sqrt(sumSq / Math.Max(1, decoded.Length));
                 _scopeEnv += 0.25 * (rms - _scopeEnv);          // smooth across packets
-                double radius = 0.12 + 1.0 * _scopeEnv;          // map loudness to circle radius
+                double radius = 0.12 + 1.0 * _scopeEnv;         // map loudness to circle radius
 
                 samples = new Complex[decoded.Length];
                 for (int i = 0; i < samples.Length; i++)
@@ -231,11 +244,6 @@ class Program
         };
 
         return Task.FromResult(pc);
-    }
-
-    private static void AudioSource_OnAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample)
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>
