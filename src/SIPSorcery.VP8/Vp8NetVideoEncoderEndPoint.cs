@@ -28,7 +28,7 @@ namespace Vpx.Net
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
         private const int VP8_FORMAT_ID = 96;
 
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<Vp8NetVideoEncoderEndPoint>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<Vp8NetVideoEncoderEndPoint>();
 
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {

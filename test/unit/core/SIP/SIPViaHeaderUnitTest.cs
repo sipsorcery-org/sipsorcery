@@ -9,7 +9,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -194,8 +193,8 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Via Header={ViaHeader}.", sipViaHeaders[0].ToString());
 
             //Assert.True(Regex.Match(sipViaHeaders[0].ToString(), "rport").Success, "The Via header did not maintain the unknown rport parameter.");
-            Assert.True(Regex.Match(sipViaHeaders[0].ToString(), "unknown=12234").Success, "The Via header did not maintain the unrecognised unknown parameter.");
-            Assert.True(Regex.Match(sipViaHeaders[0].ToString(), "unknown2").Success, "The Via header did not maintain the unrecognised unknown2 parameter.");
+            Assert.True(sipViaHeaders[0].ToString().Contains("unknown=12234"), "The Via header did not maintain the unrecognised unknown parameter.");
+            Assert.True(sipViaHeaders[0].ToString().Contains("unknown2"), "The Via header did not maintain the unrecognised unknown2 parameter.");
 
             //Assert.True("SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" == sipViaHeader.ToString(), "The Via header was not parsed correctly.");
 

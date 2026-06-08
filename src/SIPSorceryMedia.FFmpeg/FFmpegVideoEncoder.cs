@@ -55,7 +55,7 @@ namespace SIPSorceryMedia.FFmpeg
         private int _pts = 0;
         private bool _isDisposed;
 
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEncoder>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegVideoEncoder>();
 
         public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
         {

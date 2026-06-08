@@ -25,7 +25,7 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class SctpTransportUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public SctpTransportUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

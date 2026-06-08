@@ -267,5 +267,47 @@ dummy";
 
             logger.LogDebug("---------------------------------------------------");
         }
+
+        [Fact]
+        public void DialogueNameWithLocalAndRemoteUsersUnitTest()
+        {
+            const string localUri = "sip:alice@local.test";
+            const string remoteUri = "sip:bob@remote.test";
+            var dialogue = new SIPDialogue
+            {
+                LocalUserField = SIPUserField.ParseSIPUserField($"<{localUri}>"),
+                RemoteUserField = SIPUserField.ParseSIPUserField($"<{remoteUri}>"),
+            };
+
+            Assert.Equal($"L({localUri})-R({remoteUri})", dialogue.DialogueName);
+        }
+
+        [Fact]
+        public void DialogueNameWithMissingLocalUserUnitTest()
+        {
+            const string localUri = "sip:local.test";
+            const string remoteUri = "sip:bob@remote.test";
+            var dialogue = new SIPDialogue
+            {
+                LocalUserField = SIPUserField.ParseSIPUserField($"<{localUri}>"),
+                RemoteUserField = SIPUserField.ParseSIPUserField($"<{remoteUri}>"),
+            };
+
+            Assert.Equal($"L(??)-R({remoteUri})", dialogue.DialogueName);
+        }
+
+        [Fact]
+        public void DialogueNameWithMissingRemoteUserUnitTest()
+        {
+            const string localUri = "sip:alice@local.test";
+            const string remoteUri = "sip:remote.test";
+            var dialogue = new SIPDialogue
+            {
+                LocalUserField = SIPUserField.ParseSIPUserField($"<{localUri}>"),
+                RemoteUserField = SIPUserField.ParseSIPUserField($"<{remoteUri}>"),
+            };
+
+            Assert.Equal($"L({localUri})-R(??)", dialogue.DialogueName);
+        }
     }
 }
