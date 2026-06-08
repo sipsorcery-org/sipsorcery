@@ -100,6 +100,12 @@ class Program
             peer.CreatePeerConnection = () => CreatePeerConnection(AudioScopeSourceEnum.Music);
             _pc = peer.RTCPeerConnection;
         });
+        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/synth", (peer) =>
+        {
+            // For the purposes of the demo only one peer conenction at a time is managed.
+            peer.CreatePeerConnection = () => CreatePeerConnection(AudioScopeSourceEnum.Synth);
+            _pc = peer.RTCPeerConnection;
+        });
         webSocketServer.Start();
 
         Console.WriteLine($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
@@ -134,7 +140,7 @@ class Program
         var pc = new RTCPeerConnection(config);
 
         //var videoEncoderEndPoint = new Vp8NetVideoEncoderEndPoint();
-        var videoEncoderEndPoint = new FFmpegVideoSource();
+        var videoEndPoint = new FFmpegVideoEndPoint();
         var audioEncoder = new AudioEncoder();
 
         var audioSource = new AudioExtrasSource(new AudioEncoder(),
@@ -147,15 +153,15 @@ class Program
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA),
         };
 
-        MediaStreamTrack videoTrack = new MediaStreamTrack(videoEncoderEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+        MediaStreamTrack videoTrack = new MediaStreamTrack(videoEndPoint.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
         MediaStreamTrack audioTrack = new MediaStreamTrack(supportedAudioFormats, MediaStreamStatusEnum.SendOnly);
         pc.addTrack(audioTrack);
 
-        videoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
+        videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
         audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 
-        pc.OnVideoFormatsNegotiated += (formats) => videoEncoderEndPoint.SetVideoSourceFormat(formats.First());
+        pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
         pc.OnAudioFormatsNegotiated += (formats) => audioSource.SetAudioSourceFormat(formats.First());
         pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
         pc.onsignalingstatechange += () =>
@@ -218,7 +224,7 @@ class Program
 
             var frame = _renderer.ProcessAudioSample(samples);
 
-            videoEncoderEndPoint.ExternalVideoSourceRawSample(AUDIO_PACKET_DURATION,
+            videoEndPoint.ExternalVideoSourceRawSample(AUDIO_PACKET_DURATION,
                 AudioScopeRenderer.Width,
                 AudioScopeRenderer.Height,
                 frame,
@@ -246,9 +252,6 @@ class Program
         return Task.FromResult(pc);
     }
 
-    /// <summary>
-    ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
-    /// </summary>
     private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
     {
         var seriLogger = new LoggerConfiguration()
