@@ -10,7 +10,7 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public class FFmpegAudioDecoder : IDisposable
     {
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegAudioDecoder>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<FFmpegAudioDecoder>();
 
         unsafe private AVInputFormat* _inputFormat = null;
 
@@ -94,8 +94,11 @@ namespace SIPSorceryMedia.FFmpeg
                     return false;
                 }
 
+                if (logger.IsEnabled(LogLevel.Debug))
+                {
+                    logger.LogDebug("FFmpeg file source decoder {CodecName} audio codec for stream {AudioStreamIndex}.", ffmpeg.avcodec_get_name(audCodec->id), _audioStreamIndex);
+                }
 
-                logger.LogDebug($"FFmpeg file source decoder {ffmpeg.avcodec_get_name(audCodec->id)} audio codec for stream {_audioStreamIndex}.");
                 _audDecCtx = ffmpeg.avcodec_alloc_context3(audCodec);
                 if (_audDecCtx == null)
                 {
@@ -315,7 +318,7 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 else
                 {
-                    logger.LogDebug($"FFmpeg end of file for source {_sourceUrl}.");
+                    logger.LogDebug("FFmpeg end of file for source {SourceUrl}.", _sourceUrl);
 
                     if (!_isClosed && _repeat)
                     {

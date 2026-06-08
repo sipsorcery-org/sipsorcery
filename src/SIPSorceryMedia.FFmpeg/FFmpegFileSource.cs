@@ -105,7 +105,10 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (_FFmpegAudioSource != null)
             {
-                logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+                logger.LogDebug("Setting audio source format to {FormatId}:{Codec} {ClockRate}.",
+                    audioFormat.FormatID,
+                    audioFormat.Codec,
+                    audioFormat.ClockRate);
                 _FFmpegAudioSource.SetAudioSourceFormat(audioFormat);
             }
         }
@@ -161,7 +164,10 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (_FFmpegVideoSource != null)
             {
-                logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+                logger.LogDebug("Setting video source format to {FormatId}:{Codec} {ClockRate}.",
+                    videoFormat.FormatID,
+                    videoFormat.Codec,
+                    videoFormat.ClockRate);
                 _FFmpegVideoSource.SetVideoSourceFormat(videoFormat);
             }
         }

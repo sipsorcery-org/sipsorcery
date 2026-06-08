@@ -71,7 +71,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         private void AudioDecoder_OnError(string errorMessage)
         {
-            logger.LogDebug($"Audio - Source error for {path} - ErrorMessage:[{errorMessage}]");
+            logger.LogDebug("Audio - Source error for {Path} - ErrorMessage:[{ErrorMessage}]", path, errorMessage);
             OnAudioSourceError?.Invoke(errorMessage);
             Dispose();
         }
@@ -92,7 +92,10 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void SetAudioSourceFormat(AudioFormat audioFormat)
         {
-            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            logger.LogDebug("Setting audio source format to {FormatId}:{Codec} {ClockRate}.",
+                audioFormat.FormatID,
+                audioFormat.Codec,
+                audioFormat.ClockRate);
             _audioFormatManager.SetSelectedFormat(audioFormat);
             InitialiseDecoder();
         }
