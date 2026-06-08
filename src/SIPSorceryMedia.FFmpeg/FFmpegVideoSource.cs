@@ -66,7 +66,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         internal void VideoDecoder_OnError(string errorMessage)
         {
-            logger.LogDebug($"Video - Source error for {path} - ErrorMessage:[{errorMessage}]");
+            logger.LogDebug("Video - Source error for {Path} - ErrorMessage:[{ErrorMessage}]", path, errorMessage);
             OnVideoSourceError?.Invoke(errorMessage);
             Dispose();
         }
@@ -85,7 +85,11 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void SetVideoSourceFormat(VideoFormat videoFormat)
         {
-            logger.LogDebug($"Setting video source format to {videoFormat.FormatID}:{videoFormat.Codec} {videoFormat.ClockRate}.");
+            logger.LogDebug("Setting video source format to {FormatId}:{Codec} {ClockRate}.",
+                videoFormat.FormatID,
+                videoFormat.Codec,
+                videoFormat.ClockRate);
+
             _videoFormatManager.SetSelectedFormat(videoFormat);
             InitialiseDecoder();
         }
