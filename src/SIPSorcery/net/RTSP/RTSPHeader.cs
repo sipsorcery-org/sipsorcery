@@ -503,7 +503,7 @@ namespace SIPSorcery.Net
                 var headersBuilder = new StringBuilder();
 
                 void AppendHeader<T>(string headerName, T headerValue) =>
-                    headersBuilder.Append($"{headerName}: {headerValue}{m_CRLF}");
+                    headersBuilder.Append(headerName).Append(": ").Append(headerValue).Append(m_CRLF);
 
                 if (CSeq > 0)
                 {
