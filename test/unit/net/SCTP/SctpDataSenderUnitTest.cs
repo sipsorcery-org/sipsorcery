@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SctpDataSenderUnitTest.cs
 //
 // Description: Unit tests for the SctpDataSender class.
@@ -27,7 +27,7 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class SctpDataSenderUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public SctpDataSenderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
