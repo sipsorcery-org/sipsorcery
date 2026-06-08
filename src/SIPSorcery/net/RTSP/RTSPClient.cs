@@ -26,7 +26,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class RTSPClient
+    public partial class RTSPClient
     {
         public const int RTSP_PORT = 554;
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
@@ -71,6 +71,21 @@ namespace SIPSorcery.Net
         {
             _rtpTrackingAction = rtpTrackingAction;
         }
+        private const string RTSP_URL_HOSTNAME_REGEX_PATTERN = @"rtsp://(?<hostname>\S+?)/";
+
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(RTSP_URL_HOSTNAME_REGEX_PATTERN)]
+        private static partial Regex RtspUrlHostnameRegex();
+
+        [GeneratedRegex(RTSP_URL_HOSTNAME_REGEX_PATTERN, RegexOptions.IgnoreCase)]
+        private static partial Regex RtspUrlHostnameIgnoreCaseRegex();
+#else
+        private static readonly Regex m_rtspUrlHostnameRegex = new Regex(RTSP_URL_HOSTNAME_REGEX_PATTERN);
+        private static readonly Regex m_rtspUrlHostnameIgnoreCaseRegex = new Regex(RTSP_URL_HOSTNAME_REGEX_PATTERN, RegexOptions.IgnoreCase);
+
+        private static Regex RtspUrlHostnameRegex() => m_rtspUrlHostnameRegex;
+        private static Regex RtspUrlHostnameIgnoreCaseRegex() => m_rtspUrlHostnameIgnoreCaseRegex;
+#endif
 
         public void SetRTPPayloadHeaderLength(int rtpPayloadHeaderLength)
         {
@@ -86,7 +101,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                string hostname = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/").Result("${hostname}");
+                var hostname = RtspUrlHostnameRegex().Match(url).Result("${hostname}");
                 //IPEndPoint rtspEndPoint = DNSResolver.R(hostname, DNS_RESOLUTION_TIMEOUT);
 
                 logger.LogDebug("RTSP Client connecting to {Hostname}.", hostname);
@@ -143,7 +158,7 @@ namespace SIPSorcery.Net
         {
             _url = url;
 
-            Match urlMatch = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/", RegexOptions.IgnoreCase);
+            var urlMatch = RtspUrlHostnameIgnoreCaseRegex().Match(url);
 
             if (!urlMatch.Success)
             {
