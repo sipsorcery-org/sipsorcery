@@ -34,7 +34,7 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RtpIceChannelCharacterizationUnitTest
     {
-        private Microsoft.Extensions.Logging.ILogger logger = null;
+        private readonly Microsoft.Extensions.Logging.ILogger logger;
 
         public RtpIceChannelCharacterizationUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

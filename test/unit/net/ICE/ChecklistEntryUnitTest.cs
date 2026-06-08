@@ -36,7 +36,7 @@ namespace SIPSorcery.Net.UnitTests
     {
         private const ulong TWO_POW_32 = 4294967296UL; // 2^32, the multiplier on MIN(G,D) in the pair priority.
 
-        private Microsoft.Extensions.Logging.ILogger logger = null;
+        private readonly Microsoft.Extensions.Logging.ILogger logger = null;
 
         public ChecklistEntryUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
