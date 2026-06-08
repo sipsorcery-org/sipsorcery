@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -818,7 +819,7 @@ namespace SIPSorcery.SIP
             }
 
             // Contact header.
-            if (header.Contact != null && header.Contact.Count == 1)
+            if (header is { Contact: { Count: 1 } })
             {
                 if (!string.IsNullOrEmpty(ContactHost))
                 {
@@ -827,27 +828,36 @@ namespace SIPSorcery.SIP
                     if (IPAddress.TryParse(ContactHost, out _))
                     {
                         // If the custom host is an IP address include the port number that's being used for the send.
-                        copy.Contact.Single().ContactURI.Host = $"{ContactHost}:{sendFromEndPoint.Port.ToString()}";
+                        Debug.Assert(copy.Contact.Count == 1);
+                        copy.Contact[0].ContactURI.Host = $"{ContactHost}:{sendFromEndPoint.Port.ToString()}";
                     }
                     else
                     {
-                        copy.Contact.Single().ContactURI.Host = ContactHost;
+                        Debug.Assert(copy.Contact.Count == 1);
+                        copy.Contact[0].ContactURI.Host = ContactHost;
                     }
                 }
-                else if (header.Contact.Single().ContactURI.Host.StartsWith(IPAddress.Any.ToString()) ||
-                    header.Contact.Single().ContactURI.Host.StartsWith(IPAddress.IPv6Any.ToString()))
+                else
                 {
-                    copy = copy ?? header.Copy();
-                    copy.Contact.Single().ContactURI.Host = sendFromEndPoint.ToString();
-                }
+                    Debug.Assert(header.Contact.Count == 1);
+                    var contactHeader = header.Contact[0];
+                    if (contactHeader.ContactURI.Host.StartsWith(IPAddress.Any.ToString()) ||
+                        contactHeader.ContactURI.Host.StartsWith(IPAddress.IPv6Any.ToString()))
+                    {
+                        copy = copy ?? header.Copy();
+                        Debug.Assert(copy.Contact.Count == 1);
+                        copy.Contact[0].ContactURI.Host = sendFromEndPoint.ToString();
+                    }
 
-                if (header.Contact.Single().ContactURI.Scheme == SIPSchemesEnum.sip &&
-                    sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp &&
-                    header.CSeqMethod != SIPMethodsEnum.REGISTER)
-                {
-                    // REGISTER requests need the option to overrule the scheme if the caller so chooses.
-                    copy = copy ?? header.Copy();
-                    copy.Contact.Single().ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
+                    if (contactHeader.ContactURI.Scheme == SIPSchemesEnum.sip &&
+                        sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp &&
+                        header.CSeqMethod != SIPMethodsEnum.REGISTER)
+                    {
+                        // REGISTER requests need the option to overrule the scheme if the caller so chooses.
+                        copy = copy ?? header.Copy();
+                        Debug.Assert(copy.Contact.Count == 1);
+                        copy.Contact[0].ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
+                    }
                 }
             }
 
