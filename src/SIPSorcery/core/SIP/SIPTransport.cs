@@ -1247,22 +1247,6 @@ namespace SIPSorcery.SIP
             return m_sipChannels.Select(x => x.Value).ToList();
         }
 
-        // /// <summary>
-        // /// Add a SIP transaction to the transaction engine for reliable request and response delivery.
-        // /// </summary>
-        // /// <param name="transaction">The transaction to add.</param>
-        //public void AddTransaction(SIPTransaction transaction)
-        //{
-        //    if (m_transactionEngine == null)
-        //    {
-        //        logger.LogWarning("The SIP transport was requested to add a transaction in stateless mode (noop).");
-        //    }
-        //    else
-        //    {
-        //        m_transactionEngine.AddTransaction(transaction);
-        //    }
-        //}
-
         /// <summary>
         /// Attempts to retrieve the transaction matching the supplied ID.
         /// </summary>
