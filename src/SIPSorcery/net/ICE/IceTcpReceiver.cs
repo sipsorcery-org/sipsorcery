@@ -289,7 +289,7 @@ public class IceTcpReceiver : UdpReceiver
         {
             if (m_socket != null && m_socket.Connected)
             {
-                m_socket?.Disconnect(false);
+                m_socket.Disconnect(false);
             }
             base.Close(reason);
         }
