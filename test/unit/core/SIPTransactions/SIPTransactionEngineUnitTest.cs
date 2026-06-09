@@ -89,6 +89,7 @@ namespace SIPSorcery.SIP.UnitTests
             try
             {
                 TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                TaskCompletionSource<bool> uacConfirmedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 // Client side of the call.
                 clientTransport = new SIPTransport();
@@ -136,11 +137,24 @@ namespace SIPSorcery.SIP.UnitTests
                 // Send the invite to the server side.
                 UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, null);
                 SetTransactionTraceEvents(clientTransaction);
+                // The client reaching Confirmed is a separate asynchronous event from the server reaching
+                // Confirmed: the server confirms when it receives the ACK, but that ACK can be sent from the
+                // duplicate-response path (ResendAckRequest) while the client is still in the Completed state,
+                // before the client's own transition to Confirmed has run. Waiting only on the server therefore
+                // races the client's state and intermittently fails the client assertion. Signal explicitly
+                // when the client reaches Confirmed and wait for both sides below.
+                clientTransaction.TransactionStateChanged += (tx) =>
+                {
+                    if (clientTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                    {
+                        uacConfirmedTask.TrySetResult(true);
+                    }
+                };
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest();
 
-                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TRANSACTION_EXCHANGE_TIMEOUT_MS));
-                var completed = await Task.WhenAny(uasConfirmedTask.Task, timeoutTask);
+                var timeoutTask = Task.Delay(TimeSpan.FromMilliseconds(TRANSACTION_EXCHANGE_TIMEOUT_MS));
+                var completed = await Task.WhenAny(Task.WhenAll(uasConfirmedTask.Task, uacConfirmedTask.Task), timeoutTask);
 
                 if (completed == timeoutTask)
                 {
