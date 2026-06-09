@@ -37,6 +37,15 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that a SACK chunk can trigger a retransmit after being reported missing 3 times (RFC4960 7.2.4).
         /// </summary>
+        /// <remarks>
+        /// The "blocked" chunk is dropped via a stable per-chunk predicate (drop only the first transmission
+        /// of one TSN) rather than by swapping sender._sendDataChunk between a delivering and a dropping
+        /// delegate around timed awaits. The previous approach was racy: SendData only enqueues the chunk and
+        /// the sender's worker thread invokes _sendDataChunk asynchronously, so under load the chunk that was
+        /// meant to be dropped could be dequeued and delivered after the delegate had been swapped back,
+        /// advancing the receiver past the expected cumulative ACK (intermittent
+        /// "Expected initialTSN, Actual initialTSN+2" failures).
+        /// </remarks>
         [Fact]
         public async Task SACKChunkRetransmit()
         {
@@ -48,45 +57,63 @@ namespace SIPSorcery.Net.UnitTests
             SctpDataSender sender = new SctpDataSender("dummy", null, mtu, initialTSN, arwnd);
             sender.StartSending();
 
-            // This local function replicates a data chunk being sent from a data
-            // sender to the receiver of a remote peer and the return of the SACK. 
-            Action<SctpDataChunk> doSend = (chunk) =>
+            // The second chunk (this TSN) is the one we force to go missing. Only its FIRST transmission is
+            // dropped; everything else - including its eventual fast-retransmit (SendCount > 1) - is delivered
+            // to the receiver and SACKed back. This is deterministic regardless of the worker-thread timing.
+            uint missingTSN = initialTSN + 1;
+
+            Action<SctpDataChunk> relay = (chunk) =>
             {
+                if (chunk.TSN == missingTSN && chunk.SendCount == 1)
+                {
+                    // Drop only the first transmission so the chunk is reported missing in the gap ack blocks.
+                    return;
+                }
+
                 receiver.OnDataChunk(chunk);
                 sender.GotSack(receiver.GetSackChunk());
             };
+            sender._sendDataChunk = relay;
 
-            Action<SctpDataChunk> dontSend = (chunk) => { };
+            // Queue five chunks (TSNs initialTSN .. initialTSN+4). The second is dropped on its first send,
+            // leaving a gap. As the later chunks arrive out of order the gap is reported missing; after the
+            // third miss indication the sender enters fast recovery (RFC4960 7.2.4) and retransmits the
+            // missing chunk, which is then delivered, allowing the cumulative ACK to advance to the last TSN.
+            for (int i = 0; i < 5; i++)
+            {
+                sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            }
 
-            sender._sendDataChunk = doSend;
-            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
-            Assert.Equal(initialTSN + 1, sender.TSN);
-            await Task.Delay(100);
-            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
-
-            // This send to the receiver is blocked so the receivers ACK TSN should stay the same.
-            sender._sendDataChunk = dontSend;
-            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
-            Assert.Equal(initialTSN + 2, sender.TSN);
-            await Task.Delay(100);
-            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
-
-            // Unblock. Receiver's ACK TSN should not advance as it is missing chunk #2.
-            sender._sendDataChunk = doSend;
-            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
-            Assert.Equal(initialTSN + 3, sender.TSN);
-            await Task.Delay(100);
-            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
-
-            // When the chunk is reported missing a further two times, the sender 
-            // enters fast-recovery mode and retransmits the missing block.
-            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
-            sender.SendData(0, 0, new byte[] { 0x00, 0x01, 0x02 });
+            // TSN is advanced synchronously by SendData so this is not timing dependent.
             Assert.Equal(initialTSN + 5, sender.TSN);
-            await Task.Delay(250);
-            // Fast recovery has been entered and missing chunk has been sent.
-            // Sender and receiver are both up-to-date.
+
+            // Poll (rather than sleeping a fixed amount) for the fast retransmit to recover the gap. Because
+            // the missing chunk's first send was dropped, the only way the receiver's cumulative ACK can reach
+            // initialTSN+4 is for the chunk to be fast-retransmitted and delivered - so reaching it proves the
+            // retransmit path ran.
+            await WaitForConditionAsync(
+                () => receiver.CumulativeAckTSN == initialTSN + 4,
+                TimeSpan.FromSeconds(5));
+
             Assert.Equal(initialTSN + 4, receiver.CumulativeAckTSN);
+        }
+
+        /// <summary>
+        /// Polls <paramref name="condition"/> until it returns true or <paramref name="timeout"/> elapses.
+        /// Used to wait on state driven by the sender's background worker thread without relying on a fixed
+        /// sleep that can be too short under load.
+        /// </summary>
+        private static async Task WaitForConditionAsync(Func<bool> condition, TimeSpan timeout)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (sw.Elapsed < timeout)
+            {
+                if (condition())
+                {
+                    return;
+                }
+                await Task.Delay(25);
+            }
         }
 
         /// <summary>
