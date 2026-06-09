@@ -2,7 +2,7 @@
 // Filename: UdpReceiver.cs
 //
 // Description: A UDP socket manager that encapsulates the common logic for managing UDP sockets.
-// Original use case for managing RTP communications..
+// Original use case for managing RTP communications.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
