@@ -79,7 +79,7 @@ class Program
 
     static void Main()
     {
-        Console.WriteLine("WebRTC OpenGL Source Demo - Audio Scope");
+        Console.WriteLine("WebRTC Audio Scope Demo");
 
         logger = AddConsoleLogger();
 
