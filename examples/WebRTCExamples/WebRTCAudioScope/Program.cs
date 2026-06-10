@@ -42,15 +42,19 @@ using WebSocketSharp.Server;
 using AudioScope;
 using System.Numerics;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.FFmpeg;
+using Vpx.Net;
 
 namespace demo;
 
 class Program
 {
     private const int WEBSOCKET_PORT = 8081;
-    private const int AUDIO_PACKET_DURATION = 20; // 20ms of audio per RTP packet for PCMU & PCMA.
-    private const string LINUX_FFMPEG_LIB_PATH = "/usr/local/lib/";
+
+    // The scope video is rendered/encoded on its own timer rather than inside the audio packet
+    // callback. Encoding a 640x480 VP8 frame takes several milliseconds; doing it synchronously on
+    // the audio source's pacing thread delayed audio packets past their 20ms budget and made the
+    // received audio choppy. 33ms = ~30fps (down from the 50fps implied by the audio packet rate).
+    private const int SCOPE_FRAME_INTERVAL_MS = 33;
 
     private const int SYNTH_SAMPLE_RATE = 8000;        // Scope carrier sample rate (matches the codec).
     // The scope's analytic transform uses a 1024-point FFT at SYNTH_SAMPLE_RATE, so its bin spacing is
@@ -78,15 +82,6 @@ class Program
         Console.WriteLine("WebRTC OpenGL Source Demo - Audio Scope");
 
         logger = AddConsoleLogger();
-
-        if (Environment.OSVersion.Platform == PlatformID.Unix)
-        {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, LINUX_FFMPEG_LIB_PATH, logger);
-        }
-        else
-        {
-            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
-        }
 
         // The scope renders straight to an RGB buffer on the CPU - no window or GL context required.
         _renderer = new AudioScopeRenderer();
@@ -147,8 +142,18 @@ class Program
         };
         var pc = new RTCPeerConnection(config);
 
-        //var videoEncoderEndPoint = new Vp8NetVideoEncoderEndPoint();
-        var videoEndPoint = new FFmpegVideoEndPoint();
+        // Managed VP8 encoder. The audio scope is high-motion content (every frame
+        // changes) at 640x480, so every encoded frame is large and spans ~10 RTP
+        // packets. There is no RTCP PLI -> keyframe-request recovery in the pipeline
+        // yet, so a single lost packet would otherwise corrupt every inter frame until
+        // the next keyframe. A short GOP bounds that to a few frames; for this content
+        // keyframes are actually smaller than inter frames, so a short interval costs
+        // little bitrate. Lower to 1 (every frame a keyframe) for maximum loss
+        // resilience, or raise BaseQIndex to shrink frames further.
+        var videoEndPoint = new Vp8NetVideoEncoderEndPoint
+        {
+            KeyframeIntervalFrames = 1
+        };
         var audioEncoder = new AudioEncoder();
 
         bool isMicrophone = audioScopeSource == AudioScopeSourceEnum.Microphone;
@@ -165,6 +170,15 @@ class Program
         pc.addTrack(videoTrack);
         videoEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
         pc.OnVideoFormatsNegotiated += (formats) => videoEndPoint.SetVideoSourceFormat(formats.First());
+
+        // The most recent block of decoded PCM samples from the audio path. The audio callbacks
+        // only write this (cheap); the scope timer below reads it and does the expensive
+        // render + VP8 encode + send on its own thread so the audio packet cadence is never
+        // delayed by video work.
+        short[] latestPcm = null;
+        object pcmLock = new object();
+        int renderInProgress = 0;
+        Timer scopeTimer = null;
 
         // Renders one audio scope video frame from a block of decoded PCM samples.
         void RenderScope(short[] decoded)
@@ -207,11 +221,44 @@ class Program
 
             var frame = _renderer.ProcessAudioSample(samples);
 
-            videoEndPoint.ExternalVideoSourceRawSample(AUDIO_PACKET_DURATION,
+            videoEndPoint.ExternalVideoSourceRawSample(SCOPE_FRAME_INTERVAL_MS,
                 AudioScopeRenderer.Width,
                 AudioScopeRenderer.Height,
                 frame,
                 VideoPixelFormatsEnum.Rgb);
+        }
+
+        // Fires every SCOPE_FRAME_INTERVAL_MS on a thread-pool thread. Renders the scope from the
+        // most recent audio samples. If the previous render/encode is still running the tick is
+        // skipped (frame dropped) rather than queued, so a slow encode can never build a backlog.
+        void OnScopeTimer(object _)
+        {
+            if (Interlocked.CompareExchange(ref renderInProgress, 1, 0) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                short[] pcm;
+                lock (pcmLock)
+                {
+                    pcm = latestPcm;
+                }
+
+                if (pcm != null)
+                {
+                    RenderScope(pcm);
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.LogError(excp, "Exception rendering audio scope frame. {ErrorMessage}", excp.Message);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref renderInProgress, 0);
+            }
         }
 
         // For music/synth this app generates the audio; for microphone the audio comes from the peer.
@@ -226,9 +273,13 @@ class Program
 
             pc.OnAudioFrameReceived += (EncodedAudioFrame frame) =>
             {
-                // Decode the received microphone audio and drive the scope from it.
+                // Decode the received microphone audio and stash it for the scope timer. The
+                // render/encode happens on the timer thread, not here.
                 var decoded = audioEncoder.DecodeAudio(frame.EncodedAudio, frame.AudioFormat);
-                RenderScope(decoded);
+                lock (pcmLock)
+                {
+                    latestPcm = decoded;
+                }
             };
         }
         else
@@ -245,12 +296,17 @@ class Program
 
             audioSource.OnAudioSourceEncodedSample += (uint durationRtpUnits, byte[] sample) =>
             {
-                // Fires once per audio packet. The audio itself is produced and sent to the peer by the
-                // audio source above; here we only build the scope's input and render the video frame.
+                // Fires once per audio packet on the audio source's pacing thread. Keep this cheap:
+                // decode and stash only. The expensive scope render + VP8 encode runs on the scope
+                // timer thread so audio packets are never delayed by video work (which made the
+                // received audio choppy when done inline here).
                 // Note: In theory the need to decode the audio sample should be avoidable if the scope can be
                 // driven directly from the raw unencoded audio samples.
                 var decoded = audioEncoder.DecodeAudio(sample, pc.AudioStream.NegotiatedFormat.ToAudioFormat());
-                RenderScope(decoded);
+                lock (pcmLock)
+                {
+                    latestPcm = decoded;
+                }
             };
         }
 
@@ -280,14 +336,25 @@ class Program
                 {
                     await audioSource.StartAudio();
                 }
+
+                // Start the scope video clock now the connection is up.
+                scopeTimer ??= new Timer(OnScopeTimer, null, 0, SCOPE_FRAME_INTERVAL_MS);
             }
             else if (state == RTCPeerConnectionState.failed)
             {
+                scopeTimer?.Dispose();
+                scopeTimer = null;
                 pc.Close("ice disconnection");
             }
-            else if (state == RTCPeerConnectionState.closed && audioSource != null)
+            else if (state == RTCPeerConnectionState.closed)
             {
-                await audioSource.CloseAudio();
+                scopeTimer?.Dispose();
+                scopeTimer = null;
+
+                if (audioSource != null)
+                {
+                    await audioSource.CloseAudio();
+                }
             }
         };
 

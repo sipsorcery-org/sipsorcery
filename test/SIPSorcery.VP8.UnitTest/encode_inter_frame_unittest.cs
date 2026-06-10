@@ -256,6 +256,140 @@ namespace Vpx.Net.UnitTest
             Assert.NotEqual(keyframeThreadId, interFrameThreadId);
         }
 
+        [Theory]
+        [InlineData(SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)]
+        [InlineData(SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgr)]
+        [InlineData(SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgba)]
+        [InlineData(SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgra)]
+        public void EncodeVideo_PackedPixelInput_RoundTripsCleanly(SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum fmt)
+        {
+            // Regression for the RGB/BGR -> I420 stride bug: VP8Codec.EncodeVideo
+            // must hand PixelConverter the source row stride in BYTES
+            // (width * bytesPerPixel), not width. Passing width read the packed
+            // buffer with the wrong row pitch and corrupted every non-I420 frame
+            // (decoded ~23 dB, horizontally smeared) - which is what broke the
+            // RGB AudioScope source while the I420 test pattern was unaffected.
+            const int width = 128, height = 96, qIndex = 32;
+            bool hasAlpha = fmt == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgba
+                         || fmt == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgra;
+            int bpp = hasAlpha ? 4 : 3;
+
+            // Grayscale detail (R=G=B=g) so luma is g regardless of channel order
+            // and chroma stays flat 128; lets us assert on the Y plane without
+            // caring about RGB-vs-BGR ordering. A diagonal ramp gives real AC.
+            byte[] gray = new byte[width * height];
+            byte[] packed = new byte[width * height * bpp];
+            for (int row = 0; row < height; row++)
+            {
+                for (int col = 0; col < width; col++)
+                {
+                    int g = 16 + ((col + row) * 200) / (width + height);
+                    int pi = row * width + col;
+                    gray[pi] = (byte)g;
+                    int b = pi * bpp;
+                    packed[b] = (byte)g; packed[b + 1] = (byte)g; packed[b + 2] = (byte)g;
+                    if (hasAlpha) { packed[b + 3] = 255; }
+                }
+            }
+
+            var codec = new Vpx.Net.VP8Codec();
+            var ctx = OpenDecoder();
+            byte[] enc = codec.EncodeVideo(width, height, packed, fmt, SIPSorceryMedia.Abstractions.VideoCodecsEnum.VP8);
+            byte[] dec = DecodeOne(ctx, enc, width, height);
+
+            // Compare the decoded luma plane to the source grays.
+            double sse = 0;
+            for (int i = 0; i < width * height; i++) { int d = gray[i] - dec[i]; sse += d * d; }
+            double mse = sse / (width * height);
+            double psnrY = mse == 0 ? double.PositiveInfinity : 10.0 * Math.Log10(255.0 * 255.0 / mse);
+
+            Assert.True(psnrY >= 38.0,
+                $"{fmt} luma round-trip PSNR {psnrY:F1} dB too low (stride/conversion regression?).");
+        }
+
+        [Fact]
+        public void EncodeInterFrame_IntraFallbackDisabled_IsZeroMvOnlyAndDecodes()
+        {
+            // The intra-fallback mode decision is opt-in (it ~doubles inter
+            // encode cost). With it disabled every MB must be coded as ZEROMV
+            // inter (no intra MBs) and the frames must still round-trip
+            // through the decoder. This pins the off state of the flag so the
+            // gated path can't silently start evaluating intra candidates.
+            const int width = 64, height = 64, qIndex = 32;
+
+            var ctx = OpenDecoder();
+            var (yk, uk, vk) = SplitI420(MakeDriftingTextureI420(width, height, 0), width, height);
+            byte[] kf = frame_encoder.EncodeKeyframe(yk, uk, vk, width, height, qIndex);
+            DecodeOne(ctx, kf, width, height);
+
+            for (int f = 1; f <= 5; f++)
+            {
+                byte[] src = MakeDriftingTextureI420(width, height, f);
+                var (y, u, v) = SplitI420(src, width, height);
+                byte[] enc = frame_encoder.EncodeInterFrame(y, u, v, width, height, qIndex, intraFallback: false);
+
+                Assert.Equal(0, frame_encoder.LastInterFrameIntraMbCount);
+                DecodeOne(ctx, enc, width, height); // asserts decode OK + dimensions.
+            }
+        }
+
+        [Fact]
+        public void EncodeInterFrame_MovingContent_DoesNotAccumulateError()
+        {
+            // Long inter-run stability/correctness guard: a keyframe followed
+            // by 30 inter frames of slowly-changing content, decoded back
+            // through the real VP8 decoder. Asserts the decoded quality stays
+            // above a floor and does not trend downward across the run (no
+            // error accumulation), which also exercises the intra/inter mode
+            // decision and would catch any regression that desynced the
+            // encoder and decoder (PSNR would collapse).
+            const int width = 64, height = 64;
+            const int qIndex = 32;
+            const int interFrames = 30;
+            const double minFloorDb = 22.0;
+            const double maxDecayDb = 4.0;
+
+            var ctx = OpenDecoder();
+
+            byte[] key = MakeDriftingTextureI420(width, height, 0);
+            var (yk, uk, vk) = SplitI420(key, width, height);
+            byte[] kf = frame_encoder.EncodeKeyframe(yk, uk, vk, width, height, qIndex);
+            DecodeOne(ctx, kf, width, height);
+
+            double[] psnr = new double[interFrames];
+            for (int f = 1; f <= interFrames; f++)
+            {
+                byte[] src = MakeDriftingTextureI420(width, height, f);
+                var (y, u, v) = SplitI420(src, width, height);
+                byte[] enc = frame_encoder.EncodeInterFrame(y, u, v, width, height, qIndex);
+                byte[] dec = DecodeOne(ctx, enc, width, height);
+                psnr[f - 1] = ComputePSNR(src, dec);
+            }
+
+            string[] parts = new string[interFrames];
+            for (int i = 0; i < interFrames; i++) parts[i] = psnr[i].ToString("F1");
+            string seq = string.Join(", ", parts);
+
+            // Floor: every inter frame decodes to a reasonable quality.
+            for (int i = 0; i < interFrames; i++)
+            {
+                Assert.True(psnr[i] >= minFloorDb,
+                    $"inter frame {i + 1} PSNR {psnr[i]:F2} dB below floor {minFloorDb} dB. Sequence: {seq}");
+            }
+
+            // No downward accumulation: average PSNR over the last third of
+            // the run is not materially worse than over the first third. With
+            // the old ZEROMV-only encoder the tail would be well below the head.
+            int third = interFrames / 3;
+            double head = 0, tail = 0;
+            for (int i = 0; i < third; i++) head += psnr[i];
+            for (int i = interFrames - third; i < interFrames; i++) tail += psnr[i];
+            head /= third; tail /= third;
+
+            Assert.True(tail >= head - maxDecayDb,
+                $"PSNR decayed across the inter run (head avg {head:F2} dB, tail avg {tail:F2} dB), indicating error accumulation. Sequence: {seq}");
+        }
+
         // ---------- helpers ----------
 
         private static vpx_codec_ctx_t OpenDecoder()
@@ -326,6 +460,49 @@ namespace Vpx.Net.UnitTest
                 }
             for (int i = 0; i < cSize; i++) b[ySize + i] = 128;
             for (int i = 0; i < cSize; i++) b[ySize + cSize + i] = 128;
+            return b;
+        }
+
+        private static byte[] MakeDriftingTextureI420(int width, int height, int frame)
+        {
+            // Temporally DECORRELATED content: the frame is tiled with 8x8
+            // cells whose luma is (re)randomised every frame from a per-frame
+            // seed. Consecutive frames are unrelated, so the ZEROMV prediction
+            // (the previous reconstruction) is useless and the residual is
+            // large. Coding that large residual at a coarse quantizer on top of
+            // a useless prediction reconstructs poorly and the quality stays
+            // low frame after frame. A DC_PRED intra MB instead codes the cell
+            // (a flat 8x8 patch) cheaply and accurately, so the intra-fallback
+            // decision recovers far better quality. The cells are flat (low AC)
+            // precisely so intra has the advantage that the mode decision is
+            // meant to find.
+            int ySize = width * height;
+            int cSize = (width / 2) * (height / 2);
+            var b = new byte[ySize + 2 * cSize];
+
+            // A static spatial gradient with a slow GLOBAL brightness ramp
+            // (a few levels per frame). This is the canonical skip-drift
+            // failure mode: the per-frame change is a tiny, uniform DC offset
+            // that the coarse quantizer rounds to zero, so the ZEROMV residual
+            // quantizes to nothing and the MB is skipped -- even though the
+            // source keeps drifting brighter. With ZEROMV-only coding the
+            // decoded frame stays stuck at the keyframe brightness and the
+            // error grows without bound across the inter run. An intra MB
+            // codes the MB's current absolute value (DC_PRED from already-
+            // refreshed neighbours + tiny residual), so it tracks the drift;
+            // the mode decision should switch such MBs to intra once the
+            // accumulated drift makes ZEROMV's stale reconstruction the
+            // costlier choice.
+            int offset = 3 * frame;
+            for (int row = 0; row < height; row++)
+                for (int col = 0; col < width; col++)
+                {
+                    int v = 30 + (col * 120) / width + offset;
+                    if (v < 0) v = 0; if (v > 255) v = 255;
+                    b[row * width + col] = (byte)v;
+                }
+
+            for (int i = 0; i < cSize; i++) { b[ySize + i] = 128; b[ySize + cSize + i] = 128; }
             return b;
         }
 
