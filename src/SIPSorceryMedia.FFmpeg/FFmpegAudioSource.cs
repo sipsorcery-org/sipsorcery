@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
@@ -166,7 +165,8 @@ namespace SIPSorceryMedia.FFmpeg
             if(dstSampleCount > 0)
             {
                 // FFmpeg AV_SAMPLE_FMT_S16 will store the bytes in the correct endianess for the underlying platform.
-                short[] pcm = buffer.Take(dstSampleCount * 2).Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
+                short[] pcm = new short[dstSampleCount];
+                Buffer.BlockCopy(buffer, 0, pcm, 0, dstSampleCount * sizeof(short));
                 _incomingSamples.Write(pcm);
 
                 while (_incomingSamples.Available() >= frameSize)
