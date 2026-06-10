@@ -119,6 +119,15 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that a send/receive works correctly if the initial DATA chunk is dropped.
         /// </summary>
+        /// <remarks>
+        /// The original version of this test asserted that the receiver's cumulative ACK was still null a
+        /// fixed 100ms after the (dropped) first send, with the sender's RTO set to 250ms. That negative
+        /// assertion raced the RTO timer: under CI load Task.Delay can resume well past the 250ms RTO, by
+        /// which time the chunk had been retransmitted, delivered and SACKed (intermittent "Expected: null,
+        /// Actual: initialTSN" failures). The drop of the first transmission is guaranteed by the relay
+        /// predicate and verified from the delivery log instead, and the positive outcomes are polled for
+        /// rather than asserted after fixed sleeps.
+        /// </remarks>
         [Fact]
         public async Task InitialDataChunkDropped()
         {
@@ -133,8 +142,12 @@ namespace SIPSorcery.Net.UnitTests
             sender._rtoMaximumMilliseconds = 250;
             sender.StartSending();
 
+            var delivered = new ConcurrentBag<(uint tsn, int sendCount)>();
+
             // This local function replicates a data chunk being sent from a data
-            // sender to the receiver of a remote peer and the return of the SACK. 
+            // sender to the receiver of a remote peer and the return of the SACK.
+            // The first transmission of the first chunk is dropped; its RTO retransmit
+            // (SendCount > 1) and everything else is delivered.
             Action<SctpDataChunk> doSend = (chunk) =>
             {
                 if (chunk.TSN == initialTSN && chunk.SendCount == 1)
@@ -143,30 +156,32 @@ namespace SIPSorcery.Net.UnitTests
                 }
                 else
                 {
+                    delivered.Add((chunk.TSN, chunk.SendCount));
                     receiver.OnDataChunk(chunk);
                     sender.GotSack(receiver.GetSackChunk());
                 }
             };
             sender._sendDataChunk = doSend;
 
+            // The first chunk's initial transmission is dropped, so the cumulative ACK can only reach
+            // initialTSN via the RTO retransmit - reaching it proves the retransmit path ran.
             sender.SendData(0, 0, new byte[] { 0x55 });
             Assert.Equal(initialTSN + 1, sender.TSN);
-            await Task.Delay(100);
-            Assert.Null(receiver.CumulativeAckTSN);
-
-            await Task.Delay(500);
+            await WaitForConditionAsync(() => receiver.CumulativeAckTSN == initialTSN, TimeSpan.FromSeconds(5));
+            Assert.Equal(initialTSN, receiver.CumulativeAckTSN);
 
             sender.SendData(0, 0, new byte[] { 0x55 });
             Assert.Equal(initialTSN + 2, sender.TSN);
-            await Task.Delay(1250);
+            await WaitForConditionAsync(() => receiver.CumulativeAckTSN == initialTSN + 1, TimeSpan.FromSeconds(5));
             Assert.Equal(initialTSN + 1, receiver.CumulativeAckTSN);
-
-            await Task.Delay(500);
 
             sender.SendData(0, 0, new byte[] { 0x55 });
             Assert.Equal(initialTSN + 3, sender.TSN);
-            await Task.Delay(100);
+            await WaitForConditionAsync(() => receiver.CumulativeAckTSN == initialTSN + 2, TimeSpan.FromSeconds(5));
             Assert.Equal(initialTSN + 2, receiver.CumulativeAckTSN);
+
+            // The first transmission of the initial chunk must never have reached the receiver.
+            Assert.DoesNotContain(delivered, d => d.tsn == initialTSN && d.sendCount == 1);
         }
 
         /// <summary>

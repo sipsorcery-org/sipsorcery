@@ -209,5 +209,61 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNProtocolsEnum.tcp, stunUri.Transport);
             Assert.Equal(ProtocolType.Tcp, stunUri.Protocol);
         }
+
+        /// <summary>
+        /// Tests that URIs differing only by host are NOT equal. The equality operator previously
+        /// omitted the host comparison, which caused distinct ICE servers to be sporadically
+        /// de-duplicated when their host strings happened to land in the same dictionary hash bucket
+        /// (string hash codes are randomised per process, hence the intermittent failures).
+        /// </summary>
+        [Fact]
+        public void EqualityComparesHostTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            Assert.True(STUNUri.TryParse("stun:1.2.3.4:3478", out var uri1));
+            Assert.True(STUNUri.TryParse("stun:1.2.3.5:3478", out var uri2));
+
+            Assert.False(uri1 == uri2);
+            Assert.True(uri1 != uri2);
+            Assert.False(uri1.Equals(uri2));
+        }
+
+        /// <summary>
+        /// Tests that the host comparison is case-insensitive (RFC 4343) and that equal URIs
+        /// produce identical hash codes, as required for use as dictionary keys.
+        /// </summary>
+        [Fact]
+        public void EqualityHostCaseInsensitiveTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            Assert.True(STUNUri.TryParse("stun:STUN.sipsorcery.com:3478", out var uri1));
+            Assert.True(STUNUri.TryParse("stun:stun.sipsorcery.com:3478", out var uri2));
+
+            Assert.True(uri1 == uri2);
+            Assert.Equal(uri1.GetHashCode(), uri2.GetHashCode());
+        }
+
+        /// <summary>
+        /// Tests the object overload of Equals. The previous implementation called
+        /// object.Equals(this, obj) which dispatched straight back into itself (stack overflow) and
+        /// threw InvalidCastException for non STUNUri arguments.
+        /// </summary>
+        [Fact]
+        public void EqualsObjectOverloadTestMethod()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            Assert.True(STUNUri.TryParse("stun:1.2.3.4:3478", out var uri1));
+            Assert.True(STUNUri.TryParse("stun:1.2.3.4:3478", out var uri2));
+
+            Assert.True(uri1.Equals((object)uri2));
+            Assert.False(uri1.Equals("not a stun uri"));
+            Assert.False(uri1.Equals(null));
+        }
     }
 }
