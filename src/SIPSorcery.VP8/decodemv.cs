@@ -24,7 +24,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-using System.Linq;
+using System;
 
 using vp8_prob = System.Byte;
 using vp8_reader = Vpx.Net.BOOL_DECODER;
@@ -107,7 +107,7 @@ namespace Vpx.Net
             }
             else
             { /* small */
-                x = treereader.vp8_treed_read(ref r, entropymode.vp8_small_mvtree, prob.Skip((int)MV_ENUM.MVPshort).ToArray());
+                x = treereader.vp8_treed_read(ref r, entropymode.vp8_small_mvtree, prob.AsSpan((int)MV_ENUM.MVPshort).ToArray());
             }
 
             if (x > 0 && treereader.vp8_read(ref r, prob[(int)MV_ENUM.MVPsign]) > 0) x = -x;
