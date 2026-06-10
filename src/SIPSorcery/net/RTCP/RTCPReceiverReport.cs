@@ -47,7 +47,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.Net
 {
@@ -91,7 +90,7 @@ namespace SIPSorcery.Net
             int rrIndex = 8;
             for (int i = 0; i < Header.ReceptionReportCount; i++)
             {
-                var pkt = packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray();
+                var pkt = packet.AsSpan(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray();
                 if (pkt.Length >= ReceptionReportSample.PAYLOAD_SIZE)
                 {
                     var rr = new ReceptionReportSample(pkt);
