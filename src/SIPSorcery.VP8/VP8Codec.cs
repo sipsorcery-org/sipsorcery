@@ -146,6 +146,26 @@ namespace Vpx.Net
         /// </summary>
         public int FramesSinceLastKeyframe => _framesSinceLastKeyframe;
 
+        /// <summary>
+        /// Opt-in: per-macroblock intra-fallback mode decision on inter (P)
+        /// frames. When enabled, each MB is encoded both as ZEROMV inter and
+        /// DC_PRED intra and the cheaper (rate-distortion vs the source) is
+        /// kept, so regions the ZEROMV prediction cannot represent are
+        /// intra-refreshed instead of drifting until the next keyframe. The
+        /// classic failure it prevents is slow uniform change (e.g. a gradual
+        /// brightness ramp) whose per-frame residual quantises to zero: the MB
+        /// is skipped every frame while the source keeps moving away from the
+        /// stale reconstruction.
+        ///
+        /// Default is false because evaluating both candidates roughly doubles
+        /// the encode cost of every inter frame, and with the default
+        /// 30-frame keyframe interval any drift is bounded to ~1 second. Turn
+        /// it on for long keyframe intervals or content with slow ramps/fades
+        /// where intra refresh matters more than encode time. Has no effect on
+        /// keyframes or when <see cref="KeyframeIntervalFrames"/> is 1.
+        /// </summary>
+        public bool EnableIntraFallback { get; set; } = false;
+
         public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             lock (_encoderLock)
@@ -158,10 +178,38 @@ namespace Vpx.Net
                         $"Width and height must be positive multiples of 16. Got {width}x{height}.");
                 }
 
-                // Convert the input sample into planar I420.
-                byte[] i420 = (pixelFormat == VideoPixelFormatsEnum.I420)
-                    ? sample
-                    : PixelConverter.ToI420(width, height, width, sample, pixelFormat);
+                // Convert the input sample into planar I420. PixelConverter.ToI420
+                // needs the source row stride in BYTES, which for packed formats is
+                // width * bytesPerPixel -- NOT width. Passing width here corrupts the
+                // conversion (it reads the source with the wrong row pitch, smearing /
+                // horizontally repeating the image) for every non-I420 input.
+                byte[] i420;
+                if (pixelFormat == VideoPixelFormatsEnum.I420)
+                {
+                    i420 = sample;
+                }
+                else
+                {
+                    int bytesPerPixel;
+                    switch (pixelFormat)
+                    {
+                        case VideoPixelFormatsEnum.Bgra:
+                        case VideoPixelFormatsEnum.Rgba:
+                            bytesPerPixel = 4;
+                            break;
+                        case VideoPixelFormatsEnum.Bgr:
+                        case VideoPixelFormatsEnum.Rgb:
+                            bytesPerPixel = 3;
+                            break;
+                        case VideoPixelFormatsEnum.NV12:
+                            bytesPerPixel = 1;
+                            break;
+                        default:
+                            bytesPerPixel = 1;
+                            break;
+                    }
+                    i420 = PixelConverter.ToI420(width, height, width * bytesPerPixel, sample, pixelFormat);
+                }
 
                 int ySize = width * height;
                 int cSize = (width / 2) * (height / 2);
@@ -199,7 +247,7 @@ namespace Vpx.Net
                     // every macroblock. The reference frame is the
                     // reconstruction of the previous keyframe / inter
                     // frame, cached on the per-thread FrameEncoderBuffers.
-                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
+                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
                     _framesSinceLastKeyframe++;
                 }
                 return result;
