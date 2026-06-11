@@ -14,10 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading;
@@ -34,7 +34,6 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorcery.Sys;
 using Vpx.Net;
 
 const string ListenUrl = "http://localhost:8080";
@@ -82,29 +81,18 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-//// Returns non-secret publisher info for display in the page. The token and the raw SFU
-//// API are never exposed to the browser.
-//app.MapGet("/api/publisher", (CloudflareSfuService sfu) => Results.Json(new
-//{
-//    sessionId = sfu.PublisherSessionId,
-//    audioTrackName = sfu.AudioTrackName,
-//    videoTrackName = sfu.VideoTrackName
-//}));
+// Mints a short-lived, subscribe-only access token for the browser viewer. The LiveKit API
+// key and secret never leave this app; the browser only ever receives a scoped JWT.
+app.MapPost("/api/join", (LiveKitRoomService roomService) => Results.Json(roomService.CreateViewerJoinInfo()));
 
-//// Creates a subscriber session and pulls the publisher's remote tracks. Cloudflare generates
-//// the offer for pulled tracks, which we hand back to the browser to answer.
-//app.MapPost("/api/subscribe", async (CloudflareSfuService sfu) =>
-//{
-//    var (subscriberSessionId, sdp) = await sfu.SubscribeAsync();
-//    return Results.Json(new { subscriberSessionId, sdp });
-//});
-
-//// Forwards the browser's answer SDP to Cloudflare to complete the pulled-track negotiation.
-//app.MapPost("/api/renegotiate", async (CloudflareSfuService sfu, RenegotiateBody body) =>
-//{
-//    await sfu.RenegotiateAsync(body.SubscriberSessionId, body.Sdp);
-//    return Results.Ok();
-//});
+// Returns non-secret publisher state so the page can show whether the C# publisher is up.
+app.MapGet("/api/status", (LiveKitRoomService roomService) => Results.Json(new
+{
+    room = LiveKitRoomService.RoomName,
+    publisherIdentity = LiveKitRoomService.PublisherIdentity,
+    publisherState = roomService.PublisherConnectionState,
+    subscriberState = roomService.SubscriberConnectionState
+}));
 
 Console.WriteLine($"LiveKit WebRTC example. Browse to {ListenUrl} once publishing has started.");
 
@@ -128,7 +116,7 @@ sealed class LikeKitWebSocketClient
     {
         _ws.Options.SetRequestHeader("Authorization", $"Bearer {jwt}");
         await _ws.ConnectAsync(
-            new Uri($"{url}/rtc?protocol=9&sdk=dotnet&auto_subscribe=true"),
+            new Uri($"{url}/rtc?protocol=9&sdk=dotnet&auto_subscribe=false"),
             ct);
 
         if (_ws.State == WebSocketState.Open)
@@ -138,12 +126,12 @@ sealed class LikeKitWebSocketClient
         }
     }
 
-    public async Task SendPing(CancellationToken ct)
+    public async Task SendAsync(SignalRequest req, CancellationToken ct)
     {
-        var req = new SignalRequest
-        {
-            PingReq = new Ping { Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }
-        };
+        //var req = new SignalRequest
+        //{
+        //    PingReq = new Ping { Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }
+        //};
         await _ws.SendAsync(req.ToByteArray(), WebSocketMessageType.Binary, true, ct);
     }
 
@@ -204,7 +192,8 @@ sealed class LikeKitWebSocketClient
                             {
                                 var payloadJson = JsonFormatter.Default.Format(payload);
                                 var payloadJsonElement = JsonSerializer.Deserialize<JsonElement>(payloadJson);
-                                var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = true });
+                                //var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = true });
+                                var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = false });
                                 _logger.LogInformation("LiveKit response ({MessageCase}): {PayloadJson}",
                                     signalResponse.MessageCase,
                                     prettyPayloadJson);
@@ -236,9 +225,19 @@ sealed class LikeKitWebSocketClient
     }
 }
 
+/// <summary>
+/// The connection details handed to the browser so it can join the LiveKit room as a viewer.
+/// </summary>
+sealed record ViewerJoinInfo(string Url, string Token, string Room, string Identity);
+
 sealed class LiveKitRoomService : IHostedService
 {
     private const string STUN_URL = "stun:stun.cloudflare.com";
+
+    public const string RoomName = "my-room";
+    public const string PublisherIdentity = "user-123";
+    public const string VideoTrackName = "test-pattern";
+    public const string AudioTrackName = "music";
 
     private readonly ILogger<LiveKitRoomService> _logger;
     private readonly LikeKitWebSocketClient _liveKitWebSocketClient;
@@ -248,13 +247,45 @@ sealed class LiveKitRoomService : IHostedService
     private readonly string _websocketUrl;
 
     private string _jwtToken = string.Empty;
+    private RTCPeerConnection? _subscriberPc;
     private RTCPeerConnection? _publisherPc;
     private VideoTestPatternSource? _videoSource;
     private AudioExtrasSource? _audioSource;
 
-    public string? PublisherSessionId { get; private set; }
-    public string AudioTrackName => "test-audio";
-    public string VideoTrackName => "test-pattern";
+    /// <summary>
+    /// AddTrack requests awaiting their TrackPublished acknowledgement, keyed by client track id (cid).
+    /// </summary>
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<TrackInfo>> _pendingTrackPublishes = new();
+
+    public string PublisherConnectionState => _publisherPc?.connectionState.ToString() ?? "not started";
+
+    public string SubscriberConnectionState => _subscriberPc?.connectionState.ToString() ?? "not started";
+
+    /// <summary>
+    /// Creates the join details for a browser viewer: a subscribe-only token with a random
+    /// identity, scoped to the publisher's room.
+    /// </summary>
+    public ViewerJoinInfo CreateViewerJoinInfo()
+    {
+        var identity = $"viewer-{Guid.NewGuid().ToString("N")[..8]}";
+
+        var token = new AccessToken(_appId, _apiToken)
+            .WithIdentity(identity)
+            .WithName("Browser viewer")
+            .WithGrants(new VideoGrants
+            {
+                RoomJoin = true,
+                Room = RoomName,
+                CanSubscribe = true,
+                CanPublish = false,
+                CanPublishData = false
+            })
+            .WithTtl(TimeSpan.FromHours(1));
+
+        _logger.LogInformation("Created viewer access token for identity {Identity} on room {Room}.", identity, RoomName);
+
+        return new ViewerJoinInfo(_websocketUrl, token.ToJwt(), RoomName, identity);
+    }
 
     public LiveKitRoomService(
         ILogger<LiveKitRoomService> logger,
@@ -269,41 +300,102 @@ sealed class LiveKitRoomService : IHostedService
         _apiToken = apiToken;
         _websocketUrl = websocketUrl;
 
-        _liveKitWebSocketClient.OnSignalResponse += HandleLiveKitSignalResponse;
+        _liveKitWebSocketClient.OnSignalResponse += async (e) =>
+        {
+            try
+            {
+                await HandleLiveKitSignalResponse(e);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "LiveKit signal response event handler failed.");
+            }
+        };
     }
 
-    private void HandleLiveKitSignalResponse(SignalResponse response)
-    {   
+    private async Task HandleLiveKitSignalResponse(SignalResponse response)
+    {
         switch (response.MessageCase)
         {
-            case SignalResponse.MessageOneofCase.Offer:
-                if (_publisherPc == null)
+            case SignalResponse.MessageOneofCase.Join:
+
+                _logger.LogInformation("Join response received for room {Room} as participant {Identity}.",
+                    response.Join.Room?.Name, response.Join.Participant?.Identity);
+
+                // The participant is now in the room so the tracks can be registered and published.
+                await PublishTracksAsync();
+                break;
+
+            case SignalResponse.MessageOneofCase.TrackPublished:
+
+                _logger.LogInformation("Track published acknowledgement for cid {Cid}, track sid {Sid}.",
+                    response.TrackPublished.Cid, response.TrackPublished.Track?.Sid);
+
+                if (_pendingTrackPublishes.TryRemove(response.TrackPublished.Cid, out var pendingPublish))
                 {
-                    _publisherPc = CreatePublisherPeerConnection();
-                    var result = _publisherPc.setRemoteDescription(new RTCSessionDescriptionInit
+                    pendingPublish.TrySetResult(response.TrackPublished.Track!);
+                }
+                break;
+
+            case SignalResponse.MessageOneofCase.Offer:
+
+                if (_subscriberPc == null)
+                {
+                    _subscriberPc = CreateSubscriberPeerConnection();
+                    var result = _subscriberPc.setRemoteDescription(new RTCSessionDescriptionInit
                     {
                         type = RTCSdpType.offer,
                         sdp = response.Offer.Sdp
                     });
 
-                    _logger.LogInformation("Set remote description for publisher peer connection with result: {Result}.", result);
+                    _logger.LogInformation("Set remote description for subscriber peer connection with result: {Result}.", result);
+
+                    var answer = _subscriberPc.createAnswer();
+                    await _subscriberPc.setLocalDescription(answer);
+
+                    _logger.LogInformation("Created answer for subscriber peer connection: {Answer}.", answer);
+
+                    await _liveKitWebSocketClient.SendAsync(new SignalRequest { Answer = new SessionDescription { Type = "answer", Sdp = answer.sdp } }, CancellationToken.None);
+                }
+                break;
+
+            case SignalResponse.MessageOneofCase.Answer:
+
+                if (_publisherPc != null)
+                {
+                    var result = _publisherPc.setRemoteDescription(new RTCSessionDescriptionInit
+                    {
+                        type = RTCSdpType.answer,
+                        sdp = response.Answer.Sdp
+                    });
+
+                    _logger.LogInformation("Set remote answer for publisher peer connection with result: {Result}.", result);
                 }
                 break;
 
             case SignalResponse.MessageOneofCase.Trickle:
+
                 _logger.LogInformation("Received ICE candidate from LiveKit for target {Target}: {CandidateInit}.",
                     response.Trickle.Target, response.Trickle.CandidateInit);
 
-                if(_publisherPc != null)
+                var targetPeerConnection = response.Trickle.Target switch
+                {
+                    SignalTarget.Publisher => _publisherPc,
+                    SignalTarget.Subscriber => _subscriberPc,
+                    _ => null
+                };
+
+                if (targetPeerConnection != null)
                 {
                     if (RTCIceCandidateInit.TryParse(response.Trickle.CandidateInit, out var parsedCandidate))
                     {
-                        _logger.LogInformation("Parsed ICE candidate successfully: {Candidate}.", parsedCandidate.candidate);
-                        _publisherPc.addIceCandidate(parsedCandidate);
+                        _logger.LogInformation("Parsed {Target} ICE candidate successfully: {Candidate}.", response.Trickle.Target, parsedCandidate.candidate);
+
+                        targetPeerConnection.addIceCandidate(parsedCandidate);
                     }
                     else
                     {
-                        _logger.LogWarning("Failed to parse ICE candidate from LiveKit: {CandidateInit}.", response.Trickle.CandidateInit);
+                        _logger.LogWarning("Failed to parse {Target} ICE candidate from LiveKit: {CandidateInit}.", response.Trickle.Target, response.Trickle.CandidateInit);
                     }
                 }
 
@@ -317,9 +409,9 @@ sealed class LiveKitRoomService : IHostedService
 
         // Generate access token
         var token = new AccessToken(_appId, _apiToken)
-            .WithIdentity("user-123")
+            .WithIdentity(PublisherIdentity)
             .WithName("John Doe")
-            .WithGrants(new VideoGrants { RoomJoin = true, Room = "my-room" });
+            .WithGrants(new VideoGrants { RoomJoin = true, Room = RoomName });
 
         if (token is null)
         {
@@ -332,7 +424,72 @@ sealed class LiveKitRoomService : IHostedService
             _jwtToken = token.ToJwt();
 
             await _liveKitWebSocketClient.ConnectAsync(_websocketUrl, _jwtToken, cancellationToken);
+
+            // Publishing is kicked off when the Join response arrives, see HandleLiveKitSignalResponse.
+            // The tracks must be registered with AddTrack requests, and acknowledged by the server,
+            // before the publisher peer connection's offer is sent.
         }
+    }
+
+    /// <summary>
+    /// Registers the audio and video tracks with LiveKit and, once the server has acknowledged
+    /// them, creates the publisher peer connection and sends its offer. LiveKit needs the
+    /// AddTrack registrations BEFORE the offer arrives so it can map the SDP media sections to
+    /// published tracks. The SIPSorcery SDP does not include a=msid entries, so the server falls
+    /// back to matching pending tracks by media kind; the cid is used to correlate the
+    /// TrackPublished acknowledgement with the request.
+    /// </summary>
+    private async Task PublishTracksAsync()
+    {
+        var videoTrackInfo = await AddTrackAsync(new AddTrackRequest
+        {
+            Cid = "testpattern-video",
+            Name = VideoTrackName,
+            Type = TrackType.Video,
+            Source = TrackSource.Camera,
+            Width = 640,
+            Height = 480
+        });
+
+        var audioTrackInfo = await AddTrackAsync(new AddTrackRequest
+        {
+            Cid = "music-audio",
+            Name = AudioTrackName,
+            Type = TrackType.Audio,
+            Source = TrackSource.Microphone
+        });
+
+        _logger.LogInformation("LiveKit registered tracks, video sid {VideoSid}, audio sid {AudioSid}.",
+            videoTrackInfo.Sid, audioTrackInfo.Sid);
+
+        _publisherPc = CreatePublisherPeerConnection();
+
+        var offer = _publisherPc.createOffer(new RTCOfferOptions { X_WaitForIceGatheringToComplete = true });
+        await _publisherPc.setLocalDescription(offer);
+
+        await _liveKitWebSocketClient.SendAsync(new SignalRequest { Offer = new SessionDescription { Type = "offer", Sdp = offer.sdp } }, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Sends an AddTrack request to LiveKit and waits for the matching TrackPublished response.
+    /// </summary>
+    private async Task<TrackInfo> AddTrackAsync(AddTrackRequest request)
+    {
+        var tcs = new TaskCompletionSource<TrackInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pendingTrackPublishes[request.Cid] = tcs;
+
+        _logger.LogInformation("Sending AddTrack request for {Type} track cid {Cid}.", request.Type, request.Cid);
+
+        await _liveKitWebSocketClient.SendAsync(new SignalRequest { AddTrack = request }, CancellationToken.None);
+
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(10)));
+        if (completed != tcs.Task)
+        {
+            _pendingTrackPublishes.TryRemove(request.Cid, out _);
+            throw new TimeoutException($"Timed out waiting for LiveKit to acknowledge the AddTrack request for cid {request.Cid}.");
+        }
+
+        return await tcs.Task;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -340,6 +497,37 @@ sealed class LiveKitRoomService : IHostedService
         _logger.LogInformation("LiveKit Room service stopping.");
     }
 
+    /// <summary>
+    /// Creates a peer connection for the subscriber role. This peer connection set up is mandatory and is triggered by a LiveKit offer when the web socket
+    /// connection is established. The C# application does not want to subscribe to new tracks from the publisher so it can set auto subscribe to false. It
+    /// will still create the peer connection and have data channels set up but will not be used for media.
+    /// </summary>
+    private RTCPeerConnection CreateSubscriberPeerConnection()
+    {
+        RTCConfiguration config = new RTCConfiguration
+        {
+            iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
+        };
+        var pc = new RTCPeerConnection(config);
+
+        pc.onconnectionstatechange += async (state) =>
+        {
+            _logger.LogDebug("Subscriberpeer connection state change to {State}.", state);
+
+            if (state == RTCPeerConnectionState.failed)
+            {
+                pc.Close("ice disconnection");
+            }
+        };
+
+        pc.oniceconnectionstatechange += (state) => _logger.LogDebug("Subscriber ICE connection state change to {State}.", state);
+
+        return pc;
+    }
+
+    /// <summary>
+    /// Creates a peer connection for the publisher role, which will send audio and video tracks to LiveKit.
+    /// </summary>
     private RTCPeerConnection CreatePublisherPeerConnection()
     {
         RTCConfiguration config = new RTCConfiguration

@@ -3,17 +3,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cloudflare SFU Subscriber</title>
+    <title>LiveKit Subscriber</title>
     <style>
         body { font-family: sans-serif; margin: 1rem; }
         button { margin-top: 0.8rem; margin-right: 0.6rem; }
         #status { margin-top: 0.8rem; white-space: pre-wrap; }
         #publisher { margin-top: 0.6rem; color: #444; }
-        video { margin-top: 1rem; background: #000; }
+        video { margin-top: 1rem; background: #000; width: 640px; max-width: 100%; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
     <script type="text/javascript">
-        let pc;
-        let inboundStream;
+        let room;
 
         function setStatus(msg) {
             const el = document.querySelector("#status");
@@ -21,32 +21,16 @@
             console.log(msg);
         }
 
-        // The browser only ever talks to this app. The app holds the Cloudflare API token and
-        // the publisher session id, and proxies the SFU calls, so neither is exposed here.
-        async function api(path, body) {
-            const init = { method: "POST" };
-            if (body !== undefined) {
-                init.headers = { "Content-Type": "application/json" };
-                init.body = JSON.stringify(body);
-            }
-            const response = await fetch(path, init);
-            const text = await response.text();
-            if (!response.ok) {
-                throw new Error(`${path} -> HTTP ${response.status}: ${text}`);
-            }
-            return text ? JSON.parse(text) : {};
-        }
-
-        async function refreshPublisher() {
+        // Shows whether the C# publisher's peer connection to LiveKit is up. Polled so the page
+        // reflects the publisher coming online without a manual refresh.
+        async function refreshStatus() {
             try {
-                const r = await fetch("/api/publisher");
+                const r = await fetch("/api/status");
                 const info = await r.json();
                 document.querySelector("#publisher").textContent =
-                    info.sessionId
-                        ? `Publisher session: ${info.sessionId} (audio: ${info.audioTrackName}, video: ${info.videoTrackName})`
-                        : "Publisher is not ready yet.";
+                    `Room: ${info.room} | publisher '${info.publisherIdentity}' peer connection: ${info.publisherState}`;
             } catch (err) {
-                document.querySelector("#publisher").textContent = `Could not load publisher info: ${err?.message || err}`;
+                document.querySelector("#publisher").textContent = `Could not load publisher status: ${err?.message || err}`;
             }
         }
 
@@ -54,40 +38,46 @@
             try {
                 document.querySelector("#status").textContent = "";
 
-                pc = new RTCPeerConnection({
-                    iceServers: [{ urls: "stun:stun.cloudflare.com" }]
-                });
-
-                inboundStream = new MediaStream();
-                document.querySelector("#videoCtl").srcObject = inboundStream;
-
-                pc.ontrack = (evt) => {
-                    setStatus(`Received ${evt.track.kind} track.`);
-                    inboundStream.addTrack(evt.track);
-                };
-
-                pc.oniceconnectionstatechange = () => setStatus(`ICE state: ${pc.iceConnectionState}`);
-                pc.onconnectionstatechange = () => setStatus(`PC state: ${pc.connectionState}`);
-
-                // Ask the app to create a subscriber session and pull the publisher's tracks.
-                // Cloudflare returns an offer for pulled tracks, which we answer below.
-                const sub = await api("/api/subscribe");
-                if (!sub.sdp) {
-                    throw new Error(`No offer SDP returned: ${JSON.stringify(sub)}`);
+                if (!window.LivekitClient) {
+                    throw new Error("The LiveKit client SDK failed to load from the CDN.");
                 }
-                setStatus(`Subscriber session: ${sub.subscriberSessionId}`);
+                const { Room, RoomEvent } = window.LivekitClient;
 
-                await pc.setRemoteDescription({ type: "offer", sdp: sub.sdp });
+                // The browser only ever talks to this app for credentials. The app holds the
+                // LiveKit API key and secret and mints a subscribe-only token scoped to the room.
+                const resp = await fetch("/api/join", { method: "POST" });
+                if (!resp.ok) {
+                    throw new Error(`/api/join -> HTTP ${resp.status}: ${await resp.text()}`);
+                }
+                const join = await resp.json();
+                setStatus(`Joining room ${join.room} as ${join.identity}...`);
 
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
+                room = new Room();
 
-                await api("/api/renegotiate", {
-                    subscriberSessionId: sub.subscriberSessionId,
-                    sdp: pc.localDescription.sdp
+                room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                    setStatus(`Subscribed to ${track.kind} track from ${participant.identity}.`);
+                    if (track.kind === "video") {
+                        track.attach(document.querySelector("#videoCtl"));
+                    }
+                    else if (track.kind === "audio") {
+                        // Audio tracks create their own hidden element; playback is allowed
+                        // because subscribing was triggered by a user gesture.
+                        document.body.appendChild(track.attach());
+                    }
                 });
 
-                setStatus("Subscription established.");
+                room.on(RoomEvent.TrackUnsubscribed, (track) => {
+                    track.detach().forEach((el) => { if (el.tagName === "AUDIO") { el.remove(); } });
+                });
+
+                room.on(RoomEvent.ParticipantConnected, (p) => setStatus(`Participant connected: ${p.identity}.`));
+                room.on(RoomEvent.ParticipantDisconnected, (p) => setStatus(`Participant disconnected: ${p.identity}.`));
+                room.on(RoomEvent.ConnectionStateChanged, (state) => setStatus(`Connection state: ${state}.`));
+                room.on(RoomEvent.Disconnected, () => setStatus("Disconnected from room."));
+
+                await room.connect(join.url, join.token);
+
+                setStatus(`Connected to room ${room.name}. Remote participants: ${room.remoteParticipants.size}.`);
             } catch (err) {
                 setStatus(`Start failed: ${err?.message || err}`);
             }
@@ -95,23 +85,27 @@
 
         async function closePeer() {
             try {
-                if (pc) {
-                    pc.close();
-                    pc = null;
+                if (room) {
+                    await room.disconnect();
+                    room = null;
                 }
+                document.querySelector("#videoCtl").srcObject = null;
                 setStatus("Closed.");
             } catch (err) {
                 setStatus(`Close failed: ${err?.message || err}`);
             }
         }
 
-        window.addEventListener("load", refreshPublisher);
+        window.addEventListener("load", () => {
+            refreshStatus();
+            setInterval(refreshStatus, 5000);
+        });
     </script>
 </head>
 <body>
-    <h2>Cloudflare Realtime SFU Subscriber</h2>
+    <h2>LiveKit Subscriber</h2>
 
-    <div id="publisher">Loading publisher info...</div>
+    <div id="publisher">Loading status...</div>
 
     <div>
         <button type="button" onclick="start();">Subscribe</button>
