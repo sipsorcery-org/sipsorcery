@@ -16,7 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Numerics;
 using MathNet.Numerics;
 using MathNet.Numerics.IntegralTransforms;
@@ -122,7 +121,7 @@ namespace AudioScope
 
             _timeIndex = (_timeIndex + samples.Length) % FFT_SIZE;
 
-            var freqBuffer = _timeRingBuffer.Skip(_timeIndex).Take(FFT_SIZE).ToArray();
+            var freqBuffer = _timeRingBuffer.AsSpan(_timeIndex, FFT_SIZE).ToArray();
 
             Fourier.Forward(freqBuffer, FourierOptions.NoScaling);
 
@@ -152,7 +151,7 @@ namespace AudioScope
             const int DISPLAY_ADJACENCY = PREVIOUS_SAMPLES_LENGTH / DISPLAY_ARRAY_STRIDE;
             int displayCount = BUFFER_SIZE + DISPLAY_ADJACENCY;
             int analyticOffset = (FFT_SIZE - displayCount) / 2;
-            var complexAnalyticBuffer = freqBuffer.Skip(analyticOffset).Take(displayCount).ToArray();
+            var complexAnalyticBuffer = freqBuffer.AsSpan(analyticOffset, displayCount).ToArray();
             var data = new float[displayCount * DISPLAY_ARRAY_STRIDE];
 
             for (int k = 0; k < complexAnalyticBuffer.Length; k++)
