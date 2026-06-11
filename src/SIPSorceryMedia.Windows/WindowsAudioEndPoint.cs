@@ -348,7 +348,7 @@ namespace SIPSorceryMedia.Windows
             // https://github.com/naudio/NAudio/blob/master/NAudio/Wave/WaveOutputs/WaveBuffer.cs
 
             short[] pcm = new short[args.BytesRecorded / sizeof(short)];
-            Buffer.BlockCopy(args.Buffer, 0, pcm, 0, args.BytesRecorded * sizeof(short));
+            Buffer.BlockCopy(args.Buffer, 0, pcm, 0, args.BytesRecorded);
             byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
             
             OnAudioSourceEncodedSample?.Invoke((uint)encodedSample.Length, encodedSample);
