@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.WebSockets;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -116,6 +117,8 @@ sealed class LikeKitWebSocketClient
     private readonly ClientWebSocket _ws = new ClientWebSocket();
     private Task? _receiveTask;
 
+    public event Action<SignalResponse>? OnSignalResponse;
+
     public LikeKitWebSocketClient(ILogger<LikeKitWebSocketClient> logger)
     {
         _logger = logger;
@@ -181,6 +184,41 @@ sealed class LikeKitWebSocketClient
 
                 _logger.LogDebug("Received message of type {MessageType} and length {Length}.",
                     result.MessageType, messageBuffer.Length);
+
+                if (result.MessageType == WebSocketMessageType.Binary && messageBuffer.Length > 0)
+                {
+                    messageBuffer.Position = 0;
+                    var signalResponse = SignalResponse.Parser.ParseFrom(messageBuffer);
+                    _logger.LogDebug("Parsed LiveKit SignalResponse with message case {MessageCase}.",
+                        signalResponse.MessageCase);
+
+                    switch (signalResponse.MessageCase)
+                    {
+                        case SignalResponse.MessageOneofCase.None:
+                            _logger.LogInformation("LiveKit response has no message payload.");
+                            break;
+
+                        default:
+                            var payloadProperty = typeof(SignalResponse).GetProperty(signalResponse.MessageCase.ToString());
+                            if (payloadProperty?.GetValue(signalResponse) is IMessage payload)
+                            {
+                                var payloadJson = JsonFormatter.Default.Format(payload);
+                                var payloadJsonElement = JsonSerializer.Deserialize<JsonElement>(payloadJson);
+                                var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = true });
+                                _logger.LogInformation("LiveKit response ({MessageCase}): {PayloadJson}",
+                                    signalResponse.MessageCase,
+                                    prettyPayloadJson);
+                            }
+                            else
+                            {
+                                _logger.LogWarning("No payload found for LiveKit response case {MessageCase}.",
+                                    signalResponse.MessageCase);
+                            }
+                            break;
+                    }
+
+                    OnSignalResponse?.Invoke(signalResponse);
+                }
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -230,6 +268,47 @@ sealed class LiveKitRoomService : IHostedService
         _appId = appId;
         _apiToken = apiToken;
         _websocketUrl = websocketUrl;
+
+        _liveKitWebSocketClient.OnSignalResponse += HandleLiveKitSignalResponse;
+    }
+
+    private void HandleLiveKitSignalResponse(SignalResponse response)
+    {   
+        switch (response.MessageCase)
+        {
+            case SignalResponse.MessageOneofCase.Offer:
+                if (_publisherPc == null)
+                {
+                    _publisherPc = CreatePublisherPeerConnection();
+                    var result = _publisherPc.setRemoteDescription(new RTCSessionDescriptionInit
+                    {
+                        type = RTCSdpType.offer,
+                        sdp = response.Offer.Sdp
+                    });
+
+                    _logger.LogInformation("Set remote description for publisher peer connection with result: {Result}.", result);
+                }
+                break;
+
+            case SignalResponse.MessageOneofCase.Trickle:
+                _logger.LogInformation("Received ICE candidate from LiveKit for target {Target}: {CandidateInit}.",
+                    response.Trickle.Target, response.Trickle.CandidateInit);
+
+                if(_publisherPc != null)
+                {
+                    if (RTCIceCandidateInit.TryParse(response.Trickle.CandidateInit, out var parsedCandidate))
+                    {
+                        _logger.LogInformation("Parsed ICE candidate successfully: {Candidate}.", parsedCandidate.candidate);
+                        _publisherPc.addIceCandidate(parsedCandidate);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to parse ICE candidate from LiveKit: {CandidateInit}.", response.Trickle.CandidateInit);
+                    }
+                }
+
+                break;
+        }
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -273,9 +352,9 @@ sealed class LiveKitRoomService : IHostedService
         _videoSource = new VideoTestPatternSource(vp8Codec);
         _audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
-        MediaStreamTrack videoTrack = new MediaStreamTrack(_videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
+        MediaStreamTrack videoTrack = new MediaStreamTrack(_videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
-        MediaStreamTrack audioTrack = new MediaStreamTrack(_audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
+        MediaStreamTrack audioTrack = new MediaStreamTrack(_audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(audioTrack);
 
         _videoSource.OnVideoSourceEncodedSample += pc.SendVideo;

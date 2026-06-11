@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "CloudflareTurn": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:57226;http://localhost:57227"
+    }
+  }
+}
