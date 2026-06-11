@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -150,7 +152,7 @@ namespace SIPSorcery.SIP.App
             m_authUsername = username;
             m_password = password;
             m_registrarHost = server;
-            m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
+            m_expiry = (expiry is >= REGISTER_MINIMUM_EXPIRY and <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_originalExpiry = m_expiry;
             m_callID = Guid.NewGuid().ToString();
             m_maxRegistrationAttemptTimeout = maxRegistrationAttemptTimeout;
@@ -191,7 +193,7 @@ namespace SIPSorcery.SIP.App
             m_realm = realm;
             m_registrarHost = registrarHost;
             m_contactURI = contactURI;
-            m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
+            m_expiry = (expiry is >= REGISTER_MINIMUM_EXPIRY and <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_originalExpiry = m_expiry;
             m_customHeaders = customHeaders;
             m_callID = CallProperties.CreateNewCallId();
@@ -314,7 +316,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="expiry">The new expiry value.</param>
         public void SetExpiry(int expiry)
         {
-            int newExpiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
+            int newExpiry = (expiry is >= REGISTER_MINIMUM_EXPIRY and <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
 
             if (newExpiry != m_expiry)
             {
@@ -434,7 +436,7 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogDebug("Server response {SipResponseStatus} received for {SipAccountAOR}.", sipResponse.Status, m_sipAccountAOR);
 
-                if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     if (sipResponse.Header.HasAuthenticationHeader)
                     {
@@ -515,7 +517,7 @@ namespace SIPSorcery.SIP.App
 
                         m_waitForRegistrationMRE.Set();
                     }
-                    else if (sipResponse.Status == SIPResponseStatusCodesEnum.Forbidden || sipResponse.Status == SIPResponseStatusCodesEnum.NotFound)
+                    else if (sipResponse.Status is SIPResponseStatusCodesEnum.Forbidden or SIPResponseStatusCodesEnum.NotFound)
                     {
                         // SIP account does not appear to exist.
                         m_exit = m_exitOnUnequivocalFailure;
@@ -578,7 +580,7 @@ namespace SIPSorcery.SIP.App
                     logger.LogDebug("Registration for {SIPAccountAOR} had a too short expiry, updated to {Expiry} and trying again.", m_sipAccountAOR, m_expiry);
                     SendInitialRegister();
                 }
-                else if (sipResponse.Status == SIPResponseStatusCodesEnum.Forbidden || sipResponse.Status == SIPResponseStatusCodesEnum.NotFound || sipResponse.Status == SIPResponseStatusCodesEnum.PaymentRequired)
+                else if (sipResponse.Status is SIPResponseStatusCodesEnum.Forbidden or SIPResponseStatusCodesEnum.NotFound or SIPResponseStatusCodesEnum.PaymentRequired)
                 {
                     // SIP account does not appear to exist.
                     m_exit = m_exitOnUnequivocalFailure;
@@ -589,7 +591,7 @@ namespace SIPSorcery.SIP.App
 
                     m_waitForRegistrationMRE.Set();
                 }
-                else if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
+                else if (sipResponse.Status is SIPResponseStatusCodesEnum.ProxyAuthenticationRequired or SIPResponseStatusCodesEnum.Unauthorised)
                 {
                     // SIP account credentials failed.
                     m_exit = m_exitOnUnequivocalFailure;

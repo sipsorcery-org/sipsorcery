@@ -19,352 +19,338 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.Utilities.Encoders;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
+using SIPSorcery.Net;
 
-namespace SIPSorcery.Net.SharpSRTP.DTLS
+namespace SIPSorcery.Net.SharpSRTP.DTLS;
+
+public class DtlsServer : DefaultTlsServer, IDtlsPeer
 {
-    public class DtlsServer : DefaultTlsServer, IDtlsPeer
+    private readonly object _syncRoot = new object();
+    private static readonly ILogger _logger = LogFactory.CreateLogger<DtlsServer>();
+    protected DatagramTransport? _clientDatagramTransport; // valid only for the current session
+
+    public int TimeoutMilliseconds { get; set; } = 20000;
+
+    public Certificate? Certificate { get; private set; }
+    public AsymmetricKeyParameter? CertificatePrivateKey { get; private set; }
+    public short CertificateSignatureAlgorithm { get; private set; }
+    public short CertificateHashAlgorithm { get; private set; }
+
+    public bool ForceUseExtendedMasterSecret { get; set; } = true;
+    public event EventHandler<DtlsHandshakeCompletedEventArgs>? OnHandshakeCompleted;
+    public event EventHandler<DtlsAlertEventArgs>? OnAlert;
+
+    public DtlsServer(
+        Certificate? certificate = null,
+        AsymmetricKeyParameter? privateKey = null,
+        short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+        short certificateHashAlgorithm = HashAlgorithm.sha256) :
+        this(
+            new BcTlsCrypto(),
+            certificate,
+            privateKey,
+            certificateSignatureAlgorithm,
+            certificateHashAlgorithm)
+    { }
+
+    public DtlsServer(
+        TlsCrypto crypto,
+        Certificate? certificate = null,
+        AsymmetricKeyParameter? privateKey = null,
+        short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+        short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
     {
-        private readonly object _syncRoot = new object();
-        private static readonly ILogger logger = LogFactory.CreateLogger<DtlsServer>();
-        protected DatagramTransport _clientDatagramTransport = null;
-
-        public int TimeoutMilliseconds { get; set; } = 20000;
-
-        public Certificate Certificate { get; private set; }
-        public AsymmetricKeyParameter CertificatePrivateKey { get; private set; }
-        public short CertificateSignatureAlgorithm { get; private set; }
-        public short CertificateHashAlgorithm { get; private set; }
-
-        public bool ForceUseExtendedMasterSecret { get; set; } = true;
-        public event EventHandler<DtlsHandshakeCompletedEventArgs> OnHandshakeCompleted;
-        public event EventHandler<DtlsAlertEventArgs> OnAlert;
-
-        public DtlsServer(Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) :
-            this(new BcTlsCrypto(), certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
-        { }
-
-        public DtlsServer(TlsCrypto crypto, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
+        if (certificate == null || privateKey == null)
         {
-            if (certificate == null || privateKey == null)
+            // generate default self-signed certificate - SRTP_AEAD_AES_256_GCM requires ECDsa
+            AutogenerateClientCertificate(false);
+        }
+        else
+        {
+            SetCertificate(certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm);
+        }
+    }
+
+    public virtual void SetCertificate(Certificate certificate, AsymmetricKeyParameter privateKey, short signatureAlgorithm, short hashAlgorithm)
+    {
+        Certificate = certificate;
+        CertificatePrivateKey = privateKey;
+        CertificateSignatureAlgorithm = signatureAlgorithm;
+        CertificateHashAlgorithm = hashAlgorithm;
+    }
+
+    public virtual void AutogenerateClientCertificate(bool isRsa)
+    {
+        var cert = DtlsCertificateUtils.GenerateCertificate(GetCertificateCommonName(), DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), isRsa);
+        SetCertificate(cert.Certificate, cert.PrivateKey, isRsa ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa, HashAlgorithm.sha256);
+    }
+
+    protected virtual string GetCertificateCommonName()
+    {
+        return "DTLS";
+    }
+
+    public override bool RequiresExtendedMasterSecret()
+    {
+        return ForceUseExtendedMasterSecret;
+    }
+
+    protected override ProtocolVersion[] GetSupportedVersions()
+    {
+        //return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv12);
+        return ProtocolVersion.DTLSv12.Only(); // ProtocolVersion.IsSupportedDtlsVersionServer currently does not support DTLS 1.3
+    }
+
+    protected override int[] GetSupportedCipherSuites()
+    {
+        if (CertificateSignatureAlgorithm == SignatureAlgorithm.rsa)
+        {
+            return new int[]
             {
-                // generate default self-signed certificate - SRTP_AEAD_AES_256_GCM requires ECDsa
-                AutogenerateClientCertificate(false);
+                // TLS 1.2 ciphers:
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+            };
+        }
+        else if (CertificateSignatureAlgorithm == SignatureAlgorithm.ecdsa)
+        {
+            // ECDSA certificates require matching cipher suites
+            return new int[]
+            {
+                // TLS 1.3 ciphers:
+                //CipherSuite.TLS_AES_256_GCM_SHA384,
+                //CipherSuite.TLS_AES_128_GCM_SHA256,
+                //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+
+                // TLS 1.2 ciphers:
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+            };
+        }
+        else
+        {
+            throw new InvalidOperationException($"DTLS server certificate algorithm {CertificateSignatureAlgorithm} not supported!");
+        }
+    }
+
+    public virtual DtlsTransport? DoHandshake(out string? handshakeError, DatagramTransport datagramTransport, DtlsRequest? request = null)
+    {
+        lock (_syncRoot)
+        {
+            if (datagramTransport == null)
+            {
+                throw new ArgumentNullException(nameof(datagramTransport));
             }
-            else
+
+            DtlsTransport? transport = null;
+
+            try
             {
-                SetCertificate(certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm);
+                DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
+                _clientDatagramTransport = datagramTransport;
+                transport = serverProtocol.Accept(this, datagramTransport, request);
+                _clientDatagramTransport = null;
+            }
+            catch (Exception ex)
+            {
+                handshakeError = ex.Message;
+                return null;
+            }
+
+            handshakeError = null;
+            return transport;
+        }
+    }
+
+    public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
+    {
+        _logger.LogDtlsServerAlertRaised(alertLevel, alertDescription, message, cause);
+    }
+
+    public override void NotifyAlertReceived(short level, short alertDescription)
+    {
+        _logger.LogDtlsServerAlertReceived(level, alertDescription);
+
+        TlsAlertTypesEnum alertType = TlsAlertTypesEnum.Unassigned;
+        if (Enum.IsDefined(typeof(TlsAlertTypesEnum), (int)alertDescription))
+        {
+            alertType = (TlsAlertTypesEnum)alertDescription;
+        }
+
+        TlsAlertLevelsEnum alertLevel = TlsAlertLevelsEnum.Warn;
+        if (Enum.IsDefined(typeof(TlsAlertLevelsEnum), (int)alertLevel))
+        {
+            alertLevel = (TlsAlertLevelsEnum)level;
+        }
+
+        OnAlert?.Invoke(this, new DtlsAlertEventArgs(alertLevel, alertType, AlertDescription.GetText(alertDescription)));
+    }
+
+    public override ProtocolVersion GetServerVersion()
+    {
+        ProtocolVersion serverVersion = base.GetServerVersion();
+        _logger.LogDtlsServerNegotiated(serverVersion);
+        return serverVersion;
+    }
+
+    public override int GetHandshakeTimeoutMillis()
+    {
+        return TimeoutMilliseconds;
+    }
+
+    public override CertificateRequest GetCertificateRequest()
+    {
+        short[] certificateTypes = new short[] { ClientCertificateType.ecdsa_sign, ClientCertificateType.rsa_sign };
+
+        IList<SignatureAndHashAlgorithm>? serverSigAlgs = null;
+        if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(m_context.ServerVersion))
+        {
+            serverSigAlgs = TlsUtilities.GetDefaultSupportedSignatureAlgorithms(m_context);
+        }
+
+        return new CertificateRequest(certificateTypes, serverSigAlgs, null);
+    }
+
+    public override void NotifyClientCertificate(Certificate clientCertificate)
+    {
+        TlsCertificate[] chain = clientCertificate.GetCertificateList();
+
+        _logger.LogDtlsServerCertificateChainReceived(chain.Length);
+
+        for (int i = 0; i != chain.Length; i++)
+        {
+            X509CertificateStructure entry = X509CertificateStructure.GetInstance(chain[i].GetEncoded());
+            _logger.LogDtlsServerCertificateFingerprint(DtlsCertificateUtils.Fingerprint(entry), entry.Subject.ToString());
+        }
+    }
+
+    public override void NotifyHandshakeComplete()
+    {
+        base.NotifyHandshakeComplete();
+
+        ProtocolName protocolName = m_context.SecurityParameters.ApplicationProtocol;
+        if (protocolName != null)
+        {
+            _logger.LogDtlsServerAlpn(protocolName.GetUtf8Decoding());
+        }
+
+        byte[] tlsServerEndPoint = m_context.ExportChannelBinding(ChannelBinding.tls_server_end_point);
+        _logger.LogDtlsServerTlsServerEndPoint(ToHexString(tlsServerEndPoint));
+
+        byte[] tlsUnique = m_context.ExportChannelBinding(ChannelBinding.tls_unique);
+        _logger.LogDtlsServerTlsUnique(ToHexString(tlsUnique));
+
+        OnHandshakeCompleted?.Invoke(this, new DtlsHandshakeCompletedEventArgs(m_context.SecurityParameters));
+    }
+
+    public override void ProcessClientExtensions(IDictionary<int, byte[]> clientExtensions)
+    {
+        if (m_context.SecurityParameters.ClientRandom == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        base.ProcessClientExtensions(clientExtensions);
+    }
+
+    public override IDictionary<int, byte[]> GetServerExtensions()
+    {
+        if (m_context.SecurityParameters.ServerRandom == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return base.GetServerExtensions();
+    }
+
+    public override void GetServerExtensionsForConnection(IDictionary<int, byte[]> serverExtensions)
+    {
+        if (m_context.SecurityParameters.ServerRandom == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        base.GetServerExtensionsForConnection(serverExtensions);
+    }
+
+    protected virtual string ToHexString(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.ToHexString(data);
+    }
+
+    public override int GetSelectedCipherSuite()
+    {
+        return base.GetSelectedCipherSuite();
+    }
+
+    protected override TlsCredentialedSigner GetECDsaSignerCredentials()
+    {
+        IList<SignatureAndHashAlgorithm> clientSigAlgs = m_context.SecurityParameters.ClientSigAlgs;
+        SignatureAndHashAlgorithm? signatureAndHashAlgorithm = null;
+
+        if (Certificate == null || CertificatePrivateKey == null)
+        {
+            throw new InvalidOperationException("DTLS server ECDsa certificate not set!");
+        }
+
+        foreach (SignatureAndHashAlgorithm alg in clientSigAlgs)
+        {
+            if (alg.Signature == CertificateSignatureAlgorithm && alg.Hash == CertificateHashAlgorithm)
+            {
+                signatureAndHashAlgorithm = alg;
+                break;
             }
         }
 
-        public virtual void SetCertificate(Certificate certificate, AsymmetricKeyParameter privateKey, short signatureAlgorithm, short hashAlgorithm)
+        if (signatureAndHashAlgorithm == null)
         {
-            Certificate = certificate;
-            CertificatePrivateKey = privateKey;
-            CertificateSignatureAlgorithm = signatureAlgorithm;
-            CertificateHashAlgorithm = hashAlgorithm;
+            throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
         }
 
-        public virtual void AutogenerateClientCertificate(bool isRsa)
+        return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), (BcTlsCrypto)m_context.Crypto, CertificatePrivateKey, Certificate, signatureAndHashAlgorithm);
+    }
+
+    protected override TlsCredentialedSigner GetRsaSignerCredentials()
+    {
+        IList<SignatureAndHashAlgorithm> clientSigAlgs = m_context.SecurityParameters.ClientSigAlgs;
+        SignatureAndHashAlgorithm? signatureAndHashAlgorithm = null;
+
+        if (Certificate == null || CertificatePrivateKey == null)
         {
-            var cert = DtlsCertificateUtils.GenerateCertificate(GetCertificateCommonName(), DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), isRsa);
-            SetCertificate(cert.Certificate, cert.PrivateKey, isRsa ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa, HashAlgorithm.sha256);
+            throw new InvalidOperationException("DTLS server RSA certificate not set!");
         }
 
-        protected virtual string GetCertificateCommonName()
+        foreach (SignatureAndHashAlgorithm alg in clientSigAlgs)
         {
-            return "DTLS";
-        }
-
-        public override bool RequiresExtendedMasterSecret()
-        {
-            return ForceUseExtendedMasterSecret;
-        }
-
-        protected override ProtocolVersion[] GetSupportedVersions()
-        {
-            //return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv12);
-            return ProtocolVersion.DTLSv12.Only(); // ProtocolVersion.IsSupportedDtlsVersionServer currently does not support DTLS 1.3
-        }
-
-        protected override int[] GetSupportedCipherSuites()
-        {
-            if (CertificateSignatureAlgorithm == SignatureAlgorithm.rsa)
+            if (alg.Signature == CertificateSignatureAlgorithm && alg.Hash == CertificateHashAlgorithm)
             {
-                return new int[]
-                {
-                    // TLS 1.2 ciphers:
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-                };
-            }
-            else if (CertificateSignatureAlgorithm == SignatureAlgorithm.ecdsa)
-            {
-                // ECDSA certificates require matching cipher suites
-                return new int[]
-                {
-                    // TLS 1.3 ciphers:
-                    //CipherSuite.TLS_AES_256_GCM_SHA384,
-                    //CipherSuite.TLS_AES_128_GCM_SHA256,
-                    //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
-
-                    // TLS 1.2 ciphers:
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-                };
-            }
-            else
-            {
-                throw new InvalidOperationException($"DTLS server certificate algorithm {CertificateSignatureAlgorithm} not supported!");
+                signatureAndHashAlgorithm = alg;
+                break;
             }
         }
 
-        public virtual DtlsTransport DoHandshake(out string handshakeError, DatagramTransport datagramTransport, DtlsRequest request = null)
+        if (signatureAndHashAlgorithm == null)
         {
-            lock (_syncRoot)
-            {
-                if (datagramTransport == null)
-                {
-                    throw new ArgumentNullException(nameof(datagramTransport));
-                }
-
-                DtlsTransport transport = null;
-
-                try
-                {
-                    DtlsServerProtocol serverProtocol = new DtlsServerProtocol();
-                    _clientDatagramTransport = datagramTransport;
-                    transport = serverProtocol.Accept(this, datagramTransport, request);
-                    _clientDatagramTransport = null;
-                }
-                catch (Exception ex)
-                {
-                    handshakeError = ex.Message;
-                    return null;
-                }
-
-                handshakeError = null;
-                return transport;
-            }
+            throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
         }
 
-        public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
-        {
-            if (logger.IsEnabled(LogLevel.Debug))
-            {
-                logger.LogDebug("DTLS server raised alert: {AlertLevel}, {AlertDescription}.",
-                    AlertLevel.GetText(alertLevel), AlertDescription.GetText(alertDescription));
-            }
-
-            if (message != null)
-            {
-                logger.LogDebug("> {Message}", message);
-            }
-            if (cause != null)
-            {
-                logger.LogDebug("> {Cause}", cause);
-            }
-        }
-
-        public override void NotifyAlertReceived(short level, short alertDescription)
-        {
-            if (logger.IsEnabled(LogLevel.Debug))
-            {
-                logger.LogDebug("DTLS server received alert: {AlertLevel}, {AlertDescription}.",
-                    AlertLevel.GetText(level), AlertDescription.GetText(alertDescription));
-            }
-
-            TlsAlertTypesEnum alertType = TlsAlertTypesEnum.Unassigned;
-            if (Enum.IsDefined(typeof(TlsAlertTypesEnum), (int)alertDescription))
-            {
-                alertType = (TlsAlertTypesEnum)alertDescription;
-            }
-
-            TlsAlertLevelsEnum alertLevel = TlsAlertLevelsEnum.Warn;
-            if (Enum.IsDefined(typeof(TlsAlertLevelsEnum), (int)alertLevel))
-            {
-                alertLevel = (TlsAlertLevelsEnum)level;
-            }
-
-            OnAlert?.Invoke(this, new DtlsAlertEventArgs(alertLevel, alertType, AlertDescription.GetText(alertDescription)));
-        }
-
-        public override ProtocolVersion GetServerVersion()
-        {
-            ProtocolVersion serverVersion = base.GetServerVersion();
-            logger.LogDebug("DTLS server negotiated {ServerVersion}.", serverVersion);
-            return serverVersion;
-        }
-
-        public override int GetHandshakeTimeoutMillis()
-        {
-            return TimeoutMilliseconds;
-        }
-
-        public override CertificateRequest GetCertificateRequest()
-        {
-            short[] certificateTypes = new short[] { ClientCertificateType.ecdsa_sign, ClientCertificateType.rsa_sign };
-
-            IList<SignatureAndHashAlgorithm> serverSigAlgs = null;
-            if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(m_context.ServerVersion))
-            {
-                serverSigAlgs = TlsUtilities.GetDefaultSupportedSignatureAlgorithms(m_context);
-            }
-
-            return new CertificateRequest(certificateTypes, serverSigAlgs, null);
-        }
-
-        public override void NotifyClientCertificate(Certificate clientCertificate)
-        {
-            TlsCertificate[] chain = clientCertificate.GetCertificateList();
-
-            logger.LogDebug("DTLS server received client certificate chain of length {CertificateCount}.", chain.Length);
-
-            for (int i = 0; i != chain.Length; i++)
-            {
-                X509CertificateStructure entry = X509CertificateStructure.GetInstance(chain[i].GetEncoded());
-                if (logger.IsEnabled(LogLevel.Debug))
-                {
-                    logger.LogDebug("fingerprint:SHA-256 {Fingerprint} ({Subject}).",
-                        DtlsCertificateUtils.Fingerprint(entry), entry.Subject);
-                }
-            }
-        }
-
-        public override void NotifyHandshakeComplete()
-        {
-            base.NotifyHandshakeComplete();
-
-            ProtocolName protocolName = m_context.SecurityParameters.ApplicationProtocol;
-            if (protocolName != null)
-            {
-                if (logger.IsEnabled(LogLevel.Debug))
-                {
-                    logger.LogDebug("Server ALPN: {ApplicationProtocol}.", protocolName.GetUtf8Decoding());
-                }
-            }
-
-            byte[] tlsServerEndPoint = m_context.ExportChannelBinding(ChannelBinding.tls_server_end_point);
-            if (logger.IsEnabled(LogLevel.Debug))
-            {
-                logger.LogDebug("Server 'tls-server-end-point': {TlsServerEndPoint}.", ToHexString(tlsServerEndPoint));
-            }
-
-            byte[] tlsUnique = m_context.ExportChannelBinding(ChannelBinding.tls_unique);
-            if (logger.IsEnabled(LogLevel.Debug))
-            {
-                logger.LogDebug("Server 'tls-unique': {TlsUnique}.", ToHexString(tlsUnique));
-            }
-
-            OnHandshakeCompleted?.Invoke(this, new DtlsHandshakeCompletedEventArgs(m_context.SecurityParameters));
-        }
-
-        public override void ProcessClientExtensions(IDictionary<int, byte[]> clientExtensions)
-        {
-            if (m_context.SecurityParameters.ClientRandom == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            base.ProcessClientExtensions(clientExtensions);
-        }
-
-        public override IDictionary<int, byte[]> GetServerExtensions()
-        {
-            if (m_context.SecurityParameters.ServerRandom == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            return base.GetServerExtensions();
-        }
-
-        public override void GetServerExtensionsForConnection(IDictionary<int, byte[]> serverExtensions)
-        {
-            if (m_context.SecurityParameters.ServerRandom == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            base.GetServerExtensionsForConnection(serverExtensions);
-        }
-
-        protected virtual string ToHexString(byte[] data)
-        {
-            return data == null ? "(null)" : Hex.ToHexString(data);
-        }
-
-        public override int GetSelectedCipherSuite()
-        {
-            return base.GetSelectedCipherSuite();
-        }
-
-        protected override TlsCredentialedSigner GetECDsaSignerCredentials()
-        {
-            IList<SignatureAndHashAlgorithm> clientSigAlgs = m_context.SecurityParameters.ClientSigAlgs;
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-
-            if (Certificate == null || CertificatePrivateKey == null)
-            {
-                throw new InvalidOperationException("DTLS server ECDsa certificate not set!");
-            }
-
-            foreach (SignatureAndHashAlgorithm alg in clientSigAlgs)
-            {
-                if (alg.Signature == CertificateSignatureAlgorithm && alg.Hash == CertificateHashAlgorithm)
-                {
-                    signatureAndHashAlgorithm = alg;
-                    break;
-                }
-            }
-
-            if (signatureAndHashAlgorithm == null)
-            {
-                throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
-            }
-
-            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), (BcTlsCrypto)m_context.Crypto, CertificatePrivateKey, Certificate, signatureAndHashAlgorithm);
-        }
-
-        protected override TlsCredentialedSigner GetRsaSignerCredentials()
-        {
-            IList<SignatureAndHashAlgorithm> clientSigAlgs = m_context.SecurityParameters.ClientSigAlgs;
-            SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-
-            if (Certificate == null || CertificatePrivateKey == null)
-            {
-                throw new InvalidOperationException("DTLS server RSA certificate not set!");
-            }
-
-            foreach (SignatureAndHashAlgorithm alg in clientSigAlgs)
-            {
-                if (alg.Signature == CertificateSignatureAlgorithm && alg.Hash == CertificateHashAlgorithm)
-                {
-                    signatureAndHashAlgorithm = alg;
-                    break;
-                }
-            }
-
-            if (signatureAndHashAlgorithm == null)
-            {
-                throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
-            }
-
-            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), (BcTlsCrypto)m_context.Crypto, CertificatePrivateKey, Certificate, signatureAndHashAlgorithm);
-        }
+        return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(m_context), (BcTlsCrypto)m_context.Crypto, CertificatePrivateKey, Certificate, signatureAndHashAlgorithm);
     }
 }

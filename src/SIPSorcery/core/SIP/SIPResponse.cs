@@ -14,6 +14,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -52,7 +54,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public bool IsSuccessStatusCode
         {
-            get { return (StatusCode >= 200) && (StatusCode <= 204); }
+            get { return StatusCode is >= 200 and <= 204; }
         }
 
         /// <summary>

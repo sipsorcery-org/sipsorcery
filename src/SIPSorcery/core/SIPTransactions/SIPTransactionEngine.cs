@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -480,7 +482,7 @@ namespace SIPSorcery.SIP
                                                 break;
                                         }
 
-                                        if (sendResult != SocketError.Success && sendResult != SocketError.InProgress)
+                                        if (sendResult is not SocketError.Success and not SocketError.InProgress)
                                         {
                                             logger.LogWarning("SIP transaction send failed in state {TransactionState} with error {SendResult}.", transaction.TransactionState, sendResult);
 
@@ -644,7 +646,7 @@ namespace SIPSorcery.SIP
 
                 foreach (var (_, transaction) in m_pendingTransactions)
                 {
-                    if (transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                    if (transaction.TransactionType is SIPTransactionTypesEnum.InviteClient or SIPTransactionTypesEnum.InviteServer)
                     {
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
@@ -706,8 +708,8 @@ namespace SIPSorcery.SIP
                             // - Calling: it means no response of any kind (provisional or final) was received from the server in time.
                             // - Trying: it means all we got was a "100 Trying" response without any follow up progress indications or final response.
 
-                            if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                                transaction.TransactionState == SIPTransactionStatesEnum.Trying)
+                            if (transaction.TransactionState is SIPTransactionStatesEnum.Calling or
+                                SIPTransactionStatesEnum.Trying)
                             {
                                 transaction.Expire(now);
                                 expiredTransactionIds.Add(transaction.TransactionId);
@@ -725,9 +727,9 @@ namespace SIPSorcery.SIP
                     }
                     else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                     {
-                        if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                           transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
-                           transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                        if (transaction.TransactionState is SIPTransactionStatesEnum.Calling or
+                           SIPTransactionStatesEnum.Trying or
+                           SIPTransactionStatesEnum.Proceeding)
                         {
                             //logger.LogWarning("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
                             transaction.Expire(now);

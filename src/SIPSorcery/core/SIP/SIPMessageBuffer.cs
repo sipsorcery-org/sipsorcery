@@ -14,6 +14,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -309,7 +311,7 @@ namespace SIPSorcery.SIP
                             contentLengthValueStartPosn = index + 1;
                             break;
                         }
-                        else if (buffer[index] == ' ' || buffer[index] == '\t')
+                        else if (buffer[index] is (byte)' ' or (byte)'\t')
                         {
                             // Skip any whitespace between the header and the colon.
                             continue;
@@ -364,7 +366,7 @@ namespace SIPSorcery.SIP
                             // Skip any whitespace at the start of the header value.
                             continue;
                         }
-                        else if (buffer[index] >= '0' && buffer[index] <= '9')
+                        else if (buffer[index] is >= (byte)'0' and <= (byte)'9')
                         {
                             contentLengthValue += ((char)buffer[index]).ToString();
                         }

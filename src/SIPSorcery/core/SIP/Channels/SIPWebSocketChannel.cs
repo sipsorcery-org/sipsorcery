@@ -23,6 +23,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -205,7 +207,7 @@ namespace SIPSorcery.SIP
             m_webSocketServer.AddWebSocketService<SIPMessagWebSocketBehavior>("/", (behaviour) =>
             {
                 behaviour.Channel = this;
-                behaviour.Logger = this.logger;
+                behaviour.Logger = logger;
 
                 behaviour.OnClientClose += (id) => m_ingressConnections.TryRemove(id, out _);
             });

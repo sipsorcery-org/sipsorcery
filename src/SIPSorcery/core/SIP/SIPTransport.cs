@@ -18,6 +18,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -844,8 +846,8 @@ namespace SIPSorcery.SIP
                 {
                     if (contactHeader.ContactURI.Host.StartsWith(IPAddress.Any.ToString()) ||
                         contactHeader.ContactURI.Host.StartsWith(IPAddress.IPv6Any.ToString()))
-                    {
-                        copy = copy ?? header.Copy();
+                {
+                    copy = copy ?? header.Copy();
                         Debug.Assert(copy.Contact.Count == 1);
                         copy.Contact[0].ContactURI.Host = sendFromEndPoint.ToString();
                     }
@@ -1015,8 +1017,7 @@ namespace SIPSorcery.SIP
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK)
                                             {
-                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed ||
-                                                    requestTransaction.TransactionState == SIPTransactionStatesEnum.Cancelled)
+                                                if (requestTransaction.TransactionState is SIPTransactionStatesEnum.Completed or SIPTransactionStatesEnum.Cancelled)
                                                 {
                                                     sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                     requestTransaction.ACKReceived(localEndPoint, remoteEndPoint, sipRequest);

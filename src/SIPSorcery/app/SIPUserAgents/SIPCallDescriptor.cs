@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -540,13 +542,13 @@ namespace SIPSorcery.SIP.App
                                 //string headerValue = (customHeader.Length > colonIndex) ? customHeader.Substring(colonIndex + 1).Trim() : String.Empty;
 
                                 var trimmedCustomHeader = customHeader.AsSpan().Trim();
-                                if (trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_VIA, StringComparison.OrdinalIgnoreCase) ||
-                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_FROM, StringComparison.OrdinalIgnoreCase) ||
-                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CONTACT, StringComparison.OrdinalIgnoreCase) ||
-                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CSEQ, StringComparison.OrdinalIgnoreCase) ||
-                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CALLID, StringComparison.OrdinalIgnoreCase) ||
-                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_MAXFORWARDS, StringComparison.OrdinalIgnoreCase) ||
-                                    trimmedCustomHeader.Equals(SIPHeaders.SIP_HEADER_CONTENTLENGTH, StringComparison.OrdinalIgnoreCase))
+                                if (SIPHeaders.SIP_HEADER_VIA.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase) ||
+                                    SIPHeaders.SIP_HEADER_FROM.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase) ||
+                                    SIPHeaders.SIP_HEADER_CONTACT.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase) ||
+                                    SIPHeaders.SIP_HEADER_CSEQ.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase) ||
+                                    SIPHeaders.SIP_HEADER_CALLID.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase) ||
+                                    SIPHeaders.SIP_HEADER_MAXFORWARDS.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase) ||
+                                    SIPHeaders.SIP_HEADER_CONTENTLENGTH.Equals(trimmedCustomHeader, StringComparison.OrdinalIgnoreCase))
                                 {
                                     logger.LogWarning("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, {CustomHeader}.", customHeader);
                                     continue;

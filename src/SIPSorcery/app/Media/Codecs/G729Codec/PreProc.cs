@@ -1,4 +1,5 @@
-﻿/*
+﻿using System;
+/*
  * Copyright @ 2015 Atlassian Pty Ltd
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,87 +38,84 @@
  *
  * @author Lubomir Marinov (translation of ITU-T C source code to Java)
  */
-namespace SIPSorcery.Media.G729Codec
+namespace SIPSorcery.Media.G729Codec;
+
+internal sealed class PreProc
 {
-    internal class PreProc
+
+    /* ITU-T G.729 Software Package Release 2 (November 2006) */
+    /*
+ITU-T G.729 Annex C - Reference C code for floating point
+                     implementation of G.729
+                     Version 1.01 of 15.September.98
+*/
+
+    /*
+----------------------------------------------------------------------
+                COPYRIGHT NOTICE
+----------------------------------------------------------------------
+ITU-T G.729 Annex C ANSI C source code
+Copyright (C) 1998, AT&T, France Telecom, NTT, University of
+Sherbrooke.  All rights reserved.
+
+----------------------------------------------------------------------
+*/
+
+    /*
+File : PRE_PROC.C
+Used for the floating point version of both
+G.729 main body and G.729A
+*/
+
+    /**
+* High-pass fir memory
+*/
+    private float x0, x1;
+
+    /**
+* High-pass iir memory
+*/
+    private float y1, y2;
+
+    /**
+* Init Pre Process
+*/
+
+    public void init_pre_process()
     {
+        x0 = x1 = 0.0f;
+        y2 = y1 = 0.0f;
+    }
 
-        /* ITU-T G.729 Software Package Release 2 (November 2006) */
-        /*
-   ITU-T G.729 Annex C - Reference C code for floating point
-                         implementation of G.729
-                         Version 1.01 of 15.September.98
-*/
+    /// <summary>
+    /// Pre Process
+    /// </summary>
+    /// <param name="signal">Signal buffer to process (in-place).</param>
+    /// <param name="signalOffset">Offset in the signal buffer.</param>
+    /// <param name="length">Number of samples to process.</param>
+    public void pre_process(
+        Span<float> signal,
+        int signalOffset,
+        int length
+    )
+    {
+        var a140 = TabLd8k.a140;
+        var b140 = TabLd8k.b140;
 
-        /*
-----------------------------------------------------------------------
-                    COPYRIGHT NOTICE
-----------------------------------------------------------------------
-   ITU-T G.729 Annex C ANSI C source code
-   Copyright (C) 1998, AT&T, France Telecom, NTT, University of
-   Sherbrooke.  All rights reserved.
+        float x2;
+        float y0;
 
-----------------------------------------------------------------------
-*/
-
-        /*
- File : PRE_PROC.C
- Used for the floating point version of both
- G.729 main body and G.729A
-*/
-
-        /**
- * High-pass fir memory
- */
-        private float x0, x1;
-
-        /**
- * High-pass iir memory
- */
-        private float y1, y2;
-
-        /**
- * Init Pre Process
- */
-
-        public void init_pre_process()
+        for (int i = signalOffset, toIndex = length + signalOffset; i < toIndex; i++)
         {
-            x0 = x1 = 0.0f;
-            y2 = y1 = 0.0f;
-        }
+            x2 = x1;
+            x1 = x0;
+            x0 = signal[i];
 
-        /**
- * Pre Process
- *
- * @param signal            (i/o)  : signal
- * @param signal_offset     (input)  : signal offset
- * @param lg                (i)    : length of signal
- */
+            y0 = y1 * a140[1] + y2 * a140[2] + x0 * b140[0] + x1 * b140[1] + x2 * b140[2];
 
-        public void pre_process(
-            float[] signal,
-            int signal_offset,
-            int lg
-        )
-        {
-            var a140 = TabLd8k.a140;
-            var b140 = TabLd8k.b140;
-
-            float x2;
-            float y0;
-
-            for (int i = signal_offset, toIndex = lg + signal_offset; i < toIndex; i++)
-            {
-                x2 = x1;
-                x1 = x0;
-                x0 = signal[i];
-
-                y0 = y1 * a140[1] + y2 * a140[2] + x0 * b140[0] + x1 * b140[1] + x2 * b140[2];
-
-                signal[i] = y0;
-                y2 = y1;
-                y1 = y0;
-            }
+            signal[i] = y0;
+            y2 = y1;
+            y1 = y0;
         }
     }
 }

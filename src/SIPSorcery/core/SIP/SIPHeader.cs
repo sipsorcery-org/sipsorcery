@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -757,7 +759,7 @@ namespace SIPSorcery.SIP
                 {
                     foreach (string key in contact1Keys)
                     {
-                        if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
+                        if (key is EXPIRES_PARAMETER_KEY or QVALUE_PARAMETER_KEY)
                         {
                             continue;
                         }
@@ -775,7 +777,7 @@ namespace SIPSorcery.SIP
                 {
                     foreach (string key in contact2Keys)
                     {
-                        if (key == EXPIRES_PARAMETER_KEY || key == QVALUE_PARAMETER_KEY)
+                        if (key is EXPIRES_PARAMETER_KEY or QVALUE_PARAMETER_KEY)
                         {
                             continue;
                         }
@@ -1590,7 +1592,7 @@ namespace SIPSorcery.SIP
             Contact = contact;
             CallId = callId;
 
-            if (cseq >= 0 && cseq < Int32.MaxValue)
+            if (cseq is >= 0 and < int.MaxValue)
             {
                 CSeq = cseq;
             }

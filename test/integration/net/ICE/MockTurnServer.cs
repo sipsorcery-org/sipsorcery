@@ -62,7 +62,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
         private void OnPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
         {
-            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+            STUNMessage stunMessage = STUNMessage.ParseSTUNMessage(packet);
 
             switch (stunMessage.Header.MessageType)
             {
@@ -92,7 +92,9 @@ namespace SIPSorcery.Net.IntegrationTests
                     allocateResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
                     allocateResponse.AddXORAddressAttribute(STUNAttributeTypesEnum.XORRelayedAddress, _relayEndPoint.Address, _relayEndPoint.Port);
 
-                    _clientSocket.SendTo(allocateResponse.ToByteBuffer(null, false), remoteEndPoint);
+                    var allocateResponseBuffer = new byte[allocateResponse.GetByteBufferSize(null, false)];
+                    allocateResponse.WriteToBuffer(allocateResponseBuffer, null, false);
+                    _clientSocket.SendTo(allocateResponseBuffer, remoteEndPoint);
                     break;
 
                 case STUNMessageTypesEnum.BindingRequest:
@@ -102,7 +104,9 @@ namespace SIPSorcery.Net.IntegrationTests
                     STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
                     stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
                     stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
-                    _clientSocket.SendTo(stunResponse.ToByteBuffer(null, false), remoteEndPoint);
+                    var stunResponseBuffer = new byte[stunResponse.GetByteBufferSize(null, false)];
+                    stunResponse.WriteToBuffer(stunResponseBuffer, null, false);
+                    _clientSocket.SendTo(stunResponseBuffer, remoteEndPoint);
                     break;
 
                 case STUNMessageTypesEnum.CreatePermission:
@@ -111,7 +115,9 @@ namespace SIPSorcery.Net.IntegrationTests
 
                     STUNMessage permResponse = new STUNMessage(STUNMessageTypesEnum.CreatePermissionSuccessResponse);
                     permResponse.Header.TransactionId = stunMessage.Header.TransactionId;
-                    _clientSocket.SendTo(permResponse.ToByteBuffer(null, false), remoteEndPoint);
+                    var permResponseBuffer = new byte[permResponse.GetByteBufferSize(null, false)];
+                    permResponse.WriteToBuffer(permResponseBuffer, null, false);
+                    _clientSocket.SendTo(permResponseBuffer, remoteEndPoint);
                     break;
 
                 case STUNMessageTypesEnum.SendIndication:
@@ -122,7 +128,7 @@ namespace SIPSorcery.Net.IntegrationTests
 
                     logger.LogDebug("MockTurnServer relaying {BufferLength} bytes to {DestinationEndPoint}.", buffer.Length, destEP);
 
-                    _relaySocket.SendTo(buffer, destEP);
+                    _relaySocket.SendTo(buffer.ToArray(), destEP);
 
                     break;
 
@@ -146,7 +152,9 @@ namespace SIPSorcery.Net.IntegrationTests
             dataInd.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, packet));
             dataInd.AddXORPeerAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
 
-            _clientSocket.SendTo(dataInd.ToByteBuffer(null, false), _clientEndPoint);
+            var dataIndBuffer = new byte[dataInd.GetByteBufferSize(null, false)];
+            dataInd.WriteToBuffer(dataIndBuffer, null, false);
+            _clientSocket.SendTo(dataIndBuffer, _clientEndPoint);
         }
 
         public void Dispose()

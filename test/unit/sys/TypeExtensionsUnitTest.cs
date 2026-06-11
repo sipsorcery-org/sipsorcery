@@ -64,9 +64,9 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] buffer = { 0x00, 0x01, 0x02, 0x03 };
 
-            logger.LogDebug("Hex string: {HexString}.", buffer.HexStr());
+            logger.LogDebug("Hex string: {HexString}.", TypeExtensions.HexStr(buffer));
 
-            Assert.Equal("00010203", buffer.HexStr());
+            Assert.Equal("00010203", TypeExtensions.HexStr(buffer));
         }
 
         [Fact]
@@ -105,9 +105,9 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] buffer = TypeExtensions.ParseHexStr("00010203");
 
-            logger.LogDebug("Hex string: {HexString}.", buffer.HexStr());
+            logger.LogDebug("Hex string: {HexString}.", TypeExtensions.HexStr(buffer));
 
-            Assert.Equal("00010203", buffer.HexStr());
+            Assert.Equal("00010203", TypeExtensions.HexStr(buffer));
         }
     }
 }

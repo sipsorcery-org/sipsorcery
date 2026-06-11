@@ -13,6 +13,8 @@
 *   2025-03-05  Initial creation.
 */
 
+#nullable disable
+
 using System;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;

@@ -14,90 +14,103 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Linq;
+using CommunityToolkit.HighPerformance.Buffers;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using Xunit;
 
-namespace SIPSorcery.Net.UnitTests
+namespace SIPSorcery.Net.UnitTests;
+
+[Trait("Category", "unit")]
+public class AV1PacketiserUnitTest
 {
-    [Trait("Category", "unit")]
-    public class AV1PacketiserUnitTest
+    [Fact]
+    public void PacketiseAndDepacketiseAggregatedAv1FrameUnitTest()
     {
-        [Fact]
-        public void PacketiseAndDepacketiseAggregatedAv1FrameUnitTest()
+        // Arrange
+
+        var temporalDelimiter = CreateObu(AV1Packetiser.AV1ObuType.TemporalDelimiter, Array.Empty<byte>());
+        var sequenceHeader = CreateObu(AV1Packetiser.AV1ObuType.SequenceHeader, new byte[] { 0x01, 0x02, 0x03 });
+        var frame = CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[] { 0x11, 0x22, 0x33, 0x44 });
+        var sourceTemporalUnit = temporalDelimiter.Concat(sequenceHeader).Concat(frame).ToArray();
+        var expectedTemporalUnit = sequenceHeader.Concat(frame).ToArray();
+
+        // Act
+
+        var packets = AV1Packetiser.Packetize(sourceTemporalUnit, 1200);
+
+        // Assert
+
+        Assert.Single(packets);
+
+        var framer = new RtpVideoFramer(VideoCodecsEnum.AV1, 4096);
+        using var bufferWriter = new ArrayPoolBufferWriter<byte>();
+        bool gotFrame = false;
+
+        for (ushort i = 0; i < packets.Count; i++)
         {
-            var temporalDelimiter = CreateObu(AV1Packetiser.AV1ObuType.TemporalDelimiter, Array.Empty<byte>());
-            var sequenceHeader = CreateObu(AV1Packetiser.AV1ObuType.SequenceHeader, new byte[] { 0x01, 0x02, 0x03 });
-            var frame = CreateObu(AV1Packetiser.AV1ObuType.Frame, new byte[] { 0x11, 0x22, 0x33, 0x44 });
-            var sourceTemporalUnit = temporalDelimiter.Concat(sequenceHeader).Concat(frame).ToArray();
-            var expectedTemporalUnit = sequenceHeader.Concat(frame).ToArray();
-
-            var packets = AV1Packetiser.Packetize(sourceTemporalUnit, 1200);
-
-            Assert.Single(packets);
-
-            var framer = new RtpVideoFramer(VideoCodecsEnum.AV1, 4096);
-            byte[] reconstructedFrame = null;
-
-            for (ushort i = 0; i < packets.Count; i++)
+            var header = new RTPHeader
             {
-                var packet = new RTPPacket
-                {
-                    Header = new RTPHeader
-                    {
-                        SequenceNumber = i,
-                        Timestamp = 90000,
-                        MarkerBit = packets[i].IsLast ? 1 : 0
-                    },
-                    Payload = packets[i].Payload
-                };
+                SequenceNumber = i,
+                Timestamp = 90000,
+                MarkerBit = packets[i].IsLast ? 1 : 0
+            };
+            var packet = new RTPPacket(header, packets[i].Payload);
 
-                reconstructedFrame = framer.GotRtpPacket(packet);
-            }
-
-            Assert.NotNull(reconstructedFrame);
-            Assert.Equal(expectedTemporalUnit, reconstructedFrame);
+            gotFrame = framer.GotRtpPacket(bufferWriter, packet);
         }
 
-        [Fact]
-        public void PacketiseAndDepacketiseFragmentedAv1FrameUnitTest()
+        Assert.True(gotFrame);
+        Assert.Equal(expectedTemporalUnit, bufferWriter.WrittenMemory.ToArray());
+    }
+
+    [Fact]
+    public void PacketiseAndDepacketiseFragmentedAv1FrameUnitTest()
+    {
+        // Arrange
+
+        var payload = Enumerable.Range(0, 1500).Select(x => (byte)(x % 251)).ToArray();
+        var frame = CreateObu(AV1Packetiser.AV1ObuType.Frame, payload);
+
+        // Act
+
+        var packets = AV1Packetiser.Packetize(frame, 200);
+
+        // Assert
+
+        Assert.True(packets.Count > 1);
+
+        var framer = new RtpVideoFramer(VideoCodecsEnum.AV1, 4096);
+        using var bufferWriter = new ArrayPoolBufferWriter<byte>();
+        bool gotFrame = false;
+
+        for (ushort i = 0; i < packets.Count; i++)
         {
-            var payload = Enumerable.Range(0, 1500).Select(x => (byte)(x % 251)).ToArray();
-            var frame = CreateObu(AV1Packetiser.AV1ObuType.Frame, payload);
-
-            var packets = AV1Packetiser.Packetize(frame, 200);
-
-            Assert.True(packets.Count > 1);
-
-            var framer = new RtpVideoFramer(VideoCodecsEnum.AV1, 4096);
-            byte[] reconstructedFrame = null;
-
-            for (ushort i = 0; i < packets.Count; i++)
+            var header = new RTPHeader
             {
-                var packet = new RTPPacket
-                {
-                    Header = new RTPHeader
-                    {
-                        SequenceNumber = i,
-                        Timestamp = 180000,
-                        MarkerBit = packets[i].IsLast ? 1 : 0
-                    },
-                    Payload = packets[i].Payload
-                };
+                SequenceNumber = i,
+                Timestamp = 180000,
+                MarkerBit = packets[i].IsLast ? 1 : 0
+            };
+            var packet = new RTPPacket(header, packets[i].Payload);
 
-                reconstructedFrame = framer.GotRtpPacket(packet);
-            }
-
-            Assert.NotNull(reconstructedFrame);
-            Assert.Equal(frame, reconstructedFrame);
+            gotFrame = framer.GotRtpPacket(bufferWriter, packet);
         }
 
-        private static byte[] CreateObu(AV1Packetiser.AV1ObuType obuType, byte[] payload)
-        {
-            byte obuHeader = (byte)(((byte)obuType << 3) | 0x02);
-            var leb128Size = AV1Packetiser.WriteLeb128(payload.Length);
-            return new[] { obuHeader }.Concat(leb128Size).Concat(payload).ToArray();
-        }
+        Assert.True(gotFrame);
+        Assert.Equal(frame, bufferWriter.WrittenMemory.ToArray());
+    }
+
+    private static byte[] CreateObu(AV1Packetiser.AV1ObuType obuType, byte[] payload)
+    {
+        byte obuHeader = (byte)(((byte)obuType << 3) | 0x02);
+        int leb128Length = AV1Packetiser.GetLeb128Length(payload.Length);
+        var obu = new byte[1 + leb128Length + payload.Length];
+        obu[0] = obuHeader;
+        AV1Packetiser.WriteLeb128(obu.AsSpan(1), payload.Length);
+        payload.CopyTo(obu.AsSpan(1 + leb128Length));
+        return obu;
     }
 }

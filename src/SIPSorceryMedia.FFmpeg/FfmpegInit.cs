@@ -33,7 +33,7 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if(clear)
             {
-                String log = storedLogs;
+                var log = storedLogs;
                 storedLogs = "";
                 return log;
             }
@@ -49,11 +49,16 @@ namespace SIPSorceryMedia.FFmpeg
         {
             // We clear previous stored logs
             if (storeLogs)
+            {
                 ClearStoredLogs();
+            }
 
             logCallback = (p0, level, format, vl) =>
             {
-                if ( (!storeLogs) && (level > ffmpeg.av_log_get_level())) return;
+                if ( (!storeLogs) && (level > ffmpeg.av_log_get_level()))
+                {
+                    return;
+                }
 
                 var lineSize = 1024;
                 var lineBuffer = stackalloc byte[lineSize];
@@ -62,7 +67,9 @@ namespace SIPSorceryMedia.FFmpeg
                 var line = Marshal.PtrToStringAnsi((IntPtr)lineBuffer);
                 //Console.Write(line);
                 if (storeLogs)
+                {
                     storedLogs += line;
+                }
             };
             ffmpeg.av_log_set_callback(logCallback);
         }
@@ -117,13 +124,15 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void RegisterFFmpegBinaries(String? libPath = null)
         {
             if (registered)
+            {
                 return;
+            }
 
             if (libPath == null)
             {
                 // search the system path, handle with and without .exe extension
-                string ffmpegExecutable = "ffmpeg";
-                string? path = Environment.GetEnvironmentVariable("PATH")?
+                var ffmpegExecutable = "ffmpeg";
+                var path = Environment.GetEnvironmentVariable("PATH")?
                     .Split([';'], StringSplitOptions.RemoveEmptyEntries)
                     .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, $"{ffmpegExecutable}.exe")))
                     .FirstOrDefault();

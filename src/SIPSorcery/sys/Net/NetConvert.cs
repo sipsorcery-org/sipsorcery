@@ -25,7 +25,7 @@ namespace SIPSorcery.Sys
         /// <param name="buffer">The buffer to parse the value from.</param>
         /// <param name="posn">The position in the buffer to start the parse from.</param>
         /// <returns>A UInt16 value.</returns>
-        public static ushort ParseUInt16(byte[] buffer, int posn)
+        public static ushort ParseUInt16(ReadOnlySpan<byte> buffer, int posn)
         {
             return (ushort)(buffer[posn] << 8 | buffer[posn + 1]);
         }
@@ -36,7 +36,7 @@ namespace SIPSorcery.Sys
         /// <param name="buffer">The buffer to parse the value from.</param>
         /// <param name="posn">The position in the buffer to start the parse from.</param>
         /// <returns>A UInt32 value.</returns>
-        public static uint ParseUInt32(byte[] buffer, int posn)
+        public static uint ParseUInt32(ReadOnlySpan<byte> buffer, int posn)
         {
             return (uint)(buffer[posn] << 24 | buffer[posn + 1] << 16 | buffer[posn + 2] << 8 | buffer[posn + 3]);
         }
@@ -47,7 +47,7 @@ namespace SIPSorcery.Sys
         /// <param name="buffer">The buffer to parse the value from.</param>
         /// <param name="posn">The position in the buffer to start the parse from.</param>
         /// <returns>A UInt64 value.</returns>
-        public static ulong ParseUInt64(byte[] buffer, int posn)
+        public static ulong ParseUInt64(ReadOnlySpan<byte> buffer, int posn)
         {
             return 
                  (ulong)buffer[posn] << 56 |

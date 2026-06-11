@@ -32,11 +32,15 @@ namespace SIPSorcery.Sys
         private static RNGCryptoServiceProvider _randomProvider = new RNGCryptoServiceProvider();
 
         /// <summary>
-        /// Generates a salt that can be used to generate a password hash. The salt is a combination of a block of bytes to represent the 
-        /// salt entropy and an integer that represents the iteration count to feed into the RFC289 algorithm used to derive the password hash.
-        /// The iterations count is used to slow down the hash generating algorithm to mitigate brute force and rainbow table attacks.
+        /// Generates a salt that can be used to generate a password hash. The salt is a combination of a block of bytes
+        /// to represent the salt entropy and an integer that represents the iteration count to feed into the RFC289
+        /// algorithm used to derive the password hash. The iterations count is used to slow down the hash generating
+        /// algorithm to mitigate brute force and rainbow table attacks.
         /// </summary>
-        /// <param name="explicitIterations">The number of iterations used to derive the password bytes. Must be greater than the constant specifying the minimum iterations.</param>
+        /// <param name="explicitIterations">
+        /// The number of iterations used to derive the password bytes. Must be greater than the constant specifying the
+        /// minimum iterations.
+        /// </param>
         /// <returns>A string it the format iterations.salt.</returns>
         public static string GenerateSalt(int? explicitIterations = null)
         {
@@ -64,7 +68,7 @@ namespace SIPSorcery.Sys
             var i = salt.IndexOf('.');
             var iters = int.Parse(salt.Substring(0, i), System.Globalization.NumberStyles.HexNumber);
             salt = salt.Substring(i + 1);
-            byte[] key = null;
+            byte[] key;
 
             byte[] saltBytes = Convert.FromBase64String(salt);
 

@@ -128,10 +128,10 @@ namespace SIPSorcery.Net.IntegrationTests
                 logger.LogDebug("{HostCandidate}", hostCandidate.ToString());
             }
 
-            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
+            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999".AsSpan());
             rtpIceChannel.AddRemoteCandidate(remoteCandidate);
 
-            var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.51 51268 typ host generation 0 ufrag CI7o network-cost 999");
+            var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.51 51268 typ host generation 0 ufrag CI7o network-cost 999".AsSpan());
             rtpIceChannel.AddRemoteCandidate(remoteCandidate2);
 
             foreach (var entry in rtpIceChannel._checklist)
@@ -160,10 +160,10 @@ namespace SIPSorcery.Net.IntegrationTests
                 logger.LogDebug("host candidate: {HostCandidate}", hostCandidate);
             }
 
-            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
+            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999".AsSpan());
             rtpIceChannel.AddRemoteCandidate(remoteCandidate);
 
-            var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
+            var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999".AsSpan());
             rtpIceChannel.AddRemoteCandidate(remoteCandidate2);
 
             await Task.Delay(500);
@@ -196,7 +196,7 @@ namespace SIPSorcery.Net.IntegrationTests
                 logger.LogDebug("host candidate: {HostCandidate}", hostCandidate);
             }
 
-            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
+            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999".AsSpan());
             rtpIceChannel.AddRemoteCandidate(remoteCandidate);
 
             rtpIceChannel.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
@@ -231,7 +231,7 @@ namespace SIPSorcery.Net.IntegrationTests
                 logger.LogDebug("host candidate: {HostCandidate}", hostCandidate);
             }
 
-            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
+            var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999".AsSpan());
             rtpIceChannel.AddRemoteCandidate(remoteCandidate);
 
             rtpIceChannel.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
@@ -613,9 +613,9 @@ namespace SIPSorcery.Net.IntegrationTests
 
             foreach(var pair in rtpIceChannel._iceServerResolver.IceServers)
             {
-                logger.LogDebug("ICE server {ServerKey}, tx ID {TransactionID}", pair.Key, pair.Value._id);
+                logger.LogDebug("ICE server {ServerKey}, tx ID {TransactionID}", pair.Key, pair.Value.Id);
 
-                Assert.Equal(1, rtpIceChannel._iceServerResolver.IceServers.Values.Count(x => x._id == pair.Value._id));
+                Assert.Equal(1, rtpIceChannel._iceServerResolver.IceServers.Values.Count(x => x.Id == pair.Value.Id));
             }
         }
     }

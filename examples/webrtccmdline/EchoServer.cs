@@ -227,7 +227,7 @@ namespace SIPSorcery.Examples
 
             pc.OnRtpPacketReceived += (IPEndPoint rep, SDPMediaTypesEnum media, RTPPacket rtpPkt) =>
             {
-                pc.SendRtpRaw(media, rtpPkt.Payload, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
+                pc.SendRtpRaw(media, rtpPkt.Payload.Span, rtpPkt.Header.Timestamp, rtpPkt.Header.MarkerBit, rtpPkt.Header.PayloadType);
             };
 
             pc.OnTimeout += (mediaType) => logger.LogWarning($"Timeout for {mediaType}.");

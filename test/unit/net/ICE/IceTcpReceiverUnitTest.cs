@@ -201,7 +201,7 @@ namespace SIPSorcery.Net.UnitTests
                 var msg = StunHeaderOnly();
                 Assert.Equal(STUNHeader.STUN_HEADER_LENGTH, msg.Length);
 
-                int extracted = receiver.Feed(msg);
+                var extracted = receiver.Feed(msg);
 
                 Assert.Equal(0, extracted);
                 Assert.Empty(packets);

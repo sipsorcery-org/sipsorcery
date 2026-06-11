@@ -200,7 +200,7 @@ namespace demo
 
             using (var sha256 = SHA256.Create())
             {
-                return sha256.ComputeHash(hashOfHashes).HexStr();
+                return TypeExtensions.HexStr(sha256.ComputeHash(hashOfHashes));
             }
         }
 

@@ -17,6 +17,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -283,7 +285,7 @@ namespace SIPSorcery.SIP
         public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
         {
             // We can establish client web sockets to both ws and wss servers.
-            return protocol == SIPProtocolsEnum.ws || protocol == SIPProtocolsEnum.wss;
+            return protocol is SIPProtocolsEnum.ws or SIPProtocolsEnum.wss;
         }
 
         /// <summary>

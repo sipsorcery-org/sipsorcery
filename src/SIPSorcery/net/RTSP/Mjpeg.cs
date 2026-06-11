@@ -44,6 +44,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
  */
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -172,7 +174,7 @@ namespace SIPSorcery.Net
            99, 99, 99, 99, 99, 99, 99, 99
         };
 
-        static byte[] CreateJFIFHeader(uint type, uint width, uint height, ArraySegment<byte> tables, byte precision, ushort dri)
+        static byte[] CreateJFIFHeader(uint type, uint width, uint height, ReadOnlySpan<byte> tables, byte precision, ushort dri)
         {
             List<byte> result = new List<byte>();
             result.Add(Tags.Prefix);
@@ -323,11 +325,11 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="tables">The tables verbatim, either 1 or 2 (Luminance and Chrominance)</param>
         /// <returns>The table with marker and prefix</returns>
-        static byte[] CreateQuantizationTablesMarker(ArraySegment<byte> tables, byte precision)
+        static byte[] CreateQuantizationTablesMarker(ReadOnlySpan<byte> tables, byte precision)
         {
             //List<byte> result = new List<byte>();
 
-            int tableCount = tables.Count / (precision > 0 ? 128 : 64);
+            int tableCount = tables.Length / (precision > 0 ? 128 : 64);
 
             //??Some might have more then 2?
             if (tableCount > 2)
@@ -335,7 +337,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentOutOfRangeException("tableCount");
             }
 
-            int tableSize = tables.Count / tableCount;
+            int tableSize = tables.Length / tableCount;
 
             //Each tag is 4 bytes (prefix and tag) + 2 for len = 4 + 1 for Precision and TableId 
             byte[] result = new byte[(5 * tableCount) + (tableSize * tableCount)];
@@ -347,7 +349,7 @@ namespace SIPSorcery.Net
             result[4] = (byte)(precision << 4 | 0); // Precision and TableId
 
             //First table. Type - Luminance usually when two
-            System.Array.Copy(tables.Array, tables.Offset, result, 5, tableSize);
+            tables.Slice(0, tableSize).CopyTo(result.AsSpan(5, tableSize));
 
             if (tableCount > 1)
             {
@@ -358,7 +360,7 @@ namespace SIPSorcery.Net
                 result[tableSize + 9] = (byte)(precision << 4 | 1);//Precision 0, and table Id
 
                 //Second Table. Type - Chrominance usually when two
-                System.Array.Copy(tables.Array, tables.Offset + tableSize, result, 10 + tableSize, tableSize);
+                tables.Slice(0, tableSize).CopyTo(result.AsSpan(10 + tableSize, tableSize));
             }
 
             return result;
@@ -392,7 +394,7 @@ namespace SIPSorcery.Net
             ushort RestartInterval = 0, RestartCount = 0;
             //A byte which is bit mapped
             byte PrecisionTable = 0;
-            ArraySegment<byte> tables = default;
+            ReadOnlyMemory<byte> tables = default;
 
             //Using a new MemoryStream for a Buffer
             using (System.IO.MemoryStream Buffer = new System.IO.MemoryStream())
@@ -415,8 +417,8 @@ namespace SIPSorcery.Net
 
                     //Decode RtpJpeg Header
 
-                    TypeSpecific = packet.GetPayloadByteAt(offset++);
-                    FragmentOffset = (uint)(packet.GetPayloadByteAt(offset++) << 16 | packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++));
+                    TypeSpecific = packet.Payload.Span[offset++];
+                    FragmentOffset = (uint)(packet.Payload.Span[offset++] << 16 | packet.Payload.Span[offset++] << 8 | packet.Payload.Span[offset++]);
 
                     #region RFC2435 -  The Type Field
 
@@ -499,16 +501,16 @@ namespace SIPSorcery.Net
 
                     #endregion
 
-                    Type = packet.GetPayloadByteAt(offset++);
+                    Type = packet.Payload.Span[offset++];
                     type = Type & 1;
-                    if (type > 3 || type > 6)
+                    if (type is > 3 or > 6)
                     {
                         throw new ArgumentException("Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications on RFC 2035 should be updated to indicate the presence of restart markers with type 64 or 65 and the Restart Marker header.");
                     }
 
-                    Quality = packet.GetPayloadByteAt(offset++);
-                    Width = (uint)(packet.GetPayloadByteAt(offset++) * 8);  // This should have been 128 or > and the standard would have worked for all resolutions
-                    Height = (uint)(packet.GetPayloadByteAt(offset++) * 8); // Now in certain highres profiles you will need an OnVif extension before the RtpJpeg Header
+                    Quality = packet.Payload.Span[offset++];
+                    Width = (uint)(packet.Payload.Span[offset++] * 8);  // This should have been 128 or > and the standard would have worked for all resolutions
+                    Height = (uint)(packet.Payload.Span[offset++] * 8); // Now in certain highres profiles you will need an OnVif extension before the RtpJpeg Header
                                                                   //It is worth noting Rtp does not care what you send and more tags such as comments and or higher resolution pictures may be sent and these values will simply be ignored.
 
                     if (Width == 0 || Height == 0)
@@ -517,7 +519,7 @@ namespace SIPSorcery.Net
                     }
 
                     //Restart Interval 64 - 127
-                    if (Type > 63 && Type < 128)
+                    if (Type is > 63 and < 128)
                     {
                         /*
                            This header MUST be present immediately after the main JPEG header
@@ -530,8 +532,8 @@ namespace SIPSorcery.Net
                            |       Restart Interval        |F|L|       Restart Count       |
                            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                          */
-                        RestartInterval = (ushort)(packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++));
-                        RestartCount = (ushort)((packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++)) & 0x3fff);
+                        RestartInterval = (ushort)(packet.Payload.Span[offset++] << 8 | packet.Payload.Span[offset++]);
+                        RestartCount = (ushort)((packet.Payload.Span[offset++] << 8 | packet.Payload.Span[offset++]) & 0x3fff);
                     }
 
                     //QTables Only occur in the first packet
@@ -540,7 +542,7 @@ namespace SIPSorcery.Net
                         //If the quality > 127 there are usually Quantization Tables
                         if (Quality > 127)
                         {
-                            if ((packet.GetPayloadByteAt(offset++)) != 0)
+                            if ((packet.Payload.Span[offset++]) != 0)
                             {
                                 //Must Be Zero is Not Zero
                                 if (System.Diagnostics.Debugger.IsAttached)
@@ -550,7 +552,7 @@ namespace SIPSorcery.Net
                             }
 
                             //Precision
-                            PrecisionTable = (packet.GetPayloadByteAt(offset++));
+                            PrecisionTable = (packet.Payload.Span[offset++]);
 
                             #region RFC2435 Length Field
 
@@ -585,34 +587,34 @@ namespace SIPSorcery.Net
                             #endregion
 
                             //Length of all tables
-                            ushort Length = (ushort)(packet.GetPayloadByteAt(offset++) << 8 | packet.GetPayloadByteAt(offset++));
+                            ushort Length = (ushort)(packet.Payload.Span[offset++] << 8 | packet.Payload.Span[offset++]);
 
                             //If there is Table Data Read it
                             if (Length > 0)
                             {
-                                tables = packet.GetPayloadSegment(offset, Length);
+                                tables = packet.Payload.Slice(offset, Length);
                                 offset += (int)Length;
                             }
-                            else if (Length > packet.GetPayloadLength() - offset)
+                            else if (Length > packet.Payload.Length - offset)
                             {
                                 continue; // The packet must be discarded
                             }
                             else // Create it from the Quality
                             {
-                                tables = new ArraySegment<byte>(CreateQuantizationTables(Quality, type, PrecisionTable));
+                                tables = new ReadOnlyMemory<byte>(CreateQuantizationTables(Quality, type, PrecisionTable));
                             }
                         }
                         else // Create from the Quality
                         {
-                            tables = new ArraySegment<byte>(CreateQuantizationTables(type, Quality, PrecisionTable));
+                            tables = new ReadOnlyMemory<byte>(CreateQuantizationTables(type, Quality, PrecisionTable));
                         }
 
-                        byte[] header = CreateJFIFHeader(type, Width, Height, tables, PrecisionTable, RestartInterval);
+                        byte[] header = CreateJFIFHeader(type, Width, Height, tables.Span, PrecisionTable, RestartInterval);
                         Buffer.Write(header, 0, header.Length);
                     }
 
                     //Write the Payload data from the offset
-                    Buffer.Write(packet.GetPayloadBytes(), offset, (int)packet.GetPayloadLength() - offset);
+                    Buffer.Write(packet.Payload.Span.Slice(offset, packet.Payload.Length - offset));
                 }
 
                 //Check for EOI Marker

@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -232,7 +234,7 @@ public class IceTcpReceiver : UdpReceiver
 
                         var newOffset = recvRemainingSegment.Offset + stunMsgBytes;
                         var newCount = recvRemainingSegment.Count - stunMsgBytes;
-                        if (newCount > STUNHeader.STUN_HEADER_LENGTH && newOffset >= 0)
+                        if (newCount >= STUNHeader.STUN_HEADER_LENGTH && newOffset >= 0)
                         {
                             recvRemainingSegment = new ArraySegment<byte>(recvRemainingSegment.Array, newOffset, newCount);
                         }

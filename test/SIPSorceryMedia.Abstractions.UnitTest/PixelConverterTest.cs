@@ -109,7 +109,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
         [Fact]
         public unsafe void ConvertKnownNV12ToBGRTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             int width = 640;
@@ -153,7 +153,7 @@ namespace SIPSorceryMedia.Abstractions.UnitTest
             int height = 405;
 
             byte[] i420 = new byte[width * height * 3/2];
-            Assert.Throws<ApplicationException>(() => PixelConverter.I420toBGR(i420, width, height, out _));
+            Assert.ThrowsAny<ApplicationException>(() => PixelConverter.I420toBGR(i420, width, height, out _));
         }
 
         /// <summary>

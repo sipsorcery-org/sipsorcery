@@ -20,6 +20,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,6 +29,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -165,7 +168,7 @@ namespace SIPSorcery.Media
             get => _audioSamplePeriodMilliseconds;
             set
             {
-                if (value < AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN || value > AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX)
+                if (value is < AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN or > AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX)
                 {
                     throw new ApplicationException($"Invalid value for the audio sample period. Must be between {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MIN} and {AUDIO_SAMPLE_PERIOD_MILLISECONDS_MAX}ms.");
                 }
@@ -332,9 +335,9 @@ namespace SIPSorcery.Media
                         _sendSampleTimer = new Timer(SendSilenceSample);
                         _sendSampleTimer.Change(0, _audioSamplePeriodMilliseconds);
                     }
-                    else if (_audioOpts.AudioSource == AudioSourcesEnum.PinkNoise ||
-                         _audioOpts.AudioSource == AudioSourcesEnum.WhiteNoise ||
-                         _audioOpts.AudioSource == AudioSourcesEnum.SineWave)
+                    else if (_audioOpts.AudioSource is AudioSourcesEnum.PinkNoise or
+                         AudioSourcesEnum.WhiteNoise or
+                         AudioSourcesEnum.SineWave)
                     {
                         _signalGenerator = new SignalGenerator(_audioFormatManager.SelectedFormat.ClockRate, 1);
 
@@ -646,7 +649,9 @@ namespace SIPSorcery.Media
                     pcm = PcmResampler.Resample(pcm, pcmSampleRate, _audioFormatManager.SelectedFormat.ClockRate);
                 }
 
-                byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
+                using var buffer = new ArrayPoolBufferWriter<byte>(8192);
+                _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat, buffer);
+                var encodedSample = buffer.WrittenMemory;
 
                 uint rtpUnits = RtpTimestampExtensions.ToRtpUnits(_audioSamplePeriodMilliseconds, _audioFormatManager.SelectedFormat.RtpClockRate);
 
