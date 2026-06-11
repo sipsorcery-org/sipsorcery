@@ -86,13 +86,13 @@ app.UseStaticFiles();
 app.MapPost("/api/join", (LiveKitRoomService roomService) => Results.Json(roomService.CreateViewerJoinInfo()));
 
 // Returns non-secret publisher state so the page can show whether the C# publisher is up.
-app.MapGet("/api/status", (LiveKitRoomService roomService) => Results.Json(new
-{
-    room = LiveKitRoomService.RoomName,
-    publisherIdentity = LiveKitRoomService.PublisherIdentity,
-    publisherState = roomService.PublisherConnectionState,
-    subscriberState = roomService.SubscriberConnectionState
-}));
+//app.MapGet("/api/status", (LiveKitRoomService roomService) => Results.Json(new
+//{
+//    room = LiveKitRoomService.RoomName,
+//    publisherIdentity = LiveKitRoomService.PublisherIdentity,
+//    publisherState = roomService.PublisherConnectionState,
+//    subscriberState = roomService.SubscriberConnectionState
+//}));
 
 Console.WriteLine($"LiveKit WebRTC example. Browse to {ListenUrl} once publishing has started.");
 
@@ -133,6 +133,17 @@ sealed class LikeKitWebSocketClient
         //    PingReq = new Ping { Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }
         //};
         await _ws.SendAsync(req.ToByteArray(), WebSocketMessageType.Binary, true, ct);
+    }
+
+    /// <summary>
+    /// Performs a graceful web socket close handshake with the LiveKit server.
+    /// </summary>
+    public async Task CloseAsync(CancellationToken ct)
+    {
+        if (_ws.State == WebSocketState.Open || _ws.State == WebSocketState.CloseReceived)
+        {
+            await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client shutting down", ct);
+        }
     }
 
     private async Task DoReceive(CancellationToken ct)
@@ -232,16 +243,16 @@ sealed record ViewerJoinInfo(string Url, string Token, string Room, string Ident
 
 sealed class LiveKitRoomService : IHostedService
 {
-    private const string STUN_URL = "stun:stun.cloudflare.com";
-
-    public const string RoomName = "my-room";
-    public const string PublisherIdentity = "user-123";
-    public const string VideoTrackName = "test-pattern";
-    public const string AudioTrackName = "music";
+    public const string ROOM_NAME_PREFIX = "Room";
+    public const string PUBLISHER_IDENTITY_PREFIX = "Publisher";
+    public const string VIDEO_TRACK_NAME = "test-pattern";
+    public const string AUDIO_TRACK_NAME = "music";
 
     private readonly ILogger<LiveKitRoomService> _logger;
     private readonly LikeKitWebSocketClient _liveKitWebSocketClient;
 
+    private readonly string _roomName = $"{ROOM_NAME_PREFIX}-{Guid.NewGuid().ToString("N")[..8]}";
+    private readonly string _publisherIdentity = $"{PUBLISHER_IDENTITY_PREFIX}-{Guid.NewGuid().ToString("N")[..8]}";
     private readonly string _appId;
     private readonly string _apiToken;
     private readonly string _websocketUrl;
@@ -271,20 +282,20 @@ sealed class LiveKitRoomService : IHostedService
 
         var token = new AccessToken(_appId, _apiToken)
             .WithIdentity(identity)
-            .WithName("Browser viewer")
+            .WithName($"Browser {identity}")
             .WithGrants(new VideoGrants
             {
                 RoomJoin = true,
-                Room = RoomName,
+                Room = _roomName,
                 CanSubscribe = true,
                 CanPublish = false,
                 CanPublishData = false
             })
             .WithTtl(TimeSpan.FromHours(1));
 
-        _logger.LogInformation("Created viewer access token for identity {Identity} on room {Room}.", identity, RoomName);
+        _logger.LogInformation("Created viewer access token for identity {Identity} on room {Room}.", identity, _roomName);
 
-        return new ViewerJoinInfo(_websocketUrl, token.ToJwt(), RoomName, identity);
+        return new ViewerJoinInfo(_websocketUrl, token.ToJwt(), _roomName, identity);
     }
 
     public LiveKitRoomService(
@@ -320,7 +331,7 @@ sealed class LiveKitRoomService : IHostedService
             case SignalResponse.MessageOneofCase.Join:
 
                 _logger.LogInformation("Join response received for room {Room} as participant {Identity}.",
-                    response.Join.Room?.Name, response.Join.Participant?.Identity);
+                    _roomName, _publisherIdentity);
 
                 // The participant is now in the room so the tracks can be registered and published.
                 await PublishTracksAsync();
@@ -409,9 +420,9 @@ sealed class LiveKitRoomService : IHostedService
 
         // Generate access token
         var token = new AccessToken(_appId, _apiToken)
-            .WithIdentity(PublisherIdentity)
+            .WithIdentity(_publisherIdentity)
             .WithName("John Doe")
-            .WithGrants(new VideoGrants { RoomJoin = true, Room = RoomName });
+            .WithGrants(new VideoGrants { RoomJoin = true, Room = _roomName });
 
         if (token is null)
         {
@@ -444,7 +455,7 @@ sealed class LiveKitRoomService : IHostedService
         var videoTrackInfo = await AddTrackAsync(new AddTrackRequest
         {
             Cid = "testpattern-video",
-            Name = VideoTrackName,
+            Name = VIDEO_TRACK_NAME,
             Type = TrackType.Video,
             Source = TrackSource.Camera,
             Width = 640,
@@ -454,7 +465,7 @@ sealed class LiveKitRoomService : IHostedService
         var audioTrackInfo = await AddTrackAsync(new AddTrackRequest
         {
             Cid = "music-audio",
-            Name = AudioTrackName,
+            Name = AUDIO_TRACK_NAME,
             Type = TrackType.Audio,
             Source = TrackSource.Microphone
         });
@@ -495,6 +506,32 @@ sealed class LiveKitRoomService : IHostedService
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("LiveKit Room service stopping.");
+
+        try
+        {
+            // Tell LiveKit the participant is leaving so it is removed from the room immediately,
+            // rather than lingering until the server's connection timeout expires.
+            await _liveKitWebSocketClient.SendAsync(new SignalRequest
+            {
+                Leave = new LeaveRequest
+                {
+                    CanReconnect = false,
+                    Reason = DisconnectReason.ClientInitiated,
+                    Action = LeaveRequest.Types.Action.Disconnect
+                }
+            }, cancellationToken);
+
+            await _liveKitWebSocketClient.CloseAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send the leave request to LiveKit during shutdown.");
+        }
+
+        // Closing the publisher peer connection also stops the media sources via its
+        // connection state change handler.
+        _publisherPc?.Close("application shutdown");
+        _subscriberPc?.Close("application shutdown");
     }
 
     /// <summary>
@@ -504,11 +541,7 @@ sealed class LiveKitRoomService : IHostedService
     /// </summary>
     private RTCPeerConnection CreateSubscriberPeerConnection()
     {
-        RTCConfiguration config = new RTCConfiguration
-        {
-            iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
-        };
-        var pc = new RTCPeerConnection(config);
+        var pc = new RTCPeerConnection();
 
         pc.onconnectionstatechange += async (state) =>
         {
@@ -530,11 +563,7 @@ sealed class LiveKitRoomService : IHostedService
     /// </summary>
     private RTCPeerConnection CreatePublisherPeerConnection()
     {
-        RTCConfiguration config = new RTCConfiguration
-        {
-            iceServers = new List<RTCIceServer> { new RTCIceServer { urls = STUN_URL } }
-        };
-        var pc = new RTCPeerConnection(config);
+        var pc = new RTCPeerConnection();
 
         var vp8Codec = new VP8Codec();
         _videoSource = new VideoTestPatternSource(vp8Codec);

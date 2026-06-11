@@ -23,16 +23,16 @@
 
         // Shows whether the C# publisher's peer connection to LiveKit is up. Polled so the page
         // reflects the publisher coming online without a manual refresh.
-        async function refreshStatus() {
-            try {
-                const r = await fetch("/api/status");
-                const info = await r.json();
-                document.querySelector("#publisher").textContent =
-                    `Room: ${info.room} | publisher '${info.publisherIdentity}' peer connection: ${info.publisherState}`;
-            } catch (err) {
-                document.querySelector("#publisher").textContent = `Could not load publisher status: ${err?.message || err}`;
-            }
-        }
+        // async function refreshStatus() {
+        //     try {
+        //         const r = await fetch("/api/status");
+        //         const info = await r.json();
+        //         document.querySelector("#publisher").textContent =
+        //             `Room: ${info.room} | publisher '${info.publisherIdentity}' peer connection: ${info.publisherState}`;
+        //     } catch (err) {
+        //         document.querySelector("#publisher").textContent = `Could not load publisher status: ${err?.message || err}`;
+        //     }
+        // }
 
         async function start() {
             try {
@@ -96,10 +96,10 @@
             }
         }
 
-        window.addEventListener("load", () => {
-            refreshStatus();
-            setInterval(refreshStatus, 5000);
-        });
+        // window.addEventListener("load", () => {
+        //     refreshStatus();
+        //     setInterval(refreshStatus, 5000);
+        // });
     </script>
 </head>
 <body>
