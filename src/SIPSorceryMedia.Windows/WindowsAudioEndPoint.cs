@@ -347,7 +347,7 @@ namespace SIPSorceryMedia.Windows
             // Note NAudio.Wave.WaveBuffer.ShortBuffer does not take into account little endian.
             // https://github.com/naudio/NAudio/blob/master/NAudio/Wave/WaveOutputs/WaveBuffer.cs
 
-            short[] pcm = new short[args.BytesRecorded];
+            short[] pcm = new short[args.BytesRecorded / sizeof(short)];
             Buffer.BlockCopy(args.Buffer, 0, pcm, 0, args.BytesRecorded * sizeof(short));
             byte[] encodedSample = _audioEncoder.EncodeAudio(pcm, _audioFormatManager.SelectedFormat);
             
