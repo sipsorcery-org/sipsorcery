@@ -34,6 +34,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 using Vpx.Net;
 
 const string ListenUrl = "http://localhost:8080";
@@ -41,6 +42,10 @@ const string ListenUrl = "http://localhost:8080";
 var _livekitApiKey = Environment.GetEnvironmentVariable("LIVEKIT_API_KEY");
 var _livekitApiSecret = Environment.GetEnvironmentVariable("LIVEKIT_API_SECRET");
 var _livekitWebsocketUrl = Environment.GetEnvironmentVariable("LIVEKIT_WEBSOCKET_URL");
+
+// Optional. When set, a SIP dispatch rule is created on startup that routes inbound calls on
+// this trunk into the publisher's room. Leave unset if no SIP trunk is configured.
+var _livekitSipTrunkId = Environment.GetEnvironmentVariable("LIVEKIT_SIP_TRUNK_ID");
 
 if (string.IsNullOrWhiteSpace(_livekitApiKey) || string.IsNullOrWhiteSpace(_livekitApiSecret))
 {
@@ -73,7 +78,8 @@ builder.Services.AddSingleton(sp => new LiveKitRoomService(
     sp.GetRequiredService<LikeKitWebSocketClient>(),
     _livekitApiKey!,
     _livekitApiSecret!,
-    _livekitWebsocketUrl!));
+    _livekitWebsocketUrl!,
+    _livekitSipTrunkId));
 builder.Services.AddHostedService(sp => sp.GetRequiredService<LiveKitRoomService>());
 
 var app = builder.Build();
@@ -247,6 +253,7 @@ sealed class LiveKitRoomService : IHostedService
     public const string PUBLISHER_IDENTITY_PREFIX = "Publisher";
     public const string VIDEO_TRACK_NAME = "test-pattern";
     public const string AUDIO_TRACK_NAME = "music";
+    public const string SIP_DISPATCH_RULE_NAME = "sipsorcery-demo-direct";
 
     private readonly ILogger<LiveKitRoomService> _logger;
     private readonly LikeKitWebSocketClient _liveKitWebSocketClient;
@@ -256,6 +263,9 @@ sealed class LiveKitRoomService : IHostedService
     private readonly string _appId;
     private readonly string _apiToken;
     private readonly string _websocketUrl;
+    private readonly string? _sipTrunkId;
+
+    private string? _sipDispatchRuleId;
 
     private string _jwtToken = string.Empty;
     private RTCPeerConnection? _subscriberPc;
@@ -303,13 +313,15 @@ sealed class LiveKitRoomService : IHostedService
         LikeKitWebSocketClient liveKitWebSocketClient,
         string appId,
         string apiToken,
-        string websocketUrl)
+        string websocketUrl,
+        string? sipTrunkId = null)
     {
         _logger = logger;
         _liveKitWebSocketClient = liveKitWebSocketClient;
         _appId = appId;
         _apiToken = apiToken;
         _websocketUrl = websocketUrl;
+        _sipTrunkId = sipTrunkId;
 
         _liveKitWebSocketClient.OnSignalResponse += async (e) =>
         {
@@ -434,12 +446,83 @@ sealed class LiveKitRoomService : IHostedService
 
             _jwtToken = token.ToJwt();
 
+            if (!string.IsNullOrWhiteSpace(_sipTrunkId))
+            {
+                try
+                {
+                    await EnsureSipDispatchRuleAsync();
+                }
+                catch (Exception ex)
+                {
+                    // SIP is an optional extra for this example so a failure to set up the
+                    // dispatch rule should not stop the WebRTC publisher.
+                    _logger.LogError(ex, "Failed to configure the SIP dispatch rule for trunk {TrunkId}.", _sipTrunkId);
+                }
+            }
+            else
+            {
+                _logger.LogDebug("LIVEKIT_SIP_TRUNK_ID not set, skipping SIP dispatch rule configuration.");
+            }
+
             await _liveKitWebSocketClient.ConnectAsync(_websocketUrl, _jwtToken, cancellationToken);
 
             // Publishing is kicked off when the Join response arrives, see HandleLiveKitSignalResponse.
             // The tracks must be registered with AddTrack requests, and acknowledged by the server,
             // before the publisher peer connection's offer is sent.
         }
+    }
+
+    /// <summary>
+    /// Creates a client for the LiveKit server's HTTP API, which lives on the same host as the
+    /// signalling web socket.
+    /// </summary>
+    private SipServiceClient CreateSipServiceClient()
+    {
+        var apiHost = _websocketUrl.StartsWith("wss://", StringComparison.OrdinalIgnoreCase)
+            ? $"https://{_websocketUrl[6..]}"
+            : _websocketUrl.StartsWith("ws://", StringComparison.OrdinalIgnoreCase)
+                ? $"http://{_websocketUrl[5..]}"
+                : _websocketUrl;
+
+        return new SipServiceClient(apiHost, _appId, _apiToken);
+    }
+
+    /// <summary>
+    /// Points inbound SIP calls on the configured trunk at this instance's room. A dispatch rule
+    /// must exist BEFORE a call arrives; LiveKit rejects calls that match no rule. Because the
+    /// room name is random per run, the rule is recreated on every start: any rule left behind by
+    /// a previous run (matched by name) is deleted first, since CreateSIPDispatchRule does not
+    /// upsert and duplicate rules on the same trunk would compete for calls.
+    /// </summary>
+    private async Task EnsureSipDispatchRuleAsync()
+    {
+        var sipClient = CreateSipServiceClient();
+
+        var existingRules = await sipClient.ListSIPDispatchRule(new ListSIPDispatchRuleRequest());
+        foreach (var staleRule in existingRules.Items.Where(x => x.Name == SIP_DISPATCH_RULE_NAME))
+        {
+            _logger.LogInformation("Deleting SIP dispatch rule {RuleId} left over from a previous run.", staleRule.SipDispatchRuleId);
+
+            await sipClient.DeleteSIPDispatchRule(new DeleteSIPDispatchRuleRequest { SipDispatchRuleId = staleRule.SipDispatchRuleId });
+        }
+
+        var createdRule = await sipClient.CreateSIPDispatchRule(new CreateSIPDispatchRuleRequest
+        {
+            DispatchRule = new SIPDispatchRuleInfo
+            {
+                Name = SIP_DISPATCH_RULE_NAME,
+                TrunkIds = { _sipTrunkId },
+                Rule = new SIPDispatchRule
+                {
+                    DispatchRuleDirect = new SIPDispatchRuleDirect { RoomName = _roomName }
+                }
+            }
+        });
+
+        _sipDispatchRuleId = createdRule.SipDispatchRuleId;
+
+        _logger.LogInformation("Created SIP dispatch rule {RuleId} routing inbound calls on trunk {TrunkId} to room {Room}.",
+            _sipDispatchRuleId, _sipTrunkId, _roomName);
     }
 
     /// <summary>
@@ -507,6 +590,24 @@ sealed class LiveKitRoomService : IHostedService
     {
         _logger.LogInformation("LiveKit Room service stopping.");
 
+        if (_sipDispatchRuleId != null)
+        {
+            try
+            {
+                // Remove the dispatch rule so callers are rejected rather than dropped into a
+                // room with no publisher. The room name is random per run so the rule would be
+                // useless after shutdown anyway.
+                await CreateSipServiceClient().DeleteSIPDispatchRule(
+                    new DeleteSIPDispatchRuleRequest { SipDispatchRuleId = _sipDispatchRuleId });
+
+                _logger.LogInformation("Deleted SIP dispatch rule {RuleId}.", _sipDispatchRuleId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete SIP dispatch rule {RuleId} during shutdown.", _sipDispatchRuleId);
+            }
+        }
+
         try
         {
             // Tell LiveKit the participant is leaving so it is removed from the room immediately,
@@ -567,7 +668,13 @@ sealed class LiveKitRoomService : IHostedService
 
         var vp8Codec = new VP8Codec();
         _videoSource = new VideoTestPatternSource(vp8Codec);
-        _audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+
+        // LiveKit's media pipeline, in particular the SIP bridge, is built around Opus. The
+        // SIPSorcery AudioEncoder does not include Opus by default, and without it the audio
+        // track negotiates G711, which browser subscribers can decode but the SIP bridge sends
+        // to callers as silence. Publish Opus only so the negotiation cannot fall back.
+        _audioSource = new AudioExtrasSource(new AudioEncoder(includeOpus: true), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+        _audioSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.OPUS);
 
         MediaStreamTrack videoTrack = new MediaStreamTrack(_videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
