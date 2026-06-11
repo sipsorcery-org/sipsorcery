@@ -175,7 +175,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
             STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
-            stunResponse.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+            stunResponse.Header.TransactionId = Guid.NewGuid().ToByteArray().AsSpan(0, 12).ToArray();
             //stunResponse.AddFingerPrintAttribute();
             stunResponse.AddXORMappedAddressAttribute(IPAddress.Parse("127.0.0.1"), 1234);
 
@@ -344,8 +344,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var buffer = stunRequest.ToByteBufferStringKey(icePassword, true);
 
-            //logger.LogDebug($"HMAC: {buffer.Skip(buffer.Length - ).Take(20).ToArray().HexStr()}.");
-            //logger.LogDebug($"Fingerprint: {buffer.Skip(buffer.Length -4).ToArray().HexStr()}.");
+            //logger.LogDebug($"HMAC: {buffer.AsSpan(buffer.Length - , 20).ToArray().HexStr()}.");
+            //logger.LogDebug($"Fingerprint: {buffer.AsSpan(buffer.Length -4).ToArray().HexStr()}.");
 
             STUNMessage rndTripReq = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
 

@@ -199,7 +199,7 @@ namespace SIPSorcery.Media
                 short[] decodedPcm = new short[encodedSample.Length * 2];
                 int decodedSampleCount = _g722Decoder.Decode(_g722DecoderState, decodedPcm, encodedSample, encodedSample.Length);
 
-                return decodedPcm.Take(decodedSampleCount).ToArray();
+                return decodedPcm.AsSpan(0, decodedSampleCount).ToArray();
             }
             if (format.Codec == AudioCodecsEnum.G729)
             {
