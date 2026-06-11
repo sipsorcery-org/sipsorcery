@@ -87,15 +87,13 @@ namespace SIPSorcery.Net
 
             SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(4));
 
-            int rrIndex = 8;
-            for (int i = 0; i < Header.ReceptionReportCount; i++)
+            var remaining = packet.AsSpan(8);
+            for (var i = 0; (remaining.Length >= ReceptionReportSample.PAYLOAD_SIZE) && (i < Header.ReceptionReportCount); i++)
             {
-                var pkt = packet.AsSpan(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray();
-                if (pkt.Length >= ReceptionReportSample.PAYLOAD_SIZE)
-                {
-                    var rr = new ReceptionReportSample(pkt);
-                    ReceptionReports.Add(rr);
-                }
+                var rr = new ReceptionReportSample(remaining.Slice(0, ReceptionReportSample.PAYLOAD_SIZE).ToArray());
+                ReceptionReports.Add(rr);
+
+                remaining = remaining.Slice(ReceptionReportSample.PAYLOAD_SIZE);
             }
         }
 
