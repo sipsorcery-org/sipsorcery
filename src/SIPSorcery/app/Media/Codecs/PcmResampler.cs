@@ -1,40 +1,40 @@
-﻿using System;
-using System.Linq;
+using System;
 
 namespace SIPSorcery.Media
 {
     internal static class PcmResampler
     {
+        /// <summary>
+        /// Resamples PCM using linear interpolation. Not as good as a proper windowed-sinc
+        /// filter but a big improvement over sample repetition, which mirrors the source
+        /// spectrum at multiples of the input rate. Those images are inaudible through a
+        /// narrowband codec (G711 truncates at 4KHz) but are faithfully transmitted by
+        /// wideband codecs such as OPUS and make upsampled audio sound harsh and metallic.
+        /// </summary>
         public static short[] Resample(short[] pcm, int inRate, int outRate)
         {
-            if (inRate == outRate)
+            if (inRate == outRate || pcm.Length == 0)
             {
                 return pcm;
             }
-            else if (inRate == 8000 && outRate == 16000)
+
+            int outLength = (int)((long)pcm.Length * outRate / inRate);
+            var resampled = new short[outLength];
+            double step = (double)inRate / outRate;
+
+            for (int i = 0; i < outLength; i++)
             {
-                // Crude up-sample to 16Khz by doubling each sample.
-                return pcm.SelectMany(x => new short[] { x, x }).ToArray();
+                double srcPos = i * step;
+                int srcIndex = (int)srcPos;
+                double frac = srcPos - srcIndex;
+
+                short s0 = pcm[srcIndex];
+                short s1 = pcm[Math.Min(srcIndex + 1, pcm.Length - 1)];
+
+                resampled[i] = (short)Math.Round(s0 + (s1 - s0) * frac);
             }
-            else if (inRate == 8000 && outRate == 48000)
-            {
-                // Crude up-sample to 48Khz by 6x each sample. This sounds bad, use for testing only.
-                return pcm.SelectMany(x => new short[] { x, x, x, x, x, x }).ToArray();
-            }
-            else if (inRate == 16000 && outRate == 8000)
-            {
-                // Crude down-sample to 8Khz by skipping every second sample.
-                return pcm.Where((x, i) => i % 2 == 0).ToArray();
-            }
-            else if (inRate == 16000 && outRate == 48000)
-            {
-                // Crude up-sample to 48Khz by 3x each sample. This sounds bad, use for testing only.
-                return pcm.SelectMany(x => new short[] { x, x, x }).ToArray();
-            }
-            else
-            {
-                throw new ApplicationException($"Sorry don't know how to re-sample PCM from {inRate} to {outRate}. Pull requests welcome!");
-            }
+
+            return resampled;
         }
     }
 }

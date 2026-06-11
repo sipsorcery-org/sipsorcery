@@ -408,6 +408,22 @@ namespace SIPSorceryMedia.Windows
 
             if (_waveProvider != null && _audioEncoder != null && !audioFormat.IsEmpty())
             {
+                // The remote party's send format is only known once media arrives (see the note in
+                // VoIPMediaSession.AudioFormatsNegotiated), so the playback device is adjusted from
+                // the received frame's format. Without this, audio decoded at e.g. 16KHz (G722) or
+                // 48KHz (OPUS) gets played through the default 8KHz device at a fraction of the
+                // correct speed.
+                if (_waveSinkFormat != null && _waveSinkFormat.SampleRate != audioFormat.ClockRate)
+                {
+                    SetAudioSinkFormat(audioFormat);
+
+                    if (_isAudioSinkStarted)
+                    {
+                        // The re-initialised playback device starts in the stopped state.
+                        _waveOutEvent?.Play();
+                    }
+                }
+
                 var pcmSample = _audioEncoder.DecodeAudio(encodedMediaFrame.EncodedAudio, audioFormat);
                 byte[] pcmBytes = pcmSample.SelectMany(BitConverter.GetBytes).ToArray();
                 _waveProvider?.AddSamples(pcmBytes, 0, pcmBytes.Length);
