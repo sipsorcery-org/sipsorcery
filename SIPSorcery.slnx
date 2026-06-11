@@ -94,6 +94,7 @@
     <Project Path="examples/WebRTCExamples/CloudflareTurn/CloudflareTurn.csproj" />
     <Project Path="examples/WebRTCExamples/FfmpegToWebRTC/FfmpegToWebRTC.csproj" />
     <Project Path="examples/WebRTCExamples/JanusWebRTCStream/JanusWebRTCStream.csproj" />
+    <Project Path="examples/WebRTCExamples/LiveKitWebRTC/LiveKitWebRTC.csproj" />
     <Project Path="examples/WebRTCExamples/RtspToWebRTCAudioAndVideo/RtspToWebRTCAudioAndVideo.csproj" />
     <Project Path="examples/WebRTCExamples/SIPToWebRtcBridge/SIPToWebRtcBridge.csproj" />
     <Project Path="examples/WebRTCExamples/SIPToWebRtcBridgeVideo/SIPToWebRtcBridgeVideo.csproj" />
