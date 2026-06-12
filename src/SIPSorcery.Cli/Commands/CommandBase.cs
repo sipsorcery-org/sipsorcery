@@ -96,5 +96,12 @@ public abstract class CommandBase
     /// names with additive changes only, since scripts and agents parse them.
     /// </summary>
     protected static void WriteJson<T>(T result) =>
-        Console.WriteLine(JsonSerializer.Serialize(result, _jsonOptions));
+        Console.WriteLine(SerializeResult(result));
+
+    /// <summary>
+    /// Serialises a result object with the standard JSON settings. For verbs whose stdout may be
+    /// claimed by a media payload (--audio -), allowing the result to be written to stderr instead.
+    /// </summary>
+    protected static string SerializeResult<T>(T result) =>
+        JsonSerializer.Serialize(result, _jsonOptions);
 }

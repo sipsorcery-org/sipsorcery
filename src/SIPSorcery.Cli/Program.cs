@@ -37,6 +37,7 @@ rootCommand.Options.Add(new VersionOption());
 
 var sipCommand = new Command("sip", "SIP operations: send requests, make test calls, registrations.");
 sipCommand.Subcommands.Add(new SipOptionsCommand().Build());
+sipCommand.Subcommands.Add(new SipCallCommand().Build());
 rootCommand.Subcommands.Add(sipCommand);
 
 var stunCommand = new Command("stun", "STUN operations: public address lookups, NAT diagnostics.");

@@ -12,6 +12,12 @@
 // (WHIP is RFC 9725; WHEP is the equivalent egress draft). Trickle ICE is
 // avoided by gathering all candidates before sending the offer.
 //
+// Received video can be rendered or captured with --video: "play" spawns an
+// ffplay window, a file path captures the bitstream (H264 Annex B, VP8 in
+// IVF) and "-" writes it to stdout for piping (the result then moves to
+// stderr), e.g. "--video - | mpv --vo=tct -" renders video in the terminal.
+// Decode is delegated to the consumer so no video codecs run in-process.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -60,7 +66,9 @@ public sealed class WebRtcWhepCommand : CommandBase
         long VideoLost,
         int VideoOutOfOrder,
         int VideoDuplicates,
-        string? Error);
+        string? Error,
+        int? VideoFrames = null,
+        long? VideoBytesWritten = null);
 
     public WebRtcWhepCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -83,16 +91,25 @@ public sealed class WebRtcWhepCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_MEDIA_DURATION_SECONDS
         };
 
+        var videoOption = new Option<string?>("--video")
+        {
+            Description = "Where to send the received video: \"play\" to render in an ffplay window, a file path " +
+                          "(H264 is written as Annex B, VP8 in an IVF container), or \"-\" for the bitstream on stdout " +
+                          "(the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal."
+        };
+
         var command = new Command("whep", "Connect to a WHEP endpoint (full ICE/DTLS/SRTP) and verify media is received.");
         command.Arguments.Add(urlArg);
         command.Options.Add(tokenOption);
         command.Options.Add(durationOption);
+        command.Options.Add(videoOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
             parseResult.GetValue(urlArg)!,
             parseResult.GetValue(tokenOption),
             parseResult.GetValue(durationOption),
+            parseResult.GetValue(videoOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -101,7 +118,7 @@ public sealed class WebRtcWhepCommand : CommandBase
         return command;
     }
 
-    private static async Task<int> RunAsync(string url, string? token, int durationSeconds,
+    private static async Task<int> RunAsync(string url, string? token, int durationSeconds, string? videoOut,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -110,9 +127,18 @@ public sealed class WebRtcWhepCommand : CommandBase
         if (!Uri.TryCreate(url, UriKind.Absolute, out var endpointUri) ||
             (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps))
         {
-            return WriteResult(asJson,
+            return WriteResult(asJson, stdoutClaimed: false,
                 new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0,
                     $"Could not parse \"{url}\" as an HTTP or HTTPS URL."),
+                ExitCodes.InvalidArgument);
+        }
+
+        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError);
+
+        if (videoSinkError != null)
+        {
+            return WriteResult(asJson, videoSink.IsStdout,
+                new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0, videoSinkError),
                 ExitCodes.InvalidArgument);
         }
 
@@ -142,6 +168,13 @@ public sealed class WebRtcWhepCommand : CommandBase
             var audioStats = new RtpStreamStats();
             var videoStats = new RtpStreamStats();
             pc.OnRtpPacketReceived += RtpStreamStats.CreateRtpHandler(audioStats, videoStats, logger);
+
+            if (videoSink.IsActive)
+            {
+                // Depacketised (still encoded) frames; decode is delegated to the sink's consumer.
+                pc.OnVideoFrameReceived += (remoteEndPoint, timestamp, frame, format) =>
+                    videoSink.WriteFrame(frame, timestamp, format);
+            }
 
             var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             pc.onconnectionstatechange += (state) =>
@@ -180,7 +213,7 @@ public sealed class WebRtcWhepCommand : CommandBase
             if (!response.IsSuccessStatusCode)
             {
                 string detail = responseBody.Length > 200 ? responseBody[..200] : responseBody;
-                return WriteResult(asJson,
+                return WriteResult(asJson, videoSink.IsStdout,
                     new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0,
                         $"The WHEP endpoint returned HTTP {(int)response.StatusCode}. {detail}".TrimEnd()),
                     ExitCodes.Failed);
@@ -202,7 +235,7 @@ public sealed class WebRtcWhepCommand : CommandBase
 
             if (setAnswerResult != SetDescriptionResultEnum.OK)
             {
-                return WriteResult(asJson,
+                return WriteResult(asJson, videoSink.IsStdout,
                     new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0,
                         $"The SDP answer could not be applied: {setAnswerResult}."),
                     ExitCodes.Failed);
@@ -212,7 +245,7 @@ public sealed class WebRtcWhepCommand : CommandBase
 
             if (connectCompleted != connected.Task || !await connected.Task.ConfigureAwait(false))
             {
-                return WriteResult(asJson,
+                return WriteResult(asJson, videoSink.IsStdout,
                     new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(),
                         stopwatch.ElapsedMilliseconds, null,
                         audioStats.Packets, audioStats.Lost, audioStats.OutOfOrder, audioStats.Duplicates,
@@ -231,23 +264,29 @@ public sealed class WebRtcWhepCommand : CommandBase
 
             bool gotMedia = audioStats.Packets + videoStats.Packets > 0;
 
-            return WriteResult(asJson,
+            // Dispose the sink before writing the result so files are finalised, ffplay drains
+            // and, in stdout mode, the bitstream completes before the result lands on stderr.
+            videoSink.Dispose();
+
+            return WriteResult(asJson, videoSink.IsStdout,
                 new WhepResult(gotMedia, url, (int)response.StatusCode, pc.connectionState.ToString(),
                     connectTimeMs, durationSeconds * 1000,
                     audioStats.Packets, audioStats.Lost, audioStats.OutOfOrder, audioStats.Duplicates,
                     videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder, videoStats.Duplicates,
-                    gotMedia ? null : "The connection succeeded but no media packets were received. Is anything publishing to the stream?"),
+                    gotMedia ? null : "The connection succeeded but no media packets were received. Is anything publishing to the stream?",
+                    videoSink.IsActive ? videoSink.FramesWritten : null,
+                    videoSink.IsActive ? videoSink.BytesWritten : null),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
         {
-            return WriteResult(asJson,
+            return WriteResult(asJson, videoSink.IsStdout,
                 new WhepResult(false, url, null, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0, "Cancelled or HTTP request timed out."),
                 ExitCodes.Timeout);
         }
         catch (Exception excp)
         {
-            return WriteResult(asJson,
+            return WriteResult(asJson, videoSink.IsStdout,
                 new WhepResult(false, url, null, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0, excp.Message),
                 ExitCodes.TransportError);
         }
@@ -275,17 +314,22 @@ public sealed class WebRtcWhepCommand : CommandBase
         }
     }
 
-    private static int WriteResult(bool asJson, WhepResult result, int exitCode)
+    private static int WriteResult(bool asJson, bool stdoutClaimed, WhepResult result, int exitCode)
     {
+        // The stdout payload rule: when the video bitstream has claimed stdout (--video -), the
+        // result is commentary and moves to stderr.
+        var output = stdoutClaimed ? Console.Error : Console.Out;
+
         if (asJson)
         {
-            WriteJson(result);
+            output.WriteLine(SerializeResult(result));
         }
         else if (result.Success)
         {
-            Console.WriteLine($"Connected to {result.Url} in {result.ConnectTimeMs}ms. " +
+            string videoSink = result.VideoFrames != null ? $", {result.VideoFrames} video frames ({result.VideoBytesWritten} bytes) written" : string.Empty;
+            output.WriteLine($"Connected to {result.Url} in {result.ConnectTimeMs}ms. " +
                 $"Received {result.AudioPackets} audio ({FormatAnomalies(result.AudioLost, result.AudioOutOfOrder, result.AudioDuplicates)}) and " +
-                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets in {result.MediaDurationMs}ms.");
+                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets in {result.MediaDurationMs}ms{videoSink}.");
         }
         else
         {

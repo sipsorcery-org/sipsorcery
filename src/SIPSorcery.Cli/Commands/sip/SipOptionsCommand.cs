@@ -51,12 +51,16 @@ public sealed class SipOptionsCommand : CommandBase
                           "e.g. music@iptel.org, tcp:sip.example.com:5060, sips:secure.example.com."
         };
 
+        var hepOption = HepCapture.CreateOption();
+
         var command = new Command("options", "Send a SIP OPTIONS request and report the response (SIP ping).");
         command.Arguments.Add(destinationArg);
+        command.Options.Add(hepOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
             parseResult.GetValue(destinationArg)!,
+            parseResult.GetValue(hepOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -65,18 +69,29 @@ public sealed class SipOptionsCommand : CommandBase
         return command;
     }
 
-    private static async Task<int> RunAsync(string destination, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+    private static async Task<int> RunAsync(string destination, string? hep, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
+        var logger = loggerFactory.CreateLogger(nameof(SipOptionsCommand));
 
-        if (!TryParseDestination(destination, out var dstUri, out var parseError))
+        if (!SipDestination.TryParse(destination, out var dstUri, out var parseError))
         {
             return WriteResult(asJson,
                 new OptionsResult(false, destination, null, null, null, null, null, parseError),
                 ExitCodes.InvalidArgument);
         }
 
+        using var hepCapture = HepCapture.Create(hep, logger, out string? hepError);
+
+        if (hepError != null)
+        {
+            return WriteResult(asJson,
+                new OptionsResult(false, destination, null, null, null, null, null, hepError),
+                ExitCodes.InvalidArgument);
+        }
+
         var sipTransport = new SIPTransport();
+        hepCapture?.Attach(sipTransport);
 
         if (verbose)
         {
@@ -152,44 +167,6 @@ public sealed class SipOptionsCommand : CommandBase
             sipTransport.Shutdown();
         }
     }
-
-    /// <summary>
-    /// Accepts both SIP URIs (sip:100@host, music@host) and serialised SIP end points
-    /// (udp:host:port, tls:host). The same convention as the sipcmdline example.
-    /// </summary>
-    private static bool TryParseDestination(string destination, out SIPURI uri, out string? error)
-    {
-        uri = SIPURI.None;
-        error = null;
-
-        try
-        {
-            // SIPURI.TryParse is lenient, e.g. it accepts host names containing spaces, so apply
-            // a sanity check to route nonsense to an invalid argument error rather than a DNS failure.
-            if (!HasTransportPrefix(destination) && SIPURI.TryParse(destination, out var parsedUri)
-                && !string.IsNullOrWhiteSpace(parsedUri.Host) && !parsedUri.Host.Contains(' '))
-            {
-                uri = parsedUri;
-                return true;
-            }
-
-            var endPoint = SIPEndPoint.ParseSIPEndPoint(destination);
-            uri = new SIPURI(SIPSchemesEnum.sip, endPoint);
-            return true;
-        }
-        catch
-        {
-            error = $"Could not parse \"{destination}\" as a SIP URI or end point.";
-            return false;
-        }
-    }
-
-    private static bool HasTransportPrefix(string destination) =>
-        destination.StartsWith("udp:", StringComparison.OrdinalIgnoreCase) ||
-        destination.StartsWith("tcp:", StringComparison.OrdinalIgnoreCase) ||
-        destination.StartsWith("tls:", StringComparison.OrdinalIgnoreCase) ||
-        destination.StartsWith("ws:", StringComparison.OrdinalIgnoreCase) ||
-        destination.StartsWith("wss:", StringComparison.OrdinalIgnoreCase);
 
     private static int WriteResult(bool asJson, OptionsResult result, int exitCode)
     {
