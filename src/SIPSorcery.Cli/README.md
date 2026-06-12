@@ -29,6 +29,13 @@ sipsorcery ice probe --turn "turn:turn.example.com;user;pass" --relay-only
 # WebRTC WHEP: full connection (ICE, DTLS, SRTP) to a WHEP endpoint, verifies media arrives.
 # Publish to the same stream key first, e.g. with OBS's WHIP output, to get media flowing.
 sipsorcery webrtc whep https://b.siobud.com/api/whep --token mystreamkey
+
+# WebRTC WHIP server: accept a publish directly from ffmpeg/OBS and report on the media,
+# including sequence anomalies. Useful for isolating where stream problems originate.
+sipsorcery webrtc whip-server --listen http://localhost:8080/whip --token test -d 10
+ffmpeg -re -f lavfi -i testsrc=size=640x360 -f lavfi -i sine=frequency=440 \
+  -pix_fmt yuv420p -c:v libx264 -profile:v baseline -r 25 -g 50 \
+  -c:a libopus -ar 48000 -ac 2 -f whip -authorization "test" "http://localhost:8080/whip"
 ```
 
 Every verb supports `--json` for a machine readable result on stdout (logs always go to

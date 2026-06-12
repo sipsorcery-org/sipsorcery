@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebRtcWhepCommand.cs
 //
 // Description: The "sipsorcery webrtc whep" verb. Performs a full WebRTC
@@ -55,87 +55,12 @@ public sealed class WebRtcWhepCommand : CommandBase
         int AudioPackets,
         long AudioLost,
         int AudioOutOfOrder,
+        int AudioDuplicates,
         int VideoPackets,
         long VideoLost,
         int VideoOutOfOrder,
+        int VideoDuplicates,
         string? Error);
-
-    /// <summary>
-    /// Tracks RTP sequence numbers for one media stream to detect gaps and reordering. A gap
-    /// (lost packet) at this layer means the packet never reached the application: network loss,
-    /// but also packets discarded inside the library, e.g. SRTP authentication failures.
-    /// </summary>
-    private sealed class RtpStreamStats
-    {
-        private readonly object _lock = new();
-        private bool _hasFirst;
-        private ushort _highestSeq;
-        private long _cycles;            // count of 16 bit sequence number wraps observed.
-        private long _firstExtended;
-        private long _highestExtended;
-
-        public int Packets { get; private set; }
-        public int OutOfOrder { get; private set; }
-
-        /// <summary>Expected packet count from first to highest sequence number, inclusive.</summary>
-        public long Expected
-        {
-            get { lock (_lock) { return _hasFirst ? _highestExtended - _firstExtended + 1 : 0; } }
-        }
-
-        /// <summary>Sequence gaps: expected minus received (never negative).</summary>
-        public long Lost => Math.Max(0, Expected - Packets);
-
-        public void Record(ushort seq)
-        {
-            lock (_lock)
-            {
-                if (!_hasFirst)
-                {
-                    _hasFirst = true;
-                    _highestSeq = seq;
-                    _firstExtended = seq;
-                    _highestExtended = seq;
-                    Packets = 1;
-                    return;
-                }
-
-                Packets++;
-
-                // Extend the 16 bit sequence number relative to the highest seen, allowing for
-                // wraps in both directions (the same estimation problem as RFC 3711 Appendix A).
-                long extended;
-                if (seq >= _highestSeq)
-                {
-                    extended = seq - _highestSeq < 32768
-                        ? _cycles * 65536 + seq            // in order or small forward jump.
-                        : (_cycles - 1) * 65536 + seq;     // straggler from before a recent wrap.
-                }
-                else
-                {
-                    if (_highestSeq - seq < 32768)
-                    {
-                        extended = _cycles * 65536 + seq;  // late packet in the current cycle.
-                    }
-                    else
-                    {
-                        _cycles++;                         // the sequence number wrapped forward.
-                        extended = _cycles * 65536 + seq;
-                    }
-                }
-
-                if (extended > _highestExtended)
-                {
-                    _highestExtended = extended;
-                    _highestSeq = seq;
-                }
-                else
-                {
-                    OutOfOrder++;
-                }
-            }
-        }
-    }
 
     public WebRtcWhepCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -186,7 +111,7 @@ public sealed class WebRtcWhepCommand : CommandBase
             (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps))
         {
             return WriteResult(asJson,
-                new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0,
+                new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0,
                     $"Could not parse \"{url}\" as an HTTP or HTTPS URL."),
                 ExitCodes.InvalidArgument);
         }
@@ -216,17 +141,7 @@ public sealed class WebRtcWhepCommand : CommandBase
 
             var audioStats = new RtpStreamStats();
             var videoStats = new RtpStreamStats();
-            pc.OnRtpPacketReceived += (remoteEndPoint, mediaType, rtpPacket) =>
-            {
-                if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    audioStats.Record((ushort)rtpPacket.Header.SequenceNumber);
-                }
-                else if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    videoStats.Record((ushort)rtpPacket.Header.SequenceNumber);
-                }
-            };
+            pc.OnRtpPacketReceived += RtpStreamStats.CreateRtpHandler(audioStats, videoStats, logger);
 
             var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             pc.onconnectionstatechange += (state) =>
@@ -266,7 +181,7 @@ public sealed class WebRtcWhepCommand : CommandBase
             {
                 string detail = responseBody.Length > 200 ? responseBody[..200] : responseBody;
                 return WriteResult(asJson,
-                    new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0,
+                    new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0,
                         $"The WHEP endpoint returned HTTP {(int)response.StatusCode}. {detail}".TrimEnd()),
                     ExitCodes.Failed);
             }
@@ -288,7 +203,7 @@ public sealed class WebRtcWhepCommand : CommandBase
             if (setAnswerResult != SetDescriptionResultEnum.OK)
             {
                 return WriteResult(asJson,
-                    new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0,
+                    new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0,
                         $"The SDP answer could not be applied: {setAnswerResult}."),
                     ExitCodes.Failed);
             }
@@ -300,8 +215,8 @@ public sealed class WebRtcWhepCommand : CommandBase
                 return WriteResult(asJson,
                     new WhepResult(false, url, (int)response.StatusCode, pc.connectionState.ToString(),
                         stopwatch.ElapsedMilliseconds, null,
-                        audioStats.Packets, audioStats.Lost, audioStats.OutOfOrder,
-                        videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder,
+                        audioStats.Packets, audioStats.Lost, audioStats.OutOfOrder, audioStats.Duplicates,
+                        videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder, videoStats.Duplicates,
                         ct.IsCancellationRequested ? "Cancelled." :
                         connectCompleted == connected.Task
                             ? $"The peer connection failed (state {pc.connectionState})."
@@ -319,21 +234,21 @@ public sealed class WebRtcWhepCommand : CommandBase
             return WriteResult(asJson,
                 new WhepResult(gotMedia, url, (int)response.StatusCode, pc.connectionState.ToString(),
                     connectTimeMs, durationSeconds * 1000,
-                    audioStats.Packets, audioStats.Lost, audioStats.OutOfOrder,
-                    videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder,
+                    audioStats.Packets, audioStats.Lost, audioStats.OutOfOrder, audioStats.Duplicates,
+                    videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder, videoStats.Duplicates,
                     gotMedia ? null : "The connection succeeded but no media packets were received. Is anything publishing to the stream?"),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
         {
             return WriteResult(asJson,
-                new WhepResult(false, url, null, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, "Cancelled or HTTP request timed out."),
+                new WhepResult(false, url, null, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0, "Cancelled or HTTP request timed out."),
                 ExitCodes.Timeout);
         }
         catch (Exception excp)
         {
             return WriteResult(asJson,
-                new WhepResult(false, url, null, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, excp.Message),
+                new WhepResult(false, url, null, pc.connectionState.ToString(), null, null, 0, 0, 0, 0, 0, 0, 0, 0, excp.Message),
                 ExitCodes.TransportError);
         }
         finally
@@ -369,8 +284,8 @@ public sealed class WebRtcWhepCommand : CommandBase
         else if (result.Success)
         {
             Console.WriteLine($"Connected to {result.Url} in {result.ConnectTimeMs}ms. " +
-                $"Received {result.AudioPackets} audio ({FormatAnomalies(result.AudioLost, result.AudioOutOfOrder)}) and " +
-                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder)}) packets in {result.MediaDurationMs}ms.");
+                $"Received {result.AudioPackets} audio ({FormatAnomalies(result.AudioLost, result.AudioOutOfOrder, result.AudioDuplicates)}) and " +
+                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets in {result.MediaDurationMs}ms.");
         }
         else
         {
@@ -389,13 +304,14 @@ public sealed class WebRtcWhepCommand : CommandBase
         return exitCode;
     }
 
-    private static string FormatAnomalies(long lost, int outOfOrder)
+    private static string FormatAnomalies(long lost, int outOfOrder, int duplicates)
     {
-        if (lost == 0 && outOfOrder == 0)
+        if (lost == 0 && outOfOrder == 0 && duplicates == 0)
         {
             return "clean";
         }
 
-        return $"{lost} lost, {outOfOrder} reordered";
+        return $"{lost} lost, {outOfOrder} reordered, {duplicates} duplicate";
     }
 }
+
