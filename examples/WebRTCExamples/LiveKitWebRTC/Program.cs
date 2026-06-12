@@ -134,10 +134,6 @@ sealed class LikeKitWebSocketClient
 
     public async Task SendAsync(SignalRequest req, CancellationToken ct)
     {
-        //var req = new SignalRequest
-        //{
-        //    PingReq = new Ping { Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() }
-        //};
         await _ws.SendAsync(req.ToByteArray(), WebSocketMessageType.Binary, true, ct);
     }
 
@@ -209,9 +205,8 @@ sealed class LikeKitWebSocketClient
                             {
                                 var payloadJson = JsonFormatter.Default.Format(payload);
                                 var payloadJsonElement = JsonSerializer.Deserialize<JsonElement>(payloadJson);
-                                //var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = true });
-                                var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = false });
-                                _logger.LogInformation("LiveKit response ({MessageCase}): {PayloadJson}",
+                                var prettyPayloadJson = JsonSerializer.Serialize(payloadJsonElement, new JsonSerializerOptions { WriteIndented = true });
+                                _logger.LogTrace("LiveKit response ({MessageCase}): {PayloadJson}",
                                     signalResponse.MessageCase,
                                     prettyPayloadJson);
                             }
@@ -669,10 +664,13 @@ sealed class LiveKitRoomService : IHostedService
         var vp8Codec = new VP8Codec();
         _videoSource = new VideoTestPatternSource(vp8Codec);
 
-        // LiveKit's media pipeline, in particular the SIP bridge, is built around Opus. The
-        // SIPSorcery AudioEncoder does not include Opus by default, and without it the audio
-        // track negotiates G711, which browser subscribers can decode but the SIP bridge sends
-        // to callers as silence. Publish Opus only so the negotiation cannot fall back.
+        // LiveKit's room-facing media pipeline (SFU forwarding, SIP bridge, agents) consumes
+        // OPUS, so the audio track must be pinned to it. The SIPSorcery AudioEncoder does not
+        // include OPUS by default, and without the pin the track negotiates G711, which browsers
+        // can play but the SIP bridge relays to callers as silence. G722 is worse: it is not a
+        // room-enabled codec so no subscriber gets any media at all. The SIP leg between LiveKit
+        // and a caller's phone is independent (PCMU/PCMA/G722, NOT OPUS); the bridge transcodes
+        // between the caller's codec and this OPUS room track. See the README for the details.
         _audioSource = new AudioExtrasSource(new AudioEncoder(includeOpus: true), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
         _audioSource.RestrictFormats(format => format.Codec == AudioCodecsEnum.OPUS);
 
