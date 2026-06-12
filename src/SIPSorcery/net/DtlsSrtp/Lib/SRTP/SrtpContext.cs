@@ -1375,7 +1375,13 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             ulong v;
             if (s_l < 32768)
             {
-                if (SEQ - s_l > 32768)
+                // The subtraction MUST be signed. SEQ and s_l are 16 bit sequence values, but with
+                // unsigned arithmetic a reordered packet (SEQ slightly below s_l) wraps the
+                // subtraction to a huge value, incorrectly selecting ROC-1 and corrupting the HMAC
+                // input/keystream IV, so legitimate out-of-order packets fail authentication. The
+                // ROC-1 branch is only for stragglers from before a sequence wrap, i.e. when SEQ is
+                // in the upper half FAR ABOVE a recently wrapped s_l.
+                if ((long)SEQ - s_l > 32768)
                 {
                     v = (ROC - 1) % 4294967296L;
                 }
