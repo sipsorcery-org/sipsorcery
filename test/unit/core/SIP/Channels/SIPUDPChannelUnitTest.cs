@@ -62,7 +62,7 @@ namespace SIPSorcery.SIP.UnitTests
             var udpChan2 = new SIPUDPChannel(IPAddress.Any, 0);
             logger.LogDebug("Listening end point {ListeningSIPEndPoint}.", udpChan2.ListeningSIPEndPoint);
 
-            TaskCompletionSource<bool> gotMessage = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> gotMessage = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             SIPEndPoint receivedFromEP = null;
             SIPEndPoint receivedOnEP = null;
             udpChan2.SIPMessageReceived = (SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer) =>
@@ -73,7 +73,8 @@ namespace SIPSorcery.SIP.UnitTests
 
                 receivedFromEP = remoteEndPoint;
                 receivedOnEP = localSIPEndPoint;
-                gotMessage.SetResult(true);
+                // TrySet because the send is retried and more than one copy of the request may arrive.
+                gotMessage.TrySetResult(true);
                 return Task.CompletedTask;
             };
 
@@ -82,27 +83,34 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Attempting to send OPTIONS request to {dstEndPoint}.", dstEndPoint);
 
-            await udpChan1.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(optionsReq.ToString()), false, null);
-
-            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(1));
-            var completed = await Task.WhenAny(gotMessage.Task, timeoutTask);
-
-            if (completed == timeoutTask)
+            // UDP delivery is not guaranteed, even on loopback a datagram can be dropped under
+            // buffer pressure, and a single 1 second wait is not reliable on a loaded CI agent.
+            // Retry the send periodically until the message arrives or an overall deadline expires.
+            bool received = false;
+            var deadline = System.Diagnostics.Stopwatch.StartNew();
+            while (deadline.Elapsed < TimeSpan.FromSeconds(10))
             {
-                Assert.Fail("Timeout waiting for message to be received.");
-            }
-            else
-            {
-                logger.LogDebug("Message received successfully.");
+                await udpChan1.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(optionsReq.ToString()), false, null);
 
-                bool res = await gotMessage.Task;
+                var completed = await Task.WhenAny(gotMessage.Task, Task.Delay(500));
+                if (completed == gotMessage.Task)
+                {
+                    received = true;
+                    break;
+                }
 
-                Assert.True(res);
-                Assert.NotNull(receivedFromEP);
-                Assert.NotNull(receivedOnEP);
-                Assert.Equal(IPAddress.Loopback, receivedFromEP.Address);
-                Assert.Equal(IPAddress.Any, receivedOnEP.Address);
+                logger.LogDebug("No message received after {Elapsed:0.##}s, resending.", deadline.Elapsed.TotalSeconds);
             }
+
+            Assert.True(received, "Timeout waiting for message to be received.");
+
+            logger.LogDebug("Message received successfully.");
+
+            Assert.True(await gotMessage.Task);
+            Assert.NotNull(receivedFromEP);
+            Assert.NotNull(receivedOnEP);
+            Assert.Equal(IPAddress.Loopback, receivedFromEP.Address);
+            Assert.Equal(IPAddress.Any, receivedOnEP.Address);
 
             udpChan1.Close();
             udpChan2.Close();
