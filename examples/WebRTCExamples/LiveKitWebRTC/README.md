@@ -35,6 +35,7 @@ Windows (PowerShell):
 $env:LIVEKIT_API_KEY = "<your api key>"
 $env:LIVEKIT_API_SECRET = "<your api secret>"
 $env:LIVEKIT_WEBSOCKET_URL = "wss://<your project>.livekit.cloud"
+$env:LIVEKIT_SIP_TRUNK_ID = "ST_<your trunk id>"   # optional, for inbound SIP calls
 ```
 
 Linux / macOS:
@@ -43,6 +44,7 @@ Linux / macOS:
 export LIVEKIT_API_KEY="<your api key>"
 export LIVEKIT_API_SECRET="<your api secret>"
 export LIVEKIT_WEBSOCKET_URL="wss://<your project>.livekit.cloud"
+export LIVEKIT_SIP_TRUNK_ID="ST_<your trunk id>"   # optional, for inbound SIP calls
 ```
 
 ## Running
@@ -117,12 +119,25 @@ the `RestrictFormats` pin the offer also lists G711/G722, leaving the outcome to
 answer ordering.
 
 Why it has to be OPUS: the LiveKit server is an SFU - it forwards published RTP verbatim and
-never transcodes, so a track can only reach a subscriber that negotiated the same codec. The
-room will happily *accept* a G711 publish, and browser subscribers will even play it (browsers
-negotiate G711 natively), but LiveKit's own infrastructure components - the SIP bridge, egress,
-agents - are OPUS-first on their room-facing side. The failure mode is nasty: every signalling
-indicator stays green (track published, call active) while a G711 room track arrives at the SIP
-bridge as pure silence. Publish what the platform's own clients publish: OPUS.
+never transcodes, so a published track only reaches subscribers that negotiated its codec, and
+LiveKit's own infrastructure components (the SIP bridge, egress, agents) consume OPUS on their
+room-facing side. Tested outcomes per published codec (LiveKit Cloud, June 2026):
+
+| Published room codec | SFU routes it | Browser subscriber | SIP caller |
+| --- | --- | --- | --- |
+| OPUS | yes | plays | hears audio (transcoded by the bridge) |
+| PCMU / PCMA | yes (room-enabled codecs) | plays | **silence** |
+| G722 | no (not a room-enabled codec) | **no media** | **no media** |
+
+The failure modes are nasty because every signalling indicator stays green (track published,
+call active) while the media goes nowhere. Publish what the platform's own clients publish:
+OPUS.
+
+The SIP leg between the bridge and a caller's phone is a separate negotiation. The bridge's
+default SIP codec set is PCMU, PCMA and G722 (plus RFC2833 DTMF) and it transcodes between the
+caller's codec and the OPUS room track in both directions. OPUS is **not** in the bridge's
+default SIP codec set: a SIP client offering only OPUS is rejected (LiveKit answers with a 400).
+So a phone calling in on G722 hearing an OPUS room track is the normal, working configuration.
 
 A related subtlety: the `2` in the SDP's `opus/48000/2` is fixed by RFC 7587 and does not mean
 stereo is being sent. The actual channel count is signalled in-band per packet; this app sends
