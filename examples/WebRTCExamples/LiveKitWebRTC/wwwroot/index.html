@@ -56,18 +56,15 @@
 
                 room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
                     setStatus(`Subscribed to ${track.kind} track from ${participant.identity}.`);
-                    if (track.kind === "video") {
-                        track.attach(document.querySelector("#videoCtl"));
-                    }
-                    else if (track.kind === "audio") {
-                        // Audio tracks create their own hidden element; playback is allowed
-                        // because subscribing was triggered by a user gesture.
-                        document.body.appendChild(track.attach());
-                    }
+                    // Attach BOTH the audio and video tracks to the same video element; the SDK
+                    // merges them into the element's MediaStream. If the audio is attached to a
+                    // separate (hidden) audio element instead, the video element has no audio
+                    // track and the browser's native volume control stays permanently disabled.
+                    track.attach(document.querySelector("#videoCtl"));
                 });
 
                 room.on(RoomEvent.TrackUnsubscribed, (track) => {
-                    track.detach().forEach((el) => { if (el.tagName === "AUDIO") { el.remove(); } });
+                    track.detach();
                 });
 
                 room.on(RoomEvent.ParticipantConnected, (p) => setStatus(`Participant connected: ${p.identity}.`));
@@ -113,6 +110,7 @@
     </div>
 
     <div id="status"></div>
-    <video id="videoCtl" autoplay playsinline controls></video>
+    <!--<video id="videoCtl" autoplay playsinline controls></video>-->
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
 </body>
 </html>
