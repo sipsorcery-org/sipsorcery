@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- NOTE: do not set AssemblyName to "sipsorcery": on case-insensitive file systems it
+         collides with the referenced SIPSorcery.dll. The installed tool command name comes
+         from ToolCommandName below. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>sipsorcery</ToolCommandName>
+    <PackageId>SIPSorcery.Cli</PackageId>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Aaron Clauson</Authors>
+    <Description>Command line diagnostics for SIP and WebRTC: OPTIONS pings, test calls, STUN/TURN/ICE connectivity checks and more, built on the SIPSorcery library. Both human and agent friendly with JSON output and meaningful exit codes.</Description>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>SIP;VoIP;WebRTC;STUN;TURN;ICE;CLI;diagnostics</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>
