@@ -818,6 +818,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    if (RemoteTrack != null)
+                    {
+                        // Must be updated for LogIfWrongSeqNumber to function: with the initial
+                        // value of 0 the sequence discontinuity check never fires, so the
+                        // unbuffered path previously never reported out of order packets.
+                        RemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
+                    }
                     ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
                 }
 
