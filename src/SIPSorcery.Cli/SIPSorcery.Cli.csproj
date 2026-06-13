@@ -46,6 +46,8 @@
     <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
     <!-- WebRTC client for the OpenAI Realtime API, used by the "openai realtime" verb. -->
     <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
+    <!-- Native (FFmpeg.AutoGen) IVideoEncoder for the webrtc video-bench ffmpeg stage. -->
+    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
   </ItemGroup>
 
   <ItemGroup>

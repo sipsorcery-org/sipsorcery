@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebRtcEchoCommand.cs
 //
 // Description: The "sipsorcery webrtc echo" verb. Acts as a WebRTC echo test
@@ -22,6 +22,8 @@
 
 using System.CommandLine;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -78,12 +80,24 @@ public sealed class WebRtcEchoCommand : CommandBase
             Description = "Do not include a data channel (then the connection state is the only success signal)."
         };
 
+        // Cloudflare TURN options (same as the "cloudflare turn" verb). When a key ID and token are
+        // supplied, short lived TURN credentials are fetched and added as an ICE server before the
+        // connection is offered.
+        var keyIdOption = CloudflareTurn.CreateKeyIdOption();
+        var tokenOption = CloudflareTurn.CreateTokenOption();
+        var ttlOption = CloudflareTurn.CreateTtlOption();
+        var transportOption = CloudflareTurn.CreateTransportOption();
+
         var command = new Command("echo", "Run a WebRTC echo test against an echo server and verify the data channel round trips (webrtccmdline --echoclient).");
         command.Arguments.Add(urlArg);
         command.Options.Add(stunOption);
         command.Options.Add(relayOnlyOption);
         command.Options.Add(noAudioOption);
         command.Options.Add(noDataOption);
+        command.Options.Add(keyIdOption);
+        command.Options.Add(tokenOption);
+        command.Options.Add(ttlOption);
+        command.Options.Add(transportOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -92,6 +106,10 @@ public sealed class WebRtcEchoCommand : CommandBase
             parseResult.GetValue(relayOnlyOption),
             parseResult.GetValue(noAudioOption),
             parseResult.GetValue(noDataOption),
+            parseResult.GetValue(keyIdOption),
+            parseResult.GetValue(tokenOption),
+            parseResult.GetValue(ttlOption),
+            parseResult.GetValue(transportOption)!,
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -101,6 +119,7 @@ public sealed class WebRtcEchoCommand : CommandBase
     }
 
     private static async Task<int> RunAsync(string url, string? stun, bool relayOnly, bool noAudio, bool noData,
+        string? turnKeyId, string? turnToken, int turnTtl, string turnTransport,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -114,21 +133,52 @@ public sealed class WebRtcEchoCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        var config = new RTCConfiguration();
+        var config = new RTCConfiguration { iceServers = new List<RTCIceServer>() };
         if (!string.IsNullOrWhiteSpace(stun))
         {
             string[] fields = stun.Split(';');
-            config.iceServers = new List<RTCIceServer>
+            config.iceServers.Add(new RTCIceServer
             {
-                new RTCIceServer
-                {
-                    urls = fields[0],
-                    username = fields.Length > 1 ? fields[1] : null,
-                    credential = fields.Length > 2 ? fields[2] : null,
-                    credentialType = RTCIceCredentialType.password
-                }
-            };
+                urls = fields[0],
+                username = fields.Length > 1 ? fields[1] : null,
+                credential = fields.Length > 2 ? fields[2] : null,
+                credentialType = RTCIceCredentialType.password
+            });
         }
+
+        // If Cloudflare TURN is requested, fetch credentials first and add the TURN server to the
+        // peer connection's ICE servers.
+        CloudflareTurn.ResolveCredentials(ref turnKeyId, ref turnToken);
+        bool turnRequested = !string.IsNullOrWhiteSpace(turnKeyId) || !string.IsNullOrWhiteSpace(turnToken);
+        if (turnRequested)
+        {
+            if (string.IsNullOrWhiteSpace(turnKeyId) || string.IsNullOrWhiteSpace(turnToken))
+            {
+                return WriteResult(asJson,
+                    new EchoResult(false, url, "new", null, false, 0, 0,
+                        "Both a Cloudflare TURN key ID and token are required (--key-id/--token or CLOUDFLARE_TURN_KEY_ID/CLOUDFLARE_API_TOKEN)."),
+                    ExitCodes.InvalidArgument);
+            }
+
+            if (!CloudflareTurn.TryResolveTurnUrl(turnTransport, out string turnUrl, out string? urlError))
+            {
+                return WriteResult(asJson,
+                    new EchoResult(false, url, "new", null, false, 0, 0, urlError),
+                    ExitCodes.InvalidArgument);
+            }
+
+            var fetch = await CloudflareTurn.FetchIceServerAsync(turnKeyId, turnToken, turnTtl, turnUrl, timeoutSeconds, logger, ct).ConfigureAwait(false);
+            if (fetch.Error != null)
+            {
+                return WriteResult(asJson,
+                    new EchoResult(false, url, "new", null, false, 0, 0, $"Could not obtain Cloudflare TURN credentials: {fetch.Error}"),
+                    ExitCodes.Failed);
+            }
+
+            logger.LogDebug("Added Cloudflare TURN server {TurnUrl};{TurnUsername};{TurnCredential} to the peer connection.", turnUrl, fetch.IceServer?.username, fetch.IceServer?.credential);
+            config.iceServers.Add(fetch.IceServer!);
+        }
+
         if (relayOnly)
         {
             config.iceTransportPolicy = RTCIceTransportPolicy.relay;
@@ -185,6 +235,18 @@ public sealed class WebRtcEchoCommand : CommandBase
             var offer = pc.createOffer(new RTCOfferOptions { X_WaitForIceGatheringToComplete = true });
             await pc.setLocalDescription(offer).ConfigureAwait(false);
 
+            // Short circuit here if no ICE candidates were gathered. This is only likely to happen if a relay only policy was requested and
+            // the TURN server was not valid or the credentials failed.
+            if(pc.GetRtpChannel().Candidates.Count == 0)
+            {
+                logger.LogWarning("No ICE candidates were gathered. Check the STUN/TURN server configuration.");
+
+                return WriteResult(asJson,
+                    new EchoResult(false, url, pc.connectionState.ToString(), null, false, 0, 0,
+                        "No ICE candidates were gathered. Check the STUN/TURN server configuration."),
+                    ExitCodes.Failed);
+            }
+
             var stopwatch = Stopwatch.StartNew();
 
             using var content = new StringContent(offer.toJSON(), Encoding.UTF8, "application/json");
@@ -215,6 +277,15 @@ public sealed class WebRtcEchoCommand : CommandBase
                     new EchoResult(false, url, pc.connectionState.ToString(), null, false, 0, 0,
                         $"The SDP answer could not be applied: {setAnswerResult}."),
                     ExitCodes.Failed);
+            }
+
+            // With --relay-only every candidate pair routes through the (public) TURN relay. If the
+            // remote peer only offered private/loopback candidates the relay cannot create a
+            // permission for them and the connection will fail, so warn up front rather than after a
+            // timeout.
+            if (relayOnly)
+            {
+                WarnIfRemoteCandidatesAllPrivate(answerInit.sdp, logger);
             }
 
             var connectCompleted = await Task.WhenAny(connected.Task, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds), ct)).ConfigureAwait(false);
@@ -259,6 +330,69 @@ public sealed class WebRtcEchoCommand : CommandBase
         {
             pc.Close("echo test complete");
         }
+    }
+
+    /// <summary>
+    /// Parses the candidate addresses out of the remote answer SDP and, if every one is a
+    /// private/loopback address, warns that a public TURN relay cannot reach them under --relay-only.
+    /// mDNS (.local) candidates are not IP literals so they are ignored.
+    /// </summary>
+    private static void WarnIfRemoteCandidatesAllPrivate(string? answerSdp, ILogger logger)
+    {
+        if (string.IsNullOrWhiteSpace(answerSdp))
+        {
+            return;
+        }
+
+        var addresses = new List<IPAddress>();
+        foreach (var line in answerSdp.Split('\n'))
+        {
+            // a=candidate:<foundation> <component> <transport> <priority> <address> <port> typ <type> ...
+            int idx = line.IndexOf("candidate:", StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
+            {
+                continue;
+            }
+
+            var parts = line[idx..].Trim().Split(' ');
+            if (parts.Length >= 5 && IPAddress.TryParse(parts[4], out var addr))
+            {
+                addresses.Add(addr);
+            }
+        }
+
+        if (addresses.Count > 0 && addresses.TrueForAll(IsPrivateAddress))
+        {
+            logger.LogWarning("--relay-only is set but the remote peer's {Count} candidate(s) are all private/loopback addresses ({Addresses}). " +
+                "A public TURN relay (e.g. Cloudflare) cannot create permissions for private addresses, so the connection will likely fail. " +
+                "Use a publicly reachable peer, or drop --relay-only.",
+                addresses.Count, string.Join(", ", addresses));
+        }
+    }
+
+    private static bool IsPrivateAddress(IPAddress address)
+    {
+        if (IPAddress.IsLoopback(address))
+        {
+            return true;
+        }
+
+        if (address.AddressFamily == AddressFamily.InterNetwork)
+        {
+            byte[] b = address.GetAddressBytes();
+            return b[0] == 10
+                || (b[0] == 172 && b[1] >= 16 && b[1] <= 31)
+                || (b[0] == 192 && b[1] == 168)
+                || (b[0] == 169 && b[1] == 254);   // link-local
+        }
+
+        if (address.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            // Link-local (fe80::/10), site-local (deprecated) or unique-local (fc00::/7).
+            return address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || (address.GetAddressBytes()[0] & 0xFE) == 0xFC;
+        }
+
+        return false;
     }
 
     private static int WriteResult(bool asJson, EchoResult result, int exitCode)

@@ -55,6 +55,7 @@ webrtcCommand.Subcommands.Add(new WebRtcWhepCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcWhipServerCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcVideoBenchCommand().Build());
 rootCommand.Subcommands.Add(webrtcCommand);
 
 var cloudflareCommand = new Command("cloudflare", "Cloudflare Realtime operations: TURN credential and SFU publish checks.");

@@ -22,11 +22,6 @@
 
 using System.CommandLine;
 using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 
@@ -35,12 +30,6 @@ namespace SIPSorcery.Cli.Commands;
 public sealed class CloudflareTurnCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 15;
-    private const int DEFAULT_TTL_SECONDS = 120;
-    private const string CLOUDFLARE_TURN_BASE_URL = "https://rtc.live.cloudflare.com/v1/turn/";
-
-    private const string TURN_URL_TLS = "turns:turn.cloudflare.com:443";
-    private const string TURN_URL_UDP = "turn:turn.cloudflare.com:3478?transport=udp";
-    private const string TURN_URL_TCP = "turn:turn.cloudflare.com:3478?transport=tcp";
 
     /// <summary>
     /// The result shape written to stdout with --json. Stable field names; additive changes only.
@@ -56,44 +45,15 @@ public sealed class CloudflareTurnCommand : CommandBase
         long GatheringMs,
         string? Error);
 
-    private sealed class CloudflareIceServer
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Credential { get; set; } = string.Empty;
-        public List<string> Urls { get; set; } = [];
-    }
-
-    private sealed class CloudflareIceServersResponse
-    {
-        public List<CloudflareIceServer> IceServers { get; set; } = [];
-    }
-
     public CloudflareTurnCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
 
     public override Command Build()
     {
-        var keyIdOption = new Option<string?>("--key-id")
-        {
-            Description = "The Cloudflare TURN key ID. Defaults to the CLOUDFLARE_TURN_KEY_ID environment variable."
-        };
-
-        var tokenOption = new Option<string?>("--token")
-        {
-            Description = "The Cloudflare TURN key API token. Defaults to the CLOUDFLARE_API_TOKEN environment variable."
-        };
-
-        var ttlOption = new Option<int>("--ttl")
-        {
-            Description = "The requested credential lifetime in seconds.",
-            DefaultValueFactory = _ => DEFAULT_TTL_SECONDS
-        };
-
-        var transportOption = new Option<string>("--transport")
-        {
-            Description = "The TURN transport to probe: tls (turns:443), udp or tcp (turn:3478).",
-            DefaultValueFactory = _ => "tls"
-        };
+        var keyIdOption = CloudflareTurn.CreateKeyIdOption();
+        var tokenOption = CloudflareTurn.CreateTokenOption();
+        var ttlOption = CloudflareTurn.CreateTtlOption();
+        var transportOption = CloudflareTurn.CreateTransportOption();
 
         var command = new Command("turn", "Fetch Cloudflare TURN credentials and verify a relay candidate can be allocated.");
         command.Options.Add(keyIdOption);
@@ -121,8 +81,7 @@ public sealed class CloudflareTurnCommand : CommandBase
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(CloudflareTurnCommand));
 
-        keyId ??= Environment.GetEnvironmentVariable("CLOUDFLARE_TURN_KEY_ID");
-        token ??= Environment.GetEnvironmentVariable("CLOUDFLARE_API_TOKEN");
+        CloudflareTurn.ResolveCredentials(ref keyId, ref token);
 
         if (string.IsNullOrWhiteSpace(keyId) || string.IsNullOrWhiteSpace(token))
         {
@@ -132,83 +91,26 @@ public sealed class CloudflareTurnCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        string turnUrl = transport.ToLowerInvariant() switch
-        {
-            "tls" => TURN_URL_TLS,
-            "udp" => TURN_URL_UDP,
-            "tcp" => TURN_URL_TCP,
-            _ => string.Empty
-        };
-
-        if (turnUrl.Length == 0)
+        if (!CloudflareTurn.TryResolveTurnUrl(transport, out string turnUrl, out string? urlError))
         {
             return WriteResult(asJson,
-                new TurnResult(false, keyId, ttl, string.Empty, null, 0, 0,
-                    $"Unknown --transport value \"{transport}\". Expected tls, udp or tcp."),
+                new TurnResult(false, keyId, ttl, string.Empty, null, 0, 0, urlError),
                 ExitCodes.InvalidArgument);
         }
 
-        string? username;
-        string credential;
+        var fetch = await CloudflareTurn.FetchIceServerAsync(keyId, token, ttl, turnUrl, timeoutSeconds, logger, ct).ConfigureAwait(false);
 
-        try
-        {
-            using var httpClient = new HttpClient { BaseAddress = new Uri(CLOUDFLARE_TURN_BASE_URL), Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, $"keys/{keyId}/credentials/generate-ice-servers")
-            {
-                Content = new StringContent(JsonSerializer.Serialize(new { ttl }), Encoding.UTF8, "application/json")
-            };
-
-            using var response = await httpClient.SendAsync(request, ct).ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                string body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-                string detail = body.Length > 200 ? body[..200] : body;
-                return WriteResult(asJson,
-                    new TurnResult(false, keyId, ttl, turnUrl, null, 0, 0,
-                        $"The Cloudflare TURN API returned HTTP {(int)response.StatusCode}. {detail}".TrimEnd()),
-                    ExitCodes.Failed);
-            }
-
-            var iceServers = await response.Content.ReadFromJsonAsync<CloudflareIceServersResponse>(cancellationToken: ct).ConfigureAwait(false);
-
-            var server = iceServers?.IceServers.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Username));
-            if (server == null)
-            {
-                return WriteResult(asJson,
-                    new TurnResult(false, keyId, ttl, turnUrl, null, 0, 0,
-                        "The Cloudflare TURN API response did not contain credentials."),
-                    ExitCodes.Failed);
-            }
-
-            username = server.Username;
-            credential = server.Credential;
-            logger.LogDebug("Obtained Cloudflare TURN credentials for username {Username}.", username);
-        }
-        catch (OperationCanceledException)
+        if (fetch.Error != null)
         {
             return WriteResult(asJson,
-                new TurnResult(false, keyId, ttl, turnUrl, null, 0, 0, "Cancelled or the credentials request timed out."),
-                ExitCodes.Timeout);
+                new TurnResult(false, keyId, ttl, turnUrl, null, 0, 0, fetch.Error),
+                ExitCodes.Failed);
         }
-        catch (Exception excp)
-        {
-            return WriteResult(asJson,
-                new TurnResult(false, keyId, ttl, turnUrl, null, 0, 0, excp.Message),
-                ExitCodes.TransportError);
-        }
+
+        string? username = fetch.Username;
 
         // Relay only ICE gather against the Cloudflare TURN server with the fetched credentials.
-        var iceServer = new RTCIceServer
-        {
-            urls = turnUrl,
-            username = username,
-            credential = credential,
-            credentialType = RTCIceCredentialType.password
-        };
+        var iceServer = fetch.IceServer!;
 
         var iceChannel = new RtpIceChannel(
             null,
