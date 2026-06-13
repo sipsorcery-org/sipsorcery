@@ -289,7 +289,14 @@ public sealed class LiveKitRoomCommand : CommandBase
 
                     message.Position = 0;
                     var response = SignalResponse.Parser.ParseFrom(message);
-                    await HandleSignalAsync(response, ct).ConfigureAwait(false);
+
+                    // Dispatch WITHOUT awaiting so the receive loop keeps reading. A handler can
+                    // itself await a later message: the Join handler publishes tracks and waits for
+                    // the TrackPublished acknowledgement, which arrives on this same loop. Awaiting
+                    // the handler here would block the loop and deadlock that handshake.
+                    _ = HandleSignalAsync(response, ct).ContinueWith(
+                        t => _logger.LogError(t.Exception, "LiveKit signal handler failed."),
+                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
                 }
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
