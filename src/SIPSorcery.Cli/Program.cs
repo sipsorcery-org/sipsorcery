@@ -38,6 +38,8 @@ rootCommand.Options.Add(new VersionOption());
 var sipCommand = new Command("sip", "SIP operations: send requests, make test calls, registrations.");
 sipCommand.Subcommands.Add(new SipOptionsCommand().Build());
 sipCommand.Subcommands.Add(new SipCallCommand().Build());
+sipCommand.Subcommands.Add(new SipRegisterCommand().Build());
+sipCommand.Subcommands.Add(new SipLoadCommand().Build());
 rootCommand.Subcommands.Add(sipCommand);
 
 var stunCommand = new Command("stun", "STUN operations: public address lookups, NAT diagnostics.");
@@ -51,6 +53,21 @@ rootCommand.Subcommands.Add(iceCommand);
 var webrtcCommand = new Command("webrtc", "WebRTC operations: full connection probes with ICE, DTLS and media.");
 webrtcCommand.Subcommands.Add(new WebRtcWhepCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcWhipServerCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcEchoCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
 rootCommand.Subcommands.Add(webrtcCommand);
+
+var cloudflareCommand = new Command("cloudflare", "Cloudflare Realtime operations: TURN credential and SFU publish checks.");
+cloudflareCommand.Subcommands.Add(new CloudflareTurnCommand().Build());
+cloudflareCommand.Subcommands.Add(new CloudflareSfuCommand().Build());
+rootCommand.Subcommands.Add(cloudflareCommand);
+
+var livekitCommand = new Command("livekit", "LiveKit operations: room access and publish checks.");
+livekitCommand.Subcommands.Add(new LiveKitRoomCommand().Build());
+rootCommand.Subcommands.Add(livekitCommand);
+
+var openaiCommand = new Command("openai", "OpenAI operations: Realtime WebRTC API connectivity checks.");
+openaiCommand.Subcommands.Add(new OpenAiRealtimeCommand().Build());
+rootCommand.Subcommands.Add(openaiCommand);
 
 return await rootCommand.Parse(args).InvokeAsync();

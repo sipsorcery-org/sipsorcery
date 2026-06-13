@@ -32,10 +32,20 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <!-- Used by the "livekit room" verb to mint access tokens and for the protobuf signalling
+         messages. Targets netstandard2.0 so it is compatible with the net8.0 tool. -->
+    <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+    <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
+    <!-- VP8 encoder for the test pattern video published by the "cloudflare sfu" and
+         "livekit room" verbs. -->
+    <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- WebRTC client for the OpenAI Realtime API, used by the "openai realtime" verb. -->
+    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

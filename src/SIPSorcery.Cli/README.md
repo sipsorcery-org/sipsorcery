@@ -30,9 +30,19 @@ sipsorcery sip call music@iptel.org --audio - > rx.pcm     # raw s16le PCM on st
                                                            # (the result moves to stderr)
 sipsorcery sip call 100@pbx.example.com -u user --password pass --play tone --send-dtmf 123
 
-# Both SIP verbs can mirror their traffic to a HEPv3 capture server (HOMER, heplify-server,
+# SIP register: register an account with a registrar and report the result.
+sipsorcery sip register sipsorcery.com -u myuser --password mypass
+sipsorcery sip register tls:sip.example.com -u myuser --password mypass -d 30  # hold 30s then remove
+sipsorcery sip register sipsorcery.com -u myuser --password mypass --keep      # leave registered
+
+# SIP load: generate concurrent OPTIONS load and report aggregate timing/success stats.
+sipsorcery sip load myserver.org -c 1000 -x 25            # 1000 requests, 25 in flight at once
+sipsorcery sip load myserver.org -c 100 -x 10 -p 1        # each worker waits 1s between requests
+sipsorcery sip load myserver.org -c 100 -x 10 --break-on-fail --hep 192.168.0.10
+
+# The SIP verbs can mirror their traffic to a HEPv3 capture server (HOMER, heplify-server,
 # sipcapture.org) so the exchange shows up as a call ladder diagram:
-sipsorcery sip options music@iptel.org --hep 192.168.0.10
+sipsorcery sip options music@iptel.org --hep "127.0.0.1:9060"
 sipsorcery sip call music@iptel.org --hep "192.168.0.10:9060;myHep;42"   # host:port;password;agentId
 
 # STUN lookup: report this machine's public IP address and port.
@@ -45,16 +55,24 @@ sipsorcery ice probe --stun stun:stun.cloudflare.com
 sipsorcery ice probe --turn "turn:turn.example.com;user;pass" --relay-only
 
 # WebRTC WHEP: full connection (ICE, DTLS, SRTP) to a WHEP endpoint, verifies media arrives.
-# Publish to the same stream key first, e.g. with OBS's WHIP output, to get media flowing.
+# Publish to the same stream key first to get media flowing. FFmpeg can publish to
+# Broadcast Box (https://b.siobud.com/) using:
+ffmpeg `
+  -re `
+  -f lavfi -i testsrc=size=1280x720 `
+  -f lavfi -i sine=frequency=440 `
+  -pix_fmt yuv420p -vcodec libx264 -profile:v baseline -r 25 -g 50 `
+  -acodec libopus -ar 48000 -ac 2 `
+  -f whip -authorization "mystreamkey" `
+  "https://b.siobud.com/api/whip"
 sipsorcery webrtc whep https://b.siobud.com/api/whep --token mystreamkey
 
 # Received video can be rendered or captured (decode is delegated to the consumer, so no
 # video codecs are needed in-process). H264 is written as Annex B, VP8 in an IVF container.
 sipsorcery webrtc whep https://b.siobud.com/api/whep --token key --video play       # ffplay window
 sipsorcery webrtc whep https://b.siobud.com/api/whep --token key --video rx.h264    # capture to file
-sipsorcery webrtc whep https://b.siobud.com/api/whep --token key --video - \
-  | mpv --vo=tct -                                   # bitstream on stdout: video IN the terminal
-                                                     # (the result moves to stderr)
+sipsorcery webrtc whep https://b.siobud.com/api/whep --token key `
+ --video - | mpv --vo=tct - # bitstream on stdout: video IN the terminal (the result moves to stderr)
 # mpv is a media player with terminal renderers (https://mpv.io/installation/):
 #   winget install mpv          (Windows)
 #   brew install mpv            (macOS)
@@ -66,10 +84,66 @@ sipsorcery webrtc whep https://b.siobud.com/api/whep --token key --video - \
 # WebRTC WHIP server: accept a publish directly from ffmpeg/OBS and report on the media,
 # including sequence anomalies. Useful for isolating where stream problems originate.
 sipsorcery webrtc whip-server --listen http://localhost:8080/whip --token test -d 10
-ffmpeg -re -f lavfi -i testsrc=size=640x360 -f lavfi -i sine=frequency=440 \
-  -pix_fmt yuv420p -c:v libx264 -profile:v baseline -r 25 -g 50 \
+ffmpeg -re -f lavfi -i testsrc=size=640x360 -f lavfi -i sine=frequency=440 `
+  -pix_fmt yuv420p -c:v libx264 -profile:v baseline -r 25 -g 50 `
   -c:a libopus -ar 48000 -ac 2 -f whip -authorization "test" "http://localhost:8080/whip"
+
+# WebRTC echo test (https://github.com/sipsorcery/webrtc-echoes): the echo-server answers offers
+# and echoes RTP and data channel messages; the echo client verifies the data channel round trips.
+# The two pair for a self-contained interop test:
+sipsorcery webrtc echo-server --listen http://localhost:8080/    # run the echo server (ctrl-c to stop)
+sipsorcery webrtc echo http://localhost:8080/offer               # echo client against any echo server
+sipsorcery webrtc echo http://localhost:8080/offer --stun "turn:turn.example.com;user;pass" --relay-only
+
+# Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
+# candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
+# CLOUDFLARE_API_TOKEN environment variables. https://developers.cloudflare.com/realtime/turn/
+sipsorcery cloudflare turn --key-id <key-id> --token <api-token>
+sipsorcery cloudflare turn --transport udp        # probe turn:3478?transport=udp instead of turns:443
+
+# Cloudflare SFU: create a Realtime SFU session and publish a VP8 + OPUS test pattern, verifying
+# the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN.
+sipsorcery cloudflare sfu --app-id <app-id> --token <api-token> -d 10
+
+# LiveKit room: mint an access token, join a room and publish a VP8 + OPUS test pattern. Defaults
+# to LIVEKIT_WEBSOCKET_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET.
+sipsorcery livekit room --url wss://my-app.livekit.cloud --api-key <key> --api-secret <secret>
+sipsorcery livekit room --room my-room -d 30       # a specific room (default is a random name)
+
+# OpenAI Realtime: end to end connectivity test for the Realtime WebRTC API. Negotiates the
+# connection, asks the model to speak and succeeds when its voice is received. No audio device is
+# used. Defaults to the OPENAI_API_KEY environment variable.
+sipsorcery openai realtime
+sipsorcery openai realtime --voice verse --prompt "Count to three."
 ```
+
+### SIP call ladders in the terminal with sngrep
+
+[`sngrep`](https://github.com/irontec/sngrep) can act as a HEP *receiver* and draw call
+ladders right in the terminal, no database or web UI needed. Start it listening, then point
+`--hep` at it:
+
+```bash
+sngrep -L udp:0.0.0.0:9060
+sipsorcery sip call music@iptel.org --hep 127.0.0.1:9060 -d 5
+```
+
+The call appears in the sngrep calls list as it happens; arrow keys to select, Enter for the
+ladder. This shows only the traffic the CLI itself sends and receives; for ladders of other
+processes' SIP run `sngrep` in its normal sniffing mode (`sudo sngrep -d any port 5060`).
+
+sngrep is not available natively on Windows, but it runs well under WSL2. **Note:** WSL2's
+default NAT networking only forwards `localhost` for TCP, so HEP (UDP) to `127.0.0.1` is
+silently dropped. Either target the WSL IP (`wsl hostname -I`) instead of `127.0.0.1`, or
+switch WSL to mirrored networking, which makes `127.0.0.1` work in both directions for UDP.
+For mirrored mode add to `%UserProfile%\.wslconfig`:
+
+```ini
+[wsl2]
+networkingMode=mirrored
+```
+
+then `wsl --shutdown` and reopen WSL.
 
 Every verb supports `--json` for a machine readable result on stdout (logs always go to
 stderr, so JSON output is pipeable):
@@ -102,6 +176,6 @@ sipsorcery sip options music@iptel.org --json
 
 ## Status
 
-Early preview. The planned command surface covers SIP (calls, registrations, load testing),
-WebRTC (offer/answer exchange, echo test peers, ICE connectivity probes), STUN/TURN checks,
-SIP DNS resolution and integrations for services such as LiveKit and the OpenAI Realtime API.
+Early preview. Covers SIP (OPTIONS, calls, registration, load), WebRTC (WHEP, WHIP server, echo
+test peers), STUN/TURN/ICE connectivity checks, and service integrations for Cloudflare Realtime
+(TURN, SFU), LiveKit and the OpenAI Realtime API. SIP DNS resolution and further verbs are planned.
