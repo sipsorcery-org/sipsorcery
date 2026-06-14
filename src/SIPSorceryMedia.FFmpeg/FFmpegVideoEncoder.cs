@@ -11,6 +11,12 @@ namespace SIPSorceryMedia.FFmpeg
 {
     public sealed unsafe class FFmpegVideoEncoder : IVideoEncoder, IDisposable
     {
+        // libvpx's realtime deadline defaults to cpu-used 0 (the slowest realtime speed), which
+        // cannot keep up at higher resolutions (~12 fps for 1080p). 5 is a balanced realtime default
+        // that sustains 1080p30 on typical hardware while keeping good quality. Callers can override
+        // it via the encoderOptions dictionary ("cpu-used"), which is applied after this default.
+        private const string DEFAULT_LIBVPX_REALTIME_CPU_USED = "5";
+
         private static readonly List<VideoFormat> _supportedFormats = Helper.GetSupportedVideoFormats();
 
         public List<VideoFormat> SupportedFormats
@@ -290,6 +296,7 @@ namespace SIPSorceryMedia.FFmpeg
                             break;
                         case "libvpx":
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", DEFAULT_LIBVPX_REALTIME_CPU_USED, 0).ThrowExceptionIfError();
                             break;
                         case "libx265":
                             //ffmpeg.av_opt_set(_encoderContext->priv_data, "forced-idr", "1", 0).ThrowExceptionIfError();
