@@ -132,6 +132,17 @@ jobs:
             Library-SipSorceryUnitySmokeTest-${{ matrix.unityVersion }}-
             Library-SipSorceryUnitySmokeTest-
 
+      - name: Free disk space for Unity Docker image
+        if: steps.license_check.outputs.has_license == 'true'
+        run: |
+          set -euo pipefail
+          echo "Disk usage before cleanup:"
+          df -h /
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/swift || true
+          docker system prune --all --force || true
+          echo "Disk usage after cleanup:"
+          df -h /
+
       - name: Run Unity ${{ matrix.testMode }} tests
         if: steps.license_check.outputs.has_license == 'true'
         uses: game-ci/unity-test-runner@v4
