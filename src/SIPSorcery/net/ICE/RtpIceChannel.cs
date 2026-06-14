@@ -488,11 +488,7 @@ namespace SIPSorcery.Net
 
                 if (_policy == RTCIceTransportPolicy.all)
                 {
-                    _candidates = new ConcurrentBag<RTCIceCandidate>();
-                    foreach (var iceCandidate in GetHostCandidates())
-                    {
-                        _candidates.Add(iceCandidate);
-                    }
+                    _candidates = [.. GetHostCandidates()];
                 }
 
                 logger.LogDebug("RTP ICE Channel discovered {CandidateCount} local candidates.", _candidates.Count);
@@ -891,6 +887,13 @@ namespace SIPSorcery.Net
                         {
                             logger.LogDebug("RTP ICE Channel all ICE server connection checks failed, stopping ICE servers timer.");
                             _processIceServersTimer.Dispose();
+
+                            // If there are no host candidates and no active ICE server then the gathering process is complete even though we don't have any candidates. This can occur if the relay candidates only option was used and the provided ICE servers are unreachable.
+                            if (_candidates.Count == 0)
+                            {
+                                IceGatheringState = RTCIceGatheringState.complete;
+                                OnIceGatheringStateChange?.Invoke(IceGatheringState);
+                            }
                         }
                         else
                         {
@@ -947,7 +950,7 @@ namespace SIPSorcery.Net
                     else if (_activeIceServer.ErrorResponseCount >= IceServer.MAX_ERRORS)
                     {
                         logger.LogWarning("Connection attempt to ICE server {Uri} cancelled after {ErrorResponseCount} error responses.", _activeIceServer._uri, _activeIceServer.ErrorResponseCount);
-                        _activeIceServer.Error = SocketError.TimedOut;
+                        _activeIceServer.Error = SocketError.AccessDenied;
                     }
                     // Send STUN binding request.
                     else if (_activeIceServer.ServerReflexiveEndPoint == null && (_activeIceServer._uri.Scheme == STUNSchemesEnum.stun || _activeIceServer._uri.Scheme == STUNSchemesEnum.stuns))
@@ -1314,8 +1317,8 @@ namespace SIPSorcery.Net
 
                                 var rto = RTO;
                                 // No waiting entries so check for ones requiring a retransmit.
-                                var retransmitEntry = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
-                                    && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > rto).FirstOrDefault();
+                                var retransmitEntry = _checklist.FirstOrDefault(x => x.State == ChecklistEntryState.InProgress
+                                    && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > rto);
 
                                 if (retransmitEntry != null)
                                 {
@@ -1362,6 +1365,9 @@ namespace SIPSorcery.Net
                                     {
                                         _checklistState = ChecklistState.Failed;
                                         IceConnectionState = RTCIceConnectionState.failed;
+
+                                        logger.LogDebug("ICE RTP channel connect failed as all checklist entries are in a failed state.");
+
                                         OnIceConnectionStateChange?.Invoke(IceConnectionState);
                                     }
                                 }
@@ -1375,7 +1381,7 @@ namespace SIPSorcery.Net
 
                             _checklistState = ChecklistState.Failed;
                             //IceConnectionState = RTCIceConnectionState.disconnected;
-                            // No point going to and ICE disconnected state as there was never a connection and therefore
+                            // No point going to an ICE disconnected state as there was never a connection and therefore
                             // nothing to monitor for a re-connection.
                             IceConnectionState = RTCIceConnectionState.failed;
                             OnIceConnectionStateChange?.Invoke(IceConnectionState);
