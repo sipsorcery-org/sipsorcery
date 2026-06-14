@@ -249,6 +249,46 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         [Fact]
+        public void GotStunResponse_AllocateUnauthorisedAfterCredentials_KeepsCountingTowardsMaxErrors()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            // Regression test: a TURN server (e.g. Cloudflare) that returns 401 to the AUTHENTICATED
+            // Allocate retry as well as the initial unauthenticated one must not loop forever. Each
+            // 401 used to reset ErrorResponseCount to 1, so the MAX_ERRORS guard never tripped.
+            var server = CreateTurnServer();
+
+            // First Allocate is sent without credentials and is challenged with a 401. This is the
+            // expected authentication trigger and is discounted (count resets to 1).
+            server.GotStunResponse(Build401(server, "n0"), new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            Assert.Equal(1, server.ErrorResponseCount);
+            Assert.NotNull(server.Nonce);   // credentials will now be attached to subsequent Allocates.
+
+            // Every further 401 comes back DESPITE credentials being sent, so the count must keep
+            // climbing rather than being pinned at 1.
+            server.GotStunResponse(Build401(server, "n1"), new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            Assert.Equal(2, server.ErrorResponseCount);
+
+            server.GotStunResponse(Build401(server, "n2"), new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            Assert.Equal(3, server.ErrorResponseCount);
+
+            // The error budget is now reached, which is what lets RtpIceChannel abandon the server
+            // (ErrorResponseCount >= IceServer.MAX_ERRORS) instead of retrying the Allocate forever.
+            Assert.True(server.ErrorResponseCount >= IceServer.MAX_ERRORS);
+        }
+
+        // Builds a 401 Unauthorized Allocate error response carrying the server's current
+        // transaction id and a nonce/realm, as a TURN server sends to trigger authentication.
+        private static STUNMessage Build401(IceServer server, string nonce)
+        {
+            var resp = ResponseFor(server, STUNMessageTypesEnum.AllocateErrorResponse);
+            resp.Attributes.Add(new STUNErrorCodeAttribute(IceServer.STUN_UNAUTHORISED_ERROR_CODE, "Unauthorized"));
+            resp.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, Encoding.UTF8.GetBytes(nonce)));
+            resp.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, Encoding.UTF8.GetBytes("r1")));
+            return resp;
+        }
+
+        [Fact]
         public void GotStunResponse_AllocateOtherError_IncrementsErrorCountOnly()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
@@ -314,6 +354,37 @@ namespace SIPSorcery.Net.UnitTests
             server.GotStunResponse(resp, new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
 
             Assert.True(server.TurnTimeToExpiry > DateTime.Now.AddSeconds(290) && server.TurnTimeToExpiry < DateTime.Now.AddSeconds(310));
+        }
+
+        [Fact]
+        public void GotStunResponse_RefreshStaleNonceAfterCredentials_KeepsCountingTowardsMaxErrors()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            // Consistency with the Allocate path: a Refresh is only ever sent after the allocation
+            // has authenticated, so a repeated 438 Stale Nonce must keep counting towards MAX_ERRORS
+            // rather than resetting the budget and refreshing forever.
+            var server = CreateTurnServer();
+            server.Nonce = Encoding.UTF8.GetBytes("n0");   // credentials already established by the Allocate.
+
+            server.GotStunResponse(BuildRefresh438(server, "n1"), new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            Assert.Equal(1, server.ErrorResponseCount);
+
+            server.GotStunResponse(BuildRefresh438(server, "n2"), new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            Assert.Equal(2, server.ErrorResponseCount);
+
+            server.GotStunResponse(BuildRefresh438(server, "n3"), new IPEndPoint(IPAddress.Parse("1.2.3.4"), 3478));
+            Assert.Equal(3, server.ErrorResponseCount);
+            Assert.True(server.ErrorResponseCount >= IceServer.MAX_ERRORS);
+        }
+
+        // Builds a 438 Stale Nonce Refresh error response carrying the server's current transaction id.
+        private static STUNMessage BuildRefresh438(IceServer server, string nonce)
+        {
+            var resp = ResponseFor(server, STUNMessageTypesEnum.RefreshErrorResponse);
+            resp.Attributes.Add(new STUNErrorCodeAttribute(IceServer.STUN_STALE_NONCE_ERROR_CODE, "Stale Nonce"));
+            resp.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, Encoding.UTF8.GetBytes(nonce)));
+            return resp;
         }
 
         [Fact]

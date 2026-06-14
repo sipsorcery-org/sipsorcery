@@ -356,9 +356,35 @@ namespace SIPSorcery.Net
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
             {
-                logger.LogWarning("ICE RTP channel TURN Create Permission error response was received from {RemoteEndPoint}.", remoteEndPoint);
-                TurnPermissionsResponseAt = DateTime.Now;
-                State = retry ? State : ChecklistEntryState.Failed;
+                var errCodeAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+
+                if (retry)
+                {
+                    // A 401 Unauthorized / 438 Stale Nonce challenge: the authentication fields were
+                    // refreshed above. Leave TurnPermissionsResponseAt unset and the State unchanged
+                    // so the permission is re-sent with the new nonce (a fresh transaction ID is
+                    // generated on the re-send). The re-send is bounded by MAX_REQUESTS, see
+                    // RtpIceChannel, so it cannot loop forever.
+                    logger.LogDebug("ICE RTP channel re-sending TURN Create Permission after auth challenge {ErrorCode} from {RemoteEndPoint} for peer {Peer}.",
+                        errCodeAttribute?.ErrorCode, remoteEndPoint, RemoteCandidate?.DestinationEndPoint);
+                }
+                else
+                {
+                    // A non-auth error (e.g. 403 Forbidden, which a public TURN service such as
+                    // Cloudflare returns when asked to create a permission for a private/RFC1918 peer
+                    // address) is terminal for this candidate pair.
+                    if (errCodeAttribute != null)
+                    {
+                        logger.LogWarning("ICE RTP channel TURN Create Permission error response {ErrorCode} {ReasonPhrase} was received from {RemoteEndPoint} for peer {Peer}.",
+                            errCodeAttribute.ErrorCode, errCodeAttribute.ReasonPhrase, remoteEndPoint, RemoteCandidate?.DestinationEndPoint);
+                    }
+                    else
+                    {
+                        logger.LogWarning("ICE RTP channel TURN Create Permission error response was received from {RemoteEndPoint} for peer {Peer}.", remoteEndPoint, RemoteCandidate?.DestinationEndPoint);
+                    }
+                    TurnPermissionsResponseAt = DateTime.Now;
+                    State = ChecklistEntryState.Failed;
+                }
             }
             else
             {
