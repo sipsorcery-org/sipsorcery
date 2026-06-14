@@ -966,9 +966,29 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    if (_activeIceServer == null || _activeIceServer.Error != SocketError.Success)
+                    if (_activeIceServer is null || _activeIceServer.Error != SocketError.Success)
                     {
-                        if (_iceServerResolver.IceServers.Count(x => x.Value.Error == SocketError.Success) == 0)
+                        // Select the next server to check.
+                        var selectedIceServer = default(IceServer);
+                        foreach (var (uri, iceServer) in _iceServerResolver.IceServers.ToArray())
+                        {
+                            if (iceServer.Error != SocketError.Success)
+                            {
+                                continue;
+                            }
+
+                            if (selectedIceServer is null
+                                || iceServer.Uri.Scheme > selectedIceServer.Uri.Scheme)
+                            {
+                                selectedIceServer = iceServer;
+                            }
+                        }
+
+                        if (selectedIceServer is not null)
+                        {
+                            _activeIceServer = selectedIceServer;
+                        }
+                        else
                         {
                             logger.LogDebug("RTP ICE Channel all ICE server connection checks failed, stopping ICE servers timer.");
                             _processIceServersTimer.Dispose();
@@ -978,24 +998,6 @@ namespace SIPSorcery.Net
                             {
                                 IceGatheringState = RTCIceGatheringState.complete;
                                 OnIceGatheringStateChange?.Invoke(IceGatheringState);
-                            }
-                        }
-                        else
-                        {
-                            // Select the next server to check.
-                            var entry = _iceServerResolver.IceServers
-                                .Where(x => x.Value.Error == SocketError.Success)
-                                .OrderByDescending(x => x.Value._uri.Scheme) // TURN serves take priority.
-                                .FirstOrDefault();
-
-                            if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
-                            {
-                                _activeIceServer = entry.Value;
-                            }
-                            else
-                            {
-                                logger.LogDebug("RTP ICE Channel was not able to set an active ICE server, stopping ICE servers timer.");
-                                _processIceServersTimer.Dispose();
                             }
                         }
                     }
