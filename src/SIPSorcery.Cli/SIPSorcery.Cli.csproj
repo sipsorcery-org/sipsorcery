@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- NOTE: do not set AssemblyName to "sipsorcery": on case-insensitive file systems it
+         collides with the referenced SIPSorcery.dll. The installed tool command name comes
+         from ToolCommandName below. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>sipsorcery</ToolCommandName>
+    <PackageId>SIPSorcery.Cli</PackageId>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Aaron Clauson</Authors>
+    <Description>Command line diagnostics for SIP and WebRTC: OPTIONS pings, test calls, STUN/TURN/ICE connectivity checks and more, built on the SIPSorcery library. Both human and agent friendly with JSON output and meaningful exit codes.</Description>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>SIP;VoIP;WebRTC;STUN;TURN;ICE;CLI;diagnostics</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <!-- Used by the "livekit room" verb to mint access tokens and for the protobuf signalling
+         messages. Targets netstandard2.0 so it is compatible with the net8.0 tool. -->
+    <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+    <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
+    <!-- VP8 encoder for the test pattern video published by the "cloudflare sfu" and
+         "livekit room" verbs. -->
+    <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- WebRTC client for the OpenAI Realtime API, used by the "openai realtime" verb. -->
+    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
+    <!-- Native (FFmpeg.AutoGen) IVideoEncoder for the webrtc video-bench ffmpeg stage. -->
+    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

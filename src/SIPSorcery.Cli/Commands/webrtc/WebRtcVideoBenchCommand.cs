@@ -1,0 +1,781 @@
+//-----------------------------------------------------------------------------
+// Filename: WebRtcVideoBenchCommand.cs
+//
+// Description: The "sipsorcery webrtc video-bench" verb. Benchmarks the video
+// send pipeline to answer "can this machine sustain a target resolution and
+// frame rate" (the motivating goal being 1080p30). The pipeline is measured in
+// stages so the bottleneck can be isolated:
+//
+//   Stage 1 (--encoder none):        no encoding. A static, pre-sized encoded
+//                                    frame is packetised flat out. Measures the
+//                                    RTP packetisation/serialisation ceiling.
+//   Stage 2a (--encoder ffmpeg):     native codec via the SIPSorceryMedia.FFmpeg
+//                                    in-process IVideoEncoder (FFmpeg.AutoGen).
+//   Stage 2b (--encoder ffmpeg-piped): native codec by piping raw frames to an
+//                                    external ffmpeg process.
+//   Stage 3 (--encoder vp8):         the managed Vpx.Net VP8 codec.
+//
+// This is a SEND-SIDE benchmark: there is no peer connection, DTLS/SRTP or
+// socket. Each frame is fragmented and serialised exactly as the library's
+// VideoStream.SendVp8Frame does (RTP_MAX_PAYLOAD chunks, VP8 payload descriptor,
+// real RTPPacket serialisation) and the bytes are counted and discarded. The
+// reported achieved frame rate is the maximum the stage can do; comparing the
+// stages shows whether the limit is the packetiser or the encoder.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 13 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System.CommandLine;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.FFmpeg;
+using Vpx.Net;
+
+namespace SIPSorcery.Cli.Commands;
+
+public sealed class WebRtcVideoBenchCommand : CommandBase
+{
+    private const int DEFAULT_WIDTH = 1920;
+    private const int DEFAULT_HEIGHT = 1080;
+    private const int DEFAULT_FPS = 30;
+    private const int DEFAULT_DURATION_SECONDS = 5;
+    private const int DEFAULT_BITRATE = 4_000_000;
+    private const int VP8_PAYLOAD_ID = 96;
+    private const uint VIDEO_CLOCK_RATE = 90000;
+
+    // Mirrors RTPSession.RTP_MAX_PAYLOAD (which is protected internal so not visible here). The
+    // packetisation below must use the same value as the library to produce a representative
+    // packet count per frame.
+    private const int RTP_MAX_PAYLOAD = 1200;
+
+    // Cap on the number of per-frame timings retained for the percentile calculation. The average
+    // and max are accumulated over every frame; only the percentile sample is bounded so a flat out
+    // packetisation run (which can do hundreds of thousands of frames) does not grow unbounded.
+    private const int MAX_TIMING_SAMPLES = 100_000;
+
+    // Number of distinct frames pre-generated and cycled through so the encoder sees motion.
+    private const int RING_SIZE = 16;
+
+    /// <summary>
+    /// The result shape written to stdout with --json. Stable field names; additive changes only.
+    /// </summary>
+    private sealed record VideoBenchResult(
+        bool Success,
+        string Stage,
+        string Codec,
+        int Width,
+        int Height,
+        int TargetFps,
+        int FramesProcessed,
+        double AchievedFps,
+        double PerFrameMsAvg,
+        double PerFrameMsP95,
+        double PerFrameMsMax,
+        int PacketsPerFrame,
+        int FrameBytes,
+        double ThroughputMbps,
+        long DurationMs,
+        string? Error);
+
+    public WebRtcVideoBenchCommand() : base(DEFAULT_DURATION_SECONDS)
+    { }
+
+    public override Command Build()
+    {
+        var widthOption = new Option<int>("--width", "-w")
+        {
+            Description = "The frame width in pixels.",
+            DefaultValueFactory = _ => DEFAULT_WIDTH
+        };
+
+        var heightOption = new Option<int>("--height")
+        {
+            Description = "The frame height in pixels.",
+            DefaultValueFactory = _ => DEFAULT_HEIGHT
+        };
+
+        var fpsOption = new Option<int>("--fps")
+        {
+            Description = "The target frame rate to test against.",
+            DefaultValueFactory = _ => DEFAULT_FPS
+        };
+
+        var durationOption = new Option<int>("--duration", "-d")
+        {
+            Description = "The number of seconds to run the benchmark for.",
+            DefaultValueFactory = _ => DEFAULT_DURATION_SECONDS
+        };
+
+        var bitrateOption = new Option<int>("--bitrate")
+        {
+            Description = "The target encoded bitrate in bits per second. Sets the per-frame size for the packetisation stage.",
+            DefaultValueFactory = _ => DEFAULT_BITRATE
+        };
+
+        var encoderOption = new Option<string>("--encoder")
+        {
+            Description = "The pipeline stage to test: none (packetise only), ffmpeg (SIPSorceryMedia.FFmpeg in-process encoder), " +
+                          "ffmpeg-piped (external ffmpeg process) or vp8 (managed Vpx.Net codec).",
+            DefaultValueFactory = _ => "none"
+        };
+
+        var codecOption = new Option<string>("--codec")
+        {
+            Description = "The video codec to packetise as. Currently only vp8.",
+            DefaultValueFactory = _ => "vp8"
+        };
+
+        var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
+        {
+            Description = "Directory containing the FFmpeg shared libraries for the --encoder ffmpeg stage. Defaults to the system path."
+        };
+
+        // libvpx tuning knobs, applied to the ffmpeg and ffmpeg-piped stages.
+        var deadlineOption = new Option<string>("--deadline")
+        {
+            Description = "libvpx deadline for the ffmpeg stages: realtime, good or best.",
+            DefaultValueFactory = _ => "realtime"
+        };
+
+        var cpuUsedOption = new Option<int>("--cpu-used")
+        {
+            Description = "libvpx cpu-used (speed) for the ffmpeg stages. Higher is faster/lower quality (VP8 realtime 0-16). -1 leaves it unset.",
+            DefaultValueFactory = _ => 5
+        };
+
+        var threadsOption = new Option<int>("--threads")
+        {
+            Description = "Encoder thread count for the ffmpeg stages. 0 lets the encoder decide.",
+            DefaultValueFactory = _ => 0
+        };
+
+        var command = new Command("video-bench", "Benchmark the video send pipeline (packetisation/encoding) against a target resolution and frame rate.");
+        command.Options.Add(widthOption);
+        command.Options.Add(heightOption);
+        command.Options.Add(fpsOption);
+        command.Options.Add(durationOption);
+        command.Options.Add(bitrateOption);
+        command.Options.Add(encoderOption);
+        command.Options.Add(codecOption);
+        command.Options.Add(ffmpegPathOption);
+        command.Options.Add(deadlineOption);
+        command.Options.Add(cpuUsedOption);
+        command.Options.Add(threadsOption);
+        command.Options.Add(JsonOption);
+        command.Options.Add(VerboseOption);
+
+        command.SetAction((parseResult, cancellationToken) => Task.FromResult(Run(
+            parseResult.GetValue(widthOption),
+            parseResult.GetValue(heightOption),
+            parseResult.GetValue(fpsOption),
+            parseResult.GetValue(durationOption),
+            parseResult.GetValue(bitrateOption),
+            parseResult.GetValue(encoderOption)!,
+            parseResult.GetValue(codecOption)!,
+            parseResult.GetValue(ffmpegPathOption),
+            new FfmpegTuning(parseResult.GetValue(deadlineOption)!, parseResult.GetValue(cpuUsedOption), parseResult.GetValue(threadsOption)),
+            parseResult.GetValue(JsonOption),
+            parseResult.GetValue(VerboseOption),
+            cancellationToken)));
+
+        return command;
+    }
+
+    /// <summary>libvpx tuning passed to the ffmpeg encoder stages.</summary>
+    private readonly record struct FfmpegTuning(string Deadline, int CpuUsed, int Threads);
+
+    private static int Run(int width, int height, int fps, int durationSeconds, int bitrate, string encoder, string codec,
+        string? ffmpegPath, FfmpegTuning tuning, bool asJson, bool verbose, CancellationToken ct)
+    {
+        using var loggerFactory = InitLogging(verbose);
+        var logger = loggerFactory.CreateLogger(nameof(WebRtcVideoBenchCommand));
+
+        if (width < 2 || height < 2 || fps < 1 || durationSeconds < 1 || bitrate < 1000)
+        {
+            return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
+                "Invalid arguments: width/height must be >= 2, fps >= 1, duration >= 1 and bitrate >= 1000."),
+                ExitCodes.InvalidArgument);
+        }
+
+        if (!codec.Equals("vp8", StringComparison.OrdinalIgnoreCase))
+        {
+            return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
+                $"Unsupported --codec \"{codec}\". Only vp8 is implemented so far."),
+                ExitCodes.InvalidArgument);
+        }
+
+        switch (encoder.ToLowerInvariant())
+        {
+            case "none":
+                return RunPacketiseOnly(width, height, fps, durationSeconds, bitrate, codec, asJson, logger, ct);
+
+            case "vp8":
+                return RunVp8Encode(width, height, fps, durationSeconds, codec, asJson, logger, ct);
+
+            case "ffmpeg":
+                return RunNativeFfmpegEncode(width, height, fps, durationSeconds, codec, ffmpegPath, tuning, asJson, logger, ct);
+
+            case "ffmpeg-piped":
+                return RunFfmpegEncode(width, height, fps, durationSeconds, bitrate, codec, tuning, asJson, logger, ct);
+
+            default:
+                return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
+                    $"Unknown --encoder \"{encoder}\". Expected none, ffmpeg, ffmpeg-piped or vp8."),
+                    ExitCodes.InvalidArgument);
+        }
+    }
+
+    /// <summary>
+    /// Stage 1: no encoding. Packetises a static, target-sized encoded frame flat out and measures
+    /// how many frames per second the RTP packetisation/serialisation path can produce. If this
+    /// already cannot reach the target frame rate the bottleneck is the packetiser, not the encoder.
+    /// </summary>
+    private static int RunPacketiseOnly(int width, int height, int fps, int durationSeconds, int bitrate, string codec,
+        bool asJson, ILogger logger, CancellationToken ct)
+    {
+        // A representative encoded frame size for the target bitrate, e.g. 4 Mbps at 30 fps is
+        // ~16.7 KB per frame. The packetiser cost scales with this (number of RTP fragments), not
+        // with the pixel dimensions, so width/height are reported for context only at this stage.
+        int frameBytes = Math.Max(1, bitrate / fps / 8);
+        var encodedFrame = new byte[frameBytes];
+        new Random(20260613).NextBytes(encodedFrame);
+
+        uint rtpDuration = VIDEO_CLOCK_RATE / (uint)fps;
+        uint ssrc = 0x1234_5678;
+        ushort seqnum = 0;
+        uint timestamp = 0;
+
+        int frames = 0;
+        long totalPackets = 0;
+        long totalBytes = 0;
+        int packetsPerFrame = 0;
+
+        double sumMs = 0;
+        double maxMs = 0;
+        var samples = new List<double>(Math.Min(MAX_TIMING_SAMPLES, fps * durationSeconds + 1));
+
+        logger.LogDebug("Stage 1 packetise-only: {Width}x{Height}@{Fps}, frame size {FrameBytes} bytes, for {Duration}s.",
+            width, height, fps, frameBytes, durationSeconds);
+
+        long durationMs = durationSeconds * 1000L;
+        var sw = Stopwatch.StartNew();
+
+        while (sw.ElapsedMilliseconds < durationMs && !ct.IsCancellationRequested)
+        {
+            long start = Stopwatch.GetTimestamp();
+
+            int packets = PacketiseVp8(encodedFrame, timestamp, ssrc, ref seqnum, ref totalBytes);
+
+            double frameMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
+            sumMs += frameMs;
+            if (frameMs > maxMs) { maxMs = frameMs; }
+            if (samples.Count < MAX_TIMING_SAMPLES) { samples.Add(frameMs); }
+
+            packetsPerFrame = packets;
+            totalPackets += packets;
+            timestamp += rtpDuration;
+            frames++;
+        }
+
+        sw.Stop();
+
+        double elapsedSec = sw.Elapsed.TotalSeconds;
+        double achievedFps = frames / elapsedSec;
+        double throughputMbps = totalBytes * 8.0 / elapsedSec / 1_000_000.0;
+        double avgMs = frames > 0 ? sumMs / frames : 0;
+        double p95Ms = Percentile(samples, 95);
+
+        bool success = achievedFps >= fps;
+
+        var result = new VideoBenchResult(success, "none", codec.ToLowerInvariant(), width, height, fps,
+            frames, Math.Round(achievedFps, 1), Math.Round(avgMs, 4), Math.Round(p95Ms, 4), Math.Round(maxMs, 4),
+            packetsPerFrame, frameBytes, Math.Round(throughputMbps, 2), sw.ElapsedMilliseconds,
+            success ? null : $"Packetisation only reached {achievedFps:0} fps, below the {fps} fps target.");
+
+        return WriteResult(asJson, result, success ? ExitCodes.Ok : ExitCodes.Failed);
+    }
+
+    /// <summary>
+    /// Stage 3: managed Vpx.Net VP8 codec. Encodes synthetic I420 frames flat out with
+    /// VP8Codec.EncodeVideo. This is the throughput the library delivers today with no native deps.
+    /// </summary>
+    private static int RunVp8Encode(int width, int height, int fps, int durationSeconds, string codec,
+        bool asJson, ILogger logger, CancellationToken ct)
+    {
+        // VP8 requires the coded dimensions to be positive multiples of 16, so round up (encoders
+        // pad to macroblock boundaries internally anyway). 1080 is not a multiple of 16, so 1080p
+        // is encoded as 1088 lines.
+        int encWidth = RoundUpTo16(width);
+        int encHeight = RoundUpTo16(height);
+
+        if (encWidth != width || encHeight != height)
+        {
+            Console.Error.WriteLine($"Rounded {width}x{height} up to {encWidth}x{encHeight} (VP8 needs multiples of 16).");
+        }
+
+        byte[][] ring = GenerateRing(encWidth, encHeight);
+        using var encoder = new VP8Codec();
+
+        return RunEncoderLoop("vp8", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, asJson, logger, ct);
+    }
+
+    /// <summary>
+    /// Stage 2 (in-process): native codec via the SIPSorceryMedia.FFmpeg IVideoEncoder, which wraps
+    /// FFmpeg through FFmpeg.AutoGen. Same measurement loop as the managed stage, so the two are a
+    /// direct managed-vs-native comparison of the encoder the library can plug in.
+    /// </summary>
+    private static int RunNativeFfmpegEncode(int width, int height, int fps, int durationSeconds, string codec,
+        string? ffmpegPath, FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
+    {
+        try
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, ffmpegPath, logger);
+        }
+        catch (Exception excp)
+        {
+            return WriteResult(asJson, Empty("ffmpeg", codec, width, height, fps,
+                $"Could not initialise FFmpeg: {excp.Message}. Install the FFmpeg shared libraries (e.g. winget install ffmpeg) or pass --ffmpeg-path."),
+                ExitCodes.TransportError);
+        }
+
+        // libvpx needs even dimensions; it pads to macroblock boundaries internally so no
+        // multiple-of-16 rounding is required.
+        int encWidth = RoundUpToEven(width);
+        int encHeight = RoundUpToEven(height);
+
+        if (encWidth != width || encHeight != height)
+        {
+            Console.Error.WriteLine($"Rounded {width}x{height} up to {encWidth}x{encHeight} (even dimensions required).");
+        }
+
+        byte[][] ring = GenerateRing(encWidth, encHeight);
+
+        // Map the tuning knobs onto the encoder's libvpx options (applied via av_opt_set). The
+        // encoder already sets quality=realtime by default but never sets cpu-used, which is the main
+        // reason its out-of-the-box throughput is below an equivalently tuned external ffmpeg.
+        var encoderOptions = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(tuning.Deadline)) { encoderOptions["deadline"] = tuning.Deadline; }
+        if (tuning.CpuUsed >= 0) { encoderOptions["cpu-used"] = tuning.CpuUsed.ToString(); }
+
+        logger.LogDebug("FFmpeg encoder tuning: deadline={Deadline}, cpu-used={CpuUsed}, threads={Threads}.",
+            tuning.Deadline, tuning.CpuUsed, tuning.Threads);
+
+        try
+        {
+            using var encoder = new FFmpegVideoEncoder(encoderOptions);
+            if (tuning.Threads > 0)
+            {
+                encoder.SetThreadCount(tuning.Threads);
+            }
+            return RunEncoderLoop("ffmpeg", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, asJson, logger, ct);
+        }
+        catch (Exception excp)
+        {
+            return WriteResult(asJson, Empty("ffmpeg", codec, encWidth, encHeight, fps,
+                $"FFmpeg encode failed: {excp.Message}"),
+                ExitCodes.TransportError);
+        }
+    }
+
+    private static byte[][] GenerateRing(int encWidth, int encHeight)
+    {
+        // Pre-generate a ring of distinct frames so the encode loop has motion to work on without
+        // paying frame-generation cost inside the measured loop.
+        Console.Error.WriteLine($"Generating {RING_SIZE} test frames at {encWidth}x{encHeight} ...");
+        return GenerateI420Ring(encWidth, encHeight, RING_SIZE);
+    }
+
+    /// <summary>
+    /// The shared encode + packetise measurement loop used by every encoder stage. Encodes ring
+    /// frames flat out via the supplied <see cref="IVideoEncoder"/>, packetises each result and
+    /// reports the achieved frame rate against the target.
+    /// </summary>
+    private static int RunEncoderLoop(string stage, IVideoEncoder encoder, int encWidth, int encHeight, byte[][] ring,
+        int fps, int durationSeconds, string codec, bool asJson, ILogger logger, CancellationToken ct)
+    {
+        uint rtpDuration = VIDEO_CLOCK_RATE / (uint)fps;
+        uint ssrc = 0x1234_5678;
+        ushort seqnum = 0;
+        uint timestamp = 0;
+
+        int frames = 0;
+        long totalPackets = 0;
+        long rtpBytes = 0;
+        long encodedBytes = 0;
+
+        double sumMs = 0;
+        double maxMs = 0;
+        var samples = new List<double>(Math.Min(MAX_TIMING_SAMPLES, fps * durationSeconds * 2 + 1));
+
+        logger.LogDebug("Stage \"{Stage}\" encode: {Width}x{Height}@{Fps} for {Duration}s.", stage, encWidth, encHeight, fps, durationSeconds);
+
+        long durationMs = durationSeconds * 1000L;
+        var sw = Stopwatch.StartNew();
+
+        while (sw.ElapsedMilliseconds < durationMs && !ct.IsCancellationRequested)
+        {
+            byte[] raw = ring[frames % ring.Length];
+
+            long start = Stopwatch.GetTimestamp();
+
+            byte[]? encoded = encoder.EncodeVideo(encWidth, encHeight, raw, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+            int packets = (encoded != null && encoded.Length > 0)
+                ? PacketiseVp8(encoded, timestamp, ssrc, ref seqnum, ref rtpBytes)
+                : 0;
+
+            double frameMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
+            sumMs += frameMs;
+            if (frameMs > maxMs) { maxMs = frameMs; }
+            if (samples.Count < MAX_TIMING_SAMPLES) { samples.Add(frameMs); }
+
+            encodedBytes += encoded?.Length ?? 0;
+            totalPackets += packets;
+            timestamp += rtpDuration;
+            frames++;
+        }
+
+        sw.Stop();
+
+        double elapsedSec = sw.Elapsed.TotalSeconds;
+        double achievedFps = frames / elapsedSec;
+        double throughputMbps = encodedBytes * 8.0 / elapsedSec / 1_000_000.0;
+        double avgMs = frames > 0 ? sumMs / frames : 0;
+        double p95Ms = Percentile(samples, 95);
+        int avgPackets = frames > 0 ? (int)Math.Round((double)totalPackets / frames) : 0;
+        int avgEncodedSize = frames > 0 ? (int)(encodedBytes / frames) : 0;
+
+        bool success = achievedFps >= fps && frames > 0;
+
+        var result = new VideoBenchResult(success, stage, codec.ToLowerInvariant(), encWidth, encHeight, fps,
+            frames, Math.Round(achievedFps, 1), Math.Round(avgMs, 4), Math.Round(p95Ms, 4), Math.Round(maxMs, 4),
+            avgPackets, avgEncodedSize, Math.Round(throughputMbps, 2), sw.ElapsedMilliseconds,
+            frames == 0 ? "The encoder produced no frames."
+                        : success ? null : $"The {stage} encoder only reached {achievedFps:0} fps, below the {fps} fps target.");
+
+        return WriteResult(asJson, result, success ? ExitCodes.Ok : ExitCodes.Failed);
+    }
+
+    /// <summary>
+    /// Stage 2 (piped): native codec via ffmpeg. Pipes synthetic raw I420 frames to ffmpeg's libvpx encoder
+    /// (rate controlled, realtime deadline) flat out, reads the encoded IVF stream back, packetises
+    /// it and measures the achieved frame rate. This is the ceiling with a production-grade native
+    /// encoder, for comparison with the managed VP8 stage.
+    /// </summary>
+    private static int RunFfmpegEncode(int width, int height, int fps, int durationSeconds, int bitrate, string codec,
+        FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
+    {
+        // libvpx needs even dimensions; it pads internally so no multiple-of-16 rounding is required
+        // (unlike the managed stage), which lets ffmpeg encode true 1920x1080.
+        int encWidth = RoundUpToEven(width);
+        int encHeight = RoundUpToEven(height);
+        int frameSize = encWidth * encHeight * 3 / 2;
+
+        const int RING_SIZE = 16;
+        Console.Error.WriteLine($"Generating {RING_SIZE} test frames at {encWidth}x{encHeight} ...");
+        byte[][] ring = GenerateI420Ring(encWidth, encHeight, RING_SIZE);
+
+        string tuneArgs = $"-deadline {(string.IsNullOrWhiteSpace(tuning.Deadline) ? "realtime" : tuning.Deadline)}";
+        if (tuning.CpuUsed >= 0) { tuneArgs += $" -cpu-used {tuning.CpuUsed}"; }
+        if (tuning.Threads > 0) { tuneArgs += $" -threads {tuning.Threads}"; }
+
+        var startInfo = new ProcessStartInfo("ffmpeg")
+        {
+            // Flat out (no -re): the pipe back-pressure paces feeding to ffmpeg's encode speed, so the
+            // rate frames flow through is the encoder's throughput.
+            Arguments = $"-hide_banner -loglevel error -f rawvideo -pix_fmt yuv420p -s {encWidth}x{encHeight} -r {fps} -i - " +
+                        $"-c:v libvpx {tuneArgs} -b:v {bitrate} -f ivf -",
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        Process? proc;
+        try
+        {
+            proc = Process.Start(startInfo);
+            if (proc == null)
+            {
+                throw new ApplicationException("ffmpeg did not start.");
+            }
+        }
+        catch (Exception excp)
+        {
+            return WriteResult(asJson, Empty("ffmpeg", codec, encWidth, encHeight, fps,
+                $"Could not start ffmpeg: {excp.Message}. Install ffmpeg (with libvpx) and ensure it is on the PATH."),
+                ExitCodes.TransportError);
+        }
+
+        // Drain stderr so the pipe never blocks ffmpeg.
+        _ = Task.Run(async () =>
+        {
+            string? line;
+            while ((line = await proc.StandardError.ReadLineAsync().ConfigureAwait(false)) != null)
+            {
+                logger.LogDebug("ffmpeg: {Line}", line);
+            }
+        });
+
+        // Feed raw frames flat out for the requested duration, then close stdin.
+        using var feedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        feedCts.CancelAfter(TimeSpan.FromSeconds(durationSeconds));
+        var stdin = proc.StandardInput.BaseStream;
+        var writer = Task.Run(() =>
+        {
+            try
+            {
+                int i = 0;
+                while (!feedCts.IsCancellationRequested)
+                {
+                    stdin.Write(ring[i % RING_SIZE], 0, frameSize);
+                    i++;
+                }
+            }
+            catch (IOException) { /* ffmpeg closed the pipe (e.g. it exited). */ }
+            finally { try { stdin.Close(); } catch { /* already gone */ } }
+        });
+
+        // Read the encoded IVF stream: 32-byte file header, then per-frame 12-byte headers.
+        var stdout = proc.StandardOutput.BaseStream;
+        uint rtpDuration = VIDEO_CLOCK_RATE / (uint)fps;
+        uint ssrc = 0x1234_5678;
+        ushort seqnum = 0;
+        uint timestamp = 0;
+
+        int frames = 0;
+        long totalPackets = 0;
+        long rtpBytes = 0;
+        long encodedBytes = 0;
+        double sumMs = 0;
+        double maxMs = 0;
+        var samples = new List<double>(Math.Min(MAX_TIMING_SAMPLES, fps * durationSeconds * 2 + 1));
+
+        long lastTs = 0;
+        var sw = new Stopwatch();
+
+        var fileHeader = new byte[32];
+        if (ReadFully(stdout, fileHeader, 32))
+        {
+            var frameHeader = new byte[12];
+            while (ReadFully(stdout, frameHeader, 12))
+            {
+                int size = frameHeader[0] | (frameHeader[1] << 8) | (frameHeader[2] << 16) | (frameHeader[3] << 24);
+                if (size <= 0 || size > 50_000_000)
+                {
+                    break;
+                }
+
+                var frame = new byte[size];
+                if (!ReadFully(stdout, frame, size))
+                {
+                    break;
+                }
+
+                // Start the clock on the first frame so ffmpeg's process/encoder startup is excluded;
+                // subsequent inter-frame intervals are the steady-state encode cadence.
+                if (!sw.IsRunning)
+                {
+                    sw.Start();
+                    lastTs = Stopwatch.GetTimestamp();
+                }
+                else
+                {
+                    long nowTs = Stopwatch.GetTimestamp();
+                    double ms = (nowTs - lastTs) * 1000.0 / Stopwatch.Frequency;
+                    lastTs = nowTs;
+                    sumMs += ms;
+                    if (ms > maxMs) { maxMs = ms; }
+                    if (samples.Count < MAX_TIMING_SAMPLES) { samples.Add(ms); }
+                }
+
+                totalPackets += PacketiseVp8(frame, timestamp, ssrc, ref seqnum, ref rtpBytes);
+                encodedBytes += size;
+                timestamp += rtpDuration;
+                frames++;
+            }
+        }
+
+        sw.Stop();
+
+        try { writer.Wait(2000); } catch { /* best effort */ }
+        try { if (!proc.HasExited) { proc.WaitForExit(2000); } } catch { }
+        try { if (!proc.HasExited) { proc.Kill(); } } catch { }
+        proc.Dispose();
+
+        if (frames == 0)
+        {
+            return WriteResult(asJson, Empty("ffmpeg", codec, encWidth, encHeight, fps,
+                "ffmpeg produced no encoded frames. Check ffmpeg is installed and built with libvpx (run with --verbose to see ffmpeg's output)."),
+                ExitCodes.Failed);
+        }
+
+        // The throughput window runs from the first to the last frame (startup excluded), so it
+        // covers measuredFrames = frames - 1 intervals.
+        int measuredFrames = Math.Max(1, frames - 1);
+        double elapsedSec = sw.Elapsed.TotalSeconds;
+        double achievedFps = elapsedSec > 0 ? measuredFrames / elapsedSec : 0;
+        double throughputMbps = encodedBytes * 8.0 / (elapsedSec > 0 ? elapsedSec : 1) / 1_000_000.0;
+        double avgMs = measuredFrames > 0 ? sumMs / measuredFrames : 0;
+        double p95Ms = Percentile(samples, 95);
+        int avgPackets = (int)Math.Round((double)totalPackets / frames);
+        int avgEncodedSize = (int)(encodedBytes / frames);
+
+        bool success = achievedFps >= fps;
+
+        var result = new VideoBenchResult(success, "ffmpeg", codec.ToLowerInvariant(), encWidth, encHeight, fps,
+            frames, Math.Round(achievedFps, 1), Math.Round(avgMs, 4), Math.Round(p95Ms, 4), Math.Round(maxMs, 4),
+            avgPackets, avgEncodedSize, Math.Round(throughputMbps, 2), sw.ElapsedMilliseconds,
+            success ? null : $"ffmpeg encode only reached {achievedFps:0} fps, below the {fps} fps target.");
+
+        return WriteResult(asJson, result, success ? ExitCodes.Ok : ExitCodes.Failed);
+    }
+
+    private static bool ReadFully(Stream stream, byte[] buffer, int count)
+    {
+        int read = 0;
+        while (read < count)
+        {
+            int n = stream.Read(buffer, read, count - read);
+            if (n <= 0)
+            {
+                return false;
+            }
+            read += n;
+        }
+        return true;
+    }
+
+    private static int RoundUpTo16(int value) => (value + 15) & ~15;
+
+    private static int RoundUpToEven(int value) => (value + 1) & ~1;
+
+    /// <summary>
+    /// Generates a ring of distinct I420 frames with a shifting textured pattern, so the encoder
+    /// sees inter-frame motion and moderate spatial detail (a flat frame would encode unrealistically
+    /// fast). Each buffer is width*height*3/2 bytes as VP8Codec.EncodeVideo requires.
+    /// </summary>
+    private static byte[][] GenerateI420Ring(int width, int height, int count)
+    {
+        int ySize = width * height;
+        int cSize = (width / 2) * (height / 2);
+        var ring = new byte[count][];
+
+        for (int f = 0; f < count; f++)
+        {
+            var buf = new byte[ySize + 2 * cSize];
+            int shift = f * 8;
+
+            for (int y = 0; y < height; y++)
+            {
+                int rowBase = y * width;
+                for (int x = 0; x < width; x++)
+                {
+                    // Diagonal gradient plus a block-XOR texture, both shifting per frame for motion.
+                    buf[rowBase + x] = (byte)((x + y + shift) ^ ((x >> 3) + (y >> 3)));
+                }
+            }
+
+            for (int y = 0; y < height / 2; y++)
+            {
+                int uRow = ySize + y * (width / 2);
+                int vRow = ySize + cSize + y * (width / 2);
+                for (int x = 0; x < width / 2; x++)
+                {
+                    buf[uRow + x] = (byte)(128 + (((x + shift) & 0x3F) - 32));
+                    buf[vRow + x] = (byte)(128 + (((y - shift) & 0x3F) - 32));
+                }
+            }
+
+            ring[f] = buf;
+        }
+
+        return ring;
+    }
+
+    /// <summary>
+    /// Fragments and serialises one encoded VP8 frame into RTP packets exactly as
+    /// VideoStream.SendVp8Frame does, returning the packet count. The serialised bytes are added to
+    /// <paramref name="totalBytes"/> and discarded.
+    /// </summary>
+    private static int PacketiseVp8(byte[] frame, uint timestamp, uint ssrc, ref ushort seqnum, ref long totalBytes)
+    {
+        int packets = 0;
+
+        for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
+        {
+            int offset = index * RTP_MAX_PAYLOAD;
+            int payloadLength = (offset + RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - offset;
+
+            // VP8 payload descriptor: 0x10 (S bit, start of partition) on the first fragment, 0x00 after.
+            byte[] vp8Header = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+            byte[] payload = new byte[payloadLength + vp8Header.Length];
+            Buffer.BlockCopy(vp8Header, 0, payload, 0, vp8Header.Length);
+            Buffer.BlockCopy(frame, offset, payload, vp8Header.Length, payloadLength);
+
+            var rtpPacket = new RTPPacket
+            {
+                Payload = payload
+            };
+            rtpPacket.Header.SyncSource = ssrc;
+            rtpPacket.Header.SequenceNumber = seqnum++;
+            rtpPacket.Header.Timestamp = timestamp;
+            rtpPacket.Header.MarkerBit = (offset + payloadLength >= frame.Length) ? 1 : 0;
+            rtpPacket.Header.PayloadType = VP8_PAYLOAD_ID;
+
+            // The real RTP serialisation is the work being measured.
+            byte[] bytes = rtpPacket.GetBytes();
+            totalBytes += bytes.Length;
+            packets++;
+        }
+
+        return packets;
+    }
+
+    private static double Percentile(List<double> values, int percentile)
+    {
+        if (values.Count == 0)
+        {
+            return 0;
+        }
+
+        var sorted = new List<double>(values);
+        sorted.Sort();
+        int rank = (int)Math.Ceiling(percentile / 100.0 * sorted.Count) - 1;
+        return sorted[Math.Clamp(rank, 0, sorted.Count - 1)];
+    }
+
+    private static VideoBenchResult Empty(string encoder, string codec, int width, int height, int fps, string error) =>
+        new(false, encoder?.ToLowerInvariant() ?? string.Empty, codec?.ToLowerInvariant() ?? string.Empty,
+            width, height, fps, 0, 0, 0, 0, 0, 0, 0, 0, 0, error);
+
+    private static int WriteResult(bool asJson, VideoBenchResult result, int exitCode)
+    {
+        if (asJson)
+        {
+            WriteJson(result);
+        }
+        else if (result.FramesProcessed > 0)
+        {
+            string verdict = result.Success ? "PASS" : "BELOW TARGET";
+            Console.WriteLine($"Stage \"{result.Stage}\" {result.Codec} {result.Width}x{result.Height}: " +
+                $"{result.AchievedFps:0} fps achieved vs {result.TargetFps} target — {verdict}. " +
+                $"Packetise {result.PerFrameMsAvg:0.###}/{result.PerFrameMsP95:0.###}/{result.PerFrameMsMax:0.###} ms avg/p95/max, " +
+                $"{result.PacketsPerFrame} pkts/frame ({result.FrameBytes} bytes), {result.ThroughputMbps} Mbps over {result.DurationMs}ms.");
+        }
+        else
+        {
+            Console.Error.WriteLine($"Video bench failed: {result.Error}");
+        }
+
+        return exitCode;
+    }
+}
