@@ -54,6 +54,7 @@ var webrtcCommand = new Command("webrtc", "WebRTC operations: full connection pr
 webrtcCommand.Subcommands.Add(new WebRtcWhepCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcWhipCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcWhipServerCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcLoopbackCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcVideoBenchCommand().Build());

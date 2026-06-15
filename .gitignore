@@ -415,3 +415,5 @@ MigrationBackup/
 *.bmp
 
 .claude/
+
+src/SIPSorcery.Cli/benchmarks/results

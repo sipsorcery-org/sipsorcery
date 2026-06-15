@@ -15,9 +15,13 @@
 // Received video can be rendered or captured with --video, the same as the
 // "whep" verb: "play" spawns an ffplay window, a file path captures the
 // bitstream (H264 Annex B, VP8 in IVF) and "-" writes it to stdout for piping.
-// Decode is delegated to the consumer so no video codecs run in-process. Paired
-// with a local publisher this gives a self-contained encode -> network -> decode
-// -> view loop with no SFU or internet path involved.
+// Decode is delegated to the consumer so no video codecs run in-process, unless
+// --decode is set (decode in-process and send raw frames to the --video sink).
+//
+// This verb is a pure receiver: it accepts one external publisher's session. For
+// a self-contained encode -> network -> decode loop in a single process (no
+// second terminal), use the "webrtc loopback" verb, which drives the same
+// receive engine here with the in-process LibraryVideoPublisher.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -70,7 +74,9 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         long? VideoBytesWritten = null,
         double? VideoFps = null,
         int? VideoFramesDropped = null,
-        int? TargetFps = null);
+        int? TargetFps = null,
+        int? PublishedFrames = null,
+        double? PublishedFps = null);
 
     public WebRtcWhipServerCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -114,46 +120,6 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             Description = "Directory containing the FFmpeg shared libraries for --decode. Defaults to the system path."
         };
 
-        // Self-publish options: when --publish is set the server feeds its own listener with an ffmpeg
-        // test pattern, giving a one command self-contained loop with no separate publisher process.
-        var publishOption = new Option<bool>("--publish")
-        {
-            Description = "Also publish an ffmpeg test pattern to this server's own URL, for a self-contained loop in one command. Requires ffmpeg on the PATH."
-        };
-
-        var presetOption = new Option<string>("--preset")
-        {
-            Description = "With --publish: resolution preset 360p, 480p, 720p, 1080p, 1440p or 4k. Ignored if --size is given.",
-            DefaultValueFactory = _ => "720p"
-        };
-
-        var sizeOption = new Option<string?>("--size", "-s")
-        {
-            Description = "With --publish: explicit frame size WxH (e.g. 1280x720), overriding --preset."
-        };
-
-        var fpsOption = new Option<int>("--fps")
-        {
-            Description = "With --publish: frame rate.",
-            DefaultValueFactory = _ => 30
-        };
-
-        var codecOption = new Option<string>("--codec")
-        {
-            Description = "With --publish: video codec h264 (libx264) or vp8 (libvpx). h264 is the reliable choice; ffmpeg's WHIP muxer may not support vp8.",
-            DefaultValueFactory = _ => "h264"
-        };
-
-        var bitrateOption = new Option<string?>("--bitrate")
-        {
-            Description = "With --publish: target video bitrate, e.g. 2M or 4000k. Defaults to ffmpeg's rate control for h264 and 2M for vp8."
-        };
-
-        var audioOption = new Option<bool>("--audio")
-        {
-            Description = "With --publish: also publish a 440 Hz Opus audio tone."
-        };
-
         var command = new Command("whip-server", "Act as a WHIP endpoint: accept a publisher's offer (e.g. from ffmpeg or OBS) and report on the received media.");
         command.Options.Add(listenOption);
         command.Options.Add(tokenOption);
@@ -161,30 +127,17 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         command.Options.Add(videoOption);
         command.Options.Add(decodeOption);
         command.Options.Add(ffmpegPathOption);
-        command.Options.Add(publishOption);
-        command.Options.Add(presetOption);
-        command.Options.Add(sizeOption);
-        command.Options.Add(fpsOption);
-        command.Options.Add(codecOption);
-        command.Options.Add(bitrateOption);
-        command.Options.Add(audioOption);
         AddCommonOptions(command);
 
-        command.SetAction((parseResult, cancellationToken) => RunAsync(
+        command.SetAction((parseResult, cancellationToken) => RunReceiverAsync(
             parseResult.GetValue(listenOption)!,
             parseResult.GetValue(tokenOption),
             parseResult.GetValue(durationOption),
             parseResult.GetValue(videoOption),
             parseResult.GetValue(decodeOption),
             parseResult.GetValue(ffmpegPathOption),
-            parseResult.GetValue(publishOption),
-            new FfmpegPublisher.Settings(
-                parseResult.GetValue(presetOption)!,
-                parseResult.GetValue(sizeOption),
-                parseResult.GetValue(fpsOption),
-                parseResult.GetValue(codecOption)!,
-                parseResult.GetValue(bitrateOption),
-                parseResult.GetValue(audioOption)),
+            // No in-process publisher: this verb is a pure receiver for an external publisher.
+            publishSettings: null,
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -193,12 +146,20 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         return command;
     }
 
-    private static async Task<int> RunAsync(string listenUrl, string? token, int durationSeconds, string? videoOut,
-        bool decode, string? ffmpegPath, bool publish, FfmpegPublisher.Settings publishSettings,
+    /// <summary>
+    /// Runs the WHIP receive engine: bind the listener, accept one publisher's offer, complete the
+    /// peer connection and report on the received media. When <paramref name="publishSettings"/> is
+    /// non-null, also fires the in-process LibraryVideoPublisher at the same listener for a
+    /// self-contained loop (this is what the "webrtc loopback" verb uses).
+    /// </summary>
+    internal static async Task<int> RunReceiverAsync(string listenUrl, string? token, int durationSeconds, string? videoOut,
+        bool decode, string? ffmpegPath, LibraryVideoPublisher.Settings? publishSettings,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcWhipServerCommand));
+
+        bool publish = publishSettings != null;
 
         if (!Uri.TryCreate(listenUrl, UriKind.Absolute, out var listenUri) || listenUri.Scheme != Uri.UriSchemeHttp)
         {
@@ -231,7 +192,7 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             }
         }
 
-        if (publish && !FfmpegPublisher.TryValidate(publishSettings, out string? publishError))
+        if (publish && !LibraryVideoPublisher.TryValidate(publishSettings!, out string? publishError))
         {
             return WriteResult(asJson, stdoutClaimed: false,
                 new WhipServerResult(false, listenUrl, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0, publishError),
@@ -242,7 +203,7 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         using var decoder = decode ? new FFmpegVideoEncoder() : null;
         // When self-publishing we know the source frame rate, so pass it through for the decoded
         // play path (ffplay's rawvideo default of 25 fps would otherwise throttle a faster source).
-        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError, decoder, publish ? publishSettings.Fps : 0);
+        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError, decoder, publishSettings?.Fps ?? 0);
 
         if (videoSinkError != null)
         {
@@ -255,7 +216,8 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         listener.Prefixes.Add($"http://{listenUri.Authority}/");
 
         RTCPeerConnection? pc = null;
-        FfmpegPublisher.Publisher? publisher = null;
+        Task<LibraryVideoPublisher.Result>? publishTask = null;
+        CancellationTokenSource? publisherCts = null;
 
         try
         {
@@ -266,17 +228,12 @@ public sealed class WebRtcWhipServerCommand : CommandBase
 
             if (publish)
             {
-                // The listener is already bound, so the self-publish cannot race the startup. The
-                // publisher runs until the session ends and is stopped in the finally block.
-                publisher = FfmpegPublisher.Start(listenUrl, publishSettings, token, 0, out string publishCommand, out string? startError);
-                if (publisher == null)
-                {
-                    return WriteResult(asJson, videoSink.IsStdout,
-                        new WhipServerResult(false, listenUrl, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0, startError),
-                        ExitCodes.TransportError);
-                }
-
-                Console.Error.WriteLine($"Publishing to {listenUrl} with: {publishCommand}");
+                // The listener is already bound, so the in-process self-publish cannot race the startup.
+                // It runs (paced) until stopped at the end of the media window. Its HTTP offer is served
+                // by this same listener over loopback.
+                publisherCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                publishTask = LibraryVideoPublisher.RunAsync(listenUrl, publishSettings!, token, timeoutSeconds, logger, publisherCts.Token);
+                Console.Error.WriteLine($"Self-publishing {publishSettings!.Encoder} to {listenUrl} in-process.");
             }
             else
             {
@@ -290,15 +247,16 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             // ---- Wait for an acceptable POST with the SDP offer. ----
             HttpListenerContext? offerContext = null;
             var offerDeadline = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds), overallCts.Token);
-            // When self-publishing, watch for the ffmpeg publisher dying so we fail fast instead of
-            // waiting out the whole offer timeout (e.g. if the codec is unsupported by its WHIP muxer).
-            var publisherExit = publisher?.WaitForExitAsync(ct);
+            // When self-publishing, the publish task only completes early if the publisher fails
+            // (bad settings, FFmpeg init, connect failure), so watch it to fail fast instead of
+            // waiting out the whole offer timeout.
+            Task? publisherFailed = publishTask;
 
             while (offerContext == null)
             {
                 var getContext = listener.GetContextAsync();
-                var completed = publisherExit != null
-                    ? await Task.WhenAny(getContext, offerDeadline, publisherExit).ConfigureAwait(false)
+                var completed = publisherFailed != null
+                    ? await Task.WhenAny(getContext, offerDeadline, publisherFailed).ConfigureAwait(false)
                     : await Task.WhenAny(getContext, offerDeadline).ConfigureAwait(false);
 
                 if (ct.IsCancellationRequested)
@@ -316,13 +274,13 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                         ExitCodes.Timeout);
                 }
 
-                if (publisherExit != null && completed == publisherExit)
+                if (publisherFailed != null && completed == publisherFailed)
                 {
+                    var pubResult = await publishTask!.ConfigureAwait(false);
                     return WriteResult(asJson, videoSink.IsStdout,
                         new WhipServerResult(false, listenUrl, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0,
-                            $"The ffmpeg publisher exited (code {publisher!.ExitCode}) before sending a WHIP offer. The chosen --codec may be " +
-                            "unsupported by ffmpeg's WHIP muxer (h264 is the reliable choice); see the ffmpeg output above."),
-                        ExitCodes.TransportError);
+                            $"The in-process publisher failed before sending a WHIP offer: {pubResult.Error}"),
+                        pubResult.ExitCode);
                 }
 
                 var context = await getContext.ConfigureAwait(false);
@@ -488,6 +446,17 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(durationSeconds), overallCts.Token), publisherEnded.Task).ConfigureAwait(false);
             mediaWindow.Stop();
 
+            // Stop the in-process publisher (if any) and collect its send-side stats.
+            double? publishedFps = null;
+            int? publishedFrames = null;
+            if (publishTask != null)
+            {
+                publisherCts!.Cancel();
+                var pubResult = await publishTask.ConfigureAwait(false);
+                publishedFps = pubResult.AchievedFps;
+                publishedFrames = pubResult.FramesSent;
+            }
+
             bool gotMedia = audioStats.Packets + videoStats.Packets > 0;
 
             // Dispose the sink before writing the result so files are finalised, ffplay drains
@@ -513,7 +482,9 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                     videoSink.IsActive ? videoSink.BytesWritten : null,
                     videoFps,
                     videoSink.IsActive ? videoSink.DroppedFrames : null,
-                    publish ? publishSettings.Fps : null),
+                    publishSettings?.Fps,
+                    publishedFrames,
+                    publishedFps),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (HttpListenerException excp)
@@ -537,7 +508,9 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         }
         finally
         {
-            publisher?.Stop();
+            // Stop the in-process publisher; it does its own teardown (DELETE, peer connection close).
+            publisherCts?.Cancel();
+            publisherCts?.Dispose();
             pc?.Close("whip server probe complete");
             if (listener.IsListening)
             {
@@ -574,9 +547,10 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             string dropped = result.VideoFramesDropped > 0 ? $", {result.VideoFramesDropped} dropped" : string.Empty;
             string videoSink = result.VideoFrames != null ? $", {result.VideoFrames} video frames ({result.VideoBytesWritten} bytes) written{dropped}" : string.Empty;
             string videoFps = result.VideoFps != null ? $" at {result.VideoFps} fps" : string.Empty;
+            string published = result.PublishedFps != null ? $" Self-published {result.PublishedFrames} frames at {result.PublishedFps} fps." : string.Empty;
             output.WriteLine($"Publisher connected in {result.ConnectTimeMs}ms. " +
                 $"Received {result.AudioPackets} audio ({FormatAnomalies(result.AudioLost, result.AudioOutOfOrder, result.AudioDuplicates)}) and " +
-                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets{videoFps} in {result.MediaDurationMs}ms{videoSink}.");
+                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets{videoFps} in {result.MediaDurationMs}ms{videoSink}.{published}");
         }
         else
         {

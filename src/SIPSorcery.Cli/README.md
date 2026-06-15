@@ -97,18 +97,19 @@ ffmpeg `
   -f whip -authorization "test" `
   "http://localhost:8080/whip"
 
-# --publish makes the server also feed its own listener with an ffmpeg test pattern, so the whole
-# self-contained loop (encode -> network -> decode -> view/measure) is one command, no second
-# terminal and no startup race. Resolution presets are 360p/480p/720p/1080p/1440p/4k (or --size WxH),
-# with --fps, --codec (h264 reliable; ffmpeg's WHIP muxer may not support vp8), --bitrate and --audio.
-# The generated ffmpeg command is printed so you can copy and adapt it for edge cases.
-sipsorcery webrtc whip-server --publish --preset 1080p -d 10                 # 1080p30 loop, measure fps
-sipsorcery webrtc whip-server --publish --preset 720p --video play -d 30     # publish + view received
+# WebRTC loopback: a self-contained encode -> network -> decode loop in ONE process. It runs the same
+# receive engine as whip-server and, in-process, publishes a generated test pattern to it with the
+# SIPSorcery library (the same publisher as "webrtc whip"), so no second terminal and no startup race.
+# Resolution presets are 360p/480p/720p/1080p/1440p/4k (or --size WxH), with --encoder (vp8.net or
+# ffmpeg), --fps, --codec (ffmpeg: h264 or vp8), --bitrate and --video. The result JSON reports both
+# the send side (publishedFps) and the receive side (videoFps), so it doubles as a quick throughput check.
+sipsorcery webrtc loopback --preset 1080p -d 10                 # 1080p30 loop, measure send + receive fps
+sipsorcery webrtc loopback --preset 720p --video play -d 30     # publish + view the received stream
 # By default received frames are passed straight to the sink (ffplay decodes them). Add --decode to
 # instead decode in-process with the SIPSorcery (FFmpeg) decoder and send raw RGB to the sink, so the
 # picture goes through the library's decode path. Needs the FFmpeg shared libraries.
-sipsorcery webrtc whip-server --publish --video play --decode -d 30          # library-decoded, rendered raw
-sipsorcery webrtc whip-server --publish --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
+sipsorcery webrtc loopback --video play --decode -d 30          # library-decoded, rendered raw
+sipsorcery webrtc loopback --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
 # WebRTC WHIP publish (library sender): publish a generated test pattern to a WHIP endpoint using the
 # SIPSorcery stack itself -- the full SEND pipeline (generate -> encode -> RTP/SRTP -> ICE/DTLS). It
 # is the counterpart to "video-bench", which measures the encoder but stops before the network.
@@ -117,12 +118,9 @@ sipsorcery webrtc whip-server --publish --video frames.rgb --decode -d 30    # c
 # target fps and encode ms/frame, so e.g. vp8.net's ceiling vs ffmpeg H264 at 720p is obvious.
 sipsorcery webrtc whip http://localhost:8080/whip --preset 720p --fps 30 --encoder ffmpeg
 sipsorcery webrtc whip https://b.siobud.com/api/whip --token key --preset 1080p --encoder ffmpeg
-#
-# Pair it with whip-server for an ALL-LIBRARY loop (no ffmpeg, both ends are SIPSorcery). A bare
-# whip-server (no --video/--decode) just receives and discards the packets without decoding, so the
-# receiver does not bottleneck the sender being measured. Run the two in separate terminals:
-sipsorcery webrtc whip-server -d 30                                          # terminal 1: receive + discard
-sipsorcery webrtc whip http://localhost:8080/whip --preset 720p --encoder ffmpeg -d 20   # terminal 2: send
+# To exercise an ALL-LIBRARY path (no ffmpeg muxer, both ends are SIPSorcery), point it at a
+# "webrtc whip-server" running as the ingest in another terminal, or use "webrtc loopback" (above) to
+# run the publisher and receiver in a single process.
 
 # WebRTC echo test (https://github.com/sipsorcery/webrtc-echoes): the echo-server answers offers
 # and echoes RTP and data channel messages; the echo client verifies the data channel round trips.
