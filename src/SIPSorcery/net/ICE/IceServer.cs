@@ -442,8 +442,6 @@ namespace SIPSorcery.Net
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
                 {
-                    logger.LogWarning("ICE session received an error response for an Allocate request to {Uri} from {remoteEP}.", _uri, remoteEndPoint);
-
                     ErrorResponseCount++;
 
                     if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
@@ -454,6 +452,12 @@ namespace SIPSorcery.Net
                         if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
                         {
                             HandleAuthenticationChallenge(stunResponse);
+
+                            if(ErrorResponseCount > 1)
+                            {
+                                // Only log a warning if this is not the first challenge response, as the first one is expected to trigger authentication and may be discounted from the error budget.
+                                logger.LogWarning("ICE session received an error response for an Allocate request to {Uri} from {remoteEP}.", _uri, remoteEndPoint);
+                            }
                         }
                         else if (alternateServerAttribute != null)
                         {

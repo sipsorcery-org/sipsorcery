@@ -489,9 +489,13 @@ namespace SIPSorcery.Net
                 if (_policy == RTCIceTransportPolicy.all)
                 {
                     _candidates = [.. GetHostCandidates()];
-                }
 
-                logger.LogDebug("RTP ICE Channel discovered {CandidateCount} local candidates.", _candidates.Count);
+                    logger.LogDebug("RTP ICE Channel discovered {CandidateCount} local candidates.", _candidates.Count);
+                }
+                else if(_policy == RTCIceTransportPolicy.relay)
+                {
+                    logger.LogDebug("RTP ICE Channel is using a relay only policy, no local candidates will be gathered.");
+                }
 
                 if (_iceServerResolver.IceServers?.Count > 0)
                 {
