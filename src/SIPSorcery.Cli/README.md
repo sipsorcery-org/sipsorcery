@@ -53,8 +53,9 @@ sipsorcery stun lookup stun:stun.l.google.com:19302
 sipsorcery ice probe
 sipsorcery ice probe --stun stun:stun.cloudflare.com
 sipsorcery ice probe --turn "turn:turn.example.com;user;pass" --relay-only
+sipsorcery ice probe --key-id <key-id> --token <api-token> --relay-only   # probe Cloudflare TURN
 
-# WebRTC WHEP: full connection (ICE, DTLS, SRTP) to a WHEP endpoint, verifies media arrives.
+# WebRTC WHEP: Video sink, full connection (ICE, DTLS, SRTP) to a WHEP endpoint, verifies media arrives.
 # Publish to the same stream key first to get media flowing. FFmpeg can publish to
 # Broadcast Box (https://b.siobud.com/) using:
 ffmpeg `
@@ -80,13 +81,44 @@ sipsorcery webrtc whep https://b.siobud.com/api/whep --token key `
 # Windows PowerShell 5.1 corrupts binary data in pipes; run pipelines like the above
 # under cmd or PowerShell 7.4+. If mpv does not detect the format from a pipe, add
 # --demuxer-lavf-format=h264 (or ivf for VP8).
+# --decode (like whip-server) decodes in-process with the SIPSorcery FFmpeg decoder and sends raw
+# RGB to the sink instead of the encoded bitstream. The result JSON includes videoFps either way.
+sipsorcery webrtc whep https://b.siobud.com/api/whep --token key --video play --decode
 
 # WebRTC WHIP server: accept a publish directly from ffmpeg/OBS and report on the media,
 # including sequence anomalies. Useful for isolating where stream problems originate.
 sipsorcery webrtc whip-server --listen http://localhost:8080/whip --token test -d 10
-ffmpeg -re -f lavfi -i testsrc=size=640x360 -f lavfi -i sine=frequency=440 `
+ffmpeg `
+  -re `
+  -f lavfi -i testsrc=size=640x360 `
+  -f lavfi -i sine=frequency=440 `
   -pix_fmt yuv420p -c:v libx264 -profile:v baseline -r 25 -g 50 `
-  -c:a libopus -ar 48000 -ac 2 -f whip -authorization "test" "http://localhost:8080/whip"
+  -c:a libopus -ar 48000 -ac 2 `
+  -f whip -authorization "test" `
+  "http://localhost:8080/whip"
+
+# --publish makes the server also feed its own listener with an ffmpeg test pattern, so the whole
+# self-contained loop (encode -> network -> decode -> view/measure) is one command, no second
+# terminal and no startup race. Resolution presets are 360p/480p/720p/1080p/1440p/4k (or --size WxH),
+# with --fps, --codec (h264 reliable; ffmpeg's WHIP muxer may not support vp8), --bitrate and --audio.
+# The generated ffmpeg command is printed so you can copy and adapt it for edge cases.
+sipsorcery webrtc whip-server --publish --preset 1080p -d 10                 # 1080p30 loop, measure fps
+sipsorcery webrtc whip-server --publish --preset 720p --video play -d 30     # publish + view received
+# By default received frames are passed straight to the sink (ffplay decodes them). Add --decode to
+# instead decode in-process with the SIPSorcery (FFmpeg) decoder and send raw RGB to the sink, so the
+# picture goes through the library's decode path. Needs the FFmpeg shared libraries.
+sipsorcery webrtc whip-server --publish --video play --decode -d 30          # library-decoded, rendered raw
+sipsorcery webrtc whip-server --publish --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
+# The server still accepts any external publisher (ffmpeg, OBS) when --publish is omitted:
+sipsorcery webrtc whip-server --listen http://localhost:8080/whip --token test -d 10
+ffmpeg `
+  -re `
+  -f lavfi -i testsrc=size=640x360 `
+  -f lavfi -i sine=frequency=440 `
+  -pix_fmt yuv420p -c:v libx264 -profile:v baseline -r 25 -g 50 `
+  -c:a libopus -ar 48000 -ac 2 `
+  -f whip -authorization "test" `
+  "http://localhost:8080/whip"
 
 # WebRTC echo test (https://github.com/sipsorcery/webrtc-echoes): the echo-server answers offers
 # and echoes RTP and data channel messages; the echo client verifies the data channel round trips.
@@ -94,6 +126,19 @@ ffmpeg -re -f lavfi -i testsrc=size=640x360 -f lavfi -i sine=frequency=440 `
 sipsorcery webrtc echo-server --listen http://localhost:8080/    # run the echo server (ctrl-c to stop)
 sipsorcery webrtc echo http://localhost:8080/offer               # echo client against any echo server
 sipsorcery webrtc echo http://localhost:8080/offer --stun "turn:turn.example.com;user;pass" --relay-only
+
+# WebRTC video bench: measure the video SEND pipeline (no peer connection, DTLS or socket) to
+# answer "can this machine sustain a target resolution and frame rate", default 1080p30. The
+# pipeline is measured in stages via --encoder so the bottleneck can be isolated: none packetises
+# a target-sized frame flat out (the RTP packetisation ceiling), vp8 adds the managed Vpx.Net
+# codec, and ffmpeg/ffmpeg-piped add the native libvpx encoder in-process or via an external
+# ffmpeg process. Exits 0 if the target fps is met, 1 if below.
+sipsorcery webrtc video-bench                                      # 1080p30, packetise only
+sipsorcery webrtc video-bench --encoder vp8 --fps 30               # managed VP8 codec
+sipsorcery webrtc video-bench --encoder ffmpeg --width 1280 --height 720 --fps 60
+sipsorcery webrtc video-bench --encoder ffmpeg-piped --cpu-used 8 --threads 4 -d 10
+# libvpx tuning (--deadline, --cpu-used, --threads) applies to the ffmpeg stages. The in-process
+# ffmpeg stage needs the FFmpeg shared libraries (winget/brew/apt install ffmpeg, or --ffmpeg-path).
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -176,6 +221,7 @@ sipsorcery sip options music@iptel.org --json
 
 ## Status
 
-Early preview. Covers SIP (OPTIONS, calls, registration, load), WebRTC (WHEP, WHIP server, echo
-test peers), STUN/TURN/ICE connectivity checks, and service integrations for Cloudflare Realtime
-(TURN, SFU), LiveKit and the OpenAI Realtime API. SIP DNS resolution and further verbs are planned.
+Early preview. Covers SIP (OPTIONS, calls, registration, load), WebRTC (WHEP, WHIP server with
+optional self-publish, echo test peers, video send benchmark), STUN/TURN/ICE connectivity checks, and service integrations for
+Cloudflare Realtime (TURN, SFU), LiveKit and the OpenAI Realtime API. SIP DNS resolution and further
+verbs are planned.
