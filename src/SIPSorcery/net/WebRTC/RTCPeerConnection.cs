@@ -1336,30 +1336,22 @@ namespace SIPSorcery.Net
 
             if (buffer?.Length > 0)
             {
-                // ICE source-address filter (issue #1559). Non-STUN packets are
-                // only forwarded to DTLS / RTP if their source matches the
-                // currently nominated ICE candidate pair's remote endpoint.
-                // Mirrors what libwebrtc does in
-                // webrtc/p2p/base/connection.cc (Connection::OnReadPacket only
-                // signals when the packet is from remote_candidate_.address())
-                // and what pion does in pion/ice/agent.go (handleInbound
-                // silently drops non-STUN packets that don't originate from
-                // the selected pair).
-                //
-                // Without this filter an attacker who can guess the local
-                // port can flood DTLS ClientHello packets to interfere with
-                // a genuine handshake. STUN packets are filtered out earlier
-                // in the RTP channel and aren't subject to this check
-                // (consent freshness / ICE restart / new pair nomination
-                // still happen via the STUN path).
-                if (!IsFromSelectedIceCandidate(remoteEP))
+                // ICE source-address filter (issues #1559, #1731). Non-STUN packets are only
+                // forwarded to DTLS / RTP if their source matches one of the known remote ICE
+                // candidates (the remote SDP candidates plus peer-reflexive candidates discovered
+                // via authenticated STUN). This blocks an off-path attacker who guesses the local
+                // port from flooding DTLS ClientHello packets to interfere with a genuine handshake,
+                // while still accepting media that legitimately arrives from a valid-but-not-yet-
+                // nominated pair or an asymmetric path during ICE negotiation. STUN packets are
+                // filtered out earlier in the RTP channel and aren't subject to this check (consent
+                // freshness / ICE restart / new pair nomination still happen via the STUN path).
+                if (!(_rtpIceChannel?.IsKnownRemoteEndPoint(remoteEP) ?? false))
                 {
                     if (logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug))
                     {
-                        var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
                         logger.LogDebug(
-                            "Dropped {ByteCount} byte non-STUN packet from {RemoteEndPoint}; nominated ICE remote is {NominatedEndPoint} (issue #1559).",
-                            buffer.Length, remoteEP, nominatedEP);
+                            "Dropped {ByteCount} byte non-STUN packet from {RemoteEndPoint}; source does not match any known ICE remote candidate (issues #1559, #1731).",
+                            buffer.Length, remoteEP);
                     }
                     return;
                 }
@@ -1391,49 +1383,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        /// <summary>
-        /// Returns true if <paramref name="remoteEP"/> matches the address +
-        /// port of the currently nominated ICE candidate pair's remote
-        /// candidate. Returns false when no pair has been nominated yet, or
-        /// when the source endpoint does not match.
-        ///
-        /// Used by <see cref="OnRTPDataReceived"/> to filter incoming
-        /// non-STUN traffic, mirroring the source-check libwebrtc and pion
-        /// apply at the ICE layer (issue #1559).
-        ///
-        /// For TURN-relayed candidates the receive path in
-        /// <see cref="RTPChannel"/> already rewrites the remote endpoint
-        /// from the TURN server's address to the peer's apparent address
-        /// (XOR-PEER-ADDRESS in the Data indication), so the comparison
-        /// here works the same way for host and relay pairs.
-        /// </summary>
-        internal bool IsFromSelectedIceCandidate(IPEndPoint remoteEP)
-        {
-            if (remoteEP == null) { return false; }
-            var nominatedEP = _rtpIceChannel?.NominatedEntry?.RemoteCandidate?.DestinationEndPoint;
-            if (nominatedEP == null) { return false; }
-
-            // Apply the optional source translator first. This lets callers reconcile
-            // observed source endpoints with advertised ones for hairpin scenarios (a
-            // peer on the same machine as the TURN server hitting one of its own
-            // allocations — the OS picks a local interface IP as source which won't
-            // match the public IP advertised in XOR-RELAYED-ADDRESS).
-            var effectiveRemoteEP = RemoteEndpointTranslator?.Invoke(remoteEP) ?? remoteEP;
-
-            // Map IPv4-mapped IPv6 addresses (::ffff:x.x.x.x) to pure IPv4 before comparison.
-            // This handles the case where the nominated endpoint was stored as IPv4 but
-            // the received packet shows up as an IPv4-mapped IPv6 address (or vice-versa)
-            // when using dual-stack sockets.
-            var nominatedAddr = nominatedEP.Address.IsIPv4MappedToIPv6
-                ? nominatedEP.Address.MapToIPv4()
-                : nominatedEP.Address;
-            var remoteAddr = effectiveRemoteEP.Address.IsIPv4MappedToIPv6
-                ? effectiveRemoteEP.Address.MapToIPv4()
-                : effectiveRemoteEP.Address;
-
-            return nominatedEP.Port == effectiveRemoteEP.Port
-                && nominatedAddr.Equals(remoteAddr);
-        }
 
         private Func<IPEndPoint, IPEndPoint> _remoteEndpointTranslator;
 
