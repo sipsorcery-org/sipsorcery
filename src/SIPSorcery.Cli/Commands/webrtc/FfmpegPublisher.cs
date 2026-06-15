@@ -182,24 +182,7 @@ public static class FfmpegPublisher
             return false;
         }
 
-        (width, height) = preset.ToLowerInvariant() switch
-        {
-            "360p" => (640, 360),
-            "480p" => (640, 480),
-            "720p" => (1280, 720),
-            "1080p" => (1920, 1080),
-            "1440p" => (2560, 1440),
-            "2160p" or "4k" => (3840, 2160),
-            _ => (0, 0)
-        };
-
-        if (width == 0)
-        {
-            error = $"Unknown --preset \"{preset}\". Expected 360p, 480p, 720p, 1080p, 1440p or 4k (or use --size WxH).";
-            return false;
-        }
-
-        return true;
+        return VideoPresets.TryResolve(preset, out width, out height, out error);
     }
 
     /// <summary>

@@ -48,7 +48,10 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     private const int DEFAULT_HEIGHT = 1080;
     private const int DEFAULT_FPS = 30;
     private const int DEFAULT_DURATION_SECONDS = 5;
-    private const int DEFAULT_BITRATE = 4_000_000;
+    // Bits per pixel per frame used to derive a representative default bitrate from the resolution
+    // and frame rate when --bitrate is not given (~0.1 bpp is a typical medium-quality H264/VP8
+    // figure: 720p30 -> ~2.8 Mbps, 1080p30 -> ~6.2 Mbps, 4K50 -> ~41 Mbps).
+    private const double BITS_PER_PIXEL_PER_FRAME = 0.1;
     private const int VP8_PAYLOAD_ID = 96;
     private const uint VIDEO_CLOCK_RATE = 90000;
 
@@ -91,6 +94,11 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
     public override Command Build()
     {
+        var presetOption = new Option<string?>("--preset")
+        {
+            Description = $"Resolution preset ({VideoPresets.Names}); overrides --width/--height when set."
+        };
+
         var widthOption = new Option<int>("--width", "-w")
         {
             Description = "The frame width in pixels.",
@@ -117,14 +125,16 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
         var bitrateOption = new Option<int>("--bitrate")
         {
-            Description = "The target encoded bitrate in bits per second. Sets the per-frame size for the packetisation stage.",
-            DefaultValueFactory = _ => DEFAULT_BITRATE
+            Description = "Target encoded bitrate in bits per second; sets the per-frame size for the packetise stage. " +
+                          "0 (default) derives it from the resolution and frame rate.",
+            DefaultValueFactory = _ => 0
         };
 
         var encoderOption = new Option<string>("--encoder")
         {
             Description = "The pipeline stage to test: none (packetise only), ffmpeg (SIPSorceryMedia.FFmpeg in-process encoder), " +
-                          "ffmpeg-piped (external ffmpeg process) or vp8 (managed Vpx.Net codec).",
+                          "ffmpeg-piped (external ffmpeg process) or vp8.net (managed Vpx.Net codec). The none stage packetises a frame " +
+                          "sized from --bitrate/--fps, so it is independent of resolution (width/height are reported for context only).",
             DefaultValueFactory = _ => "none"
         };
 
@@ -159,6 +169,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         };
 
         var command = new Command("video-bench", "Benchmark the video send pipeline (packetisation/encoding) against a target resolution and frame rate.");
+        command.Options.Add(presetOption);
         command.Options.Add(widthOption);
         command.Options.Add(heightOption);
         command.Options.Add(fpsOption);
@@ -174,6 +185,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         command.Options.Add(VerboseOption);
 
         command.SetAction((parseResult, cancellationToken) => Task.FromResult(Run(
+            parseResult.GetValue(presetOption),
             parseResult.GetValue(widthOption),
             parseResult.GetValue(heightOption),
             parseResult.GetValue(fpsOption),
@@ -193,16 +205,39 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     /// <summary>libvpx tuning passed to the ffmpeg encoder stages.</summary>
     private readonly record struct FfmpegTuning(string Deadline, int CpuUsed, int Threads);
 
-    private static int Run(int width, int height, int fps, int durationSeconds, int bitrate, string encoder, string codec,
+    private static int Run(string? preset, int width, int height, int fps, int durationSeconds, int bitrate, string encoder, string codec,
         string? ffmpegPath, FfmpegTuning tuning, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcVideoBenchCommand));
 
-        if (width < 2 || height < 2 || fps < 1 || durationSeconds < 1 || bitrate < 1000)
+        if (!string.IsNullOrWhiteSpace(preset))
+        {
+            if (!VideoPresets.TryResolve(preset, out width, out height, out string? presetError))
+            {
+                return WriteResult(asJson, Empty(encoder, codec, width, height, fps, presetError!),
+                    ExitCodes.InvalidArgument);
+            }
+        }
+
+        if (width < 2 || height < 2 || fps < 1 || durationSeconds < 1)
         {
             return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
-                "Invalid arguments: width/height must be >= 2, fps >= 1, duration >= 1 and bitrate >= 1000."),
+                "Invalid arguments: width/height must be >= 2, fps >= 1 and duration >= 1."),
+                ExitCodes.InvalidArgument);
+        }
+
+        if (bitrate <= 0)
+        {
+            // Derive a representative bitrate from the resolution and frame rate so the per-frame size
+            // (and so the packetise stage) scales with the picture instead of using a fixed default.
+            bitrate = (int)(width * (long)height * fps * BITS_PER_PIXEL_PER_FRAME);
+        }
+
+        if (bitrate < 1000)
+        {
+            return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
+                "Invalid --bitrate: must be >= 1000 bits per second."),
                 ExitCodes.InvalidArgument);
         }
 
@@ -218,7 +253,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             case "none":
                 return RunPacketiseOnly(width, height, fps, durationSeconds, bitrate, codec, asJson, logger, ct);
 
-            case "vp8":
+            case "vp8.net":
                 return RunVp8Encode(width, height, fps, durationSeconds, codec, asJson, logger, ct);
 
             case "ffmpeg":
@@ -229,7 +264,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
             default:
                 return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
-                    $"Unknown --encoder \"{encoder}\". Expected none, ffmpeg, ffmpeg-piped or vp8."),
+                    $"Unknown --encoder \"{encoder}\". Expected none, ffmpeg, ffmpeg-piped or vp8.net."),
                     ExitCodes.InvalidArgument);
         }
     }
@@ -248,6 +283,11 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         int frameBytes = Math.Max(1, bitrate / fps / 8);
         var encodedFrame = new byte[frameBytes];
         new Random(20260613).NextBytes(encodedFrame);
+
+        // Make the model explicit: this stage does not encode, so the frame size (and therefore the
+        // result) comes from the bitrate/frame rate, and the resolution is shown for context only.
+        Console.Error.WriteLine($"Packetise-only stage: modelling a {frameBytes}-byte encoded frame from {bitrate / 1000} kbps at {fps} fps " +
+            $"({width}x{height} is context only; use --encoder ffmpeg/vp8 to benchmark actual encoding).");
 
         uint rtpDuration = VIDEO_CLOCK_RATE / (uint)fps;
         uint ssrc = 0x1234_5678;
@@ -325,7 +365,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         byte[][] ring = GenerateRing(encWidth, encHeight);
         using var encoder = new VP8Codec();
 
-        return RunEncoderLoop("vp8", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, asJson, logger, ct);
+        return RunEncoderLoop("vp8.net", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, asJson, logger, ct);
     }
 
     /// <summary>

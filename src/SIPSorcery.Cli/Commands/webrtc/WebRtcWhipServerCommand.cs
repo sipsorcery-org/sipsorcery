@@ -69,7 +69,8 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         int? VideoFrames = null,
         long? VideoBytesWritten = null,
         double? VideoFps = null,
-        int? VideoFramesDropped = null);
+        int? VideoFramesDropped = null,
+        int? TargetFps = null);
 
     public WebRtcWhipServerCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -96,8 +97,9 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         var videoOption = new Option<string?>("--video")
         {
             Description = "Where to send the received video: \"play\" to render in an ffplay window, a file path " +
-                          "(H264 is written as Annex B, VP8 in an IVF container), or \"-\" for the bitstream on stdout " +
-                          "(the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal."
+                          "(H264 is written as Annex B, VP8 in an IVF container), \"-\" for the bitstream on stdout " +
+                          "(the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal, " +
+                          "or \"null\" to discard it (headless throughput measurement, e.g. with --decode)."
         };
 
         var decodeOption = new Option<bool>("--decode")
@@ -238,7 +240,9 @@ public sealed class WebRtcWhipServerCommand : CommandBase
 
         // In decode mode the frames are decoded in-process and the raw RGB sent to the sink.
         using var decoder = decode ? new FFmpegVideoEncoder() : null;
-        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError, decoder);
+        // When self-publishing we know the source frame rate, so pass it through for the decoded
+        // play path (ffplay's rawvideo default of 25 fps would otherwise throttle a faster source).
+        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError, decoder, publish ? publishSettings.Fps : 0);
 
         if (videoSinkError != null)
         {
@@ -508,7 +512,8 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                     videoSink.IsActive ? videoSink.FramesWritten : null,
                     videoSink.IsActive ? videoSink.BytesWritten : null,
                     videoFps,
-                    videoSink.IsActive ? videoSink.DroppedFrames : null),
+                    videoSink.IsActive ? videoSink.DroppedFrames : null,
+                    publish ? publishSettings.Fps : null),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (HttpListenerException excp)

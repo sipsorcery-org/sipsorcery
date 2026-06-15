@@ -97,8 +97,9 @@ public sealed class WebRtcWhepCommand : CommandBase
         var videoOption = new Option<string?>("--video")
         {
             Description = "Where to send the received video: \"play\" to render in an ffplay window, a file path " +
-                          "(H264 is written as Annex B, VP8 in an IVF container), or \"-\" for the bitstream on stdout " +
-                          "(the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal."
+                          "(H264 is written as Annex B, VP8 in an IVF container), \"-\" for the bitstream on stdout " +
+                          "(the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal, " +
+                          "or \"null\" to discard it (headless throughput measurement, e.g. with --decode)."
         };
 
         var decodeOption = new Option<bool>("--decode")

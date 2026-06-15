@@ -52,6 +52,7 @@ rootCommand.Subcommands.Add(iceCommand);
 
 var webrtcCommand = new Command("webrtc", "WebRTC operations: full connection probes with ICE, DTLS and media.");
 webrtcCommand.Subcommands.Add(new WebRtcWhepCommand().Build());
+webrtcCommand.Subcommands.Add(new WebRtcWhipCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcWhipServerCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());

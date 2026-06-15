@@ -44,7 +44,8 @@ public sealed class VideoSink : IDisposable
         None,
         File,
         Stdout,
-        Play
+        Play,
+        Null
     }
 
     private const int IVF_HEADER_LENGTH = 32;
@@ -53,8 +54,17 @@ public sealed class VideoSink : IDisposable
     // The decode/IO work runs on a dedicated worker thread, NOT the caller's. The WebRTC receive
     // thread that delivers frames also services ICE/STUN on the same socket, so it must never block
     // on decode or a stalled pipe. Frames are handed over a bounded queue; when the worker falls
-    // behind the oldest queued frame is dropped rather than stalling the receive thread.
-    private const int MAX_QUEUED_FRAMES = 4;
+    // behind the oldest queued frame is dropped rather than stalling the receive thread. The depth is
+    // enough to absorb the consumer's start-up burst (e.g. the ffplay window opening) while keeping
+    // worst-case latency small; a worker that genuinely cannot keep up still drops.
+    private const int MAX_QUEUED_FRAMES = 16;
+
+    // ffplay's rawvideo demuxer defaults to 25 fps; without an explicit rate it paces (and so reads
+    // from the pipe) at 25 fps, back-pressuring the worker and dropping faster sources. Used only by
+    // the decoded ("--decode") play path. Video-only playback disables ffplay's frame dropping (the
+    // master clock is the video), so feeding a rate at or above the real one just means "display on
+    // arrival" -- it never fast-forwards -- which keeps ffplay from being the bottleneck.
+    private const int DEFAULT_RAW_FRAME_RATE = 60;
 
     private readonly record struct QueuedFrame(byte[] Frame, uint RtpTimestamp, VideoFormat Format);
 
@@ -62,6 +72,7 @@ public sealed class VideoSink : IDisposable
     private readonly string? _filePath;
     private readonly ILogger _logger;
     private readonly IVideoEncoder? _decoder;
+    private readonly int _frameRate;
     private readonly object _queueLock = new();
     private readonly Queue<QueuedFrame> _queue = new();
 
@@ -92,39 +103,49 @@ public sealed class VideoSink : IDisposable
     public int FramesWritten => _framesWritten;
     public int DroppedFrames { get { lock (_queueLock) { return _droppedFrames; } } }
 
-    private VideoSink(SinkMode mode, string? filePath, ILogger logger, IVideoEncoder? decoder)
+    private VideoSink(SinkMode mode, string? filePath, ILogger logger, IVideoEncoder? decoder, int frameRate)
     {
         _mode = mode;
         _filePath = filePath;
         _logger = logger;
         _decoder = decoder;
+        _frameRate = frameRate;
     }
 
     /// <summary>
     /// Creates a sink for the given spec ("play", a file path, "-" for stdout, or null/empty for no
     /// sink). When <paramref name="decoder"/> is supplied the frames are decoded in-process to raw
-    /// RGB24 and that is sent to the sink, rather than the encoded bitstream.
+    /// RGB24 and that is sent to the sink, rather than the encoded bitstream. <paramref name="frameRate"/>
+    /// (0 = unknown) sets the rawvideo playback rate for the decoded "play" path so ffplay does not
+    /// throttle to its 25 fps default.
     /// </summary>
-    public static VideoSink Create(string? spec, ILogger logger, out string? error, IVideoEncoder? decoder = null)
+    public static VideoSink Create(string? spec, ILogger logger, out string? error, IVideoEncoder? decoder = null, int frameRate = 0)
     {
         error = null;
 
         if (string.IsNullOrWhiteSpace(spec))
         {
-            return new VideoSink(SinkMode.None, null, logger, decoder);
+            return new VideoSink(SinkMode.None, null, logger, decoder, frameRate);
         }
 
         if (spec == "-")
         {
-            return new VideoSink(SinkMode.Stdout, null, logger, decoder);
+            return new VideoSink(SinkMode.Stdout, null, logger, decoder, frameRate);
         }
 
         if (spec.Equals("play", StringComparison.OrdinalIgnoreCase))
         {
-            return new VideoSink(SinkMode.Play, null, logger, decoder);
+            return new VideoSink(SinkMode.Play, null, logger, decoder, frameRate);
         }
 
-        return new VideoSink(SinkMode.File, spec, logger, decoder);
+        if (spec.Equals("null", StringComparison.OrdinalIgnoreCase))
+        {
+            // Decode/depacketise but discard the output. Lets the pipeline be exercised headlessly
+            // (no ffplay pacing, no disk) to measure throughput / frame drops.
+            return new VideoSink(SinkMode.Null, null, logger, decoder, frameRate);
+        }
+
+        return new VideoSink(SinkMode.File, spec, logger, decoder, frameRate);
     }
 
     /// <summary>
@@ -386,9 +407,14 @@ public sealed class VideoSink : IDisposable
                     return true;
 
                 case SinkMode.Play:
+                    // -framerate stops ffplay's rawvideo demuxer pacing at its 25 fps default, which
+                    // would back-pressure the pipe and drop a faster source. Give headroom over the
+                    // nominal rate so the publisher's slightly-fast "-re" pacing does not cause ffplay
+                    // to throttle; with frame dropping off (video-only) the extra headroom is harmless.
+                    int rawFrameRate = Math.Max(_frameRate * 2, DEFAULT_RAW_FRAME_RATE);
                     var startInfo = new ProcessStartInfo("ffplay")
                     {
-                        Arguments = $"-hide_banner -loglevel error -fflags nobuffer -f rawvideo -pixel_format rgb24 -video_size {_rawWidth}x{_rawHeight} -i -",
+                        Arguments = $"-hide_banner -loglevel error -fflags nobuffer -f rawvideo -pixel_format rgb24 -framerate {rawFrameRate} -video_size {_rawWidth}x{_rawHeight} -i -",
                         UseShellExecute = false,
                         RedirectStandardInput = true,
                         RedirectStandardError = true
@@ -411,6 +437,11 @@ public sealed class VideoSink : IDisposable
 
                     _out = _ffplay.StandardInput.BaseStream;
                     Console.Error.WriteLine($"Rendering in-process decoded rgb24 {_rawWidth}x{_rawHeight} video with ffplay.");
+                    return true;
+
+                case SinkMode.Null:
+                    _out = Stream.Null;
+                    _logger.LogDebug("Discarding decoded raw rgb24 {Width}x{Height} video (null sink).", _rawWidth, _rawHeight);
                     return true;
 
                 default:
@@ -477,6 +508,11 @@ public sealed class VideoSink : IDisposable
 
                     _out = _ffplay.StandardInput.BaseStream;
                     Console.Error.WriteLine($"Rendering received {format.Codec} video with ffplay.");
+                    return true;
+
+                case SinkMode.Null:
+                    _out = Stream.Null;
+                    _logger.LogDebug("Discarding received {Codec} video (null sink).", format.Codec);
                     return true;
 
                 default:

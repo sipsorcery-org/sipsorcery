@@ -109,16 +109,20 @@ sipsorcery webrtc whip-server --publish --preset 720p --video play -d 30     # p
 # picture goes through the library's decode path. Needs the FFmpeg shared libraries.
 sipsorcery webrtc whip-server --publish --video play --decode -d 30          # library-decoded, rendered raw
 sipsorcery webrtc whip-server --publish --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
-# The server still accepts any external publisher (ffmpeg, OBS) when --publish is omitted:
-sipsorcery webrtc whip-server --listen http://localhost:8080/whip --token test -d 10
-ffmpeg `
-  -re `
-  -f lavfi -i testsrc=size=640x360 `
-  -f lavfi -i sine=frequency=440 `
-  -pix_fmt yuv420p -c:v libx264 -profile:v baseline -r 25 -g 50 `
-  -c:a libopus -ar 48000 -ac 2 `
-  -f whip -authorization "test" `
-  "http://localhost:8080/whip"
+# WebRTC WHIP publish (library sender): publish a generated test pattern to a WHIP endpoint using the
+# SIPSorcery stack itself -- the full SEND pipeline (generate -> encode -> RTP/SRTP -> ICE/DTLS). It
+# is the counterpart to "video-bench", which measures the encoder but stops before the network.
+# --encoder vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (FFmpeg H264); presets/--size,
+# --fps, --bitrate and --max-rate (flat out, local receiver only). Reports frames sent, achieved vs
+# target fps and encode ms/frame, so e.g. vp8.net's ceiling vs ffmpeg H264 at 720p is obvious.
+sipsorcery webrtc whip http://localhost:8080/whip --preset 720p --fps 30 --encoder ffmpeg
+sipsorcery webrtc whip https://b.siobud.com/api/whip --token key --preset 1080p --encoder ffmpeg
+#
+# Pair it with whip-server for an ALL-LIBRARY loop (no ffmpeg, both ends are SIPSorcery). A bare
+# whip-server (no --video/--decode) just receives and discards the packets without decoding, so the
+# receiver does not bottleneck the sender being measured. Run the two in separate terminals:
+sipsorcery webrtc whip-server -d 30                                          # terminal 1: receive + discard
+sipsorcery webrtc whip http://localhost:8080/whip --preset 720p --encoder ffmpeg -d 20   # terminal 2: send
 
 # WebRTC echo test (https://github.com/sipsorcery/webrtc-echoes): the echo-server answers offers
 # and echoes RTP and data channel messages; the echo client verifies the data channel round trips.
@@ -221,7 +225,8 @@ sipsorcery sip options music@iptel.org --json
 
 ## Status
 
-Early preview. Covers SIP (OPTIONS, calls, registration, load), WebRTC (WHEP, WHIP server with
-optional self-publish, echo test peers, video send benchmark), STUN/TURN/ICE connectivity checks, and service integrations for
+Early preview. Covers SIP (OPTIONS, calls, registration, load), WebRTC (WHEP, WHIP publish, WHIP
+server with optional self-publish, echo test peers, video send benchmark), STUN/TURN/ICE connectivity
+checks, and service integrations for
 Cloudflare Realtime (TURN, SFU), LiveKit and the OpenAI Realtime API. SIP DNS resolution and further
 verbs are planned.
