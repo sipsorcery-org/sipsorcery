@@ -72,16 +72,32 @@ public sealed class IceProbeCommand : CommandBase
             Description = "Only gather relay candidates (sets the ICE transport policy to relay)."
         };
 
+        // Cloudflare TURN options (same as the "cloudflare turn" and "webrtc echo" verbs). When a key ID
+        // and token are supplied, short lived TURN credentials are fetched and added as an ICE server
+        // before gathering, so the probe doubles as a Cloudflare TURN health check.
+        var keyIdOption = CloudflareTurn.CreateKeyIdOption();
+        var tokenOption = CloudflareTurn.CreateTokenOption();
+        var ttlOption = CloudflareTurn.CreateTtlOption();
+        var transportOption = CloudflareTurn.CreateTransportOption();
+
         var command = new Command("probe", "Gather ICE candidates and report them. Fails if a requested STUN/TURN server produces no candidate.");
         command.Options.Add(stunOption);
         command.Options.Add(turnOption);
         command.Options.Add(relayOnlyOption);
+        command.Options.Add(keyIdOption);
+        command.Options.Add(tokenOption);
+        command.Options.Add(ttlOption);
+        command.Options.Add(transportOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
             parseResult.GetValue(stunOption) ?? [],
             parseResult.GetValue(turnOption) ?? [],
             parseResult.GetValue(relayOnlyOption),
+            parseResult.GetValue(keyIdOption),
+            parseResult.GetValue(tokenOption),
+            parseResult.GetValue(ttlOption),
+            parseResult.GetValue(transportOption)!,
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -91,9 +107,11 @@ public sealed class IceProbeCommand : CommandBase
     }
 
     private static async Task<int> RunAsync(string[] stunServers, string[] turnServers, bool relayOnly,
+        string? turnKeyId, string? turnToken, int turnTtl, string turnTransport,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
+        var logger = loggerFactory.CreateLogger(nameof(IceProbeCommand));
 
         var iceServers = new List<RTCIceServer>();
 
@@ -123,11 +141,46 @@ public sealed class IceProbeCommand : CommandBase
             });
         }
 
-        if (relayOnly && turnServers.Length == 0)
+        // If Cloudflare TURN is requested, fetch credentials and add the TURN server to the ICE servers.
+        CloudflareTurn.ResolveCredentials(ref turnKeyId, ref turnToken);
+        bool cloudflareTurnRequested = !string.IsNullOrWhiteSpace(turnKeyId) || !string.IsNullOrWhiteSpace(turnToken);
+        if (cloudflareTurnRequested)
+        {
+            if (string.IsNullOrWhiteSpace(turnKeyId) || string.IsNullOrWhiteSpace(turnToken))
+            {
+                return WriteResult(asJson,
+                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
+                        "Both a Cloudflare TURN key ID and token are required (--key-id/--token or CLOUDFLARE_TURN_KEY_ID/CLOUDFLARE_API_TOKEN)."),
+                    ExitCodes.InvalidArgument);
+            }
+
+            if (!CloudflareTurn.TryResolveTurnUrl(turnTransport, out string turnUrl, out string? urlError))
+            {
+                return WriteResult(asJson,
+                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [], urlError),
+                    ExitCodes.InvalidArgument);
+            }
+
+            var fetch = await CloudflareTurn.FetchIceServerAsync(turnKeyId, turnToken, turnTtl, turnUrl, timeoutSeconds, logger, ct).ConfigureAwait(false);
+            if (fetch.Error != null)
+            {
+                return WriteResult(asJson,
+                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [], $"Could not obtain Cloudflare TURN credentials: {fetch.Error}"),
+                    ExitCodes.Failed);
+            }
+
+            logger.LogDebug("Added Cloudflare TURN server {TurnUrl};{TurnUsername};{TurnCredential} to the ICE channel.", turnUrl, fetch.IceServer?.username, fetch.IceServer?.credential);
+            iceServers.Add(fetch.IceServer!);
+        }
+
+        // A relay candidate is expected if either an explicit --turn server or Cloudflare TURN was requested.
+        bool turnRequested = turnServers.Length > 0 || cloudflareTurnRequested;
+
+        if (relayOnly && !turnRequested)
         {
             return WriteResult(asJson,
                 new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
-                    "--relay-only requires at least one --turn server."),
+                    "--relay-only requires at least one --turn server or Cloudflare TURN (--key-id/--token)."),
                 ExitCodes.InvalidArgument);
         }
 
@@ -185,7 +238,7 @@ public sealed class IceProbeCommand : CommandBase
             {
                 error = "No server reflexive candidate was obtained from the STUN server(s).";
             }
-            else if (turnServers.Length > 0 && !candidates.Any(x => x.Type == RTCIceCandidateType.relay.ToString()))
+            else if (turnRequested && !candidates.Any(x => x.Type == RTCIceCandidateType.relay.ToString()))
             {
                 error = "No relay candidate was obtained from the TURN server(s).";
             }

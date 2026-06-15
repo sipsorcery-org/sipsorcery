@@ -15,6 +15,12 @@
 // and are written as-is; VP8 frames are wrapped in an IVF container, with
 // the dimensions parsed from the first key frame.
 //
+// Optionally a decoder can be supplied (see Create). In that mode the frames
+// are decoded in-process to raw RGB24 pixels and those are sent to the sink
+// instead of the encoded bitstream, so ffplay is started with the rawvideo
+// demuxer. This exercises the SIPSorcery decode path rather than ffplay's own
+// decoder, the difference being where the picture is decoded.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -44,15 +50,29 @@ public sealed class VideoSink : IDisposable
     private const int IVF_HEADER_LENGTH = 32;
     private const uint IVF_TIMEBASE = 90000;          // Matches the RTP video clock.
 
+    // The decode/IO work runs on a dedicated worker thread, NOT the caller's. The WebRTC receive
+    // thread that delivers frames also services ICE/STUN on the same socket, so it must never block
+    // on decode or a stalled pipe. Frames are handed over a bounded queue; when the worker falls
+    // behind the oldest queued frame is dropped rather than stalling the receive thread.
+    private const int MAX_QUEUED_FRAMES = 4;
+
+    private readonly record struct QueuedFrame(byte[] Frame, uint RtpTimestamp, VideoFormat Format);
+
     private readonly SinkMode _mode;
     private readonly string? _filePath;
     private readonly ILogger _logger;
-    private readonly object _lock = new();
+    private readonly IVideoEncoder? _decoder;
+    private readonly object _queueLock = new();
+    private readonly Queue<QueuedFrame> _queue = new();
+
+    private Thread? _worker;
+    private bool _stopping;
+    private int _droppedFrames;
 
     private Stream? _out;
     private FileStream? _file;
     private Process? _ffplay;
-    private bool _failed;
+    private volatile bool _failed;
     private bool _disposed;
     private bool _isVp8;
     private bool _awaitingVp8KeyFrame;
@@ -61,44 +81,56 @@ public sealed class VideoSink : IDisposable
     private bool _hasFirstTimestamp;
     private long _bytesWritten;
     private int _framesWritten;
+    private int _rawWidth;
+    private int _rawHeight;
 
     public bool IsActive => _mode != SinkMode.None;
     public bool IsStdout => _mode == SinkMode.Stdout;
-    public long BytesWritten { get { lock (_lock) { return _bytesWritten; } } }
-    public int FramesWritten { get { lock (_lock) { return _framesWritten; } } }
 
-    private VideoSink(SinkMode mode, string? filePath, ILogger logger)
+    // These counters are written only by the worker thread; read them after Dispose, which joins it.
+    public long BytesWritten => _bytesWritten;
+    public int FramesWritten => _framesWritten;
+    public int DroppedFrames { get { lock (_queueLock) { return _droppedFrames; } } }
+
+    private VideoSink(SinkMode mode, string? filePath, ILogger logger, IVideoEncoder? decoder)
     {
         _mode = mode;
         _filePath = filePath;
         _logger = logger;
+        _decoder = decoder;
     }
 
-    public static VideoSink Create(string? spec, ILogger logger, out string? error)
+    /// <summary>
+    /// Creates a sink for the given spec ("play", a file path, "-" for stdout, or null/empty for no
+    /// sink). When <paramref name="decoder"/> is supplied the frames are decoded in-process to raw
+    /// RGB24 and that is sent to the sink, rather than the encoded bitstream.
+    /// </summary>
+    public static VideoSink Create(string? spec, ILogger logger, out string? error, IVideoEncoder? decoder = null)
     {
         error = null;
 
         if (string.IsNullOrWhiteSpace(spec))
         {
-            return new VideoSink(SinkMode.None, null, logger);
+            return new VideoSink(SinkMode.None, null, logger, decoder);
         }
 
         if (spec == "-")
         {
-            return new VideoSink(SinkMode.Stdout, null, logger);
+            return new VideoSink(SinkMode.Stdout, null, logger, decoder);
         }
 
         if (spec.Equals("play", StringComparison.OrdinalIgnoreCase))
         {
-            return new VideoSink(SinkMode.Play, null, logger);
+            return new VideoSink(SinkMode.Play, null, logger, decoder);
         }
 
-        return new VideoSink(SinkMode.File, spec, logger);
+        return new VideoSink(SinkMode.File, spec, logger, decoder);
     }
 
     /// <summary>
-    /// Writes one depacketised video frame. The first frame fixes the codec and, for VP8,
-    /// writing is deferred until a key frame supplies the dimensions for the IVF header.
+    /// Queues one depacketised video frame for the worker thread and returns immediately, so the
+    /// caller's thread (the WebRTC receive/ICE thread) is never blocked by decode or IO. If the worker
+    /// cannot keep up the oldest queued frame is dropped (see <see cref="DroppedFrames"/>).
     /// </summary>
     public void WriteFrame(byte[] frame, uint rtpTimestamp, VideoFormat format)
     {
@@ -107,70 +139,295 @@ public sealed class VideoSink : IDisposable
             return;
         }
 
-        lock (_lock)
+        // Copy the frame: the caller may reuse its buffer as soon as this returns.
+        byte[] copy = new byte[frame.Length];
+        Buffer.BlockCopy(frame, 0, copy, 0, frame.Length);
+
+        lock (_queueLock)
         {
-            if (_disposed)
+            if (_disposed || _stopping)
             {
-                // Frames can still arrive between the sink closing and the peer connection
-                // closing; drop them silently.
                 return;
             }
 
+            _worker ??= StartWorker();
+
+            if (_queue.Count >= MAX_QUEUED_FRAMES)
+            {
+                // Drop the oldest to keep the freshest frame and never block the receive thread.
+                _queue.Dequeue();
+                _droppedFrames++;
+            }
+
+            _queue.Enqueue(new QueuedFrame(copy, rtpTimestamp, format));
+            Monitor.Pulse(_queueLock);
+        }
+    }
+
+    private Thread StartWorker()
+    {
+        var worker = new Thread(WorkerLoop) { IsBackground = true, Name = "video-sink" };
+        worker.Start();
+        return worker;
+    }
+
+    /// <summary>
+    /// The single consumer thread: dequeues frames and does the decode/IO off the receive thread. The
+    /// first frame fixes the codec and, for VP8, writing is deferred until a key frame supplies the
+    /// IVF dimensions. Exits promptly when stopping, discarding any remaining backlog.
+    /// </summary>
+    private void WorkerLoop()
+    {
+        while (true)
+        {
+            QueuedFrame item;
+            lock (_queueLock)
+            {
+                while (_queue.Count == 0 && !_stopping)
+                {
+                    Monitor.Wait(_queueLock);
+                }
+
+                if (_stopping)
+                {
+                    return;
+                }
+
+                item = _queue.Dequeue();
+            }
+
+            if (_failed)
+            {
+                continue;
+            }
+
+            if (_decoder != null)
+            {
+                WriteDecodedFrame(item.Frame, item.Format);
+            }
+            else
+            {
+                WriteEncodedFrame(item.Frame, item.RtpTimestamp, item.Format);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pass-through path: writes the still-encoded frame, wrapping VP8 in IVF and leaving H264 as
+    /// Annex B. Assumes the caller holds the lock. Decode is delegated to the sink's consumer.
+    /// </summary>
+    private void WriteEncodedFrame(byte[] frame, uint rtpTimestamp, VideoFormat format)
+    {
+        if (_out == null)
+        {
+            _isVp8 = format.Codec == VideoCodecsEnum.VP8;
+            _awaitingVp8KeyFrame = _isVp8;
+            _awaitingH264Sps = format.Codec == VideoCodecsEnum.H264;
+
+            if (!Init(format))
+            {
+                return;
+            }
+        }
+
+        try
+        {
+            if (_isVp8)
+            {
+                if (_awaitingVp8KeyFrame)
+                {
+                    if (!TryParseVp8KeyFrameDimensions(frame, out ushort width, out ushort height))
+                    {
+                        return; // Inter frame before the first key frame; not decodable yet.
+                    }
+
+                    WriteIvfFileHeader(width, height);
+                    _awaitingVp8KeyFrame = false;
+                }
+
+                if (!_hasFirstTimestamp)
+                {
+                    _firstTimestamp = rtpTimestamp;
+                    _hasFirstTimestamp = true;
+                }
+
+                WriteIvfFrameHeader(frame.Length, unchecked(rtpTimestamp - _firstTimestamp));
+            }
+            else if (_awaitingH264Sps)
+            {
+                if (!ContainsH264Sps(frame))
+                {
+                    return; // Frames before the first SPS/PPS reference parameter sets the decoder hasn't seen.
+                }
+
+                _awaitingH264Sps = false;
+            }
+
+            _out!.Write(frame, 0, frame.Length);
+            _out.Flush();
+            _bytesWritten += frame.Length;
+            _framesWritten++;
+        }
+        catch (Exception excp)
+        {
+            _logger.LogWarning("Video sink write failed, no further video will be written: {Error}", excp.Message);
+            _failed = true;
+        }
+    }
+
+    /// <summary>
+    /// Decode path: decodes the frame in-process to raw RGB24 and writes that to the sink. ffplay is
+    /// started with the rawvideo demuxer so the picture has been through the SIPSorcery decoder
+    /// rather than ffplay's. Assumes the caller holds the lock.
+    /// </summary>
+    private void WriteDecodedFrame(byte[] frame, VideoFormat format)
+    {
+        IEnumerable<VideoSample> samples;
+        try
+        {
+            // The decoders (FFmpeg/VP8) always convert to packed 24-bit RGB regardless of the
+            // requested pixel format, so the sink is fixed at rgb24.
+            samples = _decoder!.DecodeVideo(frame, VideoPixelFormatsEnum.Rgb, format.Codec);
+        }
+        catch (Exception excp)
+        {
+            _logger.LogWarning("In-process video decode failed, no further video will be written: {Error}", excp.Message);
+            _failed = true;
+            return;
+        }
+
+        foreach (var sample in samples)
+        {
+            if (sample.Sample == null || sample.Sample.Length == 0 || sample.Width == 0 || sample.Height == 0)
+            {
+                continue;
+            }
+
+            int width = (int)sample.Width;
+            int height = (int)sample.Height;
+
             if (_out == null)
             {
-                _isVp8 = format.Codec == VideoCodecsEnum.VP8;
-                _awaitingVp8KeyFrame = _isVp8;
-                _awaitingH264Sps = format.Codec == VideoCodecsEnum.H264;
+                _rawWidth = width;
+                _rawHeight = height;
 
-                if (!Init(format))
+                if (!InitRaw())
                 {
                     return;
                 }
             }
+            else if (width != _rawWidth || height != _rawHeight)
+            {
+                // ffplay's rawvideo demuxer is fixed to the first frame's size and cannot change mid
+                // stream, so skip a resized frame rather than corrupt the display.
+                _logger.LogWarning("Skipping decoded frame whose {Width}x{Height} differs from the initial {InitW}x{InitH}.",
+                    width, height, _rawWidth, _rawHeight);
+                continue;
+            }
 
             try
             {
-                if (_isVp8)
-                {
-                    if (_awaitingVp8KeyFrame)
-                    {
-                        if (!TryParseVp8KeyFrameDimensions(frame, out ushort width, out ushort height))
-                        {
-                            return; // Inter frame before the first key frame; not decodable yet.
-                        }
-
-                        WriteIvfFileHeader(width, height);
-                        _awaitingVp8KeyFrame = false;
-                    }
-
-                    if (!_hasFirstTimestamp)
-                    {
-                        _firstTimestamp = rtpTimestamp;
-                        _hasFirstTimestamp = true;
-                    }
-
-                    WriteIvfFrameHeader(frame.Length, unchecked(rtpTimestamp - _firstTimestamp));
-                }
-                else if (_awaitingH264Sps)
-                {
-                    if (!ContainsH264Sps(frame))
-                    {
-                        return; // Frames before the first SPS/PPS reference parameter sets the decoder hasn't seen.
-                    }
-
-                    _awaitingH264Sps = false;
-                }
-
-                _out!.Write(frame, 0, frame.Length);
-                _out.Flush();
-                _bytesWritten += frame.Length;
-                _framesWritten++;
+                WriteRawRgb(sample.Sample, width, height);
             }
             catch (Exception excp)
             {
                 _logger.LogWarning("Video sink write failed, no further video will be written: {Error}", excp.Message);
                 _failed = true;
+                return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Writes one decoded RGB24 frame, stripping any row padding the decoder's stride introduced so
+    /// the rawvideo stream is tightly packed at width*3 bytes per row.
+    /// </summary>
+    private void WriteRawRgb(byte[] buffer, int width, int height)
+    {
+        int rowBytes = width * 3;                 // RGB24, 3 bytes per pixel.
+        int stride = buffer.Length / height;
+
+        if (stride == rowBytes)
+        {
+            _out!.Write(buffer, 0, rowBytes * height);
+        }
+        else
+        {
+            for (int row = 0; row < height; row++)
+            {
+                _out!.Write(buffer, row * stride, rowBytes);
+            }
+        }
+
+        _out!.Flush();
+        _bytesWritten += (long)rowBytes * height;
+        _framesWritten++;
+    }
+
+    /// <summary>
+    /// Lazily starts the sink for decoded raw RGB24 output once the first frame's dimensions are
+    /// known. Play mode runs ffplay with the rawvideo demuxer; file/stdout get the raw pixels.
+    /// </summary>
+    private bool InitRaw()
+    {
+        try
+        {
+            switch (_mode)
+            {
+                case SinkMode.File:
+                    _file = new FileStream(_filePath!, FileMode.Create, FileAccess.ReadWrite);
+                    _out = _file;
+                    _logger.LogDebug("Writing decoded raw rgb24 {Width}x{Height} video to {FilePath}.", _rawWidth, _rawHeight, _filePath);
+                    return true;
+
+                case SinkMode.Stdout:
+                    _out = Console.OpenStandardOutput();
+                    Console.Error.WriteLine($"Writing decoded raw rgb24 {_rawWidth}x{_rawHeight} video to stdout.");
+                    return true;
+
+                case SinkMode.Play:
+                    var startInfo = new ProcessStartInfo("ffplay")
+                    {
+                        Arguments = $"-hide_banner -loglevel error -fflags nobuffer -f rawvideo -pixel_format rgb24 -video_size {_rawWidth}x{_rawHeight} -i -",
+                        UseShellExecute = false,
+                        RedirectStandardInput = true,
+                        RedirectStandardError = true
+                    };
+
+                    _ffplay = Process.Start(startInfo);
+                    if (_ffplay == null)
+                    {
+                        throw new ApplicationException("ffplay did not start.");
+                    }
+
+                    _ = Task.Run(async () =>
+                    {
+                        string? line;
+                        while ((line = await _ffplay.StandardError.ReadLineAsync().ConfigureAwait(false)) != null)
+                        {
+                            _logger.LogDebug("ffplay: {Line}", line);
+                        }
+                    });
+
+                    _out = _ffplay.StandardInput.BaseStream;
+                    Console.Error.WriteLine($"Rendering in-process decoded rgb24 {_rawWidth}x{_rawHeight} video with ffplay.");
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+        catch (Exception excp) when (_mode == SinkMode.Play)
+        {
+            _logger.LogError("Could not start ffplay: {Error}. Install ffmpeg (which includes ffplay) and ensure it is on the PATH.", excp.Message);
+            _failed = true;
+            return false;
+        }
+        catch (Exception excp)
+        {
+            _logger.LogError("Could not initialise the video sink: {Error}", excp.Message);
+            _failed = true;
+            return false;
         }
     }
 
@@ -305,45 +562,53 @@ public sealed class VideoSink : IDisposable
 
     public void Dispose()
     {
-        lock (_lock)
+        Thread? worker;
+        lock (_queueLock)
         {
             if (_disposed)
             {
                 return;
             }
             _disposed = true;
+            _stopping = true;
+            Monitor.PulseAll(_queueLock);
+            worker = _worker;
+        }
 
-            try
+        // Stop the worker before finalising the streams it writes to. It exits promptly (discarding
+        // any backlog); the timeout guards against it being blocked on a stalled ffplay pipe.
+        worker?.Join(2000);
+
+        try
+        {
+            if (_file != null)
             {
-                if (_file != null)
+                if (_isVp8 && _framesWritten > 0)
                 {
-                    if (_isVp8 && _framesWritten > 0)
-                    {
-                        // Patch the IVF frame count.
-                        _file.Seek(24, SeekOrigin.Begin);
-                        using var writer = new BinaryWriter(_file, System.Text.Encoding.ASCII, leaveOpen: true);
-                        writer.Write((uint)_framesWritten);
-                    }
-                    _file.Dispose();
+                    // Patch the IVF frame count.
+                    _file.Seek(24, SeekOrigin.Begin);
+                    using var writer = new BinaryWriter(_file, System.Text.Encoding.ASCII, leaveOpen: true);
+                    writer.Write((uint)_framesWritten);
                 }
-                else if (_ffplay != null)
-                {
-                    _ffplay.StandardInput.Close();
-                    if (!_ffplay.WaitForExit(2000))
-                    {
-                        _ffplay.Kill();
-                    }
-                    _ffplay.Dispose();
-                }
-                else
-                {
-                    _out?.Flush();
-                }
+                _file.Dispose();
             }
-            catch (Exception excp)
+            else if (_ffplay != null)
             {
-                _logger.LogDebug("Video sink close error: {Error}", excp.Message);
+                _ffplay.StandardInput.Close();
+                if (!_ffplay.WaitForExit(2000))
+                {
+                    _ffplay.Kill();
+                }
+                _ffplay.Dispose();
             }
+            else
+            {
+                _out?.Flush();
+            }
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("Video sink close error: {Error}", excp.Message);
         }
     }
 }

@@ -35,6 +35,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.FFmpeg;
 
 namespace SIPSorcery.Cli.Commands;
 
@@ -68,7 +69,9 @@ public sealed class WebRtcWhepCommand : CommandBase
         int VideoDuplicates,
         string? Error,
         int? VideoFrames = null,
-        long? VideoBytesWritten = null);
+        long? VideoBytesWritten = null,
+        double? VideoFps = null,
+        int? VideoFramesDropped = null);
 
     public WebRtcWhepCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -98,11 +101,25 @@ public sealed class WebRtcWhepCommand : CommandBase
                           "(the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal."
         };
 
+        var decodeOption = new Option<bool>("--decode")
+        {
+            Description = "Decode the received frames in-process with the SIPSorcery (FFmpeg) video decoder and send " +
+                          "raw RGB to the --video sink, instead of passing the encoded bitstream through for the consumer " +
+                          "to decode (the default). Requires the FFmpeg shared libraries and a --video sink."
+        };
+
+        var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
+        {
+            Description = "Directory containing the FFmpeg shared libraries for --decode. Defaults to the system path."
+        };
+
         var command = new Command("whep", "Connect to a WHEP endpoint (full ICE/DTLS/SRTP) and verify media is received.");
         command.Arguments.Add(urlArg);
         command.Options.Add(tokenOption);
         command.Options.Add(durationOption);
         command.Options.Add(videoOption);
+        command.Options.Add(decodeOption);
+        command.Options.Add(ffmpegPathOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -110,6 +127,8 @@ public sealed class WebRtcWhepCommand : CommandBase
             parseResult.GetValue(tokenOption),
             parseResult.GetValue(durationOption),
             parseResult.GetValue(videoOption),
+            parseResult.GetValue(decodeOption),
+            parseResult.GetValue(ffmpegPathOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -119,7 +138,7 @@ public sealed class WebRtcWhepCommand : CommandBase
     }
 
     private static async Task<int> RunAsync(string url, string? token, int durationSeconds, string? videoOut,
-        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        bool decode, string? ffmpegPath, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcWhepCommand));
@@ -133,7 +152,32 @@ public sealed class WebRtcWhepCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError);
+        if (decode && string.IsNullOrWhiteSpace(videoOut))
+        {
+            return WriteResult(asJson, stdoutClaimed: false,
+                new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0,
+                    "--decode requires a --video sink (e.g. --video play) for the decoded frames."),
+                ExitCodes.InvalidArgument);
+        }
+
+        if (decode)
+        {
+            try
+            {
+                FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, ffmpegPath, logger);
+            }
+            catch (Exception excp)
+            {
+                return WriteResult(asJson, stdoutClaimed: false,
+                    new WhepResult(false, url, null, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0,
+                        $"Could not initialise FFmpeg for --decode: {excp.Message}. Install the FFmpeg shared libraries (e.g. winget install ffmpeg) or pass --ffmpeg-path."),
+                    ExitCodes.TransportError);
+            }
+        }
+
+        // In decode mode the frames are decoded in-process and the raw RGB sent to the sink.
+        using var decoder = decode ? new FFmpegVideoEncoder() : null;
+        using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError, decoder);
 
         if (videoSinkError != null)
         {
@@ -169,12 +213,26 @@ public sealed class WebRtcWhepCommand : CommandBase
             var videoStats = new RtpStreamStats();
             pc.OnRtpPacketReceived += RtpStreamStats.CreateRtpHandler(audioStats, videoStats, logger);
 
-            if (videoSink.IsActive)
+            // Count depacketised video frames and timestamp the first and last for the frame rate
+            // stat (measured first frame to last frame, independent of any sink). When a sink is
+            // active, hand the frame to it (the sink decodes if --decode was set).
+            int videoFramesReceived = 0;
+            long firstFrameTicks = 0;
+            long lastFrameTicks = 0;
+            pc.OnVideoFrameReceived += (remoteEndPoint, timestamp, frame, format) =>
             {
-                // Depacketised (still encoded) frames; decode is delegated to the sink's consumer.
-                pc.OnVideoFrameReceived += (remoteEndPoint, timestamp, frame, format) =>
+                long nowTicks = Stopwatch.GetTimestamp();
+                if (Interlocked.Increment(ref videoFramesReceived) == 1)
+                {
+                    firstFrameTicks = nowTicks;
+                }
+                lastFrameTicks = nowTicks;
+
+                if (videoSink.IsActive)
+                {
                     videoSink.WriteFrame(frame, timestamp, format);
-            }
+                }
+            };
 
             var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             pc.onconnectionstatechange += (state) =>
@@ -268,6 +326,15 @@ public sealed class WebRtcWhepCommand : CommandBase
             // and, in stdout mode, the bitstream completes before the result lands on stderr.
             videoSink.Dispose();
 
+            // Frame rate measured from the first received frame to the last (frames - 1 intervals),
+            // so connection ramp-up and the idle head/tail of the receive window do not skew it.
+            double? videoFps = null;
+            if (videoFramesReceived > 1 && lastFrameTicks > firstFrameTicks)
+            {
+                double frameSpanSeconds = (lastFrameTicks - firstFrameTicks) / (double)Stopwatch.Frequency;
+                videoFps = Math.Round((videoFramesReceived - 1) / frameSpanSeconds, 1);
+            }
+
             return WriteResult(asJson, videoSink.IsStdout,
                 new WhepResult(gotMedia, url, (int)response.StatusCode, pc.connectionState.ToString(),
                     connectTimeMs, durationSeconds * 1000,
@@ -275,7 +342,9 @@ public sealed class WebRtcWhepCommand : CommandBase
                     videoStats.Packets, videoStats.Lost, videoStats.OutOfOrder, videoStats.Duplicates,
                     gotMedia ? null : "The connection succeeded but no media packets were received. Is anything publishing to the stream?",
                     videoSink.IsActive ? videoSink.FramesWritten : null,
-                    videoSink.IsActive ? videoSink.BytesWritten : null),
+                    videoSink.IsActive ? videoSink.BytesWritten : null,
+                    videoFps,
+                    videoSink.IsActive ? videoSink.DroppedFrames : null),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
@@ -326,10 +395,12 @@ public sealed class WebRtcWhepCommand : CommandBase
         }
         else if (result.Success)
         {
-            string videoSink = result.VideoFrames != null ? $", {result.VideoFrames} video frames ({result.VideoBytesWritten} bytes) written" : string.Empty;
+            string dropped = result.VideoFramesDropped > 0 ? $", {result.VideoFramesDropped} dropped" : string.Empty;
+            string videoSink = result.VideoFrames != null ? $", {result.VideoFrames} video frames ({result.VideoBytesWritten} bytes) written{dropped}" : string.Empty;
+            string videoFps = result.VideoFps != null ? $" at {result.VideoFps} fps" : string.Empty;
             output.WriteLine($"Connected to {result.Url} in {result.ConnectTimeMs}ms. " +
                 $"Received {result.AudioPackets} audio ({FormatAnomalies(result.AudioLost, result.AudioOutOfOrder, result.AudioDuplicates)}) and " +
-                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets in {result.MediaDurationMs}ms{videoSink}.");
+                $"{result.VideoPackets} video ({FormatAnomalies(result.VideoLost, result.VideoOutOfOrder, result.VideoDuplicates)}) packets{videoFps} in {result.MediaDurationMs}ms{videoSink}.");
         }
         else
         {
