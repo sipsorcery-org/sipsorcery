@@ -76,7 +76,14 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         int? VideoFramesDropped = null,
         int? TargetFps = null,
         int? PublishedFrames = null,
-        double? PublishedFps = null);
+        double? PublishedFps = null,
+        // Loopback only: whether a video encoder/decoder was active in-process during the timed window.
+        // VideoEncode is false when a pre-encoded bitstream was replayed (encoder out of the loop).
+        bool? VideoEncode = null,
+        bool? VideoDecode = null,
+        // Loopback only: the resolved encode frame dimensions (after preset/--size and codec rounding).
+        int? VideoWidth = null,
+        int? VideoHeight = null);
 
     public WebRtcWhipServerCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
@@ -446,15 +453,20 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(durationSeconds), overallCts.Token), publisherEnded.Task).ConfigureAwait(false);
             mediaWindow.Stop();
 
-            // Stop the in-process publisher (if any) and collect its send-side stats.
+            // Stop the in-process publisher (if any) and collect its send-side stats, including the
+            // resolved encode resolution (the publisher applies the preset/--size and any codec rounding).
             double? publishedFps = null;
             int? publishedFrames = null;
+            int? videoWidth = null;
+            int? videoHeight = null;
             if (publishTask != null)
             {
                 publisherCts!.Cancel();
                 var pubResult = await publishTask.ConfigureAwait(false);
                 publishedFps = pubResult.AchievedFps;
                 publishedFrames = pubResult.FramesSent;
+                videoWidth = pubResult.Width;
+                videoHeight = pubResult.Height;
             }
 
             bool gotMedia = audioStats.Packets + videoStats.Packets > 0;
@@ -472,6 +484,11 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                 videoFps = Math.Round((videoFramesReceived - 1) / frameSpanSeconds, 1);
             }
 
+            // Loopback only (publishSettings != null): report which in-process stages ran for the test.
+            // Encode is "off" when a pre-encoded bitstream was replayed; decode follows the --decode flag.
+            bool? videoEncode = publishSettings != null ? publishSettings.PreEncodeFrames <= 0 : null;
+            bool? videoDecode = publishSettings != null ? decode : null;
+
             return WriteResult(asJson, videoSink.IsStdout,
                 new WhipServerResult(gotMedia, listenUrl, pc.connectionState.ToString(),
                     connectTimeMs, (int)mediaWindow.ElapsedMilliseconds,
@@ -484,7 +501,11 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                     videoSink.IsActive ? videoSink.DroppedFrames : null,
                     publishSettings?.Fps,
                     publishedFrames,
-                    publishedFps),
+                    publishedFps,
+                    videoEncode,
+                    videoDecode,
+                    videoWidth,
+                    videoHeight),
                 gotMedia ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (HttpListenerException excp)

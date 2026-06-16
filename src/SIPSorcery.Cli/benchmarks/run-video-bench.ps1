@@ -14,12 +14,18 @@
 
       DECODE breakpoint - publish with --decode --video null (decode in-process, discard) and sweep
                         --fps upward until the receiver drops more than -DropThreshold of frames. The
-                        last rate under the threshold is the max sustainable decode rate. Driven by
-                        the fast ffmpeg encoder (so the decoder, not the encoder, is the limit) for
-                        H264 and VP8; the decoder is always the SIPSorcery (FFmpeg) decoder.
+                        last rate under the threshold is the max sustainable decode rate. The frames
+                        are pre-encoded once (ffmpeg, -PreEncodeFrames) and the encoded bitstream is
+                        replayed, so no encoding runs during the window and the breakpoint reflects the
+                        decoder alone. The decoder is always the SIPSorcery (FFmpeg) decoder; H264 and VP8.
 
-    Numbers are machine specific and the encode/decode stages share CPU on this one box, so treat
-    them as a snapshot of this machine, not an absolute spec.
+      PLUMBING ceiling - publish flat out (--max-rate) with neither encoder nor decoder: pre-encoded
+                        frames are replayed and the receiver discards them without decoding. The
+                        reported publishedFps is the pure WebRTC transport ceiling (packetise -> SRTP ->
+                        socket -> depacketise), the theoretical maximum the encode/decode stages sit under.
+
+    Numbers are machine specific, so treat them as a snapshot of this machine, not an absolute spec.
+    With -PreEncodeFrames 0 the decode probe encodes live, so encode and decode then share CPU.
 
 .NOTES
     Run from anywhere; paths are resolved relative to this script. Requires the .NET SDK and, for the
@@ -34,6 +40,11 @@ param(
     # auto-bitrate scales with the probe fps (hundreds of Mbps at high fps), which makes every encode
     # measurement bitrate-bound rather than encoder-speed-bound. Ignored by vp8.net (fixed quantiser).
     [hashtable] $PresetBitrate = @{ '360p' = 700000; '480p' = 1500000; '720p' = 4000000; '1080p' = 8000000; '1440p' = 16000000; '2160p' = 25000000; '4k' = 25000000 },
+    # Frames the decode probe pre-encodes once and then replays over the network, so no encoding runs
+    # during the decode measurement (the encoder is fully out of the hot loop, isolating decode). 0
+    # disables it and encodes live. Higher gives more distinct frames at the cost of longer per-cell
+    # startup; pre-encode happens before connecting, so it does not eat the receiver's media window.
+    [int]      $PreEncodeFrames = 300,
     [double]   $DropThreshold = 0.10,
     [int]      $DurationSeconds = 6,
     [int]      $Runs = 1,
@@ -75,12 +86,12 @@ function Get-Median([double[]] $values) {
     return $sorted[[int][math]::Floor(($sorted.Count - 1) / 2)]
 }
 
-# Runs one whip-server --publish measurement and returns the parsed JSON (or $null on failure).
 function Get-PresetBitrate([string] $preset) {
     if ($PresetBitrate.ContainsKey($preset)) { return [int]$PresetBitrate[$preset] } else { return 0 }
 }
 
-function Invoke-Cell([string] $encoder, [string] $codec, [string] $preset, [int] $fps, [bool] $decode, [int] $bitrate = 0) {
+# Runs one "webrtc loopback" measurement and returns the parsed JSON (or $null on failure).
+function Invoke-Cell([string] $encoder, [string] $codec, [string] $preset, [int] $fps, [bool] $decode, [int] $bitrate = 0, [int] $preEncode = 0, [bool] $maxRate = $false) {
     $cliArgs = @(
         'webrtc', 'loopback', '--json',
         '--listen', $listenUrl,
@@ -88,10 +99,12 @@ function Invoke-Cell([string] $encoder, [string] $codec, [string] $preset, [int]
         '--preset', $preset,
         '--fps', $fps,
         '-d', $DurationSeconds,
-        '-t', ($DurationSeconds + 20)
+        '-t', ($DurationSeconds + 60)
     )
     if ($codec) { $cliArgs += @('--codec', $codec) }
     if ($bitrate -gt 0) { $cliArgs += @('--bitrate', $bitrate) }
+    if ($preEncode -gt 0) { $cliArgs += @('--pre-encode', $preEncode) }
+    if ($maxRate) { $cliArgs += '--max-rate' }
     if ($decode) { $cliArgs += @('--decode', '--video', 'null') }
     if ($FfmpegPath) { $cliArgs += @('--ffmpeg-path', $FfmpegPath) }
 
@@ -113,8 +126,10 @@ function Measure-EncodeCeiling($cfg, [string] $preset) {
     return [math]::Round((Get-Median $samples), 1)
 }
 
-# Sweep --fps with the ffmpeg encoder + in-process decode; return the highest rate whose median drop
-# stays at or below the threshold (and where the sender actually delivered the rate).
+# Sweep --fps with in-process decode; return the highest rate whose median drop stays at or below the
+# threshold (and where the sender actually delivered the rate). When $PreEncodeFrames > 0 the frames
+# are encoded once up front (ffmpeg) and replayed, so no encoding runs during the window and the
+# breakpoint reflects the decoder alone rather than encode+decode sharing CPU.
 function Measure-DecodeBreakpoint([string] $codec, [string] $preset) {
     $bitrate = Get-PresetBitrate $preset
     $best = 0
@@ -122,7 +137,7 @@ function Measure-DecodeBreakpoint([string] $codec, [string] $preset) {
         $dropSamples = @()
         $delivered = $true
         for ($i = 0; $i -lt $Runs; $i++) {
-            $r = Invoke-Cell 'ffmpeg' $codec $preset $fps $true $bitrate
+            $r = Invoke-Cell 'ffmpeg' $codec $preset $fps $true $bitrate $PreEncodeFrames
             if (-not ($r -and $r.success)) { $delivered = $false; break }
             # The decode test is only valid if the sender kept up (decoder actually stressed at fps).
             if ($null -eq $r.publishedFps -or [double]$r.publishedFps -lt 0.9 * $fps) { $delivered = $false; break }
@@ -137,6 +152,23 @@ function Measure-DecodeBreakpoint([string] $codec, [string] $preset) {
         if ($medianDrop -le $DropThreshold) { $best = $fps } else { break }
     }
     return $best
+}
+
+# Median publishedFps flat out with neither encoder nor decoder in the loop: frames are pre-encoded
+# (ffmpeg) and replayed, the receiver discards them without decoding. This is the pure WebRTC plumbing
+# ceiling - packetise -> SRTP -> socket -> SRTP -> depacketise - i.e. the theoretical maximum the
+# encode/decode stages sit under. Uses --max-rate because the plumbing far outruns the paced ladder.
+function Measure-PlumbingCeiling([string] $preset) {
+    $bitrate = Get-PresetBitrate $preset
+    # Always replay a pre-encoded ring (so there is no encoder) even if -PreEncodeFrames is 0.
+    $preEncode = if ($PreEncodeFrames -gt 0) { $PreEncodeFrames } else { 300 }
+    $samples = @()
+    for ($i = 0; $i -lt $Runs; $i++) {
+        $r = Invoke-Cell 'ffmpeg' 'h264' $preset $EncodeProbeFps $false $bitrate $preEncode $true
+        if ($r -and $r.success -and $null -ne $r.publishedFps) { $samples += [double]$r.publishedFps }
+    }
+    if ($samples.Count -eq 0) { return [double]::NaN }
+    return [math]::Round((Get-Median $samples), 1)
 }
 
 # ---------------------------------------------------------------------------
@@ -155,6 +187,8 @@ foreach ($preset in $Presets) {
         Write-Host "  decode $($cfg.Label) ..."
         $row["dec:$($cfg.Label)"] = Measure-DecodeBreakpoint $cfg.Codec $preset
     }
+    Write-Host "  plumbing (no codec) ..."
+    $row["plumbing"] = Measure-PlumbingCeiling $preset
 
     $rows += [pscustomobject]$row
 }
@@ -162,8 +196,8 @@ foreach ($preset in $Presets) {
 # ---------------------------------------------------------------------------
 # Emit results.json and RESULTS.md.
 # ---------------------------------------------------------------------------
-$columns = @('enc:vp8.net', 'enc:ffmpeg H264', 'enc:ffmpeg VP8', 'dec:H264', 'dec:VP8')
-$headers = @('Encode vp8.net', 'Encode ffmpeg H264', 'Encode ffmpeg VP8', 'Decode H264', 'Decode VP8')
+$columns = @('enc:vp8.net', 'enc:ffmpeg H264', 'enc:ffmpeg VP8', 'dec:H264', 'dec:VP8', 'plumbing')
+$headers = @('Encode vp8.net', 'Encode ffmpeg H264', 'Encode ffmpeg VP8', 'Decode H264', 'Decode VP8', 'Plumbing (no codec)')
 
 # Capture the machine the benchmark ran on so the numbers have context.
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
@@ -180,9 +214,12 @@ $machine = [PSCustomObject]@{
 $md = [System.Text.StringBuilder]::new()
 [void]$md.AppendLine('# Video pipeline capacity')
 [void]$md.AppendLine('')
-[void]$md.AppendLine("Maximum sustainable frame rate (fps), encoded at a realistic per-preset bitrate. " +
+[void]$md.AppendLine("Maximum sustainable frame rate (fps), at a realistic per-preset bitrate. " +
     "Encode = encoder ceiling (publish flat out). Decode = highest rate under $([int]($DropThreshold*100))% " +
-    "received-frame loss (SIPSorcery FFmpeg decoder, driven by ffmpeg).")
+    "received-frame loss for the SIPSorcery FFmpeg decoder" +
+    $(if ($PreEncodeFrames -gt 0) { ", fed a pre-encoded bitstream so no encoding competes for CPU. " } else { ", with frames encoded live (encode and decode share CPU). " }) +
+    "Plumbing (no codec) = the transport ceiling with neither encoder nor decoder (pre-encoded frames " +
+    "replayed flat out, received and discarded): packetise -> SRTP -> socket -> depacketise only.")
 [void]$md.AppendLine('')
 [void]$md.AppendLine('## Machine')
 [void]$md.AppendLine('')

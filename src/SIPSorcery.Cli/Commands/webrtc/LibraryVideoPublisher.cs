@@ -37,6 +37,11 @@ public static class LibraryVideoPublisher
     private const int H264_PAYLOAD_ID = 100;
     private const uint VIDEO_CLOCK_RATE = 90000;
     private const int RING_SIZE = 16;
+    // The publisher reaching "connected" can slightly precede the receiver finishing its SRTP context
+    // setup. Settle briefly before the first frame so the opening keyframe is not dropped by the
+    // receiver ("packet received before secure context ready"). A live encoder's first-frame latency
+    // hides this; pre-encode replay, which sends instantly on connect, would otherwise expose it.
+    private const int CONNECT_SETTLE_MS = 200;
     private const double BITS_PER_PIXEL_PER_FRAME = 0.1;
 
     /// <summary>
@@ -208,6 +213,10 @@ public static class LibraryVideoPublisher
 
             long connectTimeMs = stopwatch.ElapsedMilliseconds;
             logger.LogDebug("Connected in {ConnectTimeMs}ms, publishing {Width}x{Height} {Codec}.", connectTimeMs, cfg.Width, cfg.Height, cfg.CodecName);
+
+            // Let the receiver finish installing its SRTP context before the first frame (see CONNECT_SETTLE_MS).
+            try { await Task.Delay(CONNECT_SETTLE_MS, ct).ConfigureAwait(false); }
+            catch (OperationCanceledException) { return Fail(ExitCodes.Timeout, pc.connectionState.ToString(), "Cancelled.", cfg, connectTimeMs); }
 
             // ---- Send loop: send paced to the frame rate or flat out. In live mode each frame is
             // generated and encoded in the loop; in pre-encode mode the encoded ring is replayed. ----

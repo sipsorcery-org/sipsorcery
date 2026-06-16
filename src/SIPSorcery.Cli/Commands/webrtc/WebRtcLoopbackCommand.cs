@@ -119,6 +119,12 @@ public sealed class WebRtcLoopbackCommand : CommandBase
                           "--decode) from the encoder. 0 (default) encodes live in the send loop."
         };
 
+        var maxRateOption = new Option<bool>("--max-rate")
+        {
+            Description = "Send as fast as the encoder/replay and transport allow (ignores --fps), to measure the pipeline " +
+                          "ceiling. Pair with --pre-encode and no --decode to get the pure transport (packetise/SRTP) ceiling."
+        };
+
         var command = new Command("loopback",
             "Publish a test pattern to an in-process WHIP receiver and report on it: a self-contained encode, network and decode loop in one process.");
         command.Options.Add(listenOption);
@@ -134,6 +140,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
         command.Options.Add(codecOption);
         command.Options.Add(bitrateOption);
         command.Options.Add(preEncodeOption);
+        command.Options.Add(maxRateOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => WebRtcWhipServerCommand.RunReceiverAsync(
@@ -143,8 +150,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
             parseResult.GetValue(videoOption),
             parseResult.GetValue(decodeOption),
             parseResult.GetValue(ffmpegPathOption),
-            // DurationSeconds 0: the publisher runs until the receiver stops it at the end of the media
-            // window. MaxRate false: paced to --fps.
+            // DurationSeconds 0: the publisher runs until the receiver stops it at the end of the media window.
             new LibraryVideoPublisher.Settings(
                 parseResult.GetValue(presetOption)!,
                 parseResult.GetValue(sizeOption),
@@ -152,7 +158,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
                 parseResult.GetValue(encoderOption)!,
                 parseResult.GetValue(codecOption),
                 parseResult.GetValue(bitrateOption),
-                false,
+                parseResult.GetValue(maxRateOption),
                 parseResult.GetValue(ffmpegPathOption),
                 0,
                 parseResult.GetValue(preEncodeOption)),

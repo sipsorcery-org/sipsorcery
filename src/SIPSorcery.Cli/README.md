@@ -103,6 +103,8 @@ ffmpeg `
 # Resolution presets are 360p/480p/720p/1080p/1440p/4k (or --size WxH), with --encoder (vp8.net or
 # ffmpeg), --fps, --codec (ffmpeg: h264 or vp8), --bitrate and --video. The result JSON reports both
 # the send side (publishedFps) and the receive side (videoFps), so it doubles as a quick throughput check.
+# videoEncode/videoDecode flag whether an encoder/decoder actually ran in-process for the test
+# (videoEncode is false when --pre-encode replays a bitstream; videoDecode follows --decode).
 sipsorcery webrtc loopback --preset 1080p -d 10                 # 1080p30 loop, measure send + receive fps
 sipsorcery webrtc loopback --preset 720p --video play -d 30     # publish + view the received stream
 # By default received frames are passed straight to the sink (ffplay decodes them). Add --decode to
@@ -110,6 +112,13 @@ sipsorcery webrtc loopback --preset 720p --video play -d 30     # publish + view
 # picture goes through the library's decode path. Needs the FFmpeg shared libraries.
 sipsorcery webrtc loopback --video play --decode -d 30          # library-decoded, rendered raw
 sipsorcery webrtc loopback --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
+# To measure the DECODE stage on its own, add --pre-encode N: it encodes N frames once before
+# connecting, then replays that bitstream, so no encoding runs during the window (the encoder is out
+# of the hot loop and not competing for CPU). Pair it with --decode --video null for headless decode.
+sipsorcery webrtc loopback --preset 1080p --fps 120 --pre-encode 300 --decode --video null -d 10
+# --max-rate sends flat out (ignoring --fps). With --pre-encode and no --decode it gives the pure
+# transport ceiling (packetise -> SRTP -> socket -> depacketise, no codec): the pipeline's theoretical max.
+sipsorcery webrtc loopback --preset 1080p --pre-encode 300 --max-rate -d 10
 # WebRTC WHIP publish (library sender): publish a generated test pattern to a WHIP endpoint using the
 # SIPSorcery stack itself -- the full SEND pipeline (generate -> encode -> RTP/SRTP -> ICE/DTLS). It
 # is the counterpart to "video-bench", which measures the encoder but stops before the network.

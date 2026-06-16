@@ -18,9 +18,14 @@ it back. No second terminal, no real network.
   decode; the reported `publishedFps` is the encoder's max sustainable rate. Measured for `vp8.net`,
   `ffmpeg` H264 and `ffmpeg` VP8.
 - **Decode breakpoint** — publish with `--decode --video null` (decode in-process, discard) and sweep
-  `--fps` upward until the receiver drops more than the threshold (default 10%) of frames. Driven by
-  the fast `ffmpeg` encoder so the **decoder** is the limit, not the encoder. The decoder is always
-  the SIPSorcery (FFmpeg) decoder; measured for H264 and VP8.
+  `--fps` upward until the receiver drops more than the threshold (default 10%) of frames. The frames
+  are **pre-encoded once** with `ffmpeg` (`-PreEncodeFrames`, default 300) and the encoded bitstream is
+  replayed, so **no encoding runs during the window** — the breakpoint reflects the decoder alone, not
+  encode and decode sharing CPU. The decoder is always the SIPSorcery (FFmpeg) decoder; H264 and VP8.
+- **Plumbing (no codec)** — publish flat out (`--max-rate`) with **neither encoder nor decoder**:
+  pre-encoded frames are replayed and the receiver discards them without decoding. The reported
+  `publishedFps` is the pure WebRTC transport ceiling (packetise → SRTP → socket → depacketise) — the
+  theoretical maximum the encode and decode stages sit under.
 
 ## Run it
 
@@ -36,6 +41,7 @@ Useful parameters (all optional):
 | `-Presets` | `480p 720p 1080p 1440p 4k` | Resolutions to test. |
 | `-FpsLadder` | `15 30 60 90 120` | Decode sweep points. **Extend above the expected max** — if decode never crosses the threshold the result is the ladder's top value (a "≥"). |
 | `-EncodeProbeFps` | `500` | The flat-out target for the encode ceiling probe. |
+| `-PreEncodeFrames` | `300` | Frames the decode probe pre-encodes once and replays, so no encoding runs during the decode measurement (isolates decode). `0` encodes live (encode + decode share CPU). Pre-encoding happens before connecting, so it does not eat the media window. |
 | `-PresetBitrate` | per-preset map | Realistic ffmpeg encoder bitrate (bps) per preset. Without it the encoder's auto-bitrate scales with the probe fps (hundreds of Mbps), making every measurement bitrate-bound instead of encoder-speed-bound. Ignored by `vp8.net`. |
 | `-DropThreshold` | `0.10` | Decode loss fraction that defines the breakpoint. |
 | `-DurationSeconds` | `6` | Seconds of media per run. |
@@ -53,8 +59,10 @@ is out of the measurement loop.
 
 ## Caveats
 
-- **One box, shared CPU.** With `--decode` the in-process encoder and decoder compete; the decode
-  breakpoint is "combined" capacity, not isolated decode.
+- **One box.** Encode and decode are measured separately. With the default `-PreEncodeFrames`, the
+  decode probe replays a pre-encoded stream so the encoder is out of the loop and the breakpoint is
+  the decoder's own ceiling; set `-PreEncodeFrames 0` to instead encode live, in which case the
+  in-process encoder and decoder compete and the breakpoint is "combined" capacity.
 - **`vp8.net` is single-threaded managed** and caps low, especially at high resolutions — the
   interesting high-rate numbers come from the `ffmpeg` encoder.
 - **Decode is FFmpeg for every codec**, so "Decode VP8" and "Decode H264" are the FFmpeg decoder on
