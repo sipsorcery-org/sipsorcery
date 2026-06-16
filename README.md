@@ -93,6 +93,28 @@ For Windows the easiest option is:
 winget install "FFmpeg (Shared)" --version 8.1
 ````
 
+# Video Pipeline Capacity
+
+Maximum sustainable frame rate (fps), at a realistic per-preset bitrate. Encode = encoder ceiling (publish flat out). Decode = highest rate under 10% received-frame loss for the named decoder (FFmpeg, or managed vp8.net for the vp8.net column, which is capped at <=1080p), fed a pre-encoded bitstream so no encoding competes for CPU. Plumbing (no codec) = the transport ceiling with neither encoder nor decoder (pre-encoded frames replayed flat out, received and discarded): packetise -> SRTP -> socket -> depacketise only.
+
+## Machine
+
+| CPU | Cores | Logical processors | Memory |
+| --- | --- | --- | --- |
+| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
+
+## Results
+
+| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
+|---|---|---|---|---|---|---|---|
+| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
+| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
+| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
+| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
+| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
+
+_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._
+
 ## Documentation
 
 Class reference documentation and articles explaining common usage are available at [https://sipsorcery-org.github.io/sipsorcery/](https://sipsorcery-org.github.io/sipsorcery/).
