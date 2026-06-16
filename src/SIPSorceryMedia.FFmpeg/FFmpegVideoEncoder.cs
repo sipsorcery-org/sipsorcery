@@ -273,7 +273,10 @@ namespace SIPSorceryMedia.FFmpeg
                 if (_bit_rate_tolerance != null) _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance;
                 if (_rc_min_rate != null) _encoderContext->rc_min_rate = (long)_rc_min_rate;
                 if (_rc_max_rate != null) _encoderContext->rc_max_rate = (long)_rc_max_rate;
-                if (_thread_count != null) _encoderContext->thread_count = (int)_thread_count;
+                // Default to auto (0) so encoding uses all available cores; callers can pin a specific
+                // count via SetThreadCount. Single threaded (the libavcodec default if left unset) is far
+                // too slow at higher resolutions.
+                _encoderContext->thread_count = _thread_count ?? 0;
 
                 // Set Key frame interval
                 if (fps < 5)
@@ -283,26 +286,35 @@ namespace SIPSorceryMedia.FFmpeg
 
                 try
                 {
-                    // provide tunings for known codecs
+                    // Real-time oriented defaults for the common encoders: a fast preset / cpu-used,
+                    // low-latency tuning and (via thread_count above) multi-threading. These suit the
+                    // typical WebRTC/live use case; callers wanting different trade-offs override them
+                    // through encoderOptions, which are applied after this block.
                     switch (cdcname)
                     {
                         case "libx264":
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "veryfast", 0).ThrowExceptionIfError();
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
                             break;
                         case "h264_qsv":
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "66" /* baseline */, 0).ThrowExceptionIfError();
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "7" /* veryfast */, 0).ThrowExceptionIfError();
                             break;
+                        case "libx265":
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                            break;
                         case "libvpx":
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", DEFAULT_LIBVPX_REALTIME_CPU_USED, 0).ThrowExceptionIfError();
                             break;
-                        case "libx265":
-                            //ffmpeg.av_opt_set(_encoderContext->priv_data, "forced-idr", "1", 0).ThrowExceptionIfError();
-                            //ffmpeg.av_opt_set(_encoderContext->priv_data, "crf", "28", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                        case "libvpx-vp9":
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                            // VP9 realtime cpu-used range is 0-9 (higher is faster); row-mt enables
+                            // tile-row multi-threading which is what makes VP9 keep up at high rates.
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
                             break;
                         default:
                             break;
