@@ -145,6 +145,7 @@ class Program
 
         var testPattern = new VideoTestPatternSource();
         var videoSource = new FFmpegVideoEndPoint();
+        //videoSource.RestrictFormats(f => f.Codec == SIPSorceryMedia.Abstractions.VideoCodecsEnum.AV1);
         var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
 
         MediaStreamTrack videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);

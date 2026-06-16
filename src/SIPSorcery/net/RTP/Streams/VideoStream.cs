@@ -34,6 +34,9 @@ namespace SIPSorcery.Net
         private VideoFormat sendingFormat;
         private bool sendingFormatFound = false;
 
+        // Monotonically increasing 15-bit VP9 picture ID, stamped on the descriptor of every VP9 frame sent.
+        private int _vp9PictureId = 0;
+
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common video formats is set.
         /// </summary>
@@ -267,6 +270,42 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends a VP9 encoded frame as one or more RTP packets.
+        /// </summary>
+        /// <param name="duration">The duration in timestamp units of the payload. Needs to be based on a 90KHz clock.</param>
+        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
+        /// <param name="buffer">The VP9 encoded frame.</param>
+        public void SendVp9Frame(uint duration, int payloadTypeID, byte[] buffer)
+        {
+            if (CheckIfCanSendRtpRaw())
+            {
+                try
+                {
+                    bool isKeyFrame = Vp9Packetiser.IsKeyFrame(buffer);
+                    var packets = Vp9Packetiser.Packetize(buffer, RTPSession.RTP_MAX_PAYLOAD, isKeyFrame, _vp9PictureId);
+
+                    for (int i = 0; i < packets.Count; i++)
+                    {
+                        int markerBit = (i == packets.Count - 1) ? 1 : 0; // Marker bit set on the last packet of the frame.
+
+                        SetRtpHeaderExtensionValue(TransportWideCCExtension.RTP_HEADER_EXTENSION_URI, null);
+                        SendRtpRaw(packets[i], LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                    }
+
+                    if (packets.Count > 0)
+                    {
+                        LocalTrack.Timestamp += duration;
+                        _vp9PictureId = (_vp9PictureId + 1) & Vp9Packetiser.MAX_PICTURE_ID;
+                    }
+                }
+                catch (SocketException sockExcp)
+                {
+                    logger.LogError(sockExcp, "SocketException SendVp9Frame.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Sends an AV1 temporal unit as one or more RTP packets.
         /// </summary>
         /// <param name="duration"> The duration in timestamp units of the payload. Needs
@@ -369,6 +408,9 @@ namespace SIPSorcery.Net
                 case VideoCodecsEnum.VP8:
                     SendVp8Frame(durationRtpUnits, payloadID, sample);
                     break;
+                case VideoCodecsEnum.VP9:
+                    SendVp9Frame(durationRtpUnits, payloadID, sample);
+                    break;
                 case VideoCodecsEnum.AV1:
                     SendAv1Frame(durationRtpUnits, payloadID, sample);
                     break;
@@ -410,6 +452,7 @@ namespace SIPSorcery.Net
             else
             {
                 if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
+                    format.ToVideoFormat().Codec == VideoCodecsEnum.VP9 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.AV1 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H264 ||
                     format.ToVideoFormat().Codec == VideoCodecsEnum.H265 ||

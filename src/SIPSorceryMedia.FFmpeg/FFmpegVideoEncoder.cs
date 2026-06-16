@@ -316,6 +316,25 @@ namespace SIPSorceryMedia.FFmpeg
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
                             break;
+                        case "libaom-av1":
+                            // libaom's default (good/best) is far too slow for live use; usage=realtime
+                            // plus a high cpu-used (0-11 in realtime, higher is faster) and row-mt makes it
+                            // usable, though it is still the slowest of the software encoders.
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "usage", "realtime", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
+                            break;
+                        case "libsvtav1":
+                            // SVT-AV1 is the realtime-oriented AV1 encoder. preset 0-13 (higher is faster);
+                            // the high presets plus a low-latency, low-delay prediction structure suit live.
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "11", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "svtav1-params", "lp=0:pred-struct=1", 0).ThrowExceptionIfError();
+                            break;
+                        case "librav1e":
+                            // rav1e exposes speed 0-10 (higher is faster); use a fast, low-latency setting.
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "speed", "10", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "low_latency", "true", 0).ThrowExceptionIfError();
+                            break;
                         default:
                             break;
                     }
