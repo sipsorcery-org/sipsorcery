@@ -108,10 +108,12 @@ ffmpeg `
 sipsorcery webrtc loopback --preset 1080p -d 10                 # 1080p30 loop, measure send + receive fps
 sipsorcery webrtc loopback --preset 720p --video play -d 30     # publish + view the received stream
 # By default received frames are passed straight to the sink (ffplay decodes them). Add --decode to
-# instead decode in-process with the SIPSorcery (FFmpeg) decoder and send raw RGB to the sink, so the
-# picture goes through the library's decode path. Needs the FFmpeg shared libraries.
-sipsorcery webrtc loopback --video play --decode -d 30          # library-decoded, rendered raw
+# instead decode in-process and send raw RGB to the sink, so the picture goes through the library's
+# decode path. --decoder selects ffmpeg (default, any codec; needs the FFmpeg libraries) or vp8.net
+# (managed Vpx.Net, VP8 only -- and only reliable on vp8.net-encoded VP8; it can crash on FFmpeg's VP8).
+sipsorcery webrtc loopback --video play --decode -d 30          # library-decoded (ffmpeg), rendered raw
 sipsorcery webrtc loopback --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
+sipsorcery webrtc loopback --encoder vp8.net --codec vp8 --decode --decoder vp8.net --video null -d 10  # managed VP8 round-trip
 # To measure the DECODE stage on its own, add --pre-encode N: it encodes N frames once before
 # connecting, then replays that bitstream, so no encoding runs during the window (the encoder is out
 # of the hot loop and not competing for CPU). Pair it with --decode --video null for headless decode.

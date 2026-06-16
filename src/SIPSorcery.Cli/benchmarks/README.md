@@ -19,9 +19,14 @@ it back. No second terminal, no real network.
   `ffmpeg` H264 and `ffmpeg` VP8.
 - **Decode breakpoint** — publish with `--decode --video null` (decode in-process, discard) and sweep
   `--fps` upward until the receiver drops more than the threshold (default 10%) of frames. The frames
-  are **pre-encoded once** with `ffmpeg` (`-PreEncodeFrames`, default 300) and the encoded bitstream is
-  replayed, so **no encoding runs during the window** — the breakpoint reflects the decoder alone, not
-  encode and decode sharing CPU. The decoder is always the SIPSorcery (FFmpeg) decoder; H264 and VP8.
+  are **pre-encoded once** (`-PreEncodeFrames`, default 300) and the encoded bitstream is replayed, so
+  **no encoding runs during the window** — the breakpoint reflects the decoder alone, not encode and
+  decode sharing CPU. Three columns:
+  - **Decode H264 (ffmpeg)** / **Decode VP8 (ffmpeg)** — the SIPSorcery FFmpeg decoder, driven by the FFmpeg encoder.
+  - **Decode VP8 (vp8.net)** — the managed Vpx.Net VP8 decoder, driven by the **vp8.net** encoder. It
+    must use its own encoder's bitstream: the managed decoder crashes on FFmpeg-encoded VP8 (a Vpx.Net
+    inter-prediction bug). Because vp8.net encode is slow, this column is **capped at ≤1080p** (larger
+    presets show `n/a`); the decode measurement is still valid, only the one-time pre-encode would be too slow.
 - **Plumbing (no codec)** — publish flat out (`--max-rate`) with **neither encoder nor decoder**:
   pre-encoded frames are replayed and the receiver discards them without decoding. The reported
   `publishedFps` is the pure WebRTC transport ceiling (packetise → SRTP → socket → depacketise) — the

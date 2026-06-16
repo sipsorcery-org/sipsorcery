@@ -41,6 +41,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
+using Vpx.Net;
 
 namespace SIPSorcery.Cli.Commands;
 
@@ -117,14 +118,20 @@ public sealed class WebRtcWhipServerCommand : CommandBase
 
         var decodeOption = new Option<bool>("--decode")
         {
-            Description = "Decode the received frames in-process with the SIPSorcery (FFmpeg) video decoder and send " +
-                          "raw RGB to the --video sink, instead of passing the encoded bitstream through for the consumer " +
-                          "to decode (the default). Requires the FFmpeg shared libraries and a --video sink."
+            Description = "Decode the received frames in-process (see --decoder) and send raw RGB to the --video sink, " +
+                          "instead of passing the encoded bitstream through for the consumer to decode (the default). " +
+                          "Requires a --video sink."
+        };
+
+        var decoderOption = new Option<string>("--decoder")
+        {
+            Description = "With --decode: the decoder, ffmpeg (SIPSorceryMedia.FFmpeg, any codec) or vp8.net (managed Vpx.Net, VP8 only).",
+            DefaultValueFactory = _ => "ffmpeg"
         };
 
         var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
         {
-            Description = "Directory containing the FFmpeg shared libraries for --decode. Defaults to the system path."
+            Description = "Directory containing the FFmpeg shared libraries for the ffmpeg --decoder. Defaults to the system path."
         };
 
         var command = new Command("whip-server", "Act as a WHIP endpoint: accept a publisher's offer (e.g. from ffmpeg or OBS) and report on the received media.");
@@ -133,6 +140,7 @@ public sealed class WebRtcWhipServerCommand : CommandBase
         command.Options.Add(durationOption);
         command.Options.Add(videoOption);
         command.Options.Add(decodeOption);
+        command.Options.Add(decoderOption);
         command.Options.Add(ffmpegPathOption);
         AddCommonOptions(command);
 
@@ -142,6 +150,7 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             parseResult.GetValue(durationOption),
             parseResult.GetValue(videoOption),
             parseResult.GetValue(decodeOption),
+            parseResult.GetValue(decoderOption)!,
             parseResult.GetValue(ffmpegPathOption),
             // No in-process publisher: this verb is a pure receiver for an external publisher.
             publishSettings: null,
@@ -160,7 +169,7 @@ public sealed class WebRtcWhipServerCommand : CommandBase
     /// self-contained loop (this is what the "webrtc loopback" verb uses).
     /// </summary>
     internal static async Task<int> RunReceiverAsync(string listenUrl, string? token, int durationSeconds, string? videoOut,
-        bool decode, string? ffmpegPath, LibraryVideoPublisher.Settings? publishSettings,
+        bool decode, string decoderName, string? ffmpegPath, LibraryVideoPublisher.Settings? publishSettings,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -176,6 +185,8 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
+        decoderName = decoderName.ToLowerInvariant();
+
         if (decode && string.IsNullOrWhiteSpace(videoOut))
         {
             return WriteResult(asJson, stdoutClaimed: false,
@@ -184,7 +195,16 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        if (decode)
+        if (decode && decoderName != "ffmpeg" && decoderName != "vp8.net")
+        {
+            return WriteResult(asJson, stdoutClaimed: false,
+                new WhipServerResult(false, listenUrl, "new", null, null, 0, 0, 0, 0, 0, 0, 0, 0,
+                    $"Unknown --decoder \"{decoderName}\". Expected ffmpeg (any codec) or vp8.net (managed VP8 only)."),
+                ExitCodes.InvalidArgument);
+        }
+
+        // The managed vp8.net decoder needs no native libraries; only the FFmpeg decoder requires init.
+        if (decode && decoderName == "ffmpeg")
         {
             try
             {
@@ -206,8 +226,10 @@ public sealed class WebRtcWhipServerCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        // In decode mode the frames are decoded in-process and the raw RGB sent to the sink.
-        using var decoder = decode ? new FFmpegVideoEncoder() : null;
+        // In decode mode the frames are decoded in-process and the raw RGB sent to the sink. The
+        // decoder is the SIPSorcery FFmpeg decoder (any codec) or the managed Vpx.Net VP8 decoder.
+        using IVideoEncoder? decoder = !decode ? null
+            : (decoderName == "vp8.net" ? (IVideoEncoder)new VP8Codec() : new FFmpegVideoEncoder());
         // When self-publishing we know the source frame rate, so pass it through for the decoded
         // play path (ffplay's rawvideo default of 25 fps would otherwise throttle a faster source).
         using var videoSink = VideoSink.Create(videoOut, logger, out string? videoSinkError, decoder, publishSettings?.Fps ?? 0);

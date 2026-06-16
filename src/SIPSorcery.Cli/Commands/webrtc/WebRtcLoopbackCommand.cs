@@ -69,14 +69,20 @@ public sealed class WebRtcLoopbackCommand : CommandBase
 
         var decodeOption = new Option<bool>("--decode")
         {
-            Description = "Decode the received frames in-process with the SIPSorcery (FFmpeg) video decoder and send " +
-                          "raw RGB to the --video sink, instead of passing the encoded bitstream through for the consumer " +
-                          "to decode (the default). Requires the FFmpeg shared libraries and a --video sink."
+            Description = "Decode the received frames in-process (see --decoder) and send raw RGB to the --video sink, " +
+                          "instead of passing the encoded bitstream through for the consumer to decode (the default). " +
+                          "Requires a --video sink."
+        };
+
+        var decoderOption = new Option<string>("--decoder")
+        {
+            Description = "With --decode: the decoder, ffmpeg (SIPSorceryMedia.FFmpeg, any codec) or vp8.net (managed Vpx.Net, VP8 only).",
+            DefaultValueFactory = _ => "ffmpeg"
         };
 
         var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
         {
-            Description = "Directory containing the FFmpeg shared libraries for the ffmpeg encoder and/or --decode. Defaults to the system path."
+            Description = "Directory containing the FFmpeg shared libraries for the ffmpeg encoder and/or ffmpeg --decoder. Defaults to the system path."
         };
 
         var encoderOption = new Option<string>("--encoder")
@@ -132,6 +138,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
         command.Options.Add(durationOption);
         command.Options.Add(videoOption);
         command.Options.Add(decodeOption);
+        command.Options.Add(decoderOption);
         command.Options.Add(ffmpegPathOption);
         command.Options.Add(encoderOption);
         command.Options.Add(presetOption);
@@ -149,6 +156,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
             parseResult.GetValue(durationOption),
             parseResult.GetValue(videoOption),
             parseResult.GetValue(decodeOption),
+            parseResult.GetValue(decoderOption)!,
             parseResult.GetValue(ffmpegPathOption),
             // DurationSeconds 0: the publisher runs until the receiver stops it at the end of the media window.
             new LibraryVideoPublisher.Settings(
