@@ -11,16 +11,18 @@
 //                                    RTP packetisation/serialisation ceiling.
 //   Stage 2a (--encoder ffmpeg):     native codec via the SIPSorceryMedia.FFmpeg
 //                                    in-process IVideoEncoder (FFmpeg.AutoGen).
+//                                    --codec selects vp8, vp9, h264, h265 or av1.
 //   Stage 2b (--encoder ffmpeg-piped): native codec by piping raw frames to an
-//                                    external ffmpeg process.
-//   Stage 3 (--encoder vp8):         the managed Vpx.Net VP8 codec.
+//                                    external ffmpeg process (vp8/vp9 via IVF).
+//   Stage 3 (--encoder vp8.net):     the managed Vpx.Net VP8 codec.
 //
 // This is a SEND-SIDE benchmark: there is no peer connection, DTLS/SRTP or
-// socket. Each frame is fragmented and serialised exactly as the library's
-// VideoStream.SendVp8Frame does (RTP_MAX_PAYLOAD chunks, VP8 payload descriptor,
-// real RTPPacket serialisation) and the bytes are counted and discarded. The
-// reported achieved frame rate is the maximum the stage can do; comparing the
-// stages shows whether the limit is the packetiser or the encoder.
+// socket. Each frame is fragmented and serialised the same way the library's
+// VideoStream.SendVp8Frame does (RTP_MAX_PAYLOAD chunks, a one-byte payload
+// descriptor stand-in, real RTPPacket serialisation) and the bytes are counted
+// and discarded; that serialisation cost is codec independent. The reported
+// achieved frame rate is the maximum the stage can do; comparing the stages
+// shows whether the limit is the packetiser or the encoder.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -140,7 +142,8 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
         var codecOption = new Option<string>("--codec")
         {
-            Description = "The video codec to packetise as. Currently only vp8.",
+            Description = "The video codec to encode/packetise as: vp8, vp9, h264, h265 (alias hevc) or av1. The in-process " +
+                          "ffmpeg encoder supports all five; vp8.net is VP8 only and ffmpeg-piped supports vp8 and vp9 (IVF) only.",
             DefaultValueFactory = _ => "vp8"
         };
 
@@ -241,26 +244,33 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        if (!codec.Equals("vp8", StringComparison.OrdinalIgnoreCase))
+        if (!TryParseCodec(codec, out var codecEnum, out string? codecError))
         {
-            return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
-                $"Unsupported --codec \"{codec}\". Only vp8 is implemented so far."),
+            return WriteResult(asJson, Empty(encoder, codec, width, height, fps, codecError!),
                 ExitCodes.InvalidArgument);
         }
 
         switch (encoder.ToLowerInvariant())
         {
             case "none":
+                // Packetise-only models a target-sized encoded frame and fragments it; the measured cost
+                // is the RTP serialisation, which is codec independent, so any codec label is accepted.
                 return RunPacketiseOnly(width, height, fps, durationSeconds, bitrate, codec, asJson, logger, ct);
 
             case "vp8.net":
+                if (codecEnum != VideoCodecsEnum.VP8)
+                {
+                    return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
+                        $"The vp8.net managed encoder only supports --codec vp8. Use --encoder ffmpeg for {codec.ToLowerInvariant()}."),
+                        ExitCodes.InvalidArgument);
+                }
                 return RunVp8Encode(width, height, fps, durationSeconds, codec, asJson, logger, ct);
 
             case "ffmpeg":
-                return RunNativeFfmpegEncode(width, height, fps, durationSeconds, codec, ffmpegPath, tuning, asJson, logger, ct);
+                return RunNativeFfmpegEncode(width, height, fps, durationSeconds, codec, codecEnum, ffmpegPath, tuning, asJson, logger, ct);
 
             case "ffmpeg-piped":
-                return RunFfmpegEncode(width, height, fps, durationSeconds, bitrate, codec, tuning, asJson, logger, ct);
+                return RunFfmpegEncode(width, height, fps, durationSeconds, bitrate, codec, codecEnum, tuning, asJson, logger, ct);
 
             default:
                 return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
@@ -313,7 +323,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         {
             long start = Stopwatch.GetTimestamp();
 
-            int packets = PacketiseVp8(encodedFrame, timestamp, ssrc, ref seqnum, ref totalBytes);
+            int packets = PacketiseFrame(encodedFrame, timestamp, ssrc, ref seqnum, ref totalBytes);
 
             double frameMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
             sumMs += frameMs;
@@ -365,7 +375,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         byte[][] ring = GenerateRing(encWidth, encHeight);
         using var encoder = new VP8Codec();
 
-        return RunEncoderLoop("vp8.net", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, asJson, logger, ct);
+        return RunEncoderLoop("vp8.net", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, VideoCodecsEnum.VP8, asJson, logger, ct);
     }
 
     /// <summary>
@@ -374,7 +384,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     /// direct managed-vs-native comparison of the encoder the library can plug in.
     /// </summary>
     private static int RunNativeFfmpegEncode(int width, int height, int fps, int durationSeconds, string codec,
-        string? ffmpegPath, FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
+        VideoCodecsEnum codecEnum, string? ffmpegPath, FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
     {
         try
         {
@@ -402,9 +412,15 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         // Map the tuning knobs onto the encoder's libvpx options (applied via av_opt_set). The
         // encoder already sets quality=realtime by default but never sets cpu-used, which is the main
         // reason its out-of-the-box throughput is below an equivalently tuned external ffmpeg.
+        // deadline/cpu-used are libvpx (VP8/VP9) knobs; for H264/H265 the encoder applies its own
+        // realtime defaults (fast preset + zerolatency tune), so leave them unset to avoid invalid options.
         var encoderOptions = new Dictionary<string, string>();
-        if (!string.IsNullOrWhiteSpace(tuning.Deadline)) { encoderOptions["deadline"] = tuning.Deadline; }
-        if (tuning.CpuUsed >= 0) { encoderOptions["cpu-used"] = tuning.CpuUsed.ToString(); }
+        bool isVpx = codecEnum is VideoCodecsEnum.VP8 or VideoCodecsEnum.VP9;
+        if (isVpx)
+        {
+            if (!string.IsNullOrWhiteSpace(tuning.Deadline)) { encoderOptions["deadline"] = tuning.Deadline; }
+            if (tuning.CpuUsed >= 0) { encoderOptions["cpu-used"] = tuning.CpuUsed.ToString(); }
+        }
 
         logger.LogDebug("FFmpeg encoder tuning: deadline={Deadline}, cpu-used={CpuUsed}, threads={Threads}.",
             tuning.Deadline, tuning.CpuUsed, tuning.Threads);
@@ -416,7 +432,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             {
                 encoder.SetThreadCount(tuning.Threads);
             }
-            return RunEncoderLoop("ffmpeg", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, asJson, logger, ct);
+            return RunEncoderLoop("ffmpeg", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, codecEnum, asJson, logger, ct);
         }
         catch (Exception excp)
         {
@@ -440,7 +456,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     /// reports the achieved frame rate against the target.
     /// </summary>
     private static int RunEncoderLoop(string stage, IVideoEncoder encoder, int encWidth, int encHeight, byte[][] ring,
-        int fps, int durationSeconds, string codec, bool asJson, ILogger logger, CancellationToken ct)
+        int fps, int durationSeconds, string codec, VideoCodecsEnum codecEnum, bool asJson, ILogger logger, CancellationToken ct)
     {
         uint rtpDuration = VIDEO_CLOCK_RATE / (uint)fps;
         uint ssrc = 0x1234_5678;
@@ -467,9 +483,9 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
             long start = Stopwatch.GetTimestamp();
 
-            byte[]? encoded = encoder.EncodeVideo(encWidth, encHeight, raw, VideoPixelFormatsEnum.I420, VideoCodecsEnum.VP8);
+            byte[]? encoded = encoder.EncodeVideo(encWidth, encHeight, raw, VideoPixelFormatsEnum.I420, codecEnum);
             int packets = (encoded != null && encoded.Length > 0)
-                ? PacketiseVp8(encoded, timestamp, ssrc, ref seqnum, ref rtpBytes)
+                ? PacketiseFrame(encoded, timestamp, ssrc, ref seqnum, ref rtpBytes)
                 : 0;
 
             double frameMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
@@ -511,8 +527,23 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     /// encoder, for comparison with the managed VP8 stage.
     /// </summary>
     private static int RunFfmpegEncode(int width, int height, int fps, int durationSeconds, int bitrate, string codec,
-        FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
+        VideoCodecsEnum codecEnum, FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
     {
+        // This stage reads ffmpeg's IVF output, which carries VP8/VP9 (and AV1) but not H264/H265. Map
+        // the codec to its libvpx encoder; H264/H265 need the in-process --encoder ffmpeg stage instead.
+        string vcodec = codecEnum switch
+        {
+            VideoCodecsEnum.VP8 => "libvpx",
+            VideoCodecsEnum.VP9 => "libvpx-vp9",
+            _ => string.Empty
+        };
+        if (vcodec.Length == 0)
+        {
+            return WriteResult(asJson, Empty("ffmpeg", codec, width, height, fps,
+                $"The ffmpeg-piped stage supports vp8 and vp9 only (IVF output). Use --encoder ffmpeg for {codec.ToLowerInvariant()}."),
+                ExitCodes.InvalidArgument);
+        }
+
         // libvpx needs even dimensions; it pads internally so no multiple-of-16 rounding is required
         // (unlike the managed stage), which lets ffmpeg encode true 1920x1080.
         int encWidth = RoundUpToEven(width);
@@ -526,13 +557,15 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         string tuneArgs = $"-deadline {(string.IsNullOrWhiteSpace(tuning.Deadline) ? "realtime" : tuning.Deadline)}";
         if (tuning.CpuUsed >= 0) { tuneArgs += $" -cpu-used {tuning.CpuUsed}"; }
         if (tuning.Threads > 0) { tuneArgs += $" -threads {tuning.Threads}"; }
+        // row-mt enables VP9's tile-row multi-threading, which is what lets it keep up at high rates.
+        if (codecEnum == VideoCodecsEnum.VP9) { tuneArgs += " -row-mt 1"; }
 
         var startInfo = new ProcessStartInfo("ffmpeg")
         {
             // Flat out (no -re): the pipe back-pressure paces feeding to ffmpeg's encode speed, so the
             // rate frames flow through is the encoder's throughput.
             Arguments = $"-hide_banner -loglevel error -f rawvideo -pix_fmt yuv420p -s {encWidth}x{encHeight} -r {fps} -i - " +
-                        $"-c:v libvpx {tuneArgs} -b:v {bitrate} -f ivf -",
+                        $"-c:v {vcodec} {tuneArgs} -b:v {bitrate} -f ivf -",
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -637,7 +670,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
                     if (samples.Count < MAX_TIMING_SAMPLES) { samples.Add(ms); }
                 }
 
-                totalPackets += PacketiseVp8(frame, timestamp, ssrc, ref seqnum, ref rtpBytes);
+                totalPackets += PacketiseFrame(frame, timestamp, ssrc, ref seqnum, ref rtpBytes);
                 encodedBytes += size;
                 timestamp += rtpDuration;
                 frames++;
@@ -699,6 +732,28 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     private static int RoundUpToEven(int value) => (value + 1) & ~1;
 
     /// <summary>
+    /// Maps a --codec string to the abstraction's codec enum. vp8, vp9, h264 and h265 (alias hevc) are
+    /// the codecs the SIPSorceryMedia.FFmpeg in-process encoder can produce.
+    /// </summary>
+    private static bool TryParseCodec(string codec, out VideoCodecsEnum codecEnum, out string? error)
+    {
+        error = null;
+        switch (codec?.ToLowerInvariant())
+        {
+            case "vp8": codecEnum = VideoCodecsEnum.VP8; return true;
+            case "vp9": codecEnum = VideoCodecsEnum.VP9; return true;
+            case "h264": codecEnum = VideoCodecsEnum.H264; return true;
+            case "h265":
+            case "hevc": codecEnum = VideoCodecsEnum.H265; return true;
+            case "av1": codecEnum = VideoCodecsEnum.AV1; return true;
+            default:
+                codecEnum = VideoCodecsEnum.Unknown;
+                error = $"Unsupported --codec \"{codec}\". Expected vp8, vp9, h264, h265 or av1.";
+                return false;
+        }
+    }
+
+    /// <summary>
     /// Generates a ring of distinct I420 frames with a shifting textured pattern, so the encoder
     /// sees inter-frame motion and moderate spatial detail (a flat frame would encode unrealistically
     /// fast). Each buffer is width*height*3/2 bytes as VP8Codec.EncodeVideo requires.
@@ -742,11 +797,13 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     }
 
     /// <summary>
-    /// Fragments and serialises one encoded VP8 frame into RTP packets exactly as
-    /// VideoStream.SendVp8Frame does, returning the packet count. The serialised bytes are added to
-    /// <paramref name="totalBytes"/> and discarded.
+    /// Fragments and serialises one encoded frame into RTP packets the same way VideoStream.SendVp8Frame
+    /// does (RTP_MAX_PAYLOAD chunks with a one-byte payload-descriptor stand-in), returning the packet
+    /// count. The serialised bytes are added to <paramref name="totalBytes"/> and discarded. The measured
+    /// cost is the RTP serialisation, which is codec independent, so this is reused for every codec — a
+    /// codec-specific payload descriptor (VP9/H264/H265) would not change the per-packet serialisation cost.
     /// </summary>
-    private static int PacketiseVp8(byte[] frame, uint timestamp, uint ssrc, ref ushort seqnum, ref long totalBytes)
+    private static int PacketiseFrame(byte[] frame, uint timestamp, uint ssrc, ref ushort seqnum, ref long totalBytes)
     {
         int packets = 0;
 

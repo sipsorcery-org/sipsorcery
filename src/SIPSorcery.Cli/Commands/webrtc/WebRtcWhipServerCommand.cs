@@ -51,7 +51,10 @@ public sealed class WebRtcWhipServerCommand : CommandBase
     private const int DEFAULT_MEDIA_DURATION_SECONDS = 10;
     private const string DEFAULT_LISTEN_URL = "http://localhost:8080/whip";
     private const int VP8_PAYLOAD_ID = 96;
+    private const int VP9_PAYLOAD_ID = 98;
     private const int H264_PAYLOAD_ID = 100;
+    private const int H265_PAYLOAD_ID = 102;
+    private const int AV1_PAYLOAD_ID = 104;
 
     /// <summary>
     /// The result shape written to stdout with --json. Stable field names; additive changes only.
@@ -351,7 +354,10 @@ public sealed class WebRtcWhipServerCommand : CommandBase
             pc.addTrack(new MediaStreamTrack(new List<VideoFormat>
             {
                 new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID),
-                new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1")
+                new VideoFormat(VideoCodecsEnum.VP9, VP9_PAYLOAD_ID),
+                new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1"),
+                new VideoFormat(VideoCodecsEnum.H265, H265_PAYLOAD_ID),
+                new VideoFormat(VideoCodecsEnum.AV1, AV1_PAYLOAD_ID)
             }, MediaStreamStatusEnum.RecvOnly));
 
             var audioStats = new RtpStreamStats();

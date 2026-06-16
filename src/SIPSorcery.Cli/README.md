@@ -101,7 +101,7 @@ ffmpeg `
 # receive engine as whip-server and, in-process, publishes a generated test pattern to it with the
 # SIPSorcery library (the same publisher as "webrtc whip"), so no second terminal and no startup race.
 # Resolution presets are 360p/480p/720p/1080p/1440p/4k (or --size WxH), with --encoder (vp8.net or
-# ffmpeg), --fps, --codec (ffmpeg: h264 or vp8), --bitrate and --video. The result JSON reports both
+# ffmpeg), --fps, --codec (ffmpeg: h264, h265, vp8, vp9 or av1), --bitrate and --video. The result JSON reports both
 # the send side (publishedFps) and the receive side (videoFps), so it doubles as a quick throughput check.
 # videoEncode/videoDecode flag whether an encoder/decoder actually ran in-process for the test
 # (videoEncode is false when --pre-encode replays a bitstream; videoDecode follows --decode).
@@ -114,6 +114,7 @@ sipsorcery webrtc loopback --preset 720p --video play -d 30     # publish + view
 sipsorcery webrtc loopback --video play --decode -d 30          # library-decoded (ffmpeg), rendered raw
 sipsorcery webrtc loopback --video frames.rgb --decode -d 30    # capture raw rgb24 to a file
 sipsorcery webrtc loopback --encoder vp8.net --codec vp8 --decode --decoder vp8.net --video null -d 10  # managed VP8 round-trip
+sipsorcery webrtc loopback --encoder ffmpeg --codec av1 --preset 720p --decode --video null -d 10       # AV1 (or h265/vp9) library round-trip
 # To measure the DECODE stage on its own, add --pre-encode N: it encodes N frames once before
 # connecting, then replays that bitstream, so no encoding runs during the window (the encoder is out
 # of the hot loop and not competing for CPU). Pair it with --decode --video null for headless decode.
@@ -124,7 +125,7 @@ sipsorcery webrtc loopback --preset 1080p --pre-encode 300 --max-rate -d 10
 # WebRTC WHIP publish (library sender): publish a generated test pattern to a WHIP endpoint using the
 # SIPSorcery stack itself -- the full SEND pipeline (generate -> encode -> RTP/SRTP -> ICE/DTLS). It
 # is the counterpart to "video-bench", which measures the encoder but stops before the network.
-# --encoder vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (FFmpeg H264); presets/--size,
+# --encoder vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (--codec h264/h265/vp8/vp9/av1); presets/--size,
 # --fps, --bitrate and --max-rate (flat out, local receiver only). Reports frames sent, achieved vs
 # target fps and encode ms/frame, so e.g. vp8.net's ceiling vs ffmpeg H264 at 720p is obvious.
 sipsorcery webrtc whip http://localhost:8080/whip --preset 720p --fps 30 --encoder ffmpeg
@@ -143,15 +144,18 @@ sipsorcery webrtc echo http://localhost:8080/offer --stun "turn:turn.example.com
 # WebRTC video bench: measure the video SEND pipeline (no peer connection, DTLS or socket) to
 # answer "can this machine sustain a target resolution and frame rate", default 1080p30. The
 # pipeline is measured in stages via --encoder so the bottleneck can be isolated: none packetises
-# a target-sized frame flat out (the RTP packetisation ceiling), vp8 adds the managed Vpx.Net
-# codec, and ffmpeg/ffmpeg-piped add the native libvpx encoder in-process or via an external
-# ffmpeg process. Exits 0 if the target fps is met, 1 if below.
+# a target-sized frame flat out (the RTP packetisation ceiling), vp8.net adds the managed Vpx.Net
+# codec, and ffmpeg/ffmpeg-piped add the native FFmpeg encoder in-process or via an external
+# ffmpeg process. --codec selects vp8, vp9, h264 or h265: the in-process ffmpeg stage does all
+# four, vp8.net is VP8 only and ffmpeg-piped does vp8/vp9 (IVF). Exits 0 if the target fps is met, 1 if below.
 sipsorcery webrtc video-bench                                      # 1080p30, packetise only
-sipsorcery webrtc video-bench --encoder vp8 --fps 30               # managed VP8 codec
-sipsorcery webrtc video-bench --encoder ffmpeg --width 1280 --height 720 --fps 60
+sipsorcery webrtc video-bench --encoder vp8.net --fps 30           # managed VP8 codec
+sipsorcery webrtc video-bench --encoder ffmpeg --codec h265 --width 1280 --height 720 --fps 60
+sipsorcery webrtc video-bench --encoder ffmpeg --codec vp9 --preset 4k --fps 30
 sipsorcery webrtc video-bench --encoder ffmpeg-piped --cpu-used 8 --threads 4 -d 10
-# libvpx tuning (--deadline, --cpu-used, --threads) applies to the ffmpeg stages. The in-process
-# ffmpeg stage needs the FFmpeg shared libraries (winget/brew/apt install ffmpeg, or --ffmpeg-path).
+# libvpx tuning (--deadline, --cpu-used, --threads) applies to the VP8/VP9 ffmpeg stages; for H264/H265
+# the encoder uses its own realtime defaults. The in-process ffmpeg stage needs the FFmpeg shared
+# libraries (winget/brew/apt install ffmpeg, or --ffmpeg-path).
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and

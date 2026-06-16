@@ -110,7 +110,7 @@ public sealed class WebRtcLoopbackCommand : CommandBase
 
         var codecOption = new Option<string?>("--codec")
         {
-            Description = "Codec for the ffmpeg encoder: h264 (default) or vp8. Ignored for vp8.net, which is always VP8."
+            Description = "Codec for the ffmpeg encoder: h264 (default), h265, vp8, vp9 or av1. Ignored for vp8.net, which is always VP8."
         };
 
         var bitrateOption = new Option<int>("--bitrate")

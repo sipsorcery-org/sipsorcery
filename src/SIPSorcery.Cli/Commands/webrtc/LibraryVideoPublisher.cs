@@ -6,9 +6,9 @@
 // RTP packetise -> SRTP -> ICE/DTLS socket). Shared by the "webrtc whip" verb
 // (publish to any endpoint) and "webrtc whip-server --publish" (an in-process
 // self publish to the server's own listener). The encoder is selectable:
-// vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg,
-// H264 or VP8). Frames are sent paced to a target rate, or flat out (MaxRate) to
-// find the send-pipeline ceiling.
+// vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg:
+// h264, h265, vp8, vp9 or av1). Frames are sent paced to a target rate, or flat out
+// (MaxRate) to find the send-pipeline ceiling.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -34,7 +34,10 @@ namespace SIPSorcery.Cli.Commands;
 public static class LibraryVideoPublisher
 {
     private const int VP8_PAYLOAD_ID = 96;
+    private const int VP9_PAYLOAD_ID = 98;
     private const int H264_PAYLOAD_ID = 100;
+    private const int H265_PAYLOAD_ID = 102;
+    private const int AV1_PAYLOAD_ID = 104;
     private const uint VIDEO_CLOCK_RATE = 90000;
     private const int RING_SIZE = 16;
     // The publisher reaching "connected" can slightly precede the receiver finishing its SRTP context
@@ -364,23 +367,35 @@ public static class LibraryVideoPublisher
         else if (encoder == "ffmpeg")
         {
             string wantCodec = codecArg ?? "h264";
-            if (wantCodec == "h264")
+            switch (wantCodec)
             {
-                codec = VideoCodecsEnum.H264;
-                videoFormat = new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1");
-            }
-            else if (wantCodec == "vp8")
-            {
-                codec = VideoCodecsEnum.VP8;
-                videoFormat = new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID);
-            }
-            else
-            {
-                error = $"Unknown --codec \"{wantCodec}\". Expected h264 or vp8.";
-                return false;
+                case "h264":
+                    codec = VideoCodecsEnum.H264;
+                    videoFormat = new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1");
+                    break;
+                case "h265":
+                case "hevc":
+                    codec = VideoCodecsEnum.H265;
+                    videoFormat = new VideoFormat(VideoCodecsEnum.H265, H265_PAYLOAD_ID);
+                    break;
+                case "vp8":
+                    codec = VideoCodecsEnum.VP8;
+                    videoFormat = new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID);
+                    break;
+                case "vp9":
+                    codec = VideoCodecsEnum.VP9;
+                    videoFormat = new VideoFormat(VideoCodecsEnum.VP9, VP9_PAYLOAD_ID);
+                    break;
+                case "av1":
+                    codec = VideoCodecsEnum.AV1;
+                    videoFormat = new VideoFormat(VideoCodecsEnum.AV1, AV1_PAYLOAD_ID);
+                    break;
+                default:
+                    error = $"Unknown --codec \"{wantCodec}\". Expected h264, h265, vp8, vp9 or av1.";
+                    return false;
             }
 
-            // libx264/libvpx need even dimensions.
+            // The native encoders (libx264/libx265/libvpx/AV1) need even dimensions.
             (width, height) = (RoundUpToEven(width), RoundUpToEven(height));
             useFfmpeg = true;
         }
