@@ -44,7 +44,8 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryBranch>master</RepositoryBranch>
 		<PackageTags>WebRTC VoIP SIPSorcery Media FFmpeg</PackageTags>
-		<PackageReleaseNotes>-v10.0.9: Real-time video encoder defaults - libvpx (VP8/VP9) now sets cpu-used 5 and AV1 defaults to the SVT-AV1 (libsvtav1) encoder when present, so HD encoding keeps up out of the box. SVT-AV1 now uses CBR rate control when a bitrate is set (its low-delay mode rejects VBR, which previously produced no output). Updated for main sipsorcery library release.
+		<PackageReleaseNotes>-v10.0.10: Add and improve support for video codecs including H265, VP9 and AV1.
+-v10.0.9:  Updated for main sipsorcery library release.
 -v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
 -v10.0.6: Updated for main sipsorcery library release.
@@ -74,9 +75,9 @@
 -v0.0.1-pre: Initial release.
 		</PackageReleaseNotes>
 		<NeutralLanguage>en</NeutralLanguage>
-		<Version>10.0.9</Version>
-		<AssemblyVersion>10.0.9</AssemblyVersion>
-		<FileVersion>10.0.9</FileVersion>
+		<Version>10.0.10</Version>
+		<AssemblyVersion>10.0.10</AssemblyVersion>
+		<FileVersion>10.0.10</FileVersion>
 	</PropertyGroup>
 
 
