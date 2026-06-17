@@ -146,16 +146,18 @@ sipsorcery webrtc echo http://localhost:8080/offer --stun "turn:turn.example.com
 # pipeline is measured in stages via --encoder so the bottleneck can be isolated: none packetises
 # a target-sized frame flat out (the RTP packetisation ceiling), vp8.net adds the managed Vpx.Net
 # codec, and ffmpeg/ffmpeg-piped add the native FFmpeg encoder in-process or via an external
-# ffmpeg process. --codec selects vp8, vp9, h264 or h265: the in-process ffmpeg stage does all
-# four, vp8.net is VP8 only and ffmpeg-piped does vp8/vp9 (IVF). Exits 0 if the target fps is met, 1 if below.
+# ffmpeg process. --codec selects vp8, vp9, h264, h265 or av1: the in-process ffmpeg stage does all
+# five, vp8.net is VP8 only and ffmpeg-piped does vp8/vp9 (IVF). Exits 0 if the target fps is met, 1 if below.
 sipsorcery webrtc video-bench                                      # 1080p30, packetise only
 sipsorcery webrtc video-bench --encoder vp8.net --fps 30           # managed VP8 codec
 sipsorcery webrtc video-bench --encoder ffmpeg --codec h265 --width 1280 --height 720 --fps 60
 sipsorcery webrtc video-bench --encoder ffmpeg --codec vp9 --preset 4k --fps 30
+sipsorcery webrtc video-bench --all --preset 1080p                 # benchmark vp8/vp9/h265/av1 in one run
 sipsorcery webrtc video-bench --encoder ffmpeg-piped --cpu-used 8 --threads 4 -d 10
 # libvpx tuning (--deadline, --cpu-used, --threads) applies to the VP8/VP9 ffmpeg stages; for H264/H265
-# the encoder uses its own realtime defaults. The in-process ffmpeg stage needs the FFmpeg shared
-# libraries (winget/brew/apt install ffmpeg, or --ffmpeg-path).
+# the encoder uses its own realtime defaults. AV1 uses the SVT-AV1 encoder by default (--av1-encoder
+# selects another, e.g. av1_nvenc; --av1-preset tunes its speed). The in-process ffmpeg stage needs the
+# FFmpeg shared libraries (winget/brew/apt install ffmpeg, or --ffmpeg-path).
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and

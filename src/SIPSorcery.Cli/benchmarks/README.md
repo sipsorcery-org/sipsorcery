@@ -15,14 +15,14 @@ to an in-process WHIP receiver (using the same `LibraryVideoPublisher` as `webrt
 it back. No second terminal, no real network.
 
 - **Encode ceiling** — publish flat out (a very high `--fps` the encoder cannot reach) with no
-  decode; the reported `publishedFps` is the encoder's max sustainable rate. Measured for `vp8.net`,
-  `ffmpeg` H264 and `ffmpeg` VP8.
+  decode; the reported `publishedFps` is the encoder's max sustainable rate. Measured for the managed
+  `vp8.net` encoder and the `ffmpeg` encoder on **H264, VP8, VP9, H265 and AV1**.
 - **Decode breakpoint** — publish with `--decode --video null` (decode in-process, discard) and sweep
   `--fps` upward until the receiver drops more than the threshold (default 10%) of frames. The frames
   are **pre-encoded once** (`-PreEncodeFrames`, default 300) and the encoded bitstream is replayed, so
   **no encoding runs during the window** — the breakpoint reflects the decoder alone, not encode and
-  decode sharing CPU. Three columns:
-  - **Decode H264 (ffmpeg)** / **Decode VP8 (ffmpeg)** — the SIPSorcery FFmpeg decoder, driven by the FFmpeg encoder.
+  decode sharing CPU. The codec columns:
+  - **Decode H264 / VP8 / VP9 / H265 / AV1 (ffmpeg)** — the SIPSorcery FFmpeg decoder, driven by the FFmpeg encoder.
   - **Decode VP8 (vp8.net)** — the managed Vpx.Net VP8 decoder, driven by the **vp8.net** encoder. It
     must use its own encoder's bitstream: the managed decoder crashes on FFmpeg-encoded VP8 (a Vpx.Net
     inter-prediction bug). Because vp8.net encode is slow, this column is **capped at ≤1080p** (larger
@@ -60,7 +60,8 @@ is out of the measurement loop.
 ## Output
 
 `results/RESULTS.md` (the committable report — machine info + capacity table) and
-`results/results.json` (machine + raw results). A full sweep at the defaults is roughly 10–15 minutes.
+`results/results.json` (machine + raw results). A full sweep at the defaults (five codecs encode +
+decode across all presets) is roughly 25–40 minutes; narrow `-Presets` to shorten it.
 
 ## Caveats
 

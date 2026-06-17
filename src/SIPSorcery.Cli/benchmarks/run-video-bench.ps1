@@ -10,17 +10,17 @@
 
       ENCODE ceiling  - publish flat out (a very high --fps the encoder cannot reach) with no decode;
                         the reported publishedFps is the encoder's max sustainable rate. Measured for
-                        vp8.net, ffmpeg H264 and ffmpeg VP8.
+                        the managed vp8.net encoder and the ffmpeg encoder on H264, VP8, VP9, H265 and AV1.
 
       DECODE breakpoint - publish with --decode --video null (decode in-process, discard) and sweep
                         --fps upward until the receiver drops more than -DropThreshold of frames. The
                         last rate under the threshold is the max sustainable decode rate. The frames
                         are pre-encoded once (-PreEncodeFrames) and the encoded bitstream is replayed,
                         so no encoding runs during the window and the breakpoint reflects the decoder
-                        alone. Measured for the FFmpeg decoder on H264 and VP8 (driven by the FFmpeg
-                        encoder), and for the managed vp8.net decoder on VP8 (driven by the vp8.net
-                        encoder, since it crashes on FFmpeg-encoded VP8; capped at <=1080p as vp8.net
-                        encode is too slow to pre-encode above that).
+                        alone. Measured for the FFmpeg decoder on H264, VP8, VP9, H265 and AV1 (driven
+                        by the FFmpeg encoder), and for the managed vp8.net decoder on VP8 (driven by
+                        the vp8.net encoder, since it crashes on FFmpeg-encoded VP8; capped at <=1080p
+                        as vp8.net encode is too slow to pre-encode above that).
 
       PLUMBING ceiling - publish flat out (--max-rate) with neither encoder nor decoder: pre-encoded
                         frames are replayed and the receiver discards them without decoding. The
@@ -59,18 +59,26 @@ param(
 $ErrorActionPreference = 'Stop'
 $listenUrl = "http://localhost:$Port/whip"
 
-# The encode configs (label, --encoder, --codec) and the decode codecs to sweep.
+# The encode configs (label, --encoder, --codec) and the decode codecs to sweep. The ffmpeg encoder
+# covers every codec; vp8.net is the managed VP8-only encoder.
 $encodeConfigs = @(
     @{ Label = 'vp8.net';      Encoder = 'vp8.net'; Codec = $null   },
     @{ Label = 'ffmpeg H264';  Encoder = 'ffmpeg';  Codec = 'h264'  },
-    @{ Label = 'ffmpeg VP8';   Encoder = 'ffmpeg';  Codec = 'vp8'   }
+    @{ Label = 'ffmpeg VP8';   Encoder = 'ffmpeg';  Codec = 'vp8'   },
+    @{ Label = 'ffmpeg VP9';   Encoder = 'ffmpeg';  Codec = 'vp9'   },
+    @{ Label = 'ffmpeg H265';  Encoder = 'ffmpeg';  Codec = 'h265'  },
+    @{ Label = 'ffmpeg AV1';   Encoder = 'ffmpeg';  Codec = 'av1'   }
 )
-# Decode configs (label, driving encoder, codec, decoder). The FFmpeg decoder is driven by the fast
-# FFmpeg encoder. The managed vp8.net decoder is driven by the vp8.net encoder: it crashes on
-# FFmpeg-encoded VP8 (a Vpx.Net inter-prediction bug) and only reliably decodes its own bitstream.
+# Decode configs (label, driving encoder, codec, decoder). The FFmpeg decoder handles every codec and
+# is driven by the fast FFmpeg encoder. The managed vp8.net decoder is driven by the vp8.net encoder:
+# it crashes on FFmpeg-encoded VP8 (a Vpx.Net inter-prediction bug) and only reliably decodes its own
+# bitstream.
 $decodeConfigs = @(
     @{ Label = 'H264 (ffmpeg)'; Encoder = 'ffmpeg';  Codec = 'h264'; Decoder = 'ffmpeg'  },
     @{ Label = 'VP8 (ffmpeg)';  Encoder = 'ffmpeg';  Codec = 'vp8';  Decoder = 'ffmpeg'  },
+    @{ Label = 'VP9 (ffmpeg)';  Encoder = 'ffmpeg';  Codec = 'vp9';  Decoder = 'ffmpeg'  },
+    @{ Label = 'H265 (ffmpeg)'; Encoder = 'ffmpeg';  Codec = 'h265'; Decoder = 'ffmpeg'  },
+    @{ Label = 'AV1 (ffmpeg)';  Encoder = 'ffmpeg';  Codec = 'av1';  Decoder = 'ffmpeg'  },
     @{ Label = 'VP8 (vp8.net)'; Encoder = 'vp8.net'; Codec = 'vp8';  Decoder = 'vp8.net' }
 )
 # vp8.net encode is too slow to pre-encode above 1080p, so the vp8.net decode column is capped here
@@ -212,8 +220,10 @@ foreach ($preset in $Presets) {
 # ---------------------------------------------------------------------------
 # Emit results.json and RESULTS.md.
 # ---------------------------------------------------------------------------
-$columns = @('enc:vp8.net', 'enc:ffmpeg H264', 'enc:ffmpeg VP8', 'dec:H264 (ffmpeg)', 'dec:VP8 (ffmpeg)', 'dec:VP8 (vp8.net)', 'plumbing')
-$headers = @('Encode vp8.net', 'Encode ffmpeg H264', 'Encode ffmpeg VP8', 'Decode H264 (ffmpeg)', 'Decode VP8 (ffmpeg)', 'Decode VP8 (vp8.net)', 'Plumbing (no codec)')
+$columns = @('enc:vp8.net', 'enc:ffmpeg H264', 'enc:ffmpeg VP8', 'enc:ffmpeg VP9', 'enc:ffmpeg H265', 'enc:ffmpeg AV1',
+             'dec:H264 (ffmpeg)', 'dec:VP8 (ffmpeg)', 'dec:VP9 (ffmpeg)', 'dec:H265 (ffmpeg)', 'dec:AV1 (ffmpeg)', 'dec:VP8 (vp8.net)', 'plumbing')
+$headers = @('Encode vp8.net', 'Encode ffmpeg H264', 'Encode ffmpeg VP8', 'Encode ffmpeg VP9', 'Encode ffmpeg H265', 'Encode ffmpeg AV1',
+             'Decode H264 (ffmpeg)', 'Decode VP8 (ffmpeg)', 'Decode VP9 (ffmpeg)', 'Decode H265 (ffmpeg)', 'Decode AV1 (ffmpeg)', 'Decode VP8 (vp8.net)', 'Plumbing (no codec)')
 
 # Capture the machine the benchmark ran on so the numbers have context.
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1

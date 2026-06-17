@@ -36,6 +36,7 @@
 
 using System.CommandLine;
 using System.Diagnostics;
+using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
@@ -171,6 +172,24 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             DefaultValueFactory = _ => 0
         };
 
+        var av1EncoderOption = new Option<string>("--av1-encoder")
+        {
+            Description = "FFmpeg AV1 encoder for the in-process ffmpeg stage: libsvtav1 (fastest for realtime), " +
+                          "libaom-av1, librav1e, or a hardware encoder (av1_nvenc, av1_qsv). Applies to --codec av1 and --all.",
+            DefaultValueFactory = _ => "libsvtav1"
+        };
+
+        var av1PresetOption = new Option<int>("--av1-preset")
+        {
+            Description = "Speed preset for the AV1 encoder, higher is faster (libsvtav1 preset 0-13). -1 uses the encoder's realtime default.",
+            DefaultValueFactory = _ => -1
+        };
+
+        var allOption = new Option<bool>("--all", "--extended")
+        {
+            Description = "Benchmark every video codec (vp8, vp9, h265, av1) with the in-process ffmpeg encoder and report each. Overrides --encoder and --codec."
+        };
+
         var command = new Command("video-bench", "Benchmark the video send pipeline (packetisation/encoding) against a target resolution and frame rate.");
         command.Options.Add(presetOption);
         command.Options.Add(widthOption);
@@ -184,6 +203,9 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         command.Options.Add(deadlineOption);
         command.Options.Add(cpuUsedOption);
         command.Options.Add(threadsOption);
+        command.Options.Add(av1EncoderOption);
+        command.Options.Add(av1PresetOption);
+        command.Options.Add(allOption);
         command.Options.Add(JsonOption);
         command.Options.Add(VerboseOption);
 
@@ -197,7 +219,9 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             parseResult.GetValue(encoderOption)!,
             parseResult.GetValue(codecOption)!,
             parseResult.GetValue(ffmpegPathOption),
-            new FfmpegTuning(parseResult.GetValue(deadlineOption)!, parseResult.GetValue(cpuUsedOption), parseResult.GetValue(threadsOption)),
+            new FfmpegTuning(parseResult.GetValue(deadlineOption)!, parseResult.GetValue(cpuUsedOption), parseResult.GetValue(threadsOption),
+                parseResult.GetValue(av1EncoderOption)!, parseResult.GetValue(av1PresetOption)),
+            parseResult.GetValue(allOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
             cancellationToken)));
@@ -205,11 +229,20 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         return command;
     }
 
-    /// <summary>libvpx tuning passed to the ffmpeg encoder stages.</summary>
-    private readonly record struct FfmpegTuning(string Deadline, int CpuUsed, int Threads);
+    /// <summary>Encoder tuning passed to the ffmpeg encoder stages.</summary>
+    private readonly record struct FfmpegTuning(string Deadline, int CpuUsed, int Threads, string Av1Encoder, int Av1Preset);
+
+    /// <summary>The codecs benchmarked by --all, using the in-process ffmpeg encoder.</summary>
+    private static readonly (string Label, VideoCodecsEnum Codec)[] ALL_CODECS =
+    {
+        ("vp8", VideoCodecsEnum.VP8),
+        ("vp9", VideoCodecsEnum.VP9),
+        ("h265", VideoCodecsEnum.H265),
+        ("av1", VideoCodecsEnum.AV1),
+    };
 
     private static int Run(string? preset, int width, int height, int fps, int durationSeconds, int bitrate, string encoder, string codec,
-        string? ffmpegPath, FfmpegTuning tuning, bool asJson, bool verbose, CancellationToken ct)
+        string? ffmpegPath, FfmpegTuning tuning, bool all, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(WebRtcVideoBenchCommand));
@@ -242,6 +275,13 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             return WriteResult(asJson, Empty(encoder, codec, width, height, fps,
                 "Invalid --bitrate: must be >= 1000 bits per second."),
                 ExitCodes.InvalidArgument);
+        }
+
+        // Extended mode benchmarks every codec with the in-process ffmpeg encoder (the only one that
+        // supports them all), ignoring --encoder/--codec.
+        if (all)
+        {
+            return RunAllCodecs(width, height, fps, durationSeconds, ffmpegPath, tuning, asJson, logger, ct);
         }
 
         if (!TryParseCodec(codec, out var codecEnum, out string? codecError))
@@ -375,7 +415,8 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         byte[][] ring = GenerateRing(encWidth, encHeight);
         using var encoder = new VP8Codec();
 
-        return RunEncoderLoop("vp8.net", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, VideoCodecsEnum.VP8, asJson, logger, ct);
+        var result = RunEncoderLoop("vp8.net", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, VideoCodecsEnum.VP8, logger, ct);
+        return WriteResult(asJson, result, result.Success ? ExitCodes.Ok : ExitCodes.Failed);
     }
 
     /// <summary>
@@ -409,6 +450,17 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
 
         byte[][] ring = GenerateRing(encWidth, encHeight);
 
+        var result = EncodeWithFfmpeg(encWidth, encHeight, ring, fps, durationSeconds, codec, codecEnum, tuning, logger, ct);
+        return WriteResult(asJson, result, result.Success ? ExitCodes.Ok : ExitCodes.Failed);
+    }
+
+    /// <summary>
+    /// Encodes the supplied frame ring with the in-process FFmpeg encoder for one codec and returns
+    /// the result. Assumes FFmpegInit.Initialise has already been called.
+    /// </summary>
+    private static VideoBenchResult EncodeWithFfmpeg(int encWidth, int encHeight, byte[][] ring, int fps, int durationSeconds,
+        string codec, VideoCodecsEnum codecEnum, FfmpegTuning tuning, ILogger logger, CancellationToken ct)
+    {
         // Map the tuning knobs onto the encoder's libvpx options (applied via av_opt_set). The
         // encoder already sets quality=realtime by default but never sets cpu-used, which is the main
         // reason its out-of-the-box throughput is below an equivalently tuned external ffmpeg.
@@ -421,9 +473,15 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             if (!string.IsNullOrWhiteSpace(tuning.Deadline)) { encoderOptions["deadline"] = tuning.Deadline; }
             if (tuning.CpuUsed >= 0) { encoderOptions["cpu-used"] = tuning.CpuUsed.ToString(); }
         }
+        else if (codecEnum == VideoCodecsEnum.AV1 && tuning.Av1Preset >= 0)
+        {
+            // Overrides the encoder's realtime default preset (applied after it via av_opt_set). The
+            // "preset" option is understood by libsvtav1; other AV1 encoders ignore it with a warning.
+            encoderOptions["preset"] = tuning.Av1Preset.ToString();
+        }
 
-        logger.LogDebug("FFmpeg encoder tuning: deadline={Deadline}, cpu-used={CpuUsed}, threads={Threads}.",
-            tuning.Deadline, tuning.CpuUsed, tuning.Threads);
+        logger.LogDebug("FFmpeg encoder tuning for {Codec}: deadline={Deadline}, cpu-used={CpuUsed}, threads={Threads}.",
+            codec, tuning.Deadline, tuning.CpuUsed, tuning.Threads);
 
         try
         {
@@ -432,14 +490,70 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             {
                 encoder.SetThreadCount(tuning.Threads);
             }
-            return RunEncoderLoop("ffmpeg", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, codecEnum, asJson, logger, ct);
+
+            // FFmpeg's default AV1 encoder is libaom-av1, the slowest. Select a realtime-oriented one
+            // (libsvtav1 by default); the encoder applies its own realtime preset for whichever is chosen.
+            if (codecEnum == VideoCodecsEnum.AV1 && !string.IsNullOrWhiteSpace(tuning.Av1Encoder))
+            {
+                if (encoder.SetCodec(AVCodecID.AV_CODEC_ID_AV1, tuning.Av1Encoder))
+                {
+                    logger.LogDebug("Using AV1 encoder {Av1Encoder}.", tuning.Av1Encoder);
+                }
+                else
+                {
+                    Console.Error.WriteLine($"AV1 encoder \"{tuning.Av1Encoder}\" is not available in this FFmpeg build; falling back to the default AV1 encoder.");
+                }
+            }
+
+            return RunEncoderLoop("ffmpeg", encoder, encWidth, encHeight, ring, fps, durationSeconds, codec, codecEnum, logger, ct);
         }
         catch (Exception excp)
         {
-            return WriteResult(asJson, Empty("ffmpeg", codec, encWidth, encHeight, fps,
-                $"FFmpeg encode failed: {excp.Message}"),
+            return Empty("ffmpeg", codec, encWidth, encHeight, fps, $"FFmpeg encode failed: {excp.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Extended mode: benchmarks every codec in <see cref="ALL_CODECS"/> with the in-process ffmpeg
+    /// encoder. FFmpeg is initialised once and the same frame ring feeds every codec.
+    /// </summary>
+    private static int RunAllCodecs(int width, int height, int fps, int durationSeconds, string? ffmpegPath,
+        FfmpegTuning tuning, bool asJson, ILogger logger, CancellationToken ct)
+    {
+        try
+        {
+            FFmpegInit.Initialise(FfmpegLogLevelEnum.AV_LOG_FATAL, ffmpegPath, logger);
+        }
+        catch (Exception excp)
+        {
+            return WriteResult(asJson, Empty("ffmpeg", "all", width, height, fps,
+                $"Could not initialise FFmpeg: {excp.Message}. Install the FFmpeg shared libraries (e.g. winget install ffmpeg) or pass --ffmpeg-path."),
                 ExitCodes.TransportError);
         }
+
+        int encWidth = RoundUpToEven(width);
+        int encHeight = RoundUpToEven(height);
+        if (encWidth != width || encHeight != height)
+        {
+            Console.Error.WriteLine($"Rounded {width}x{height} up to {encWidth}x{encHeight} (even dimensions required).");
+        }
+
+        // The same raw frames feed every codec, so generate the ring once.
+        byte[][] ring = GenerateRing(encWidth, encHeight);
+
+        var results = new List<VideoBenchResult>();
+        foreach (var (label, codecEnum) in ALL_CODECS)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                break;
+            }
+
+            Console.Error.WriteLine($"Benchmarking {label} at {encWidth}x{encHeight}@{fps} for {durationSeconds}s ...");
+            results.Add(EncodeWithFfmpeg(encWidth, encHeight, ring, fps, durationSeconds, label, codecEnum, tuning, logger, ct));
+        }
+
+        return WriteResults(asJson, results);
     }
 
     private static byte[][] GenerateRing(int encWidth, int encHeight)
@@ -455,8 +569,8 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
     /// frames flat out via the supplied <see cref="IVideoEncoder"/>, packetises each result and
     /// reports the achieved frame rate against the target.
     /// </summary>
-    private static int RunEncoderLoop(string stage, IVideoEncoder encoder, int encWidth, int encHeight, byte[][] ring,
-        int fps, int durationSeconds, string codec, VideoCodecsEnum codecEnum, bool asJson, ILogger logger, CancellationToken ct)
+    private static VideoBenchResult RunEncoderLoop(string stage, IVideoEncoder encoder, int encWidth, int encHeight, byte[][] ring,
+        int fps, int durationSeconds, string codec, VideoCodecsEnum codecEnum, ILogger logger, CancellationToken ct)
     {
         uint rtpDuration = VIDEO_CLOCK_RATE / (uint)fps;
         uint ssrc = 0x1234_5678;
@@ -517,7 +631,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             frames == 0 ? "The encoder produced no frames."
                         : success ? null : $"The {stage} encoder only reached {achievedFps:0} fps, below the {fps} fps target.");
 
-        return WriteResult(asJson, result, success ? ExitCodes.Ok : ExitCodes.Failed);
+        return result;
     }
 
     /// <summary>
@@ -860,7 +974,39 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         {
             WriteJson(result);
         }
-        else if (result.FramesProcessed > 0)
+        else
+        {
+            WriteResultHuman(result);
+        }
+
+        return exitCode;
+    }
+
+    /// <summary>
+    /// Writes a set of results (the --all extended mode): a JSON array, or one human readable line
+    /// per codec. The exit code is Ok only if every codec met the target frame rate.
+    /// </summary>
+    private static int WriteResults(bool asJson, List<VideoBenchResult> results)
+    {
+        if (asJson)
+        {
+            WriteJson(results);
+        }
+        else
+        {
+            foreach (var result in results)
+            {
+                WriteResultHuman(result);
+            }
+        }
+
+        bool allOk = results.Count > 0 && results.TrueForAll(r => r.Success);
+        return allOk ? ExitCodes.Ok : ExitCodes.Failed;
+    }
+
+    private static void WriteResultHuman(VideoBenchResult result)
+    {
+        if (result.FramesProcessed > 0)
         {
             string verdict = result.Success ? "PASS" : "BELOW TARGET";
             Console.WriteLine($"Stage \"{result.Stage}\" {result.Codec} {result.Width}x{result.Height}: " +
@@ -870,9 +1016,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
         }
         else
         {
-            Console.Error.WriteLine($"Video bench failed: {result.Error}");
+            Console.Error.WriteLine($"Video bench {result.Codec} failed: {result.Error}");
         }
-
-        return exitCode;
     }
 }
