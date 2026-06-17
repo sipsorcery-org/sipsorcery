@@ -93,17 +93,21 @@ For Windows the easiest option is:
 winget install "FFmpeg (Shared)" --version 8.1
 ````
 
-# Video Pipeline Capacity
+## Video Pipeline Capacity
 
-Maximum sustainable frame rate (fps), at a realistic per-preset bitrate. Encode = encoder ceiling (publish flat out). Decode = highest rate under 10% received-frame loss for the named decoder (FFmpeg, or managed vp8.net for the vp8.net column, which is capped at <=1080p), fed a pre-encoded bitstream so no encoding competes for CPU. Plumbing (no codec) = the transport ceiling with neither encoder nor decoder (pre-encoded frames replayed flat out, received and discarded): packetise -> SRTP -> socket -> depacketise only.
+Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
 
-## Machine
+In June 2026, the new SIPSorcery.Cli tool was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
+
+Sample test results are shown below.
+
+### Machine
 
 | CPU | Cores | Logical processors | Memory |
 | --- | --- | --- | --- |
 | Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
 
-## Results
+### Results
 
 | Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
 |---|---|---|---|---|---|---|---|
