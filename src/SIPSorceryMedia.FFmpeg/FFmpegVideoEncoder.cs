@@ -218,7 +218,22 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 if (isEncoder)
                 {
-                    codec = ffmpeg.avcodec_find_encoder(codecID);
+                    // FFmpeg's default AV1 encoder is libaom-av1, the reference encoder, which is far
+                    // too slow for real-time use (~12 fps at 1080p). Prefer SVT-AV1, the realtime
+                    // oriented AV1 encoder, when it is present in the FFmpeg build; the per-encoder
+                    // realtime tuning in InitialiseEncoder then applies. Fall back to the default
+                    // otherwise. An encoder chosen explicitly via SetCodec still takes precedence (it
+                    // is handled by the _specificEncoders lookup above, so this is only reached when
+                    // the caller has not selected one).
+                    if (codecID == AVCodecID.AV_CODEC_ID_AV1)
+                    {
+                        codec = ffmpeg.avcodec_find_encoder_by_name("libsvtav1");
+                    }
+
+                    if (codec == null)
+                    {
+                        codec = ffmpeg.avcodec_find_encoder(codecID);
+                    }
                 }
                 else
                 {
@@ -327,8 +342,14 @@ namespace SIPSorceryMedia.FFmpeg
                         case "libsvtav1":
                             // SVT-AV1 is the realtime-oriented AV1 encoder. preset 0-13 (higher is faster);
                             // the high presets plus a low-latency, low-delay prediction structure suit live.
+                            // SVT-AV1's low-delay structure does NOT support VBR rate control, so when a
+                            // target bitrate is set the rate control must be CBR (rc=2); otherwise it errors
+                            // ("VBR Rate control is currently not supported for LOW_DELAY") and produces no
+                            // output. With no bitrate the default constant-quality mode is used, which
+                            // low-delay does support.
                             ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "11", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "svtav1-params", "lp=0:pred-struct=1", 0).ThrowExceptionIfError();
+                            ffmpeg.av_opt_set(_encoderContext->priv_data, "svtav1-params",
+                                _encoderContext->bit_rate > 0 ? "lp=0:pred-struct=1:rc=2" : "lp=0:pred-struct=1", 0).ThrowExceptionIfError();
                             break;
                         case "librav1e":
                             // rav1e exposes speed 0-10 (higher is faster); use a fast, low-latency setting.
