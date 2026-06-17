@@ -63,11 +63,13 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 **Media End Points - Audio/Video Sinks and Sources:**
 
- - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Providing cross platform access to to these features on top of .NET is a large undertaking. A number of separate demonstration libraries show some different approaches to accessing audio/video devices and wrapping codecs with .NET. 
-   - [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows): An example of a Windows specific library that provides audio capture and playback. 
-   - [SIPSorceryMedia.FFmpeg](SIPSorceryMedia.FFmpeg/): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
+ - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Two separate library packages can be used depending on the runtime target:
+   - [SIPSorceryMedia.Windows](src/SIPSorceryMedia.Windows): A Windows specific library that provides audio capture and playback. 
+   - [SIPSorceryMedia.FFmpeg](src/SIPSorceryMedia.FFmpeg/): A cross platform library that can be used for high performance video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
 
- - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via [Concentus](https://github.com/lostromb/concentus). A per-release of a C# port of the VP8 video codec is available at [SIPSorcery.VP8 directory](SIPSorcery.VP8/) Additional codecs, particularly video ones, require C or C++ libraries.
+ - This library includes audio codecs G711, G722, G729 and, thanks to [Concentus](https://github.com/lostromb/concentus), OPUS.
+ - A C# port of the VP8 video codec is available at [SIPSorcery.VP8 directory](src/SIPSorcery.VP8/) but it should be considered experimental and performs poorly at 1080p and greater. The advantage of the VP8 .NET port is it allows video streaming with NO native dependencies required.
+ - High performance native video codecs (VP8, VP9, H264, H265 and AV1) are available via the [SIPSorcery FFmpeg](src/SIPSorceryMedia.FFmpeg/) package which in turn depends on [FFmpeg](https://ffmpeg.org/) being available at runtime. These video codecs (H264 is the fastest) can be used to stream 4k video at 30fps on a typical Windows machine. See [Video Pipeline Capacity](#video-pipeline-capacity) below for some benchmarking results.
 
 ## Installation
 
