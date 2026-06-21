@@ -21,7 +21,7 @@ namespace SIPSorcery.Net.UnitTests
 {
     public class SctpHeaderUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public SctpHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

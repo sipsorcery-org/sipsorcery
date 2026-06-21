@@ -39,7 +39,7 @@ public interface ILightningClientFactory
 
 public class LightningClientFactory : ILightningClientFactory
 {
-    private ILogger _logger;
+    private readonly ILogger _logger;
     private IConfiguration _config;
 
     private readonly string _lndUrl;

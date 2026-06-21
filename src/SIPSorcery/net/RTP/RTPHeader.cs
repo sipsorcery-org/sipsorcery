@@ -17,7 +17,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net;
@@ -159,7 +158,7 @@ public class RTPHeader
                     invalid = true;
                     return null;
                 }
-                ext = new RTPHeaderExtensionData(id, ExtensionPayload.Skip(position).Take(len).ToArray(), type);
+                ext = new RTPHeaderExtensionData(id, ExtensionPayload.AsSpan(position, len).ToArray(), type);
                 position += len;
             }
             else

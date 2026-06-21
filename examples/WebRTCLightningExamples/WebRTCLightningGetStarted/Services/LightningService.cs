@@ -42,7 +42,7 @@ public interface ILightningService
 
 public class LightningService : ILightningService
 {
-    private ILogger _logger;
+    private readonly ILogger _logger;
 
     private readonly ILightningClientFactory _lightningClientFactory;
 

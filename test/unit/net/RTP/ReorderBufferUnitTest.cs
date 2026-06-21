@@ -13,7 +13,7 @@ namespace SIPSorcery.UnitTests.Net
     [Trait("Category", "unit")]
     public class ReorderBufferUnitTest
     {
-        private ILogger logger = null;
+        private readonly ILogger logger;
 
         public ReorderBufferUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {

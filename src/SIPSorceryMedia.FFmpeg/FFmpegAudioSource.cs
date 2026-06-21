@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
@@ -71,7 +70,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         private void AudioDecoder_OnError(string errorMessage)
         {
-            logger.LogDebug($"Audio - Source error for {path} - ErrorMessage:[{errorMessage}]");
+            logger.LogDebug("Audio - Source error for {Path} - ErrorMessage:[{ErrorMessage}]", path, errorMessage);
             OnAudioSourceError?.Invoke(errorMessage);
             Dispose();
         }
@@ -86,13 +85,18 @@ namespace SIPSorceryMedia.FFmpeg
         public List<AudioFormat> GetAudioSourceFormats()
         {
             if (_audioFormatManager != null)
+            {
                 return _audioFormatManager.GetSourceFormats();
+            }
             return new List<AudioFormat>();
         }
 
         public void SetAudioSourceFormat(AudioFormat audioFormat)
         {
-            logger.LogDebug($"Setting audio source format to {audioFormat.FormatID}:{audioFormat.Codec} {audioFormat.ClockRate}.");
+            logger.LogDebug("Setting audio source format to {FormatId}:{Codec} {ClockRate}.",
+                audioFormat.FormatID,
+                audioFormat.Codec,
+                audioFormat.ClockRate);
             _audioFormatManager.SetSelectedFormat(audioFormat);
             InitialiseDecoder();
         }
@@ -100,7 +104,9 @@ namespace SIPSorceryMedia.FFmpeg
         public void RestrictFormats(Func<AudioFormat, bool> filter)
         {
             if (_audioFormatManager != null)
+            {
                 _audioFormatManager.RestrictFormats(filter);
+            }
         }
 
         public void ExternalAudioSourceRawSample(AudioSamplingRatesEnum samplingRate, uint durationMilliseconds, short[] sample) => throw new NotImplementedException();
@@ -119,8 +125,10 @@ namespace SIPSorceryMedia.FFmpeg
 
         private unsafe void AudioDecoder_OnAudioFrame(ref AVFrame avFrame)
         {
-            if ( (OnAudioSourceEncodedSample == null) || (_audioDecoder == null) )
+            if ((OnAudioSourceEncodedSample == null) || (_audioDecoder == null))
+            {
                 return;
+            }
 
             // Avoid to create several times buffer of the same size
             if (_currentNbSamples < avFrame.nb_samples)
@@ -143,7 +151,9 @@ namespace SIPSorceryMedia.FFmpeg
             // Convert audio
             int dstSampleCount;
             fixed (byte* pBuffer = buffer)
+            {
                 dstSampleCount = ffmpeg.swr_convert(_audioDecoder._swrContext, &pBuffer, bufferSizeInSamples, avFrame.extended_data, avFrame.nb_samples);
+            }
 
             if(dstSampleCount < 0)
             {
@@ -155,15 +165,18 @@ namespace SIPSorceryMedia.FFmpeg
             if(dstSampleCount > 0)
             {
                 // FFmpeg AV_SAMPLE_FMT_S16 will store the bytes in the correct endianess for the underlying platform.
-                short[] pcm = buffer.Take(dstSampleCount * 2).Where((x, i) => i % 2 == 0).Select((y, i) => BitConverter.ToInt16(buffer, i * 2)).ToArray();
+                short[] pcm = new short[dstSampleCount];
+                Buffer.BlockCopy(buffer, 0, pcm, 0, dstSampleCount * sizeof(short));
                 _incomingSamples.Write(pcm);
 
                 while (_incomingSamples.Available() >= frameSize)
                 {
                     var pcmFrame = _incomingSamples.Read(frameSize);
                     var encodedSample = _audioEncoder.EncodeAudio(pcmFrame, _audioFormatManager.SelectedFormat);
-                    if(encodedSample.Length > 0)
-                        OnAudioSourceEncodedSample?.Invoke((uint) (pcmFrame.Length * _audioFormatManager.SelectedFormat.RtpClockRate / _audioFormatManager.SelectedFormat.ClockRate ), encodedSample);
+                    if (encodedSample.Length > 0)
+                    {
+                        OnAudioSourceEncodedSample?.Invoke((uint)(pcmFrame.Length * _audioFormatManager.SelectedFormat.RtpClockRate / _audioFormatManager.SelectedFormat.ClockRate), encodedSample);
+                    }
                 }
             }
         }
@@ -188,8 +201,10 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _isClosed = true;
 
-                if(_audioDecoder != null)
+                if (_audioDecoder != null)
+                {
                     await _audioDecoder.Close();
+                }
 
                 Dispose();
             }
@@ -202,7 +217,9 @@ namespace SIPSorceryMedia.FFmpeg
                 _isPaused = true;
 
                 if (_audioDecoder != null)
+                {
                     _audioDecoder.Pause();
+                }
             }
 
             return Task.CompletedTask;
@@ -214,7 +231,9 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 _isPaused = false;
                 if (_audioDecoder != null)
+                {
                     _audioDecoder.Resume();
+                }
             }
             return Task.CompletedTask;
         }

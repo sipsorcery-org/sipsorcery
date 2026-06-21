@@ -19,7 +19,6 @@
 
 using System;
 using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
@@ -289,7 +288,7 @@ namespace SIPSorcery.Sys
                 //could [a:b:c]:d
                 if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
                 {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    string ipaddressstring = string.Join(":", values.AsSpan(0, values.Length - 1).ToArray());
                     ipaddr = IPAddress.Parse(ipaddressstring);
                     port = getPort(values[values.Length - 1]);
                     host = ipaddr.ToString();
@@ -367,7 +366,7 @@ namespace SIPSorcery.Sys
                 //could [a:b:c]:d
                 if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
                 {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    string ipaddressstring = string.Join(":", values.AsSpan(0, values.Length - 1).ToArray());
                     ipaddr = IPAddress.Parse(ipaddressstring);
                     port = getPort(values[values.Length - 1]);
                 }

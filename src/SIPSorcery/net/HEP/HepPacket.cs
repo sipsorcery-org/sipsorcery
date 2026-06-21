@@ -29,7 +29,6 @@
 
 using System;
 using System.Buffers.Binary;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -287,7 +286,7 @@ namespace SIPSorcery.Net
             // Length
             BinaryPrimitives.WriteUInt16BigEndian(packetBuffer.AsSpan(4), (ushort)offset);
 
-            return packetBuffer.Take(offset).ToArray();
+            return packetBuffer.AsSpan(0, offset).ToArray();
         }
     }
 }

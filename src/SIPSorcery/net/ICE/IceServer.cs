@@ -442,8 +442,6 @@ namespace SIPSorcery.Net
                 }
                 else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
                 {
-                    logger.LogWarning("ICE session received an error response for an Allocate request to {Uri} from {remoteEP}.", _uri, remoteEndPoint);
-
                     ErrorResponseCount++;
 
                     if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
@@ -453,13 +451,13 @@ namespace SIPSorcery.Net
 
                         if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
                         {
-                            // Set the authentication properties authenticate.
-                            SetAuthenticationFields(stunResponse);
+                            HandleAuthenticationChallenge(stunResponse);
 
-                            // Set a new transaction ID.
-                            GenerateNewTransactionID();
-
-                            ErrorResponseCount = 1;
+                            if(ErrorResponseCount > 1)
+                            {
+                                // Only log a warning if this is not the first challenge response, as the first one is expected to trigger authentication and may be discounted from the error budget.
+                                logger.LogWarning("ICE session received an error response for an Allocate request to {Uri} from {remoteEP}.", _uri, remoteEndPoint);
+                            }
                         }
                         else if (alternateServerAttribute != null)
                         {
@@ -509,10 +507,7 @@ namespace SIPSorcery.Net
 
                         if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
                         {
-                            SetAuthenticationFields(stunResponse);
-
-                            // Set a new transaction ID.
-                            GenerateNewTransactionID();
+                            HandleAuthenticationChallenge(stunResponse);
                         }
                         else
                         {
@@ -551,10 +546,7 @@ namespace SIPSorcery.Net
 
                         if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE || errCodeAttribute.ErrorCode == STUN_STALE_NONCE_ERROR_CODE)
                         {
-                            SetAuthenticationFields(stunResponse);
-
-                            // Set a new transaction ID.
-                            GenerateNewTransactionID();
+                            HandleAuthenticationChallenge(stunResponse);
                         }
                         else
                         {
@@ -576,6 +568,31 @@ namespace SIPSorcery.Net
             }
 
             return candidatesAvailable;
+        }
+
+        /// <summary>
+        /// Handles a 401 Unauthorized / 438 Stale Nonce challenge to an authenticated request
+        /// (Allocate, Binding or Refresh): captures the nonce and realm and rotates the transaction
+        /// ID so the request can be retried with credentials. The first, unauthenticated challenge
+        /// is the expected trigger for authentication and is discounted from the error budget; a
+        /// challenge that comes back AFTER credentials were already sent (indicated by a non-null
+        /// Nonce) keeps counting towards MAX_ERRORS so the request cannot be retried forever.
+        /// </summary>
+        /// <param name="stunResponse">The STUN authentication required error response.</param>
+        internal void HandleAuthenticationChallenge(STUNMessage stunResponse)
+        {
+            // A request only carries credentials once a Nonce has been obtained (see the
+            // SendTurn*/SendStun* request builders), so a non-null Nonce here means this error came
+            // back despite credentials being sent.
+            bool credentialsAlreadySent = Nonce != null;
+
+            SetAuthenticationFields(stunResponse);
+            GenerateNewTransactionID();
+
+            if (!credentialsAlreadySent)
+            {
+                ErrorResponseCount = 1;
+            }
         }
 
         /// <summary>

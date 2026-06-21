@@ -94,9 +94,11 @@
     <Project Path="examples/WebRTCExamples/CloudflareTurn/CloudflareTurn.csproj" />
     <Project Path="examples/WebRTCExamples/FfmpegToWebRTC/FfmpegToWebRTC.csproj" />
     <Project Path="examples/WebRTCExamples/JanusWebRTCStream/JanusWebRTCStream.csproj" />
+    <Project Path="examples/WebRTCExamples/LiveKitWebRTC/LiveKitWebRTC.csproj" />
     <Project Path="examples/WebRTCExamples/RtspToWebRTCAudioAndVideo/RtspToWebRTCAudioAndVideo.csproj" />
     <Project Path="examples/WebRTCExamples/SIPToWebRtcBridge/SIPToWebRtcBridge.csproj" />
     <Project Path="examples/WebRTCExamples/SIPToWebRtcBridgeVideo/SIPToWebRtcBridgeVideo.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCAudioScope/WebRTCAudioScope.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCClient/WebRTCClient.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCClientVP8Net/WebRTCClientVP8Net.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCDaemon/WebRTCDaemon.csproj" />
@@ -109,8 +111,6 @@
     <Project Path="examples/WebRTCExamples/WebRTCMp4Source/WebRTCMp4Source.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCNoSignalling/WebRTCNoSignalling.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCNostrSignalling/WebRTCNostrSignalling.csproj" />
-    <Project Path="examples/WebRTCExamples/WebRTCOpenGL/WebRTCOpenGL.csproj" />
-    <Project Path="examples/WebRTCExamples/WebRTCOpenGLSource/WebRTCOpenGLSource.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCReceiveAudio/WebRTCReceiveAudio.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCReceiver/WebRTCReceiver.csproj" />
     <Project Path="examples/WebRTCExamples/WebRTCSendAudio/WebRTCSendAudio.csproj" />

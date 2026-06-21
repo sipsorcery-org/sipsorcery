@@ -816,5 +816,86 @@ namespace Vpx.Net
                 row0,
                 MB_PREDICTION_MODE.ZEROMV);
         }
+
+        // -----------------------------------------------------------------
+        // Intra-in-inter-frame MB mode bits.
+        //
+        // After WriteInterMbAsIntra has written is_inter=0, an intra MB in an
+        // inter frame signals its luma 16x16 mode and its chroma mode using
+        // the *non-keyframe* mode trees and the default (non-updated) mode
+        // probability tables. This mirrors decodemv.read_mb_modes_mv's
+        // intra branch: read_ymode(fc.ymode_prob) over vp8_ymode_tree, then
+        // read_uv_mode(fc.uv_mode_prob) over vp8_uv_mode_tree. The encoder
+        // header writes the ymode/uv_mode update flags as 0, so the decoder's
+        // fc.*_prob stay at the vp8_ymode_prob / vp8_uv_mode_prob defaults
+        // used here. B_PRED (4x4) intra is not produced.
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Walks <paramref name="tree"/> to find the boolean-coder bit path
+        /// (value, MSB-first, and length) that reaches the leaf encoding
+        /// <paramref name="leafMode"/>. Leaves are stored as the negation of
+        /// the mode value (so DC_PRED = 0 is the leaf value 0); internal node
+        /// links are always positive. This is the encode-side inverse of
+        /// treereader.vp8_treed_read.
+        /// </summary>
+        private static bool TryFindTreePath(sbyte[] tree, int leafMode, int node,
+            int value, int length, out int outValue, out int outLength)
+        {
+            for (int b = 0; b <= 1; b++)
+            {
+                int next = tree[node + b];
+                int v = (value << 1) | b;
+                int len = length + 1;
+                if (next <= 0)
+                {
+                    if (-next == leafMode) { outValue = v; outLength = len; return true; }
+                }
+                else if (TryFindTreePath(tree, leafMode, next, v, len, out outValue, out outLength))
+                {
+                    return true;
+                }
+            }
+            outValue = 0; outLength = 0; return false;
+        }
+
+        /// <summary>
+        /// Writes the luma mode bits for an intra MB inside an inter frame.
+        /// Only the four 16x16 luma intra modes (DC/V/H/TM_PRED) are
+        /// supported; B_PRED is rejected.
+        /// </summary>
+        public static void WriteIntraMbYMode16x16(ref BOOL_CODER bc, MB_PREDICTION_MODE mode)
+        {
+            if (mode != MB_PREDICTION_MODE.DC_PRED && mode != MB_PREDICTION_MODE.V_PRED &&
+                mode != MB_PREDICTION_MODE.H_PRED && mode != MB_PREDICTION_MODE.TM_PRED)
+            {
+                throw new ArgumentException(
+                    "Only the four 16x16 luma intra modes (DC/V/H/TM_PRED) are supported.", nameof(mode));
+            }
+
+            if (!TryFindTreePath(entropymode.vp8_ymode_tree, (int)mode, 0, 0, 0,
+                    out int value, out int length))
+            {
+                throw new ArgumentException($"Mode {mode} not found in vp8_ymode_tree.", nameof(mode));
+            }
+
+            vp8_treed_write(ref bc, entropymode.vp8_ymode_tree,
+                vp8_entropymodedata.vp8_ymode_prob, value, length);
+        }
+
+        /// <summary>
+        /// Writes the chroma mode bits for an intra MB inside an inter frame.
+        /// </summary>
+        public static void WriteIntraMbUVMode(ref BOOL_CODER bc, MB_PREDICTION_MODE mode)
+        {
+            if (!TryFindTreePath(entropymode.vp8_uv_mode_tree, (int)mode, 0, 0, 0,
+                    out int value, out int length))
+            {
+                throw new ArgumentException($"Mode {mode} not found in vp8_uv_mode_tree.", nameof(mode));
+            }
+
+            vp8_treed_write(ref bc, entropymode.vp8_uv_mode_tree,
+                vp8_entropymodedata.vp8_uv_mode_prob, value, length);
+        }
     }
 }

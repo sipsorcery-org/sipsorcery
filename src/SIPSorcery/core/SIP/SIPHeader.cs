@@ -2298,7 +2298,12 @@ namespace SIPSorcery.SIP
                 var headersBuilder = new StringBuilder();
 
                 void AppendHeader<T>(string headerName, T headerValue) =>
-                    headersBuilder.Append($"{headerName}: {headerValue}{m_CRLF}");
+                    headersBuilder
+                        .Append(headerName)
+                        .Append(SIPConstants.HEADER_DELIMITER_CHAR)
+                        .Append(' ')
+                        .Append(headerValue)
+                        .Append(m_CRLF);
 
                 headersBuilder.Append(Vias.ToString());
 
@@ -2333,7 +2338,7 @@ namespace SIPSorcery.SIP
                 else if (Contact != null && Contact.Count > 1)
                 {
                     StringBuilder contactsBuilder = new StringBuilder();
-                    contactsBuilder.Append($"{SIPHeaders.SIP_HEADER_CONTACT}: ");
+                    contactsBuilder.Append(SIPHeaders.SIP_HEADER_CONTACT).Append(':').Append(' ');
 
                     bool firstContact = true;
                     foreach (SIPContactHeader contactHeader in Contact)
@@ -2344,7 +2349,7 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
-                            contactsBuilder.Append($",{contactHeader}");
+                            contactsBuilder.Append(',').Append(contactHeader);
                         }
 
                         firstContact = false;

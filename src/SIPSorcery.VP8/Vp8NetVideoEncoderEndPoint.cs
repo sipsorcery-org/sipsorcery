@@ -28,7 +28,7 @@ namespace Vpx.Net
         private const int DEFAULT_FRAMES_PER_SECOND = 30;
         private const int VP8_FORMAT_ID = 96;
 
-        private ILogger logger = SIPSorcery.LogFactory.CreateLogger<Vp8NetVideoEncoderEndPoint>();
+        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<Vp8NetVideoEncoderEndPoint>();
 
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
@@ -71,6 +71,46 @@ namespace Vpx.Net
             _vp8Codec = new VP8Codec();
         }
 
+        /// <summary>
+        /// Number of frames between forced keyframes (the GOP length). Defaults to the
+        /// <see cref="VP8Codec"/> default. A short GOP bounds how long a packet-loss-induced
+        /// decode error can persist: inter frames predict from the previous frame, so until a
+        /// keyframe arrives a single lost RTP packet corrupts every subsequent frame. Because
+        /// the SIPSorcery pipeline does not currently turn a received RTCP PLI into a keyframe
+        /// request, the next scheduled keyframe is the only recovery point — so for
+        /// high-motion sources sent over a lossy/bursty path a short interval (or 1, i.e. every
+        /// frame a keyframe) is far more robust. Range [1, int.MaxValue].
+        /// </summary>
+        public int KeyframeIntervalFrames
+        {
+            get => _vp8Codec.KeyframeIntervalFrames;
+            set => _vp8Codec.KeyframeIntervalFrames = value;
+        }
+
+        /// <summary>
+        /// VP8 base quantizer index in the range [0, 127] used for every frame (higher = smaller
+        /// frames and lower quality). Defaults to the <see cref="VP8Codec"/> default. This is the
+        /// primary lever for trading bitrate against quality on this keyframe-oriented encoder,
+        /// which has no rate control.
+        /// </summary>
+        public int BaseQIndex
+        {
+            get => _vp8Codec.BaseQIndex;
+            set => _vp8Codec.BaseQIndex = value;
+        }
+
+        /// <summary>
+        /// Opt-in per-macroblock intra-fallback mode decision on inter frames. Prevents
+        /// quality drift on content ZEROMV prediction cannot represent (slow ramps/fades,
+        /// fast-changing detail) at roughly double the inter-frame encode cost. Defaults to
+        /// false. See <see cref="VP8Codec.EnableIntraFallback"/> for details.
+        /// </summary>
+        public bool EnableIntraFallback
+        {
+            get => _vp8Codec.EnableIntraFallback;
+            set => _vp8Codec.EnableIntraFallback = value;
+        }
+
         public void RestrictFormats(Func<VideoFormat, bool> filter) => _formatManager.RestrictFormats(filter);
         public List<VideoFormat> GetVideoSourceFormats() => _formatManager.GetSourceFormats();
         public void SetVideoSourceFormat(VideoFormat videoFormat) => _formatManager.SetSelectedFormat(videoFormat);
@@ -79,7 +119,7 @@ namespace Vpx.Net
 
         public void ForceKeyFrame() => _vp8Codec.ForceKeyFrame();
         public void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload) =>
-            throw new ApplicationException("The Windows Video End Point requires full video frames rather than individual RTP packets.");
+            throw new ApplicationException("The VP8 Video End Point requires full video frames rather than individual RTP packets.");
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public bool IsVideoSourcePaused() => false;
         public Task PauseVideo() => Task.CompletedTask;

@@ -449,15 +449,21 @@ namespace SIPSorceryMedia.Windows
                 MediaCapture mediaCapture = new MediaCapture();
                 await mediaCapture.InitializeAsync(mediaCaptureSettings);
 
-                foreach (var srcFmtList in mediaCapture.FrameSources.Values.Select(x => x.SupportedFormats).Select(y => y.ToList()))
+                if (logger.IsEnabled(LogLevel.Debug))
                 {
-                    foreach (var srcFmt in srcFmtList)
+                    foreach (var srcFmtList in mediaCapture.FrameSources.Values)
                     {
-                        var vidFmt = srcFmt.VideoFormat;
-                        float vidFps = vidFmt.MediaFrameFormat.FrameRate.Numerator / vidFmt.MediaFrameFormat.FrameRate.Denominator;
-                        string pixFmt = vidFmt.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : vidFmt.MediaFrameFormat.Subtype;
-                        logger.LogDebug("Video Capture device {VideoDeviceName} format {Width}x{Height} {Fps:0.##}fps {PixelFormat}",
-                            vidCapDevice.Name, vidFmt.Width, vidFmt.Height, vidFps, pixFmt);
+                        foreach (var srcFmt in srcFmtList.SupportedFormats)
+                        {
+                            var vidFps = srcFmt.VideoFormat.MediaFrameFormat.FrameRate.Numerator / srcFmt.VideoFormat.MediaFrameFormat.FrameRate.Denominator;
+                            var pixFmt = srcFmt.VideoFormat.MediaFrameFormat.Subtype == MF_I420_PIXEL_FORMAT ? "I420" : srcFmt.VideoFormat.MediaFrameFormat.Subtype;
+                            logger.LogDebug("Video Capture device {VideoDeviceName} format {Width}x{Height} {FrameRate:0.##}fps {PixelFormat}",
+                                vidCapDevice.Name,
+                                srcFmt.VideoFormat.Width,
+                                srcFmt.VideoFormat.Height,
+                                vidFps,
+                                pixFmt);
+                        }
                     }
                 }
             }
@@ -678,17 +684,21 @@ namespace SIPSorceryMedia.Windows
         /// </summary>
         private void PrintFrameSourceInfo(MediaFrameSource frameSource)
         {
-            var width = frameSource.CurrentFormat.VideoFormat.Width;
-            var height = frameSource.CurrentFormat.VideoFormat.Height;
-            var fpsNumerator = frameSource.CurrentFormat.FrameRate.Numerator;
-            var fpsDenominator = frameSource.CurrentFormat.FrameRate.Denominator;
+            if (!logger.IsEnabled(LogLevel.Information))
+            {
+                return;
+            }
 
-            double fps = fpsNumerator / fpsDenominator;
-            string pixFmt = frameSource.CurrentFormat.Subtype;
-            string deviceName = frameSource.Info.DeviceInformation.Name;
+            var currentFormat = frameSource.CurrentFormat;
+            var videoFormat = currentFormat.VideoFormat;
+            var frameRate = currentFormat.FrameRate;
 
             logger.LogInformation("Video capture device {VideoDeviceName} successfully initialised: {Width}x{Height} {Fps:0.##}fps pixel format {PixelFormat}.",
-                deviceName, width, height, fps, pixFmt);
+                frameSource.Info.DeviceInformation.Name,
+                videoFormat.Width,
+                videoFormat.Height,
+                frameRate.Numerator / frameRate.Denominator,
+                currentFormat.Subtype);
         }
 
         public void Dispose()

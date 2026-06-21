@@ -114,9 +114,30 @@ namespace Vpx.Net
         public int MbRows;
 
         // Pool of MbEncodeResult instances, one per MB position. Each is
-        // Reset()'d before reuse.
+        // Reset()'d before reuse. In the inter path MbResults holds the
+        // ZEROMV-inter candidate and MbResultsIntra holds the DC_PRED intra
+        // candidate; IsIntra[idx] selects the winning mode per MB (and
+        // doubles as the intra/inter neighbour grid used for the inter
+        // mode-context computation).
         public MbEncodeResult[] MbResults;
+        public MbEncodeResult[] MbResultsIntra;
         public bool[] MbSkip;
+        public bool[] IsIntra;
+
+        // ZEROMV inter-prediction MB buffers (same-position samples pulled
+        // from LAST_FRAME). 16x16 Y + 8x8 U + 8x8 V.
+        public byte[] PredY = new byte[256];
+        public byte[] PredU = new byte[64];
+        public byte[] PredV = new byte[64];
+
+        // Per-candidate entropy-context scratch (9 slots each: 4 Y + 2 U +
+        // 2 V + 1 Y2). Both candidates are encoded from the same starting
+        // context, so each gets its own copy and only the winner's mutated
+        // context is committed back to FrameAboveCtx/LeftCtx.
+        public byte[] CtxAboveInter = new byte[9];
+        public byte[] CtxLeftInter = new byte[9];
+        public byte[] CtxAboveIntra = new byte[9];
+        public byte[] CtxLeftIntra = new byte[9];
 
         // Per-MB scratch shared by all MBs (single instance — only one MB
         // is being encoded at a time on this thread).
@@ -177,7 +198,16 @@ namespace Vpx.Net
                 for (int i = oldLen; i < total; i++) newResults[i] = new MbEncodeResult();
                 MbResults = newResults;
             }
+            if (MbResultsIntra == null || MbResultsIntra.Length < total)
+            {
+                int oldLen = MbResultsIntra?.Length ?? 0;
+                var newResults = new MbEncodeResult[total];
+                if (oldLen > 0) System.Array.Copy(MbResultsIntra, newResults, oldLen);
+                for (int i = oldLen; i < total; i++) newResults[i] = new MbEncodeResult();
+                MbResultsIntra = newResults;
+            }
             if (MbSkip == null || MbSkip.Length < total) MbSkip = new bool[total];
+            if (IsIntra == null || IsIntra.Length < total) IsIntra = new bool[total];
 
             if (FrameAboveCtx == null || FrameAboveCtx.Length < mbCols * 9)
                 FrameAboveCtx = new byte[mbCols * 9];
@@ -227,6 +257,13 @@ namespace Vpx.Net
         // call.
         [System.ThreadStatic]
         private static FrameEncoderBuffers _buffers;
+
+        /// <summary>
+        /// Diagnostic: the number of macroblocks coded as intra (DC_PRED) in
+        /// the most recent inter frame. Exposed for tests/tuning of the
+        /// intra-fallback mode decision; not part of the bitstream.
+        /// </summary>
+        public static int LastInterFrameIntraMbCount;
         // The keyframe Y mode tree (vp8_kf_ymode_tree, in entropymode.cs)
         // contains 4 internal nodes; the 4 corresponding probabilities live
         // in vp8_kf_ymode_prob = { 145, 156, 163, 128 }.
@@ -577,9 +614,17 @@ namespace Vpx.Net
         /// <param name="width">Frame width (multiple of 16).</param>
         /// <param name="height">Frame height (multiple of 16).</param>
         /// <param name="qIndex">Base quantizer (0..127).</param>
+        /// <param name="buffers">Per-instance scratch/reference buffers.</param>
+        /// <param name="intraFallback">When true, every MB is encoded both as a
+        /// ZEROMV inter candidate and a DC_PRED intra candidate and the cheaper
+        /// (rate-distortion measured against the source) is kept. This stops
+        /// error accumulation on content ZEROMV cannot represent, at roughly 2x
+        /// the encode cost per inter frame. When false, every MB is ZEROMV
+        /// inter (the original P-frame behaviour): cheapest, but regions whose
+        /// per-frame change quantises to zero drift until the next keyframe.</param>
         /// <returns>The encoded VP8 inter frame bytes.</returns>
         internal static byte[] EncodeInterFrameWithBuffers(byte[] srcY, byte[] srcU, byte[] srcV,
-            int width, int height, int qIndex, FrameEncoderBuffers buffers)
+            int width, int height, int qIndex, FrameEncoderBuffers buffers, bool intraFallback = true)
         {
             if (buffers == null) throw new System.ArgumentNullException(nameof(buffers));
             if (width <= 0 || width % 16 != 0)
@@ -632,44 +677,75 @@ namespace Vpx.Net
                             boolhuff.vp8_encode_bool(ref bc0, 0,
                                 coefupdateprobs.vp8_coef_update_probs[t, b, c, n]);
 
-            // ----- Phase 1: encode all MBs into MbEncodeResults -----
+            // ----- Phase 1: encode all MBs with a per-MB intra/inter RD decision -----
             //
             // Same two-phase split as the keyframe path: encode every MB
             // first so we know skip flags before writing prob_skip_false
-            // and the per-MB skip bits. For the ZEROMV-everywhere model
-            // the prediction for each MB is the same-position 16x16 Y +
-            // 8x8 U + 8x8 V samples from buf.LastFrameY/U/V.
+            // and the per-MB skip bits.
+            //
+            // For each MB we evaluate two candidates and keep the cheaper:
+            //   - ZEROMV inter: same-position 16x16 Y + 8x8 U + 8x8 V samples
+            //     from buf.LastFrameY/U/V (the previous reconstruction).
+            //   - DC_PRED intra: predicted from the CURRENT frame's causal
+            //     reconstructed neighbours (above row + left column), exactly
+            //     as the keyframe path does.
+            //
+            // The intra candidate is what stops the high-motion error
+            // accumulation: when ZEROMV cannot represent fast-changing
+            // content at the chosen quantizer, the MB is intra-refreshed
+            // instead of letting stale prediction ghost through and compound
+            // across the inter frames between keyframes. When ZEROMV already
+            // predicts the MB perfectly (zero residual -> skippable) we keep
+            // inter unconditionally, which preserves the tiny all-skip frames
+            // for static content.
+            //
+            // The decoder reconstructs whichever mode we signal, so either
+            // choice is bit-exact; the decision only trades quality vs size.
 
-            MbEncodeResult[] mbResults = buf.MbResults;
+            MbEncodeResult[] mbResults = buf.MbResults;            // inter candidate pool.
+            MbEncodeResult[] mbResultsIntra = buf.MbResultsIntra;  // intra candidate pool.
             bool[] mbSkip = buf.MbSkip;
+            bool[] isIntra = buf.IsIntra;
             int skipTrueCount = 0;
             int skipFalseCount = 0;
+            int intraCount = 0;
 
             byte[] frameAboveCtx = buf.FrameAboveCtx;
             Array.Clear(frameAboveCtx, 0, mbCols * 9);
 
             byte[] leftCtx = buf.LeftCtx;
-            byte[] aboveCtx = buf.AboveCtx;
             byte[] mbY = buf.MbY;
             byte[] mbU = buf.MbU;
             byte[] mbV = buf.MbV;
 
-            // ZEROMV prediction reuses the per-MB scratch slots that the
-            // keyframe path used for above/left neighbour pixels — the
-            // inter encoder only needs same-position prediction so those
-            // slots are free to repurpose.
-            byte[] predY = buf.AboveY.Length >= 256 ? buf.AboveY : new byte[256];
-            byte[] predU = buf.AboveU.Length >= 64  ? buf.AboveU : new byte[64];
-            byte[] predV = buf.AboveV.Length >= 64  ? buf.AboveV : new byte[64];
-            // Above slots are 16/8/8 in the keyframe path; for inter we
-            // need 256/64/64. Allocate dedicated buffers if the existing
-            // ones aren't large enough (one-time per encoder lifetime).
-            if (predY.Length < 256) predY = new byte[256];
-            if (predU.Length < 64) predU = new byte[64];
-            if (predV.Length < 64) predV = new byte[64];
+            // ZEROMV prediction buffers (16x16 Y + 8x8 U + 8x8 V).
+            byte[] predY = buf.PredY;
+            byte[] predU = buf.PredU;
+            byte[] predV = buf.PredV;
+
+            // Per-candidate entropy-context copies (both candidates start
+            // from the same above/left context; only the winner's mutated
+            // context is committed).
+            byte[] ctxAboveInter = buf.CtxAboveInter;
+            byte[] ctxLeftInter = buf.CtxLeftInter;
+            byte[] ctxAboveIntra = buf.CtxAboveIntra;
+            byte[] ctxLeftIntra = buf.CtxLeftIntra;
+
+            // Current-frame reconstructed-neighbour buffers for intra
+            // prediction (same role as in the keyframe path).
+            byte[] aboveYRow = buf.AboveYRow;
+            byte[] aboveURow = buf.AboveURow;
+            byte[] aboveVRow = buf.AboveVRow;
+            byte[] leftY = buf.LeftY;
+            byte[] leftU = buf.LeftU;
+            byte[] leftV = buf.LeftV;
+            byte[] aboveY = buf.AboveY;
+            byte[] aboveU = buf.AboveU;
+            byte[] aboveV = buf.AboveV;
 
             for (int mbRow = 0; mbRow < mbRows; mbRow++)
             {
+                bool haveLeftNeighbour = false;
                 Array.Clear(leftCtx, 0, 9);
 
                 for (int mbCol = 0; mbCol < mbCols; mbCol++)
@@ -684,40 +760,119 @@ namespace Vpx.Net
                     ExtractPlaneInto(buf.LastFrameU, chromaW, mbCol * 8,  mbRow * 8,   8,  8, predU);
                     ExtractPlaneInto(buf.LastFrameV, chromaW, mbCol * 8,  mbRow * 8,   8,  8, predV);
 
-                    // Pull this MB column's above context.
+                    bool haveAbove = mbRow > 0;
+                    if (haveAbove)
+                    {
+                        ExtractRowInto(aboveYRow, mbCol * 16, 16, aboveY);
+                        ExtractRowInto(aboveURow, mbCol * 8,  8,  aboveU);
+                        ExtractRowInto(aboveVRow, mbCol * 8,  8,  aboveV);
+                    }
+
                     int aboveBase = mbCol * 9;
-                    for (int s = 0; s < 9; s++) aboveCtx[s] = frameAboveCtx[aboveBase + s];
-
                     int idx = mbRow * mbCols + mbCol;
-                    var pooled = mbResults[idx];
 
-                    var r = mb_encoder.EncodeMacroblockZeroMvLast(
+                    // --- Inter (ZEROMV) candidate, from a copy of the start context. ---
+                    for (int s = 0; s < 9; s++) ctxAboveInter[s] = frameAboveCtx[aboveBase + s];
+                    for (int s = 0; s < 9; s++) ctxLeftInter[s] = leftCtx[s];
+
+                    var interR = mb_encoder.EncodeMacroblockZeroMvLast(
                         mbY, mbU, mbV,
                         predY, predU, predV,
                         fq,
-                        aboveCtx, leftCtx,
-                        pooled, scratch);
-                    mbResults[idx] = r;
+                        ctxAboveInter, ctxLeftInter,
+                        mbResults[idx], scratch);
 
-                    bool skip = IsAllEob(r);
+                    MbEncodeResult winner;
+                    byte[] winAbove, winLeft;
+                    bool chooseIntra = false;
+
+                    if (intraFallback)
+                    {
+                        // --- Intra (DC_PRED) candidate, from a copy of the start context. ---
+                        //
+                        // Both candidates are always evaluated. We deliberately do
+                        // NOT shortcut on "inter residual quantised to zero": that
+                        // condition means the coded residual is zero, NOT that the
+                        // prediction matches the source. For fine/high-contrast
+                        // moving detail the residual can quantise to zero while the
+                        // source has actually changed -- the MB would then be
+                        // skipped and the stale prediction would ghost through and
+                        // accumulate. The RD cost below is measured against the
+                        // SOURCE (distortion = SSE vs the source MB), so such an MB
+                        // shows a large inter cost and is refreshed via intra.
+                        for (int s = 0; s < 9; s++) ctxAboveIntra[s] = frameAboveCtx[aboveBase + s];
+                        for (int s = 0; s < 9; s++) ctxLeftIntra[s] = leftCtx[s];
+
+                        var intraR = mb_encoder.EncodeMacroblockDcPred(
+                            mbY, mbU, mbV,
+                            haveAbove         ? aboveY : null,
+                            haveLeftNeighbour ? leftY : null,
+                            haveAbove         ? aboveU : null,
+                            haveLeftNeighbour ? leftU : null,
+                            haveAbove         ? aboveV : null,
+                            haveLeftNeighbour ? leftV : null,
+                            fq,
+                            ctxAboveIntra, ctxLeftIntra,
+                            mbResultsIntra[idx], scratch);
+
+                        long interCost = ModeRdCost(mbY, mbU, mbV, interR, isIntra: false);
+                        long intraCost = ModeRdCost(mbY, mbU, mbV, intraR, isIntra: true);
+
+                        if (intraCost < interCost)
+                        {
+                            winner = intraR; winAbove = ctxAboveIntra; winLeft = ctxLeftIntra;
+                            chooseIntra = true;
+                        }
+                        else
+                        {
+                            winner = interR; winAbove = ctxAboveInter; winLeft = ctxLeftInter;
+                        }
+                    }
+                    else
+                    {
+                        // Intra fallback disabled: every MB is the ZEROMV inter
+                        // candidate (original P-frame behaviour, ~half the encode
+                        // cost). The reconstructed-neighbour maintenance below is
+                        // still performed so the buffers stay coherent.
+                        winner = interR; winAbove = ctxAboveInter; winLeft = ctxLeftInter;
+                    }
+
+                    isIntra[idx] = chooseIntra;
+                    if (chooseIntra) intraCount++;
+
+                    bool skip = IsAllEob(winner);
                     mbSkip[idx] = skip;
                     if (skip) skipTrueCount++; else skipFalseCount++;
 
-                    // Save mutated above context for the row below.
-                    for (int s = 0; s < 9; s++) frameAboveCtx[aboveBase + s] = aboveCtx[s];
+                    // Commit the winner's mutated entropy context.
+                    for (int s = 0; s < 9; s++) frameAboveCtx[aboveBase + s] = winAbove[s];
+                    for (int s = 0; s < 9; s++) leftCtx[s] = winLeft[s];
+
+                    // Update the current-frame reconstructed-neighbour buffers
+                    // from the winner so a later intra MB predicts from the
+                    // pixels the decoder will have reconstructed.
+                    ExtractColumnInto(winner.ReconY, srcStride: 16, columnIndex: 15, rows: 16, dst: leftY);
+                    ExtractColumnInto(winner.ReconU, srcStride: 8,  columnIndex: 7,  rows: 8,  dst: leftU);
+                    ExtractColumnInto(winner.ReconV, srcStride: 8,  columnIndex: 7,  rows: 8,  dst: leftV);
+                    haveLeftNeighbour = true;
+
+                    CopyRowOut(winner.ReconY, srcStride: 16, srcRow: 15, dst: aboveYRow, dstOffset: mbCol * 16, count: 16);
+                    CopyRowOut(winner.ReconU, srcStride: 8,  srcRow: 7,  dst: aboveURow, dstOffset: mbCol * 8,  count: 8);
+                    CopyRowOut(winner.ReconV, srcStride: 8,  srcRow: 7,  dst: aboveVRow, dstOffset: mbCol * 8,  count: 8);
                 }
             }
 
             // ----- Save reconstructed frame as next inter prediction ref -----
             //
-            // Same per-MB stitch as the keyframe path. Future inter
-            // frames in the stream will use the bytes we write here as
-            // their LAST_FRAME prediction source.
+            // Same per-MB stitch as the keyframe path, reading each MB's
+            // winning-candidate reconstruction. Future inter frames in the
+            // stream use these bytes as their LAST_FRAME prediction source.
             for (int mbRow = 0; mbRow < mbRows; mbRow++)
             {
                 for (int mbCol = 0; mbCol < mbCols; mbCol++)
                 {
-                    var r = mbResults[mbRow * mbCols + mbCol];
+                    int idx = mbRow * mbCols + mbCol;
+                    var r = isIntra[idx] ? mbResultsIntra[idx] : mbResults[idx];
 
                     int yBase = (mbRow * 16) * width + (mbCol * 16);
                     for (int row = 0; row < 16; row++)
@@ -757,13 +912,20 @@ namespace Vpx.Net
             for (int b = 7; b >= 0; b--)
                 bitstream.vp8_write_bit(ref bc0, (probSkipFalse >> b) & 1);
 
-            // ----- Phase 2b: inter-only prob_intra / prob_last / prob_gf -----
+            // ----- Phase 2b: prob_intra / prob_last / prob_gf -----
             //
-            // Choices for the ZEROMV-everywhere model:
-            //   prob_intra = 1   -> writing is_inter=1 costs ~0 bits.
-            //   prob_last  = 1   -> writing ref_is_LAST=0 costs ~0 bits.
-            //   prob_gf    = 128 -> never used (ref is always LAST).
-            const byte probIntra = 1;
+            // prob_intra = P(is_inter bit == 0) = P(MB is intra), scaled to
+            // [1, 255] from the actual intra/inter split chosen above so both
+            // intra and inter MBs code at a sensible cost. With no intra MBs
+            // this collapses to 1 (writing is_inter=1 costs ~0 bits), matching
+            // the previous all-inter behaviour.
+            //   prob_last = 1   -> writing ref_is_LAST=0 costs ~0 bits.
+            //   prob_gf   = 128 -> never used (ref is always LAST).
+            int totalMbCount = mbRows * mbCols;
+            int probIntraInt = intraCount * 256 / totalMbCount;
+            if (probIntraInt < 1) probIntraInt = 1;
+            if (probIntraInt > 255) probIntraInt = 255;
+            byte probIntra = (byte)probIntraInt;
             const byte probLast = 1;
             const byte probGf = 128;
             for (int b = 7; b >= 0; b--) bitstream.vp8_write_bit(ref bc0, (probIntra >> b) & 1);
@@ -790,34 +952,27 @@ namespace Vpx.Net
                 }
             }
 
-            // ----- Phase 2c: per-MB skip flag + ref_frame + inter mode -----
+            // ----- Phase 2c: per-MB skip flag + mode bits -----
             //
-            // The inter mode tree probabilities depend on a per-MB
-            // neighbour-MV-counting context cnt[CNT_INTRA]. The decoder
-            // (decodemv.read_mb_modes_mv) accumulates this context by
-            // walking the above, left and aboveleft neighbours: each
-            // non-intra neighbour with a zero MV adds either 2
-            // (above/left) or 1 (aboveleft) to cnt[CNT_INTRA].
+            // Each MB is either an intra (DC_PRED) MB or a ZEROMV inter MB.
             //
-            // For an all-ZEROMV LAST_FRAME stream the cnt[CNT_INTRA]
-            // value is determined entirely by the MB's position, since
-            // every inter MB has ref_frame = LAST and mv.as_int = 0:
-            //   (0,0)        -> 0 (no inter neighbours)
-            //   (0,c) c>0    -> 2 (only left contributes)
-            //   (r,0) r>0    -> 2 (only above contributes)
-            //   (r,c) r>0,c>0 -> 5 (above+left+aboveleft all contribute: 2+2+1)
+            // For inter MBs the mode tree probability row is the decoder's
+            // cnt[CNT_INTRA] (decodemv.read_mb_modes_mv): walking the above,
+            // left and above-left neighbours, each INTER neighbour (every
+            // inter MB here has mv == 0) adds 2 (above/left) or 1 (above-left)
+            // to cnt[CNT_INTRA]; intra neighbours and off-frame borders add
+            // nothing. So cnt = 2*[above inter] + 2*[left inter] +
+            // 1*[above-left inter], in the range [0, 5]. We pre-build the six
+            // possible rows and index by the per-MB count.
             //
-            // We pre-build the three context rows we'll need and pick
-            // the right one per MB, then walk the inter mode tree with
-            // the decoder-matching row.
-            byte[] modeProbsRow0 = new byte[4];
-            byte[] modeProbsRow2 = new byte[4];
-            byte[] modeProbsRow5 = new byte[4];
-            for (int j = 0; j < 4; j++)
+            // For intra MBs we write is_inter=0 then the DC_PRED Y/UV mode
+            // bits (matching the decoder's intra branch).
+            byte[][] modeProbRows = new byte[6][];
+            for (int row = 0; row < 6; row++)
             {
-                modeProbsRow0[j] = (byte)modecont.vp8_mode_contexts[0, j];
-                modeProbsRow2[j] = (byte)modecont.vp8_mode_contexts[2, j];
-                modeProbsRow5[j] = (byte)modecont.vp8_mode_contexts[5, j];
+                modeProbRows[row] = new byte[4];
+                for (int j = 0; j < 4; j++)
+                    modeProbRows[row][j] = (byte)modecont.vp8_mode_contexts[row, j];
             }
 
             for (int mbRow = 0; mbRow < mbRows; mbRow++)
@@ -829,19 +984,30 @@ namespace Vpx.Net
                     // Skip flag (boolean coder, prob_skip_false).
                     boolhuff.vp8_encode_bool(ref bc0, mbSkip[i] ? 1 : 0, probSkipFalse);
 
-                    // Pick the context-correct mode prob row.
-                    byte[] modeProbs;
-                    if (mbRow == 0 && mbCol == 0)       modeProbs = modeProbsRow0;
-                    else if (mbRow == 0 || mbCol == 0)  modeProbs = modeProbsRow2;
-                    else                                modeProbs = modeProbsRow5;
+                    if (isIntra[i])
+                    {
+                        // is_inter = 0, then DC_PRED luma + chroma mode bits.
+                        bitstream.WriteInterMbAsIntra(ref bc0, probIntra);
+                        bitstream.WriteIntraMbYMode16x16(ref bc0, MB_PREDICTION_MODE.DC_PRED);
+                        bitstream.WriteIntraMbUVMode(ref bc0, MB_PREDICTION_MODE.DC_PRED);
+                    }
+                    else
+                    {
+                        // Neighbour-derived inter mode context (intra/border
+                        // neighbours contribute nothing).
+                        bool aboveInter = mbRow > 0       && !isIntra[(mbRow - 1) * mbCols + mbCol];
+                        bool leftInter = mbCol > 0       && !isIntra[mbRow * mbCols + (mbCol - 1)];
+                        bool aboveLeftInter = mbRow > 0 && mbCol > 0 && !isIntra[(mbRow - 1) * mbCols + (mbCol - 1)];
+                        int cnt = (aboveInter ? 2 : 0) + (leftInter ? 2 : 0) + (aboveLeftInter ? 1 : 0);
 
-                    // is_inter=1, ref_is_LAST=0, ZEROMV tree path.
-                    bitstream.WriteInterMbRefAndMode(
-                        ref bc0,
-                        probIntra, probLast, probGf,
-                        MV_REFERENCE_FRAME.LAST_FRAME,
-                        modeProbs,
-                        MB_PREDICTION_MODE.ZEROMV);
+                        // is_inter=1, ref_is_LAST=0, ZEROMV tree path.
+                        bitstream.WriteInterMbRefAndMode(
+                            ref bc0,
+                            probIntra, probLast, probGf,
+                            MV_REFERENCE_FRAME.LAST_FRAME,
+                            modeProbRows[cnt],
+                            MB_PREDICTION_MODE.ZEROMV);
+                    }
                 }
             }
 
@@ -863,7 +1029,7 @@ namespace Vpx.Net
                 {
                     if (mbSkip[i]) continue;
 
-                    var r = mbResults[i];
+                    var r = isIntra[i] ? mbResultsIntra[i] : mbResults[i];
                     bitstream.vp8_pack_tokens(ref bc1, r.Y2Block);
                     for (int b = 0; b < 16; b++) bitstream.vp8_pack_tokens(ref bc1, r.YBlocks[b]);
                     for (int b = 0; b < 4;  b++) bitstream.vp8_pack_tokens(ref bc1, r.UBlocks[b]);
@@ -872,6 +1038,8 @@ namespace Vpx.Net
 
                 boolhuff.vp8_stop_encode(ref bc1);
             }
+
+            LastInterFrameIntraMbCount = intraCount;
 
             int totalBytes = totalThroughP0 + (int)bc1.pos;
             byte[] result = new byte[totalBytes];
@@ -910,10 +1078,10 @@ namespace Vpx.Net
         /// the production-correct entry point.
         /// </summary>
         public static byte[] EncodeInterFrame(byte[] srcY, byte[] srcU, byte[] srcV,
-            int width, int height, int qIndex)
+            int width, int height, int qIndex, bool intraFallback = true)
         {
             return EncodeInterFrameWithBuffers(srcY, srcU, srcV, width, height, qIndex,
-                _buffers ??= new FrameEncoderBuffers());
+                _buffers ??= new FrameEncoderBuffers(), intraFallback);
         }
 
         // ----- helpers -----
@@ -932,6 +1100,46 @@ namespace Vpx.Net
             for (int i = 0; i < 4;  i++) if (r.UBlocks[i].Count != 1) return false;
             for (int i = 0; i < 4;  i++) if (r.VBlocks[i].Count != 1) return false;
             return true;
+        }
+
+        // RD mode-decision tuning for the inter-frame intra fallback.
+        //
+        // cost = SSE(source vs reconstruction) + RD_LAMBDA * tokenRate, with
+        // a small additive bias toward inter (INTRA_MODE_PENALTY) so that
+        // marginal MBs stay inter -- cheaper to signal and keeps the
+        // inter-prediction chain intact. Distortion dominates the decision,
+        // which is exactly what halts high-motion error accumulation: an MB
+        // that ZEROMV reconstructs far from the source (large SSE) loses
+        // decisively to its DC_PRED intra refresh, so stale content cannot
+        // ghost through and compound across inter frames. The inter-skippable
+        // shortcut in the encode loop means this is only consulted for MBs
+        // that actually code a residual.
+        private const long INTER_RD_LAMBDA = 24;
+        private const long INTRA_MODE_PENALTY = 2000;
+
+        private static long ModeRdCost(byte[] srcY, byte[] srcU, byte[] srcV, MbEncodeResult r, bool isIntra)
+        {
+            long sse = Sse(srcY, r.ReconY, 256) + Sse(srcU, r.ReconU, 64) + Sse(srcV, r.ReconV, 64);
+            long rate = TokenCount(r);
+            long cost = sse + INTER_RD_LAMBDA * rate;
+            if (isIntra) cost += INTRA_MODE_PENALTY;
+            return cost;
+        }
+
+        private static long Sse(byte[] src, byte[] recon, int n)
+        {
+            long sum = 0;
+            for (int i = 0; i < n; i++) { int d = src[i] - recon[i]; sum += (long)d * d; }
+            return sum;
+        }
+
+        private static int TokenCount(MbEncodeResult r)
+        {
+            int c = r.Y2Block.Count;
+            for (int b = 0; b < 16; b++) c += r.YBlocks[b].Count;
+            for (int b = 0; b < 4;  b++) c += r.UBlocks[b].Count;
+            for (int b = 0; b < 4;  b++) c += r.VBlocks[b].Count;
+            return c;
         }
 
         private static void ExtractPlaneInto(byte[] src, int srcStride, int x, int y, int w, int h, byte[] dst)

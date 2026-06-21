@@ -83,7 +83,11 @@ namespace SIPSorceryMedia.FFmpeg
 
             RegisterFFmpegBinaries(libPath);
 
-            logger.LogInformation("FFmpeg version info: {VersionInfo}", ffmpeg.av_version_info());
+            if (logger.IsEnabled(LogLevel.Information))
+            {
+                string versionInfo = ffmpeg.av_version_info();
+                logger.LogInformation("FFmpeg version info: {VersionInfo}", versionInfo);
+            }
 
             if (logLevel.HasValue)
             {
@@ -197,6 +201,9 @@ namespace SIPSorceryMedia.FFmpeg
                 case VideoCodecsEnum.H265:
                     avCodecID = AVCodecID.AV_CODEC_ID_HEVC;
                     break;
+                case VideoCodecsEnum.AV1:
+                    avCodecID = AVCodecID.AV_CODEC_ID_AV1;
+                    break;
 
                 // Currently disabled because MJPEG doesn't work with the current pipeline that forces pixel conversion to YUV420P
                 // TODO: Fix pixel format conversion in Decode->Encode pipeline
@@ -214,6 +221,12 @@ namespace SIPSorceryMedia.FFmpeg
             {
                 case AVCodecID.AV_CODEC_ID_H264:
                     return VideoCodecsEnum.H264;
+                case AVCodecID.AV_CODEC_ID_HEVC:
+                    return VideoCodecsEnum.H265;
+                case AVCodecID.AV_CODEC_ID_VP9:
+                    return VideoCodecsEnum.VP9;
+                case AVCodecID.AV_CODEC_ID_AV1:
+                    return VideoCodecsEnum.AV1;
             }
 
             return VideoCodecsEnum.VP8;

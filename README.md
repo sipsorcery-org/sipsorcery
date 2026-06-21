@@ -63,11 +63,13 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 **Media End Points - Audio/Video Sinks and Sources:**
 
- - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Providing cross platform access to to these features on top of .NET is a large undertaking. A number of separate demonstration libraries show some different approaches to accessing audio/video devices and wrapping codecs with .NET. 
-   - [SIPSorceryMedia.Windows](https://github.com/sipsorcery-org/SIPSorceryMedia.Windows): An example of a Windows specific library that provides audio capture and playback. 
-   - [SIPSorceryMedia.FFmpeg](SIPSorceryMedia.FFmpeg/): An example of a cross platform library that features audio and video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
+ - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Two separate library packages can be used depending on the runtime target:
+   - [SIPSorceryMedia.Windows](src/SIPSorceryMedia.Windows): A Windows specific library that provides audio capture and playback. 
+   - [SIPSorceryMedia.FFmpeg](src/SIPSorceryMedia.FFmpeg/): A cross platform library that can be used for high performance video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
 
- - This library provides only a small number of audio and video codecs (G711, G722 and G729). OPUS is available via [Concentus](https://github.com/lostromb/concentus). A per-release of a C# port of the VP8 video codec is available at [SIPSorcery.VP8 directory](SIPSorcery.VP8/) Additional codecs, particularly video ones, require C or C++ libraries.
+ - This library includes audio codecs G711, G722, G729 and, thanks to [Concentus](https://github.com/lostromb/concentus), OPUS.
+ - A C# port of the VP8 video codec is available at [SIPSorcery.VP8 directory](src/SIPSorcery.VP8/) but it should be considered experimental and performs poorly at 1080p and greater. The advantage of the VP8 .NET port is it allows video streaming with NO native dependencies required.
+ - High performance native video codecs (VP8, VP9, H264, H265 and AV1) are available via the [SIPSorcery FFmpeg](src/SIPSorceryMedia.FFmpeg/) package which in turn depends on [FFmpeg](https://ffmpeg.org/) being available at runtime. These video codecs (H264 is the fastest) can be used to stream 4k video at 30fps on a typical Windows machine. See [Video Pipeline Capacity](#video-pipeline-capacity) below for some benchmarking results.
 
 ## Installation
 
@@ -92,6 +94,32 @@ For Windows the easiest option is:
 ````ps1
 winget install "FFmpeg (Shared)" --version 8.1
 ````
+
+## Video Pipeline Capacity
+
+Video processing — and encoding in particular — is generally the bottleneck in most real-time communications libraries. The original goal of the SIPSorcery library was to support 1080p video at 30 frames per second.
+
+In June 2026, the new SIPSorcery.Cli tool was conceived to test various SIP, ICE, WebRTC, and benchmarking scenarios. The benchmarking has revealed that, thanks to the capabilities of the [FFmpeg](https://ffmpeg.org/) project (and the various libraries it in turn wraps), the SIPSorcery library running on a typical Windows machine with the H264 video codec is capable of processing 4K video at over 30fps and 1080p at over 100fps.
+
+Sample test results are shown below.
+
+### Machine
+
+| CPU | Cores | Logical processors | Memory |
+| --- | --- | --- | --- |
+| Intel(R) Core(TM) i9-10900 CPU @ 2.80GHz | 10 | 20 | 31.8 GB |
+
+### Results
+
+| Preset | Encode vp8.net | Encode ffmpeg H264 | Encode ffmpeg VP8 | Decode H264 (ffmpeg) | Decode VP8 (ffmpeg) | Decode VP8 (vp8.net) | Plumbing (no codec) |
+|---|---|---|---|---|---|---|---|
+| 480p | 74.9 | 500.1 | 361.5 | 120 | 120 | 60 | 6435.4 |
+| 720p | 23.3 | 341.1 | 132.4 | 120 | 120 | 30 | 1735.5 |
+| 1080p | 9 | 174.3 | 52.8 | 120 | 120 | 15 | 1084.9 |
+| 1440p | 5.1 | 95.1 | 37.7 | 90 | 90 | n/a | 525.3 |
+| 4k | 1.9 | 48.7 | 31.6 | 30 | 30 | n/a | 367.3 |
+
+_Generated 2026-06-16 09:31; duration 6s/run, 1 run(s)/point._
 
 ## Documentation
 

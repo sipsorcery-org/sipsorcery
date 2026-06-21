@@ -31,7 +31,7 @@ namespace SIPSorcery.Net;
 /// </summary>
 public class WebRTCWebSocketPeerAspNet
 {
-    private readonly ILogger _logger = LogFactory.CreateLogger<WebRTCWebSocketPeerAspNet>();
+    private static readonly ILogger _logger = LogFactory.CreateLogger<WebRTCWebSocketPeerAspNet>();
 
     private RTCConfiguration _peerConnectionConfig;
     private RTCPeerConnection _pc;
@@ -194,7 +194,7 @@ public class WebRTCWebSocketPeerAspNet
     private async Task OnMessage(WebSocketReceiveResult receiveResult, byte[] buffer)
     {
         string message = Encoding.UTF8.GetString(buffer, 0, receiveResult.Count);
-        _logger.LogDebug($"Received message: {message}");
+        _logger.LogDebug("Received message: {Message}", message);
 
         if (RTCIceCandidateInit.TryParse(message, out var iceCandidateInit))
         {

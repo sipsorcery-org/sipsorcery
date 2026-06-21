@@ -323,7 +323,7 @@ namespace SIPSorcery.Net
 
                 if (res == 0)
                 {
-                    return (true, buffer.Take(outBufLen).ToArray());
+                    return (true, buffer.AsSpan(0, outBufLen).ToArray());
                 }
                 else
                 {
@@ -522,7 +522,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        rtpBuffer = rtpBuffer.Take(outBufLen).ToArray();
+                        rtpBuffer = rtpBuffer.AsSpan(0, outBufLen).ToArray();
                     }
                 }
 
@@ -710,7 +710,7 @@ namespace SIPSorcery.Net
                         //logger.LogDebug("Sending key {MediaType} RTCP packet size {Size} to {EndPoint}.",
                         //    MediaType, outBufLen, ControlDestinationEndPoint);
 
-                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
+                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.AsSpan(0, outBufLen).ToArray());
                     }
                 }
             }
@@ -818,6 +818,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    if (RemoteTrack != null)
+                    {
+                        // Must be updated for LogIfWrongSeqNumber to function: with the initial
+                        // value of 0 the sequence discontinuity check never fires, so the
+                        // unbuffered path previously never reported out of order packets.
+                        RemoteTrack.LastRemoteSeqNum = rtpPacket.Header.SequenceNumber;
+                    }
                     ProcessRtpPacket(remoteEndPoint, rtpPacket, format.Value);
                 }
 

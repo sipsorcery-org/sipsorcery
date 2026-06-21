@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP.App
         }
     }
 
-    public class SIPCallDescriptor
+    public partial class SIPCallDescriptor
     {
         private const int MAX_REINVITE_DELAY = 5;
         private const int DEFAULT_REINVITE_DELAY = 2;
@@ -82,8 +82,90 @@ namespace SIPSorcery.SIP.App
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private readonly static string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static char m_customHeadersSeparator = '|';                 // Must match SIPProvider.CUSTOM_HEADERS_SEPARATOR.
+        private const string DELAY_CALL_REGEX_PATTERN = @"dt=(?<delaytime>\d+)";
+        private const string REDIRECT_MODE_REGEX_PATTERN = @"rm=(?<redirectmode>\w)";
+        private const string CALL_DURATION_REGEX_PATTERN = @"cd=(?<callduration>\d+)";
+        private const string MANGLE_MODE_REGEX_PATTERN = @"ma=(?<mangle>\w+)";
+        private const string FROM_DISPLAY_NAME_REGEX_PATTERN = @"fd=(?<displayname>.+?)(,|$)";
+        private const string FROM_USERNAME_REGEX_PATTERN = @"fu=(?<username>.+?)(,|$)";
+        private const string FROM_HOST_REGEX_PATTERN = @"fh=(?<host>.+?)(,|$)";
+        private const string TRANSFER_MODE_REGEX_PATTERN = @"tr=(?<transfermode>.+?)(,|$)";
+        private const string CALLER_DETAILS_REGEX_PATTERN = @"rcd=(?<callerdetails>\w+)";
+        private const string ACCOUNT_CODE_REGEX_PATTERN = @"ac=(?<accountCode>\w+)";
+        private const string RATE_CODE_REGEX_PATTERN = @"rc=(?<rateCode>\w+)";
+        private const string DELAYED_REINVITE_REGEX_PATTERN = @"dr=(?<delayedReinvite>\d+)";
+        private const string IMMEDIATE_REINVITE_REGEX_PATTERN = @"ir=\w+";
 
         private static readonly ILogger logger = LogFactory.CreateLogger<SIPCallDescriptor>();
+
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(DELAY_CALL_REGEX_PATTERN)]
+        private static partial Regex DelayCallRegex();
+
+        [GeneratedRegex(REDIRECT_MODE_REGEX_PATTERN)]
+        private static partial Regex RedirectModeRegex();
+
+        [GeneratedRegex(CALL_DURATION_REGEX_PATTERN)]
+        private static partial Regex CallDurationRegex();
+
+        [GeneratedRegex(MANGLE_MODE_REGEX_PATTERN)]
+        private static partial Regex MangleModeRegex();
+
+        [GeneratedRegex(FROM_DISPLAY_NAME_REGEX_PATTERN)]
+        private static partial Regex FromDisplayNameRegex();
+
+        [GeneratedRegex(FROM_USERNAME_REGEX_PATTERN)]
+        private static partial Regex FromUsernameRegex();
+
+        [GeneratedRegex(FROM_HOST_REGEX_PATTERN)]
+        private static partial Regex FromHostRegex();
+
+        [GeneratedRegex(TRANSFER_MODE_REGEX_PATTERN)]
+        private static partial Regex TransferModeRegex();
+
+        [GeneratedRegex(CALLER_DETAILS_REGEX_PATTERN)]
+        private static partial Regex CallerDetailsRegex();
+
+        [GeneratedRegex(ACCOUNT_CODE_REGEX_PATTERN)]
+        private static partial Regex AccountCodeRegex();
+
+        [GeneratedRegex(RATE_CODE_REGEX_PATTERN)]
+        private static partial Regex RateCodeRegex();
+
+        [GeneratedRegex(DELAYED_REINVITE_REGEX_PATTERN)]
+        private static partial Regex DelayedReinviteRegex();
+
+        [GeneratedRegex(IMMEDIATE_REINVITE_REGEX_PATTERN)]
+        private static partial Regex ImmediateReinviteRegex();
+#else
+        private static readonly Regex m_delayCallRegex = new Regex(DELAY_CALL_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_redirectModeRegex = new Regex(REDIRECT_MODE_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_callDurationRegex = new Regex(CALL_DURATION_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_mangleModeRegex = new Regex(MANGLE_MODE_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_fromDisplayNameRegex = new Regex(FROM_DISPLAY_NAME_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_fromUsernameRegex = new Regex(FROM_USERNAME_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_fromHostRegex = new Regex(FROM_HOST_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_transferModeRegex = new Regex(TRANSFER_MODE_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_callerDetailsRegex = new Regex(CALLER_DETAILS_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_accountCodeRegex = new Regex(ACCOUNT_CODE_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_rateCodeRegex = new Regex(RATE_CODE_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_delayedReinviteRegex = new Regex(DELAYED_REINVITE_REGEX_PATTERN, RegexOptions.Compiled);
+        private static readonly Regex m_immediateReinviteRegex = new Regex(IMMEDIATE_REINVITE_REGEX_PATTERN, RegexOptions.Compiled);
+
+        private static Regex DelayCallRegex() => m_delayCallRegex;
+        private static Regex RedirectModeRegex() => m_redirectModeRegex;
+        private static Regex CallDurationRegex() => m_callDurationRegex;
+        private static Regex MangleModeRegex() => m_mangleModeRegex;
+        private static Regex FromDisplayNameRegex() => m_fromDisplayNameRegex;
+        private static Regex FromUsernameRegex() => m_fromUsernameRegex;
+        private static Regex FromHostRegex() => m_fromHostRegex;
+        private static Regex TransferModeRegex() => m_transferModeRegex;
+        private static Regex CallerDetailsRegex() => m_callerDetailsRegex;
+        private static Regex AccountCodeRegex() => m_accountCodeRegex;
+        private static Regex RateCodeRegex() => m_rateCodeRegex;
+        private static Regex DelayedReinviteRegex() => m_delayedReinviteRegex;
+        private static Regex ImmediateReinviteRegex() => m_immediateReinviteRegex;
+#endif
 
         public string Username;                 // The username that will be used in the From header and to authenticate the call unless overridden by AuthUsername.
         public string AuthUsername;             // The username that will be used from authentication. Optional setting only needed if the From header user needs to be different from the digest username.
@@ -291,84 +373,84 @@ namespace SIPSorcery.SIP.App
                 options = options.Trim('[', ']');
 
                 // Parse delay time option.
-                Match delayCallMatch = Regex.Match(options, $@"{DELAY_CALL_OPTION_KEY}=(?<delaytime>\d+)");
+                var delayCallMatch = DelayCallRegex().Match(options);
                 if (delayCallMatch.Success)
                 {
                     int.TryParse(delayCallMatch.Result("${delaytime}"), out DelaySeconds);
                 }
 
                 // Parse redirect mode option.
-                Match redirectModeMatch = Regex.Match(options, $@"{REDIRECT_MODE_OPTION_KEY}=(?<redirectmode>\w)");
+                var redirectModeMatch = RedirectModeRegex().Match(options);
                 if (redirectModeMatch.Success)
                 {
                     string redirectMode = redirectModeMatch.Result("${redirectmode}");
-                    //if (redirectMode == "a" || redirectMode == "A")
+                    //if (redirectMode is "a" or "A")
                     //{
                     //    RedirectMode = SIPCallRedirectModesEnum.Add;
                     //}
-                    //else if (redirectMode == "r" || redirectMode == "R")
+                    //else if (redirectMode is "r" or "R")
                     //{
                     //    RedirectMode = SIPCallRedirectModesEnum.Replace;
                     //}
-                    if (redirectMode == "n" || redirectMode == "N")
+                    if (redirectMode is "n" or "N")
                     {
                         RedirectMode = SIPCallRedirectModesEnum.NewDialPlan;
                     }
-                    else if (redirectMode == "m" || redirectMode == "M")
+                    else if (redirectMode is "m" or "M")
                     {
                         RedirectMode = SIPCallRedirectModesEnum.Manual;
                     }
                 }
 
                 // Parse call duration limit option.
-                Match callDurationMatch = Regex.Match(options, $@"{CALL_DURATION_OPTION_KEY}=(?<callduration>\d+)");
+                var callDurationMatch = CallDurationRegex().Match(options);
                 if (callDurationMatch.Success)
                 {
                     int.TryParse(callDurationMatch.Result("${callduration}"), out CallDurationLimit);
                 }
 
                 // Parse the mangle option.
-                Match mangleMatch = Regex.Match(options, $@"{MANGLE_MODE_OPTION_KEY}=(?<mangle>\w+)");
+                var mangleMatch = MangleModeRegex().Match(options);
                 if (mangleMatch.Success)
                 {
                     bool.TryParse(mangleMatch.Result("${mangle}"), out MangleResponseSDP);
                 }
 
                 // Parse the From header display name option.
-                Match fromDisplayNameMatch = Regex.Match(options, $@"{FROM_DISPLAY_NAME_KEY}=(?<displayname>.+?)(,|$)");
+                var fromDisplayNameMatch = FromDisplayNameRegex().Match(options);
                 if (fromDisplayNameMatch.Success)
                 {
                     FromDisplayName = fromDisplayNameMatch.Result("${displayname}").Trim();
                 }
 
                 // Parse the From header URI username option.
-                Match fromUsernameNameMatch = Regex.Match(options, $@"{FROM_USERNAME_KEY}=(?<username>.+?)(,|$)");
+                var fromUsernameNameMatch = FromUsernameRegex().Match(options);
                 if (fromUsernameNameMatch.Success)
                 {
                     FromURIUsername = fromUsernameNameMatch.Result("${username}").Trim();
                 }
 
                 // Parse the From header URI host option.
-                Match fromURIHostMatch = Regex.Match(options, $@"{FROM_HOST_KEY}=(?<host>.+?)(,|$)");
+                var fromURIHostMatch = FromHostRegex().Match(options);
                 if (fromURIHostMatch.Success)
                 {
                     FromURIHost = fromURIHostMatch.Result("${host}").Trim();
                 }
 
                 // Parse the Transfer behaviour option.
-                Match transferMatch = Regex.Match(options, $@"{TRANSFER_MODE_OPTION_KEY}=(?<transfermode>.+?)(,|$)");
+                var transferMatch = TransferModeRegex().Match(options);
                 if (transferMatch.Success)
                 {
                     string transferMode = transferMatch.Result("${transfermode}");
-                    if (transferMode == "n" || transferMode == "N")
+                    if (transferMode is "n" or "N")
                     {
                         TransferMode = SIPDialogueTransferModesEnum.NotAllowed;
                     }
-                    else if (transferMode == "p" || transferMode == "P")
+                    else if (transferMode is "p" or "P")
                     {
                         TransferMode = SIPDialogueTransferModesEnum.PassThru;
                     }
-                    else if (transferMode == "c" || transferMode == "C")
+                    else if (transferMode is "c" or "C")
                     {
                         TransferMode = SIPDialogueTransferModesEnum.BlindPlaceCall;
                     }
@@ -387,28 +469,28 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the request caller details option.
-                Match callerDetailsMatch = Regex.Match(options, $@"{REQUEST_CALLER_DETAILS}=(?<callerdetails>\w+)");
+                var callerDetailsMatch = CallerDetailsRegex().Match(options);
                 if (callerDetailsMatch.Success)
                 {
                     bool.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
                 }
 
                 // Parse the accountcode.
-                Match accountCodeMatch = Regex.Match(options, $@"{ACCOUNT_CODE_KEY}=(?<accountCode>\w+)");
+                var accountCodeMatch = AccountCodeRegex().Match(options);
                 if (accountCodeMatch.Success)
                 {
                     AccountCode = accountCodeMatch.Result("${accountCode}");
                 }
 
                 // Parse the rate code.
-                Match rateCodeMatch = Regex.Match(options, $@"{RATE_CODE_KEY}=(?<rateCode>\w+)");
+                var rateCodeMatch = RateCodeRegex().Match(options);
                 if (rateCodeMatch.Success)
                 {
                     RateCode = rateCodeMatch.Result("${rateCode}");
                 }
 
                 // Parse the delayed reinvite option.
-                Match delayedReinviteMatch = Regex.Match(options, $@"{DELAYED_REINVITE_KEY}=(?<delayedReinvite>\d+)");
+                var delayedReinviteMatch = DelayedReinviteRegex().Match(options);
                 if (delayedReinviteMatch.Success)
                 {
                     int.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
@@ -420,7 +502,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the immediate reinvite option (TODO: remove after user switches to delayed reinvite option).
-                Match immediateReinviteMatch = Regex.Match(options, @"ir=\w+");
+                var immediateReinviteMatch = ImmediateReinviteRegex().Match(options);
                 if (immediateReinviteMatch.Success)
                 {
                     ReinviteDelay = DEFAULT_REINVITE_DELAY;

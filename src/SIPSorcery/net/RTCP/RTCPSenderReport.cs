@@ -47,7 +47,6 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace SIPSorcery.Net
 {
@@ -107,16 +106,13 @@ namespace SIPSorcery.Net
             PacketCount = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(20));
             OctetCount = BinaryPrimitives.ReadUInt32BigEndian(packet.AsSpan(24));
 
-            int rrIndex = 28;
-            for (int i = 0; i < Header.ReceptionReportCount; i++)
+            var remaining = packet.AsSpan(28);
+            for (var i = 0; (remaining.Length >= ReceptionReportSample.PAYLOAD_SIZE) && (i < Header.ReceptionReportCount); i++)
             {
-                var pkt = packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray();
-                if (pkt.Length >= ReceptionReportSample.PAYLOAD_SIZE)
-                {
-                    var rr = new ReceptionReportSample(pkt);
-                    ReceptionReports.Add(rr);
-                }
-                
+                var rr = new ReceptionReportSample(remaining.Slice(0, ReceptionReportSample.PAYLOAD_SIZE).ToArray());
+                ReceptionReports.Add(rr);
+
+                remaining = remaining.Slice(ReceptionReportSample.PAYLOAD_SIZE);
             }
         }
 

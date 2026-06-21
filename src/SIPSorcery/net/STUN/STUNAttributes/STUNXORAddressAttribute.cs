@@ -50,6 +50,11 @@ namespace SIPSorcery.Net
         public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue, byte[] transactionId)
             : base(attributeType, attributeValue)
         {
+            if (attributeValue == null || attributeValue.Length < ADDRESS_ATTRIBUTE_IPV4_LENGTH)
+            {
+                throw new ArgumentException($"A STUN XOR address attribute value must be at least {ADDRESS_ATTRIBUTE_IPV4_LENGTH} bytes.", nameof(attributeValue));
+            }
+
             Family = attributeValue[1];
             AddressAttributeLength = Family == 1 ? ADDRESS_ATTRIBUTE_IPV4_LENGTH : ADDRESS_ATTRIBUTE_IPV6_LENGTH;
             TransactionId = transactionId;
@@ -61,7 +66,8 @@ namespace SIPSorcery.Net
             address = new byte[4];
             BinaryPrimitives.WriteUInt32BigEndian(address, xorAddrBE);
 
-            if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null)
+            if (Family == STUNAttributeConstants.IPv6AddressFamily[0] && TransactionId != null
+                && attributeValue.Length >= ADDRESS_ATTRIBUTE_IPV6_LENGTH && TransactionId.Length >= 12)
             {
                 address = address.Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 08) ^ BitConverter.ToUInt32(TransactionId, 0)))
                                  .Concat(BitConverter.GetBytes(BitConverter.ToUInt32(attributeValue, 12) ^ BitConverter.ToUInt32(TransactionId, 4)))

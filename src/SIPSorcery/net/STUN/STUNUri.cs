@@ -299,7 +299,7 @@ namespace SIPSorcery.Net
 
         public override bool Equals(object obj)
         {
-            return Equals(this, (STUNUri)obj);
+            return obj is STUNUri other && this == other;
         }
 
         public static bool operator ==(STUNUri uri1, STUNUri uri2)
@@ -314,6 +314,11 @@ namespace SIPSorcery.Net
             }
             else if (uri1.Host == null || uri2.Host == null)
             {
+                return false;
+            }
+            else if (!string.Equals(uri1.Host, uri2.Host, StringComparison.OrdinalIgnoreCase))
+            {
+                // DNS hostnames are case-insensitive (RFC 4343).
                 return false;
             }
             else if (uri1.Scheme != uri2.Scheme)
@@ -343,7 +348,8 @@ namespace SIPSorcery.Net
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Scheme, Transport, Host, Port, ExplicitPort);
+            // Host must be hashed with the same case-insensitive semantics used by operator ==.
+            return HashCode.Combine(Scheme, Transport, Host == null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(Host), Port, ExplicitPort);
         }
     }
 }

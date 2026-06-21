@@ -102,6 +102,32 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// Tests that a receiver report whose header claims more reception reports than the packet
+        /// actually contains is parsed tolerantly: the complete reports are returned and the
+        /// missing ones are skipped without an exception. RTCP packets arrive from the network so
+        /// a truncated or corrupted report count must not be able to throw.
+        /// </summary>
+        [Fact]
+        public void ParseReceiverReportWithOverstatedReportCountUnitTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var rr = new ReceptionReportSample(5, 6, 7, 8, 9, 10, 11);
+            var receiverReport = new RTCPReceiverReport(1, new List<ReceptionReportSample> { rr });
+            byte[] buffer = receiverReport.GetBytes();
+
+            // Patch the reception report count (low 5 bits of the first byte) to claim 3 reports
+            // when only 1 is present in the packet.
+            buffer[0] = (byte)((buffer[0] & 0xE0) | 0x03);
+
+            var parsed = new RTCPReceiverReport(buffer);
+
+            Assert.Single(parsed.ReceptionReports);
+            Assert.Equal(5U, parsed.ReceptionReports.First().SSRC);
+        }
+
+        /// <summary>
         /// Tests parsing a Receiver Report received from the Chrome browser as part of a WebRTC session works correctly.
         /// </summary>
         [Fact]

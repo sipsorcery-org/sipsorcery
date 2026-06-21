@@ -9,7 +9,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -210,7 +209,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", xtenInviteHeaders);
 
-            string[] headersCollection = Regex.Split(xtenInviteHeaders, "\r\n");
+            string[] headersCollection = xtenInviteHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -248,7 +247,7 @@ namespace SIPSorcery.SIP.UnitTests
                 $"Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bK8Z4EIWBeY45fRGwC0qIeu/xpw3A={m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64091;branch=z9hG4bK4E0728C26A0640E7830D7C9179D08D67{m_CRLF}Record-Route: <sip:213.168.225.133:5060;lr>,<sip:220.240.255.198:64091;lr>{m_CRLF}From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=457825353{m_CRLF}To: <sip:303@bluesipd>;tag=as02a64a42{m_CRLF}Call-ID: 8A702FA2-18F0-4DFC-AED5-C1A883EADB84@192.168.1.2{m_CRLF}CSeq: 38002 INVITE{m_CRLF}User-Agent: asterisk{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY{m_CRLF}Contact: <sip:303@213.168.225.133>{m_CRLF}Content-Type: application/sdp{m_CRLF}Content-Length: 350{m_CRLF}";
             logger.LogDebug("Original SIP Headers:\n{Headers}", xtenInviteHeaders);
 
-            string[] headersCollection = Regex.Split(xtenInviteHeaders, "\r\n");
+            string[] headersCollection = xtenInviteHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -303,7 +302,7 @@ namespace SIPSorcery.SIP.UnitTests
                 $"SIP/2.0 407 Proxy Authentication Required{m_CRLF}Via: SIP/2.0/UDP 192.168.1.2:5066;received=220.240.255.198:64066;branch=65cacee9-25b6-405c-8f82-e40427438af7{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>;tag=as67b6416e{m_CRLF}Contact: <sip:303@213.168.225.133>{m_CRLF}Call-ID: 5bcb927f-9571-47d0-a2a1-36226bcf7665@192.168.1.2{m_CRLF}CSeq: 908 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}User-Agent: asterisk{m_CRLF}Proxy-Authenticate: Digest realm=\"asterisk\", nonce=\"15aeff81\"{m_CRLF}Record-Route: <sip:213.168.225.135:5060;lr>{m_CRLF}Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY{m_CRLF}{m_CRLF}";
             logger.LogDebug("Original SIP Headers:\n{Headers}", authReqdHeaders);
 
-            string[] headersCollection = Regex.Split(authReqdHeaders, "\r\n");
+            string[] headersCollection = authReqdHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -323,7 +322,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", noViaHeaders);
 
-            string[] headersCollection = Regex.Split(noViaHeaders, "\r\n");
+            string[] headersCollection = noViaHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             Assert.Throws<SIPValidationException>(() => SIPHeader.ParseSIPHeaders(headersCollection));
 
@@ -341,7 +340,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("Original SIP Headers:\n{Headers}", sipMsg);
 
-            string[] headersCollection = Regex.Split(sipMsg, "\r\n");
+            string[] headersCollection = sipMsg.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
 
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
@@ -368,7 +367,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("{SipHeader}", sipHeader.ToString());
             logger.LogDebug("{AuthenticationHeader}", sipHeader.AuthenticationHeaders[0].ToString());
 
-            Assert.True(Regex.Match(sipHeader.AuthenticationHeaders[0].ToString(), "nonce").Success, "The WWW-Authenticate header was not correctly parsed across multiple lines.");
+            Assert.True(sipHeader.AuthenticationHeaders[0].ToString().Contains("nonce"), "The WWW-Authenticate header was not correctly parsed across multiple lines.");
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -849,7 +848,7 @@ namespace SIPSorcery.SIP.UnitTests
             string inviteHeaders =
                 $"Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}User-Agent: X-PRO release 1103v{m_CRLF}Content-Length: 271{m_CRLF}Require: abcd, 100rel, xyz{m_CRLF}Supported: 100rel, other{m_CRLF}";
 
-            string[] headersCollection = Regex.Split(inviteHeaders, "\r\n");
+            string[] headersCollection = inviteHeaders.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
 
             Assert.True(sipHeader.RequiredExtensions.Contains(SIPExtensions.Prack), "The required header extensions was missing Prack.");
@@ -910,7 +909,7 @@ namespace SIPSorcery.SIP.UnitTests
             string inviteWithServerHeader =
                 $"Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001{m_CRLF}From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136{m_CRLF}To: <sip:303@sip.blueface.ie>{m_CRLF}Contact: <sip:aaronxten@192.168.1.2:5065>{m_CRLF}Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2{m_CRLF}CSeq: 49429 INVITE{m_CRLF}Max-Forwards: 70{m_CRLF}Content-Type: application/sdp{m_CRLF}Content-Length: 271{m_CRLF}Server: {expectedServerValue}{m_CRLF}";
 
-            string[] headersCollection = Regex.Split(inviteWithServerHeader, "\r\n");
+            string[] headersCollection = inviteWithServerHeader.Split(new[] { m_CRLF }, System.StringSplitOptions.None);
             SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
             Assert.True(sipHeader.Server == expectedServerValue, "The Server value was not parsed properly");
 
