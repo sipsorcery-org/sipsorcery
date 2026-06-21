@@ -116,7 +116,9 @@ namespace SIPSorceryMedia.FFmpeg
 
             var decodedFrames = DecodeFaster(codecID.Value, encodedSample, out int width, out int height);
             if (decodedFrames != null && decodedFrames.Count > 0)
+            {
                 return decodedFrames;
+            }
 
             return new List<RawImage>();
         }
@@ -170,7 +172,9 @@ namespace SIPSorceryMedia.FFmpeg
             (_specificEncoders ??= [])[cdc] = (IntPtr)codec;
 
             if (opts != null)
+            {
                 (_codecOptionsByName ??= [])[name] = opts;
+            }
 
             return codec != null;
         }
@@ -178,7 +182,9 @@ namespace SIPSorceryMedia.FFmpeg
         private AVCodec* GetCodec(AVCodecID codecID, string? wrapName, bool isEncoder = true)
         {
             if (wrapName == null)
+            {
                 return null;
+            }
 
             IntPtr? iterator = null;
             var cdc = ffmpeg.av_codec_iterate((void**)&iterator);
@@ -190,15 +196,19 @@ namespace SIPSorceryMedia.FFmpeg
                         || (!isEncoder && ffmpeg.av_codec_is_decoder(cdc) != 0)
                         )
                     )
+                {
                     break;
+                }
 
                 cdc = ffmpeg.av_codec_iterate((void**)&iterator);
             }
 
             (_specificEncoders ??= [])[codecID] = (IntPtr)cdc;
-            
+
             if (cdc == null)
+            {
                 logger.LogWarning("Codec not found for {id} with wrapper {wrap}", codecID, _wrapName);
+            }
 
             return cdc;
         }
@@ -208,7 +218,9 @@ namespace SIPSorceryMedia.FFmpeg
             AVCodec* codec = null;
 
             if (_specificEncoders?.TryGetValue(codecID, out var cdc) ?? false)
+            {
                 codec = (AVCodec*)cdc;
+            }
 
             if (codec == null)
             {
@@ -247,11 +259,15 @@ namespace SIPSorceryMedia.FFmpeg
 
         private Dictionary<string, string> GetCodecOptions(string? name)
         {
-            if (!string.IsNullOrWhiteSpace(name) 
+            if (!string.IsNullOrWhiteSpace(name)
                 && (_codecOptionsByName?.TryGetValue(name!, out var opt) ?? false))
+            {
                 return opt;
+            }
             else
+            {
                 return _codecOptions;
+            }
         }
 
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
@@ -274,7 +290,7 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 var cdcname = GetNameString(codec->name);
-                var encOpts = GetCodecOptions(cdcname);
+                //var encOpts = GetCodecOptions(cdcname);
 
                 _encoderContext = ffmpeg.avcodec_alloc_context3(codec);
                 if (_encoderContext == null)
@@ -289,12 +305,18 @@ namespace SIPSorceryMedia.FFmpeg
                 _encoderContext->framerate.den = 1;
                 _encoderContext->framerate.num = fps;
 
-                _encoderContext->pix_fmt = _negotiatedPixFmt ?? codec->pix_fmts[0];
+                var supportedPixFmts = GetSupportedPixelFormats(_encoderContext, codec);
+                if (supportedPixFmts.Length == 0)
+                {
+                    throw new ApplicationException($"Encoder {cdcname} does not report any supported pixel formats.");
+                }
 
-                if (_bit_rate != null) _encoderContext->bit_rate = (long)_bit_rate;
-                if (_bit_rate_tolerance != null) _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance;
-                if (_rc_min_rate != null) _encoderContext->rc_min_rate = (long)_rc_min_rate;
-                if (_rc_max_rate != null) _encoderContext->rc_max_rate = (long)_rc_max_rate;
+                _encoderContext->pix_fmt = _negotiatedPixFmt ?? supportedPixFmts[0];
+
+                if (_bit_rate != null) { _encoderContext->bit_rate = (long)_bit_rate; }
+                if (_bit_rate_tolerance != null) { _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance; }
+                if (_rc_min_rate != null) { _encoderContext->rc_min_rate = (long)_rc_min_rate; }
+                if (_rc_max_rate != null) { _encoderContext->rc_max_rate = (long)_rc_max_rate; }
                 // Default to auto (0) so encoding uses all available cores; callers can pin a specific
                 // count via SetThreadCount. Single threaded (the libavcodec default if left unset) is far
                 // too slow at higher resolutions.
@@ -302,9 +324,13 @@ namespace SIPSorceryMedia.FFmpeg
 
                 // Set Key frame interval
                 if (fps < 5)
+                {
                     _encoderContext->gop_size = 1;
+                }
                 else
+                {
                     _encoderContext->gop_size = fps;
+                }
 
                 try
                 {
@@ -377,7 +403,9 @@ namespace SIPSorceryMedia.FFmpeg
                 {
                     var ok = ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, ffmpeg.AV_OPT_SEARCH_CHILDREN);
                     if (ok < 0)
+                    {
                         logger.LogWarning("Failed to set encoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, FFmpegInit.av_strerror(ok));
+                    }
                 }
 
                 ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
@@ -744,13 +772,17 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void AdjustStream(int bitrate, int fps)
         {
-            
             if (_encoderContext == null)
+            {
                 return;
+            }
+
             lock (_encoderLock)
             {
                 if (_encoderContext == null)
+                {
                     return;
+                }
                 _encoderContext->bit_rate = bitrate;
                 _encoderContext->framerate.num = fps;
                 _encoderContext->gop_size = Math.Max(5, fps * 2);
@@ -766,9 +798,7 @@ namespace SIPSorceryMedia.FFmpeg
                         
                         break;
                 }
-                
             }
-            
         }
 
         public List<RawImage>? DecodeFaster(AVCodecID codecID, byte[] buffer, out int width, out int height)
@@ -812,7 +842,9 @@ namespace SIPSorceryMedia.FFmpeg
                 height = 0;
 
                 if (_isDecoderInitialised && _codecID != codecID)
+                {
                     ResetDecoder();
+                }
 
                 if (!_isDecoderInitialised)
                 {
@@ -965,28 +997,38 @@ namespace SIPSorceryMedia.FFmpeg
             lock (_encoderLock)
             {
                 if (_isEncoderInitialised)
+                {
                     ResetEncoder();
+                }
 
                 InitialiseEncoder(codecid, width, height, frameRate);
 
                 if (logger.IsEnabled(LogLevel.Trace))
+                {
                     logger.LogTrace("Negotiating pixel format for codec [{name}].", GetNameString(_encoderContext->codec->name));
+                }
 
                 var fmts = _encoderContext->codec->pix_fmts;
                 while (*fmts != AVPixelFormat.AV_PIX_FMT_NONE
                     && sourcePixFmts?.Length > 0 && !sourcePixFmts.Contains(*fmts))
                 {
                     if (logger.IsEnabled(LogLevel.Trace))
+                    {
                         logger.LogTrace("Skipping unsupported pixel format {fmt}.", *fmts);
+                    }
                     fmts++;
                 }
 
                 var ret = false;
                 fmt = *fmts;
                 if (fmt == AVPixelFormat.AV_PIX_FMT_NONE)
+                {
                     fmt = _encoderContext->codec->pix_fmts[0];
+                }
                 else
+                {
                     ret = true;
+                }
 
                 ResetEncoder();
                 
@@ -996,6 +1038,34 @@ namespace SIPSorceryMedia.FFmpeg
 
                 return ret;
             }
+        }
+
+        private static AVPixelFormat[] GetSupportedPixelFormats(AVCodecContext* codecContext, AVCodec* codec)
+        {
+            void* configs = null;
+            int configsCount = 0;
+
+            ffmpeg.avcodec_get_supported_config(
+                codecContext,
+                codec,
+                AVCodecConfig.AV_CODEC_CONFIG_PIX_FORMAT,
+                0,
+                &configs,
+                &configsCount).ThrowExceptionIfError();
+
+            if (configs == null || configsCount <= 0)
+            {
+                return Array.Empty<AVPixelFormat>();
+            }
+
+            var pixFmts = (AVPixelFormat*)configs;
+            var result = new AVPixelFormat[configsCount];
+            for (int i = 0; i < configsCount; i++)
+            {
+                result[i] = pixFmts[i];
+            }
+
+            return result;
         }
 
         private static string? GetNameString(byte* name) => Marshal.PtrToStringAnsi((IntPtr)name);
