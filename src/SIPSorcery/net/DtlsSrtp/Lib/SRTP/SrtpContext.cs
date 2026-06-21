@@ -180,17 +180,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
         private readonly SrtpContextType _contextType;
 
-        // SRTP protect/unprotect mutate shared, non-thread-safe state on this context
-        // (the BouncyCastle HMac, the cached cipher engines, the rollover counter and the
-        // replay-protection state). A SrtpContext can be driven from more than one thread
-        // concurrently - e.g. audio and video bundled on one DTLS-SRTP transport share a
-        // single EncodeRtpContext and are protected from separate send threads - so every
-        // public operation is serialised on this lock. The four contexts (encode/decode x
-        // rtp/rtcp) are distinct objects, so this never serialises send against receive or
-        // RTP against RTCP; the only contended case is audio vs video on the send context,
-        // over a sub-microsecond critical section.
-        private readonly object _syncRoot = new object();
-
         public SrtpContextType ContextType { get { return _contextType; } }
 
         public event EventHandler<EventArgs> OnRekeyingRequested;
@@ -527,14 +516,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
         public virtual int ProtectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
-            lock (_syncRoot)
-            {
-                return ProtectRtpCore(input, output, out outputBufferLength);
-            }
-        }
-
-        private int ProtectRtpCore(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
-        {
             var context = this;
             var length = input.Length;
 
@@ -794,14 +775,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         }
 
         public virtual int UnprotectRtp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
-        {
-            lock (_syncRoot)
-            {
-                return UnprotectRtpCore(input, output, out outputBufferLength);
-            }
-        }
-
-        private int UnprotectRtpCore(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
             var context = this;
             var length = input.Length;
@@ -1075,14 +1048,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
 
         public int ProtectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
-            lock (_syncRoot)
-            {
-                return ProtectRtcpCore(input, output, out outputBufferLength);
-            }
-        }
-
-        private int ProtectRtcpCore(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
-        {
             var context = this;
             var length = input.Length;
 
@@ -1221,14 +1186,6 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         }
 
         public virtual int UnprotectRtcp(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
-        {
-            lock (_syncRoot)
-            {
-                return UnprotectRtcpCore(input, output, out outputBufferLength);
-            }
-        }
-
-        private int UnprotectRtcpCore(ReadOnlyBytes input, Bytes output, out int outputBufferLength)
         {
             var context = this;
             var length = input.Length;
