@@ -142,13 +142,14 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void SetFFmpegBinariesPath(string path)
         {
             ffmpeg.RootPath = path;
-            registered = true;
 
             DynamicallyLoadedBindings.ThrowErrorIfFunctionNotFound = true;
 
             try
             {
                 ffmpeg.avdevice_register_all();
+
+                registered = true;
             }
             catch (Exception e)
             {
@@ -161,14 +162,16 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void RegisterFFmpegBinaries(String? libPath = null)
         {
             if (registered)
+            {
                 return;
+            }
 
             if (libPath == null)
             {
                 // search the system path, handle with and without .exe extension
                 string ffmpegExecutable = "ffmpeg";
                 string? path = Environment.GetEnvironmentVariable("PATH")?
-                    .Split([';'], StringSplitOptions.RemoveEmptyEntries)
+                    .Split([Path.PathSeparator], StringSplitOptions.RemoveEmptyEntries)
                     .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, $"{ffmpegExecutable}.exe")))
                     .FirstOrDefault();
 

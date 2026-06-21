@@ -36,8 +36,6 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
 
     public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder? audioEncoder, uint audioFrameSize = 960, bool useVideo = true)
     {
-        FFmpegInit.EnsureBinariesRegistered();
-
         if (!File.Exists(path))
         {
             if (!Uri.TryCreate(path, UriKind.Absolute, out Uri? result))
@@ -45,6 +43,8 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
                 throw new ApplicationException($"Requested path is not a valid file path or not a valid Uri: {path}.");
             }
         }
+
+        FFmpegInit.EnsureBinariesRegistered();
 
         if (audioEncoder != null)
         {
