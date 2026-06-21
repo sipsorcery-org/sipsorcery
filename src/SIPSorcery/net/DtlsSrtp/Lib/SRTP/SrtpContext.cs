@@ -179,6 +179,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
         public const uint E_FLAG = 0x80000000;
 
         private readonly SrtpContextType _contextType;
+
         public SrtpContextType ContextType { get { return _contextType; } }
 
         public event EventHandler<EventArgs> OnRekeyingRequested;

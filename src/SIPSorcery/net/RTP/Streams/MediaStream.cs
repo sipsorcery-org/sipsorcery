@@ -309,17 +309,7 @@ namespace SIPSorcery.Net
                 int res = 0;
                 int outBufLen = 0;
 
-                if (RtpSessionConfig.IsMediaMultiplexed)
-                {
-                    lock (rtpChannel)
-                    {
-                        res = unprotectRtpPacket(buffer, buffer.Length, out outBufLen);
-                    }
-                }
-                else
-                {
-                    res = unprotectRtpPacket(buffer, buffer.Length, out outBufLen);
-                }
+                res = unprotectRtpPacket(buffer, buffer.Length, out outBufLen);
 
                 if (res == 0)
                 {
@@ -501,19 +491,7 @@ namespace SIPSorcery.Net
                     int rtperr = 0;
                     int outBufLen = 0;
 
-                    if (RtpSessionConfig.IsMediaMultiplexed)
-                    {
-                        // Multiplexing means that a single rtpChannel is used by multiple MediaStreams from multiple threads. We have
-                        //  to ensure that ProtectRtp is being called only from a single thread, otherwise encryption will fail.
-                        lock (rtpChannel)
-                        {
-                            rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
-                        }
-                    }
-                    else
-                    {
-                        rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
-                    }                        
+                    rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
 
                     if (rtperr != 0)
                     {
@@ -688,17 +666,7 @@ namespace SIPSorcery.Net
                     int rtperr = 0;
                     int outBufLen = 0;
 
-                    if (RtpSessionConfig.IsMediaMultiplexed && RtpSessionConfig.IsRtcpMultiplexed)
-                    {
-                        lock (rtpChannel)
-                        {
-                            rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
-                        }
-                    }
-                    else
-                    {
-                        rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
-                    }
+                    rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
 
                     if (rtperr != 0)
                     {
