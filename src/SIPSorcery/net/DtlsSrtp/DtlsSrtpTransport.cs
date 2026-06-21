@@ -43,7 +43,7 @@ namespace SIPSorcery.Net
         public bool IsClient { get { return _connection is DtlsSrtpClient; } }
         public SrtpKeys Keys { get; private set; }
 
-        public SrtpSessionContext Context { get; private set; }
+        public ThreadSafeSrtpSessionContext Context { get; private set; }
 
         public int TimeoutMilliseconds { get { return _connection.TimeoutMilliseconds; } set { _connection.TimeoutMilliseconds = value; } }
 
@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         private void DtlsSrtpTransport_OnSessionStarted(object sender, DtlsSessionStartedEventArgs e)
         {
             this._peerCertificate = e.PeerCertificate;
-            this.Context = e.Context;
+            this.Context = new ThreadSafeSrtpSessionContext(e.Context);
         }
 
         private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)

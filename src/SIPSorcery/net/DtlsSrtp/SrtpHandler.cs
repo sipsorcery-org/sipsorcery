@@ -27,7 +27,7 @@ namespace SIPSorcery.Net
         private List<SDPSecurityDescription> _localSecurityDescriptions;
         private List<SDPSecurityDescription> _remoteSecurityDescriptions;
 
-        public SrtpSessionContext Context { get; private set; }
+        public ThreadSafeSrtpSessionContext Context { get; private set; }
 
         public bool IsNegotiationComplete { get; private set; }
         public SDPSecurityDescription LocalSecurityDescription { get; private set; }
@@ -94,7 +94,7 @@ namespace SIPSorcery.Net
             {
                 IsNegotiationComplete = true;
 
-                Context = CreateSessionContext(localSecurityDescription, remoteSecurityDescription);
+                Context = new ThreadSafeSrtpSessionContext(CreateSessionContext(localSecurityDescription, remoteSecurityDescription));
 
                 return true;
             }
@@ -129,7 +129,7 @@ namespace SIPSorcery.Net
             {
                 IsNegotiationComplete = true;
 
-                Context = CreateSessionContext(localSecurityDescription, remoteSecurityDescription);
+                Context = new ThreadSafeSrtpSessionContext(CreateSessionContext(localSecurityDescription, remoteSecurityDescription));
 
                 return true;
             }

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SrtpContextThreadSafetyUnitTest.cs
 //
 // Description: Regression tests for an intermittent
@@ -79,7 +79,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ProtectRtp_ConcurrentSendersOnSharedContext_DoesNotThrow()
         {
             var (key, salt) = DeterministicKey();
-            var sender = new SrtpContext(SrtpContextType.RTP, Aes128CmHmacSha1_80(), key, salt);
+            var sender = new ThreadSafeSrtpSessionContext(new SrtpContext(SrtpContextType.RTP, Aes128CmHmacSha1_80(), key, salt));
 
             const uint audioSsrc = 0x0A0A0A0Au;
             const uint videoSsrc = 0x0B0B0B0Bu;
@@ -131,8 +131,8 @@ namespace SIPSorcery.Net.UnitTests
         public void UnprotectRtcp_ConcurrentCallersOnSharedContext_DoesNotThrow()
         {
             var (key, salt) = DeterministicKey();
-            var sender   = new SrtpContext(SrtpContextType.RTCP, Aes128CmHmacSha1_80(), key, salt);
-            var receiver = new SrtpContext(SrtpContextType.RTCP, Aes128CmHmacSha1_80(), key, salt);
+            var sender   = new ThreadSafeSrtpSessionContext(new SrtpContext(SrtpContextType.RTCP, Aes128CmHmacSha1_80(), key, salt));
+            var receiver = new ThreadSafeSrtpSessionContext(new SrtpContext(SrtpContextType.RTCP, Aes128CmHmacSha1_80(), key, salt));
 
             const uint ssrc = 0x0C0C0C0Cu;
             const int packetCount = 20_000;
@@ -224,22 +224,22 @@ namespace SIPSorcery.Net.UnitTests
         }
 
 #if NET8_0_OR_GREATER
-        private static int ProtectRtp(SrtpContext ctx, byte[] input, byte[] output, out int outLen)
+        private static int ProtectRtp(ISrtpContext ctx, byte[] input, byte[] output, out int outLen)
             => ctx.ProtectRtp(input.AsSpan(), output.AsSpan(), out outLen);
 
-        private static int ProtectRtcp(SrtpContext ctx, byte[] input, byte[] output, out int outLen)
+        private static int ProtectRtcp(ISrtpContext ctx, byte[] input, byte[] output, out int outLen)
             => ctx.ProtectRtcp(input.AsSpan(), output.AsSpan(), out outLen);
 
-        private static int UnprotectRtcp(SrtpContext ctx, byte[] input, byte[] output, out int outLen)
+        private static int UnprotectRtcp(ISrtpContext ctx, byte[] input, byte[] output, out int outLen)
             => ctx.UnprotectRtcp(input.AsSpan(), output.AsSpan(), out outLen);
 #else
-        private static int ProtectRtp(SrtpContext ctx, byte[] input, byte[] output, out int outLen)
+        private static int ProtectRtp(ISrtpContext ctx, byte[] input, byte[] output, out int outLen)
             => ctx.ProtectRtp(new ArraySegment<byte>(input), output, out outLen);
 
-        private static int ProtectRtcp(SrtpContext ctx, byte[] input, byte[] output, out int outLen)
+        private static int ProtectRtcp(ISrtpContext ctx, byte[] input, byte[] output, out int outLen)
             => ctx.ProtectRtcp(new ArraySegment<byte>(input), output, out outLen);
 
-        private static int UnprotectRtcp(SrtpContext ctx, byte[] input, byte[] output, out int outLen)
+        private static int UnprotectRtcp(ISrtpContext ctx, byte[] input, byte[] output, out int outLen)
             => ctx.UnprotectRtcp(new ArraySegment<byte>(input), output, out outLen);
 #endif
     }
