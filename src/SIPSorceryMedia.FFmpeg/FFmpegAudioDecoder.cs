@@ -41,6 +41,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         public unsafe FFmpegAudioDecoder(string url, AVInputFormat* inputFormat = null, bool repeat = false, bool isMicrophone = false)
         {
+            FFmpegInit.EnsureBinariesRegistered();
+
             _sourceUrl = url;
             _inputFormat = inputFormat;
             _repeat = repeat;

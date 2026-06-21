@@ -36,6 +36,8 @@ public class FFmpegFileSource: IAudioSource, IVideoSource, IDisposable
 
     public unsafe FFmpegFileSource(string path, bool repeat, IAudioEncoder? audioEncoder, uint audioFrameSize = 960, bool useVideo = true)
     {
+        FFmpegInit.EnsureBinariesRegistered();
+
         if (!File.Exists(path))
         {
             if (!Uri.TryCreate(path, UriKind.Absolute, out Uri? result))

@@ -70,6 +70,7 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
 
     public FFmpegVideoEndPoint(Dictionary<string, string>? decoderOptions = null)
     {
+        FFmpegInit.EnsureBinariesRegistered();
         _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedFormats);
         _ffmpegEncoder = new FFmpegVideoEncoder(decoderOptions);
     }

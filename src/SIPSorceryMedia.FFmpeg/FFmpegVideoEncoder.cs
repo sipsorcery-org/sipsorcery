@@ -65,6 +65,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public FFmpegVideoEncoder(Dictionary<string, string>? encoderOptions = null, AVHWDeviceType HWDeviceType = AVHWDeviceType.AV_HWDEVICE_TYPE_NONE)
         {
+            FFmpegInit.EnsureBinariesRegistered();
             _codecOptions = encoderOptions ?? new Dictionary<string, string>();
             _HwDeviceType = HWDeviceType;
         }
@@ -257,17 +258,23 @@ namespace SIPSorceryMedia.FFmpeg
         {
             if (!_isEncoderInitialised)
             {
-                _isEncoderInitialised = true;
                 _codecID = codecID;
-                
-                var codec = GetCodec(codecID);
-                var cdcname = GetNameString(codec->name);
-                var encOpts = GetCodecOptions(cdcname);
 
+                var codec = GetCodec(codecID);
                 if (codec == null)
                 {
-                    throw new ApplicationException($"Codec encoder could not be found for {codecID}.");
+                    // A null codec means the loaded FFmpeg build has no encoder for this codec
+                    // (e.g. H264/H265 when built without libx264/libx265). Check before
+                    // dereferencing codec->name below so this surfaces as a clear, actionable
+                    // error rather than a NullReferenceException.
+                    throw new ApplicationException(
+                        $"The loaded FFmpeg build does not provide an encoder for {codecID}. " +
+                        $"For H264/H265 this usually means FFmpeg was built without libx264/libx265; " +
+                        $"verify with 'ffmpeg -encoders' or select a codec the build supports (e.g. VP8).");
                 }
+
+                var cdcname = GetNameString(codec->name);
+                var encOpts = GetCodecOptions(cdcname);
 
                 _encoderContext = ffmpeg.avcodec_alloc_context3(codec);
                 if (_encoderContext == null)
@@ -377,6 +384,12 @@ namespace SIPSorceryMedia.FFmpeg
 
                 logger.LogDebug("Successfully initialised ffmpeg based image encoder: CodecId:[{id}] - Name:[{name}] - {w}:{h} - {fps} Fps - {fmt}",
                     codecID, GetNameString(codec->name), width, height, fps, _encoderContext->pix_fmt);
+
+                // Only mark initialised once the context is fully built and opened. Setting this
+                // earlier means a failure part-way through latches a half-initialised state, and
+                // every later Encode call then dereferences the null/unopened context (a repeating
+                // NullReferenceException) instead of surfacing the real error.
+                _isEncoderInitialised = true;
             }
         }
 
