@@ -33,225 +33,220 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
+using SIPSorceryMedia.FFmpeg;
 
-namespace demo
+namespace demo;
+
+class Program
 {
-    class Program
+    private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;
+
+    // The demo drives a single connected viewer.
+    private static MaxHeadroomVideoSource _videoSource;
+    private static AudioExtrasSource _audioSource;
+    private static AzureTtsSpeaker _speaker;
+    private static LocalLlmClient _llm;
+
+    private static string _azureKey;
+    private static string _azureRegion;
+    private static string _azureVoice;
+    private static int _visemeLeadMs = 0;
+
+    static async Task Main()
     {
-        private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Debug)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
 
-        // The demo drives a single connected viewer.
-        private static MaxHeadroomVideoSource _videoSource;
-        private static AudioExtrasSource _audioSource;
-        private static AzureTtsSpeaker _speaker;
-        private static LocalLlmClient _llm;
+        var factory = new SerilogLoggerFactory(Log.Logger);
+        SIPSorcery.LogFactory.Set(factory);
+        _logger = factory.CreateLogger<Program>();
 
-        private static string _azureKey;
-        private static string _azureRegion;
-        private static string _azureVoice;
-        private static int _visemeLeadMs = 150;
+        _logger.LogInformation("WebRTC Max Headroom Avatar Demo");
 
-        static async Task Main()
+        // Quick visual sanity check: render a few frames to PNG and exit.
+        if (Array.Exists(Environment.GetCommandLineArgs(), a => a == "--snapshot"))
         {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Debug)
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .CreateLogger();
-
-            var factory = new SerilogLoggerFactory(Log.Logger);
-            SIPSorcery.LogFactory.Set(factory);
-            _logger = factory.CreateLogger<Program>();
-
-            _logger.LogInformation("WebRTC Max Headroom Avatar Demo");
-
-            // Quick visual sanity check: render a few frames to PNG and exit.
-            if (Array.Exists(Environment.GetCommandLineArgs(), a => a == "--snapshot"))
+            using var preview = new MaxHeadroomVideoSource();
+            foreach (var v in new[] { 0, 2, 7, 21 })
             {
-                using var preview = new MaxHeadroomVideoSource();
-                foreach (var v in new[] { 0, 2, 7, 21 })
-                {
-                    preview.SaveSnapshot($"maxheadroom_viseme{v}.png", v);
-                }
-                _logger.LogInformation("Wrote snapshot PNGs to {Dir}.", Environment.CurrentDirectory);
-                return;
+                preview.SaveSnapshot($"maxheadroom_viseme{v}.png", v);
             }
-
-            _azureKey = Environment.GetEnvironmentVariable("AZURE_SPEECH_KEY");
-            _azureRegion = Environment.GetEnvironmentVariable("AZURE_SPEECH_REGION");
-            _azureVoice = Environment.GetEnvironmentVariable("AZURE_SPEECH_VOICE") ?? "en-US-GuyNeural";
-            if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
-
-            if (string.IsNullOrWhiteSpace(_azureKey) || string.IsNullOrWhiteSpace(_azureRegion))
-            {
-                _logger.LogWarning("AZURE_SPEECH_KEY / AZURE_SPEECH_REGION not set. The avatar will render but cannot speak.");
-            }
-
-            _llm = new LocalLlmClient(
-                Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
-                Environment.GetEnvironmentVariable("LLM_MODEL"));
-            _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? "configured" : "not configured (text will be spoken verbatim)");
-
-            var builder = WebApplication.CreateBuilder();
-            builder.Host.UseSerilog();
-            var app = builder.Build();
-
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-
-            app.MapPost("/offer", HandleOffer);
-
-            app.MapPost("/say", async (HttpRequest request) =>
-            {
-                var text = await ReadBody(request);
-                var notReady = SpeakerNotReady();
-                if (notReady != null) { return notReady; }
-                _ = _speaker.SpeakAsync(text);
-                return Results.Ok();
-            });
-
-            app.MapPost("/ask", async (HttpRequest request) =>
-            {
-                var prompt = await ReadBody(request);
-                var notReady = SpeakerNotReady();
-                if (notReady != null) { return notReady; }
-                var reply = await _llm.GenerateReplyAsync(prompt);
-                _logger.LogInformation("LLM reply: {Reply}", reply);
-                _ = _speaker.SpeakAsync(reply);
-                return Results.Text(reply);
-            });
-
-            await app.RunAsync();
+            _logger.LogInformation("Wrote snapshot PNGs to {Dir}.", Environment.CurrentDirectory);
+            return;
         }
 
-        private static async Task<IResult> HandleOffer(HttpRequest request)
+        _azureKey = Environment.GetEnvironmentVariable("AZURE_SPEECH_KEY");
+        _azureRegion = Environment.GetEnvironmentVariable("AZURE_SPEECH_REGION");
+        _azureVoice = Environment.GetEnvironmentVariable("AZURE_SPEECH_VOICE") ?? "en-US-GuyNeural";
+        if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
+
+        if (string.IsNullOrWhiteSpace(_azureKey) || string.IsNullOrWhiteSpace(_azureRegion))
         {
-            var sdpOffer = await ReadBody(request);
-            _logger.LogDebug("Received SDP offer.");
-
-            var pc = CreatePeerConnection();
-
-            var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sdpOffer, type = RTCSdpType.offer });
-            if (result != SetDescriptionResultEnum.OK)
-            {
-                _logger.LogError("Failed to set remote description: {Result}", result);
-                return Results.BadRequest(result.ToString());
-            }
-
-            var answer = pc.createAnswer();
-            await pc.setLocalDescription(answer);
-
-            return Results.Text(pc.localDescription.sdp.ToString());
+            _logger.LogWarning("AZURE_SPEECH_KEY / AZURE_SPEECH_REGION not set. The avatar will render but cannot speak.");
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        _llm = new LocalLlmClient(
+            Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
+            Environment.GetEnvironmentVariable("LLM_MODEL"));
+        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? "configured" : "not configured (text will be spoken verbatim)");
+
+        var builder = WebApplication.CreateBuilder();
+        builder.Host.UseSerilog();
+        var app = builder.Build();
+
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+
+        app.MapPost("/offer", HandleOffer);
+
+        app.MapPost("/say", async (HttpRequest request) =>
         {
-            var pc = new RTCPeerConnection(null);
+            var text = await ReadBody(request);
+            var notReady = SpeakerNotReady();
+            if (notReady != null) { return notReady; }
+            _ = _speaker.SpeakAsync(text);
+            return Results.Ok();
+        });
 
-            var videoSource = new MaxHeadroomVideoSource();
-            var videoEncoder = new VideoEncoderEndPoint();
-            var videoTrack = new MediaStreamTrack(videoEncoder.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(videoTrack);
-            videoSource.OnVideoSourceRawSample += videoEncoder.ExternalVideoSourceRawSample;
-            videoEncoder.OnVideoSourceEncodedSample += pc.SendVideo;
-            pc.OnVideoFormatsNegotiated += formats => videoEncoder.SetVideoSourceFormat(formats.First());
+        app.MapPost("/ask", async (HttpRequest request) =>
+        {
+            var prompt = await ReadBody(request);
+            var notReady = SpeakerNotReady();
+            if (notReady != null) { return notReady; }
+            var reply = await _llm.GenerateReplyAsync(prompt);
+            _logger.LogInformation("LLM reply: {Reply}", reply);
+            _ = _speaker.SpeakAsync(reply);
+            return Results.Text(reply);
+        });
 
-            // Use Silence rather than None so audio RTP packets flow continuously between
-            // prompts. A continuous audio clock keeps the browser's jitter buffer and the
-            // RTCP A/V sync stable; with bursty audio (None) the lip-sync drifts ahead of
-            // the voice over successive prompts.
-            var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
-            var audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
-            pc.addTrack(audioTrack);
-            audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
-            pc.OnAudioFormatsNegotiated += formats => audioSource.SetAudioSourceFormat(formats.First());
+        await app.RunAsync();
+    }
 
-            AzureTtsSpeaker speaker = null;
-            if (!string.IsNullOrWhiteSpace(_azureKey) && !string.IsNullOrWhiteSpace(_azureRegion))
+    private static async Task<IResult> HandleOffer(HttpRequest request)
+    {
+        var sdpOffer = await ReadBody(request);
+        _logger.LogDebug("Received SDP offer.");
+
+        var pc = CreatePeerConnection();
+
+        var result = pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sdpOffer, type = RTCSdpType.offer });
+        if (result != SetDescriptionResultEnum.OK)
+        {
+            _logger.LogError("Failed to set remote description: {Result}", result);
+            return Results.BadRequest(result.ToString());
+        }
+
+        var answer = pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        return Results.Text(pc.localDescription.sdp.ToString());
+    }
+
+    private static RTCPeerConnection CreatePeerConnection()
+    {
+        var pc = new RTCPeerConnection(null);
+
+        var videoSource = new MaxHeadroomVideoSource(new FFmpegVideoEncoder());
+        var videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+        pc.addTrack(videoTrack);
+        videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
+        pc.OnVideoFormatsNegotiated += formats => videoSource.SetVideoSourceFormat(formats.First());
+
+        // Use Silence rather than None so audio RTP packets flow continuously between
+        // prompts. A continuous audio clock keeps the browser's jitter buffer and the
+        // RTCP A/V sync stable; with bursty audio (None) the lip-sync drifts ahead of
+        // the voice over successive prompts.
+        var audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
+        var audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
+        pc.addTrack(audioTrack);
+        audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
+        pc.OnAudioFormatsNegotiated += formats => audioSource.SetAudioSourceFormat(formats.First());
+
+        AzureTtsSpeaker speaker = null;
+        if (!string.IsNullOrWhiteSpace(_azureKey) && !string.IsNullOrWhiteSpace(_azureRegion))
+        {
+            speaker = new AzureTtsSpeaker(_azureKey, _azureRegion, _azureVoice, videoSource, audioSource, _visemeLeadMs);
+        }
+
+        pc.onconnectionstatechange += async (state) =>
+        {
+            _logger.LogDebug("Peer connection state change to {State}.", state);
+
+            switch (state)
             {
-                speaker = new AzureTtsSpeaker(_azureKey, _azureRegion, _azureVoice, videoSource, audioSource, _visemeLeadMs);
-            }
-
-            pc.onconnectionstatechange += async (state) =>
-            {
-                _logger.LogDebug("Peer connection state change to {State}.", state);
-
-                switch (state)
-                {
-                    case RTCPeerConnectionState.connected:
-                        // Register as the active call first so /say and /ask are reachable
-                        // even if media start-up below hiccups.
-                        _videoSource = videoSource;
-                        _audioSource = audioSource;
-                        _speaker = speaker;
-                        try
+                case RTCPeerConnectionState.connected:
+                    // Register as the active call first so /say and /ask are reachable
+                    // even if media start-up below hiccups.
+                    _videoSource = videoSource;
+                    _audioSource = audioSource;
+                    _speaker = speaker;
+                    try
+                    {
+                        await audioSource.StartAudio();
+                        await videoSource.StartVideo();
+                        if (speaker != null)
                         {
-                            await audioSource.StartAudio();
-                            await videoSource.StartVideo();
-                            if (speaker != null)
-                            {
-                                _ = speaker.SpeakAsync("M-m-max Headroom here. Welcome to the show!");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Connected but Azure Speech is not configured; the avatar cannot speak.");
-                            }
+                            _ = speaker.SpeakAsync("M-m-max Headroom here. Welcome to the show!");
                         }
-                        catch (Exception excp)
+                        else
                         {
-                            _logger.LogError(excp, "Error starting avatar media on connect.");
+                            _logger.LogWarning("Connected but Azure Speech is not configured; the avatar cannot speak.");
                         }
-                        break;
+                    }
+                    catch (Exception excp)
+                    {
+                        _logger.LogError(excp, "Error starting avatar media on connect.");
+                    }
+                    break;
 
-                    case RTCPeerConnectionState.failed:
-                        pc.Close("ice disconnection");
-                        break;
+                case RTCPeerConnectionState.failed:
+                    pc.Close("ice disconnection");
+                    break;
 
-                    case RTCPeerConnectionState.closed:
-                        await audioSource.CloseAudio();
-                        await videoSource.CloseVideo();
-                        videoSource.Dispose();
-                        if (_videoSource == videoSource) { _videoSource = null; _audioSource = null; _speaker = null; }
-                        break;
-                }
-            };
-
-            pc.oniceconnectionstatechange += (state) => _logger.LogDebug("ICE connection state change to {State}.", state);
-
-            return pc;
-        }
-
-        /// <summary>
-        /// Returns a descriptive 400 result if the avatar can't speak yet, otherwise null.
-        /// Distinguishes "no active call" from "TTS not configured" so the cause is obvious.
-        /// </summary>
-        private static IResult SpeakerNotReady()
-        {
-            if (_videoSource == null)
-            {
-                return Results.BadRequest("No active call. Connect a viewer in the browser first.");
+                case RTCPeerConnectionState.closed:
+                    await audioSource.CloseAudio();
+                    await videoSource.CloseVideo();
+                    videoSource.Dispose();
+                    if (_videoSource == videoSource) { _videoSource = null; _audioSource = null; _speaker = null; }
+                    break;
             }
-            if (_speaker == null)
-            {
-                return Results.BadRequest("Azure Speech is not configured. Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION (and optionally AZURE_SPEECH_VOICE), then restart.");
-            }
-            return null;
-        }
+        };
 
-        private static async Task<string> ReadBody(HttpRequest request)
+        pc.oniceconnectionstatechange += (state) => _logger.LogDebug("ICE connection state change to {State}.", state);
+
+        return pc;
+    }
+
+    /// <summary>
+    /// Returns a descriptive 400 result if the avatar can't speak yet, otherwise null.
+    /// Distinguishes "no active call" from "TTS not configured" so the cause is obvious.
+    /// </summary>
+    private static IResult SpeakerNotReady()
+    {
+        if (_videoSource == null)
         {
-            using var reader = new StreamReader(request.Body);
-            return await reader.ReadToEndAsync();
+            return Results.BadRequest("No active call. Connect a viewer in the browser first.");
         }
+        if (_speaker == null)
+        {
+            return Results.BadRequest("Azure Speech is not configured. Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION (and optionally AZURE_SPEECH_VOICE), then restart.");
+        }
+        return null;
+    }
+
+    private static async Task<string> ReadBody(HttpRequest request)
+    {
+        using var reader = new StreamReader(request.Body);
+        return await reader.ReadToEndAsync();
     }
 }
