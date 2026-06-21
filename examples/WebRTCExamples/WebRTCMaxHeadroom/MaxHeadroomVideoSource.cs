@@ -88,6 +88,7 @@ namespace demo
         private bool _isStarted;
         private bool _isPaused;
         private bool _isClosed;
+        private bool _faulted;
 
         // Animation state, written by the speaker thread, read by the render thread.
         private volatile int _currentViseme;
@@ -101,10 +102,10 @@ namespace demo
 
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
         public event EncodedSampleDelegate OnVideoSourceEncodedSample;
+        public event SourceErrorDelegate OnVideoSourceError;
 
 #pragma warning disable CS0067
         public event RawVideoSampleFasterDelegate OnVideoSourceRawSampleFaster;
-        public event SourceErrorDelegate OnVideoSourceError;
 #pragma warning restore CS0067
 
         private readonly IVideoEncoder _videoEncoder;
@@ -171,7 +172,7 @@ namespace demo
             bool hasRawSubscribers = OnVideoSourceRawSample != null;
             bool hasEncodedSubscribers = _videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty();
 
-            if (_isClosed || _isPaused || (!hasRawSubscribers && !hasEncodedSubscribers))
+            if (_isClosed || _isPaused || _faulted || (!hasRawSubscribers && !hasEncodedSubscribers))
             {
                 return;
             }
@@ -204,7 +205,14 @@ namespace demo
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception MaxHeadroomVideoSource.RenderFrame.");
+                // A render/encode failure here (e.g. the negotiated codec is missing from the
+                // FFmpeg build) is not transient - it recurs on every frame. Stop the render loop
+                // and surface the error once via OnVideoSourceError rather than logging it ~25x a
+                // second.
+                _faulted = true;
+                _renderTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                logger.LogError(excp, "Fatal error in MaxHeadroomVideoSource render loop; stopping video.");
+                OnVideoSourceError?.Invoke(excp.Message);
             }
         }
 
