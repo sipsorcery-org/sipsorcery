@@ -25,6 +25,7 @@ namespace SIPSorceryMedia.FFmpeg
     {
         private static ILogger logger = NullLogger.Instance;
         private static bool registered = false;
+        private static readonly object registerLock = new object();
 
         private static av_log_set_callback_callback? logCallback;
         private static String storedLogs = "";
@@ -74,6 +75,49 @@ namespace SIPSorceryMedia.FFmpeg
             ffmpeg.av_log_set_callback(logCallback);
         }
 
+        /// <summary>
+        /// Ensures the FFmpeg native binaries have been located and registered, attempting
+        /// auto-discovery if no explicit <see cref="Initialise"/> call has been made yet. This is
+        /// invoked implicitly by the FFmpeg components (encoder, sources, etc.) from their
+        /// constructors so that, when the binaries are discoverable via the system PATH or an
+        /// FFmpeg/bin/x64 folder, no explicit initialisation is required.
+        ///
+        /// Unlike <see cref="Initialise"/> this performs auto-discovery only and never throws: if
+        /// the binaries cannot be found it leaves the library unregistered and returns false, so a
+        /// subsequent explicit <see cref="Initialise"/> call with a known path can still take over.
+        /// It is safe to call repeatedly and from multiple threads; the first registration wins.
+        /// </summary>
+        /// <returns>True if the binaries are registered (now or previously), otherwise false.</returns>
+        public static bool EnsureBinariesRegistered()
+        {
+            if (registered)
+            {
+                return true;
+            }
+
+            lock (registerLock)
+            {
+                if (registered)
+                {
+                    return true;
+                }
+
+                try
+                {
+                    RegisterFFmpegBinaries();
+                }
+                catch (Exception excp)
+                {
+                    registered = false;
+                    ffmpeg.RootPath = string.Empty;
+                    logger.LogWarning(excp,
+                        "FFmpeg binaries could not be located automatically. Call FFmpegInit.Initialise with an explicit library path.");
+                }
+
+                return registered;
+            }
+        }
+
         public static void Initialise(FfmpegLogLevelEnum? logLevel = null, String? libPath = null, ILogger? appLogger = null)
         {
             if (appLogger != null)
@@ -81,7 +125,10 @@ namespace SIPSorceryMedia.FFmpeg
                 logger = appLogger;
             }
 
-            RegisterFFmpegBinaries(libPath);
+            lock (registerLock)
+            {
+                RegisterFFmpegBinaries(libPath);
+            }
 
             if (logger.IsEnabled(LogLevel.Information))
             {
@@ -98,13 +145,14 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void SetFFmpegBinariesPath(string path)
         {
             ffmpeg.RootPath = path;
-            registered = true;
 
             DynamicallyLoadedBindings.ThrowErrorIfFunctionNotFound = true;
 
             try
             {
                 ffmpeg.avdevice_register_all();
+
+                registered = true;
             }
             catch (Exception e)
             {
@@ -117,14 +165,16 @@ namespace SIPSorceryMedia.FFmpeg
         internal static void RegisterFFmpegBinaries(String? libPath = null)
         {
             if (registered)
+            {
                 return;
+            }
 
             if (libPath == null)
             {
                 // search the system path, handle with and without .exe extension
                 string ffmpegExecutable = "ffmpeg";
                 string? path = Environment.GetEnvironmentVariable("PATH")?
-                    .Split([';'], StringSplitOptions.RemoveEmptyEntries)
+                    .Split([Path.PathSeparator], StringSplitOptions.RemoveEmptyEntries)
                     .Where(s => File.Exists(Path.Combine(s, ffmpegExecutable)) || File.Exists(Path.Combine(s, $"{ffmpegExecutable}.exe")))
                     .FirstOrDefault();
 

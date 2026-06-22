@@ -42,6 +42,8 @@ namespace SIPSorceryMedia.FFmpeg
         public FFmpegAudioSource(IAudioEncoder audioEncoder, uint frameSize = 960)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
+            FFmpegInit.EnsureBinariesRegistered();
+
             if (audioEncoder == null)
             {
                 throw new ApplicationException("Audio encoder provided is null");
