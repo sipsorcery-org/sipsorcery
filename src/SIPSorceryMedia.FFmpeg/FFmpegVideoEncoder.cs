@@ -293,7 +293,6 @@ namespace SIPSorceryMedia.FFmpeg
                     }
 
                     var cdcname = GetNameString(codec->name);
-                    //var encOpts = GetCodecOptions(cdcname);
 
                     _encoderContext = ffmpeg.avcodec_alloc_context3(codec);
                     if (_encoderContext == null)
