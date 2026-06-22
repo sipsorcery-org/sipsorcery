@@ -17,6 +17,12 @@ namespace SIPSorceryMedia.FFmpeg
         // it via the encoderOptions dictionary ("cpu-used"), which is applied after this default.
         private const string DEFAULT_LIBVPX_REALTIME_CPU_USED = "5";
 
+        /// <summary>
+        /// The threshold frame rate at which to use a key frame rate of 1 (every frame is a key frame).
+        /// This is to avoid the encoder lagging behind when the frame rate is very low.
+        /// </summary>
+        private const int ALL_KEY_FRAMES_FPS_THRESHOLD = 5;
+
         private static readonly List<VideoFormat> _supportedFormats = Helper.GetSupportedVideoFormats();
 
         public List<VideoFormat> SupportedFormats
@@ -320,7 +326,7 @@ namespace SIPSorceryMedia.FFmpeg
                     _encoderContext->thread_count = _thread_count ?? 0;
 
                     // Set Key frame interval
-                    _encoderContext->gop_size = (fps < 5) ? 1 : fps;
+                    _encoderContext->gop_size = (fps < ALL_KEY_FRAMES_FPS_THRESHOLD) ? 1 : fps;
 
                     try
                     {
