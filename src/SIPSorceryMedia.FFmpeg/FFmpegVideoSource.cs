@@ -43,6 +43,7 @@ namespace SIPSorceryMedia.FFmpeg
 
         public FFmpegVideoSource()
         {
+            FFmpegInit.EnsureBinariesRegistered();
             _videoFormatManager = new MediaFormatManager<VideoFormat>(_supportedVideoFormats);
             _videoEncoder = new FFmpegVideoEncoder();
             path = "";

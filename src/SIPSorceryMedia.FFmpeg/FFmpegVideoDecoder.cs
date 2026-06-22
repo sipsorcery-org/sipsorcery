@@ -49,6 +49,8 @@ namespace SIPSorceryMedia.FFmpeg
 
         public unsafe FFmpegVideoDecoder(string url, AVInputFormat* inputFormat, bool repeat = false, bool isCamera = false)
         {
+            FFmpegInit.EnsureBinariesRegistered();
+
             _sourceUrl = url;
 
             _inputFormat = inputFormat;
