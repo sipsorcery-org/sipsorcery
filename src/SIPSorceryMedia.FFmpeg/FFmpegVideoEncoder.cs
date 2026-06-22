@@ -259,15 +259,10 @@ namespace SIPSorceryMedia.FFmpeg
 
         private Dictionary<string, string> GetCodecOptions(string? name)
         {
-            if (!string.IsNullOrWhiteSpace(name)
+            return (!string.IsNullOrWhiteSpace(name)
                 && (_codecOptionsByName?.TryGetValue(name!, out var opt) ?? false))
-            {
-                return opt;
-            }
-            else
-            {
-                return _codecOptions;
-            }
+                ? opt
+                : _codecOptions;
         }
 
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
