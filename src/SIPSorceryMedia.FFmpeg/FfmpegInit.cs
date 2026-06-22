@@ -108,7 +108,10 @@ namespace SIPSorceryMedia.FFmpeg
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning("FFmpeg binaries could not be located automatically ({Message}). Call FFmpegInit.Initialise with an explicit library path.", excp.Message);
+                    registered = false;
+                    ffmpeg.RootPath = string.Empty;
+                    logger.LogWarning(excp,
+                        "FFmpeg binaries could not be located automatically. Call FFmpegInit.Initialise with an explicit library path.");
                 }
 
                 return registered;
