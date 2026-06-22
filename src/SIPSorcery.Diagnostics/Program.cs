@@ -47,8 +47,12 @@ stunCommand.Subcommands.Add(new StunLookupCommand().Build());
 rootCommand.Subcommands.Add(stunCommand);
 
 var iceCommand = new Command("ice", "ICE operations: candidate gathering, STUN/TURN connectivity probes.");
-iceCommand.Subcommands.Add(new IceProbeCommand().Build());
+iceCommand.Subcommands.Add(new IceGatherCommand().Build());
 rootCommand.Subcommands.Add(iceCommand);
+
+var turnCommand = new Command("turn", "TURN operations: relay allocation checks.");
+turnCommand.Subcommands.Add(new TurnAllocateCommand().Build());
+rootCommand.Subcommands.Add(turnCommand);
 
 var webrtcCommand = new Command("webrtc", "WebRTC operations: full connection probes with ICE, DTLS and media.");
 webrtcCommand.Subcommands.Add(new WebRtcWhepCommand().Build());
@@ -60,22 +64,7 @@ webrtcCommand.Subcommands.Add(new WebRtcEchoServerCommand().Build());
 webrtcCommand.Subcommands.Add(new WebRtcVideoBenchCommand().Build());
 rootCommand.Subcommands.Add(webrtcCommand);
 
-var cloudflareCommand = new Command("cloudflare", "Cloudflare Realtime operations: TURN credential and SFU publish checks.");
-cloudflareCommand.Subcommands.Add(new CloudflareTurnCommand().Build());
-cloudflareCommand.Subcommands.Add(new CloudflareSfuCommand().Build());
-rootCommand.Subcommands.Add(cloudflareCommand);
-
-var livekitCommand = new Command("livekit", "LiveKit operations: room access and publish checks.");
-livekitCommand.Subcommands.Add(new LiveKitRoomCommand().Build());
-rootCommand.Subcommands.Add(livekitCommand);
-
-var openaiCommand = new Command("openai", "OpenAI operations: Realtime WebRTC API connectivity checks and voice chat.");
-openaiCommand.Subcommands.Add(new OpenAiRealtimeCommand().Build());
-openaiCommand.Subcommands.Add(new OpenAiChatCommand().Build());
-rootCommand.Subcommands.Add(openaiCommand);
-
-// route is a top-level verb (not a noun/verb pair): it wires a source edge to one or more sink edges
-// over a stream graph. It is the seed of the stream-routing flagship rather than another diagnostic.
-rootCommand.Subcommands.Add(new RouteCommand().Build());
+// The cloudflare, livekit, openai and route verbs live in the sibling "sipsorcery" tool
+// (SIPSorcery.Cli), the application/streams CLI. This tool stays focused on probe/test/benchmark.
 
 return await rootCommand.Parse(args).InvokeAsync();

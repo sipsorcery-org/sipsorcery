@@ -1,0 +1,116 @@
+# SIPSorcery.Cli
+
+The **`sipsorcery`** command: route and bridge live media **streams** between SIP, WebRTC and the
+major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime), built on the
+[SIPSorcery](https://github.com/sipsorcery-org/sipsorcery) library.
+
+Where the sibling [`sipsorcery-diags`](../SIPSorcery.Diagnostics) tool is a probe/test/benchmark
+harness, this tool treats a **stream as the primitive** and lets you attach edges to it. It is human
+and agent friendly: every verb supports `--json` and meaningful exit codes.
+
+## Install
+
+```bash
+dotnet tool install -g SIPSorcery.Cli --prerelease
+```
+
+The installed command is **`sipsorcery`**:
+
+```bash
+sipsorcery route --from testpattern --to out.ivf -d 10
+```
+
+## Usage
+
+```bash
+# Route (v0.1): wire a source edge to one or more sink edges over a stream graph. The stream is the
+# noun; --from / --to attach edges to it. The graph repacketises, it does not transcode -- frames
+# travel encoded from source to sink. See "The route verb" below.
+sipsorcery route --from testpattern --to out.ivf -d 10          # generate VP8, record to IVF
+sipsorcery route --from testpattern --to play                  # generate VP8, watch in ffplay
+sipsorcery route --from testpattern --to play --to out.ivf     # tee: watch AND record at once
+sipsorcery route --from whep:https://b.siobud.com/api/whep --to out.ivf --token key  # record a live WebRTC stream
+
+# Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
+# candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
+# CLOUDFLARE_API_TOKEN environment variables. https://developers.cloudflare.com/realtime/turn/
+sipsorcery cloudflare turn --key-id <key-id> --token <api-token>
+sipsorcery cloudflare turn --transport udp        # probe turn:3478?transport=udp instead of turns:443
+
+# Cloudflare SFU: create a Realtime SFU session and publish a VP8 + OPUS test pattern, verifying
+# the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN.
+sipsorcery cloudflare sfu --app-id <app-id> --token <api-token> -d 10
+
+# LiveKit room: mint an access token, join a room and publish a VP8 + OPUS test pattern. Defaults
+# to LIVEKIT_WEBSOCKET_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET.
+sipsorcery livekit room --url wss://my-app.livekit.cloud --api-key <key> --api-secret <secret>
+sipsorcery livekit room --room my-room -d 30       # a specific room (default is a random name)
+
+# OpenAI Realtime: end to end connectivity test for the Realtime WebRTC API. Negotiates the
+# connection, asks the model to speak and succeeds when its voice is received. No audio device is
+# used. Defaults to the OPENAI_API_KEY environment variable.
+sipsorcery openai realtime
+sipsorcery openai realtime --voice verse --prompt "Count to three."
+sipsorcery openai realtime --audio play              # hear the model's reply (ffplay)
+sipsorcery openai realtime --audio reply.wav         # record the model's reply to a WAV file
+sipsorcery openai realtime --audio - > reply.pcm     # raw s16le PCM on stdout (the result moves to stderr)
+
+# OpenAI chat: an interactive voice session (runs until ctrl-c). The model's voice plays via ffplay;
+# --play - reads microphone PCM from stdin, so pipe an ffmpeg mic capture in. The mic is gated while
+# the model speaks (half-duplex, no echo canceller) so it does not hear itself -- use a headset for
+# full-duplex barge-in. Capture device syntax is per-OS (dshow/avfoundation/pulse). ffmpeg/ffplay act
+# as the cross platform audio device layer (winget/brew/apt install ffmpeg).
+ffmpeg -f dshow -i audio="Microphone (Realtek Audio)" -ac 1 -ar 48000 -f s16le - \
+  | sipsorcery openai chat --play -
+sipsorcery openai chat               # listen-only (hear the model, no mic)
+```
+
+### The route verb
+
+`route` is the first cut of the stream router: rather than a one-shot diagnostic, it treats a media
+**stream** as the primitive and lets you attach **edges** to it. A graph is a source node, one or more
+sink nodes, and the directed edges between them; a routing decision is just a mutation of that graph.
+v0.1 implements the simplest shape — one source fanned out to N sinks (a free tee).
+
+Two design rules carry through from the bigger picture:
+
+- **Repacketise, not transcode.** Frames travel the edges still encoded (VP8 stays VP8, H264 stays
+  H264). The tool stands in the media path only far enough to depacketise and re-emit; it never
+  decodes to samples. Per-sample work (a real transcode) is the job of a future transform node backed
+  by ffmpeg, not managed code.
+- **Edges are addressable.** A `--from` / `--to` spec is either a bare keyword/path (`out.ivf`,
+  `play`, `null`, `-`) or `scheme:rest` (`whep:https://host/whep`). Adding a transport edge is one new
+  case in the edge factory and nothing else.
+
+v0.1 edges:
+
+| Direction | Edge | Notes |
+|-----------|------|-------|
+| `--from`  | `testpattern` | A generated VP8 pattern. No native dependencies. `--fps` sets the rate. |
+| `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
+| `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
+| `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
+| `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
+| `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
+
+Sinks named `whip:` / `sip:` / `livekit:` / `cloudflare:` are recognised and report that they are not
+wired into `route` yet — publish into those with the dedicated verbs today (`cloudflare sfu`,
+`livekit room`, or `sipsorcery-diags webrtc whip`). They become `route` edges in a later version, at
+which point `route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success. |
+| 1 | Ran but did not achieve its goal (e.g. connected but no media flowed). |
+| 2 | Invalid argument or option. |
+| 3 | Timed out. |
+| 4 | Transport/network error (DNS, connect, TLS). |
+
+## Status
+
+Early (v0.1). The `route` engine is video-only and single source → N sinks; the transport sink edges
+and the authoring layers above the graph (declarative routing, scripted policies, an external control
+API) are planned. Feedback and issues welcome on the
+[SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).

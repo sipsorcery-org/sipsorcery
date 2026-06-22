@@ -33,7 +33,7 @@ using SIPSorcery.OpenAI.Realtime;
 using SIPSorcery.OpenAI.Realtime.Models;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Commands;
 
 public sealed class OpenAiChatCommand : CommandBase
 {

@@ -28,7 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Diagnostics.Commands.Route;
+namespace SIPSorcery.Cli.Commands.Route;
 
 /// <summary>
 /// One unit travelling along a graph edge: a single depacketised but still ENCODED video frame

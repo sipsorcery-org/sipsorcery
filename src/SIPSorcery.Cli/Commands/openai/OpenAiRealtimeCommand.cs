@@ -9,9 +9,10 @@
 // HTTP SDP exchange, ICE, DTLS, SRTP, the data channel and the model producing
 // audio.
 //
-// No audio device is used: the verb does not send microphone audio, it triggers
-// the model with a data channel "response.create" and listens for the returned
-// audio frames. https://platform.openai.com/docs/guides/realtime-webrtc
+// No microphone is used: the verb does not send audio, it triggers the model with
+// a data channel "response.create" and listens for the returned audio frames. The
+// received audio can optionally be played or captured with --audio (play, a .wav
+// file or raw PCM on stdout). https://platform.openai.com/docs/guides/realtime-webrtc
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -26,15 +27,20 @@
 using System.CommandLine;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Media;
 using SIPSorcery.OpenAI.Realtime;
 using SIPSorcery.OpenAI.Realtime.Models;
+using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Commands;
 
 public sealed class OpenAiRealtimeCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 20;
     private const RealtimeVoicesEnum DEFAULT_VOICE = RealtimeVoicesEnum.marin;
+
+    // OPUS for WebRTC is a 48 kHz mono stream; the decoded model audio is rendered/recorded at this rate.
+    private const int SAMPLE_RATE = 48000;
 
     /// <summary>
     /// The result shape written to stdout with --json. Stable field names; additive changes only.
@@ -71,16 +77,25 @@ public sealed class OpenAiRealtimeCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_VOICE
         };
 
+        var audioOption = new Option<string?>("--audio")
+        {
+            Description = "Where to send the model's received audio: \"play\" to hear it in an ffplay window, a .wav " +
+                          "file path to record it, or \"-\" for raw s16le 48kHz mono PCM on stdout (the result then " +
+                          "moves to stderr). Omit to only detect that voice arrived. ffplay is part of ffmpeg."
+        };
+
         var command = new Command("realtime", "Connectivity test for the OpenAI Realtime WebRTC API; succeeds when the model's voice is received.");
         command.Options.Add(apiKeyOption);
         command.Options.Add(promptOption);
         command.Options.Add(voiceOption);
+        command.Options.Add(audioOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
             parseResult.GetValue(apiKeyOption),
             parseResult.GetValue(promptOption)!,
             parseResult.GetValue(voiceOption),
+            parseResult.GetValue(audioOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -89,7 +104,7 @@ public sealed class OpenAiRealtimeCommand : CommandBase
         return command;
     }
 
-    private static async Task<int> RunAsync(string? apiKey, string prompt, RealtimeVoicesEnum voice,
+    private static async Task<int> RunAsync(string? apiKey, string prompt, RealtimeVoicesEnum voice, string? audioOut,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -99,30 +114,58 @@ public sealed class OpenAiRealtimeCommand : CommandBase
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            return WriteResult(asJson,
+            return WriteResult(asJson, false,
                 new RealtimeResult(false, false, null, false, 0, null, null,
                     "An OpenAI API key is required (--api-key or the OPENAI_API_KEY environment variable)."),
                 ExitCodes.InvalidArgument);
         }
+
+        // Optional audio sink for the received model voice ("play", a .wav file or "-"). When active the
+        // OPUS frames are decoded to PCM and written to it; otherwise only the frame count matters.
+        using var audioSink = AudioSink.Create(audioOut, logger, out string? sinkError);
+        if (sinkError != null)
+        {
+            return WriteResult(asJson, false,
+                new RealtimeResult(false, false, null, false, 0, null, null, sinkError),
+                ExitCodes.InvalidArgument);
+        }
+        var decoder = audioSink.IsActive ? new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC) : null;
+        bool stdoutClaimed = audioSink.IsStdout;
 
         using var endpoint = new WebRTCEndPoint(apiKey, loggerFactory);
 
         var stopwatch = Stopwatch.StartNew();
         long? connectTimeMs = null;
         long? firstAudioMs = null;
+        long lastAudioTicks = 0;
         int audioFrames = 0;
         string? transcript = null;
 
         var voiceDetected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var connectionFailed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        endpoint.OnAudioFrameReceived += _ =>
+        endpoint.OnAudioFrameReceived += frame =>
         {
+            lastAudioTicks = DateTime.UtcNow.Ticks;
+
             if (Interlocked.Increment(ref audioFrames) == 1)
             {
                 firstAudioMs = stopwatch.ElapsedMilliseconds;
                 logger.LogDebug("First audio frame received from OpenAI at {FirstAudioMs}ms; voice detected.", firstAudioMs);
                 voiceDetected.TrySetResult(true);
+            }
+
+            if (decoder != null)
+            {
+                try
+                {
+                    var pcm = decoder.DecodeAudio(frame.EncodedAudio, AudioCommonlyUsedFormats.OpusWebRTC);
+                    audioSink.Write(pcm, SAMPLE_RATE);
+                }
+                catch (Exception excp)
+                {
+                    logger.LogWarning("Failed to decode/play a model audio frame: {Error}", excp.Message);
+                }
             }
         };
 
@@ -157,7 +200,7 @@ public sealed class OpenAiRealtimeCommand : CommandBase
 
             if (connectResult.IsLeft)
             {
-                return WriteResult(asJson,
+                return WriteResult(asJson, stdoutClaimed,
                     new RealtimeResult(false, false, null, false, 0, null, null,
                         $"Failed to negotiate the connection to OpenAI: {connectResult.LeftAsEnumerable().First().Message}"),
                     ExitCodes.TransportError);
@@ -171,7 +214,7 @@ public sealed class OpenAiRealtimeCommand : CommandBase
 
             if (completed == connectionFailed.Task)
             {
-                return WriteResult(asJson,
+                return WriteResult(asJson, stdoutClaimed,
                     new RealtimeResult(false, connectTimeMs != null, connectTimeMs, false, audioFrames, firstAudioMs, transcript,
                         "The peer connection failed before any audio was received."),
                     ExitCodes.TransportError);
@@ -180,7 +223,7 @@ public sealed class OpenAiRealtimeCommand : CommandBase
             if (completed != voiceDetected.Task)
             {
                 bool connected = connectTimeMs != null;
-                return WriteResult(asJson,
+                return WriteResult(asJson, stdoutClaimed,
                     new RealtimeResult(false, connected, connectTimeMs, false, audioFrames, firstAudioMs, transcript,
                         ct.IsCancellationRequested ? "Cancelled." :
                         connected
@@ -189,27 +232,42 @@ public sealed class OpenAiRealtimeCommand : CommandBase
                     ExitCodes.Timeout);
             }
 
-            // Voice detected. Give the model a short grace period to finish speaking so the
-            // transcript and a representative frame count can be reported.
+            // Voice detected. When a sink is active, let the model finish speaking so the whole reply is
+            // heard/recorded (wait until the audio has been idle briefly, capped by the timeout); without
+            // a sink a short fixed grace is enough to report a representative frame count and transcript.
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
+                if (audioSink.IsActive)
+                {
+                    var drain = Stopwatch.StartNew();
+                    long idleTicks = TimeSpan.FromMilliseconds(800).Ticks;
+                    while (!ct.IsCancellationRequested &&
+                           drain.Elapsed < TimeSpan.FromSeconds(timeoutSeconds) &&
+                           (DateTime.UtcNow.Ticks - lastAudioTicks) < idleTicks)
+                    {
+                        await Task.Delay(100, ct).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
+                }
             }
             catch (OperationCanceledException) { }
 
-            return WriteResult(asJson,
+            return WriteResult(asJson, stdoutClaimed,
                 new RealtimeResult(true, true, connectTimeMs, true, audioFrames, firstAudioMs, transcript, null),
                 ExitCodes.Ok);
         }
         catch (OperationCanceledException)
         {
-            return WriteResult(asJson,
+            return WriteResult(asJson, stdoutClaimed,
                 new RealtimeResult(false, connectTimeMs != null, connectTimeMs, false, audioFrames, firstAudioMs, transcript, "Cancelled."),
                 ExitCodes.Timeout);
         }
         catch (Exception excp)
         {
-            return WriteResult(asJson,
+            return WriteResult(asJson, stdoutClaimed,
                 new RealtimeResult(false, connectTimeMs != null, connectTimeMs, false, audioFrames, firstAudioMs, transcript, excp.Message),
                 ExitCodes.TransportError);
         }
@@ -219,16 +277,20 @@ public sealed class OpenAiRealtimeCommand : CommandBase
         }
     }
 
-    private static int WriteResult(bool asJson, RealtimeResult result, int exitCode)
+    private static int WriteResult(bool asJson, bool stdoutClaimed, RealtimeResult result, int exitCode)
     {
+        // When the audio bitstream has claimed stdout (--audio -), the result is commentary and moves
+        // to stderr so stdout carries exactly one payload.
+        var output = stdoutClaimed ? Console.Error : Console.Out;
+
         if (asJson)
         {
-            WriteJson(result);
+            output.WriteLine(SerializeResult(result));
         }
         else if (result.Success)
         {
             string said = result.Transcript != null ? $" Model said: \"{result.Transcript}\"." : string.Empty;
-            Console.WriteLine($"OpenAI Realtime OK: connected in {result.ConnectTimeMs}ms, voice detected after {result.FirstAudioMs}ms " +
+            output.WriteLine($"OpenAI Realtime OK: connected in {result.ConnectTimeMs}ms, voice detected after {result.FirstAudioMs}ms " +
                 $"({result.AudioFrames} audio frames).{said}");
         }
         else

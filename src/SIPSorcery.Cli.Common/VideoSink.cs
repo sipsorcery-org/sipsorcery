@@ -35,7 +35,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Common;
 
 public sealed class VideoSink : IDisposable
 {

@@ -33,9 +33,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SIPSorcery.Diagnostics.Commands.Route;
+using SIPSorcery.Cli.Commands.Route;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Commands;
 
 public sealed class RouteCommand : CommandBase
 {

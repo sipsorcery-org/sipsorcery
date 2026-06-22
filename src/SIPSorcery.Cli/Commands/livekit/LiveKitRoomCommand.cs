@@ -35,7 +35,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Commands;
 
 public sealed class LiveKitRoomCommand : CommandBase
 {

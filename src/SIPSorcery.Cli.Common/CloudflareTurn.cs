@@ -27,7 +27,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Common;
 
 public static class CloudflareTurn
 {

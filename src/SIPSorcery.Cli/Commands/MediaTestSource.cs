@@ -23,7 +23,7 @@ using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 using Vpx.Net;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Commands;
 
 public sealed class MediaTestSource : IDisposable
 {

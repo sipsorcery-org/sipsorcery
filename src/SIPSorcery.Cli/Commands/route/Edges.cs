@@ -32,7 +32,7 @@ using SIPSorcery.Media;
 using SIPSorceryMedia.Abstractions;
 using Vpx.Net;
 
-namespace SIPSorcery.Diagnostics.Commands.Route;
+namespace SIPSorcery.Cli.Commands.Route;
 
 /// <summary>The few knobs an edge needs from the verb (frame rate for generators, auth/timeout for transports).</summary>
 public sealed record EdgeOptions(int Fps, string? Token, int TimeoutSeconds);

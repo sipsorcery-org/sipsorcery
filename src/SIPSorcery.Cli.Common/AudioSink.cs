@@ -25,7 +25,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Common;
 
 public sealed class AudioSink : IDisposable
 {

@@ -33,7 +33,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Diagnostics.Commands.Route;
+namespace SIPSorcery.Cli.Commands.Route;
 
 public sealed class WhepSourceNode : ISourceNode
 {

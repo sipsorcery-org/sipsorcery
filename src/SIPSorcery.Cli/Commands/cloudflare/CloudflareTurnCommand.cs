@@ -25,7 +25,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Commands;
 
 public sealed class CloudflareTurnCommand : CommandBase
 {

@@ -58,11 +58,21 @@ sipsorcery-diags sip call music@iptel.org --hep "192.168.0.10:9060;myHep;42"   #
 sipsorcery-diags stun lookup stun.cloudflare.com
 sipsorcery-diags stun lookup stun:stun.l.google.com:19302
 
-# ICE probe: gather candidates and verify STUN/TURN connectivity.
-sipsorcery-diags ice probe
-sipsorcery-diags ice probe --stun stun:stun.cloudflare.com
-sipsorcery-diags ice probe --turn "turn:turn.example.com;user;pass" --relay-only
-sipsorcery-diags ice probe --key-id <key-id> --token <api-token> --relay-only   # probe Cloudflare TURN
+# ICE gather: gather candidates and verify STUN/TURN connectivity.
+sipsorcery-diags ice gather
+sipsorcery-diags ice gather --stun stun:stun.cloudflare.com
+sipsorcery-diags ice gather --turn "turn:turn.example.com;user;pass" --relay-only
+sipsorcery-diags ice gather --key-id <key-id> --token <api-token> --relay-only   # Cloudflare TURN health check
+
+# TURN allocate: check a single TURN server can allocate a relay socket and report the relay address.
+# A focused, relay-only credential/health check (use "ice gather" to see all candidate types at once).
+sipsorcery-diags turn allocate turn:turn.example.com:3478 -u user -p pass
+sipsorcery-diags turn allocate "turn:turn.example.com:3478?transport=tcp" -u user -p pass
+sipsorcery-diags turn allocate turns:turn.example.com:5349 -u user -p pass -t 12
+# Or check Cloudflare TURN: omit the url and pass (or set CLOUDFLARE_TURN_KEY_ID/CLOUDFLARE_API_TOKEN)
+# the key ID and token; short lived credentials are fetched and that relay is allocated.
+sipsorcery-diags turn allocate --key-id <key-id> --token <api-token>
+sipsorcery-diags turn allocate --transport udp        # turn:3478?transport=udp instead of turns:443
 
 # WebRTC WHEP: Video sink, full connection (ICE, DTLS, SRTP) to a WHEP endpoint, verifies media arrives.
 # Publish to the same stream key first to get media flowing. FFmpeg can publish to
@@ -168,76 +178,10 @@ sipsorcery-diags webrtc video-bench --encoder ffmpeg-piped --cpu-used 8 --thread
 # selects another, e.g. av1_nvenc; --av1-preset tunes its speed). The in-process ffmpeg stage needs the
 # FFmpeg shared libraries (winget/brew/apt install ffmpeg, or --ffmpeg-path).
 
-# Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
-# candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
-# CLOUDFLARE_API_TOKEN environment variables. https://developers.cloudflare.com/realtime/turn/
-sipsorcery-diags cloudflare turn --key-id <key-id> --token <api-token>
-sipsorcery-diags cloudflare turn --transport udp        # probe turn:3478?transport=udp instead of turns:443
-
-# Cloudflare SFU: create a Realtime SFU session and publish a VP8 + OPUS test pattern, verifying
-# the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN.
-sipsorcery-diags cloudflare sfu --app-id <app-id> --token <api-token> -d 10
-
-# LiveKit room: mint an access token, join a room and publish a VP8 + OPUS test pattern. Defaults
-# to LIVEKIT_WEBSOCKET_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET.
-sipsorcery-diags livekit room --url wss://my-app.livekit.cloud --api-key <key> --api-secret <secret>
-sipsorcery-diags livekit room --room my-room -d 30       # a specific room (default is a random name)
-
-# OpenAI Realtime: end to end connectivity test for the Realtime WebRTC API. Negotiates the
-# connection, asks the model to speak and succeeds when its voice is received. No audio device is
-# used. Defaults to the OPENAI_API_KEY environment variable.
-sipsorcery-diags openai realtime
-sipsorcery-diags openai realtime --voice verse --prompt "Count to three."
-
-# OpenAI chat: an interactive voice session (runs until ctrl-c). The model's voice plays via ffplay;
-# --play - reads microphone PCM from stdin, so pipe an ffmpeg mic capture in. The mic is gated while
-# the model speaks (half-duplex, no echo canceller) so it does not hear itself -- use a headset for
-# full-duplex barge-in. Capture device syntax is per-OS (dshow/avfoundation/pulse).
-ffmpeg -f dshow -i audio="Microphone (Realtek Audio)" -ac 1 -ar 48000 -f s16le - \
-  | sipsorcery-diags openai chat --play -
-sipsorcery-diags openai chat               # listen-only (hear the model, no mic)
-
-# Route (v0.1): wire a source edge to one or more sink edges over a stream graph. The stream is the
-# noun; --from / --to attach edges to it. The graph repacketises, it does not transcode -- frames
-# travel encoded from source to sink. See "The route verb" below.
-sipsorcery-diags route --from testpattern --to out.ivf -d 10          # generate VP8, record to IVF
-sipsorcery-diags route --from testpattern --to play                  # generate VP8, watch in ffplay
-sipsorcery-diags route --from testpattern --to play --to out.ivf     # tee: watch AND record at once
-sipsorcery-diags route --from whep:https://b.siobud.com/api/whep --to out.ivf --token key  # record a live WebRTC stream
+# The cloudflare, livekit, openai and route verbs moved to the sibling "sipsorcery" tool
+# (SIPSorcery.Cli), the application/streams CLI. Install it with:
+#   dotnet tool install -g SIPSorcery.Cli --prerelease
 ```
-
-### The route verb
-
-`route` is the first cut of the stream router: rather than another one-shot diagnostic, it treats a
-media **stream** as the primitive and lets you attach **edges** to it. A graph is a source node, one
-or more sink nodes, and the directed edges between them; a routing decision is just a mutation of that
-graph. v0.1 implements the simplest shape — one source fanned out to N sinks (a free tee).
-
-Two design rules carry through from the bigger picture:
-
-- **Repacketise, not transcode.** Frames travel the edges still encoded (VP8 stays VP8, H264 stays
-  H264). The tool stands in the media path only far enough to depacketise and re-emit; it never
-  decodes to samples. Per-sample work (a real transcode) is the job of a future transform node backed
-  by ffmpeg, not managed code.
-- **Edges are addressable.** A `--from` / `--to` spec is either a bare keyword/path (`out.ivf`,
-  `play`, `null`, `-`) or `scheme:rest` (`whep:https://host/whep`). Adding a transport edge is one new
-  case in the edge factory and nothing else.
-
-v0.1 edges:
-
-| Direction | Edge | Notes |
-|-----------|------|-------|
-| `--from`  | `testpattern` | A generated VP8 pattern. No native dependencies. `--fps` sets the rate. |
-| `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
-| `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
-| `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
-| `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
-| `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
-
-Sinks named `whip:` / `sip:` / `livekit:` / `cloudflare:` are recognised and report that they are not
-wired into `route` yet — publish into those with the dedicated verbs today (`webrtc whip`,
-`livekit room`). They become `route` edges in a later version, at which point
-`route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
 
 ### SIP call ladders in the terminal with sngrep
 

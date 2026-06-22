@@ -1,11 +1,11 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: IceProbeCommand.cs
+// Filename: IceGatherCommand.cs
 //
-// Description: The "sipsorcery ice probe" verb. Runs ICE candidate gathering,
+// Description: The "sipsorcery ice gather" verb. Runs ICE candidate gathering,
 // optionally against STUN and TURN servers, and reports the candidates
 // obtained. Answers "what connectivity paths does this machine have" and
 // doubles as a STUN/TURN server health check: if a requested server type
-// yields no candidate the probe fails.
+// yields no candidate the gather fails.
 //
 // Note this verb deliberately stops at the ICE gathering stage. No SDP is
 // exchanged and no DTLS handshake is attempted, which is why it lives under
@@ -28,7 +28,7 @@ using SIPSorcery.Net;
 
 namespace SIPSorcery.Diagnostics.Commands;
 
-public sealed class IceProbeCommand : CommandBase
+public sealed class IceGatherCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 10;
 
@@ -43,14 +43,14 @@ public sealed class IceProbeCommand : CommandBase
     /// <summary>
     /// The result shape written to stdout with --json. Stable field names; additive changes only.
     /// </summary>
-    private sealed record ProbeResult(
+    private sealed record GatherResult(
         bool Success,
         string GatheringState,
         long DurationMs,
         IReadOnlyList<CandidateResult> Candidates,
         string? Error);
 
-    public IceProbeCommand() : base(DEFAULT_TIMEOUT_SECONDS)
+    public IceGatherCommand() : base(DEFAULT_TIMEOUT_SECONDS)
     { }
 
     public override Command Build()
@@ -74,13 +74,13 @@ public sealed class IceProbeCommand : CommandBase
 
         // Cloudflare TURN options (same as the "cloudflare turn" and "webrtc echo" verbs). When a key ID
         // and token are supplied, short lived TURN credentials are fetched and added as an ICE server
-        // before gathering, so the probe doubles as a Cloudflare TURN health check.
+        // before gathering, so the gather doubles as a Cloudflare TURN health check.
         var keyIdOption = CloudflareTurn.CreateKeyIdOption();
         var tokenOption = CloudflareTurn.CreateTokenOption();
         var ttlOption = CloudflareTurn.CreateTtlOption();
         var transportOption = CloudflareTurn.CreateTransportOption();
 
-        var command = new Command("probe", "Gather ICE candidates and report them. Fails if a requested STUN/TURN server produces no candidate.");
+        var command = new Command("gather", "Gather ICE candidates and report them. Fails if a requested STUN/TURN server produces no candidate.");
         command.Options.Add(stunOption);
         command.Options.Add(turnOption);
         command.Options.Add(relayOnlyOption);
@@ -111,7 +111,7 @@ public sealed class IceProbeCommand : CommandBase
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
-        var logger = loggerFactory.CreateLogger(nameof(IceProbeCommand));
+        var logger = loggerFactory.CreateLogger(nameof(IceGatherCommand));
 
         var iceServers = new List<RTCIceServer>();
 
@@ -127,7 +127,7 @@ public sealed class IceProbeCommand : CommandBase
             if (fields.Length != 3 || string.IsNullOrWhiteSpace(fields[0]))
             {
                 return WriteResult(asJson,
-                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
+                    new GatherResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
                         $"Could not parse TURN server \"{turn}\". Expected format \"turn:host[:port];username;password\"."),
                     ExitCodes.InvalidArgument);
             }
@@ -149,7 +149,7 @@ public sealed class IceProbeCommand : CommandBase
             if (string.IsNullOrWhiteSpace(turnKeyId) || string.IsNullOrWhiteSpace(turnToken))
             {
                 return WriteResult(asJson,
-                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
+                    new GatherResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
                         "Both a Cloudflare TURN key ID and token are required (--key-id/--token or CLOUDFLARE_TURN_KEY_ID/CLOUDFLARE_API_TOKEN)."),
                     ExitCodes.InvalidArgument);
             }
@@ -157,7 +157,7 @@ public sealed class IceProbeCommand : CommandBase
             if (!CloudflareTurn.TryResolveTurnUrl(turnTransport, out string turnUrl, out string? urlError))
             {
                 return WriteResult(asJson,
-                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [], urlError),
+                    new GatherResult(false, RTCIceGatheringState.@new.ToString(), 0, [], urlError),
                     ExitCodes.InvalidArgument);
             }
 
@@ -165,7 +165,7 @@ public sealed class IceProbeCommand : CommandBase
             if (fetch.Error != null)
             {
                 return WriteResult(asJson,
-                    new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [], $"Could not obtain Cloudflare TURN credentials: {fetch.Error}"),
+                    new GatherResult(false, RTCIceGatheringState.@new.ToString(), 0, [], $"Could not obtain Cloudflare TURN credentials: {fetch.Error}"),
                     ExitCodes.Failed);
             }
 
@@ -179,7 +179,7 @@ public sealed class IceProbeCommand : CommandBase
         if (relayOnly && !turnRequested)
         {
             return WriteResult(asJson,
-                new ProbeResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
+                new GatherResult(false, RTCIceGatheringState.@new.ToString(), 0, [],
                     "--relay-only requires at least one --turn server or Cloudflare TURN (--key-id/--token)."),
                 ExitCodes.InvalidArgument);
         }
@@ -204,7 +204,7 @@ public sealed class IceProbeCommand : CommandBase
             };
 
             iceChannel.OnIceCandidateError += (candidate, error) =>
-                loggerFactory.CreateLogger(nameof(IceProbeCommand)).LogWarning("ICE candidate error: {Error}", error);
+                loggerFactory.CreateLogger(nameof(IceGatherCommand)).LogWarning("ICE candidate error: {Error}", error);
 
             var stopwatch = Stopwatch.StartNew();
 
@@ -227,12 +227,12 @@ public sealed class IceProbeCommand : CommandBase
             if (completed != gatheringComplete.Task)
             {
                 return WriteResult(asJson,
-                    new ProbeResult(false, iceChannel.IceGatheringState.ToString(), stopwatch.ElapsedMilliseconds, candidates,
+                    new GatherResult(false, iceChannel.IceGatheringState.ToString(), stopwatch.ElapsedMilliseconds, candidates,
                         ct.IsCancellationRequested ? "Cancelled." : $"Gathering did not complete within {timeoutSeconds}s."),
                     ExitCodes.Timeout);
             }
 
-            // The probe contract: each requested capability must have produced a candidate.
+            // The gather contract: each requested capability must have produced a candidate.
             string? error = null;
             if (stunServers.Length > 0 && !candidates.Any(x => x.Type == RTCIceCandidateType.srflx.ToString()))
             {
@@ -248,22 +248,22 @@ public sealed class IceProbeCommand : CommandBase
             }
 
             return WriteResult(asJson,
-                new ProbeResult(error == null, iceChannel.IceGatheringState.ToString(), stopwatch.ElapsedMilliseconds, candidates, error),
+                new GatherResult(error == null, iceChannel.IceGatheringState.ToString(), stopwatch.ElapsedMilliseconds, candidates, error),
                 error == null ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (Exception excp)
         {
             return WriteResult(asJson,
-                new ProbeResult(false, iceChannel.IceGatheringState.ToString(), 0, [], excp.Message),
+                new GatherResult(false, iceChannel.IceGatheringState.ToString(), 0, [], excp.Message),
                 ExitCodes.TransportError);
         }
         finally
         {
-            iceChannel.Close("probe complete");
+            iceChannel.Close("gather complete");
         }
     }
 
-    private static int WriteResult(bool asJson, ProbeResult result, int exitCode)
+    private static int WriteResult(bool asJson, GatherResult result, int exitCode)
     {
         if (asJson)
         {
@@ -287,7 +287,7 @@ public sealed class IceProbeCommand : CommandBase
             }
             else
             {
-                Console.Error.WriteLine($"ICE probe failed after {result.DurationMs}ms ({host} host, {srflx} srflx, {relay} relay): {result.Error}");
+                Console.Error.WriteLine($"ICE gather failed after {result.DurationMs}ms ({host} host, {srflx} srflx, {relay} relay): {result.Error}");
             }
         }
 

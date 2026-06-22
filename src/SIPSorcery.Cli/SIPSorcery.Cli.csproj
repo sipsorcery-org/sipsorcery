@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <!-- NOTE: do not set AssemblyName to "sipsorcery": on case-insensitive file systems it
-         collides with the referenced SIPSorcery.dll. The assembly is SIPSorcery.Diagnostics and the
+         collides with the referenced SIPSorcery.dll. The assembly is SIPSorcery.Cli and the
          installed tool command name comes from ToolCommandName below. -->
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -15,19 +15,18 @@
 
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
-    <!-- The bare "sipsorcery" command name is deliberately NOT used here; it is reserved for a
-         potential future interactive/flagship tool. This diagnostics tool installs as the
-         "sipsorcery-diags" command. -->
-    <ToolCommandName>sipsorcery-diags</ToolCommandName>
-    <PackageId>SIPSorcery.Diagnostics</PackageId>
+    <!-- The flagship/application tool installs as the bare "sipsorcery" command (the diagnostics
+         tool is "sipsorcery-diags"). -->
+    <ToolCommandName>sipsorcery</ToolCommandName>
+    <PackageId>SIPSorcery.Cli</PackageId>
     <Version>0.1.0-alpha</Version>
     <Authors>Aaron Clauson</Authors>
-    <Description>Diagnostics and benchmarking CLI for SIP and WebRTC, built on the SIPSorcery library: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Probe/test tooling (not a general softphone); human and agent friendly with JSON output and meaningful exit codes. For routing streams and the Cloudflare/LiveKit/OpenAI fabric verbs see the SIPSorcery.Cli tool.</Description>
+    <Description>SIPSorcery CLI: route and bridge live media streams between SIP, WebRTC and the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime), built on the SIPSorcery library. A stream is the primitive; verbs attach edges to it. Human and agent friendly with JSON output and meaningful exit codes.</Description>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>SIP;VoIP;WebRTC;STUN;TURN;ICE;CLI;diagnostics</PackageTags>
+    <PackageTags>SIP;VoIP;WebRTC;streams;routing;Cloudflare;LiveKit;OpenAI;CLI</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
@@ -41,15 +40,20 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <!-- Used by the "livekit room" verb to mint access tokens and for the protobuf signalling
+         messages. Targets netstandard2.0 so it is compatible with the net8.0 tool. -->
+    <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+    <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
+    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SIPSorcery.Cli.Common\SIPSorcery.Cli.Common.csproj" />
     <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
-    <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
+    <!-- VP8 encoder for the generated test pattern (route, cloudflare sfu, livekit room verbs). -->
     <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
-    <!-- Native (FFmpeg.AutoGen) IVideoEncoder for the webrtc video-bench ffmpeg stage and whep decode. -->
-    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+    <!-- WebRTC client for the OpenAI Realtime API, used by the "openai" verbs. -->
+    <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
