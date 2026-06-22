@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>Max Headroom WebRTC Avatar</title>
+    <style>
+        body { font-family: sans-serif; background: #0a0a2a; color: #20c0e0; max-width: 700px; margin: 1em auto; }
+        video { width: 640px; height: 480px; background: #000; display: block; }
+        input[type=text] { width: 480px; padding: 6px; }
+        button { padding: 6px 12px; }
+        .row { margin: 8px 0; }
+        label { display: inline-block; width: 70px; }
+    </style>
+</head>
+<body>
+    <h2>Max Headroom WebRTC Avatar</h2>
+
+    <video controls autoplay playsinline id="videoCtl"></video>
+
+    <div class="row">
+        <input type="text" id="serverurl" />
+        <button onclick="start();">Connect</button>
+        <button onclick="closePeer();">Close</button>
+    </div>
+
+    <div class="row">
+        <label>Say:</label>
+        <input type="text" id="sayText" placeholder="Type text to speak verbatim..." />
+        <button onclick="post('/say', 'sayText');">Speak</button>
+    </div>
+
+    <div class="row">
+        <label>Ask:</label>
+        <input type="text" id="askText" placeholder="Ask the LLM something..." />
+        <button onclick="post('/ask', 'askText');">Ask</button>
+    </div>
+
+    <script type="text/javascript">
+        const STUN_URL = "stun:stun.cloudflare.com";
+        const BASE_URL = "https://localhost:5443";
+        var pc;
+
+        async function start() {
+            pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
+            pc.ontrack = evt => document.querySelector('#videoCtl').srcObject = evt.streams[0];
+            pc.oniceconnectionstatechange = () => console.log("ice: " + pc.iceConnectionState);
+            pc.onconnectionstatechange = () => console.log("conn: " + pc.connectionState);
+
+            pc.addTransceiver("audio", { direction: "recvonly" });
+            pc.addTransceiver("video", { direction: "recvonly" });
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            const response = await fetch(document.querySelector('#serverurl').value + "/offer", {
+                method: "POST",
+                headers: { "Content-Type": "application/sdp" },
+                body: pc.localDescription.sdp
+            });
+
+            if (!response.ok) { console.error("Offer failed:", response.status); return; }
+
+            const sdpAnswer = await response.text();
+            await pc.setRemoteDescription({ type: "answer", sdp: sdpAnswer });
+        }
+
+        async function post(path, inputId) {
+            const text = document.querySelector('#' + inputId).value;
+            if (!text) return;
+            const resp = await fetch(document.querySelector('#serverurl').value + path, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: text
+            });
+            if (resp.ok) { console.log(await resp.text()); }
+            else { console.error(path + " failed:", resp.status); }
+        }
+
+        async function closePeer() { await pc?.close(); }
+
+        document.querySelector('#serverurl').value = BASE_URL;
+    </script>
+</body>
