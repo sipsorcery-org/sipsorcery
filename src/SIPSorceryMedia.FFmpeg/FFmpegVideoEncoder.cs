@@ -267,152 +267,166 @@ namespace SIPSorceryMedia.FFmpeg
 
         public void InitialiseEncoder(AVCodecID codecID, int width, int height, int fps)
         {
-            if (!_isEncoderInitialised)
+            try
             {
-                _codecID = codecID;
-
-                var codec = GetCodec(codecID);
-                if (codec == null)
+                if (!_isEncoderInitialised)
                 {
-                    // A null codec means the loaded FFmpeg build has no encoder for this codec
-                    // (e.g. H264/H265 when built without libx264/libx265). Check before
-                    // dereferencing codec->name below so this surfaces as a clear, actionable
-                    // error rather than a NullReferenceException.
-                    throw new ApplicationException(
-                        $"The loaded FFmpeg build does not provide an encoder for {codecID}. " +
-                        $"For H264/H265 this usually means FFmpeg was built without libx264/libx265; " +
-                        $"verify with 'ffmpeg -encoders' or select a codec the build supports (e.g. VP8).");
-                }
+                    _codecID = codecID;
 
-                var cdcname = GetNameString(codec->name);
-                //var encOpts = GetCodecOptions(cdcname);
-
-                _encoderContext = ffmpeg.avcodec_alloc_context3(codec);
-                if (_encoderContext == null)
-                {
-                    throw new ApplicationException("Failed to allocate encoder codec context.");
-                }
-
-                _encoderContext->width = width;
-                _encoderContext->height = height;
-                _encoderContext->time_base.den = fps;
-                _encoderContext->time_base.num = 1;
-                _encoderContext->framerate.den = 1;
-                _encoderContext->framerate.num = fps;
-
-                var supportedPixFmts = GetSupportedPixelFormats(_encoderContext, codec);
-                if (supportedPixFmts.Length == 0)
-                {
-                    throw new ApplicationException($"Encoder {cdcname} does not report any supported pixel formats.");
-                }
-
-                _encoderContext->pix_fmt = _negotiatedPixFmt ?? supportedPixFmts[0];
-
-                if (_bit_rate != null) { _encoderContext->bit_rate = (long)_bit_rate; }
-                if (_bit_rate_tolerance != null) { _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance; }
-                if (_rc_min_rate != null) { _encoderContext->rc_min_rate = (long)_rc_min_rate; }
-                if (_rc_max_rate != null) { _encoderContext->rc_max_rate = (long)_rc_max_rate; }
-                // Default to auto (0) so encoding uses all available cores; callers can pin a specific
-                // count via SetThreadCount. Single threaded (the libavcodec default if left unset) is far
-                // too slow at higher resolutions.
-                _encoderContext->thread_count = _thread_count ?? 0;
-
-                // Set Key frame interval
-                if (fps < 5)
-                {
-                    _encoderContext->gop_size = 1;
-                }
-                else
-                {
-                    _encoderContext->gop_size = fps;
-                }
-
-                try
-                {
-                    // Real-time oriented defaults for the common encoders: a fast preset / cpu-used,
-                    // low-latency tuning and (via thread_count above) multi-threading. These suit the
-                    // typical WebRTC/live use case; callers wanting different trade-offs override them
-                    // through encoderOptions, which are applied after this block.
-                    switch (cdcname)
+                    var codec = GetCodec(codecID);
+                    if (codec == null)
                     {
-                        case "libx264":
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "veryfast", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
-                            break;
-                        case "h264_qsv":
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "66" /* baseline */, 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "7" /* veryfast */, 0).ThrowExceptionIfError();
-                            break;
-                        case "libx265":
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
-                            break;
-                        case "libvpx":
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", DEFAULT_LIBVPX_REALTIME_CPU_USED, 0).ThrowExceptionIfError();
-                            break;
-                        case "libvpx-vp9":
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
-                            // VP9 realtime cpu-used range is 0-9 (higher is faster); row-mt enables
-                            // tile-row multi-threading which is what makes VP9 keep up at high rates.
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
-                            break;
-                        case "libaom-av1":
-                            // libaom's default (good/best) is far too slow for live use; usage=realtime
-                            // plus a high cpu-used (0-11 in realtime, higher is faster) and row-mt makes it
-                            // usable, though it is still the slowest of the software encoders.
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "usage", "realtime", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
-                            break;
-                        case "libsvtav1":
-                            // SVT-AV1 is the realtime-oriented AV1 encoder. preset 0-13 (higher is faster);
-                            // the high presets plus a low-latency, low-delay prediction structure suit live.
-                            // SVT-AV1's low-delay structure does NOT support VBR rate control, so when a
-                            // target bitrate is set the rate control must be CBR (rc=2); otherwise it errors
-                            // ("VBR Rate control is currently not supported for LOW_DELAY") and produces no
-                            // output. With no bitrate the default constant-quality mode is used, which
-                            // low-delay does support.
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "11", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "svtav1-params",
-                                _encoderContext->bit_rate > 0 ? "lp=0:pred-struct=1:rc=2" : "lp=0:pred-struct=1", 0).ThrowExceptionIfError();
-                            break;
-                        case "librav1e":
-                            // rav1e exposes speed 0-10 (higher is faster); use a fast, low-latency setting.
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "speed", "10", 0).ThrowExceptionIfError();
-                            ffmpeg.av_opt_set(_encoderContext->priv_data, "low_latency", "true", 0).ThrowExceptionIfError();
-                            break;
-                        default:
-                            break;
+                        // A null codec means the loaded FFmpeg build has no encoder for this codec
+                        // (e.g. H264/H265 when built without libx264/libx265). Check before
+                        // dereferencing codec->name below so this surfaces as a clear, actionable
+                        // error rather than a NullReferenceException.
+                        throw new ApplicationException(
+                            $"The loaded FFmpeg build does not provide an encoder for {codecID}. " +
+                            $"For H264/H265 this usually means FFmpeg was built without libx264/libx265; " +
+                            $"verify with 'ffmpeg -encoders' or select a codec the build supports (e.g. VP8).");
+                    }
+
+                    var cdcname = GetNameString(codec->name);
+                    //var encOpts = GetCodecOptions(cdcname);
+
+                    _encoderContext = ffmpeg.avcodec_alloc_context3(codec);
+                    if (_encoderContext == null)
+                    {
+                        throw new ApplicationException("Failed to allocate encoder codec context.");
+                    }
+
+                    _encoderContext->width = width;
+                    _encoderContext->height = height;
+                    _encoderContext->time_base.den = fps;
+                    _encoderContext->time_base.num = 1;
+                    _encoderContext->framerate.den = 1;
+                    _encoderContext->framerate.num = fps;
+
+                    var supportedPixFmts = GetSupportedPixelFormats(_encoderContext, codec);
+                    if (supportedPixFmts.Length == 0)
+                    {
+                        throw new ApplicationException($"Encoder {cdcname} does not report any supported pixel formats.");
+                    }
+
+                    _encoderContext->pix_fmt = _negotiatedPixFmt ?? supportedPixFmts[0];
+
+                    if (_bit_rate != null) { _encoderContext->bit_rate = (long)_bit_rate; }
+                    if (_bit_rate_tolerance != null) { _encoderContext->bit_rate_tolerance = (int)_bit_rate_tolerance; }
+                    if (_rc_min_rate != null) { _encoderContext->rc_min_rate = (long)_rc_min_rate; }
+                    if (_rc_max_rate != null) { _encoderContext->rc_max_rate = (long)_rc_max_rate; }
+                    // Default to auto (0) so encoding uses all available cores; callers can pin a specific
+                    // count via SetThreadCount. Single threaded (the libavcodec default if left unset) is far
+                    // too slow at higher resolutions.
+                    _encoderContext->thread_count = _thread_count ?? 0;
+
+                    // Set Key frame interval
+                    if (fps < 5)
+                    {
+                        _encoderContext->gop_size = 1;
+                    }
+                    else
+                    {
+                        _encoderContext->gop_size = fps;
+                    }
+
+                    try
+                    {
+                        // Real-time oriented defaults for the common encoders: a fast preset / cpu-used,
+                        // low-latency tuning and (via thread_count above) multi-threading. These suit the
+                        // typical WebRTC/live use case; callers wanting different trade-offs override them
+                        // through encoderOptions, which are applied after this block.
+                        switch (cdcname)
+                        {
+                            case "libx264":
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "baseline", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "veryfast", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                                break;
+                            case "h264_qsv":
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "profile", "66" /* baseline */, 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "7" /* veryfast */, 0).ThrowExceptionIfError();
+                                break;
+                            case "libx265":
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "ultrafast", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "tune", "zerolatency", 0).ThrowExceptionIfError();
+                                break;
+                            case "libvpx":
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", DEFAULT_LIBVPX_REALTIME_CPU_USED, 0).ThrowExceptionIfError();
+                                break;
+                            case "libvpx-vp9":
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "quality", "realtime", 0).ThrowExceptionIfError();
+                                // VP9 realtime cpu-used range is 0-9 (higher is faster); row-mt enables
+                                // tile-row multi-threading which is what makes VP9 keep up at high rates.
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
+                                break;
+                            case "libaom-av1":
+                                // libaom's default (good/best) is far too slow for live use; usage=realtime
+                                // plus a high cpu-used (0-11 in realtime, higher is faster) and row-mt makes it
+                                // usable, though it is still the slowest of the software encoders.
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "usage", "realtime", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "cpu-used", "8", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "row-mt", "1", 0).ThrowExceptionIfError();
+                                break;
+                            case "libsvtav1":
+                                // SVT-AV1 is the realtime-oriented AV1 encoder. preset 0-13 (higher is faster);
+                                // the high presets plus a low-latency, low-delay prediction structure suit live.
+                                // SVT-AV1's low-delay structure does NOT support VBR rate control, so when a
+                                // target bitrate is set the rate control must be CBR (rc=2); otherwise it errors
+                                // ("VBR Rate control is currently not supported for LOW_DELAY") and produces no
+                                // output. With no bitrate the default constant-quality mode is used, which
+                                // low-delay does support.
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "preset", "11", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "svtav1-params",
+                                    _encoderContext->bit_rate > 0 ? "lp=0:pred-struct=1:rc=2" : "lp=0:pred-struct=1", 0).ThrowExceptionIfError();
+                                break;
+                            case "librav1e":
+                                // rav1e exposes speed 0-10 (higher is faster); use a fast, low-latency setting.
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "speed", "10", 0).ThrowExceptionIfError();
+                                ffmpeg.av_opt_set(_encoderContext->priv_data, "low_latency", "true", 0).ThrowExceptionIfError();
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    catch (ApplicationException ex)
+                    {
+                        logger.LogCritical(ex, "Failed to set default encoder options for codec {name}. {msg}", cdcname, ex.Message);
+                        throw;
+                    }
+
+                    foreach (var option in _codecOptions)
+                    {
+                        var ok = ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, ffmpeg.AV_OPT_SEARCH_CHILDREN);
+                        if (ok < 0)
+                        {
+                            logger.LogWarning("Failed to set encoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, FFmpegInit.av_strerror(ok));
+                        }
+                    }
+
+                    ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
+
+                    logger.LogDebug("Successfully initialised ffmpeg based image encoder: CodecId:[{id}] - Name:[{name}] - {w}:{h} - {fps} Fps - {fmt}",
+                        codecID, GetNameString(codec->name), width, height, fps, _encoderContext->pix_fmt);
+
+                    // Only mark initialised once the context is fully built and opened. Setting this
+                    // earlier means a failure part-way through latches a half-initialised state, and
+                    // every later Encode call then dereferences the null/unopened context (a repeating
+                    // NullReferenceException) instead of surfacing the real error.
+                    _isEncoderInitialised = true;
+                }
+            }
+            finally
+            {
+                if (!_isEncoderInitialised && _encoderContext != null)
+                {
+                    // IF the encoder failed to initialise, free the context so a later attempt can try again.
+                    fixed (AVCodecContext** pCtx = &_encoderContext)
+                    {
+                        ffmpeg.avcodec_free_context(pCtx);
                     }
                 }
-                catch (ApplicationException ex)
-                {
-                    logger.LogCritical(ex, "Failed to set default encoder options for codec {name}. {msg}", cdcname, ex.Message);
-                    throw;
-                }
-
-                foreach (var option in _codecOptions)
-                {
-                    var ok = ffmpeg.av_opt_set(_encoderContext->priv_data, option.Key, option.Value, ffmpeg.AV_OPT_SEARCH_CHILDREN);
-                    if (ok < 0)
-                    {
-                        logger.LogWarning("Failed to set encoder option \"{key}\"=\"{val}\", Skipping this option. {msg}", option.Key, option.Value, FFmpegInit.av_strerror(ok));
-                    }
-                }
-
-                ffmpeg.avcodec_open2(_encoderContext, codec, null).ThrowExceptionIfError();
-
-                logger.LogDebug("Successfully initialised ffmpeg based image encoder: CodecId:[{id}] - Name:[{name}] - {w}:{h} - {fps} Fps - {fmt}",
-                    codecID, GetNameString(codec->name), width, height, fps, _encoderContext->pix_fmt);
-
-                // Only mark initialised once the context is fully built and opened. Setting this
-                // earlier means a failure part-way through latches a half-initialised state, and
-                // every later Encode call then dereferences the null/unopened context (a repeating
-                // NullReferenceException) instead of surfacing the real error.
-                _isEncoderInitialised = true;
             }
         }
 
