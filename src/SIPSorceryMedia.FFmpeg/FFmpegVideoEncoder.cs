@@ -320,14 +320,7 @@ namespace SIPSorceryMedia.FFmpeg
                     _encoderContext->thread_count = _thread_count ?? 0;
 
                     // Set Key frame interval
-                    if (fps < 5)
-                    {
-                        _encoderContext->gop_size = 1;
-                    }
-                    else
-                    {
-                        _encoderContext->gop_size = fps;
-                    }
+                    _encoderContext->gop_size = (fps < 5) ? 1 : fps;
 
                     try
                     {
