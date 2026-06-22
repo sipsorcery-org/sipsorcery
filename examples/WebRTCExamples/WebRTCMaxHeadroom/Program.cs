@@ -17,8 +17,11 @@
 //   AZURE_SPEECH_KEY     - required, Azure Speech resource key.
 //   AZURE_SPEECH_REGION  - required, e.g. "westeurope".
 //   AZURE_SPEECH_VOICE   - optional, defaults to en-US-GuyNeural.
-//   LLM_ENDPOINT         - optional, e.g. http://localhost:11434/v1/chat/completions
-//   LLM_MODEL            - optional, e.g. llama3.2
+//   LLM_ENDPOINT         - optional OpenAI-compatible chat completions URL.
+//                          Local:      http://localhost:11434/v1/chat/completions (Ollama)
+//                          OpenRouter: https://openrouter.ai/api/v1/chat/completions
+//   LLM_MODEL            - optional, e.g. llama3.2 or anthropic/claude-3.5-sonnet
+//   LLM_API_KEY          - optional, required only for hosted gateways (OpenRouter/OpenAI).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -30,6 +33,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -97,8 +102,9 @@ class Program
 
         _llm = new LocalLlmClient(
             Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
-            Environment.GetEnvironmentVariable("LLM_MODEL"));
-        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? "configured" : "not configured (text will be spoken verbatim)");
+            Environment.GetEnvironmentVariable("LLM_MODEL"),
+            Environment.GetEnvironmentVariable("LLM_API_KEY"));
+        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? $"configured with endpoint {_llm.Endpoint} and model {_llm.Model}" : " not configured (text will be spoken verbatim)");
 
         var builder = WebApplication.CreateBuilder();
         builder.Host.UseSerilog();
@@ -123,10 +129,43 @@ class Program
             var prompt = await ReadBody(request);
             var notReady = SpeakerNotReady();
             if (notReady != null) { return notReady; }
-            var reply = await _llm.GenerateReplyAsync(prompt);
-            _logger.LogInformation("LLM reply: {Reply}", reply);
-            _ = _speaker.SpeakAsync(reply);
-            return Results.Text(reply);
+
+            // Capture the speaker so a mid-stream disconnect (which nulls _speaker) can't
+            // throw inside the background consumer below.
+            var speaker = _speaker;
+
+            // Stream the reply and speak each sentence as it arrives so the avatar starts
+            // talking on the first sentence instead of waiting for the whole completion. A
+            // single background consumer speaks the sentences in order (the speaker also
+            // serialises internally), while generation continues unblocked. The assembled
+            // text is returned once generation completes; speech finishes in the background.
+            var sentences = Channel.CreateUnbounded<string>();
+            var speakTask = Task.Run(async () =>
+            {
+                try
+                {
+                    await foreach (var sentence in sentences.Reader.ReadAllAsync())
+                    {
+                        await speaker.SpeakAsync(sentence);
+                    }
+                }
+                catch (Exception excp)
+                {
+                    _logger.LogError(excp, "Error speaking streamed reply.");
+                }
+            });
+
+            var reply = new StringBuilder();
+            await foreach (var sentence in _llm.StreamReplyAsync(prompt))
+            {
+                reply.Append(sentence).Append(' ');
+                await sentences.Writer.WriteAsync(sentence);
+            }
+            sentences.Writer.Complete();
+
+            var text = reply.ToString().Trim();
+            _logger.LogInformation("LLM reply: {Reply}", text);
+            return Results.Text(text);
         });
 
         await app.RunAsync();
