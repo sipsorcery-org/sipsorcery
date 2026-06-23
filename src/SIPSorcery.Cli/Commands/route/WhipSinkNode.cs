@@ -3,7 +3,7 @@
 //
 // Description: A WebRTC egress edge for the "route" verb: publishes the graph's
 // media to a WHIP (WebRTC-HTTP Ingestion Protocol) endpoint over a single peer
-// connection carrying an audio track (PCMU) and a video track (VP8). Audio
+// connection carrying an audio track (PCMU) and a video track (H264). Audio
 // frames are relayed onto the audio track and video frames onto the video track,
 // both still ENCODED - the graph repacketises, it does not transcode.
 //
@@ -72,8 +72,10 @@ public sealed class WhipSinkNode : ISinkNode
             throw new EdgeException($"Could not parse the whip sink '{_url}' as an HTTP or HTTPS URL.");
         }
 
-        // Send-only PCMU audio and VP8 video. Audio is pinned to PCMU so a SIP source's payload can
-        // be relayed unchanged (repacketise, not transcode).
+        // Send-only PCMU audio and H264 video (H264 because the public Broadcast Box test endpoint
+        // rejects VP8). Audio is pinned to PCMU and video to H264 so the source's payloads relay
+        // unchanged (repacketise, not transcode); packetization-mode=1 allows the large H264 NAL
+        // units to be fragmented across RTP packets.
         _pc.addTrack(new MediaStreamTrack(new List<AudioFormat>
         {
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU)
@@ -81,7 +83,7 @@ public sealed class WhipSinkNode : ISinkNode
 
         _pc.addTrack(new MediaStreamTrack(new List<VideoFormat>
         {
-            new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID)
+            new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1")
         }, MediaStreamStatusEnum.SendOnly));
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

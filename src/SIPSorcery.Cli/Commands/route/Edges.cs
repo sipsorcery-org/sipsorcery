@@ -53,20 +53,25 @@ public sealed record EdgeOptions(
     string? SipPassword = null);
 
 /// <summary>
-/// A generated VP8 test pattern source: the zero dependency ingress for demonstrating the graph.
-/// Reuses the library's VideoTestPatternSource + managed VP8 encoder, emitting each encoded frame as
-/// a <see cref="MediaFrame"/>. The RTP timestamp is accumulated from the per frame duration so a sink
-/// (e.g. the IVF writer) gets a monotonic clock.
+/// A generated test pattern source: the zero dependency ingress for demonstrating the graph. Emits an
+/// H264 video test pattern (the library's VideoTestPatternSource + ffmpeg encoder) AND a PCMU music
+/// track (AudioExtrasSource), each encoded frame fanned into the graph as a <see cref="MediaFrame"/>.
+/// The audio is pinned to PCMU so it relays unchanged onto a whip: sink (repacketise, not transcode);
+/// a video-only sink (file/play/-) just ignores the audio frames. Per stream the RTP timestamp is
+/// accumulated from the per frame duration so a sink gets a monotonic clock.
 /// </summary>
 public sealed class TestPatternSourceNode : ISourceNode
 {
     private const int H264_PAYLOAD_ID = 96;
 
     private readonly VideoTestPatternSource _source;
+    private readonly AudioExtrasSource _audioSource;
     private readonly VideoFormat _format = new(VideoCodecsEnum.H264, H264_PAYLOAD_ID);
+    private readonly AudioFormat _audioFormat = new(SDPWellKnownMediaFormatsEnum.PCMU);
     private readonly int _fps;
     private readonly ILogger _logger;
     private uint _timestamp;
+    private uint _audioTimestamp;
 
     public event Action<MediaFrame>? OnFrame;
 
@@ -79,10 +84,16 @@ public sealed class TestPatternSourceNode : ISourceNode
     {
         _fps = fps;
         _logger = logger;
+
         _source = new VideoTestPatternSource(new FFmpegVideoEncoder());
         _source.RestrictFormats(f => f.Codec == VideoCodecsEnum.H264);
         _source.SetFrameRate(fps);
         _source.OnVideoSourceEncodedSample += HandleEncoded;
+
+        _audioSource = new AudioExtrasSource(new AudioEncoder(),
+            new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
+        _audioSource.RestrictFormats(f => f.Codec == AudioCodecsEnum.PCMU);
+        _audioSource.OnAudioSourceEncodedSample += HandleAudioEncoded;
     }
 
     private void HandleEncoded(uint durationRtpUnits, byte[] sample)
@@ -91,19 +102,29 @@ public sealed class TestPatternSourceNode : ISourceNode
         OnFrame?.Invoke(MediaFrame.ForVideo(sample, _timestamp, _format, durationRtpUnits));
     }
 
+    private void HandleAudioEncoded(uint durationRtpUnits, byte[] sample)
+    {
+        _audioTimestamp += durationRtpUnits;
+        OnFrame?.Invoke(MediaFrame.ForAudio(sample, _audioTimestamp, durationRtpUnits, _audioFormat));
+    }
+
     public async Task StartAsync(CancellationToken ct)
     {
         _source.SetVideoSourceFormat(_format);
+        _audioSource.SetAudioSourceFormat(_audioFormat);
         await _source.StartVideo().ConfigureAwait(false);
-        _logger.LogDebug("Test pattern source started: VP8 @ {Fps}fps.", _fps);
+        await _audioSource.StartAudio().ConfigureAwait(false);
+        _logger.LogDebug("Test pattern source started: H264 @ {Fps}fps + PCMU music.", _fps);
     }
 
-    public string Describe() => $"testpattern vp8 @ {_fps}fps";
+    public string Describe() => $"testpattern h264 @ {_fps}fps + music (pcmu)";
 
     public async ValueTask DisposeAsync()
     {
         _source.OnVideoSourceEncodedSample -= HandleEncoded;
+        _audioSource.OnAudioSourceEncodedSample -= HandleAudioEncoded;
         try { await _source.CloseVideo().ConfigureAwait(false); } catch { /* best effort */ }
+        try { await _audioSource.CloseAudio().ConfigureAwait(false); } catch { /* best effort */ }
         _source.Dispose();
     }
 }

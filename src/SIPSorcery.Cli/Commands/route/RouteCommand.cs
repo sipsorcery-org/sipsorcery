@@ -72,8 +72,8 @@ public sealed class RouteCommand : CommandBase
     {
         var fromOption = new Option<string>("--from", "-f")
         {
-            Description = "The source edge to pull a stream from: testpattern (a generated VP8 pattern), whep:<url> " +
-                          "(a live WebRTC stream) or sip:<uri> (place a SIP call and forward its audio, e.g. sip:music@iptel.org).",
+            Description = "The source edge to pull a stream from: testpattern (a generated H264 pattern + PCMU music), " +
+                          "whep:<url> (a live WebRTC stream) or sip:<uri> (place a SIP call and forward its audio, e.g. sip:music@iptel.org).",
             Required = true
         };
 

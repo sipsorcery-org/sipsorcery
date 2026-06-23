@@ -26,8 +26,8 @@ sipsorcery route --from testpattern --to out.ivf -d 10
 # Route (v0.1): wire a source edge to one or more sink edges over a stream graph. The stream is the
 # noun; --from / --to attach edges to it. The graph repacketises, it does not transcode -- frames
 # travel encoded from source to sink. See "The route verb" below.
-sipsorcery route --from testpattern --to out.ivf -d 10          # generate VP8, record to IVF
-sipsorcery route --from testpattern --to play                  # generate VP8, watch in ffplay
+sipsorcery route --from testpattern --to out.h264 -d 10         # generate H264, record to Annex B
+sipsorcery route --from testpattern --to play                  # generate H264, watch in ffplay
 sipsorcery route --from testpattern --to play --to out.ivf     # tee: watch AND record at once
 sipsorcery route --from whep:https://b.siobud.com/api/whep --to out.ivf --token key  # record a live WebRTC stream
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip      # bridge a SIP call to WebRTC
@@ -88,24 +88,24 @@ Edges:
 
 | Direction | Edge | Notes |
 |-----------|------|-------|
-| `--from`  | `testpattern` | A generated VP8 pattern. No native dependencies. `--fps` sets the rate. |
+| `--from`  | `testpattern` | A generated H264 video pattern **+ PCMU music** (so it can feed a `whip:` sink with audio and video). `--fps` sets the video rate. |
 | `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
 | `--from`  | `sip:<uri>` | Place a SIP call (PCMU) and forward its received audio. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
 | `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
-| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only PCMU audio + VP8 video peer connection. `--token` sets the Authorization. |
+| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only PCMU audio + H264 video peer connection. `--token` sets the Authorization. |
 
 #### The `--scope` audio-scope video
 
 With a `sip:` source, `--scope` adds a second video track that is a live **visualisation of the call
 audio** — a moving waveform (`--scope-mode waves`, the default) or a scrolling spectrum
 (`--scope-mode spectrum`), sized with `--scope-size WxH`. The forwarded audio still travels
-repacketised; the scope is the one transform that decodes to samples, and that rendering plus its VP8
-encoding is delegated to an external **ffmpeg** process (the `showwaves`/`showspectrum` filters, the
-same way the sinks shell out to `ffplay`) — never a managed node. ffmpeg must be on the `PATH` or
-located with `--ffmpeg-path`.
+repacketised; the scope is the one transform that decodes to samples, and that rendering plus its H264
+encoding is delegated to an external **ffmpeg** process (the `showwaves`/`showspectrum` filters +
+`libx264`, the same way the sinks shell out to `ffplay`) — never a managed node. ffmpeg must be on the
+`PATH` or located with `--ffmpeg-path`.
 
 ```bash
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope --scope-mode spectrum
