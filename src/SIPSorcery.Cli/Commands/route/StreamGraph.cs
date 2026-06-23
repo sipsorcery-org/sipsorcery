@@ -17,6 +17,8 @@
 //
 // History:
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 23 Jun 2026	Aaron Clauson	MediaFrame carries audio as well as video, and sinks gained an
+//                              async start, so a sip: source can be forwarded to a whip: sink.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,12 +32,34 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Cli.Commands.Route;
 
+/// <summary>Which kind of media a <see cref="MediaFrame"/> carries.</summary>
+public enum MediaKind
+{
+    Video,
+    Audio
+}
+
 /// <summary>
-/// One unit travelling along a graph edge: a single depacketised but still ENCODED video frame
-/// (the repacketise level - it carries a compressed payload, never raw samples, which is what keeps
-/// the per-frame work cheap). Audio and data are the planned next frame kinds; v0.1 routes video only.
+/// One unit travelling along a graph edge: a single depacketised but still ENCODED frame (the
+/// repacketise level - it carries a compressed payload, never raw samples, which is what keeps the
+/// per-frame work cheap). A frame is either video or audio; <see cref="DurationRtpUnits"/> is the
+/// frame's span in its media clock (needed to re-time it onto an outgoing WebRTC track). Use the
+/// <see cref="ForVideo"/> / <see cref="ForAudio"/> factories rather than the positional constructor.
 /// </summary>
-public readonly record struct MediaFrame(byte[] Payload, uint RtpTimestamp, VideoFormat Format);
+public readonly record struct MediaFrame(
+    MediaKind Kind,
+    byte[] Payload,
+    uint RtpTimestamp,
+    uint DurationRtpUnits,
+    VideoFormat VideoFormat,
+    AudioFormat AudioFormat)
+{
+    public static MediaFrame ForVideo(byte[] payload, uint rtpTimestamp, VideoFormat format, uint durationRtpUnits = 0) =>
+        new(MediaKind.Video, payload, rtpTimestamp, durationRtpUnits, format, AudioFormat.Empty);
+
+    public static MediaFrame ForAudio(byte[] payload, uint rtpTimestamp, uint durationRtpUnits, AudioFormat format) =>
+        new(MediaKind.Audio, payload, rtpTimestamp, durationRtpUnits, VideoFormat.Empty, format);
+}
 
 /// <summary>Thrown when an edge spec is invalid or unsupported. Carries a user facing message.</summary>
 public sealed class EdgeException : Exception
@@ -75,6 +99,14 @@ public readonly record struct SinkStats(int Frames, long Bytes, int Dropped);
 /// <summary>A node that consumes frames: an egress edge of the graph (a file, a player, a transport sender).</summary>
 public interface ISinkNode : IStreamNode
 {
+    /// <summary>
+    /// Brings the sink up before any frame is written. A transport sink (whip:) does its
+    /// offer/answer/ICE/DTLS handshake here so it is connected before media flows; a local sink
+    /// (file/play/null) starts lazily on first write and implements this as a no-op. Throws
+    /// <see cref="EdgeException"/> on failure.
+    /// </summary>
+    Task StartAsync(CancellationToken ct);
+
     /// <summary>Hands one frame to the sink. Must not block the calling (source/receive) thread.</summary>
     void Write(MediaFrame frame);
 
@@ -90,7 +122,8 @@ public sealed class StreamGraph
 {
     private readonly ISourceNode _source;
     private readonly IReadOnlyList<ISinkNode> _sinks;
-    private long _framesRouted;
+    private long _videoFramesRouted;
+    private long _audioFramesRouted;
 
     public StreamGraph(ISourceNode source, IReadOnlyList<ISinkNode> sinks)
     {
@@ -100,15 +133,24 @@ public sealed class StreamGraph
 
     public ISourceNode Source => _source;
     public IReadOnlyList<ISinkNode> Sinks => _sinks;
-    public long FramesRouted => Interlocked.Read(ref _framesRouted);
+    public long VideoFramesRouted => Interlocked.Read(ref _videoFramesRouted);
+    public long AudioFramesRouted => Interlocked.Read(ref _audioFramesRouted);
+    public long FramesRouted => VideoFramesRouted + AudioFramesRouted;
 
     /// <summary>
-    /// Starts the source and runs until it ends, the duration elapses (0 = run until the source ends
-    /// or cancellation), or cancellation. Returns the reason the run stopped. Does not dispose the
-    /// nodes; the caller disposes them (sinks first, to finalise files) and then reads the stats.
+    /// Brings the sinks up, starts the source, and runs until it ends, the duration elapses (0 = run
+    /// until the source ends or cancellation), or cancellation. Returns the reason the run stopped.
+    /// Sinks are started before the source so a transport sink (whip:) is connected before the first
+    /// frame is written. Does not dispose the nodes; the caller disposes them (sinks first, to
+    /// finalise files) and then reads the stats.
     /// </summary>
     public async Task<string> RunAsync(int durationSeconds, CancellationToken ct)
     {
+        foreach (var sink in _sinks)
+        {
+            await sink.StartAsync(ct).ConfigureAwait(false);
+        }
+
         _source.OnFrame += Fan;
         try
         {
@@ -135,7 +177,15 @@ public sealed class StreamGraph
 
         void Fan(MediaFrame frame)
         {
-            Interlocked.Increment(ref _framesRouted);
+            if (frame.Kind == MediaKind.Audio)
+            {
+                Interlocked.Increment(ref _audioFramesRouted);
+            }
+            else
+            {
+                Interlocked.Increment(ref _videoFramesRouted);
+            }
+
             foreach (var sink in _sinks)
             {
                 sink.Write(frame);

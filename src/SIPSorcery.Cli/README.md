@@ -30,6 +30,8 @@ sipsorcery route --from testpattern --to out.ivf -d 10          # generate VP8, 
 sipsorcery route --from testpattern --to play                  # generate VP8, watch in ffplay
 sipsorcery route --from testpattern --to play --to out.ivf     # tee: watch AND record at once
 sipsorcery route --from whep:https://b.siobud.com/api/whep --to out.ivf --token key  # record a live WebRTC stream
+sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip      # bridge a SIP call to WebRTC
+sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope  # ...and add an audio-scope video
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -82,21 +84,37 @@ Two design rules carry through from the bigger picture:
   `play`, `null`, `-`) or `scheme:rest` (`whep:https://host/whep`). Adding a transport edge is one new
   case in the edge factory and nothing else.
 
-v0.1 edges:
+Edges:
 
 | Direction | Edge | Notes |
 |-----------|------|-------|
 | `--from`  | `testpattern` | A generated VP8 pattern. No native dependencies. `--fps` sets the rate. |
 | `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
+| `--from`  | `sip:<uri>` | Place a SIP call (PCMU) and forward its received audio. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
 | `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
+| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only PCMU audio + VP8 video peer connection. `--token` sets the Authorization. |
 
-Sinks named `whip:` / `sip:` / `livekit:` / `cloudflare:` are recognised and report that they are not
-wired into `route` yet — publish into those with the dedicated verbs today (`cloudflare sfu`,
-`livekit room`, or `sipsorcery-diags webrtc whip`). They become `route` edges in a later version, at
-which point `route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
+#### The `--scope` audio-scope video
+
+With a `sip:` source, `--scope` adds a second video track that is a live **visualisation of the call
+audio** — a moving waveform (`--scope-mode waves`, the default) or a scrolling spectrum
+(`--scope-mode spectrum`), sized with `--scope-size WxH`. The forwarded audio still travels
+repacketised; the scope is the one transform that decodes to samples, and that rendering plus its VP8
+encoding is delegated to an external **ffmpeg** process (the `showwaves`/`showspectrum` filters, the
+same way the sinks shell out to `ffplay`) — never a managed node. ffmpeg must be on the `PATH` or
+located with `--ffmpeg-path`.
+
+```bash
+sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope --scope-mode spectrum
+```
+
+Sinks/sources named `livekit:` / `cloudflare:` (and `sip:` as a sink) are recognised and report that
+they are not wired into `route` yet — use the dedicated verbs today (`cloudflare sfu`, `livekit room`).
+They become `route` edges in a later version, at which point `route --from sip:… --to livekit:room`
+bridges a call into a room with no bespoke command.
 
 ## Exit codes
 
@@ -110,7 +128,8 @@ which point `route --from sip:… --to livekit:room` bridges a call into a room 
 
 ## Status
 
-Early (v0.1). The `route` engine is video-only and single source → N sinks; the transport sink edges
-and the authoring layers above the graph (declarative routing, scripted policies, an external control
-API) are planned. Feedback and issues welcome on the
+Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with a
+`sip:` source, a `whip:` sink and an ffmpeg-backed audio-scope transform wired in. Fan-in, richer
+transforms, the remaining transport edges and the authoring layers above the graph (declarative
+routing, scripted policies, an external control API) are planned. Feedback and issues welcome on the
 [SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).

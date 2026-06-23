@@ -1,7 +1,7 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: MediaTestSource.cs
 //
-// Description: A reusable publisher media source for the SFU/room verbs: a VP8
+// Description: A reusable publisher media source for the SFU/room verbs: an H264
 // video test pattern and an OPUS (or G711) music audio source, wired onto a
 // peer connection. Centralises the track creation, encoded sample plumbing and
 // format negotiation so the "cloudflare sfu" and "livekit room" verbs share one
@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
-using Vpx.Net;
+using SIPSorceryMedia.FFmpeg;
 
 namespace SIPSorcery.Cli.Commands;
 
@@ -42,8 +42,8 @@ public sealed class MediaTestSource : IDisposable
     {
         _logger = logger;
 
-        _videoSource = new VideoTestPatternSource(new VP8Codec());
-        _videoSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.VP8);
+        _videoSource = new VideoTestPatternSource(new FFmpegVideoEncoder());
+        _videoSource.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
         _audioSource = new AudioExtrasSource(new AudioEncoder(includeOpus: true),
             new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });

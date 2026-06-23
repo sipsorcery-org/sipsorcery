@@ -11,16 +11,20 @@
 //   route --from testpattern --to out.ivf            # generate VP8, record to IVF
 //   route --from testpattern --to play --to out.ivf  # tee: watch and record
 //   route --from whep:https://host/whep --to out.ivf # pull a live WebRTC stream and record it
+//   route --from sip:music@iptel.org --to whip:http://host/whip --scope
+//                                                    # bridge a SIP call to WebRTC, adding an
+//                                                    # audio-scope video generated from the call audio
 //
 // The graph repacketises, it does not transcode: frames travel encoded from source
-// to sink. Transport sinks (whip/sip/livekit) and transcode transforms are later
-// versions; the factory in Edges.cs is where they slot in.
+// to sink. The scope video is the exception by design - it is rendered and encoded
+// by an external ffmpeg process, not a managed node (see AudioScopeTransform).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 23 Jun 2026	Aaron Clauson	Added the sip: source, whip: sink and the --scope audio-scope video.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -42,6 +46,8 @@ public sealed class RouteCommand : CommandBase
     private const int DEFAULT_TIMEOUT_SECONDS = 30;
     private const int DEFAULT_DURATION_SECONDS = 10;
     private const int DEFAULT_FPS = 30;
+    private const string DEFAULT_SCOPE_MODE = "waves";
+    private const string DEFAULT_SCOPE_SIZE = "640x360";
 
     /// <summary>The result shape written with --json. Stable field names; additive changes only.</summary>
     private sealed record RouteResult(
@@ -50,6 +56,8 @@ public sealed class RouteCommand : CommandBase
         string[] To,
         string Stopped,
         long FramesRouted,
+        long VideoFramesRouted,
+        long AudioFramesRouted,
         long? ConnectTimeMs,
         int RunMs,
         SinkReport[] Sinks,
@@ -64,14 +72,16 @@ public sealed class RouteCommand : CommandBase
     {
         var fromOption = new Option<string>("--from", "-f")
         {
-            Description = "The source edge to pull a stream from: testpattern (a generated VP8 pattern) or whep:<url> (a live WebRTC stream).",
+            Description = "The source edge to pull a stream from: testpattern (a generated VP8 pattern), whep:<url> " +
+                          "(a live WebRTC stream) or sip:<uri> (place a SIP call and forward its audio, e.g. sip:music@iptel.org).",
             Required = true
         };
 
         var toOption = new Option<string[]>("--to", "-o")
         {
             Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B), \"play\" (ffplay), " +
-                          "\"null\" (discard) or \"-\" (bitstream on stdout). Repeat --to to fan out to several sinks at once.",
+                          "\"null\" (discard), \"-\" (bitstream on stdout) or whip:<url> (publish to a WebRTC endpoint). " +
+                          "Repeat --to to fan out to several sinks at once.",
             Required = true,
             AllowMultipleArgumentsPerToken = true
         };
@@ -84,13 +94,45 @@ public sealed class RouteCommand : CommandBase
 
         var fpsOption = new Option<int>("--fps")
         {
-            Description = "Frame rate for a generated source (testpattern).",
+            Description = "Frame rate for a generated source (testpattern) and for the --scope video.",
             DefaultValueFactory = _ => DEFAULT_FPS
         };
 
         var tokenOption = new Option<string?>("--token")
         {
-            Description = "Optional bearer token for a transport source (e.g. a whep stream key)."
+            Description = "Optional bearer token for a transport edge (a whep stream key, or the whip endpoint Authorization)."
+        };
+
+        var scopeOption = new Option<bool>("--scope")
+        {
+            Description = "For an audio source (sip:), add a generated \"audio scope\" video track that visualises the audio."
+        };
+
+        var scopeModeOption = new Option<string>("--scope-mode")
+        {
+            Description = "Scope visualisation: waves (a moving waveform) or spectrum (a scrolling frequency spectrum).",
+            DefaultValueFactory = _ => DEFAULT_SCOPE_MODE
+        };
+
+        var scopeSizeOption = new Option<string>("--scope-size")
+        {
+            Description = "Scope video size WxH.",
+            DefaultValueFactory = _ => DEFAULT_SCOPE_SIZE
+        };
+
+        var ffmpegPathOption = new Option<string?>("--ffmpeg-path")
+        {
+            Description = "Directory containing the ffmpeg executable used for the --scope video. Defaults to ffmpeg on the PATH."
+        };
+
+        var usernameOption = new Option<string?>("--username", "-u")
+        {
+            Description = "Optional username for authenticating a sip: source call."
+        };
+
+        var passwordOption = new Option<string?>("--password")
+        {
+            Description = "Optional password for authenticating a sip: source call."
         };
 
         var command = new Command("route",
@@ -100,6 +142,12 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(durationOption);
         command.Options.Add(fpsOption);
         command.Options.Add(tokenOption);
+        command.Options.Add(scopeOption);
+        command.Options.Add(scopeModeOption);
+        command.Options.Add(scopeSizeOption);
+        command.Options.Add(ffmpegPathOption);
+        command.Options.Add(usernameOption);
+        command.Options.Add(passwordOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -108,6 +156,12 @@ public sealed class RouteCommand : CommandBase
             parseResult.GetValue(durationOption),
             parseResult.GetValue(fpsOption),
             parseResult.GetValue(tokenOption),
+            parseResult.GetValue(scopeOption),
+            parseResult.GetValue(scopeModeOption)!,
+            parseResult.GetValue(scopeSizeOption)!,
+            parseResult.GetValue(ffmpegPathOption),
+            parseResult.GetValue(usernameOption),
+            parseResult.GetValue(passwordOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -117,6 +171,7 @@ public sealed class RouteCommand : CommandBase
     }
 
     private static async Task<int> RunAsync(string from, string[] to, int durationSeconds, int fps, string? token,
+        bool scope, string scopeMode, string scopeSize, string? ffmpegPath, string? username, string? password,
         int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -126,7 +181,16 @@ public sealed class RouteCommand : CommandBase
         // bitstream on stdout stays a single clean payload.
         bool stdoutClaimed = to.Contains("-");
 
-        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds);
+        // The scope video derives from audio, so it only applies to a sip: source.
+        if (scope && !IsSipSource(from))
+        {
+            return WriteResult(asJson, stdoutClaimed,
+                new RouteResult(false, from, to, "invalid argument", 0, 0, 0, null, 0, Array.Empty<SinkReport>(),
+                    "The --scope option needs an audio source, e.g. --from sip:music@iptel.org."),
+                ExitCodes.InvalidArgument);
+        }
+
+        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;
@@ -138,7 +202,7 @@ public sealed class RouteCommand : CommandBase
         catch (EdgeException ex)
         {
             return WriteResult(asJson, stdoutClaimed,
-                new RouteResult(false, from, to, "invalid source", 0, null, 0, Array.Empty<SinkReport>(), ex.Message),
+                new RouteResult(false, from, to, "invalid source", 0, 0, 0, null, 0, Array.Empty<SinkReport>(), ex.Message),
                 ExitCodes.InvalidArgument);
         }
 
@@ -146,14 +210,14 @@ public sealed class RouteCommand : CommandBase
         {
             foreach (var spec in to)
             {
-                sinks.Add(EdgeFactory.CreateSink(spec, logger));
+                sinks.Add(EdgeFactory.CreateSink(spec, edgeOptions, logger));
             }
         }
         catch (EdgeException ex)
         {
             await DisposeAllAsync(source, sinks).ConfigureAwait(false);
             return WriteResult(asJson, stdoutClaimed,
-                new RouteResult(false, from, to, "invalid sink", 0, null, 0, Array.Empty<SinkReport>(), ex.Message),
+                new RouteResult(false, from, to, "invalid sink", 0, 0, 0, null, 0, Array.Empty<SinkReport>(), ex.Message),
                 ExitCodes.InvalidArgument);
         }
 
@@ -203,10 +267,19 @@ public sealed class RouteCommand : CommandBase
             : ExitCodes.Failed;
 
         return WriteResult(asJson, stdoutClaimed,
-            new RouteResult(success, from, to, stopped, framesRouted, connectTimeMs, (int)stopwatch.ElapsedMilliseconds,
-                sinkReports.ToArray(), error),
+            new RouteResult(success, from, to, stopped, framesRouted, graph.VideoFramesRouted, graph.AudioFramesRouted,
+                connectTimeMs, (int)stopwatch.ElapsedMilliseconds, sinkReports.ToArray(), error),
             exitCode);
     }
+
+    /// <summary>
+    /// Whether a --from spec resolves to a SIP (audio) source: an explicit sip:/sips: scheme, or a
+    /// bare user@host. Matches the SIP cases in <see cref="EdgeFactory.CreateSource"/>.
+    /// </summary>
+    private static bool IsSipSource(string from) =>
+        from.StartsWith("sip:", StringComparison.OrdinalIgnoreCase) ||
+        from.StartsWith("sips:", StringComparison.OrdinalIgnoreCase) ||
+        (from.Contains('@') && !from.Contains(':'));
 
     private static async Task DisposeAllAsync(ISourceNode source, IEnumerable<ISinkNode> sinks)
     {
@@ -233,8 +306,11 @@ public sealed class RouteCommand : CommandBase
                 string dropped = s.Dropped > 0 ? $", {s.Dropped} dropped" : string.Empty;
                 return $"{s.Edge}: {s.Frames} frames ({s.Bytes} bytes){dropped}";
             }));
+            string breakdown = result.AudioFramesRouted > 0
+                ? $"{result.FramesRouted} frames routed ({result.VideoFramesRouted} video, {result.AudioFramesRouted} audio)"
+                : $"{result.FramesRouted} frames routed";
             output.WriteLine($"Routed {result.From} -> [{string.Join(", ", result.To)}] ({connect}{result.Stopped} after {result.RunMs}ms). " +
-                $"{result.FramesRouted} frames routed. {sinkList}.");
+                $"{breakdown}. {sinkList}.");
         }
         else
         {

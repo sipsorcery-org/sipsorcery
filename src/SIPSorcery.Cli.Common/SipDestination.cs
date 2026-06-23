@@ -6,11 +6,17 @@
 // points (udp:host:port, tls:host). The same convention as the sipcmdline
 // example.
 //
+// Lives in SIPSorcery.Cli.Common (a global using in both the diagnostics and
+// the flagship CLI) because both tools now parse SIP destinations: the
+// diagnostics "sip" verbs and the flagship "route" verb's sip: source edge.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 12 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 23 Jun 2026	Aaron Clauson	Moved from SIPSorcery.Diagnostics to the shared
+//                              Cli.Common so the route sip: edge can use it.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -18,7 +24,7 @@
 
 using SIPSorcery.SIP;
 
-namespace SIPSorcery.Diagnostics.Commands;
+namespace SIPSorcery.Cli.Common;
 
 public static class SipDestination
 {

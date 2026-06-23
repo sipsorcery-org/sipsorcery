@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Edges.cs
 //
 // Description: The v0.1 edges the "route" verb can attach to a stream graph, plus
@@ -8,7 +8,7 @@
 // node implementations, so adding a transport edge (whip, sip, livekit) later is a
 // new case here and nothing else.
 //
-// v0.1 sources: testpattern (a generated VP8 pattern, no native deps) and whep (a
+// v0.1 sources: testpattern (a generated H264 pattern) and whep (a
 // live WebRTC ingress). v0.1 sinks: a file, an ffplay window ("play"), discard
 // ("null") or the bitstream on stdout ("-"). All sink frames stay ENCODED - the
 // graph repacketises, it does not transcode.
@@ -18,6 +18,8 @@
 //
 // History:
 // 18 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 23 Jun 2026	Aaron Clauson	Wired the sip: source (with an optional ffmpeg audio-scope video)
+//                              and the whip: sink so a call can be bridged to a WebRTC endpoint.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -29,13 +31,26 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
+using SIPSorcery.SIP;
 using SIPSorceryMedia.Abstractions;
-using Vpx.Net;
+using SIPSorceryMedia.FFmpeg;
 
 namespace SIPSorcery.Cli.Commands.Route;
 
-/// <summary>The few knobs an edge needs from the verb (frame rate for generators, auth/timeout for transports).</summary>
-public sealed record EdgeOptions(int Fps, string? Token, int TimeoutSeconds);
+/// <summary>
+/// The knobs an edge needs from the verb: frame rate for generators / the scope video, auth and
+/// timeout for transports, the scope options for a sip: source, and SIP credentials.
+/// </summary>
+public sealed record EdgeOptions(
+    int Fps,
+    string? Token,
+    int TimeoutSeconds,
+    bool Scope = false,
+    string ScopeMode = "waves",
+    string ScopeSize = "640x360",
+    string? FfmpegPath = null,
+    string? SipUsername = null,
+    string? SipPassword = null);
 
 /// <summary>
 /// A generated VP8 test pattern source: the zero dependency ingress for demonstrating the graph.
@@ -45,10 +60,10 @@ public sealed record EdgeOptions(int Fps, string? Token, int TimeoutSeconds);
 /// </summary>
 public sealed class TestPatternSourceNode : ISourceNode
 {
-    private const int VP8_PAYLOAD_ID = 96;
+    private const int H264_PAYLOAD_ID = 96;
 
     private readonly VideoTestPatternSource _source;
-    private readonly VideoFormat _format = new(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID);
+    private readonly VideoFormat _format = new(VideoCodecsEnum.H264, H264_PAYLOAD_ID);
     private readonly int _fps;
     private readonly ILogger _logger;
     private uint _timestamp;
@@ -64,8 +79,8 @@ public sealed class TestPatternSourceNode : ISourceNode
     {
         _fps = fps;
         _logger = logger;
-        _source = new VideoTestPatternSource(new VP8Codec());
-        _source.RestrictFormats(f => f.Codec == VideoCodecsEnum.VP8);
+        _source = new VideoTestPatternSource(new FFmpegVideoEncoder());
+        _source.RestrictFormats(f => f.Codec == VideoCodecsEnum.H264);
         _source.SetFrameRate(fps);
         _source.OnVideoSourceEncodedSample += HandleEncoded;
     }
@@ -73,7 +88,7 @@ public sealed class TestPatternSourceNode : ISourceNode
     private void HandleEncoded(uint durationRtpUnits, byte[] sample)
     {
         _timestamp += durationRtpUnits;
-        OnFrame?.Invoke(new MediaFrame(sample, _timestamp, _format));
+        OnFrame?.Invoke(MediaFrame.ForVideo(sample, _timestamp, _format, durationRtpUnits));
     }
 
     public async Task StartAsync(CancellationToken ct)
@@ -111,7 +126,20 @@ public sealed class VideoSinkNode : ISinkNode
 
     public bool IsStdout => _sink.IsStdout;
 
-    public void Write(MediaFrame frame) => _sink.WriteFrame(frame.Payload, frame.RtpTimestamp, frame.Format);
+    // The underlying VideoSink starts lazily on the first frame, so there is nothing to bring up.
+    public Task StartAsync(CancellationToken ct) => Task.CompletedTask;
+
+    public void Write(MediaFrame frame)
+    {
+        // A video sink ignores any audio frames a source fans to it (e.g. a sip: source forwarding
+        // audio alongside a scope video).
+        if (frame.Kind != MediaKind.Video)
+        {
+            return;
+        }
+
+        _sink.WriteFrame(frame.Payload, frame.RtpTimestamp, frame.VideoFormat);
+    }
 
     public SinkStats GetStats() => new(_sink.FramesWritten, _sink.BytesWritten, _sink.DroppedFrames);
 
@@ -143,32 +171,80 @@ public static class EdgeFactory
                 }
                 return new WhepSourceNode(rest!, options.Token, options.TimeoutSeconds, logger);
 
-            case "whip":
             case "sip":
+            case "sips":
+                if (string.IsNullOrWhiteSpace(rest))
+                {
+                    throw new EdgeException("The sip source needs a destination, e.g. --from sip:music@iptel.org.");
+                }
+                // SipDestination handles both the "sip:"/"sips:" form and a bare user@host, so pass
+                // the original spec rather than the scheme-stripped rest.
+                return CreateSipSource(spec, options, logger);
+
+            case "whip":
             case "livekit":
             case "cloudflare":
                 throw new EdgeException(
-                    $"'{scheme}' as a --from source is not wired into route yet (v0.1 sources: testpattern, whep:<url>). " +
+                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>). " +
                     "The transport receivers exist as their own verbs today; they become route sources in a later version.");
 
             default:
-                throw new EdgeException($"Unknown --from edge '{spec}'. v0.1 sources: testpattern, whep:<url>.");
+                // A bare user@host (no scheme) is taken as a SIP destination, so "--from music@iptel.org" works.
+                if (spec.Contains('@'))
+                {
+                    return CreateSipSource(spec, options, logger);
+                }
+                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, whep:<url>, sip:<uri>.");
         }
     }
 
-    public static ISinkNode CreateSink(string spec, ILogger logger)
+    /// <summary>
+    /// Builds a sip: source: a SIP call whose received audio is forwarded into the graph. When the
+    /// verb's --scope option is set the source is wrapped in an <see cref="AudioScopeTransform"/> so
+    /// it also emits a generated audio-scope video.
+    /// </summary>
+    private static ISourceNode CreateSipSource(string sipSpec, EdgeOptions options, ILogger logger)
     {
-        var (scheme, _) = Split(spec);
+        if (!SipDestination.TryParse(sipSpec, out SIPURI uri, out string? error))
+        {
+            throw new EdgeException(error!);
+        }
+
+        ISourceNode source = new SipSourceNode(uri, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+
+        if (options.Scope)
+        {
+            source = new AudioScopeTransform(source, options, logger);
+        }
+
+        return source;
+    }
+
+    public static ISinkNode CreateSink(string spec, EdgeOptions options, ILogger logger)
+    {
+        var (scheme, rest) = Split(spec);
 
         switch (scheme)
         {
             case "whip":
+                if (string.IsNullOrWhiteSpace(rest))
+                {
+                    throw new EdgeException("The whip sink needs a URL, e.g. --to whip:http://host/whip.");
+                }
+                if (!Uri.TryCreate(rest, UriKind.Absolute, out var whipUri) ||
+                    (whipUri.Scheme != Uri.UriSchemeHttp && whipUri.Scheme != Uri.UriSchemeHttps))
+                {
+                    throw new EdgeException($"Could not parse the whip sink '{rest}' as an HTTP or HTTPS URL.");
+                }
+                return new WhipSinkNode(rest!, options.Token, options.TimeoutSeconds, logger);
+
             case "sip":
+            case "sips":
             case "livekit":
             case "cloudflare":
                 throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (v0.1 sinks: a file path, play, null, -). " +
-                    "Publish into these with the dedicated verbs today (e.g. 'webrtc whip', 'livekit room'); they become route sinks in a later version.");
+                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>). " +
+                    "Publish into these with the dedicated verbs today (e.g. 'livekit room'); they become route sinks in a later version.");
 
             default:
                 // Anything else is a VideoSink spec: a file path, "play", "null" or "-".
