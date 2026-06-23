@@ -50,15 +50,41 @@ public sealed record EdgeOptions(
     string ScopeSize = "640x360",
     string? FfmpegPath = null,
     string? SipUsername = null,
-    string? SipPassword = null);
+    string? SipPassword = null,
+    string AudioCodec = "pcmu");
+
+/// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
+public static class RouteAudio
+{
+    public static bool TryResolveCodec(string? name, out AudioFormat format, out string? error)
+    {
+        error = null;
+        switch ((name ?? "pcmu").Trim().ToLowerInvariant())
+        {
+            case "pcmu":
+                format = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU);
+                return true;
+            case "pcma":
+                format = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA);
+                return true;
+            case "opus":
+                format = AudioCommonlyUsedFormats.OpusWebRTC;
+                return true;
+            default:
+                format = AudioFormat.Empty;
+                error = $"Unknown --audio-codec '{name}'. Use pcmu (default), pcma or opus.";
+                return false;
+        }
+    }
+}
 
 /// <summary>
 /// A generated test pattern source: the zero dependency ingress for demonstrating the graph. Emits an
-/// H264 video test pattern (the library's VideoTestPatternSource + ffmpeg encoder) AND a PCMU music
-/// track (AudioExtrasSource), each encoded frame fanned into the graph as a <see cref="MediaFrame"/>.
-/// The audio is pinned to PCMU so it relays unchanged onto a whip: sink (repacketise, not transcode);
-/// a video-only sink (file/play/-) just ignores the audio frames. Per stream the RTP timestamp is
-/// accumulated from the per frame duration so a sink gets a monotonic clock.
+/// H264 video test pattern (the library's VideoTestPatternSource + ffmpeg encoder) AND a music audio
+/// track (AudioExtrasSource) in the requested codec (PCMU by default, or Opus / PCMA), each encoded
+/// frame fanned into the graph as a <see cref="MediaFrame"/>. The audio relays unchanged onto a whip:
+/// sink (repacketise, not transcode); a video-only sink (file/play/-) ignores the audio frames. Per
+/// stream the RTP timestamp is accumulated from the per frame duration so a sink gets a monotonic clock.
 /// </summary>
 public sealed class TestPatternSourceNode : ISourceNode
 {
@@ -67,7 +93,7 @@ public sealed class TestPatternSourceNode : ISourceNode
     private readonly VideoTestPatternSource _source;
     private readonly AudioExtrasSource _audioSource;
     private readonly VideoFormat _format = new(VideoCodecsEnum.H264, H264_PAYLOAD_ID);
-    private readonly AudioFormat _audioFormat = new(SDPWellKnownMediaFormatsEnum.PCMU);
+    private readonly AudioFormat _audioFormat;
     private readonly int _fps;
     private readonly ILogger _logger;
     private uint _timestamp;
@@ -80,9 +106,10 @@ public sealed class TestPatternSourceNode : ISourceNode
 
     public long? ConnectTimeMs => null;
 
-    public TestPatternSourceNode(int fps, ILogger logger)
+    public TestPatternSourceNode(int fps, AudioFormat audioFormat, ILogger logger)
     {
         _fps = fps;
+        _audioFormat = audioFormat;
         _logger = logger;
 
         _source = new VideoTestPatternSource(new FFmpegVideoEncoder());
@@ -90,9 +117,10 @@ public sealed class TestPatternSourceNode : ISourceNode
         _source.SetFrameRate(fps);
         _source.OnVideoSourceEncodedSample += HandleEncoded;
 
-        _audioSource = new AudioExtrasSource(new AudioEncoder(),
+        // The AudioEncoder only offers Opus when explicitly asked, so build it to match the format.
+        _audioSource = new AudioExtrasSource(new AudioEncoder(includeOpus: audioFormat.Codec == AudioCodecsEnum.OPUS),
             new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music });
-        _audioSource.RestrictFormats(f => f.Codec == AudioCodecsEnum.PCMU);
+        _audioSource.RestrictFormats(f => f.Codec == audioFormat.Codec);
         _audioSource.OnAudioSourceEncodedSample += HandleAudioEncoded;
     }
 
@@ -114,10 +142,10 @@ public sealed class TestPatternSourceNode : ISourceNode
         _audioSource.SetAudioSourceFormat(_audioFormat);
         await _source.StartVideo().ConfigureAwait(false);
         await _audioSource.StartAudio().ConfigureAwait(false);
-        _logger.LogDebug("Test pattern source started: H264 @ {Fps}fps + PCMU music.", _fps);
+        _logger.LogDebug("Test pattern source started: H264 @ {Fps}fps + {Codec} music.", _fps, _audioFormat.Codec);
     }
 
-    public string Describe() => $"testpattern h264 @ {_fps}fps + music (pcmu)";
+    public string Describe() => $"testpattern h264 @ {_fps}fps + music ({_audioFormat.Codec.ToString().ToLowerInvariant()})";
 
     public async ValueTask DisposeAsync()
     {
@@ -183,7 +211,7 @@ public static class EdgeFactory
         switch (scheme)
         {
             case "testpattern":
-                return new TestPatternSourceNode(options.Fps, logger);
+                return new TestPatternSourceNode(options.Fps, ResolveAudioFormat(options), logger);
 
             case "whep":
                 if (string.IsNullOrWhiteSpace(rest))
@@ -231,14 +259,39 @@ public static class EdgeFactory
             throw new EdgeException(error!);
         }
 
-        ISourceNode source = new SipSourceNode(uri, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+        var sinkFormat = ResolveAudioFormat(options);
 
+        // The SIP leg is G.711: carry the call in the sink codec directly when that is a G.711 variant
+        // (pure relay), otherwise (Opus) carry it as PCMU and transcode up to the sink codec.
+        var sipLegFormat = sinkFormat.Codec == AudioCodecsEnum.OPUS
+            ? new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU)
+            : sinkFormat;
+
+        ISourceNode source = new SipSourceNode(uri, sipLegFormat, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+
+        // The scope decodes the (G.711) call audio for its waveform, so it sits inside the transcode.
         if (options.Scope)
         {
             source = new AudioScopeTransform(source, options, logger);
         }
 
+        // Bridge the G.711 call audio up to an Opus sink when the codecs differ (no-op otherwise).
+        if (sinkFormat.Codec != sipLegFormat.Codec)
+        {
+            source = new AudioTranscodeTransform(source, sinkFormat, logger);
+        }
+
         return source;
+    }
+
+    /// <summary>Resolves the verb's --audio-codec to a format, throwing <see cref="EdgeException"/> if invalid.</summary>
+    private static AudioFormat ResolveAudioFormat(EdgeOptions options)
+    {
+        if (!RouteAudio.TryResolveCodec(options.AudioCodec, out var format, out string? error))
+        {
+            throw new EdgeException(error!);
+        }
+        return format;
     }
 
     public static ISinkNode CreateSink(string spec, EdgeOptions options, ILogger logger)
@@ -257,7 +310,7 @@ public static class EdgeFactory
                 {
                     throw new EdgeException($"Could not parse the whip sink '{rest}' as an HTTP or HTTPS URL.");
                 }
-                return new WhipSinkNode(rest!, options.Token, options.TimeoutSeconds, logger);
+                return new WhipSinkNode(rest!, ResolveAudioFormat(options), options.Token, options.TimeoutSeconds, logger);
 
             case "sip":
             case "sips":

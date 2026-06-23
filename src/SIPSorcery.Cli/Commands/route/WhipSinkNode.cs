@@ -3,7 +3,8 @@
 //
 // Description: A WebRTC egress edge for the "route" verb: publishes the graph's
 // media to a WHIP (WebRTC-HTTP Ingestion Protocol) endpoint over a single peer
-// connection carrying an audio track (PCMU) and a video track (H264). Audio
+// connection carrying an audio track (PCMU by default, or Opus/PCMA via --audio-codec)
+// and a video track (H264). Audio
 // frames are relayed onto the audio track and video frames onto the video track,
 // both still ENCODED - the graph repacketises, it does not transcode.
 //
@@ -41,6 +42,7 @@ public sealed class WhipSinkNode : ISinkNode
     private const int H264_PAYLOAD_ID = 96;
 
     private readonly string _url;
+    private readonly AudioFormat _audioFormat;
     private readonly string? _token;
     private readonly int _timeoutSeconds;
     private readonly ILogger _logger;
@@ -53,9 +55,10 @@ public sealed class WhipSinkNode : ISinkNode
     private long _bytesSent;
     private int _dropped;
 
-    public WhipSinkNode(string url, string? token, int timeoutSeconds, ILogger logger)
+    public WhipSinkNode(string url, AudioFormat audioFormat, string? token, int timeoutSeconds, ILogger logger)
     {
         _url = url;
+        _audioFormat = audioFormat;
         _token = token;
         _timeoutSeconds = timeoutSeconds;
         _logger = logger;
@@ -72,14 +75,12 @@ public sealed class WhipSinkNode : ISinkNode
             throw new EdgeException($"Could not parse the whip sink '{_url}' as an HTTP or HTTPS URL.");
         }
 
-        // Send-only PCMU audio and H264 video (H264 because the public Broadcast Box test endpoint
-        // rejects VP8). Audio is pinned to PCMU and video to H264 so the source's payloads relay
-        // unchanged (repacketise, not transcode); packetization-mode=1 allows the large H264 NAL
-        // units to be fragmented across RTP packets.
-        _pc.addTrack(new MediaStreamTrack(new List<AudioFormat>
-        {
-            new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU)
-        }, MediaStreamStatusEnum.SendOnly));
+        // Send-only audio (the --audio-codec, PCMU by default) and H264 video (H264 because the public
+        // Broadcast Box test endpoint rejects VP8; some endpoints likewise reject G.711, hence the Opus
+        // option). The video and audio are offered as the exact format the source produces so the
+        // payloads relay unchanged (repacketise, not transcode); packetization-mode=1 lets the large
+        // H264 NAL units be fragmented across RTP packets.
+        _pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
 
         _pc.addTrack(new MediaStreamTrack(new List<VideoFormat>
         {
@@ -106,6 +107,10 @@ public sealed class WhipSinkNode : ISinkNode
         // Gather all candidates up front so the single POST carries a complete offer (no trickle).
         var offer = _pc.createOffer(new RTCOfferOptions { X_WaitForIceGatheringToComplete = true });
         await _pc.setLocalDescription(offer).ConfigureAwait(false);
+
+        // The SDP is logged at debug (shown with --verbose) to diagnose codec/direction negotiation,
+        // e.g. an audio or video m-line the server answers as inactive because it lacks the codec.
+        _logger.LogDebug("whip sink offer SDP to {Url}:\n{Sdp}", _url, offer.sdp);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)
         {
@@ -142,6 +147,8 @@ public sealed class WhipSinkNode : ISinkNode
                     ? response.Headers.Location
                     : new Uri(endpointUri, response.Headers.Location);
             }
+
+            _logger.LogDebug("whip sink answer SDP from {Url}:\n{Sdp}", _url, responseBody);
 
             var setAnswerResult = _pc.setRemoteDescription(new RTCSessionDescriptionInit
             {

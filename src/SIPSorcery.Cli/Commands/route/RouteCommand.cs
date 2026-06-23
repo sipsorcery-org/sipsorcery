@@ -46,6 +46,7 @@ public sealed class RouteCommand : CommandBase
     private const int DEFAULT_TIMEOUT_SECONDS = 30;
     private const int DEFAULT_DURATION_SECONDS = 10;
     private const int DEFAULT_FPS = 30;
+    private const string DEFAULT_AUDIO_CODEC = "pcmu";
     private const string DEFAULT_SCOPE_MODE = "waves";
     private const string DEFAULT_SCOPE_SIZE = "640x360";
 
@@ -135,6 +136,13 @@ public sealed class RouteCommand : CommandBase
             Description = "Optional password for authenticating a sip: source call."
         };
 
+        var audioCodecOption = new Option<string>("--audio-codec")
+        {
+            Description = "Audio codec a whip: sink offers / the source produces: pcmu (default), pcma or opus. " +
+                          "Some WebRTC endpoints (e.g. Broadcast Box) only accept opus; a G.711 sip: call is transcoded up to opus when needed.",
+            DefaultValueFactory = _ => DEFAULT_AUDIO_CODEC
+        };
+
         var command = new Command("route",
             "Route a media stream from a --from source edge to one or more --to sink edges (a v0.1 stream graph).");
         command.Options.Add(fromOption);
@@ -148,6 +156,7 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(ffmpegPathOption);
         command.Options.Add(usernameOption);
         command.Options.Add(passwordOption);
+        command.Options.Add(audioCodecOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -162,6 +171,7 @@ public sealed class RouteCommand : CommandBase
             parseResult.GetValue(ffmpegPathOption),
             parseResult.GetValue(usernameOption),
             parseResult.GetValue(passwordOption),
+            parseResult.GetValue(audioCodecOption)!,
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -172,7 +182,7 @@ public sealed class RouteCommand : CommandBase
 
     private static async Task<int> RunAsync(string from, string[] to, int durationSeconds, int fps, string? token,
         bool scope, string scopeMode, string scopeSize, string? ffmpegPath, string? username, string? password,
-        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        string audioCodec, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(RouteCommand));
@@ -190,7 +200,15 @@ public sealed class RouteCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password);
+        // Validate the audio codec up front for a clean error before any edge is built.
+        if (!RouteAudio.TryResolveCodec(audioCodec, out _, out string? audioCodecError))
+        {
+            return WriteResult(asJson, stdoutClaimed,
+                new RouteResult(false, from, to, "invalid argument", 0, 0, 0, null, 0, Array.Empty<SinkReport>(), audioCodecError),
+                ExitCodes.InvalidArgument);
+        }
+
+        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password, audioCodec);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

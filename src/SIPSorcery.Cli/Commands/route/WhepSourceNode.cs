@@ -121,6 +121,9 @@ public sealed class WhepSourceNode : ISourceNode
         var offer = _pc.createOffer(new RTCOfferOptions { X_WaitForIceGatheringToComplete = true });
         await _pc.setLocalDescription(offer).ConfigureAwait(false);
 
+        // Logged at debug (shown with --verbose) to diagnose codec/direction negotiation.
+        _logger.LogDebug("whep source offer SDP to {Url}:\n{Sdp}", _url, offer.sdp);
+
         var stopwatch = Stopwatch.StartNew();
 
         using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)
@@ -158,6 +161,8 @@ public sealed class WhepSourceNode : ISourceNode
                     ? response.Headers.Location
                     : new Uri(endpointUri, response.Headers.Location);
             }
+
+            _logger.LogDebug("whep source answer SDP from {Url}:\n{Sdp}", _url, responseBody);
 
             var setAnswerResult = _pc.setRemoteDescription(new RTCSessionDescriptionInit
             {

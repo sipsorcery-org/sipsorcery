@@ -28,10 +28,11 @@ sipsorcery route --from testpattern --to out.ivf -d 10
 # travel encoded from source to sink. See "The route verb" below.
 sipsorcery route --from testpattern --to out.h264 -d 10         # generate H264, record to Annex B
 sipsorcery route --from testpattern --to play                  # generate H264, watch in ffplay
-sipsorcery route --from testpattern --to play --to out.ivf     # tee: watch AND record at once
+sipsorcery route --from testpattern --to play --to out.h264    # tee: watch AND record at once
 sipsorcery route --from whep:https://b.siobud.com/api/whep --to out.ivf --token key  # record a live WebRTC stream
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip      # bridge a SIP call to WebRTC
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope  # ...and add an audio-scope video
+sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --audio-codec opus --token key  # publish to Broadcast Box (needs H264+opus)
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -88,14 +89,14 @@ Edges:
 
 | Direction | Edge | Notes |
 |-----------|------|-------|
-| `--from`  | `testpattern` | A generated H264 video pattern **+ PCMU music** (so it can feed a `whip:` sink with audio and video). `--fps` sets the video rate. |
+| `--from`  | `testpattern` | A generated H264 video pattern **+ music** (codec via `--audio-codec`: pcmu default / pcma / opus), so it can feed a `whip:` sink with audio and video. `--fps` sets the video rate. |
 | `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
-| `--from`  | `sip:<uri>` | Place a SIP call (PCMU) and forward its received audio. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
+| `--from`  | `sip:<uri>` | Place a SIP call (G.711) and forward its received audio, transcoding up to `--audio-codec opus` if the sink needs it. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
 | `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
-| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only PCMU audio + H264 video peer connection. `--token` sets the Authorization. |
+| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: pcmu default / pcma / opus) + H264 video peer connection. `--token` sets the Authorization. Some endpoints (e.g. Broadcast Box) require `--audio-codec opus`. |
 
 #### The `--scope` audio-scope video
 

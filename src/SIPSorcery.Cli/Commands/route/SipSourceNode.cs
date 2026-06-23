@@ -42,6 +42,7 @@ namespace SIPSorcery.Cli.Commands.Route;
 public sealed class SipSourceNode : ISourceNode
 {
     private readonly SIPURI _destination;
+    private readonly AudioFormat _audioFormat;
     private readonly string? _username;
     private readonly string? _password;
     private readonly int _ringTimeoutSeconds;
@@ -60,12 +61,13 @@ public sealed class SipSourceNode : ISourceNode
 
     public long? ConnectTimeMs => _connectTimeMs;
 
-    /// <summary>The audio format negotiated on the call, once answered (PCMU). Used by the scope transform.</summary>
+    /// <summary>The audio format negotiated on the call, once answered. Used by the scope transform.</summary>
     public AudioFormat NegotiatedFormat => _negotiatedFormat;
 
-    public SipSourceNode(SIPURI destination, string? username, string? password, int ringTimeoutSeconds, ILogger logger)
+    public SipSourceNode(SIPURI destination, AudioFormat audioFormat, string? username, string? password, int ringTimeoutSeconds, ILogger logger)
     {
         _destination = destination;
+        _audioFormat = audioFormat;
         _username = username;
         _password = password;
         _ringTimeoutSeconds = ringTimeoutSeconds;
@@ -79,9 +81,9 @@ public sealed class SipSourceNode : ISourceNode
         var mediaSession = new VoIPMediaSession();
         mediaSession.AcceptRtpFromAny = true;
 
-        // Pin the audio to PCMU: the received payload is relayed onto the outgoing WebRTC track
-        // unchanged (repacketise, not transcode) and decoded cheaply for the scope.
-        mediaSession.AudioExtrasSource.RestrictFormats(f => f.Codec == AudioCodecsEnum.PCMU);
+        // Pin the audio to the chosen G.711 codec (PCMU/PCMA): the received payload is relayed onto the
+        // outgoing WebRTC track unchanged (repacketise, not transcode) and decoded cheaply for the scope.
+        mediaSession.AudioExtrasSource.RestrictFormats(f => f.Codec == _audioFormat.Codec);
         mediaSession.AudioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
 
         mediaSession.OnAudioFormatsNegotiated += (formats) => _negotiatedFormat = formats.First();
