@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -33,12 +34,12 @@ namespace SIPSorcery.Diagnostics.Commands;
 
 public static class LibraryVideoPublisher
 {
-    private const int VP8_PAYLOAD_ID = 96;
-    private const int VP9_PAYLOAD_ID = 98;
-    private const int H264_PAYLOAD_ID = 100;
-    private const int H265_PAYLOAD_ID = 102;
-    private const int AV1_PAYLOAD_ID = 104;
     private const uint VIDEO_CLOCK_RATE = 90000;
+
+    // Resolve the single library-supported VideoFormat for a codec so the SDP fmtp (e.g. the H264
+    // profile-level-id) comes from SIPSorceryMedia.FFmpeg's canonical list rather than being re-typed here.
+    private static VideoFormat LibraryVideoFormat(VideoCodecsEnum codec) =>
+        Helper.GetSupportedVideoFormats().Single(f => f.Codec == codec);
     private const int RING_SIZE = 16;
     // The publisher reaching "connected" can slightly precede the receiver finishing its SRTP context
     // setup. Settle briefly before the first frame so the opening keyframe is not dropped by the
@@ -361,7 +362,7 @@ public static class LibraryVideoPublisher
             // The managed VP8 encoder requires positive multiples of 16.
             (width, height) = (RoundUpTo16(width), RoundUpTo16(height));
             codec = VideoCodecsEnum.VP8;
-            videoFormat = new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID);
+            videoFormat = LibraryVideoFormat(codec);
             useFfmpeg = false;
         }
         else if (encoder == "ffmpeg")
@@ -371,24 +372,24 @@ public static class LibraryVideoPublisher
             {
                 case "h264":
                     codec = VideoCodecsEnum.H264;
-                    videoFormat = new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1");
+                    videoFormat = LibraryVideoFormat(codec);
                     break;
                 case "h265":
                 case "hevc":
                     codec = VideoCodecsEnum.H265;
-                    videoFormat = new VideoFormat(VideoCodecsEnum.H265, H265_PAYLOAD_ID);
+                    videoFormat = LibraryVideoFormat(codec);
                     break;
                 case "vp8":
                     codec = VideoCodecsEnum.VP8;
-                    videoFormat = new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID);
+                    videoFormat = LibraryVideoFormat(codec);
                     break;
                 case "vp9":
                     codec = VideoCodecsEnum.VP9;
-                    videoFormat = new VideoFormat(VideoCodecsEnum.VP9, VP9_PAYLOAD_ID);
+                    videoFormat = LibraryVideoFormat(codec);
                     break;
                 case "av1":
                     codec = VideoCodecsEnum.AV1;
-                    videoFormat = new VideoFormat(VideoCodecsEnum.AV1, AV1_PAYLOAD_ID);
+                    videoFormat = LibraryVideoFormat(codec);
                     break;
                 default:
                     error = $"Unknown --codec \"{wantCodec}\". Expected h264, h265, vp8, vp9 or av1.";
