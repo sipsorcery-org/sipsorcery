@@ -292,7 +292,14 @@ namespace SIPSorcery.Net
         /// <returns>An audio or video format or null if no payload ID matched.</returns>
         public SDPAudioVideoMediaFormat? GetFormatForPayloadID(int payloadID)
         {
-            return Capabilities?.FirstOrDefault(x => x.ID == payloadID);
+            if(Capabilities == null || Capabilities.Count == 0 || !Capabilities.Any(x => x.ID == payloadID))
+            {
+                return SDPAudioVideoMediaFormat.Empty;
+            }
+            else
+            {
+                return Capabilities.First(x => x.ID == payloadID);
+            }
         }
 
         /// <summary>

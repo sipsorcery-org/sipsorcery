@@ -768,7 +768,11 @@ namespace SIPSorcery.Net
 
             var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
 
-            if (rtpPacket != null && format != null)
+            if(format == null || format.Value.IsEmpty())
+            {
+                logger.LogWarning("Received RTP packet with unknown payload type {PayloadType} for {MediaType} stream from {RemoteEndPoint}.", hdr.PayloadType, MediaType, remoteEndPoint);
+            }
+            else if (rtpPacket != null)
             {
                 if (UseBuffer())
                 {
