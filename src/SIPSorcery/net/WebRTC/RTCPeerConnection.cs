@@ -869,22 +869,21 @@ namespace SIPSorcery.Net
                     ann.HeaderExtensions.Clear();
 
                     var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
-                    if (localHeaderExtensions != null)
+                    var remoteHeaderExtensions = AudioStreamList[indexAudioStream].RemoteTrack?.HeaderExtensions?.Values;
+                    if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
                     {
-                        foreach (var localExtension in localHeaderExtensions)
+                        foreach (var remoteExtension in remoteHeaderExtensions)
                         {
-                            // We must ensure to use same Id by extension
-                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
+                            if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                             {
-                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
-                            }
-                            else
-                            {
-                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
-                            }
+                                // We must ensure to use same Id by extension
+                                localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
 
-                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
-                            ann.HeaderExtensions[localExtension.Id] = localExtension;
+                                logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                            }
                         }
                     }
                     indexAudioStream++;
@@ -895,22 +894,21 @@ namespace SIPSorcery.Net
                     ann.HeaderExtensions.Clear();
 
                     var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
-                    if (localHeaderExtensions != null)
+                    var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
+                    if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
                     {
-                        foreach (var localExtension in localHeaderExtensions)
+                        foreach (var remoteExtension in remoteHeaderExtensions)
                         {
-                            // We must ensure to use same Id by extension
-                            if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                            var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
+                            if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
                             {
-                                localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
-                            }
-                            else
-                            {
-                                _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
-                            }
+                                // We must ensure to use same Id by extension
+                                localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                localExtension.Uri = remoteExtension.Uri; // Keep same Uri as remote
 
-                            logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
-                            ann.HeaderExtensions[localExtension.Id] = localExtension;
+                                logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                            }
                         }
                     }
                     indexVideoStream++;
@@ -1511,8 +1509,14 @@ namespace SIPSorcery.Net
             }
             return Task.Run(async () =>
             {
-                //Call Renegotiation Delayed
-                await Task.Delay(RENEGOTIATION_CALL_DELAY, token);
+                try
+                {
+                    //Call Renegotiation Delayed
+                    await Task.Delay(RENEGOTIATION_CALL_DELAY, token);
+                }
+                catch (TaskCanceledException)
+                {
+                }
 
                 //Prevent continue with cancellation requested
                 if (token.IsCancellationRequested)
@@ -1544,6 +1548,7 @@ namespace SIPSorcery.Net
                         _cancellationSource.Cancel();
                     }
 
+                    _cancellationSource.Dispose();
                     _cancellationSource = null;
                 }
             }
