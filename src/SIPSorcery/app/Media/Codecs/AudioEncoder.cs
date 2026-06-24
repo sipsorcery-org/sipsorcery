@@ -136,7 +136,7 @@ namespace SIPSorcery.Media
 
                 int outputBufferSize = pcm.Length / 2;
                 byte[] encodedSample = new byte[outputBufferSize];
-                int res = g722Codec.Encode(g722State, encodedSample, pcm, pcm.Length);
+                g722Codec.Encode(g722State, encodedSample, pcm, pcm.Length);
 
                 return encodedSample;
             }
