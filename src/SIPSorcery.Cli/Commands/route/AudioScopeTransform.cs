@@ -41,14 +41,13 @@ namespace SIPSorcery.Cli.Commands.Route;
 
 public sealed class AudioScopeTransform : ISourceNode
 {
-    private const int H264_PAYLOAD_ID = 100;
     private const uint VIDEO_CLOCK_RATE = 90000;
     private const int READ_CHUNK_SIZE = 16 * 1024;
 
     private readonly ISourceNode _inner;
     private readonly EdgeOptions _options;
     private readonly ILogger _logger;
-    private readonly VideoFormat _videoFormat = new(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1");
+    private readonly VideoFormat _videoFormat = RouteVideoFormats.H264;
     private readonly AudioEncoder _audioDecoder = new();
     private readonly object _ffmpegLock = new();
 

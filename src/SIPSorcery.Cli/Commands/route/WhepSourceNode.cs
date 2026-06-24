@@ -37,12 +37,6 @@ namespace SIPSorcery.Cli.Commands.Route;
 
 public sealed class WhepSourceNode : ISourceNode
 {
-    private const int VP8_PAYLOAD_ID = 96;
-    private const int VP9_PAYLOAD_ID = 98;
-    private const int H264_PAYLOAD_ID = 100;
-    private const int H265_PAYLOAD_ID = 102;
-    private const int AV1_PAYLOAD_ID = 104;
-
     private readonly string _url;
     private readonly string? _token;
     private readonly int _timeoutSeconds;
@@ -88,14 +82,7 @@ public sealed class WhepSourceNode : ISourceNode
             new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
         }, MediaStreamStatusEnum.RecvOnly));
 
-        _pc.addTrack(new MediaStreamTrack(new List<VideoFormat>
-        {
-            new VideoFormat(VideoCodecsEnum.VP8, VP8_PAYLOAD_ID),
-            new VideoFormat(VideoCodecsEnum.VP9, VP9_PAYLOAD_ID),
-            new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1"),
-            new VideoFormat(VideoCodecsEnum.H265, H265_PAYLOAD_ID),
-            new VideoFormat(VideoCodecsEnum.AV1, AV1_PAYLOAD_ID)
-        }, MediaStreamStatusEnum.RecvOnly));
+        _pc.addTrack(new MediaStreamTrack(RouteVideoFormats.All(), MediaStreamStatusEnum.RecvOnly));
 
         _pc.OnVideoFrameReceived += (_, timestamp, frame, format) =>
             OnFrame?.Invoke(MediaFrame.ForVideo(frame, timestamp, format));

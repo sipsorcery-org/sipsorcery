@@ -39,8 +39,6 @@ namespace SIPSorcery.Cli.Commands.Route;
 
 public sealed class WhipSinkNode : ISinkNode
 {
-    private const int H264_PAYLOAD_ID = 96;
-
     private readonly string _url;
     private readonly AudioFormat _audioFormat;
     private readonly string? _token;
@@ -82,10 +80,7 @@ public sealed class WhipSinkNode : ISinkNode
         // H264 NAL units be fragmented across RTP packets.
         _pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
 
-        _pc.addTrack(new MediaStreamTrack(new List<VideoFormat>
-        {
-            new VideoFormat(VideoCodecsEnum.H264, H264_PAYLOAD_ID, parameters: "packetization-mode=1")
-        }, MediaStreamStatusEnum.SendOnly));
+        _pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { RouteVideoFormats.H264 }, MediaStreamStatusEnum.SendOnly));
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pc.onconnectionstatechange += (state) =>

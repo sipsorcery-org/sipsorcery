@@ -88,11 +88,9 @@ public static class RouteAudio
 /// </summary>
 public sealed class TestPatternSourceNode : ISourceNode
 {
-    private const int H264_PAYLOAD_ID = 96;
-
     private readonly VideoTestPatternSource _source;
     private readonly AudioExtrasSource _audioSource;
-    private readonly VideoFormat _format = new(VideoCodecsEnum.H264, H264_PAYLOAD_ID);
+    private readonly VideoFormat _format = RouteVideoFormats.H264;
     private readonly AudioFormat _audioFormat;
     private readonly int _fps;
     private readonly ILogger _logger;

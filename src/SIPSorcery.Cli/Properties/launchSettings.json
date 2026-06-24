@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SIPSorcery.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "route --from whep:https://b.siobud.com/api/whep --token \"ffmpeg-test2\" --to play --verbose"
+    }
+  }
+}
