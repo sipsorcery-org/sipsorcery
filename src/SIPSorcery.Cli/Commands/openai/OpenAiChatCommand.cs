@@ -38,6 +38,7 @@ namespace SIPSorcery.Cli.Commands;
 public sealed class OpenAiChatCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 20;
+    private const int DEFAULT_WEB_PORT = 8080;
     private const RealtimeVoicesEnum DEFAULT_VOICE = RealtimeVoicesEnum.marin;
 
     // OPUS for WebRTC is a 48 kHz, mono (encoded in-band) stream; a 20 ms frame is 960 samples.
@@ -68,7 +69,20 @@ public sealed class OpenAiChatCommand : CommandBase
         var playOption = new Option<string?>("--play")
         {
             Description = "Microphone input: \"-\" reads raw s16le 48kHz mono PCM from stdin (pipe an ffmpeg mic capture in). " +
-                          "Omit for listen-only (you hear the model but cannot talk back)."
+                          "Omit for listen-only (you hear the model but cannot talk back). Ignored with --web."
+        };
+
+        var webOption = new Option<bool>("--web")
+        {
+            Description = "Use a browser as the audio device: host a local page that captures your microphone and plays the " +
+                          "model's voice over WebRTC (no ffmpeg/ffplay). Full-duplex thanks to the browser's echo canceller. " +
+                          "Mutually exclusive with --play."
+        };
+
+        var webPortOption = new Option<int>("--web-port")
+        {
+            Description = "The localhost port for the --web audio page.",
+            DefaultValueFactory = _ => DEFAULT_WEB_PORT
         };
 
         var instructionsOption = new Option<string>("--instructions")
@@ -77,10 +91,12 @@ public sealed class OpenAiChatCommand : CommandBase
             DefaultValueFactory = _ => "You are a helpful voice assistant. Keep your replies concise and conversational."
         };
 
-        var command = new Command("chat", "Interactive voice chat with the OpenAI Realtime API (mic via --play -, speaker via ffplay). Runs until ctrl-c.");
+        var command = new Command("chat", "Interactive voice chat with the OpenAI Realtime API (mic + speaker via --web in a browser, or --play - + ffplay). Runs until ctrl-c.");
         command.Options.Add(apiKeyOption);
         command.Options.Add(voiceOption);
         command.Options.Add(playOption);
+        command.Options.Add(webOption);
+        command.Options.Add(webPortOption);
         command.Options.Add(instructionsOption);
         command.Options.Add(TimeoutOption);
         command.Options.Add(VerboseOption);
@@ -89,6 +105,8 @@ public sealed class OpenAiChatCommand : CommandBase
             parseResult.GetValue(apiKeyOption),
             parseResult.GetValue(voiceOption),
             parseResult.GetValue(playOption),
+            parseResult.GetValue(webOption),
+            parseResult.GetValue(webPortOption),
             parseResult.GetValue(instructionsOption)!,
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(VerboseOption),
@@ -97,8 +115,8 @@ public sealed class OpenAiChatCommand : CommandBase
         return command;
     }
 
-    private static async Task<int> RunAsync(string? apiKey, RealtimeVoicesEnum voice, string? play, string instructions,
-        int timeoutSeconds, bool verbose, CancellationToken ct)
+    private static async Task<int> RunAsync(string? apiKey, RealtimeVoicesEnum voice, string? play, bool useWeb, int webPort,
+        string instructions, int timeoutSeconds, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(OpenAiChatCommand));
@@ -110,8 +128,14 @@ public sealed class OpenAiChatCommand : CommandBase
             return ExitCodes.InvalidArgument;
         }
 
+        if (useWeb && !string.IsNullOrEmpty(play))
+        {
+            Console.Error.WriteLine("--web and --play are mutually exclusive: --web uses the browser for both the mic and the speaker.");
+            return ExitCodes.InvalidArgument;
+        }
+
         bool useMic;
-        if (string.IsNullOrEmpty(play)) { useMic = false; }
+        if (useWeb || string.IsNullOrEmpty(play)) { useMic = false; }
         else if (play == "-") { useMic = true; }
         else
         {
@@ -119,7 +143,7 @@ public sealed class OpenAiChatCommand : CommandBase
             return ExitCodes.InvalidArgument;
         }
 
-        var session = new ChatSession(logger, loggerFactory, voice, instructions, useMic);
+        var session = new ChatSession(logger, loggerFactory, voice, instructions, useMic, useWeb, webPort);
         return await session.RunAsync(apiKey, timeoutSeconds, ct).ConfigureAwait(false);
     }
 
@@ -134,6 +158,8 @@ public sealed class OpenAiChatCommand : CommandBase
         private readonly RealtimeVoicesEnum _voice;
         private readonly string _instructions;
         private readonly bool _useMic;
+        private readonly bool _useWeb;
+        private readonly int _webPort;
 
         // The encode (mic) and decode (model) OPUS codecs are independent objects, kept separate so
         // the mic loop and the receive callback never touch shared codec state.
@@ -143,37 +169,78 @@ public sealed class OpenAiChatCommand : CommandBase
         // Ticks of the last received model audio frame; the mic is gated while this is recent.
         private long _lastModelAudioTicks;
 
-        public ChatSession(ILogger logger, ILoggerFactory loggerFactory, RealtimeVoicesEnum voice, string instructions, bool useMic)
+        // Greeting coordination: the model greets once both the OpenAI data channel and (in --web mode)
+        // a browser are ready, and only once. 0/1 flags driven with Volatile/Interlocked.
+        private int _openAiReady;
+        private int _browserReady;
+        private int _greeted;
+
+        public ChatSession(ILogger logger, ILoggerFactory loggerFactory, RealtimeVoicesEnum voice, string instructions,
+            bool useMic, bool useWeb, int webPort)
         {
             _logger = logger;
             _loggerFactory = loggerFactory;
             _voice = voice;
             _instructions = instructions;
             _useMic = useMic;
+            _useWeb = useWeb;
+            _webPort = webPort;
         }
 
         public async Task<int> RunAsync(string apiKey, int timeoutSeconds, CancellationToken ct)
         {
             using var endpoint = new WebRTCEndPoint(apiKey, _loggerFactory);
-            using var speaker = AudioSink.Create("play", _logger, out string? sinkError);
 
-            if (sinkError != null)
+            // The audio device: a browser (microphone + speaker over WebRTC) with --web, otherwise an
+            // ffplay output sink (and, with --play -, a stdin microphone). Only one is created.
+            AudioSink? speaker = null;
+            BrowserAudioBridge? bridge = null;
+
+            if (_useWeb)
             {
-                Console.Error.WriteLine($"Could not start the audio output: {sinkError}");
-                return ExitCodes.InvalidArgument;
+                bridge = new BrowserAudioBridge(_webPort, openBrowser: true, _logger);
+            }
+            else
+            {
+                speaker = AudioSink.Create("play", _logger, out string? sinkError);
+                if (sinkError != null)
+                {
+                    Console.Error.WriteLine($"Could not start the audio output: {sinkError}");
+                    speaker.Dispose();
+                    return ExitCodes.InvalidArgument;
+                }
             }
 
             var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var failed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var sessionCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
+            // The model greets once both ends are ready: the OpenAI data channel is up, and (in --web mode)
+            // a browser has connected, so the greeting is actually heard rather than dropped.
+            const string greetPrompt = "Briefly greet the user and invite them to speak.";
+            void TryGreet()
+            {
+                bool ready = Volatile.Read(ref _openAiReady) == 1 && (!_useWeb || Volatile.Read(ref _browserReady) == 1);
+                if (ready && Interlocked.Exchange(ref _greeted, 1) == 0)
+                {
+                    endpoint.DataChannelMessenger.SendResponseCreate(_voice, greetPrompt);
+                }
+            }
+
             endpoint.OnAudioFrameReceived += frame =>
             {
+                if (_useWeb)
+                {
+                    // Relay the model's OPUS straight to the browser speaker (repacketise, no decode).
+                    bridge!.SendToBrowser(frame);
+                    return;
+                }
+
                 _lastModelAudioTicks = DateTime.UtcNow.Ticks;   // marks the model as speaking, gating the mic.
                 try
                 {
                     var pcm = _modelDecoder.DecodeAudio(frame.EncodedAudio, AudioCommonlyUsedFormats.OpusWebRTC);
-                    speaker.Write(pcm, SAMPLE_RATE);
+                    speaker!.Write(pcm, SAMPLE_RATE);
                 }
                 catch (Exception excp)
                 {
@@ -204,56 +271,104 @@ public sealed class OpenAiChatCommand : CommandBase
                 // Whisper transcription of the input is requested so the user's turns can be shown.
                 endpoint.DataChannelMessenger.SendSessionUpdate(_voice, _instructions, transcriptionModel: TranscriptionModelEnum.Whisper1);
 
-                // Have the model greet first, which confirms the audio output path before the user speaks.
-                endpoint.DataChannelMessenger.SendResponseCreate(_voice, "Briefly greet the user and invite them to speak.");
-
-                if (_useMic)
+                // The stdin mic path; the --web path relays the browser mic instead (wired below).
+                if (!_useWeb && _useMic)
                 {
                     _ = Task.Run(() => RunMicLoop(endpoint, sessionCts.Token));
                 }
 
+                Volatile.Write(ref _openAiReady, 1);
+                TryGreet();
                 connected.TrySetResult(true);
             };
 
-            var connectResult = await endpoint.StartConnect().ConfigureAwait(false);
-            if (connectResult.IsLeft)
+            if (_useWeb)
             {
-                Console.Error.WriteLine($"Failed to negotiate the connection to OpenAI: {connectResult.LeftAsEnumerable().First().Message}");
-                return ExitCodes.TransportError;
+                // Browser microphone OPUS -> OpenAI (repacketise, no encode), and greet once the browser is up.
+                bridge!.OnMicFrameReceived += frame =>
+                {
+                    try
+                    {
+                        uint durationRtpUnits = (uint)((long)frame.DurationMilliSeconds * frame.AudioFormat.RtpClockRate / 1000);
+                        endpoint.SendAudio(durationRtpUnits, frame.EncodedAudio);
+                    }
+                    catch (Exception excp)
+                    {
+                        _logger.LogDebug("Relaying a browser mic frame to OpenAI failed: {Error}", excp.Message);
+                    }
+                };
+                bridge.OnBrowserConnected += () =>
+                {
+                    Volatile.Write(ref _browserReady, 1);
+                    TryGreet();
+                };
             }
-
-            var completed = await Task.WhenAny(connected.Task, failed.Task, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds), ct)).ConfigureAwait(false);
-            if (completed != connected.Task)
-            {
-                Console.Error.WriteLine(completed == failed.Task
-                    ? "The peer connection failed before the session was established."
-                    : $"The connection did not establish within {timeoutSeconds}s.");
-                return completed == failed.Task ? ExitCodes.TransportError : ExitCodes.Timeout;
-            }
-
-            Console.Error.WriteLine(_useMic
-                ? "Connected. Start talking — the mic is muted while the assistant speaks (half-duplex). Ctrl-C to quit."
-                : "Connected (listen-only; pass --play - with a piped mic to talk back). Ctrl-C to quit.");
-
-            // Run until ctrl-c, the connection drops, or (mic mode) the input pipe ends.
-            var exit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; exit.TrySetResult(true); };
-            Console.CancelKeyPress += onCancel;
 
             try
             {
-                await Task.WhenAny(exit.Task, failed.Task, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
+                if (_useWeb)
+                {
+                    try
+                    {
+                        await bridge!.StartAsync(sessionCts.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception excp)
+                    {
+                        Console.Error.WriteLine($"Could not start the browser audio device: {excp.Message}");
+                        return ExitCodes.InvalidArgument;
+                    }
+                }
+
+                var connectResult = await endpoint.StartConnect().ConfigureAwait(false);
+                if (connectResult.IsLeft)
+                {
+                    Console.Error.WriteLine($"Failed to negotiate the connection to OpenAI: {connectResult.LeftAsEnumerable().First().Message}");
+                    return ExitCodes.TransportError;
+                }
+
+                var completed = await Task.WhenAny(connected.Task, failed.Task, Task.Delay(TimeSpan.FromSeconds(timeoutSeconds), ct)).ConfigureAwait(false);
+                if (completed != connected.Task)
+                {
+                    Console.Error.WriteLine(completed == failed.Task
+                        ? "The peer connection failed before the session was established."
+                        : $"The connection did not establish within {timeoutSeconds}s.");
+                    return completed == failed.Task ? ExitCodes.TransportError : ExitCodes.Timeout;
+                }
+
+                Console.Error.WriteLine(_useWeb
+                    ? $"Connected. Open {bridge!.Url} and click \"Start talking\" — full-duplex (the browser cancels echo). Ctrl-C to quit."
+                    : _useMic
+                        ? "Connected. Start talking — the mic is muted while the assistant speaks (half-duplex). Ctrl-C to quit."
+                        : "Connected (listen-only; pass --play - with a piped mic, or --web, to talk back). Ctrl-C to quit.");
+
+                // Run until ctrl-c, the connection drops, or (mic mode) the input pipe ends.
+                var exit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; exit.TrySetResult(true); };
+                Console.CancelKeyPress += onCancel;
+
+                try
+                {
+                    await Task.WhenAny(exit.Task, failed.Task, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) { }
+                finally
+                {
+                    Console.CancelKeyPress -= onCancel;
+                    sessionCts.Cancel();
+                    endpoint.Close();
+                }
+
+                Console.Error.WriteLine("Session ended.");
+                return ExitCodes.Ok;
             }
-            catch (OperationCanceledException) { }
             finally
             {
-                Console.CancelKeyPress -= onCancel;
-                sessionCts.Cancel();
-                endpoint.Close();
+                speaker?.Dispose();
+                if (bridge != null)
+                {
+                    await bridge.DisposeAsync().ConfigureAwait(false);
+                }
             }
-
-            Console.Error.WriteLine("Session ended.");
-            return ExitCodes.Ok;
         }
 
         /// <summary>

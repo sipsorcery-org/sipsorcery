@@ -62,14 +62,18 @@ sipsorcery openai realtime --audio play              # hear the model's reply (f
 sipsorcery openai realtime --audio reply.wav         # record the model's reply to a WAV file
 sipsorcery openai realtime --audio - > reply.pcm     # raw s16le PCM on stdout (the result moves to stderr)
 
-# OpenAI chat: an interactive voice session (runs until ctrl-c). The model's voice plays via ffplay;
-# --play - reads microphone PCM from stdin, so pipe an ffmpeg mic capture in. The mic is gated while
-# the model speaks (half-duplex, no echo canceller) so it does not hear itself -- use a headset for
-# full-duplex barge-in. Capture device syntax is per-OS (dshow/avfoundation/pulse). ffmpeg/ffplay act
-# as the cross platform audio device layer (winget/brew/apt install ffmpeg).
+# OpenAI chat: an interactive voice session (runs until ctrl-c).
+# --web is the easy path: a browser becomes the microphone AND speaker over WebRTC (no ffmpeg). The
+# browser's echo canceller makes it FULL-DUPLEX, so you can interrupt the assistant (barge-in). It
+# hosts a page on http://localhost:8080 (set --web-port) and opens it; click "Start talking".
+sipsorcery openai chat --web
+sipsorcery openai chat --web --web-port 9000 --voice verse
+# Alternatively use ffmpeg/ffplay as the audio device: --play - reads mic PCM from stdin (pipe an
+# ffmpeg capture). This path gates the mic while the model speaks (half-duplex, no echo canceller), so
+# use a headset for barge-in. Capture device syntax is per-OS (dshow/avfoundation/pulse); install ffmpeg.
 ffmpeg -f dshow -i audio="Microphone (Realtek Audio)" -ac 1 -ar 48000 -f s16le - \
   | sipsorcery openai chat --play -
-sipsorcery openai chat               # listen-only (hear the model, no mic)
+sipsorcery openai chat               # listen-only (hear the model via ffplay, no mic)
 ```
 
 ### The route verb
