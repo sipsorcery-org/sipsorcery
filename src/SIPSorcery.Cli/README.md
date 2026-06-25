@@ -36,6 +36,7 @@ sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --au
 sipsorcery route --from testpattern --to web                   # watch in a browser: self-hosts a WHEP server + player on http://localhost:8080
 sipsorcery route --from sip:music@iptel.org --to web:9000 --scope --audio-codec opus  # bridge a SIP call to a browser page with an audio-scope video
 sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus  # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
+sipsorcery route --from livekit:demo-room --to web --audio-codec opus           # ...and in a SEPARATE process, subscribe to that room and watch it in a browser
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -95,6 +96,7 @@ Edges:
 | `--from`  | `testpattern` | A generated H264 video pattern **+ music** (codec via `--audio-codec`: pcmu default / pcma / opus), so it can feed a `whip:` sink with audio and video. `--fps` sets the video rate. |
 | `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
 | `--from`  | `sip:<uri>` | Place a SIP call (G.711) and forward its received audio, transcoding up to `--audio-codec opus` if the sink needs it. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
+| `--from`  | `livekit:<room>` | Subscribe to a LiveKit **room** and emit the received H264 video + OPUS audio. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_*` env). Mints its own subscribe-only token, so it only needs the room name + creds. Start the publisher first so the track is in the room when this joins. |
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
@@ -133,11 +135,11 @@ sipsorcery route --from testpattern --to web                 # open http://local
 sipsorcery route --from sip:music@iptel.org --to web --scope --audio-codec opus
 ```
 
-The `livekit:` **sink** publishes into a room (above). The `livekit:` / `cloudflare:` **sources**, the
-`cloudflare:` sink and `sip:` as a sink are recognised but report that they are not wired into `route`
-yet — use the dedicated verbs for those today (`cloudflare sfu`). They become `route` edges in a later
-version, at which point `route --from livekit:room --to web` subscribes to a room and serves it to a
-browser, and `route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
+The `livekit:` **source and sink** are both wired (publish into a room, and subscribe to one — run the
+two in separate processes for a room round trip). The `cloudflare:` source/sink and `sip:` as a sink are
+recognised but report that they are not wired into `route` yet — use the dedicated verbs for those today
+(`cloudflare sfu`). They become `route` edges in a later version, at which point
+`route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
 
 ## Exit codes
 
@@ -151,9 +153,10 @@ browser, and `route --from sip:… --to livekit:room` bridges a call into a room
 
 ## Status
 
-Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with a
-`sip:` source, `whip:`, `web` and `livekit:` sinks and an ffmpeg-backed audio-scope transform wired in.
-Streaming verbs default to `-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer
+Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
+`whep:`/`sip:`/`livekit:` sources, `whip:`/`web`/`livekit:` sinks and an ffmpeg-backed audio-scope
+transform wired in. Streaming verbs default to `-d 0` (run until ctrl-c); pass a positive `--duration`
+for a fixed window. Fan-in, richer
 transforms, the remaining transport edges and the authoring layers above the graph (declarative
 routing, scripted policies, an external control API) are planned. Feedback and issues welcome on the
 [SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).

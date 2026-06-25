@@ -232,11 +232,13 @@ public static class EdgeFactory
                 // the original spec rather than the scheme-stripped rest.
                 return CreateSipSource(spec, options, logger);
 
-            case "whip":
             case "livekit":
+                return CreateLiveKitSource(rest, options, logger);
+
+            case "whip":
             case "cloudflare":
                 throw new EdgeException(
-                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>). " +
+                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>, livekit[:room]). " +
                     "The transport receivers exist as their own verbs today; they become route sources in a later version.");
 
             default:
@@ -314,6 +316,32 @@ public static class EdgeFactory
         string room = string.IsNullOrWhiteSpace(rest) ? $"cli-{Guid.NewGuid().ToString("N")[..8]}" : rest!;
 
         return new LiveKitSinkNode(url!, apiKey!, apiSecret!, room, audioFormat, options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// Builds a livekit: source: subscribe to a LiveKit room and emit the received media. The room is the
+    /// edge's "rest" and is required (you must name the room to subscribe to). Credentials resolve the
+    /// same way as the sink (--url/--api-key/--api-secret or the LIVEKIT_* environment variables).
+    /// </summary>
+    private static ISourceNode CreateLiveKitSource(string? rest, EdgeOptions options, ILogger logger)
+    {
+        if (string.IsNullOrWhiteSpace(rest))
+        {
+            throw new EdgeException("The livekit source needs a room name, e.g. --from livekit:my-room.");
+        }
+
+        string? url = options.LiveKitUrl ?? Environment.GetEnvironmentVariable("LIVEKIT_WEBSOCKET_URL");
+        string? apiKey = options.LiveKitApiKey ?? Environment.GetEnvironmentVariable("LIVEKIT_API_KEY");
+        string? apiSecret = options.LiveKitApiSecret ?? Environment.GetEnvironmentVariable("LIVEKIT_API_SECRET");
+
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
+        {
+            throw new EdgeException(
+                "The livekit source needs a URL, API key and API secret (--url/--api-key/--api-secret or " +
+                "LIVEKIT_WEBSOCKET_URL/LIVEKIT_API_KEY/LIVEKIT_API_SECRET).");
+        }
+
+        return new LiveKitSourceNode(url!, apiKey!, apiSecret!, rest!, options.TimeoutSeconds, logger);
     }
 
     /// <summary>Resolves the verb's --audio-codec to a format, throwing <see cref="EdgeException"/> if invalid.</summary>
