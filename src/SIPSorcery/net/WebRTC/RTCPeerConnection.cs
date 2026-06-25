@@ -870,19 +870,42 @@ namespace SIPSorcery.Net
 
                     var localHeaderExtensions = AudioStreamList[indexAudioStream].LocalTrack?.HeaderExtensions?.Values;
                     var remoteHeaderExtensions = AudioStreamList[indexAudioStream].RemoteTrack?.HeaderExtensions?.Values;
-                    if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
+
+                    if (localHeaderExtensions?.Count > 0)
                     {
-                        foreach (var remoteExtension in remoteHeaderExtensions)
+                        // Do we have already some extensions set ?
+                        if (remoteHeaderExtensions is null || remoteHeaderExtensions.Count == 0)
                         {
-                            var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
-                            if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                            foreach (var localExtension in localHeaderExtensions)
                             {
                                 // We must ensure to use same Id by extension
-                                localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
-                                localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
+                                if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                                {
+                                    localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                                }
+                                else
+                                {
+                                    _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                                }
 
                                 logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
-                                ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                ann.HeaderExtensions[localExtension.Id] = localExtension;
+                            }
+                        }
+                        else
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
+                            {
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                {
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
+
+                                    logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                }
                             }
                         }
                     }
@@ -895,19 +918,41 @@ namespace SIPSorcery.Net
 
                     var localHeaderExtensions = VideoStreamList[indexVideoStream].LocalTrack?.HeaderExtensions?.Values;
                     var remoteHeaderExtensions = VideoStreamList[indexVideoStream].RemoteTrack?.HeaderExtensions?.Values;
-                    if ((remoteHeaderExtensions?.Count > 0) && (localHeaderExtensions?.Count > 0))
+                    if (localHeaderExtensions?.Count > 0)
                     {
-                        foreach (var remoteExtension in remoteHeaderExtensions)
+                        // Do we have already some extensions set ?
+                        if (remoteHeaderExtensions is null || remoteHeaderExtensions.Count == 0)
                         {
-                            var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
-                            if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                            foreach (var localExtension in localHeaderExtensions)
                             {
                                 // We must ensure to use same Id by extension
-                                localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
-                                localExtension.Uri = remoteExtension.Uri; // Keep same Uri as remote
+                                if (_rtpExtensionsUsed.ContainsKey(localExtension.Uri))
+                                {
+                                    localExtension.Id = _rtpExtensionsUsed[localExtension.Uri];
+                                }
+                                else
+                                {
+                                    _rtpExtensionsUsed[localExtension.Uri] = localExtension.Id;
+                                }
 
                                 logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
-                                ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                ann.HeaderExtensions[localExtension.Id] = localExtension;
+                            }
+                        }
+                        else
+                        {
+                            foreach (var remoteExtension in remoteHeaderExtensions)
+                            {
+                                var localExtension = localHeaderExtensions.FirstOrDefault(ext => ext.MatchesExtension(remoteExtension.Uri));
+                                if ((localExtension != null) && _rtpExtensionsUsed.ContainsKey(remoteExtension.Uri))
+                                {
+                                    // We must ensure to use same Id by extension
+                                    localExtension.Id = _rtpExtensionsUsed[remoteExtension.Uri];
+                                    localExtension.Uri = remoteExtension.Uri;// Keep same Uri as remote
+
+                                    logger.LogDebug("[createOffer] - {Media}:[{MediaID}] - Add HeaderExtensions:[{Id} - {Uri}]", ann.Media, ann.MediaID, localExtension.Id, localExtension.Uri);
+                                    ann.HeaderExtensions.Add(localExtension.Id, localExtension);
+                                }
                             }
                         }
                     }
