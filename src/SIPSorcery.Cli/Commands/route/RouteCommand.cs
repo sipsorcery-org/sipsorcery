@@ -81,8 +81,9 @@ public sealed class RouteCommand : CommandBase
         var toOption = new Option<string[]>("--to", "-o")
         {
             Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B), \"play\" (ffplay), " +
-                          "\"null\" (discard), \"-\" (bitstream on stdout), whip:<url> (publish to a WebRTC endpoint) or " +
-                          "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser). " +
+                          "\"null\" (discard), \"-\" (bitstream on stdout), whip:<url> (publish to a WebRTC endpoint), " +
+                          "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser) or " +
+                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret and --audio-codec opus). " +
                           "Repeat --to to fan out to several sinks at once.",
             Required = true,
             AllowMultipleArgumentsPerToken = true
@@ -150,6 +151,21 @@ public sealed class RouteCommand : CommandBase
             Description = "For a web sink, do not automatically open a browser at the listen URL (it is also never opened with --json)."
         };
 
+        var urlOption = new Option<string?>("--url")
+        {
+            Description = "For a livekit edge: the LiveKit web socket URL (wss://...). Defaults to the LIVEKIT_WEBSOCKET_URL environment variable."
+        };
+
+        var apiKeyOption = new Option<string?>("--api-key")
+        {
+            Description = "For a livekit edge: the LiveKit API key. Defaults to the LIVEKIT_API_KEY environment variable."
+        };
+
+        var apiSecretOption = new Option<string?>("--api-secret")
+        {
+            Description = "For a livekit edge: the LiveKit API secret. Defaults to the LIVEKIT_API_SECRET environment variable."
+        };
+
         var command = new Command("route",
             "Route a media stream from a --from source edge to one or more --to sink edges (a v0.1 stream graph).");
         command.Options.Add(fromOption);
@@ -165,6 +181,9 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(passwordOption);
         command.Options.Add(audioCodecOption);
         command.Options.Add(noOpenOption);
+        command.Options.Add(urlOption);
+        command.Options.Add(apiKeyOption);
+        command.Options.Add(apiSecretOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -181,6 +200,9 @@ public sealed class RouteCommand : CommandBase
             parseResult.GetValue(passwordOption),
             parseResult.GetValue(audioCodecOption)!,
             parseResult.GetValue(noOpenOption),
+            parseResult.GetValue(urlOption),
+            parseResult.GetValue(apiKeyOption),
+            parseResult.GetValue(apiSecretOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -191,7 +213,8 @@ public sealed class RouteCommand : CommandBase
 
     private static async Task<int> RunAsync(string from, string[] to, int durationSeconds, int fps, string? token,
         bool scope, string scopeMode, string scopeSize, string? ffmpegPath, string? username, string? password,
-        string audioCodec, bool noOpen, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        string audioCodec, bool noOpen, string? liveKitUrl, string? liveKitApiKey, string? liveKitApiSecret,
+        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(RouteCommand));
@@ -220,7 +243,8 @@ public sealed class RouteCommand : CommandBase
         // A web sink auto-opens a browser for interactive use, but never when --json (a scripted run) or
         // --no-open is set.
         bool openBrowser = !noOpen && !asJson;
-        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password, audioCodec, openBrowser);
+        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password,
+            audioCodec, openBrowser, liveKitUrl, liveKitApiKey, liveKitApiSecret);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

@@ -52,7 +52,10 @@ public sealed record EdgeOptions(
     string? SipUsername = null,
     string? SipPassword = null,
     string AudioCodec = "pcmu",
-    bool OpenBrowser = false);
+    bool OpenBrowser = false,
+    string? LiveKitUrl = null,
+    string? LiveKitApiKey = null,
+    string? LiveKitApiSecret = null);
 
 /// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
 public static class RouteAudio
@@ -283,6 +286,36 @@ public static class EdgeFactory
         return source;
     }
 
+    /// <summary>
+    /// Builds a livekit: sink: publish the graph's media into a LiveKit room. The room is the edge's
+    /// "rest" (a random name if omitted); the URL/key/secret come from the --url/--api-key/--api-secret
+    /// options, falling back to the LIVEKIT_* environment variables. LiveKit's room pipeline requires
+    /// OPUS audio, so the edge requires --audio-codec opus.
+    /// </summary>
+    private static ISinkNode CreateLiveKitSink(string? rest, EdgeOptions options, ILogger logger)
+    {
+        string? url = options.LiveKitUrl ?? Environment.GetEnvironmentVariable("LIVEKIT_WEBSOCKET_URL");
+        string? apiKey = options.LiveKitApiKey ?? Environment.GetEnvironmentVariable("LIVEKIT_API_KEY");
+        string? apiSecret = options.LiveKitApiSecret ?? Environment.GetEnvironmentVariable("LIVEKIT_API_SECRET");
+
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
+        {
+            throw new EdgeException(
+                "The livekit sink needs a URL, API key and API secret (--url/--api-key/--api-secret or " +
+                "LIVEKIT_WEBSOCKET_URL/LIVEKIT_API_KEY/LIVEKIT_API_SECRET).");
+        }
+
+        var audioFormat = ResolveAudioFormat(options);
+        if (audioFormat.Codec != AudioCodecsEnum.OPUS)
+        {
+            throw new EdgeException("The livekit sink requires OPUS audio; pass --audio-codec opus (LiveKit's room pipeline does not carry G.711).");
+        }
+
+        string room = string.IsNullOrWhiteSpace(rest) ? $"cli-{Guid.NewGuid().ToString("N")[..8]}" : rest!;
+
+        return new LiveKitSinkNode(url!, apiKey!, apiSecret!, room, audioFormat, options.TimeoutSeconds, logger);
+    }
+
     /// <summary>Resolves the verb's --audio-codec to a format, throwing <see cref="EdgeException"/> if invalid.</summary>
     private static AudioFormat ResolveAudioFormat(EdgeOptions options)
     {
@@ -324,13 +357,15 @@ public static class EdgeFactory
                 }
                 return new WebSinkNode(port, ResolveAudioFormat(options), options.Token, options.OpenBrowser, logger);
 
+            case "livekit":
+                return CreateLiveKitSink(rest, options, logger);
+
             case "sip":
             case "sips":
-            case "livekit":
             case "cloudflare":
                 throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port]). " +
-                    "Publish into these with the dedicated verbs today (e.g. 'livekit room'); they become route sinks in a later version.");
+                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port], livekit[:room]). " +
+                    "Publish into these with the dedicated verbs today (e.g. 'cloudflare sfu'); they become route sinks in a later version.");
 
             default:
                 // Anything else is a VideoSink spec: a file path, "play", "null" or "-".

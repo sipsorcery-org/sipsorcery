@@ -35,6 +35,7 @@ sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip
 sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --audio-codec opus --token key  # publish to Broadcast Box (needs H264+opus)
 sipsorcery route --from testpattern --to web                   # watch in a browser: self-hosts a WHEP server + player on http://localhost:8080
 sipsorcery route --from sip:music@iptel.org --to web:9000 --scope --audio-codec opus  # bridge a SIP call to a browser page with an audio-scope video
+sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus  # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -100,6 +101,7 @@ Edges:
 | `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
 | `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: pcmu default / pcma / opus) + H264 video peer connection. `--token` sets the Authorization. Some endpoints (e.g. Broadcast Box) require `--audio-codec opus`. |
 | `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. H264 video + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
+| `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`) and `--audio-codec opus`. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |
 
 #### The `--scope` audio-scope video
 
@@ -131,10 +133,11 @@ sipsorcery route --from testpattern --to web                 # open http://local
 sipsorcery route --from sip:music@iptel.org --to web --scope --audio-codec opus
 ```
 
-Sinks/sources named `livekit:` / `cloudflare:` (and `sip:` as a sink) are recognised and report that
-they are not wired into `route` yet — use the dedicated verbs today (`cloudflare sfu`, `livekit room`).
-They become `route` edges in a later version, at which point `route --from sip:… --to livekit:room`
-bridges a call into a room with no bespoke command.
+The `livekit:` **sink** publishes into a room (above). The `livekit:` / `cloudflare:` **sources**, the
+`cloudflare:` sink and `sip:` as a sink are recognised but report that they are not wired into `route`
+yet — use the dedicated verbs for those today (`cloudflare sfu`). They become `route` edges in a later
+version, at which point `route --from livekit:room --to web` subscribes to a room and serves it to a
+browser, and `route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
 
 ## Exit codes
 
@@ -149,8 +152,8 @@ bridges a call into a room with no bespoke command.
 ## Status
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with a
-`sip:` source, `whip:` and `web` sinks and an ffmpeg-backed audio-scope transform wired in. Streaming
-verbs default to `-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer
+`sip:` source, `whip:`, `web` and `livekit:` sinks and an ffmpeg-backed audio-scope transform wired in.
+Streaming verbs default to `-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer
 transforms, the remaining transport edges and the authoring layers above the graph (declarative
 routing, scripted policies, an external control API) are planned. Feedback and issues welcome on the
 [SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).
