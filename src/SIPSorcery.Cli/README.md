@@ -33,6 +33,8 @@ sipsorcery route --from whep:https://b.siobud.com/api/whep --to out.ivf --token 
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip      # bridge a SIP call to WebRTC
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope  # ...and add an audio-scope video
 sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --audio-codec opus --token key  # publish to Broadcast Box (needs H264+opus)
+sipsorcery route --from testpattern --to web                   # watch in a browser: self-hosts a WHEP server + player on http://localhost:8080
+sipsorcery route --from sip:music@iptel.org --to web:9000 --scope --audio-codec opus  # bridge a SIP call to a browser page with an audio-scope video
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -97,6 +99,7 @@ Edges:
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
 | `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
 | `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: pcmu default / pcma / opus) + H264 video peer connection. `--token` sets the Authorization. Some endpoints (e.g. Broadcast Box) require `--audio-codec opus`. |
+| `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. H264 video + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
 
 #### The `--scope` audio-scope video
 
@@ -110,6 +113,22 @@ encoding is delegated to an external **ffmpeg** process (the `showwaves`/`showsp
 
 ```bash
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope --scope-mode spectrum
+```
+
+#### The `web` sink (watch in a browser)
+
+`--to web` turns the CLI into its own viewer. It binds a local `HttpListener` that serves a small
+auto-connecting HTML player at `http://localhost:8080/` (pick another port with `web:9000`) and answers
+the browser's WHEP request, streaming the graph's H264 video + audio over WebRTC. Unlike `whip:`, which
+dials *out* to a remote endpoint and blocks until connected, this **listens** for viewers — so it never
+blocks waiting for one. Open the URL whenever, in as many tabs as you like, each becoming its own peer
+connection fanned from the one graph tee. The browser opens for you (suppress with `--no-open`, or
+`--json`); the run continues until ctrl-c. The page and the WHEP signalling share one port (`GET /`
+serves the player, `POST /whep` does the offer/answer), and it binds localhost only.
+
+```bash
+sipsorcery route --from testpattern --to web                 # open http://localhost:8080 and watch
+sipsorcery route --from sip:music@iptel.org --to web --scope --audio-codec opus
 ```
 
 Sinks/sources named `livekit:` / `cloudflare:` (and `sip:` as a sink) are recognised and report that
@@ -130,7 +149,8 @@ bridges a call into a room with no bespoke command.
 ## Status
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with a
-`sip:` source, a `whip:` sink and an ffmpeg-backed audio-scope transform wired in. Fan-in, richer
+`sip:` source, `whip:` and `web` sinks and an ffmpeg-backed audio-scope transform wired in. Streaming
+verbs default to `-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer
 transforms, the remaining transport edges and the authoring layers above the graph (declarative
 routing, scripted policies, an external control API) are planned. Feedback and issues welcome on the
 [SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).

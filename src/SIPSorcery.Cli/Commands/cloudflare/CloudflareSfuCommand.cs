@@ -39,7 +39,7 @@ namespace SIPSorcery.Cli.Commands;
 public sealed class CloudflareSfuCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 15;
-    private const int DEFAULT_MEDIA_DURATION_SECONDS = 5;
+    private const int DEFAULT_MEDIA_DURATION_SECONDS = 0;
     private const string CLOUDFLARE_SFU_BASE_URL = "https://rtc.live.cloudflare.com/v1/apps/";
     private const string STUN_URL = "stun:stun.cloudflare.com";
 
@@ -72,7 +72,7 @@ public sealed class CloudflareSfuCommand : CommandBase
 
         var durationOption = new Option<int>("--duration", "-d")
         {
-            Description = "The number of seconds to keep publishing after the connection is established.",
+            Description = "The number of seconds to keep publishing after the connection is established. The default 0 publishes until ctrl-c.",
             DefaultValueFactory = _ => DEFAULT_MEDIA_DURATION_SECONDS
         };
 
@@ -213,12 +213,26 @@ public sealed class CloudflareSfuCommand : CommandBase
             }
 
             long connectTimeMs = stopwatch.ElapsedMilliseconds;
-            logger.LogDebug("Publisher connected in {ConnectTimeMs}ms, publishing for {Duration}s.", connectTimeMs, durationSeconds);
+            var mediaWindow = Stopwatch.StartNew();
 
-            await Task.Delay(TimeSpan.FromSeconds(durationSeconds), ct).ConfigureAwait(false);
+            if (durationSeconds > 0)
+            {
+                logger.LogDebug("Publisher connected in {ConnectTimeMs}ms, publishing for {Duration}s.", connectTimeMs, durationSeconds);
+                await Task.Delay(TimeSpan.FromSeconds(durationSeconds), ct).ConfigureAwait(false);
+            }
+            else
+            {
+                // Publish until ctrl-c. The cancellation is the user's clean stop, so swallow it here and
+                // report success rather than letting it fall through to the "Cancelled" handler.
+                logger.LogDebug("Publisher connected in {ConnectTimeMs}ms, publishing until ctrl-c.", connectTimeMs);
+                Console.Error.WriteLine("Publishing to the SFU until ctrl-c ...");
+                try { await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false); } catch (OperationCanceledException) { }
+            }
+
+            mediaWindow.Stop();
 
             return WriteResult(asJson,
-                new SfuResult(true, appId, sessionId, pc.connectionState.ToString(), connectTimeMs, durationSeconds * 1000, null),
+                new SfuResult(true, appId, sessionId, pc.connectionState.ToString(), connectTimeMs, (int)mediaWindow.ElapsedMilliseconds, null),
                 ExitCodes.Ok);
         }
         catch (OperationCanceledException)

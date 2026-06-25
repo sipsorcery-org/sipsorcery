@@ -51,7 +51,8 @@ public sealed record EdgeOptions(
     string? FfmpegPath = null,
     string? SipUsername = null,
     string? SipPassword = null,
-    string AudioCodec = "pcmu");
+    string AudioCodec = "pcmu",
+    bool OpenBrowser = false);
 
 /// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
 public static class RouteAudio
@@ -310,12 +311,25 @@ public static class EdgeFactory
                 }
                 return new WhipSinkNode(rest!, ResolveAudioFormat(options), options.Token, options.TimeoutSeconds, logger);
 
+            case "web":
+                // Self-hosting WHEP server: bind a local HTTP listener that serves a player page and
+                // answers browser offers. The spec is an optional port ("web" or "web:8080").
+                int port = 8080;
+                if (!string.IsNullOrWhiteSpace(rest))
+                {
+                    if (!int.TryParse(rest, out port) || port < 1 || port > 65535)
+                    {
+                        throw new EdgeException($"The web sink port '{rest}' is not a valid port number (1-65535), e.g. --to web:8080.");
+                    }
+                }
+                return new WebSinkNode(port, ResolveAudioFormat(options), options.Token, options.OpenBrowser, logger);
+
             case "sip":
             case "sips":
             case "livekit":
             case "cloudflare":
                 throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>). " +
+                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port]). " +
                     "Publish into these with the dedicated verbs today (e.g. 'livekit room'); they become route sinks in a later version.");
 
             default:

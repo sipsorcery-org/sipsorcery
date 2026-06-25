@@ -44,7 +44,7 @@ namespace SIPSorcery.Cli.Commands;
 public sealed class RouteCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 30;
-    private const int DEFAULT_DURATION_SECONDS = 10;
+    private const int DEFAULT_DURATION_SECONDS = 0;
     private const int DEFAULT_FPS = 30;
     private const string DEFAULT_AUDIO_CODEC = "pcmu";
     private const string DEFAULT_SCOPE_MODE = "waves";
@@ -81,7 +81,8 @@ public sealed class RouteCommand : CommandBase
         var toOption = new Option<string[]>("--to", "-o")
         {
             Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B), \"play\" (ffplay), " +
-                          "\"null\" (discard), \"-\" (bitstream on stdout) or whip:<url> (publish to a WebRTC endpoint). " +
+                          "\"null\" (discard), \"-\" (bitstream on stdout), whip:<url> (publish to a WebRTC endpoint) or " +
+                          "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser). " +
                           "Repeat --to to fan out to several sinks at once.",
             Required = true,
             AllowMultipleArgumentsPerToken = true
@@ -89,7 +90,8 @@ public sealed class RouteCommand : CommandBase
 
         var durationOption = new Option<int>("--duration", "-d")
         {
-            Description = "Seconds to run for. 0 runs until the source ends (a live source hanging up) or ctrl-c.",
+            Description = "Seconds to run for. The default 0 runs until the source ends (a live source hanging up) or ctrl-c; " +
+                          "set a positive value to stop after a fixed time.",
             DefaultValueFactory = _ => DEFAULT_DURATION_SECONDS
         };
 
@@ -138,9 +140,14 @@ public sealed class RouteCommand : CommandBase
 
         var audioCodecOption = new Option<string>("--audio-codec")
         {
-            Description = "Audio codec a whip: sink offers / the source produces: pcmu (default), pcma or opus. " +
+            Description = "Audio codec a whip:/web sink offers / the source produces: pcmu (default), pcma or opus. " +
                           "Some WebRTC endpoints (e.g. Broadcast Box) only accept opus; a G.711 sip: call is transcoded up to opus when needed.",
             DefaultValueFactory = _ => DEFAULT_AUDIO_CODEC
+        };
+
+        var noOpenOption = new Option<bool>("--no-open")
+        {
+            Description = "For a web sink, do not automatically open a browser at the listen URL (it is also never opened with --json)."
         };
 
         var command = new Command("route",
@@ -157,6 +164,7 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(usernameOption);
         command.Options.Add(passwordOption);
         command.Options.Add(audioCodecOption);
+        command.Options.Add(noOpenOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -172,6 +180,7 @@ public sealed class RouteCommand : CommandBase
             parseResult.GetValue(usernameOption),
             parseResult.GetValue(passwordOption),
             parseResult.GetValue(audioCodecOption)!,
+            parseResult.GetValue(noOpenOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -182,7 +191,7 @@ public sealed class RouteCommand : CommandBase
 
     private static async Task<int> RunAsync(string from, string[] to, int durationSeconds, int fps, string? token,
         bool scope, string scopeMode, string scopeSize, string? ffmpegPath, string? username, string? password,
-        string audioCodec, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        string audioCodec, bool noOpen, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(RouteCommand));
@@ -208,7 +217,10 @@ public sealed class RouteCommand : CommandBase
                 ExitCodes.InvalidArgument);
         }
 
-        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password, audioCodec);
+        // A web sink auto-opens a browser for interactive use, but never when --json (a scripted run) or
+        // --no-open is set.
+        bool openBrowser = !noOpen && !asJson;
+        var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password, audioCodec, openBrowser);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

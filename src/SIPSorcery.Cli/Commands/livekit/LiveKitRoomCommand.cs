@@ -40,7 +40,7 @@ namespace SIPSorcery.Cli.Commands;
 public sealed class LiveKitRoomCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 15;
-    private const int DEFAULT_MEDIA_DURATION_SECONDS = 5;
+    private const int DEFAULT_MEDIA_DURATION_SECONDS = 0;
     private const int ADD_TRACK_TIMEOUT_SECONDS = 10;
     private const string VIDEO_TRACK_NAME = "test-pattern";
     private const string AUDIO_TRACK_NAME = "music";
@@ -86,7 +86,7 @@ public sealed class LiveKitRoomCommand : CommandBase
 
         var durationOption = new Option<int>("--duration", "-d")
         {
-            Description = "The number of seconds to keep publishing after the connection is established.",
+            Description = "The number of seconds to keep publishing after the connection is established. The default 0 publishes until ctrl-c.",
             DefaultValueFactory = _ => DEFAULT_MEDIA_DURATION_SECONDS
         };
 
@@ -231,13 +231,27 @@ public sealed class LiveKitRoomCommand : CommandBase
                 }
 
                 long connectTimeMs = stopwatch.ElapsedMilliseconds;
-                _logger.LogDebug("Publisher connected in {ConnectTimeMs}ms, publishing for {Duration}s.", connectTimeMs, _durationSeconds);
+                var mediaWindow = Stopwatch.StartNew();
 
-                await Task.Delay(TimeSpan.FromSeconds(_durationSeconds), ct).ConfigureAwait(false);
+                if (_durationSeconds > 0)
+                {
+                    _logger.LogDebug("Publisher connected in {ConnectTimeMs}ms, publishing for {Duration}s.", connectTimeMs, _durationSeconds);
+                    await Task.Delay(TimeSpan.FromSeconds(_durationSeconds), ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    // Publish until ctrl-c. The cancellation is the user's clean stop, so swallow it here
+                    // and report success rather than letting it fall through to the "Cancelled" handler.
+                    _logger.LogDebug("Publisher connected in {ConnectTimeMs}ms, publishing until ctrl-c.", connectTimeMs);
+                    Console.Error.WriteLine("Publishing to the room until ctrl-c ...");
+                    try { await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false); } catch (OperationCanceledException) { }
+                }
+
+                mediaWindow.Stop();
 
                 return WriteResult(asJson,
                     new RoomResult(true, _room, _identity, _publisherState, _videoTrackSid, _audioTrackSid,
-                        connectTimeMs, _durationSeconds * 1000, null),
+                        connectTimeMs, (int)mediaWindow.ElapsedMilliseconds, null),
                     ExitCodes.Ok);
             }
             catch (OperationCanceledException)
