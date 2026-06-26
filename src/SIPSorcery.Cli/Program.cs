@@ -52,4 +52,8 @@ rootCommand.Subcommands.Add(openaiCommand);
 // over a stream graph. It is the seed of the stream-routing flagship.
 rootCommand.Subcommands.Add(new RouteCommand().Build());
 
+// bridge is the duplex counterpart to route: it connects two endpoints both ways (e.g. talk to a
+// voice agent in a browser with "bridge web agent").
+rootCommand.Subcommands.Add(new BridgeCommand().Build());
+
 return await rootCommand.Parse(args).InvokeAsync();

@@ -45,6 +45,14 @@
     <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
     <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
     <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <!-- Speech-to-text and text-to-speech for the "bridge ... agent" voice agent. Same package the
+         WebRTCMaxHeadroom example uses; a heavy native dependency, a candidate to move behind an
+         optional agent plugin later so the core tool stays lean. -->
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.40.0" />
+    <!-- Renders the bridge agent avatar (the Max Headroom face, MaxHeadroomVideoSource). Another
+         heavy/native dependency, reinforcing the future optional-avatar-plugin direction. -->
+    <PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
   </ItemGroup>
 
   <ItemGroup>

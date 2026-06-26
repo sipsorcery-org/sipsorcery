@@ -38,6 +38,11 @@ sipsorcery route --from sip:music@iptel.org --to web:9000 --scope --audio-codec 
 sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus  # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
 sipsorcery route --from livekit:demo-room --to web --audio-codec opus           # ...and in a SEPARATE process, subscribe to that room and watch it in a browser
 
+# Bridge: connect two duplex endpoints BOTH ways (full duplex). Where route is directional (--from/--to),
+# bridge is symmetric and order-agnostic. v0.1 endpoints: web (a browser mic+speaker page) and agent (an
+# Azure speech-to-text -> LLM -> Azure text-to-speech voice agent). See "The bridge verb" below.
+sipsorcery bridge web agent --open    # open a browser and TALK to a voice agent (e.g. Max Headroom)
+
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
 # CLOUDFLARE_API_TOKEN environment variables. https://developers.cloudflare.com/realtime/turn/
@@ -145,6 +150,41 @@ recognised but report that they are not wired into `route` yet — use the dedic
 (`cloudflare sfu`). They become `route` edges in a later version, at which point
 `route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
 
+### The bridge verb
+
+`route` is directional — `--from` → `--to`. A conversation is **duplex**, and `--from/--to` reads wrong
+for that, so the duplex case has its own verb: **`bridge <a> <b>`** connects two endpoints **both ways**
+(`a` → `b` *and* `b` → `a`). The endpoints are **symmetric / order-agnostic** — `bridge web agent` and
+`bridge agent web` are the same.
+
+v0.1 endpoints:
+
+| Endpoint | Role |
+|----------|------|
+| `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page; `--open` launches it, `--port` sets the port). Reuses the `openai chat` browser bridge. |
+| `agent` | A locally-assembled **voice agent**: **Azure speech-to-text → LLM → Azure text-to-speech**, with a Max Headroom persona by default. You speak, it listens, thinks and replies. |
+
+```bash
+# Set the agent's credentials (or pass --azure-key/--azure-region/--llm), then:
+export AZURE_SPEECH_KEY=…  AZURE_SPEECH_REGION=westeurope
+export LLM_ENDPOINT=http://localhost:11434/v1/chat/completions  LLM_MODEL=llama3.2   # e.g. Ollama
+sipsorcery bridge web agent --open
+```
+
+Open the page, grant the microphone, and **talk to Max** — full duplex (the browser's echo canceller
+keeps the agent out of its own mic, so you can interrupt). `--voice`, `--persona`, `--greeting`, `--llm`
+/`--llm-model`/`--api-key` tune it; without an `--llm` the agent just repeats what it heard.
+
+Add **`--avatar`** to put a lip-synced **video face** (the SkiaSharp Max Headroom avatar) on the voice —
+the browser then shows his face, mouth driven by the Azure TTS visemes, alongside the audio:
+
+```bash
+sipsorcery bridge web agent --avatar --open
+```
+
+The agent needs **Azure Speech** credentials (and optionally an LLM endpoint). A `sip:` peer (phone ↔
+agent), an `openai` agent, and pluggable/external avatars are planned.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -159,8 +199,9 @@ recognised but report that they are not wired into `route` yet — use the dedic
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
 `whep:`/`sip:`/`livekit:` sources, `whip:`/`web`/`livekit:` sinks and an ffmpeg-backed audio-scope
-transform wired in. Streaming verbs default to `-d 0` (run until ctrl-c); pass a positive `--duration`
-for a fixed window. Fan-in, richer
-transforms, the remaining transport edges and the authoring layers above the graph (declarative
-routing, scripted policies, an external control API) are planned. Feedback and issues welcome on the
+transform wired in. The `bridge` verb adds the duplex case (two endpoints both ways), with `web` and a
+local Azure voice `agent` as the first endpoints. Streaming verbs default to `-d 0` (run until ctrl-c);
+pass a positive `--duration` for a fixed window. Fan-in, richer transforms, the remaining transport
+edges, the agent's `--avatar` / `sip:` / `openai` endpoints, and the authoring layers above the graph
+(declarative routing, scripted policies, an external control API) are planned. Feedback and issues welcome on the
 [SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).

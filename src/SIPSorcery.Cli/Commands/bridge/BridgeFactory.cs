@@ -1,0 +1,91 @@
+//-----------------------------------------------------------------------------
+// Filename: BridgeFactory.cs
+//
+// Description: Maps a bridge endpoint spec ("web", "agent") to a participant, the
+// single place endpoints are wired (the bridge counterpart to route's EdgeFactory).
+// Adding a new endpoint (a sip: peer, openai, livekit:) is a new case here.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// History:
+// 26 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Cli.Commands.Route;
+
+namespace SIPSorcery.Cli.Commands.Bridge;
+
+/// <summary>The knobs the bridge endpoints need from the verb.</summary>
+public sealed record BridgeOptions(
+    int Port = 8080,
+    bool OpenBrowser = false,
+    string? AzureKey = null,
+    string? AzureRegion = null,
+    string? Voice = null,
+    string? Persona = null,
+    string? Llm = null,
+    string? LlmModel = null,
+    string? LlmApiKey = null,
+    string? Greeting = null,
+    string? Avatar = null);
+
+public static class BridgeFactory
+{
+    public static IBridgeParticipant CreateParticipant(string spec, BridgeOptions options, ILogger logger)
+    {
+        switch (spec.Trim().ToLowerInvariant())
+        {
+            case "web":
+                // The page offers a video track only when an avatar is in play (the agent's face).
+                return new WebParticipant(options.Port, options.OpenBrowser, options.Avatar != null, logger);
+
+            case "agent":
+                return CreateAgent(options, logger);
+
+            case "sip":
+            case "sips":
+            case "openai":
+            case "livekit":
+                throw new EdgeException(
+                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent). " +
+                    "A sip: peer, openai and livekit become bridge endpoints in a later version.");
+
+            default:
+                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent.");
+        }
+    }
+
+    private static IBridgeParticipant CreateAgent(BridgeOptions options, ILogger logger)
+    {
+        string? azureKey = options.AzureKey ?? Environment.GetEnvironmentVariable("AZURE_SPEECH_KEY");
+        string? azureRegion = options.AzureRegion ?? Environment.GetEnvironmentVariable("AZURE_SPEECH_REGION");
+        string voice = options.Voice ?? Environment.GetEnvironmentVariable("AZURE_SPEECH_VOICE") ?? "en-US-GuyNeural";
+
+        if (string.IsNullOrWhiteSpace(azureKey) || string.IsNullOrWhiteSpace(azureRegion))
+        {
+            throw new EdgeException(
+                "The agent needs an Azure Speech key and region (--azure-key/--azure-region or " +
+                "AZURE_SPEECH_KEY/AZURE_SPEECH_REGION) for its speech-to-text and text-to-speech.");
+        }
+
+        string? llm = options.Llm ?? Environment.GetEnvironmentVariable("LLM_ENDPOINT");
+        string? llmModel = options.LlmModel ?? Environment.GetEnvironmentVariable("LLM_MODEL");
+        string? llmApiKey = options.LlmApiKey ?? Environment.GetEnvironmentVariable("LLM_API_KEY");
+
+        // Only the built-in "max" avatar exists for now; anything else is a clear error.
+        bool avatar = options.Avatar != null;
+        if (avatar && !options.Avatar!.Equals("max", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new EdgeException($"Unknown avatar '{options.Avatar}'. The only built-in avatar is 'max'.");
+        }
+
+        return new AzureAgentParticipant(azureKey!, azureRegion!, voice, options.Persona,
+            llm, llmModel, llmApiKey, options.Greeting, avatar, logger);
+    }
+}

@@ -44,6 +44,7 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
 
     private readonly int _port;
     private readonly bool _openBrowser;
+    private readonly bool _enableVideo;
     private readonly ILogger _logger;
     private readonly HttpListener _listener = new();
 
@@ -60,13 +61,17 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
     /// <summary>Raised once when a browser peer connection first reaches connected (cue the model greeting).</summary>
     public event Action? OnBrowserConnected;
 
+    /// <summary>Raised when the connected browser peer drops (used by the route bridge to end the run).</summary>
+    public event Action? OnBrowserDisconnected;
+
     public string Url => _url;
 
-    public BrowserAudioBridge(int port, bool openBrowser, ILogger logger)
+    public BrowserAudioBridge(int port, bool openBrowser, ILogger logger, bool enableVideo = false)
     {
         _port = port;
         _openBrowser = openBrowser;
         _logger = logger;
+        _enableVideo = enableVideo;
     }
 
     public Task StartAsync(CancellationToken ct)
@@ -114,6 +119,46 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
         catch (Exception excp)
         {
             _logger.LogDebug("Browser audio send failed: {Error}", excp.Message);
+        }
+    }
+
+    /// <summary>Sends an already-encoded OPUS audio payload to the browser speaker with an explicit
+    /// RTP duration. Used by the route bridge, which works in encoded frames + durations directly.</summary>
+    public void SendAudio(uint durationRtpUnits, byte[] payload)
+    {
+        var pc = _browserPc;
+        if (pc == null || payload.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            pc.SendAudio(durationRtpUnits, payload);
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("Browser audio send failed: {Error}", excp.Message);
+        }
+    }
+
+    /// <summary>Sends an already-encoded H264 video payload to the browser (the agent avatar). Only does
+    /// anything when the bridge was created with video enabled.</summary>
+    public void SendVideo(uint durationRtpUnits, byte[] payload)
+    {
+        var pc = _browserPc;
+        if (pc == null || payload.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            pc.SendVideo(durationRtpUnits, payload);
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("Browser video send failed: {Error}", excp.Message);
         }
     }
 
@@ -189,6 +234,15 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
         // A single send/recv OPUS audio track: receive the browser microphone, send the model's voice.
         pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { AudioCommonlyUsedFormats.OpusWebRTC }, MediaStreamStatusEnum.SendRecv));
 
+        if (_enableVideo)
+        {
+            // Send-only H264 video for the bridge agent's avatar; the browser shows it in a <video>.
+            pc.addTrack(new MediaStreamTrack(new List<VideoFormat>
+            {
+                new VideoFormat(VideoCodecsEnum.H264, 100, parameters: "packetization-mode=1")
+            }, MediaStreamStatusEnum.SendOnly));
+        }
+
         pc.OnAudioFrameReceived += frame => OnMicFrameReceived?.Invoke(frame);
 
         pc.onconnectionstatechange += (state) =>
@@ -205,14 +259,20 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
             else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.closed ||
                      state == RTCPeerConnectionState.disconnected)
             {
+                bool wasActive;
                 lock (_pcLock)
                 {
-                    if (ReferenceEquals(_browserPc, pc))
+                    wasActive = ReferenceEquals(_browserPc, pc);
+                    if (wasActive)
                     {
                         _browserPc = null;
                     }
                 }
                 try { pc.Close("browser audio gone"); } catch { /* best effort */ }
+                if (wasActive)
+                {
+                    OnBrowserDisconnected?.Invoke();
+                }
             }
         };
 
@@ -272,18 +332,21 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
     /// that captures the microphone with echo cancellation, plays the model's track and runs the WHEP
     /// offer/answer against /whep. Single quoted JS braces are literal in the $$ raw string.
     /// </summary>
-    private static string BuildPage()
+    private string BuildPage()
     {
-        return """
+        // The video element + receive transceiver are injected only when video is enabled (the bridge
+        // avatar); marker replacement keeps the page a plain verbatim string (no brace escaping).
+        string page = """
             <!doctype html>
             <html lang="en">
             <head>
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1">
-              <title>SIPSorcery · OpenAI voice</title>
+              <title>SIPSorcery · voice</title>
               <style>
                 html, body { margin: 0; height: 100%; background: #111; color: #ddd; font-family: system-ui, sans-serif; display: grid; place-items: center; }
                 .card { text-align: center; }
+                video { max-width: 90vw; max-height: 70vh; background: #000; border-radius: 8px; display: block; margin: 0 auto 12px; }
                 button { font-size: 18px; padding: 12px 24px; border: 0; border-radius: 8px; background: #2d7; color: #042; cursor: pointer; }
                 button:disabled { background: #555; color: #999; cursor: default; }
                 #status { margin-top: 16px; font-size: 14px; color: #aaa; min-height: 1.2em; }
@@ -291,6 +354,7 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
             </head>
             <body>
               <div class="card">
+                <!--VIDEO_EL-->
                 <button id="start">Start talking</button>
                 <div id="status">Click to allow your microphone and connect.</div>
                 <audio id="a" autoplay></audio>
@@ -305,9 +369,10 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
                     const pc = new RTCPeerConnection();
                     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-                    pc.ontrack = (e) => { document.getElementById('a').srcObject = e.streams[0]; };
+                    //VIDEO_TX
+                    pc.ontrack = (e) => { const el = e.track.kind === 'video' ? document.getElementById('v') : document.getElementById('a'); if (el) el.srcObject = e.streams[0]; };
                     pc.onconnectionstatechange = () => {
-                      statusEl.textContent = pc.connectionState === 'connected' ? 'connected — talk to the assistant' : pc.connectionState;
+                      statusEl.textContent = pc.connectionState === 'connected' ? 'connected — talk to the agent' : pc.connectionState;
                     };
                     const offer = await pc.createOffer();
                     await pc.setLocalDescription(offer);
@@ -327,6 +392,10 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
             </body>
             </html>
             """;
+
+        return page
+            .Replace("<!--VIDEO_EL-->", _enableVideo ? "<video id=\"v\" autoplay playsinline></video>" : "")
+            .Replace("//VIDEO_TX", _enableVideo ? "pc.addTransceiver('video', { direction: 'recvonly' });" : "");
     }
 
     private static void Respond(HttpListenerContext context, HttpStatusCode statusCode)
