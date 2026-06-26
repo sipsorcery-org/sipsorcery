@@ -410,7 +410,7 @@ namespace SIPSorcery.Net
 
         protected void SendRtpRaw(ArraySegment<byte> data, uint timestamp, int markerBit, int payloadType, Boolean checkDone, ushort? seqNum = null)
         {
-            if (checkDone || CheckIfCanSendRtpRaw())
+            if (HasRtpChannel() && (checkDone || CheckIfCanSendRtpRaw()))
             {
                 ProtectRtpPacket protectRtpPacket = SecureContext?.ProtectRtpPacket;
                 int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
@@ -643,7 +643,7 @@ namespace SIPSorcery.Net
                 logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
                 return false;
             }
-            else if (ControlDestinationEndPoint != null)
+            else if (HasRtpChannel() && ControlDestinationEndPoint != null)
             {
                 //logger.LogDebug("SendRtcpReport: {ReportBytes}", reportBytes.HexStr());
 
