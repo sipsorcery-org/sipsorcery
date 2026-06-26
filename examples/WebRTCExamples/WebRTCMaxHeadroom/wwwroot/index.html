@@ -23,6 +23,12 @@
     </div>
 
     <div class="row">
+        <label>Mic:</label>
+        <button id="micBtn" onclick="toggleMic();" disabled>Mute mic</button>
+        <span id="micStatus">not connected &ndash; talk to Max once connected, or use Say/Ask below</span>
+    </div>
+
+    <div class="row">
         <label>Say:</label>
         <input type="text" id="sayText" placeholder="Type text to speak verbatim..." />
         <button onclick="post('/say', 'sayText');">Speak</button>
@@ -38,6 +44,7 @@
         const STUN_URL = "stun:stun.cloudflare.com";
         const BASE_URL = "https://localhost:5443";
         var pc;
+        var micStream;
 
         async function start() {
             pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
@@ -45,7 +52,19 @@
             pc.oniceconnectionstatechange = () => console.log("ice: " + pc.iceConnectionState);
             pc.onconnectionstatechange = () => console.log("conn: " + pc.connectionState);
 
-            pc.addTransceiver("audio", { direction: "recvonly" });
+            // Capture the microphone and send it on a send/recv audio track so you can TALK to Max
+            // (the server runs speech-to-text on it). Echo cancellation keeps the avatar's own voice
+            // out of the mic, so it stays full duplex - you can talk over him. If the mic is denied or
+            // unavailable, fall back to receive-only audio and use the Say/Ask boxes instead.
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+                pc.addTrack(micStream.getAudioTracks()[0], micStream);
+                setMicStatus(true);
+            } catch (err) {
+                console.warn("Microphone unavailable:", err);
+                pc.addTransceiver("audio", { direction: "recvonly" });
+                document.querySelector('#micStatus').textContent = "mic unavailable (" + err.name + ") – use Say/Ask";
+            }
             pc.addTransceiver("video", { direction: "recvonly" });
 
             const offer = await pc.createOffer();
@@ -75,7 +94,27 @@
             else { console.error(path + " failed:", resp.status); }
         }
 
-        async function closePeer() { await pc?.close(); }
+        function toggleMic() {
+            const track = micStream && micStream.getAudioTracks()[0];
+            if (!track) return;
+            track.enabled = !track.enabled;
+            setMicStatus(track.enabled);
+        }
+
+        function setMicStatus(on) {
+            const btn = document.querySelector('#micBtn');
+            btn.disabled = !(micStream && micStream.getAudioTracks().length);
+            btn.textContent = on ? "Mute mic" : "Unmute mic";
+            document.querySelector('#micStatus').textContent = on ? "listening – talk to Max" : "muted";
+        }
+
+        async function closePeer() {
+            micStream?.getTracks().forEach(t => t.stop());
+            micStream = null;
+            await pc?.close();
+            document.querySelector('#micBtn').disabled = true;
+            document.querySelector('#micStatus').textContent = "not connected";
+        }
 
         document.querySelector('#serverurl').value = BASE_URL;
     </script>
