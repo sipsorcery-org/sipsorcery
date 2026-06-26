@@ -18,6 +18,7 @@
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Cli.Commands.Route;
+using SIPSorcery.OpenAI.Realtime.Models;
 
 namespace SIPSorcery.Cli.Commands.Bridge;
 
@@ -37,7 +38,7 @@ public sealed record BridgeOptions(
 
 public static class BridgeFactory
 {
-    public static IBridgeParticipant CreateParticipant(string spec, BridgeOptions options, ILogger logger)
+    public static IBridgeParticipant CreateParticipant(string spec, BridgeOptions options, ILoggerFactory loggerFactory, ILogger logger)
     {
         switch (spec.Trim().ToLowerInvariant())
         {
@@ -48,16 +49,18 @@ public static class BridgeFactory
             case "agent":
                 return CreateAgent(options, logger);
 
+            case "openai":
+                return CreateOpenAi(options, loggerFactory, logger);
+
             case "sip":
             case "sips":
-            case "openai":
             case "livekit":
                 throw new EdgeException(
-                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent). " +
-                    "A sip: peer, openai and livekit become bridge endpoints in a later version.");
+                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent, openai). " +
+                    "A sip: peer and livekit become bridge endpoints in a later version.");
 
             default:
-                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent.");
+                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent, openai.");
         }
     }
 
@@ -87,5 +90,35 @@ public static class BridgeFactory
 
         return new AzureAgentParticipant(azureKey!, azureRegion!, voice, options.Persona,
             llm, llmModel, llmApiKey, options.Greeting, avatar, logger);
+    }
+
+    private static IBridgeParticipant CreateOpenAi(BridgeOptions options, ILoggerFactory loggerFactory, ILogger logger)
+    {
+        // The OpenAI Realtime key. --api-key is shared with the agent's LLM gateway key; for openai it is
+        // the OpenAI key, else the OPENAI_API_KEY environment variable.
+        string? apiKey = options.LlmApiKey ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new EdgeException(
+                "The openai endpoint needs an OpenAI API key (--api-key or the OPENAI_API_KEY environment variable).");
+        }
+
+        // OpenAI uses its own named voices (marin, alloy, ...), not Azure neural voice names.
+        RealtimeVoicesEnum voice = RealtimeVoicesEnum.marin;
+        if (!string.IsNullOrWhiteSpace(options.Voice) &&
+            !Enum.TryParse(options.Voice, ignoreCase: true, out voice))
+        {
+            throw new EdgeException(
+                $"Unknown OpenAI voice '{options.Voice}'. Choose one of: {string.Join(", ", Enum.GetNames<RealtimeVoicesEnum>())}.");
+        }
+
+        // Only the built-in "max" avatar exists for now; anything else is a clear error.
+        bool avatar = options.Avatar != null;
+        if (avatar && !options.Avatar!.Equals("max", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new EdgeException($"Unknown avatar '{options.Avatar}'. The only built-in avatar is 'max'.");
+        }
+
+        return new OpenAiAgentParticipant(apiKey!, voice, options.Persona, options.Greeting, avatar, loggerFactory, logger);
     }
 }

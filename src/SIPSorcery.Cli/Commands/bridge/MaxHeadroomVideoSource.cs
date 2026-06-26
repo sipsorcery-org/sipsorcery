@@ -99,12 +99,29 @@ namespace SIPSorcery.Cli.Commands.Bridge
         // Animation state, written by the speaker thread, read by the render thread.
         private volatile int _currentViseme;
         private volatile bool _isSpeaking;
+        private volatile bool _audioDrivenMouth;
+        private int _audioLevelBits;   // float 0..1 stored as bits for lock-free cross-thread reads.
 
         /// <summary>The current Azure viseme id (0-21) to render the mouth for.</summary>
         public int CurrentViseme { get => _currentViseme; set => _currentViseme = value; }
 
         /// <summary>When true a little extra "live" jitter/glitch is added.</summary>
         public bool IsSpeaking { get => _isSpeaking; set => _isSpeaking = value; }
+
+        /// <summary>
+        /// When true the mouth is driven by <see cref="AudioLevel"/> (an audio envelope) instead of
+        /// <see cref="CurrentViseme"/>. Used by sources that have no viseme timeline, e.g. the OpenAI
+        /// Realtime voice, where lip-sync has to be derived from the speech amplitude.
+        /// </summary>
+        public bool AudioDrivenMouth { get => _audioDrivenMouth; set => _audioDrivenMouth = value; }
+
+        /// <summary>Mouth openness 0..1 when <see cref="AudioDrivenMouth"/> is set (the smoothed speech
+        /// envelope). Written by the audio thread, read by the render thread.</summary>
+        public float AudioLevel
+        {
+            get => BitConverter.Int32BitsToSingle(Volatile.Read(ref _audioLevelBits));
+            set => Volatile.Write(ref _audioLevelBits, BitConverter.SingleToInt32Bits(value < 0f ? 0f : value > 1f ? 1f : value));
+        }
 
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
         public event EncodedSampleDelegate OnVideoSourceEncodedSample;
@@ -543,12 +560,25 @@ namespace SIPSorcery.Cli.Commands.Bridge
 
         private void DrawMouth(SKCanvas canvas, float cx, float cy, int visemeId)
         {
-            if (visemeId < 0 || visemeId >= _visemeShapes.Length)
+            float open, spread, round;
+            if (_audioDrivenMouth)
             {
-                visemeId = 0;
+                // No viseme timeline (e.g. the OpenAI Realtime voice): open the mouth in proportion to
+                // the speech envelope. A neutral spread/round reads as generic talking; a small floor
+                // keeps the lips from snapping fully shut between syllables.
+                float level = AudioLevel;
+                open = 0.08f + 0.80f * level;
+                spread = 0.82f - 0.10f * level;   // narrows a touch as it opens, like a real jaw
+                round = 0.18f;
             }
-
-            var (open, spread, round) = _visemeShapes[visemeId];
+            else
+            {
+                if (visemeId < 0 || visemeId >= _visemeShapes.Length)
+                {
+                    visemeId = 0;
+                }
+                (open, spread, round) = _visemeShapes[visemeId];
+            }
 
             float hw = 70f * spread * (1f - 0.45f * round);
             float hh = Math.Max(2f, 46f * open);

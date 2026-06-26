@@ -51,10 +51,11 @@ public sealed class WebParticipant : IBridgeParticipant
     {
         _bridge = new BrowserAudioBridge(port, openBrowser, logger, enableVideo);
 
-        // The browser microphone (encoded OPUS) becomes an audio MediaFrame. The agent only decodes
-        // the payload for speech-to-text, so the frame's duration is not needed on this direction.
+        // The browser microphone (encoded OPUS) becomes an audio MediaFrame. The Azure agent only
+        // decodes the payload (duration unused), but the openai endpoint re-sends it on its own track,
+        // so carry the real frame duration (its RTP clock units) for that direction.
         _bridge.OnMicFrameReceived += frame =>
-            OnFrame?.Invoke(MediaFrame.ForAudio(frame.EncodedAudio, 0, 0, AudioCommonlyUsedFormats.OpusWebRTC));
+            OnFrame?.Invoke(MediaFrame.ForAudio(frame.EncodedAudio, 0, ToRtpUnits(frame), AudioCommonlyUsedFormats.OpusWebRTC));
 
         _bridge.OnBrowserConnected += () => Connected?.Invoke();
         _bridge.OnBrowserDisconnected += () => _completion.TrySetResult();
@@ -83,6 +84,10 @@ public sealed class WebParticipant : IBridgeParticipant
         Interlocked.Increment(ref _framesToBrowser);
         Interlocked.Add(ref _bytesToBrowser, frame.Payload.Length);
     }
+
+    /// <summary>Converts a mic frame's millisecond duration to its OPUS RTP clock units.</summary>
+    private static uint ToRtpUnits(EncodedAudioFrame frame) =>
+        (uint)((long)frame.DurationMilliSeconds * frame.AudioFormat.RtpClockRate / 1000);
 
     public SinkStats GetStats() => new(_framesToBrowser, Interlocked.Read(ref _bytesToBrowser), 0);
 
