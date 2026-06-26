@@ -38,7 +38,7 @@ using SIPSorceryMedia.FFmpeg;
 
 namespace SIPSorcery.Cli.Commands.Bridge;
 
-public sealed class AzureAgentParticipant : IBridgeParticipant
+public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable
 {
     public const string DEFAULT_GREETING = "M-m-max Headroom here. Welcome to the show!";
 
@@ -141,6 +141,15 @@ public sealed class AzureAgentParticipant : IBridgeParticipant
         }
         await _recognizer.StartAsync().ConfigureAwait(false);
         _logger.LogDebug("Voice agent started{Avatar}.", _avatar != null ? " with avatar" : "");
+
+        if (_llm.IsConfigured)
+        {
+            _logger.LogDebug("Agent LLM: model '{Model}' at {Endpoint}.", _llm.Model, _llm.Endpoint);
+        }
+        else
+        {
+            _logger.LogDebug("Agent LLM: none configured (--llm/LLM_ENDPOINT unset); echoing recognised speech.");
+        }
     }
 
     /// <summary>Inbound audio from the other participant: decode to 16 kHz PCM and feed the recogniser

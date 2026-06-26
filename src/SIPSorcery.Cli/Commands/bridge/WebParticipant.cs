@@ -30,7 +30,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Cli.Commands.Bridge;
 
-public sealed class WebParticipant : IBridgeParticipant
+public sealed class WebParticipant : IBridgeParticipant, IConnectable
 {
     private readonly BrowserAudioBridge _bridge;
     private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);

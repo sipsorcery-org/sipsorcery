@@ -40,11 +40,12 @@ sipsorcery route --from livekit:demo-room --to web --audio-codec opus           
 
 # Bridge: connect two duplex endpoints BOTH ways (full duplex). Where route is directional (--from/--to),
 # bridge is symmetric and order-agnostic. v0.1 endpoints: web (a browser mic+speaker page), agent (an
-# Azure speech-to-text -> LLM -> Azure text-to-speech voice agent) and openai (the OpenAI Realtime API).
-# See "The bridge verb" below.
+# Azure speech-to-text -> LLM -> Azure text-to-speech voice agent), openai (the OpenAI Realtime API) and
+# sip:<uri> (a phone call, transcoded G.711 <-> Opus). See "The bridge verb" below.
 sipsorcery bridge web agent --open             # open a browser and TALK to an Azure voice agent (e.g. Max Headroom)
 sipsorcery bridge web openai --open            # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
 sipsorcery bridge web openai --avatar --open   # ...with a lip-synced video face (mouth driven by the speech envelope)
+sipsorcery bridge sip:alice@example.com agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
 
 # Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
 # candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
@@ -167,6 +168,7 @@ v0.1 endpoints:
 | `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page; `--open` launches it, `--port` sets the port). Reuses the `openai chat` browser bridge. |
 | `agent` | A locally-assembled **voice agent**: **Azure speech-to-text → LLM → Azure text-to-speech**, with a Max Headroom persona by default. You speak, it listens, thinks and replies. |
 | `openai` | A voice agent backed by the **OpenAI Realtime API** — OpenAI does the listening, thinking and speaking in one hop. Opus passes straight through both ways (repacketise, not transcode). Needs an OpenAI key (`--api-key` or `OPENAI_API_KEY`); `--voice` picks a Realtime voice (marin, alloy, verse, …), `--persona` sets the system prompt. |
+| `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--user`/`--password` authenticate if challenged; a phone has no video, so an agent `--avatar` is simply not sent to it. |
 
 ```bash
 # Set the agent's credentials (or pass --azure-key/--azure-region/--llm), then:
@@ -198,8 +200,22 @@ sipsorcery bridge web openai --avatar --open                # mouth driven by th
 
 The two avatars differ in how the mouth is driven: the Azure `agent` has a viseme timeline, so its
 lip-sync is phoneme-accurate; the `openai` voice has none, so its mouth is **audio-driven** from the
-speech envelope (reads as generic talking that tracks the speech). A `sip:` peer (phone ↔ agent) and
-pluggable/external avatars are planned.
+speech envelope (reads as generic talking that tracks the speech).
+
+Either agent also answers the **phone**: a `sip:<uri>` peer places a SIP call and bridges the caller to
+the other side, so someone on a handset can speak to the agent. The endpoints are symmetric, so the
+agent can be on either side:
+
+```bash
+sipsorcery bridge sip:alice@example.com agent          # call alice, bridge her to the Azure agent
+sipsorcery bridge sip:alice@example.com openai         # ...or to the OpenAI Realtime agent
+sipsorcery bridge sip:1001@pbx.local agent --user 1000 --password secret   # authenticate the call
+```
+
+The SIP leg is **G.711** (8 kHz); every other endpoint speaks **48 kHz Opus**, so this peer transcodes
+G.711 ↔ Opus at its boundary (audio is light enough to transcode in managed code — only video is
+delegated to ffmpeg, and a phone has no video, so an agent `--avatar` is just not sent to it). The agent
+greets the moment the call is answered. Pluggable/external avatars are planned.
 
 ## Exit codes
 
@@ -216,9 +232,9 @@ pluggable/external avatars are planned.
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
 `whep:`/`sip:`/`livekit:` sources, `whip:`/`web`/`livekit:` sinks and an ffmpeg-backed audio-scope
 transform wired in. The `bridge` verb adds the duplex case (two endpoints both ways), with `web`, a
-local Azure voice `agent` and an `openai` Realtime agent as the endpoints, each with an optional
-lip-synced `--avatar`. Streaming verbs default to `-d 0` (run until ctrl-c); pass a positive
-`--duration` for a fixed window. Fan-in, richer transforms, the remaining transport edges, the `sip:`
-bridge peer, pluggable/external avatars, and the authoring layers above the graph (declarative routing,
-scripted policies, an external control API) are planned. Feedback and issues welcome on the
-[SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).
+local Azure voice `agent`, an `openai` Realtime agent and a `sip:` phone peer (transcoded G.711 ↔ Opus)
+as the endpoints, the agents each with an optional lip-synced `--avatar`. Streaming verbs default to
+`-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer transforms,
+the remaining transport edges, pluggable/external avatars, and the authoring layers above the graph
+(declarative routing, scripted policies, an external control API) are planned. Feedback and issues
+welcome on the [SIPSorcery repo](https://github.com/sipsorcery-org/sipsorcery).

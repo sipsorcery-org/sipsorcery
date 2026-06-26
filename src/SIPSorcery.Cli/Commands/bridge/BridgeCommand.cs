@@ -51,8 +51,8 @@ public sealed class BridgeCommand : CommandBase
 
     public override Command Build()
     {
-        var aArg = new Argument<string>("a") { Description = "The first endpoint: web, agent or openai." };
-        var bArg = new Argument<string>("b") { Description = "The second endpoint: web, agent or openai." };
+        var aArg = new Argument<string>("a") { Description = "The first endpoint: web, agent, openai or sip:<uri>." };
+        var bArg = new Argument<string>("b") { Description = "The second endpoint: web, agent, openai or sip:<uri>." };
 
         var portOption = new Option<int>("--port")
         {
@@ -102,6 +102,14 @@ public sealed class BridgeCommand : CommandBase
         {
             Description = "Show a lip-synced video face (the Max Headroom avatar) on the agent in the browser."
         };
+        var userOption = new Option<string?>("--user", "-u")
+        {
+            Description = "Username to authenticate a sip: endpoint's call (if the destination challenges)."
+        };
+        var passwordOption = new Option<string?>("--password")
+        {
+            Description = "Password for the sip: endpoint's --user."
+        };
         var durationOption = new Option<int>("--duration", "-d")
         {
             Description = "Seconds to run for. 0 (default) runs until a participant leaves or ctrl-c.",
@@ -123,6 +131,8 @@ public sealed class BridgeCommand : CommandBase
         command.Options.Add(azureKeyOption);
         command.Options.Add(azureRegionOption);
         command.Options.Add(avatarOption);
+        command.Options.Add(userOption);
+        command.Options.Add(passwordOption);
         command.Options.Add(durationOption);
         AddCommonOptions(command);
 
@@ -140,7 +150,10 @@ public sealed class BridgeCommand : CommandBase
                 parseResult.GetValue(llmModelOption),
                 parseResult.GetValue(apiKeyOption),
                 parseResult.GetValue(greetingOption),
-                parseResult.GetValue(avatarOption) ? "max" : null),
+                parseResult.GetValue(avatarOption) ? "max" : null,
+                parseResult.GetValue(userOption),
+                parseResult.GetValue(passwordOption),
+                parseResult.GetValue(TimeoutOption)),
             parseResult.GetValue(durationOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -220,11 +233,13 @@ public sealed class BridgeCommand : CommandBase
 
     private static void WireGreeting(IBridgeParticipant a, IBridgeParticipant b)
     {
-        var web = a as WebParticipant ?? b as WebParticipant;
-        var agent = a as IGreetable ?? b as IGreetable;
-        if (web != null && agent != null)
+        // The agent greets when the far side first connects (a browser opening the page, a SIP call
+        // answered). The connectable is whichever side announces a connection; the greeter is the agent.
+        var greeter = a as IGreetable ?? b as IGreetable;
+        var connectable = (a is IGreetable ? null : a as IConnectable) ?? (b is IGreetable ? null : b as IConnectable);
+        if (greeter != null && connectable != null)
         {
-            web.Connected += agent.Greet;
+            connectable.Connected += greeter.Greet;
         }
     }
 

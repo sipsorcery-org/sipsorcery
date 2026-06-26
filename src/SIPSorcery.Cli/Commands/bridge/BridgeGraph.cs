@@ -36,11 +36,18 @@ public interface IBridgeParticipant : ISourceNode, ISinkNode
     new Task StartAsync(CancellationToken ct);
 }
 
-/// <summary>An agent participant that can speak first when cued (the web peer connecting). Lets the
+/// <summary>An agent participant that can speak first when cued (the far side connecting). Lets the
 /// command wire a greeting without knowing which concrete agent (Azure, OpenAI) is on the other side.</summary>
 public interface IGreetable
 {
     void Greet();
+}
+
+/// <summary>A participant that announces when its far side first connects (a browser opening the page,
+/// a SIP call being answered). The command uses it to cue the other side's greeting.</summary>
+public interface IConnectable
+{
+    event Action? Connected;
 }
 
 /// <summary>Cross-wires two participants and pumps media between them in both directions.</summary>

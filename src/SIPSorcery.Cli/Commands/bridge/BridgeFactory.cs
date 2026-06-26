@@ -18,7 +18,9 @@
 using System;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Cli.Commands.Route;
+using SIPSorcery.Cli.Common;
 using SIPSorcery.OpenAI.Realtime.Models;
+using SIPSorcery.SIP;
 
 namespace SIPSorcery.Cli.Commands.Bridge;
 
@@ -34,13 +36,26 @@ public sealed record BridgeOptions(
     string? LlmModel = null,
     string? LlmApiKey = null,
     string? Greeting = null,
-    string? Avatar = null);
+    string? Avatar = null,
+    string? SipUsername = null,
+    string? SipPassword = null,
+    int RingTimeoutSeconds = 30);
 
 public static class BridgeFactory
 {
     public static IBridgeParticipant CreateParticipant(string spec, BridgeOptions options, ILoggerFactory loggerFactory, ILogger logger)
     {
-        switch (spec.Trim().ToLowerInvariant())
+        string trimmed = spec.Trim();
+
+        // A sip:/sips: scheme, or a bare user@host, is a SIP call (SipDestination handles both forms).
+        if (trimmed.StartsWith("sip:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("sips:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Contains('@'))
+        {
+            return CreateSip(trimmed, options, logger);
+        }
+
+        switch (trimmed.ToLowerInvariant())
         {
             case "web":
                 // The page offers a video track only when an avatar is in play (the agent's face).
@@ -52,15 +67,13 @@ public static class BridgeFactory
             case "openai":
                 return CreateOpenAi(options, loggerFactory, logger);
 
-            case "sip":
-            case "sips":
             case "livekit":
                 throw new EdgeException(
-                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent, openai). " +
-                    "A sip: peer and livekit become bridge endpoints in a later version.");
+                    $"'{spec}' is not wired into bridge yet (endpoints: web, agent, openai, sip:<uri>). " +
+                    "livekit becomes a bridge endpoint in a later version.");
 
             default:
-                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent, openai.");
+                throw new EdgeException($"Unknown bridge endpoint '{spec}'. Endpoints: web, agent, openai, sip:<uri>.");
         }
     }
 
@@ -120,5 +133,23 @@ public static class BridgeFactory
         }
 
         return new OpenAiAgentParticipant(apiKey!, voice, options.Persona, options.Greeting, avatar, loggerFactory, logger);
+    }
+
+    private static IBridgeParticipant CreateSip(string spec, BridgeOptions options, ILogger logger)
+    {
+        // Reject a bare scheme with no destination before the lenient parser accepts it as an empty host.
+        string rest = spec.Contains(':') ? spec[(spec.IndexOf(':') + 1)..] : spec;
+        if (string.IsNullOrWhiteSpace(rest))
+        {
+            throw new EdgeException("The sip endpoint needs a destination, e.g. bridge sip:music@iptel.org agent.");
+        }
+
+        // SipDestination accepts both "sip:"/"sips:" and a bare user@host, so pass the original spec.
+        if (!SipDestination.TryParse(spec, out SIPURI uri, out string? error))
+        {
+            throw new EdgeException(error!);
+        }
+
+        return new SipBridgeParticipant(uri, options.SipUsername, options.SipPassword, options.RingTimeoutSeconds, logger);
     }
 }
