@@ -100,7 +100,8 @@ public sealed class BridgeCommand : CommandBase
         };
         var avatarOption = new Option<bool>("--avatar")
         {
-            Description = "Show a lip-synced video face (the Max Headroom avatar) on the agent in the browser."
+            Description = "Give the agent a lip-synced video face (the Max Headroom avatar): a video track to " +
+                          "the web peer, or a video call to a sip: peer."
         };
         var userOption = new Option<string?>("--user", "-u")
         {
@@ -190,8 +191,10 @@ public sealed class BridgeCommand : CommandBase
             return WriteResult(asJson, new BridgeResult(false, a, b, "invalid endpoint", 0, 0, 0, ex.Message), ExitCodes.InvalidArgument);
         }
 
-        // Cue the agent's greeting when the web peer connects (the only control wire the bridge needs).
+        // Cue the agent's greeting when the web peer connects, and relay the agent transcript to the
+        // web peer's browser console. Both are side-channels the media graph doesn't carry.
         WireGreeting(participantA, participantB);
+        WireTranscript(participantA, participantB);
 
         var graph = new BridgeGraph(participantA, participantB);
 
@@ -240,6 +243,18 @@ public sealed class BridgeCommand : CommandBase
         if (greeter != null && connectable != null)
         {
             connectable.Connected += greeter.Greet;
+        }
+    }
+
+    private static void WireTranscript(IBridgeParticipant a, IBridgeParticipant b)
+    {
+        // The agent produces the transcript; the web peer shows it in the browser console. Only meaningful
+        // when one side is a web peer (a sip: peer has nowhere to log it), so it no-ops otherwise.
+        var web = a as WebParticipant ?? b as WebParticipant;
+        var source = a as ITranscriptSource ?? b as ITranscriptSource;
+        if (web != null && source != null)
+        {
+            source.OnTranscript += web.SendTranscript;
         }
     }
 

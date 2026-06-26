@@ -39,17 +39,9 @@ cloudflareCommand.Subcommands.Add(new CloudflareTurnCommand().Build());
 cloudflareCommand.Subcommands.Add(new CloudflareSfuCommand().Build());
 rootCommand.Subcommands.Add(cloudflareCommand);
 
-var livekitCommand = new Command("livekit", "LiveKit operations: room access and publish checks.");
-livekitCommand.Subcommands.Add(new LiveKitRoomCommand().Build());
-rootCommand.Subcommands.Add(livekitCommand);
-
-var openaiCommand = new Command("openai", "OpenAI operations: Realtime WebRTC API connectivity checks and voice chat.");
-openaiCommand.Subcommands.Add(new OpenAiRealtimeCommand().Build());
-openaiCommand.Subcommands.Add(new OpenAiChatCommand().Build());
-rootCommand.Subcommands.Add(openaiCommand);
-
 // route is a top-level verb (not a noun/verb pair): it wires a source edge to one or more sink edges
-// over a stream graph. It is the seed of the stream-routing flagship.
+// over a stream graph. It is the seed of the stream-routing flagship. LiveKit and OpenAI are reached
+// through route/bridge edges (livekit:<room>, bridge web openai), so they have no standalone verbs.
 rootCommand.Subcommands.Add(new RouteCommand().Build());
 
 // bridge is the duplex counterpart to route: it connects two endpoints both ways (e.g. talk to a

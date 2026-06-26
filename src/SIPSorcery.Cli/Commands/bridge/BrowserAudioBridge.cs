@@ -1,19 +1,19 @@
 //-----------------------------------------------------------------------------
 // Filename: BrowserAudioBridge.cs
 //
-// Description: A browser-as-audio-device for the "openai chat" verb. It hosts a
+// Description: A browser-as-audio-device for the bridge "web" peer. It hosts a
 // local HTTP listener that serves a small page; the page captures the microphone
-// with getUserMedia and plays the model's voice, over a single send/recv OPUS
+// with getUserMedia and plays the agent's voice, over a single send/recv OPUS
 // WebRTC peer connection back to the CLI. The CLI then relays OPUS frames between
-// this browser peer connection and the OpenAI endpoint in both directions
+// this browser peer connection and the other bridge endpoint in both directions
 // (repacketise, not transcode) - the browser is the microphone AND the speaker.
 //
-// This replaces the fragile ffmpeg microphone capture (a piped s16le stdin) and
-// the ffplay output: the browser is a far more reliable cross platform audio
-// device, and crucially it has a built-in acoustic echo canceller, so unlike the
-// piped path this is FULL DUPLEX - no half-duplex mic gating is needed, the model
-// can be interrupted (barge-in). getUserMedia works over http://localhost because
-// localhost is a secure context, so no TLS is required.
+// The browser is a reliable cross platform audio device, and crucially it has a
+// built-in acoustic echo canceller, so this is FULL DUPLEX - no half-duplex mic
+// gating is needed, the agent can be interrupted (barge-in). getUserMedia works
+// over http://localhost because localhost is a secure context, so no TLS is
+// required. The page also opens a "transcript" data channel the CLI pushes the
+// conversation transcript down, which the page logs to the browser console.
 //
 // The HTTP + answer plumbing mirrors the route "web" sink (an HttpListener that
 // serves a page and answers a browser SDP offer), kept as raw HttpListener so the
@@ -32,15 +32,17 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Cli.Commands;
+namespace SIPSorcery.Cli.Commands.Bridge;
 
 internal sealed class BrowserAudioBridge : IAsyncDisposable
 {
     private const string WHEP_PATH = "/whep";
+    private const string TRANSCRIPT_CHANNEL = "transcript";
 
     private readonly int _port;
     private readonly bool _openBrowser;
@@ -49,6 +51,7 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
     private readonly HttpListener _listener = new();
 
     private RTCPeerConnection? _browserPc;
+    private RTCDataChannel? _transcriptChannel;     // the browser-created channel we push transcript text to
     private readonly object _pcLock = new();
     private CancellationTokenSource? _cts;
     private Task? _acceptLoop;
@@ -162,6 +165,26 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
         }
     }
 
+    /// <summary>Pushes a transcript line to the browser over the data channel; the page logs it to the
+    /// console. A no-op until the channel is open, so early lines (a greeting) are simply skipped.</summary>
+    public void SendTranscript(string speaker, string text)
+    {
+        var dc = _transcriptChannel;
+        if (dc == null || !dc.IsOpened || string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        try
+        {
+            dc.send(JsonSerializer.Serialize(new { speaker, text }));
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("Browser transcript send failed: {Error}", excp.Message);
+        }
+    }
+
     private async Task AcceptLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested && _listener.IsListening)
@@ -245,6 +268,17 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
 
         pc.OnAudioFrameReceived += frame => OnMicFrameReceived?.Invoke(frame);
 
+        // The page opens a "transcript" data channel in its offer; capture it so we can push the running
+        // conversation transcript for the browser console (see SendTranscript).
+        pc.ondatachannel += dc =>
+        {
+            if (dc.label == TRANSCRIPT_CHANNEL)
+            {
+                _transcriptChannel = dc;
+                _logger.LogDebug("Browser transcript data channel opened.");
+            }
+        };
+
         pc.onconnectionstatechange += (state) =>
         {
             _logger.LogDebug("Browser audio peer connection state changed to {State}.", state);
@@ -266,6 +300,7 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
                     if (wasActive)
                     {
                         _browserPc = null;
+                        _transcriptChannel = null;
                     }
                 }
                 try { pc.Close("browser audio gone"); } catch { /* best effort */ }
@@ -369,6 +404,12 @@ internal sealed class BrowserAudioBridge : IAsyncDisposable
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
                     const pc = new RTCPeerConnection();
                     stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+                    // A data channel the CLI pushes the conversation transcript down; log it to the console.
+                    const transcript = pc.createDataChannel('transcript');
+                    transcript.onmessage = (e) => {
+                      try { const m = JSON.parse(e.data); console.debug('[' + m.speaker + '] ' + m.text); }
+                      catch { console.debug(e.data); }
+                    };
                     //VIDEO_TX
                     pc.ontrack = (e) => { const el = e.track.kind === 'video' ? document.getElementById('v') : document.getElementById('a'); if (el) el.srcObject = e.streams[0]; };
                     pc.onconnectionstatechange = () => {

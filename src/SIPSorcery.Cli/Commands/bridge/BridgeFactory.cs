@@ -150,6 +150,10 @@ public static class BridgeFactory
             throw new EdgeException(error!);
         }
 
-        return new SipBridgeParticipant(uri, options.SipUsername, options.SipPassword, options.RingTimeoutSeconds, logger);
+        // An avatar makes the call a video call: offer a send-only video m-line for the agent's face, the
+        // same way --avatar makes the web peer offer a video track. A phone with no video just declines it.
+        bool video = options.Avatar != null;
+
+        return new SipBridgeParticipant(uri, options.SipUsername, options.SipPassword, options.RingTimeoutSeconds, video, logger);
     }
 }

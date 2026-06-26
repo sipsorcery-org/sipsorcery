@@ -50,6 +50,14 @@ public interface IConnectable
     event Action? Connected;
 }
 
+/// <summary>An agent that produces a running transcript of the conversation. Raised with (speaker, text)
+/// for each finalised utterance - "you" for the human, "ai" for the agent. The command relays it to a web
+/// peer so it shows up in the browser console.</summary>
+public interface ITranscriptSource
+{
+    event Action<string, string>? OnTranscript;
+}
+
 /// <summary>Cross-wires two participants and pumps media between them in both directions.</summary>
 public sealed class BridgeGraph
 {

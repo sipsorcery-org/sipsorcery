@@ -57,32 +57,10 @@ sipsorcery cloudflare turn --transport udp        # probe turn:3478?transport=ud
 # the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN.
 sipsorcery cloudflare sfu --app-id <app-id> --token <api-token> -d 10
 
-# LiveKit room: mint an access token, join a room and publish a VP8 + OPUS test pattern. Defaults
-# to LIVEKIT_WEBSOCKET_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET.
-sipsorcery livekit room --url wss://my-app.livekit.cloud --api-key <key> --api-secret <secret>
-sipsorcery livekit room --room my-room -d 30       # a specific room (default is a random name)
-
-# OpenAI Realtime: end to end connectivity test for the Realtime WebRTC API. Negotiates the
-# connection, asks the model to speak and succeeds when its voice is received. No audio device is
-# used. Defaults to the OPENAI_API_KEY environment variable.
-sipsorcery openai realtime
-sipsorcery openai realtime --voice verse --prompt "Count to three."
-sipsorcery openai realtime --audio play              # hear the model's reply (ffplay)
-sipsorcery openai realtime --audio reply.wav         # record the model's reply to a WAV file
-sipsorcery openai realtime --audio - > reply.pcm     # raw s16le PCM on stdout (the result moves to stderr)
-
-# OpenAI chat: an interactive voice session (runs until ctrl-c).
-# --web is the easy path: a browser becomes the microphone AND speaker over WebRTC (no ffmpeg). The
-# browser's echo canceller makes it FULL-DUPLEX, so you can interrupt the assistant (barge-in). It
-# hosts a page on http://localhost:8080 (set --web-port) and opens it; click "Start talking".
-sipsorcery openai chat --web
-sipsorcery openai chat --web --web-port 9000 --voice verse
-# Alternatively use ffmpeg/ffplay as the audio device: --play - reads mic PCM from stdin (pipe an
-# ffmpeg capture). This path gates the mic while the model speaks (half-duplex, no echo canceller), so
-# use a headset for barge-in. Capture device syntax is per-OS (dshow/avfoundation/pulse); install ffmpeg.
-ffmpeg -f dshow -i audio="Microphone (Realtek Audio)" -ac 1 -ar 48000 -f s16le - \
-  | sipsorcery openai chat --play -
-sipsorcery openai chat               # listen-only (hear the model via ffplay, no mic)
+# LiveKit and OpenAI have no standalone verbs: they are reached as route/bridge edges.
+sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus -d 5   # publish to a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_*)
+sipsorcery route --from livekit:demo-room --to web --audio-codec opus                # ...and subscribe to it in a browser
+sipsorcery bridge web openai --open                                                  # talk to OpenAI Realtime in a browser (OPENAI_API_KEY)
 ```
 
 ### The route verb
@@ -165,10 +143,10 @@ v0.1 endpoints:
 
 | Endpoint | Role |
 |----------|------|
-| `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page; `--open` launches it, `--port` sets the port). Reuses the `openai chat` browser bridge. |
+| `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page; `--open` launches it, `--port` sets the port). When the other side is an agent, the live **conversation transcript is logged to the browser console** (`[you] …` / `[ai] …`) over a data channel. |
 | `agent` | A locally-assembled **voice agent**: **Azure speech-to-text → LLM → Azure text-to-speech**, with a Max Headroom persona by default. You speak, it listens, thinks and replies. |
 | `openai` | A voice agent backed by the **OpenAI Realtime API** — OpenAI does the listening, thinking and speaking in one hop. Opus passes straight through both ways (repacketise, not transcode). Needs an OpenAI key (`--api-key` or `OPENAI_API_KEY`); `--voice` picks a Realtime voice (marin, alloy, verse, …), `--persona` sets the system prompt. |
-| `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--user`/`--password` authenticate if challenged; a phone has no video, so an agent `--avatar` is simply not sent to it. |
+| `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--user`/`--password` authenticate if challenged. With `--avatar` the call becomes a **video call** (a send-only H264 m-line carrying the agent's face); a phone that can't do video just declines it and the call stays audio-only. |
 
 ```bash
 # Set the agent's credentials (or pass --azure-key/--azure-region/--llm), then:
@@ -214,8 +192,19 @@ sipsorcery bridge sip:1001@pbx.local agent --user 1000 --password secret   # aut
 
 The SIP leg is **G.711** (8 kHz); every other endpoint speaks **48 kHz Opus**, so this peer transcodes
 G.711 ↔ Opus at its boundary (audio is light enough to transcode in managed code — only video is
-delegated to ffmpeg, and a phone has no video, so an agent `--avatar` is just not sent to it). The agent
-greets the moment the call is answered. Pluggable/external avatars are planned.
+delegated to ffmpeg). The agent greets the moment the call is answered.
+
+Adding **`--avatar`** turns it into a **video call**: the SIP leg offers a send-only H264 m-line and the
+agent's lip-synced face is sent down it, so a **video softphone** (Linphone, Zoiper, …) shows the avatar
+while you talk to it — the same `--avatar` that paints the face in the browser, no extra flag:
+
+```bash
+sipsorcery bridge sip:alice@example.com agent  --avatar    # Azure agent, viseme lip-sync, on the phone
+sipsorcery bridge sip:alice@example.com openai --avatar    # OpenAI agent, envelope lip-sync, on the phone
+```
+
+An audio-only phone simply rejects the video m-line and the call carries on as audio. Pluggable/external
+avatars are planned.
 
 ## Exit codes
 

@@ -89,6 +89,10 @@ namespace SIPSorcery.Cli.Commands.Bridge
         private readonly Random _rng = new();
 
         private Timer _renderTimer;
+        // Serialises a render against teardown: the timer fires on a thread-pool thread and could otherwise
+        // run RenderFrame after CloseVideo/Dispose has freed the SKBitmap and encoder, reading freed native
+        // memory (an AccessViolationException on hangup). Held for the whole render and the whole dispose.
+        private readonly object _renderLock = new();
         private int _frameSpacingMs = 1000 / DEFAULT_FRAMES_PER_SECOND;
         private int _frameCount;
         private bool _isStarted;
@@ -182,60 +186,71 @@ namespace SIPSorcery.Cli.Commands.Bridge
 
         public Task CloseVideo()
         {
-            if (!_isClosed)
+            // Under _renderLock so an in-flight RenderFrame finishes before we mark closed; once _isClosed
+            // is set under the lock no later render proceeds.
+            lock (_renderLock)
             {
-                _isClosed = true;
-                _renderTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                if (!_isClosed)
+                {
+                    _isClosed = true;
+                    _renderTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                }
             }
             return Task.CompletedTask;
         }
 
         private void RenderFrame(object state)
         {
-            bool hasRawSubscribers = OnVideoSourceRawSample != null;
-            bool hasEncodedSubscribers = _videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty();
-
-            if (_isClosed || _isPaused || _faulted || (!hasRawSubscribers && !hasEncodedSubscribers))
+            // The whole render holds _renderLock so teardown (which takes the same lock) cannot free the
+            // bitmap/encoder mid-frame. Re-check _isClosed INSIDE the lock: a Dispose that ran between the
+            // timer firing and us taking the lock will have set it, so we bail before touching freed memory.
+            lock (_renderLock)
             {
-                return;
-            }
+                bool hasRawSubscribers = OnVideoSourceRawSample != null;
+                bool hasEncodedSubscribers = _videoEncoder != null && OnVideoSourceEncodedSample != null && !_formatManager.SelectedFormat.IsEmpty();
 
-            try
-            {
-                _frameCount++;
-
-                using (var canvas = new SKCanvas(_bitmap))
+                if (_isClosed || _isPaused || _faulted || (!hasRawSubscribers && !hasEncodedSubscribers))
                 {
-                    DrawScene(canvas, _frameCount);
-                    //ApplyGlitch(canvas, _frameCount);
+                    return;
                 }
 
-                BgraToBgr(_bitmap.GetPixelSpan(), _bgrBuffer);
-
-                OnVideoSourceRawSample?.Invoke((uint)_frameSpacingMs, WIDTH, HEIGHT, _bgrBuffer, VideoPixelFormatsEnum.Bgr);
-
-                if (hasEncodedSubscribers)
+                try
                 {
-                    var encodedBuffer = _videoEncoder.EncodeVideo(WIDTH, HEIGHT, _bgrBuffer, VideoPixelFormatsEnum.Bgr, _formatManager.SelectedFormat.Codec);
+                    _frameCount++;
 
-                    if (encodedBuffer != null)
+                    using (var canvas = new SKCanvas(_bitmap))
                     {
-                        uint fps = _frameSpacingMs > 0 ? 1000u / (uint)_frameSpacingMs : DEFAULT_FRAMES_PER_SECOND;
-                        uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
-                        OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
+                        DrawScene(canvas, _frameCount);
+                        //ApplyGlitch(canvas, _frameCount);
+                    }
+
+                    BgraToBgr(_bitmap.GetPixelSpan(), _bgrBuffer);
+
+                    OnVideoSourceRawSample?.Invoke((uint)_frameSpacingMs, WIDTH, HEIGHT, _bgrBuffer, VideoPixelFormatsEnum.Bgr);
+
+                    if (hasEncodedSubscribers)
+                    {
+                        var encodedBuffer = _videoEncoder.EncodeVideo(WIDTH, HEIGHT, _bgrBuffer, VideoPixelFormatsEnum.Bgr, _formatManager.SelectedFormat.Codec);
+
+                        if (encodedBuffer != null)
+                        {
+                            uint fps = _frameSpacingMs > 0 ? 1000u / (uint)_frameSpacingMs : DEFAULT_FRAMES_PER_SECOND;
+                            uint durationRtpTS = VIDEO_SAMPLING_RATE / fps;
+                            OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encodedBuffer);
+                        }
                     }
                 }
-            }
-            catch (Exception excp)
-            {
-                // A render/encode failure here (e.g. the negotiated codec is missing from the
-                // FFmpeg build) is not transient - it recurs on every frame. Stop the render loop
-                // and surface the error once via OnVideoSourceError rather than logging it ~25x a
-                // second.
-                _faulted = true;
-                _renderTimer.Change(Timeout.Infinite, Timeout.Infinite);
-                logger.LogError(excp, "Fatal error in MaxHeadroomVideoSource render loop; stopping video.");
-                OnVideoSourceError?.Invoke(excp.Message);
+                catch (Exception excp)
+                {
+                    // A render/encode failure here (e.g. the negotiated codec is missing from the
+                    // FFmpeg build) is not transient - it recurs on every frame. Stop the render loop
+                    // and surface the error once via OnVideoSourceError rather than logging it ~25x a
+                    // second.
+                    _faulted = true;
+                    _renderTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                    logger.LogError(excp, "Fatal error in MaxHeadroomVideoSource render loop; stopping video.");
+                    OnVideoSourceError?.Invoke(excp.Message);
+                }
             }
         }
 
@@ -653,10 +668,17 @@ namespace SIPSorcery.Cli.Commands.Bridge
 
         public void Dispose()
         {
-            _isClosed = true;
-            _renderTimer?.Dispose();
-            _bitmap?.Dispose();
-            _videoEncoder?.Dispose();
+            // Stop the timer first so no new callback queues, then free native resources under _renderLock
+            // so a render already in progress completes before the bitmap/encoder are disposed.
+            _renderTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            lock (_renderLock)
+            {
+                _isClosed = true;
+                _renderTimer?.Dispose();
+                _renderTimer = null;
+                _bitmap?.Dispose();
+                _videoEncoder?.Dispose();
+            }
         }
     }
 }

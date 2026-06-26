@@ -6,10 +6,10 @@
 // bridge graph - it produces the browser's microphone frames (OnFrame) and consumes
 // frames to play on the browser's speaker (Write).
 //
-// It composes the existing BrowserAudioBridge (the self-hosted page + signalling
-// already used by "openai chat"), bridging its EncodedAudioFrame microphone events
-// and its SendAudio to the route graph's MediaFrame, so there is no duplicated HTTP
-// or page code.
+// It composes the BrowserAudioBridge (the self-hosted page + signalling), bridging
+// its EncodedAudioFrame microphone events and its SendAudio to the route graph's
+// MediaFrame, so there is no duplicated HTTP or page code. It also relays the agent
+// transcript to the browser console via the bridge's data channel.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -84,6 +84,9 @@ public sealed class WebParticipant : IBridgeParticipant, IConnectable
         Interlocked.Increment(ref _framesToBrowser);
         Interlocked.Add(ref _bytesToBrowser, frame.Payload.Length);
     }
+
+    /// <summary>Relays a conversation transcript line to the browser console (over the data channel).</summary>
+    public void SendTranscript(string speaker, string text) => _bridge.SendTranscript(speaker, text);
 
     /// <summary>Converts a mic frame's millisecond duration to its OPUS RTP clock units.</summary>
     private static uint ToRtpUnits(EncodedAudioFrame frame) =>

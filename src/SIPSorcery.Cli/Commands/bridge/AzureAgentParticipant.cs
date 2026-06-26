@@ -38,7 +38,7 @@ using SIPSorceryMedia.FFmpeg;
 
 namespace SIPSorcery.Cli.Commands.Bridge;
 
-public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable
+public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITranscriptSource
 {
     public const string DEFAULT_GREETING = "M-m-max Headroom here. Welcome to the show!";
 
@@ -85,6 +85,8 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable
     private long _bytesSpoken;
 
     public event Action<MediaFrame>? OnFrame;
+
+    public event Action<string, string>? OnTranscript;
 
     public long? ConnectTimeMs => null;
 
@@ -201,6 +203,7 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable
 
     private async Task HandleUtteranceAsync(string prompt)
     {
+        OnTranscript?.Invoke("you", prompt.Trim());
         try
         {
             await foreach (var sentence in _llm.StreamReplyAsync(prompt))
@@ -225,6 +228,8 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable
         {
             return;
         }
+
+        OnTranscript?.Invoke("ai", text.Trim());
 
         await _speakLock.WaitAsync(_ct).ConfigureAwait(false);
         _speaking = true;       // stop feeding the mic to STT for this turn (avoid hearing ourselves)

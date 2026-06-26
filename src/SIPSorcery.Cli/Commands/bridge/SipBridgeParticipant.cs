@@ -57,6 +57,8 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
     private readonly string? _username;
     private readonly string? _password;
     private readonly int _ringTimeoutSeconds;
+    private readonly bool _video;                           // offer a video m-line for the agent's avatar
+    private readonly VideoFormat _h264 = RouteVideoFormats.H264;
     private readonly ILogger _logger;
 
     private readonly SIPTransport _sipTransport = new();
@@ -87,19 +89,31 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
 
     public Task Completion => _completion.Task;
 
-    public SipBridgeParticipant(SIPURI destination, string? username, string? password, int ringTimeoutSeconds, ILogger logger)
+    public SipBridgeParticipant(SIPURI destination, string? username, string? password, int ringTimeoutSeconds, bool video, ILogger logger)
     {
         _destination = destination;
         _username = username;
         _password = password;
         _ringTimeoutSeconds = ringTimeoutSeconds;
+        _video = video;
         _logger = logger;
     }
 
-    public string Describe() => $"sip:{_destination}";
+    public string Describe() => $"sip:{_destination}{(_video ? " +video" : "")}";
 
     public async Task StartAsync(CancellationToken ct)
     {
+        // Trace the full SIP messages (--verbose): the whole INVITE/answer/re-INVITE, headers and SDP body.
+        _sipTransport.SIPRequestOutTraceEvent += (local, remote, req) => LogSipMessage("sent to", remote, () => req.ToString());
+        _sipTransport.SIPRequestInTraceEvent += (local, remote, req) => LogSipMessage("received from", remote, () => req.ToString());
+        _sipTransport.SIPResponseInTraceEvent += (local, remote, resp) => LogSipMessage("received from", remote, () => resp.ToString());
+        _sipTransport.SIPResponseOutTraceEvent += (local, remote, resp) => LogSipMessage("sent to", remote, () => resp.ToString());
+
+        // Keep the call up: some softphones (e.g. MicroSIP) send in-dialog INFO/OPTIONS keepalives and hang
+        // up if they go unanswered. The user agent already answers in-dialog OPTIONS but never INFO, so we
+        // 200 OK the rest. See OnSipRequest for how double-responses are avoided.
+        _sipTransport.SIPTransportRequestReceived += OnSipRequest;
+
         var mediaSession = new VoIPMediaSession();
         mediaSession.AcceptRtpFromAny = true;
         _mediaSession = mediaSession;
@@ -111,6 +125,13 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
 
         mediaSession.OnAudioFormatsNegotiated += (formats) => _negotiatedFormat = formats.First();
         mediaSession.OnRtpPacketReceived += OnCallAudio;
+
+        // With an avatar in play, offer a send-only H264 video m-line so the agent's face goes to a video
+        // softphone. A phone that can't do video just rejects the m-line and the call stays audio-only.
+        if (_video)
+        {
+            mediaSession.addTrack(new MediaStreamTrack(new List<VideoFormat> { _h264 }, MediaStreamStatusEnum.SendOnly));
+        }
 
         _userAgent = new SIPUserAgent(_sipTransport, null);
         SIPResponse? failureResponse = null;
@@ -154,6 +175,50 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
             _negotiatedFormat.IsEmpty() ? "format pending" : _negotiatedFormat.Codec.ToString());
 
         Connected?.Invoke();
+    }
+
+    /// <summary>Answers in-call INFO/OPTIONS keepalives with 200 OK so the softphone doesn't tear the call
+    /// down. Runs alongside the user agent's own request handler (a shared, multicast transport event); the
+    /// agent already answers in-dialog OPTIONS, so to avoid a double response we only step in for INFO (never
+    /// handled) and OPTIONS the agent will not handle (e.g. an out-of-dialog keepalive).</summary>
+    private async Task OnSipRequest(SIPEndPoint local, SIPEndPoint remote, SIPRequest req)
+    {
+        if (req.Method != SIPMethodsEnum.INFO && req.Method != SIPMethodsEnum.OPTIONS)
+        {
+            return;
+        }
+
+        var dialogue = _userAgent?.Dialogue;
+        bool agentAnswersIt = req.Method == SIPMethodsEnum.OPTIONS
+            && dialogue != null
+            && req.Header.CallId == dialogue.CallId
+            && req.Header.From?.FromTag != null
+            && req.Header.To?.ToTag != null;
+        if (agentAnswersIt)
+        {
+            return;
+        }
+
+        try
+        {
+            var ok = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.Ok, null);
+            await _sipTransport.SendResponseAsync(ok).ConfigureAwait(false);
+            _logger.LogDebug("sip bridge answered {Method} with 200 OK.", req.Method);
+        }
+        catch (Exception excp)
+        {
+            _logger.LogDebug("sip bridge failed to answer {Method}: {Error}", req.Method, excp.Message);
+        }
+    }
+
+    /// <summary>Logs a full traced SIP message (headers + SDP) for --verbose debugging. The message string
+    /// is built lazily so nothing is serialised when debug logging is off.</summary>
+    private void LogSipMessage(string direction, SIPEndPoint remote, Func<string> message)
+    {
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug("SIP message {Direction} {Remote}:\n{Message}", direction, remote, message());
+        }
     }
 
     /// <summary>Inbound call audio (G.711): transcode up to 48 kHz OPUS and emit to the other side.</summary>
@@ -223,11 +288,28 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
         }
     }
 
-    /// <summary>The far side's audio (48 kHz OPUS): transcode down to G.711 and send it into the call.
-    /// Video frames (e.g. an agent avatar) are dropped - a phone has no video.</summary>
+    /// <summary>The far side's media. Audio (48 kHz OPUS) is transcoded down to G.711 and sent into the
+    /// call; video (the agent avatar's H264) is sent on the video m-line when one was offered (--avatar)
+    /// and the phone accepted it - otherwise it is dropped.</summary>
     public void Write(MediaFrame frame)
     {
-        if (frame.Kind != MediaKind.Audio || frame.Payload.Length == 0 || _negotiatedFormat.IsEmpty())
+        if (frame.Payload.Length == 0)
+        {
+            return;
+        }
+
+        if (frame.Kind == MediaKind.Video)
+        {
+            if (_video)
+            {
+                // SendVideo is a no-op if the remote rejected the video m-line (no video stream).
+                try { _mediaSession?.SendVideo(frame.DurationRtpUnits, frame.Payload); }
+                catch (Exception excp) { _logger.LogDebug("sip bridge video send failed: {Error}", excp.Message); }
+            }
+            return;
+        }
+
+        if (_negotiatedFormat.IsEmpty())
         {
             return;
         }
