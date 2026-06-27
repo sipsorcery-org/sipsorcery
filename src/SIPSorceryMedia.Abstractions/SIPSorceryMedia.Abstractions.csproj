@@ -24,12 +24,13 @@
     <PackageProjectUrl>https://github.com/sipsorcery-org/sipsorcery/tree/master/src/SIPSorceryMedia.Abstractions</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>10.0.10</Version>
-    <AssemblyVersion>10.0.10</AssemblyVersion>
-    <FileVersion>10.0.10</FileVersion>
+    <Version>10.0.11</Version>
+    <AssemblyVersion>10.0.11</AssemblyVersion>
+    <FileVersion>10.0.11</FileVersion>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>WebRTC VoIP SIPSorcery Media</PackageTags>
-    <PackageReleaseNotes>-v10.0.10: Updated for main sipsorcery library release.
+    <PackageReleaseNotes>-v10.0.11: Updated for main sipsorcery library release.
+-v10.0.10: Updated for main sipsorcery library release.
 -v10.0.9: Updated for main sipsorcery library release.
 -v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
