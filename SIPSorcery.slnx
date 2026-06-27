@@ -13,6 +13,7 @@
     <Project Path="test/FFmpegTranscodeTest/FFmpegTranscodeTest.csproj" />
     <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
     <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
+    <Project Path="test/SIPSorcery.Cli.UnitTest/SIPSorcery.Cli.UnitTest.csproj" />
     <Project Path="test/SIPSorcery.OpenAI.Realtime.UnitTest/SIPSorcery.OpenAI.Realtime.UnitTests.csproj" />
     <Project Path="test/SIPSorcery.VP8.TestVectors/SIPSorcery.VP8.TestVectors.csproj" />
     <Project Path="test/SIPSorcery.VP8.UnitTest/SIPSorcery.VP8.UnitTest.csproj" />

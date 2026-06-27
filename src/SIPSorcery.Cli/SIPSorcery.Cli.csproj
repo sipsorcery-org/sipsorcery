@@ -59,8 +59,6 @@
     <ProjectReference Include="..\SIPSorcery.Cli.Common\SIPSorcery.Cli.Common.csproj" />
     <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
-    <!-- VP8 encoder for the generated test pattern (route, cloudflare sfu, livekit room verbs). -->
-    <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
     <!-- WebRTC client for the OpenAI Realtime API, used by the "openai" verbs. -->
     <ProjectReference Include="..\SIPSorcery.OpenAI.Realtime\SIPSorcery.OpenAI.Realtime.csproj" />
   </ItemGroup>
