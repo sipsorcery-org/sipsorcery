@@ -51,7 +51,7 @@ public sealed record EdgeOptions(
     string? FfmpegPath = null,
     string? SipUsername = null,
     string? SipPassword = null,
-    string AudioCodec = "pcmu",
+    string AudioCodec = "opus",
     bool OpenBrowser = false,
     string? LiveKitUrl = null,
     string? LiveKitApiKey = null,
@@ -64,20 +64,20 @@ public static class RouteAudio
     public static bool TryResolveCodec(string? name, out AudioFormat format, out string? error)
     {
         error = null;
-        switch ((name ?? "pcmu").Trim().ToLowerInvariant())
+        switch ((string.IsNullOrWhiteSpace(name) ? "opus" : name).Trim().ToLowerInvariant())
         {
+            case "opus":
+                format = AudioCommonlyUsedFormats.OpusWebRTC;
+                return true;
             case "pcmu":
                 format = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU);
                 return true;
             case "pcma":
                 format = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA);
                 return true;
-            case "opus":
-                format = AudioCommonlyUsedFormats.OpusWebRTC;
-                return true;
             default:
                 format = AudioFormat.Empty;
-                error = $"Unknown --audio-codec '{name}'. Use pcmu (default), pcma or opus.";
+                error = $"Unknown --audio-codec '{name}'. Use opus (default), pcmu or pcma.";
                 return false;
         }
     }
@@ -266,27 +266,33 @@ public static class EdgeFactory
             throw new EdgeException(error!);
         }
 
-        var sinkFormat = ResolveAudioFormat(options);
+        var graphFormat = ResolveAudioFormat(options);   // the codec the graph/sinks want (opus by default)
 
-        // The SIP leg is G.711: carry the call in the sink codec directly when that is a G.711 variant
-        // (pure relay), otherwise (Opus) carry it as PCMU and transcode up to the sink codec.
-        var sipLegFormat = sinkFormat.Codec == AudioCodecsEnum.OPUS
-            ? new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU)
-            : sinkFormat;
+        // Offer OPUS first then a G.711 fallback when the graph is OPUS, so the call is carried in OPUS
+        // end to end whenever the far end supports it and only falls back to (and transcodes) G.711 when
+        // that is all there is. When the user forced a G.711 graph (--audio-codec pcmu/pcma) offer just it.
+        List<AudioFormat> offered = graphFormat.Codec == AudioCodecsEnum.OPUS
+            ? new List<AudioFormat>
+              {
+                  AudioCommonlyUsedFormats.OpusWebRTC,
+                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU),
+                  new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMA)
+              }
+            : new List<AudioFormat> { graphFormat };
 
-        ISourceNode source = new SipSourceNode(uri, sipLegFormat, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
+        ISourceNode source = new SipSourceNode(uri, offered, options.SipUsername, options.SipPassword, options.TimeoutSeconds, logger);
 
-        // The scope decodes the (G.711) call audio for its waveform, so it sits inside the transcode.
+        // The scope decodes the call audio for its waveform; it sits inside the transcode so it sees the
+        // negotiated codec directly (it decodes by the frame's format, so it handles G.711 or OPUS).
         if (options.Scope)
         {
             source = new AudioScopeTransform(source, options, logger);
         }
 
-        // Bridge the G.711 call audio up to an Opus sink when the codecs differ (no-op otherwise).
-        if (sinkFormat.Codec != sipLegFormat.Codec)
-        {
-            source = new AudioTranscodeTransform(source, sinkFormat, logger);
-        }
+        // Bridge whatever the call negotiated up to the graph codec. The transform is a no-op pass-through
+        // when the negotiated codec already matches (e.g. OPUS negotiated for an OPUS graph) and only
+        // transcodes otherwise (e.g. a G.711 gateway -> OPUS), so it is always safe to wrap.
+        source = new AudioTranscodeTransform(source, graphFormat, logger);
 
         return source;
     }

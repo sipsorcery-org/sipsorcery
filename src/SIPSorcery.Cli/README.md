@@ -32,13 +32,13 @@ sipsorcery route --from testpattern --to play --to out.h264    # tee: watch AND 
 sipsorcery route --from whep:https://b.siobud.com/api/whep --to out.ivf --token key  # record a live WebRTC stream
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip      # bridge a SIP call to WebRTC
 sipsorcery route --from sip:music@iptel.org --to whip:http://localhost:8080/whip --scope  # ...and add an audio-scope video
-sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --audio-codec opus --token key  # publish to Broadcast Box (needs H264+opus)
+sipsorcery route --from testpattern --to whip:https://b.siobud.com/api/whip --token key  # publish to Broadcast Box (H264 + opus, both now the default)
 sipsorcery route --from testpattern --to web                   # watch in a browser: self-hosts a WHEP server + player on http://localhost:8080
-sipsorcery route --from sip:music@iptel.org --to web:9000 --scope --audio-codec opus  # bridge a SIP call to a browser page with an audio-scope video
-sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus  # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
-sipsorcery route --from livekit:demo-room --to web --audio-codec opus           # ...and in a SEPARATE process, subscribe to that room and watch it in a browser
-sipsorcery route --from testpattern --to cloudflare --audio-codec opus          # publish into a Cloudflare Realtime SFU session (creds via --app-id/--token or CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN)
-sipsorcery route --from cloudflare:<sessionId> --to web --audio-codec opus       # ...and in a SEPARATE process, pull that session (id printed by the sink) and watch it in a browser
+sipsorcery route --from sip:music@iptel.org --to web:9000 --scope          # bridge a SIP call (opus if the peer supports it, else G.711 auto-transcoded) to a browser page with an audio-scope video
+sipsorcery route --from testpattern --to livekit:demo-room                 # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
+sipsorcery route --from livekit:demo-room --to web                         # ...and in a SEPARATE process, subscribe to that room and watch it in a browser
+sipsorcery route --from testpattern --to cloudflare                        # publish into a Cloudflare Realtime SFU session (creds via --app-id/--token or CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN)
+sipsorcery route --from cloudflare:<sessionId> --to web                    # ...and in a SEPARATE process, pull that session (id printed by the sink) and watch it in a browser
 
 # Bridge: connect two duplex endpoints BOTH ways (full duplex). Where route is directional (--from/--to),
 # bridge is symmetric and order-agnostic. v0.1 endpoints: web (a browser mic+speaker page), agent (an
@@ -74,18 +74,18 @@ Edges:
 
 | Direction | Edge | Notes |
 |-----------|------|-------|
-| `--from`  | `testpattern` | A generated H264 video pattern **+ music** (codec via `--audio-codec`: pcmu default / pcma / opus), so it can feed a `whip:` sink with audio and video. `--fps` sets the video rate. |
+| `--from`  | `testpattern` | A generated H264 video pattern **+ music** (codec via `--audio-codec`: opus default / pcmu / pcma), so it can feed a `whip:` sink with audio and video. `--fps` sets the video rate. |
 | `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
-| `--from`  | `sip:<uri>` | Place a SIP call (G.711) and forward its received audio, transcoding up to `--audio-codec opus` if the sink needs it. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
+| `--from`  | `sip:<uri>` | Place a SIP call and forward its received audio. It offers **opus first, then a G.711 fallback**, so a modern endpoint is carried in opus end to end and a G.711-only gateway is **auto-transcoded** up to the graph codec (opus by default) — no flag needed either way. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
 | `--from`  | `livekit:<room>` | Subscribe to a LiveKit **room** and emit the received H264 video + OPUS audio. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_*` env). Mints its own subscribe-only token, so it only needs the room name + creds. Start the publisher first so the track is in the room when this joins. |
 | `--from`  | `cloudflare:<sessionId>` | Pull (subscribe to) a **Cloudflare Realtime SFU** session published by the `cloudflare` sink, emitting its received video + audio. The session id is the one the sink printed; the pulled track names are the sink's (`cli-video`/`cli-audio`). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Start the publisher first. |
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
 | `--to`    | `-` | The bitstream on stdout (the result JSON then moves to stderr). |
-| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: pcmu default / pcma / opus) + H264 video peer connection. `--token` sets the Authorization. Some endpoints (e.g. Broadcast Box) require `--audio-codec opus`. |
+| `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: opus default / pcmu / pcma) + H264 video peer connection. `--token` sets the Authorization. Opus is the default, so endpoints that require it (e.g. Broadcast Box) just work. |
 | `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. H264 video + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
-| `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`) and `--audio-codec opus`. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |
+| `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`); requires opus, which is the default. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |
 | `--to`    | `cloudflare` | Publish into a **Cloudflare Realtime SFU** session as a send-only H264 + `--audio-codec` peer (opus recommended). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Cloudflare allocates the session id, so the sink prints it plus the track names; a subscriber pulls the media by (session id, track name). |
 
 #### The `--scope` audio-scope video
@@ -115,7 +115,7 @@ serves the player, `POST /whep` does the offer/answer), and it binds localhost o
 
 ```bash
 sipsorcery route --from testpattern --to web                 # open http://localhost:8080 and watch
-sipsorcery route --from sip:music@iptel.org --to web --scope --audio-codec opus
+sipsorcery route --from sip:music@iptel.org --to web --scope
 ```
 
 The `livekit:` and `cloudflare:` **source and sink** are both wired — publish into a room / SFU session,

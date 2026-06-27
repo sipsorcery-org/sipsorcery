@@ -46,7 +46,7 @@ public sealed class RouteCommand : CommandBase
     private const int DEFAULT_TIMEOUT_SECONDS = 30;
     private const int DEFAULT_DURATION_SECONDS = 0;
     private const int DEFAULT_FPS = 30;
-    private const string DEFAULT_AUDIO_CODEC = "pcmu";
+    private const string DEFAULT_AUDIO_CODEC = "opus";
     private const string DEFAULT_SCOPE_MODE = "waves";
     private const string DEFAULT_SCOPE_SIZE = "640x360";
 
@@ -85,7 +85,7 @@ public sealed class RouteCommand : CommandBase
             Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B), \"play\" (ffplay), " +
                           "\"null\" (discard), \"-\" (bitstream on stdout), whip:<url> (publish to a WebRTC endpoint), " +
                           "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser), " +
-                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret and --audio-codec opus) or " +
+                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret) or " +
                           "cloudflare (publish to a Cloudflare Realtime SFU session; needs --app-id/--token). " +
                           "Repeat --to to fan out to several sinks at once.",
             Required = true,
@@ -145,8 +145,9 @@ public sealed class RouteCommand : CommandBase
 
         var audioCodecOption = new Option<string>("--audio-codec")
         {
-            Description = "Audio codec a whip:/web sink offers / the source produces: pcmu (default), pcma or opus. " +
-                          "Some WebRTC endpoints (e.g. Broadcast Box) only accept opus; a G.711 sip: call is transcoded up to opus when needed.",
+            Description = "Audio codec the sinks offer / a generated source produces: opus (default, the universal " +
+                          "WebRTC codec) or pcmu/pcma for an endpoint that only accepts G.711. A G.711 sip: call is " +
+                          "transcoded up to opus automatically, so opus needs no flag.",
             DefaultValueFactory = _ => DEFAULT_AUDIO_CODEC
         };
 

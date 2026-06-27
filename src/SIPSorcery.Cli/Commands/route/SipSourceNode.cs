@@ -6,9 +6,11 @@
 // MediaFrame, so a caller can be forwarded to another edge (e.g. a whip: sink).
 //
 // The call sends silence to the remote party - this edge consumes the inbound
-// audio, it is not a softphone. The audio is pinned to PCMU so the received
-// payload can be relayed onto an outgoing WebRTC track unchanged (repacketise,
-// not transcode) and decoded cheaply for the audio scope. No audio devices are
+// audio, it is not a softphone. It offers the codecs the caller asks for (OPUS
+// first then a G.711 fallback by default), so a modern endpoint is carried in OPUS
+// end to end and a G.711-only gateway falls back; the received payload is relayed
+// onward in whatever was negotiated (repacketise, not transcode - a transcode
+// transform bridges it to the graph codec when they differ). No audio devices are
 // used, so the edge behaves identically on every OS.
 //
 // Mirrors the call/receive plumbing of the diagnostics "sip call" verb
@@ -26,6 +28,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -42,7 +45,7 @@ namespace SIPSorcery.Cli.Commands.Route;
 public sealed class SipSourceNode : ISourceNode
 {
     private readonly SIPURI _destination;
-    private readonly AudioFormat _audioFormat;
+    private readonly IReadOnlyList<AudioFormat> _offeredFormats;
     private readonly string? _username;
     private readonly string? _password;
     private readonly int _ringTimeoutSeconds;
@@ -55,6 +58,12 @@ public sealed class SipSourceNode : ISourceNode
     private AudioFormat _negotiatedFormat = AudioFormat.Empty;
     private long? _connectTimeMs;
 
+    // Received RTP timestamps are absolute; a transport sink wants a per-frame duration. The codec sets
+    // the per-frame increment (160 @ 8 kHz for G.711, 960 @ 48 kHz for OPUS), so we derive it from the
+    // gap between successive timestamps rather than assuming one byte == one sample (true only for G.711).
+    private uint _lastTimestamp;
+    private bool _haveTimestamp;
+
     public event Action<MediaFrame>? OnFrame;
 
     public Task Completion => _completion.Task;
@@ -64,10 +73,10 @@ public sealed class SipSourceNode : ISourceNode
     /// <summary>The audio format negotiated on the call, once answered. Used by the scope transform.</summary>
     public AudioFormat NegotiatedFormat => _negotiatedFormat;
 
-    public SipSourceNode(SIPURI destination, AudioFormat audioFormat, string? username, string? password, int ringTimeoutSeconds, ILogger logger)
+    public SipSourceNode(SIPURI destination, IReadOnlyList<AudioFormat> offeredFormats, string? username, string? password, int ringTimeoutSeconds, ILogger logger)
     {
         _destination = destination;
-        _audioFormat = audioFormat;
+        _offeredFormats = offeredFormats;
         _username = username;
         _password = password;
         _ringTimeoutSeconds = ringTimeoutSeconds;
@@ -78,13 +87,16 @@ public sealed class SipSourceNode : ISourceNode
 
     public async Task StartAsync(CancellationToken ct)
     {
-        var mediaSession = new VoIPMediaSession();
-        mediaSession.AcceptRtpFromAny = true;
+        // Offer exactly the requested codecs, in order, so the call uses the best the far end supports
+        // (e.g. OPUS first, then a G.711 fallback). The AudioEncoder(params) overload sets the SDP offer
+        // order, so OPUS is preferred when present. The source sends silence - this is an ingress that
+        // consumes the inbound audio - and the received payload is relayed onward in whatever codec was
+        // negotiated (repacketise, not transcode; a transcode transform bridges it to the graph codec).
+        var audioSource = new AudioExtrasSource(new AudioEncoder(_offeredFormats.ToArray()),
+            new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
 
-        // Pin the audio to the chosen G.711 codec (PCMU/PCMA): the received payload is relayed onto the
-        // outgoing WebRTC track unchanged (repacketise, not transcode) and decoded cheaply for the scope.
-        mediaSession.AudioExtrasSource.RestrictFormats(f => f.Codec == _audioFormat.Codec);
-        mediaSession.AudioExtrasSource.SetSource(new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
+        var mediaSession = new VoIPMediaSession(new MediaEndPoints { AudioSource = audioSource });
+        mediaSession.AcceptRtpFromAny = true;
 
         mediaSession.OnAudioFormatsNegotiated += (formats) => _negotiatedFormat = formats.First();
 
@@ -101,9 +113,14 @@ public sealed class SipSourceNode : ISourceNode
                 return;
             }
 
-            // For PCMU/PCMA the 8 kHz clock advances one unit per sample, and one byte carries one
-            // sample, so the payload length is the frame's duration in RTP units.
-            OnFrame?.Invoke(MediaFrame.ForAudio(payload, rtpPacket.Header.Timestamp, (uint)payload.Length, _negotiatedFormat));
+            // Per-frame duration = the gap to the previous packet's timestamp (the first frame has no
+            // predecessor, so 0). Works for any codec: G.711 advances 160/frame, OPUS 960/frame.
+            uint timestamp = rtpPacket.Header.Timestamp;
+            uint duration = _haveTimestamp ? timestamp - _lastTimestamp : 0;
+            _lastTimestamp = timestamp;
+            _haveTimestamp = true;
+
+            OnFrame?.Invoke(MediaFrame.ForAudio(payload, timestamp, duration, _negotiatedFormat));
         };
 
         _userAgent = new SIPUserAgent(_sipTransport, null);
