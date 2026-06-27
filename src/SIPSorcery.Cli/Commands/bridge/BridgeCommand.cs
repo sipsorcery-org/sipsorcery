@@ -59,9 +59,9 @@ public sealed class BridgeCommand : CommandBase
             Description = "Port for the web endpoint's local page.",
             DefaultValueFactory = _ => DEFAULT_PORT
         };
-        var openOption = new Option<bool>("--open")
+        var noOpenOption = new Option<bool>("--no-open")
         {
-            Description = "Open the web endpoint's page in a browser automatically."
+            Description = "With a web endpoint, do not automatically open its page in a browser (it is also never opened with --json)."
         };
         var voiceOption = new Option<string?>("--voice")
         {
@@ -122,7 +122,7 @@ public sealed class BridgeCommand : CommandBase
         command.Arguments.Add(aArg);
         command.Arguments.Add(bArg);
         command.Options.Add(portOption);
-        command.Options.Add(openOption);
+        command.Options.Add(noOpenOption);
         command.Options.Add(voiceOption);
         command.Options.Add(personaOption);
         command.Options.Add(greetingOption);
@@ -137,28 +137,39 @@ public sealed class BridgeCommand : CommandBase
         command.Options.Add(durationOption);
         AddCommonOptions(command);
 
-        command.SetAction((parseResult, cancellationToken) => RunAsync(
-            parseResult.GetValue(aArg)!,
-            parseResult.GetValue(bArg)!,
-            new BridgeOptions(
-                parseResult.GetValue(portOption),
-                parseResult.GetValue(openOption),
-                parseResult.GetValue(azureKeyOption),
-                parseResult.GetValue(azureRegionOption),
-                parseResult.GetValue(voiceOption),
-                parseResult.GetValue(personaOption),
-                parseResult.GetValue(llmOption),
-                parseResult.GetValue(llmModelOption),
-                parseResult.GetValue(apiKeyOption),
-                parseResult.GetValue(greetingOption),
-                parseResult.GetValue(avatarOption) ? "max" : null,
-                parseResult.GetValue(userOption),
-                parseResult.GetValue(passwordOption),
-                parseResult.GetValue(TimeoutOption)),
-            parseResult.GetValue(durationOption),
-            parseResult.GetValue(JsonOption),
-            parseResult.GetValue(VerboseOption),
-            cancellationToken));
+        command.SetAction((parseResult, cancellationToken) =>
+        {
+            string a = parseResult.GetValue(aArg)!;
+            string b = parseResult.GetValue(bArg)!;
+            bool asJson = parseResult.GetValue(JsonOption);
+
+            // Match the route web sink: when a web endpoint is in play, open its page automatically unless
+            // --no-open is set or --json is (a scripted run). Bridges with no web endpoint open nothing.
+            bool openBrowser = !parseResult.GetValue(noOpenOption) && !asJson && (IsWeb(a) || IsWeb(b));
+
+            return RunAsync(
+                a,
+                b,
+                new BridgeOptions(
+                    parseResult.GetValue(portOption),
+                    openBrowser,
+                    parseResult.GetValue(azureKeyOption),
+                    parseResult.GetValue(azureRegionOption),
+                    parseResult.GetValue(voiceOption),
+                    parseResult.GetValue(personaOption),
+                    parseResult.GetValue(llmOption),
+                    parseResult.GetValue(llmModelOption),
+                    parseResult.GetValue(apiKeyOption),
+                    parseResult.GetValue(greetingOption),
+                    parseResult.GetValue(avatarOption) ? "max" : null,
+                    parseResult.GetValue(userOption),
+                    parseResult.GetValue(passwordOption),
+                    parseResult.GetValue(TimeoutOption)),
+                parseResult.GetValue(durationOption),
+                asJson,
+                parseResult.GetValue(VerboseOption),
+                cancellationToken);
+        });
 
         return command;
     }
@@ -233,6 +244,8 @@ public sealed class BridgeCommand : CommandBase
                 graph.AToBFrames, graph.BToAFrames, (int)stopwatch.ElapsedMilliseconds, error),
             exitCode);
     }
+
+    private static bool IsWeb(string spec) => spec.Trim().Equals("web", StringComparison.OrdinalIgnoreCase);
 
     private static void WireGreeting(IBridgeParticipant a, IBridgeParticipant b)
     {

@@ -44,9 +44,9 @@ sipsorcery route --from cloudflare:<sessionId> --to web                    # ...
 # bridge is symmetric and order-agnostic. v0.1 endpoints: web (a browser mic+speaker page), agent (an
 # Azure speech-to-text -> LLM -> Azure text-to-speech voice agent), openai (the OpenAI Realtime API) and
 # sip:<uri> (a phone call, transcoded G.711 <-> Opus). See "The bridge verb" below.
-sipsorcery bridge web agent --open             # open a browser and TALK to an Azure voice agent (e.g. Max Headroom)
-sipsorcery bridge web openai --open            # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
-sipsorcery bridge web openai --avatar --open   # ...with a lip-synced video face (mouth driven by the speech envelope)
+sipsorcery bridge web agent                    # open a browser and TALK to an Azure voice agent (e.g. Max Headroom)
+sipsorcery bridge web openai                   # ...or talk to an OpenAI Realtime agent (OPENAI_API_KEY)
+sipsorcery bridge web openai --avatar          # ...with a lip-synced video face (mouth driven by the speech envelope)
 sipsorcery bridge sip:alice@example.com agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
 
 # The realtime fabrics (Cloudflare, LiveKit, OpenAI) have no standalone verbs: each is reached as a
@@ -136,7 +136,7 @@ v0.1 endpoints:
 
 | Endpoint | Role |
 |----------|------|
-| `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page; `--open` launches it, `--port` sets the port). When the other side is an agent, the live **conversation transcript is logged to the browser console** (`[you] …` / `[ai] …`) over a data channel. |
+| `web`   | A browser as a **microphone + speaker** over one send/recv Opus peer connection (self-hosts the page on `--port`, default 8080, and **opens it automatically** — suppress with `--no-open`, also never opened with `--json`). When the other side is an agent, the live **conversation transcript is logged to the browser console** (`[you] …` / `[ai] …`) over a data channel. |
 | `agent` | A locally-assembled **voice agent**: **Azure speech-to-text → LLM → Azure text-to-speech**, with a Max Headroom persona by default. You speak, it listens, thinks and replies. |
 | `openai` | A voice agent backed by the **OpenAI Realtime API** — OpenAI does the listening, thinking and speaking in one hop. Opus passes straight through both ways (repacketise, not transcode). Needs an OpenAI key (`--api-key` or `OPENAI_API_KEY`); `--voice` picks a Realtime voice (marin, alloy, verse, …), `--persona` sets the system prompt. |
 | `sip:<uri>` | A **SIP call** as a full-duplex peer — place a call to `sip:user@host` (or a bare `user@host`) and bridge the caller to the other side, so a **phone can talk to a voice agent**. The G.711 call is transcoded to/from 48 kHz Opus at the boundary (audio is cheap to transcode in managed code), so it drops in against `web`, `agent` or `openai`. `--user`/`--password` authenticate if challenged. With `--avatar` the call becomes a **video call** (a send-only H264 m-line carrying the agent's face); a phone that can't do video just declines it and the call stays audio-only. |
@@ -145,7 +145,7 @@ v0.1 endpoints:
 # Set the agent's credentials (or pass --azure-key/--azure-region/--llm), then:
 export AZURE_SPEECH_KEY=…  AZURE_SPEECH_REGION=westeurope
 export LLM_ENDPOINT=http://localhost:11434/v1/chat/completions  LLM_MODEL=llama3.2   # e.g. Ollama
-sipsorcery bridge web agent --open
+sipsorcery bridge web agent
 ```
 
 Open the page, grant the microphone, and **talk to Max** — full duplex (the browser's echo canceller
@@ -157,16 +157,16 @@ whole listen→think→speak in one hop:
 
 ```bash
 export OPENAI_API_KEY=sk-…
-sipsorcery bridge web openai --open                          # talk to OpenAI Realtime
-sipsorcery bridge web openai --voice verse --persona "You are a terse pirate." --open
+sipsorcery bridge web openai                                 # talk to OpenAI Realtime
+sipsorcery bridge web openai --voice verse --persona "You are a terse pirate."
 ```
 
 Add **`--avatar`** to put a lip-synced **video face** (the SkiaSharp Max Headroom avatar) on the voice —
 the browser then shows his face alongside the audio, on either agent:
 
 ```bash
-sipsorcery bridge web agent  --avatar --open                # mouth driven by Azure TTS visemes (phoneme-accurate)
-sipsorcery bridge web openai --avatar --open                # mouth driven by the speech envelope (no visemes)
+sipsorcery bridge web agent  --avatar                       # mouth driven by Azure TTS visemes (phoneme-accurate)
+sipsorcery bridge web openai --avatar                       # mouth driven by the speech envelope (no visemes)
 ```
 
 The two avatars differ in how the mouth is driven: the Azure `agent` has a viseme timeline, so its
