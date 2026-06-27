@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -211,13 +212,21 @@ public sealed class SipBridgeParticipant : IBridgeParticipant, IConnectable
         }
     }
 
-    /// <summary>Logs a full traced SIP message (headers + SDP) for --verbose debugging. The message string
-    /// is built lazily so nothing is serialised when debug logging is off.</summary>
+    // Mask the credential-bearing authorization headers so --verbose SIP traces never leak the digest
+    // response/username. The challenge headers (WWW-Authenticate/Proxy-Authenticate) are left visible as
+    // they carry no secret and help diagnose auth.
+    private static readonly Regex AuthHeaderRegex =
+        new(@"^(Authorization|Proxy-Authorization)\s*:.*$", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Logs a full traced SIP message (headers + SDP) for --verbose debugging, with the
+    /// authorization headers redacted. The message string is built lazily so nothing is serialised
+    /// when debug logging is off.</summary>
     private void LogSipMessage(string direction, SIPEndPoint remote, Func<string> message)
     {
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug("SIP message {Direction} {Remote}:\n{Message}", direction, remote, message());
+            string redacted = AuthHeaderRegex.Replace(message(), "$1: <redacted>");
+            _logger.LogDebug("SIP message {Direction} {Remote}:\n{Message}", direction, remote, redacted);
         }
     }
 
