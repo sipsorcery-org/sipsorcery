@@ -14,11 +14,9 @@
 // to. Because the CLI holds the API key + secret it mints its own token locally, so
 // the only shared config between a publisher and a subscriber is the room name.
 //
-// The signalling mirrors the "livekit room" verb's RoomPublisher (a self contained
-// copy so that proven verb is left untouched); the one difference is the media:
-// here the tracks carry the graph's frames via SendVideo/SendAudio rather than a
-// managed MediaTestSource. LiveKit's room pipeline requires OPUS audio, so the edge
-// requires --audio-codec opus.
+// The tracks carry the graph's already-encoded frames via SendVideo/SendAudio
+// (repacketise, not transcode) rather than generating their own media. LiveKit's
+// room pipeline requires OPUS audio, so the edge requires --audio-codec opus.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

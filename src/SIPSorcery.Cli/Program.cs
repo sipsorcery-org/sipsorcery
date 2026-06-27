@@ -34,13 +34,12 @@ var rootCommand = new Command("sipsorcery",
 rootCommand.Options.Add(new HelpOption());
 rootCommand.Options.Add(new VersionOption());
 
-var cloudflareCommand = new Command("cloudflare", "Cloudflare Realtime operations: SFU publish check.");
-cloudflareCommand.Subcommands.Add(new CloudflareSfuCommand().Build());
-rootCommand.Subcommands.Add(cloudflareCommand);
+// The CLI is two verbs. Every realtime fabric (Cloudflare, LiveKit, OpenAI) is reached through a
+// route/bridge edge (cloudflare/livekit:<room> sinks and sources, bridge web openai), not a standalone
+// noun. The probe/test commands for those fabrics live in the sibling "sipsorcery-diags" tool.
 
 // route is a top-level verb (not a noun/verb pair): it wires a source edge to one or more sink edges
-// over a stream graph. It is the seed of the stream-routing flagship. LiveKit and OpenAI are reached
-// through route/bridge edges (livekit:<room>, bridge web openai), so they have no standalone verbs.
+// over a stream graph. It is the seed of the stream-routing flagship.
 rootCommand.Subcommands.Add(new RouteCommand().Build());
 
 // bridge is the duplex counterpart to route: it connects two endpoints both ways (e.g. talk to a

@@ -49,15 +49,8 @@ sipsorcery bridge web openai --open            # ...or talk to an OpenAI Realtim
 sipsorcery bridge web openai --avatar --open   # ...with a lip-synced video face (mouth driven by the speech envelope)
 sipsorcery bridge sip:alice@example.com agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
 
-# Cloudflare SFU: create a Realtime SFU session and publish a VP8 + OPUS test pattern, verifying
-# the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN. (To publish real
-# media into a session use the route sink: route --from <src> --to cloudflare.)
-sipsorcery cloudflare sfu --app-id <app-id> --token <api-token> -d 10
-
-# LiveKit and OpenAI have no standalone verbs: they are reached as route/bridge edges.
-sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus -d 5   # publish to a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_*)
-sipsorcery route --from livekit:demo-room --to web --audio-codec opus                # ...and subscribe to it in a browser
-sipsorcery bridge web openai --open                                                  # talk to OpenAI Realtime in a browser (OPENAI_API_KEY)
+# The realtime fabrics (Cloudflare, LiveKit, OpenAI) have no standalone verbs: each is reached as a
+# route/bridge edge, shown above. Probe/test commands for them live in the sibling sipsorcery-diags tool.
 ```
 
 ### The route verb
