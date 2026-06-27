@@ -8,6 +8,8 @@
       "src\\SIPSorcery\\SIPSorcery.csproj",
 	  "src\\SIPSorcery.OpenAI.Realtime\\SIPSorcery.OpenAI.Realtime.csproj",
 	  "src\\SIPSorcery.VP8\\SIPSorcery.VP8.csproj",
+	  "src\\SIPSorcery.Cli\\SIPSorcery.Cli.csproj",
+	  "src\\SIPSorcery.Diagnostics\\SIPSorcery.Diagnostics.csproj",
       "test\\SIPSorceryMedia.Abstractions.UnitTest\\SIPSorceryMedia.Abstractions.UnitTest.csproj",
       "test\\integration\\SIPSorcery.IntegrationTests.csproj",
       "test\\unit\\SIPSorcery.UnitTests.csproj"
