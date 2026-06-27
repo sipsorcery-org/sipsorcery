@@ -8,6 +8,9 @@ on:
 jobs:
   build-test-pack:
     runs-on: windows-latest
+    permissions:
+      id-token: write   # required for NuGet trusted publishing (the GitHub OIDC token)
+      contents: read    # once a permissions block is set it is the full allow-list; checkout needs this
     steps:
       - uses: actions/checkout@v4
 
