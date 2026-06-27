@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Multi-targeted so consumers such as the net8.0 SIPSorcery.Diagnostics global tool can reference
+         it. Purely additive: the dependencies (SIPSorcery, LanguageExt.Core, the
+         Microsoft.Extensions.* packages) all support these frameworks. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>

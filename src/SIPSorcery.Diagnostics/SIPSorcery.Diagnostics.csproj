@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Lets the net8.0 tool run on newer installed runtimes without a reinstall. -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <!-- The bare "sipsorcery" command name is deliberately NOT used here; it is reserved for a
+         potential future interactive/flagship tool. This diagnostics tool installs as the
+         "sipsorcery-diags" command. -->
+    <ToolCommandName>sipsorcery-diags</ToolCommandName>
+    <PackageId>SIPSorcery.Diagnostics</PackageId>
+    <Version>0.1.0-beta</Version>
+    <Authors>Aaron Clauson</Authors>
+    <Description>Diagnostics and benchmarking CLI for SIP and WebRTC, built on the SIPSorcery library: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Probe/test tooling (not a general softphone); human and agent friendly with JSON output and meaningful exit codes. For routing streams and the Cloudflare/LiveKit/OpenAI fabric verbs see the SIPSorcery.Cli tool.</Description>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>SIP;VoIP;WebRTC;STUN;TURN;ICE;CLI;diagnostics</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <!-- Make the shared CommandBase/ExitCodes/CloudflareTurn/AudioSink/VideoSink visible to every
+       verb without a per-file using (ImplicitUsings turns this into a global using). -->
+  <ItemGroup>
+    <Using Include="SIPSorcery.Cli.Common" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Cli.Common\SIPSorcery.Cli.Common.csproj" />
+    <ProjectReference Include="..\SIPSorcery\SIPSorcery.csproj" />
+    <!-- VP8 encoder for the test pattern video published via LibraryVideoPublisher (webrtc verbs). -->
+    <ProjectReference Include="..\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- Native (FFmpeg.AutoGen) IVideoEncoder for the webrtc video-bench ffmpeg stage and whep decode. -->
+    <ProjectReference Include="..\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

@@ -898,11 +898,14 @@ namespace SIPSorcery.Net
 
         protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
-            if (track.LastRemoteSeqNum != 0 &&
-                header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
-                !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
+            if (logger.IsEnabled(LogLevel.Trace))
             {
-                logger.LogWarning("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
+                if (track.LastRemoteSeqNum != 0 &&
+                    header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
+                    !(header.SequenceNumber == 0 && track.LastRemoteSeqNum == ushort.MaxValue))
+                {
+                    logger.LogTrace("{TrackType} stream sequence number jumped from {LastRemoteSeqNum} to {SequenceNumber}.", trackType, track.LastRemoteSeqNum, header.SequenceNumber);
+                }
             }
         }
 

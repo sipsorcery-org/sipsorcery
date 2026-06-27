@@ -41,6 +41,12 @@ jobs:
         
       - name: Pack SIPSorcery.VP8
         run: dotnet pack src/SIPSorcery.VP8/SIPSorcery.VP8.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.Cli
+        run: dotnet pack src/SIPSorcery.Cli/SIPSorcery.Cli.csproj -c Release --no-build -o ./artifacts
+        
+      - name: Pack SIPSorcery.Diagnostics
+        run: dotnet pack src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj -c Release --no-build -o ./artifacts
 
       # Publish to NuGet (only on tag pushes)
       - name: Publish all packages to NuGet

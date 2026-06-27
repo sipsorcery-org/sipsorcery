@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Multi-targeted so consumers such as the net8.0 SIPSorcery.Diagnostics global tool can reference
+         it. Purely additive: the sole dependency (SIPSorceryMedia.Abstractions) already supports
+         all of these frameworks. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);CS1570;CS1573;CS1591;CS1587;CS8981</NoWarn>
   </PropertyGroup>
@@ -27,7 +30,7 @@ A .NET library that implements the VP8 video codec. This package is intended to 
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
     <PackageTags>SIPSorcery Video-Encoding VP8</PackageTags>
-    <PackageReleaseNotes>-v10.0.10: pdated for main sipsorcery library release.
+    <PackageReleaseNotes>-v10.0.10: Updated for main sipsorcery library release.
 -v10.0.9: Updated for main sipsorcery library release.
 -v10.0.8: Full library release.
 -v10.0.7: Updated for main sipsorcery library release.
