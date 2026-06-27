@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- NOTE: do not set AssemblyName to "sipsorcery": on case-insensitive file systems it
-         collides with the referenced SIPSorcery.dll. The assembly is SIPSorcery.Diagnostics and the
-         installed tool command name comes from ToolCommandName below. -->
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
