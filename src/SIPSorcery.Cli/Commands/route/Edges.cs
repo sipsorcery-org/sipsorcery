@@ -55,7 +55,8 @@ public sealed record EdgeOptions(
     bool OpenBrowser = false,
     string? LiveKitUrl = null,
     string? LiveKitApiKey = null,
-    string? LiveKitApiSecret = null);
+    string? LiveKitApiSecret = null,
+    string? CloudflareAppId = null);
 
 /// <summary>Resolves the --audio-codec name to the audio format a source produces and a sink offers.</summary>
 public static class RouteAudio
@@ -235,11 +236,13 @@ public static class EdgeFactory
             case "livekit":
                 return CreateLiveKitSource(rest, options, logger);
 
-            case "whip":
             case "cloudflare":
+                return CreateCloudflareSource(rest, options, logger);
+
+            case "whip":
                 throw new EdgeException(
-                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>, livekit[:room]). " +
-                    "The transport receivers exist as their own verbs today; they become route sources in a later version.");
+                    $"'{scheme}' as a --from source is not wired into route yet (sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>). " +
+                    "Use whep:<url> to receive a WHIP/WHEP stream today.");
 
             default:
                 // A bare user@host (no scheme) is taken as a SIP destination, so "--from music@iptel.org" works.
@@ -247,7 +250,7 @@ public static class EdgeFactory
                 {
                     return CreateSipSource(spec, options, logger);
                 }
-                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, whep:<url>, sip:<uri>.");
+                throw new EdgeException($"Unknown --from edge '{spec}'. Sources: testpattern, whep:<url>, sip:<uri>, livekit[:room], cloudflare:<sessionId>.");
         }
     }
 
@@ -316,6 +319,52 @@ public static class EdgeFactory
         string room = string.IsNullOrWhiteSpace(rest) ? $"cli-{Guid.NewGuid().ToString("N")[..8]}" : rest!;
 
         return new LiveKitSinkNode(url!, apiKey!, apiSecret!, room, audioFormat, options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// Builds a cloudflare: sink: create a Cloudflare Realtime SFU session and publish the graph's media
+    /// to it. The app ID and API token come from --app-id/--token, falling back to the CLOUDFLARE_APPID
+    /// and CLOUDFLARE_API_TOKEN environment variables. Cloudflare allocates the session id (printed at
+    /// start), so unlike a livekit room there is no name to pass.
+    /// </summary>
+    private static ISinkNode CreateCloudflareSink(EdgeOptions options, ILogger logger)
+    {
+        string? appId = options.CloudflareAppId ?? Environment.GetEnvironmentVariable("CLOUDFLARE_APPID");
+        string? token = options.Token ?? Environment.GetEnvironmentVariable("CLOUDFLARE_API_TOKEN");
+
+        if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(token))
+        {
+            throw new EdgeException(
+                "The cloudflare sink needs an app ID and API token (--app-id/--token or " +
+                "CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN).");
+        }
+
+        return new CloudflareSinkNode(appId!, token!, ResolveAudioFormat(options), options.TimeoutSeconds, logger);
+    }
+
+    /// <summary>
+    /// Builds a cloudflare: source: subscribe to (pull) the tracks a CloudflareSinkNode published into an
+    /// SFU session. The "rest" is the publisher's session id (printed by the sink); the pulled track names
+    /// are the ones the sink publishes (cli-video / cli-audio). App ID and token resolve as for the sink.
+    /// </summary>
+    private static ISourceNode CreateCloudflareSource(string? rest, EdgeOptions options, ILogger logger)
+    {
+        if (string.IsNullOrWhiteSpace(rest))
+        {
+            throw new EdgeException("The cloudflare source needs the publisher's session id, e.g. --from cloudflare:<sessionId> (printed by the cloudflare sink).");
+        }
+
+        string? appId = options.CloudflareAppId ?? Environment.GetEnvironmentVariable("CLOUDFLARE_APPID");
+        string? token = options.Token ?? Environment.GetEnvironmentVariable("CLOUDFLARE_API_TOKEN");
+
+        if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(token))
+        {
+            throw new EdgeException(
+                "The cloudflare source needs an app ID and API token (--app-id/--token or " +
+                "CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN).");
+        }
+
+        return new CloudflareSourceNode(appId!, token!, rest!, options.TimeoutSeconds, logger);
     }
 
     /// <summary>
@@ -388,12 +437,14 @@ public static class EdgeFactory
             case "livekit":
                 return CreateLiveKitSink(rest, options, logger);
 
+            case "cloudflare":
+                return CreateCloudflareSink(options, logger);
+
             case "sip":
             case "sips":
-            case "cloudflare":
                 throw new EdgeException(
-                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port], livekit[:room]). " +
-                    "Publish into these with the dedicated verbs today (e.g. 'cloudflare sfu'); they become route sinks in a later version.");
+                    $"'{scheme}' as a --to sink is not wired into route yet (sinks: a file path, play, null, -, whip:<url>, web[:port], livekit[:room], cloudflare). " +
+                    "A sip: call sink becomes a route sink in a later version.");
 
             default:
                 // Anything else is a VideoSink spec: a file path, "play", "null" or "-".

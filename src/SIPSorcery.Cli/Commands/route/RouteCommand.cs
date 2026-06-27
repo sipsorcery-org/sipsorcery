@@ -74,8 +74,9 @@ public sealed class RouteCommand : CommandBase
         var fromOption = new Option<string>("--from", "-f")
         {
             Description = "The source edge to pull a stream from: testpattern (a generated H264 pattern + PCMU music), " +
-                          "whep:<url> (a live WebRTC stream), sip:<uri> (place a SIP call and forward its audio, e.g. sip:music@iptel.org) " +
-                          "or livekit:<room> (subscribe to a LiveKit room; needs --url/--api-key/--api-secret).",
+                          "whep:<url> (a live WebRTC stream), sip:<uri> (place a SIP call and forward its audio, e.g. sip:music@iptel.org), " +
+                          "livekit:<room> (subscribe to a LiveKit room; needs --url/--api-key/--api-secret) or " +
+                          "cloudflare:<sessionId> (pull a Cloudflare Realtime SFU session published by the cloudflare sink; needs --app-id/--token).",
             Required = true
         };
 
@@ -83,8 +84,9 @@ public sealed class RouteCommand : CommandBase
         {
             Description = "A sink edge to push the stream to: a file path (VP8->IVF, H264/H265->Annex B), \"play\" (ffplay), " +
                           "\"null\" (discard), \"-\" (bitstream on stdout), whip:<url> (publish to a WebRTC endpoint), " +
-                          "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser) or " +
-                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret and --audio-codec opus). " +
+                          "web[:port] (self-host a WHEP server + player page on localhost, default port 8080, to watch in a browser), " +
+                          "livekit[:room] (publish into a LiveKit room; needs --url/--api-key/--api-secret and --audio-codec opus) or " +
+                          "cloudflare (publish to a Cloudflare Realtime SFU session; needs --app-id/--token). " +
                           "Repeat --to to fan out to several sinks at once.",
             Required = true,
             AllowMultipleArgumentsPerToken = true
@@ -105,7 +107,8 @@ public sealed class RouteCommand : CommandBase
 
         var tokenOption = new Option<string?>("--token")
         {
-            Description = "Optional bearer token for a transport edge (a whep stream key, or the whip endpoint Authorization)."
+            Description = "Bearer token for a transport edge: a whep stream key, the whip endpoint Authorization, or the " +
+                          "Cloudflare SFU API token (else CLOUDFLARE_API_TOKEN)."
         };
 
         var scopeOption = new Option<bool>("--scope")
@@ -167,6 +170,12 @@ public sealed class RouteCommand : CommandBase
             Description = "For a livekit edge: the LiveKit API secret. Defaults to the LIVEKIT_API_SECRET environment variable."
         };
 
+        var appIdOption = new Option<string?>("--app-id")
+        {
+            Description = "For a cloudflare sink: the Cloudflare Realtime SFU app ID (its API token comes from --token). " +
+                          "Defaults to the CLOUDFLARE_APPID environment variable (token: CLOUDFLARE_API_TOKEN)."
+        };
+
         var command = new Command("route",
             "Route a media stream from a --from source edge to one or more --to sink edges (a v0.1 stream graph).");
         command.Options.Add(fromOption);
@@ -185,6 +194,7 @@ public sealed class RouteCommand : CommandBase
         command.Options.Add(urlOption);
         command.Options.Add(apiKeyOption);
         command.Options.Add(apiSecretOption);
+        command.Options.Add(appIdOption);
         AddCommonOptions(command);
 
         command.SetAction((parseResult, cancellationToken) => RunAsync(
@@ -204,6 +214,7 @@ public sealed class RouteCommand : CommandBase
             parseResult.GetValue(urlOption),
             parseResult.GetValue(apiKeyOption),
             parseResult.GetValue(apiSecretOption),
+            parseResult.GetValue(appIdOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
             parseResult.GetValue(VerboseOption),
@@ -215,7 +226,7 @@ public sealed class RouteCommand : CommandBase
     private static async Task<int> RunAsync(string from, string[] to, int durationSeconds, int fps, string? token,
         bool scope, string scopeMode, string scopeSize, string? ffmpegPath, string? username, string? password,
         string audioCodec, bool noOpen, string? liveKitUrl, string? liveKitApiKey, string? liveKitApiSecret,
-        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        string? cloudflareAppId, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(RouteCommand));
@@ -245,7 +256,7 @@ public sealed class RouteCommand : CommandBase
         // --no-open is set.
         bool openBrowser = !noOpen && !asJson;
         var edgeOptions = new EdgeOptions(fps, token, timeoutSeconds, scope, scopeMode, scopeSize, ffmpegPath, username, password,
-            audioCodec, openBrowser, liveKitUrl, liveKitApiKey, liveKitApiSecret);
+            audioCodec, openBrowser, liveKitUrl, liveKitApiKey, liveKitApiSecret, cloudflareAppId);
 
         // Build the edges. A bad spec is an argument error before anything starts.
         ISourceNode source;

@@ -34,8 +34,7 @@ var rootCommand = new Command("sipsorcery",
 rootCommand.Options.Add(new HelpOption());
 rootCommand.Options.Add(new VersionOption());
 
-var cloudflareCommand = new Command("cloudflare", "Cloudflare Realtime operations: TURN credential and SFU publish checks.");
-cloudflareCommand.Subcommands.Add(new CloudflareTurnCommand().Build());
+var cloudflareCommand = new Command("cloudflare", "Cloudflare Realtime operations: SFU publish check.");
 cloudflareCommand.Subcommands.Add(new CloudflareSfuCommand().Build());
 rootCommand.Subcommands.Add(cloudflareCommand);
 

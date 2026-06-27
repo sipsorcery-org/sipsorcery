@@ -37,6 +37,8 @@ sipsorcery route --from testpattern --to web                   # watch in a brow
 sipsorcery route --from sip:music@iptel.org --to web:9000 --scope --audio-codec opus  # bridge a SIP call to a browser page with an audio-scope video
 sipsorcery route --from testpattern --to livekit:demo-room --audio-codec opus  # publish into a LiveKit room (creds via --url/--api-key/--api-secret or LIVEKIT_* env)
 sipsorcery route --from livekit:demo-room --to web --audio-codec opus           # ...and in a SEPARATE process, subscribe to that room and watch it in a browser
+sipsorcery route --from testpattern --to cloudflare --audio-codec opus          # publish into a Cloudflare Realtime SFU session (creds via --app-id/--token or CLOUDFLARE_APPID/CLOUDFLARE_API_TOKEN)
+sipsorcery route --from cloudflare:<sessionId> --to web --audio-codec opus       # ...and in a SEPARATE process, pull that session (id printed by the sink) and watch it in a browser
 
 # Bridge: connect two duplex endpoints BOTH ways (full duplex). Where route is directional (--from/--to),
 # bridge is symmetric and order-agnostic. v0.1 endpoints: web (a browser mic+speaker page), agent (an
@@ -47,14 +49,9 @@ sipsorcery bridge web openai --open            # ...or talk to an OpenAI Realtim
 sipsorcery bridge web openai --avatar --open   # ...with a lip-synced video face (mouth driven by the speech envelope)
 sipsorcery bridge sip:alice@example.com agent  # ...or let a PHONE caller talk to the agent (G.711 <-> Opus transcoded)
 
-# Cloudflare TURN: fetch short lived credentials from the Realtime TURN API and confirm a relay
-# candidate can be allocated. Credentials default to the CLOUDFLARE_TURN_KEY_ID and
-# CLOUDFLARE_API_TOKEN environment variables. https://developers.cloudflare.com/realtime/turn/
-sipsorcery cloudflare turn --key-id <key-id> --token <api-token>
-sipsorcery cloudflare turn --transport udp        # probe turn:3478?transport=udp instead of turns:443
-
 # Cloudflare SFU: create a Realtime SFU session and publish a VP8 + OPUS test pattern, verifying
-# the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN.
+# the publisher connects. Defaults to CLOUDFLARE_APPID and CLOUDFLARE_API_TOKEN. (To publish real
+# media into a session use the route sink: route --from <src> --to cloudflare.)
 sipsorcery cloudflare sfu --app-id <app-id> --token <api-token> -d 10
 
 # LiveKit and OpenAI have no standalone verbs: they are reached as route/bridge edges.
@@ -88,6 +85,7 @@ Edges:
 | `--from`  | `whep:<url>` | A live WebRTC ingress (full ICE/DTLS/SRTP). `--token` sets a bearer/stream key. |
 | `--from`  | `sip:<uri>` | Place a SIP call (G.711) and forward its received audio, transcoding up to `--audio-codec opus` if the sink needs it. `sip:music@iptel.org`, `sips:…` or a bare `user@host`; `-u`/`--password` authenticate. |
 | `--from`  | `livekit:<room>` | Subscribe to a LiveKit **room** and emit the received H264 video + OPUS audio. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_*` env). Mints its own subscribe-only token, so it only needs the room name + creds. Start the publisher first so the track is in the room when this joins. |
+| `--from`  | `cloudflare:<sessionId>` | Pull (subscribe to) a **Cloudflare Realtime SFU** session published by the `cloudflare` sink, emitting its received video + audio. The session id is the one the sink printed; the pulled track names are the sink's (`cli-video`/`cli-audio`). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Start the publisher first. |
 | `--to`    | *file path* | VP8 written as IVF, H264/H265 as Annex B. |
 | `--to`    | `play` | An ffplay window (decode delegated to ffplay). |
 | `--to`    | `null` | Discard — exercises the pipeline headlessly and reports throughput. |
@@ -95,6 +93,7 @@ Edges:
 | `--to`    | `whip:<url>` | Publish to a WebRTC (WHIP) endpoint as a send-only audio (`--audio-codec`: pcmu default / pcma / opus) + H264 video peer connection. `--token` sets the Authorization. Some endpoints (e.g. Broadcast Box) require `--audio-codec opus`. |
 | `--to`    | `web[:port]` | Self-host a **WHEP server + player page** on `http://localhost:<port>` (default 8080) and stream to any browser that opens it. Many tabs can watch at once — each gets its own peer connection fanned from the one graph tee. H264 video + `--audio-codec` audio (opus is the most broadly supported). `--token` gates the WHEP endpoint; `--no-open` suppresses the browser auto-launch (also never opened with `--json`). |
 | `--to`    | `livekit[:room]` | Publish into a LiveKit **room** (default a random name) as a send-only H264 + OPUS participant. Needs `--url`/`--api-key`/`--api-secret` (or `LIVEKIT_WEBSOCKET_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`) and `--audio-codec opus`. The CLI mints its own publisher token locally, so a separate subscriber only needs the same room name + creds. |
+| `--to`    | `cloudflare` | Publish into a **Cloudflare Realtime SFU** session as a send-only H264 + `--audio-codec` peer (opus recommended). Needs `--app-id`/`--token` (or `CLOUDFLARE_APPID`/`CLOUDFLARE_API_TOKEN`). Cloudflare allocates the session id, so the sink prints it plus the track names; a subscriber pulls the media by (session id, track name). |
 
 #### The `--scope` audio-scope video
 
@@ -126,11 +125,12 @@ sipsorcery route --from testpattern --to web                 # open http://local
 sipsorcery route --from sip:music@iptel.org --to web --scope --audio-codec opus
 ```
 
-The `livekit:` **source and sink** are both wired (publish into a room, and subscribe to one — run the
-two in separate processes for a room round trip). The `cloudflare:` source/sink and `sip:` as a sink are
-recognised but report that they are not wired into `route` yet — use the dedicated verbs for those today
-(`cloudflare sfu`). They become `route` edges in a later version, at which point
-`route --from sip:… --to livekit:room` bridges a call into a room with no bespoke command.
+The `livekit:` and `cloudflare:` **source and sink** are both wired — publish into a room / SFU session,
+and subscribe to (pull) one — so running the two in separate processes is a full round trip
+(`route --from testpattern --to cloudflare` in one, `route --from cloudflare:<id> --to web` in another).
+`sip:` as a sink is recognised but reports it is not wired into `route` yet; it becomes a `route` edge in
+a later version, at which point `route --from sip:… --to livekit:room` bridges a call into a room with no
+bespoke command.
 
 ### The bridge verb
 
@@ -219,8 +219,8 @@ avatars are planned.
 ## Status
 
 Early. The `route` engine carries audio and video over a single source → N sinks (a free tee), with
-`whep:`/`sip:`/`livekit:` sources, `whip:`/`web`/`livekit:` sinks and an ffmpeg-backed audio-scope
-transform wired in. The `bridge` verb adds the duplex case (two endpoints both ways), with `web`, a
+`whep:`/`sip:`/`livekit:`/`cloudflare:` sources, `whip:`/`web`/`livekit:`/`cloudflare` sinks and an
+ffmpeg-backed audio-scope transform wired in. The `bridge` verb adds the duplex case (two endpoints both ways), with `web`, a
 local Azure voice `agent`, an `openai` Realtime agent and a `sip:` phone peer (transcoded G.711 ↔ Opus)
 as the endpoints, the agents each with an optional lip-synced `--avatar`. Streaming verbs default to
 `-d 0` (run until ctrl-c); pass a positive `--duration` for a fixed window. Fan-in, richer transforms,
