@@ -48,15 +48,18 @@ jobs:
       - name: Pack SIPSorcery.Diagnostics
         run: dotnet pack src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj -c Release --no-build -o ./artifacts
 
-      # Publish to NuGet (only on tag pushes)
+      # Publish to NuGet (only on tag pushes)         
+      - name: NuGet login (trusted publishing)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: sipsorcery
+
       - name: Publish all packages to NuGet
         if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          Get-ChildItem ./artifacts/*.nupkg | ForEach-Object {
-            dotnet nuget push $_.FullName `
-              --source https://api.nuget.org/v3/index.json `
-              --api-key $env:NUGET_API_KEY `
-              --skip-duplicate
-          }
+          dotnet nuget push "./artifacts/*.nupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} `
+            --skip-duplicate
