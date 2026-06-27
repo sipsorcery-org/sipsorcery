@@ -282,24 +282,22 @@ public sealed class WebSinkNode : ISinkNode
             }
         };
 
-        var setOfferResult = pc.setRemoteDescription(new RTCSessionDescriptionInit
+        // The WHEP offer/answer is delegated to the library server helper. Host candidates are immediate on
+        // localhost, so there is nothing to wait for (waitForIceGathering: false).
+        string answerSdp;
+        try
         {
-            type = RTCSdpType.offer,
-            sdp = offerSdp
-        });
-
-        if (setOfferResult != SetDescriptionResultEnum.OK)
+            answerSdp = await WhipWhepServer.AnswerAsync(pc, offerSdp, waitForIceGathering: false).ConfigureAwait(false);
+        }
+        catch (Exception excp)
         {
-            _logger.LogWarning("web sink could not apply a viewer's SDP offer: {Result}.", setOfferResult);
+            _logger.LogWarning("web sink could not answer a viewer's SDP offer: {Error}.", excp.Message);
             try { pc.Close("bad offer"); } catch { /* best effort */ }
             Respond(context, HttpStatusCode.BadRequest);
             return;
         }
 
-        var answer = pc.createAnswer();
-        await pc.setLocalDescription(answer).ConfigureAwait(false);
-
-        _logger.LogDebug("web sink answer SDP to viewer:\n{Sdp}", answer.sdp);
+        _logger.LogDebug("web sink answer SDP to viewer:\n{Sdp}", answerSdp);
 
         // Register the viewer before replying so it is ready for frames the instant it connects.
         lock (_viewersLock)
@@ -309,7 +307,7 @@ public sealed class WebSinkNode : ISinkNode
 
         // 201 + answer SDP + a Location header naming the session resource (WHEP, RFC 9725 style).
         string resourcePath = $"{WHEP_PATH}/{Guid.NewGuid().ToString("N")[..8]}";
-        byte[] answerBytes = Encoding.UTF8.GetBytes(answer.sdp);
+        byte[] answerBytes = Encoding.UTF8.GetBytes(answerSdp);
         context.Response.StatusCode = (int)HttpStatusCode.Created;
         context.Response.ContentType = "application/sdp";
         context.Response.AddHeader("Location", resourcePath);

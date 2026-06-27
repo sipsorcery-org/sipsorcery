@@ -1,23 +1,23 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: WhipSinkNode.cs
 //
 // Description: A WebRTC egress edge for the "route" verb: publishes the graph's
 // media to a WHIP (WebRTC-HTTP Ingestion Protocol) endpoint over a single peer
-// connection carrying an audio track (PCMU by default, or Opus/PCMA via --audio-codec)
-// and a video track (H264). Audio
-// frames are relayed onto the audio track and video frames onto the video track,
-// both still ENCODED - the graph repacketises, it does not transcode.
+// connection carrying an audio track (Opus by default, or PCMU/PCMA via
+// --audio-codec) and a video track (H264). Audio frames are relayed onto the audio
+// track and video frames onto the video track, both still ENCODED - the graph
+// repacketises, it does not transcode.
 //
-// This is the publishing counterpart to WhepSourceNode (the WHEP ingress edge):
-// the same offer / POST / answer / ICE / DTLS / SRTP path, send-only. It makes
-// "route --from sip:... --to whip:..." bridge a SIP caller into a WebRTC
-// endpoint, optionally with a generated scope video (see AudioScopeTransform).
+// The WHIP signalling itself (offer / POST / answer / DELETE) is delegated to the
+// library's WhipWhepClient; this node only configures the peer connection's tracks,
+// relays the graph frames, and waits for the connection to come up.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
 // 23 Jun 2026	Aaron Clauson	Created, Wexford, Ireland.
+// 27 Jun 2026	Aaron Clauson	Delegated the WHIP signalling to the library WhipWhepClient.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -25,10 +25,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -45,9 +41,8 @@ public sealed class WhipSinkNode : ISinkNode
     private readonly int _timeoutSeconds;
     private readonly ILogger _logger;
     private readonly RTCPeerConnection _pc = new();
-    private readonly HttpClient _http;
+    private readonly WhipWhepClient _whip = new();
 
-    private Uri? _resource;
     private volatile bool _connected;
     private int _framesSent;
     private long _bytesSent;
@@ -60,26 +55,16 @@ public sealed class WhipSinkNode : ISinkNode
         _token = token;
         _timeoutSeconds = timeoutSeconds;
         _logger = logger;
-        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(timeoutSeconds) };
     }
 
     public string Describe() => $"whip:{_url}";
 
     public async Task StartAsync(CancellationToken ct)
     {
-        if (!Uri.TryCreate(_url, UriKind.Absolute, out var endpointUri) ||
-            (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps))
-        {
-            throw new EdgeException($"Could not parse the whip sink '{_url}' as an HTTP or HTTPS URL.");
-        }
-
-        // Send-only audio (the --audio-codec, PCMU by default) and H264 video (H264 because the public
-        // Broadcast Box test endpoint rejects VP8; some endpoints likewise reject G.711, hence the Opus
-        // option). The video and audio are offered as the exact format the source produces so the
-        // payloads relay unchanged (repacketise, not transcode); packetization-mode=1 lets the large
-        // H264 NAL units be fragmented across RTP packets.
+        // Send-only audio (the --audio-codec, Opus by default) and H264 video, offered as the exact format
+        // the source produces so the payloads relay unchanged (repacketise, not transcode);
+        // packetization-mode=1 lets the large H264 NAL units be fragmented across RTP packets.
         _pc.addTrack(new MediaStreamTrack(new List<AudioFormat> { _audioFormat }, MediaStreamStatusEnum.SendOnly));
-
         _pc.addTrack(new MediaStreamTrack(new List<VideoFormat> { RouteVideoFormats.H264 }, MediaStreamStatusEnum.SendOnly));
 
         var connected = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -99,61 +84,20 @@ public sealed class WhipSinkNode : ISinkNode
             }
         };
 
-        // Gather all candidates up front so the single POST carries a complete offer (no trickle).
-        var offer = _pc.createOffer(new RTCOfferOptions { X_WaitForIceGatheringToComplete = true });
-        await _pc.setLocalDescription(offer).ConfigureAwait(false);
-
-        // The SDP is logged at debug (shown with --verbose) to diagnose codec/direction negotiation,
-        // e.g. an audio or video m-line the server answers as inactive because it lacks the codec.
-        _logger.LogDebug("whip sink offer SDP to {Url}:\n{Sdp}", _url, offer.sdp);
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpointUri)
-        {
-            Content = new StringContent(offer.sdp, Encoding.UTF8, "application/sdp")
-        };
-        if (!string.IsNullOrWhiteSpace(_token))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
-        }
-
-        HttpResponseMessage response;
-        string responseBody;
+        // Do the WHIP offer / POST / answer exchange (delegated to the library client), bounded by the timeout.
         try
         {
-            response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-            responseBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            using var publishCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            publishCts.CancelAfter(TimeSpan.FromSeconds(_timeoutSeconds));
+            await _whip.PublishAsync(_pc, _url, _token, publishCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            throw new EdgeException($"The whip request to {_url} did not complete within {_timeoutSeconds}s.");
         }
         catch (Exception excp) when (excp is not EdgeException)
         {
-            throw new EdgeException($"The whip request to {_url} failed: {excp.Message}");
-        }
-
-        using (response)
-        {
-            if (!response.IsSuccessStatusCode)
-            {
-                string detail = responseBody.Length > 200 ? responseBody[..200] : responseBody;
-                throw new EdgeException($"The whip endpoint {_url} returned HTTP {(int)response.StatusCode}. {detail}".TrimEnd());
-            }
-
-            if (response.Headers.Location != null)
-            {
-                _resource = response.Headers.Location.IsAbsoluteUri
-                    ? response.Headers.Location
-                    : new Uri(endpointUri, response.Headers.Location);
-            }
-
-            _logger.LogDebug("whip sink answer SDP from {Url}:\n{Sdp}", _url, responseBody);
-
-            var setAnswerResult = _pc.setRemoteDescription(new RTCSessionDescriptionInit
-            {
-                type = RTCSdpType.answer,
-                sdp = responseBody
-            });
-            if (setAnswerResult != SetDescriptionResultEnum.OK)
-            {
-                throw new EdgeException($"The whip SDP answer from {_url} could not be applied: {setAnswerResult}.");
-            }
+            throw new EdgeException($"The whip publish to {_url} failed: {excp.Message}");
         }
 
         var completed = await Task.WhenAny(connected.Task, Task.Delay(TimeSpan.FromSeconds(_timeoutSeconds), ct)).ConfigureAwait(false);
@@ -202,25 +146,10 @@ public sealed class WhipSinkNode : ISinkNode
     {
         _connected = false;
 
-        // Best effort WHIP session teardown then close the peer connection.
-        if (_resource != null)
-        {
-            try
-            {
-                using var deleteRequest = new HttpRequestMessage(HttpMethod.Delete, _resource);
-                if (!string.IsNullOrWhiteSpace(_token))
-                {
-                    deleteRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
-                }
-                await _http.SendAsync(deleteRequest, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception excp)
-            {
-                _logger.LogDebug("whip sink session delete error: {Error}", excp.Message);
-            }
-        }
+        // Best effort WHIP session teardown (DELETE the resource) then close the peer connection.
+        await _whip.DeleteAsync(_token).ConfigureAwait(false);
 
         try { _pc.Close("route whip sink disposed"); } catch { /* best effort */ }
-        _http.Dispose();
+        _whip.Dispose();
     }
 }
