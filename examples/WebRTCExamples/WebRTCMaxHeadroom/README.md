@@ -31,9 +31,13 @@ containerised and deployed to Kubernetes.
 | `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, drive the mouth from an RMS amplitude envelope). Concrete engines only implement `SynthesiseAsync`. |
 | `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server (recommended) or per-utterance child process. Returns 16-bit PCM for the base class to play. |
 | `ElevenLabsTtsSpeaker.cs` | Cloud ElevenLabs engine — POSTs to the API requesting raw `pcm_16000`. Best quality, but paid/online. Used when `ELEVENLABS_API_KEY` is set. |
+| `ElevenLabsStreamingTtsSpeaker.cs` | Low-latency ElevenLabs engine — WebSocket fed by the LLM token stream, audio played as it arrives, mouth driven by each chunk's amplitude. Enabled with `ELEVENLABS_STREAMING=true`. |
+| `IAvatarSpeaker.cs` | The speaking contract: `IAvatarSpeaker` (speak text) and `IStreamingAvatarSpeaker` (speak a text stream), so the batch and streaming engines plug in uniformly. |
 | `SpeechRecognizer.cs` | Base class for the STT engines: owns the streaming front-end (energy VAD that buffers the 8kHz mic PCM into utterances). Concrete engines only implement `TranscribeAsync`. |
 | `WhisperSpeechRecognizer.cs` | Local Whisper.net speech-to-text — resamples each utterance to 16kHz and transcribes it offline. The default STT. |
 | `ElevenLabsSpeechRecognizer.cs` | Cloud ElevenLabs "scribe" speech-to-text — POSTs each utterance (as a WAV) to the API. Used when `ELEVENLABS_API_KEY` is set. |
+| `ElevenLabsStreamingSpeechRecognizer.cs` | Low-latency realtime STT — streams the 8kHz mic over a WebSocket (Scribe v2) with server-side VAD. Enabled with `ELEVENLABS_STREAMING=true`. |
+| `ISpeechRecognizer.cs` | The listening contract (`StartAsync` / `Write` / `OnRecognized`), so the batch and streaming recognisers plug in uniformly. |
 | `LocalLlmClient.cs` | Optional OpenAI-compatible chat client (Ollama / LM Studio / llama.cpp) for generating in-character replies. |
 | `Program.cs` | ASP.NET host: `/offer` (send/recv WebRTC), `/say`, `/ask`. Routes both the Ask box and recognised speech through one shared `AskAsync`. |
 | `wwwroot/index.html` | Browser client: connect (captures the mic), a mic mute toggle, plus the Say / Ask text boxes. |
@@ -155,6 +159,22 @@ containerised and deployed to Kubernetes.
    Find voice ids in your ElevenLabs dashboard or via `GET https://api.elevenlabs.io/v1/voices`.
    The app requests raw `pcm_16000` audio, so there is no MP3 decode or resample — it feeds
    straight into the same amplitude-driven lip-sync as Piper.
+
+   **Low-latency streaming (`ELEVENLABS_STREAMING=true`).** Switches both directions to
+   ElevenLabs WebSockets:
+   - **TTS** opens `/stream-input`, is fed the LLM's token stream as it is generated, and
+     plays audio chunks as they arrive — so the avatar starts talking sooner. Lip-sync is
+     driven by the amplitude of each audio chunk as it plays (an earlier version used the
+     API's alignment timestamps, but those drift against chunked playback and froze the mouth
+     partway through long sentences).
+   - **STT** opens `/v1/speech-to-text/realtime` (Scribe v2) and streams the 8kHz mic straight
+     up with **server-side VAD** — no local buffer-until-silence — so listening is lower
+     latency. Final (`committed`) transcripts drive the same LLM→speak path.
+   ```powershell
+   $env:ELEVENLABS_STREAMING = "true"
+   ```
+   This is a prototype; the realtime STT commit strategy and message field names are best
+   confirmed against your account.
 
 2. (Optional) **Whisper** speech-to-text. A `ggml` model is downloaded to the app
    directory on first run; override the file with:

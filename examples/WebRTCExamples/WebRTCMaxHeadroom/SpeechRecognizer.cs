@@ -30,7 +30,7 @@ using Microsoft.Extensions.Logging;
 
 namespace demo;
 
-public abstract class SpeechRecognizer : IDisposable
+public abstract class SpeechRecognizer : ISpeechRecognizer
 {
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<SpeechRecognizer>();
 

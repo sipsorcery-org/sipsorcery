@@ -30,7 +30,12 @@
 //   ELEVENLABS_API_KEY   - cloud TTS + STT (best quality, paid). When set, ElevenLabs is used.
 //   ELEVENLABS_VOICE_ID  - optional TTS voice id (default "21m00Tcm4TlvDq8ikWAM", "Rachel").
 //   ELEVENLABS_MODEL     - optional TTS model id (default "eleven_turbo_v2_5").
-//   ELEVENLABS_STT_MODEL - optional STT model id (default "scribe_v1").
+//   ELEVENLABS_STT_MODEL - optional batch STT model id (default "scribe_v1").
+//   ELEVENLABS_STREAMING - optional "true" to use the low-latency WebSocket engines: TTS fed
+//                          the LLM token stream (ElevenLabsStreamingTtsSpeaker) and realtime
+//                          STT that streams the mic with server-side VAD
+//                          (ElevenLabsStreamingSpeechRecognizer). Default is the batch engines.
+//   ELEVENLABS_STT_REALTIME_MODEL - optional realtime STT model id (default "scribe_v2_realtime").
 //
 // Piper TTS (local, offline) - pick ONE mode:
 //   PIPER_HTTP_URL       - recommended, the synthesis endpoint of a running `piper.http_server`.
@@ -63,6 +68,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -88,8 +94,8 @@ class Program
     // The demo drives a single connected viewer.
     private static MaxHeadroomVideoSource _videoSource;
     private static AudioExtrasSource _audioSource;
-    private static LipSyncTtsSpeaker _speaker;
-    private static SpeechRecognizer _recognizer;
+    private static IAvatarSpeaker _speaker;
+    private static ISpeechRecognizer _recognizer;
     private static LocalLlmClient _llm;
 
     private static string _piperHttpUrl;
@@ -100,6 +106,8 @@ class Program
     private static string _elevenLabsVoiceId;
     private static string _elevenLabsModel;
     private static string _elevenLabsSttModel;
+    private static string _elevenLabsSttRealtimeModel;
+    private static bool _elevenLabsStreaming;
     private static string _whisperModel;
     private static int _visemeLeadMs = 0;
 
@@ -138,6 +146,8 @@ class Program
         _elevenLabsVoiceId = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID") ?? "21m00Tcm4TlvDq8ikWAM"; // "Rachel".
         _elevenLabsModel = Environment.GetEnvironmentVariable("ELEVENLABS_MODEL") ?? "eleven_turbo_v2_5";
         _elevenLabsSttModel = Environment.GetEnvironmentVariable("ELEVENLABS_STT_MODEL") ?? "scribe_v1";
+        _elevenLabsSttRealtimeModel = Environment.GetEnvironmentVariable("ELEVENLABS_STT_REALTIME_MODEL") ?? "scribe_v2_realtime";
+        _elevenLabsStreaming = string.Equals(Environment.GetEnvironmentVariable("ELEVENLABS_STREAMING"), "true", StringComparison.OrdinalIgnoreCase);
         _whisperModel = Environment.GetEnvironmentVariable("WHISPER_MODEL");
         if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
 
@@ -199,6 +209,26 @@ class Program
         if (speaker == null || string.IsNullOrWhiteSpace(prompt))
         {
             return string.Empty;
+        }
+
+        // A streaming speaker consumes the LLM token stream directly over one WebSocket; tee the
+        // sentences into a builder so we can still return the assembled reply text.
+        if (speaker is IStreamingAvatarSpeaker streaming)
+        {
+            var streamed = new StringBuilder();
+            async IAsyncEnumerable<string> Tee()
+            {
+                await foreach (var sentence in _llm.StreamReplyAsync(prompt))
+                {
+                    streamed.Append(sentence).Append(' ');
+                    yield return sentence;
+                }
+            }
+
+            await streaming.SpeakStreamAsync(Tee());
+            var streamedText = streamed.ToString().Trim();
+            _logger.LogInformation("LLM reply: {Reply}", streamedText);
+            return streamedText;
         }
 
         var sentences = Channel.CreateUnbounded<string>();
@@ -274,8 +304,8 @@ class Program
         audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
         pc.OnAudioFormatsNegotiated += formats => audioSource.SetAudioSourceFormat(formats.First());
 
-        LipSyncTtsSpeaker speaker = CreateSpeaker(videoSource, audioSource);
-        SpeechRecognizer recognizer = null;
+        IAvatarSpeaker speaker = CreateSpeaker(videoSource, audioSource);
+        ISpeechRecognizer recognizer = null;
         if (speaker != null)
         {
             // Speech-to-text: decode the received microphone RTP (PCMU -> 8kHz PCM) and feed the STT engine.
@@ -375,11 +405,13 @@ class Program
     /// Builds the TTS speaker from configuration: ElevenLabs (cloud) takes priority if an API key
     /// is set, otherwise Piper (local). Returns null if no TTS is configured.
     /// </summary>
-    private static LipSyncTtsSpeaker CreateSpeaker(MaxHeadroomVideoSource video, AudioExtrasSource audio)
+    private static IAvatarSpeaker CreateSpeaker(MaxHeadroomVideoSource video, AudioExtrasSource audio)
     {
         if (!string.IsNullOrWhiteSpace(_elevenLabsKey))
         {
-            return new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs);
+            return _elevenLabsStreaming
+                ? new ElevenLabsStreamingTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs)
+                : new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs);
         }
         if (PiperConfigured())
         {
@@ -389,13 +421,20 @@ class Program
     }
 
     /// <summary>
-    /// Builds the STT recogniser from configuration: ElevenLabs (cloud) if an API key is set,
-    /// otherwise local Whisper. Mirrors the TTS engine choice in CreateSpeaker.
+    /// Builds the STT recogniser from configuration: ElevenLabs (cloud) if an API key is set -
+    /// realtime WebSocket when ELEVENLABS_STREAMING is on, otherwise the batch scribe API - and
+    /// local Whisper when no key is set. Mirrors the TTS engine choice in CreateSpeaker.
     /// </summary>
-    private static SpeechRecognizer CreateRecognizer() =>
-        !string.IsNullOrWhiteSpace(_elevenLabsKey)
-            ? new ElevenLabsSpeechRecognizer(_elevenLabsKey, _elevenLabsSttModel)
-            : new WhisperSpeechRecognizer(_whisperModel);
+    private static ISpeechRecognizer CreateRecognizer()
+    {
+        if (!string.IsNullOrWhiteSpace(_elevenLabsKey))
+        {
+            return _elevenLabsStreaming
+                ? new ElevenLabsStreamingSpeechRecognizer(_elevenLabsKey, _elevenLabsSttRealtimeModel)
+                : new ElevenLabsSpeechRecognizer(_elevenLabsKey, _elevenLabsSttModel);
+        }
+        return new WhisperSpeechRecognizer(_whisperModel);
+    }
 
     /// <summary>True if any TTS engine is configured (ElevenLabs or Piper).</summary>
     private static bool TtsConfigured() =>

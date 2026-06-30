@@ -32,7 +32,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace demo;
 
-public abstract class LipSyncTtsSpeaker
+public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
 {
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<LipSyncTtsSpeaker>();
 
