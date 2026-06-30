@@ -417,3 +417,6 @@ MigrationBackup/
 .claude/
 
 src/SIPSorcery.Diagnostics/benchmarks/results
+
+examples/WebRTCExamples/WebRTCMaxHeadroom/*.bin
+examples/WebRTCExamples/WebRTCMaxHeadroom/*.wav

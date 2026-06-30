@@ -16,7 +16,12 @@
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
-    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.40.0" />
+    <!-- Local, offline speech-to-text. The Runtime package carries the native whisper.cpp
+         binaries for win-x64 / linux-x64 / osx, so it works in a Linux container with no GPU.
+         Text-to-speech is handled out-of-process by Piper (PIPER_PATH), so no TTS package is
+         needed - the whole avatar runs offline with no cloud dependency. -->
+    <PackageReference Include="Whisper.net" Version="1.8.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.8.1" />
   </ItemGroup>
 
   <ItemGroup>
