@@ -1,12 +1,14 @@
 # WebRTC Max Headroom Avatar
 
 A demo that streams a stylised **Max Headroom** style talking avatar to a WebRTC
-browser. The face is rendered with SkiaSharp, speech is synthesised locally with
-**Piper**, and the mouth is lip-synced to an **amplitude envelope** of that audio.
+browser. The face is rendered with SkiaSharp, speech is synthesised by a pluggable
+TTS engine — local **Piper** or cloud **ElevenLabs** — and the mouth is lip-synced
+to an **amplitude envelope** of that audio.
 An optional local LLM generates the replies. You can **talk to** the avatar with
-your microphone (local **Whisper** speech-to-text), or type into the Say / Ask
-boxes — both drive the same reply pipeline. Everything runs offline with no cloud
-dependency, so the avatar can be containerised and deployed to Kubernetes.
+your microphone (speech-to-text via local **Whisper** or cloud **ElevenLabs**), or
+type into the Say / Ask boxes — both drive the same reply pipeline. With the local
+engines everything runs offline with no cloud dependency, so the avatar can be
+containerised and deployed to Kubernetes.
 
 ```
  mic (browser)  ─► WebRTC audio ─► Whisper STT (local) ─┐
@@ -26,8 +28,12 @@ dependency, so the avatar can be containerised and deployed to Kubernetes.
 | File | Role |
 |------|------|
 | `MaxHeadroomVideoSource.cs` | `IVideoSource` that renders the head/mouth/glitch with SkiaSharp and emits raw BGR frames. Mouth shape is driven by `CurrentViseme`. |
-| `PiperTtsSpeaker.cs` | Runs Piper as a child process (text in, raw PCM out), resamples to 16kHz, streams it to the audio track, and drives the mouth from a short-window RMS envelope of the audio (Piper emits no visemes). |
-| `WhisperSpeechRecognizer.cs` | Local Whisper.net speech-to-text: the received microphone audio (decoded to 8kHz PCM) is buffered with a simple energy VAD, resampled to 16kHz and transcribed; each recognised utterance is raised for the LLM→speak path. Lets you talk to the avatar. |
+| `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, drive the mouth from an RMS amplitude envelope). Concrete engines only implement `SynthesiseAsync`. |
+| `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server (recommended) or per-utterance child process. Returns 16-bit PCM for the base class to play. |
+| `ElevenLabsTtsSpeaker.cs` | Cloud ElevenLabs engine — POSTs to the API requesting raw `pcm_16000`. Best quality, but paid/online. Used when `ELEVENLABS_API_KEY` is set. |
+| `SpeechRecognizer.cs` | Base class for the STT engines: owns the streaming front-end (energy VAD that buffers the 8kHz mic PCM into utterances). Concrete engines only implement `TranscribeAsync`. |
+| `WhisperSpeechRecognizer.cs` | Local Whisper.net speech-to-text — resamples each utterance to 16kHz and transcribes it offline. The default STT. |
+| `ElevenLabsSpeechRecognizer.cs` | Cloud ElevenLabs "scribe" speech-to-text — POSTs each utterance (as a WAV) to the API. Used when `ELEVENLABS_API_KEY` is set. |
 | `LocalLlmClient.cs` | Optional OpenAI-compatible chat client (Ollama / LM Studio / llama.cpp) for generating in-character replies. |
 | `Program.cs` | ASP.NET host: `/offer` (send/recv WebRTC), `/say`, `/ask`. Routes both the Ask box and recognised speech through one shared `AskAsync`. |
 | `wwwroot/index.html` | Browser client: connect (captures the mic), a mic mute toggle, plus the Say / Ask text boxes. |
@@ -125,7 +131,30 @@ dependency, so the avatar can be containerised and deployed to Kubernetes.
    In Kubernetes, run the Piper server as a **sidecar container** in the same pod and set
    `PIPER_HTTP_URL=http://127.0.0.1:5000` — the app and Piper share the pod's localhost.
 
-   Without `PIPER_PATH`/`PIPER_MODEL` the avatar still renders but cannot speak or listen.
+   Without any TTS configured the avatar still renders but cannot speak or listen.
+
+   ### Cloud alternative: ElevenLabs
+
+   For the most natural voices you can use [ElevenLabs](https://elevenlabs.io) instead of
+   Piper. It is a **paid cloud service** (so it reintroduces an external dependency and a
+   per-character cost — the opposite of the offline goal), but the quality is the best of
+   the options here. Setting an API key switches **both** the voice (TTS) and the listening
+   (STT, via the ElevenLabs "scribe" model) to ElevenLabs, taking priority over Piper and
+   Whisper:
+
+   ```powershell
+   $env:ELEVENLABS_API_KEY   = "<your key>"
+   $env:ELEVENLABS_VOICE_ID  = "21m00Tcm4TlvDq8ikWAM"   # optional, TTS voice, default "Rachel"
+   $env:ELEVENLABS_MODEL     = "eleven_turbo_v2_5"        # optional, TTS model, low-latency default
+   $env:ELEVENLABS_STT_MODEL = "scribe_v1"                # optional, STT model default
+   ```
+   ```bash
+   export ELEVENLABS_API_KEY=<your key>
+   ```
+
+   Find voice ids in your ElevenLabs dashboard or via `GET https://api.elevenlabs.io/v1/voices`.
+   The app requests raw `pcm_16000` audio, so there is no MP3 decode or resample — it feeds
+   straight into the same amplitude-driven lip-sync as Piper.
 
 2. (Optional) **Whisper** speech-to-text. A `ggml` model is downloaded to the app
    directory on first run; override the file with:

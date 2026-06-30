@@ -3,10 +3,12 @@
 //
 // Description: A WebRTC demo that serves a stylised "Max Headroom" talking
 // avatar. Video is rendered with SkiaSharp (MaxHeadroomVideoSource), speech is
-// synthesised locally with Piper and the mouth is lip-synced to an amplitude
-// envelope of that audio (PiperTtsSpeaker). An optional local LLM (Ollama / LM
-// Studio / llama.cpp) generates the replies (LocalLlmClient). Everything runs
-// offline, so the avatar can be containerised and deployed to Kubernetes.
+// synthesised by a pluggable TTS engine - local Piper (PiperTtsSpeaker) or cloud
+// ElevenLabs (ElevenLabsTtsSpeaker), both via the shared LipSyncTtsSpeaker base -
+// and the mouth is lip-synced to an amplitude envelope of that audio. An optional
+// local LLM (Ollama / LM Studio / llama.cpp) generates the replies (LocalLlmClient).
+// With Piper everything runs offline, so the avatar can be containerised and deployed
+// to Kubernetes.
 //
 // You can also TALK to the avatar: the browser sends its microphone over the same
 // WebRTC connection, the server decodes it and runs local, offline speech-to-text
@@ -21,7 +23,16 @@
 //   POST /ask    - body = prompt. Runs the prompt through the local LLM (if
 //                  configured) and speaks the reply (same path as speaking to it).
 //
-// Configuration (environment variables) - Piper TTS, pick ONE mode:
+// Configuration (environment variables):
+//
+// Engine selection - if ELEVENLABS_API_KEY is set, ElevenLabs is used for BOTH the voice
+// (TTS) and the listening (STT); otherwise Piper (TTS) + Whisper (STT) run locally:
+//   ELEVENLABS_API_KEY   - cloud TTS + STT (best quality, paid). When set, ElevenLabs is used.
+//   ELEVENLABS_VOICE_ID  - optional TTS voice id (default "21m00Tcm4TlvDq8ikWAM", "Rachel").
+//   ELEVENLABS_MODEL     - optional TTS model id (default "eleven_turbo_v2_5").
+//   ELEVENLABS_STT_MODEL - optional STT model id (default "scribe_v1").
+//
+// Piper TTS (local, offline) - pick ONE mode:
 //   PIPER_HTTP_URL       - recommended, the synthesis endpoint of a running `piper.http_server`.
 //                          The voice loads once server-side, so this is much faster than
 //                          spawning Piper per utterance. For piper-tts <= 1.4.2 this is the
@@ -77,14 +88,18 @@ class Program
     // The demo drives a single connected viewer.
     private static MaxHeadroomVideoSource _videoSource;
     private static AudioExtrasSource _audioSource;
-    private static PiperTtsSpeaker _speaker;
-    private static WhisperSpeechRecognizer _recognizer;
+    private static LipSyncTtsSpeaker _speaker;
+    private static SpeechRecognizer _recognizer;
     private static LocalLlmClient _llm;
 
     private static string _piperHttpUrl;
     private static string _piperPath;
     private static string _piperModel;
     private static string _piperDataDir;
+    private static string _elevenLabsKey;
+    private static string _elevenLabsVoiceId;
+    private static string _elevenLabsModel;
+    private static string _elevenLabsSttModel;
     private static string _whisperModel;
     private static int _visemeLeadMs = 0;
 
@@ -119,12 +134,16 @@ class Program
         _piperPath = Environment.GetEnvironmentVariable("PIPER_PATH");
         _piperModel = Environment.GetEnvironmentVariable("PIPER_MODEL");
         _piperDataDir = Environment.GetEnvironmentVariable("PIPER_DATA_DIR");
+        _elevenLabsKey = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY");
+        _elevenLabsVoiceId = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID") ?? "21m00Tcm4TlvDq8ikWAM"; // "Rachel".
+        _elevenLabsModel = Environment.GetEnvironmentVariable("ELEVENLABS_MODEL") ?? "eleven_turbo_v2_5";
+        _elevenLabsSttModel = Environment.GetEnvironmentVariable("ELEVENLABS_STT_MODEL") ?? "scribe_v1";
         _whisperModel = Environment.GetEnvironmentVariable("WHISPER_MODEL");
         if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
 
-        if (!PiperConfigured())
+        if (!TtsConfigured())
         {
-            _logger.LogWarning("Piper TTS not configured (set PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
+            _logger.LogWarning("No TTS configured (set ELEVENLABS_API_KEY, or PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
         }
 
         _llm = new LocalLlmClient(
@@ -255,16 +274,14 @@ class Program
         audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
         pc.OnAudioFormatsNegotiated += formats => audioSource.SetAudioSourceFormat(formats.First());
 
-        PiperTtsSpeaker speaker = null;
-        WhisperSpeechRecognizer recognizer = null;
-        if (PiperConfigured())
+        LipSyncTtsSpeaker speaker = CreateSpeaker(videoSource, audioSource);
+        SpeechRecognizer recognizer = null;
+        if (speaker != null)
         {
-            speaker = new PiperTtsSpeaker(_piperHttpUrl, _piperPath, _piperModel, _piperDataDir, videoSource, audioSource, _visemeLeadMs);
-
-            // Speech-to-text: decode the received microphone RTP (PCMU -> 8kHz PCM) and feed local Whisper STT.
+            // Speech-to-text: decode the received microphone RTP (PCMU -> 8kHz PCM) and feed the STT engine.
             // Recognised utterances run through the same LLM->speak path as /ask, so typing a prompt and
             // speaking one are parallel inputs to the exact same pipeline.
-            recognizer = new WhisperSpeechRecognizer(_whisperModel);
+            recognizer = CreateRecognizer();
             recognizer.OnRecognized += text => _ = AskAsync(text);
 
             var micDecoder = new AudioEncoder();
@@ -305,7 +322,7 @@ class Program
                         }
                         else
                         {
-                            _logger.LogWarning("Connected but Piper TTS is not configured; the avatar cannot speak or listen.");
+                            _logger.LogWarning("Connected but no TTS is configured; the avatar cannot speak or listen.");
                         }
                         if (recognizer != null)
                         {
@@ -349,10 +366,40 @@ class Program
         }
         if (_speaker == null)
         {
-            return Results.BadRequest("Piper TTS is not configured. Set PIPER_HTTP_URL (or PIPER_PATH + PIPER_MODEL), then restart.");
+            return Results.BadRequest("No TTS configured. Set ELEVENLABS_API_KEY, or PIPER_HTTP_URL (or PIPER_PATH + PIPER_MODEL), then restart.");
         }
         return null;
     }
+
+    /// <summary>
+    /// Builds the TTS speaker from configuration: ElevenLabs (cloud) takes priority if an API key
+    /// is set, otherwise Piper (local). Returns null if no TTS is configured.
+    /// </summary>
+    private static LipSyncTtsSpeaker CreateSpeaker(MaxHeadroomVideoSource video, AudioExtrasSource audio)
+    {
+        if (!string.IsNullOrWhiteSpace(_elevenLabsKey))
+        {
+            return new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs);
+        }
+        if (PiperConfigured())
+        {
+            return new PiperTtsSpeaker(_piperHttpUrl, _piperPath, _piperModel, _piperDataDir, video, audio, _visemeLeadMs);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Builds the STT recogniser from configuration: ElevenLabs (cloud) if an API key is set,
+    /// otherwise local Whisper. Mirrors the TTS engine choice in CreateSpeaker.
+    /// </summary>
+    private static SpeechRecognizer CreateRecognizer() =>
+        !string.IsNullOrWhiteSpace(_elevenLabsKey)
+            ? new ElevenLabsSpeechRecognizer(_elevenLabsKey, _elevenLabsSttModel)
+            : new WhisperSpeechRecognizer(_whisperModel);
+
+    /// <summary>True if any TTS engine is configured (ElevenLabs or Piper).</summary>
+    private static bool TtsConfigured() =>
+        !string.IsNullOrWhiteSpace(_elevenLabsKey) || PiperConfigured();
 
     /// <summary>True if Piper TTS is configured, either via the HTTP server or the child-process mode.</summary>
     private static bool PiperConfigured() =>
