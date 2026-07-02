@@ -3,16 +3,17 @@
 //
 // Description: Local, offline, IN-PROCESS speech-to-text using sherpa-onnx - one of
 // the avatar's STT engines (see SpeechRecognizer for the shared streaming/segmentation
-// front-end). Runs a WHISPER model exported to ONNX, so accuracy is identical to the
-// Whisper.net engine, but through the same sherpa-onnx/onnxruntime stack the TTS
-// already uses - one less native runtime (whisper.cpp) to carry.
+// front-end). Runs through the same sherpa-onnx/onnxruntime stack the TTS already uses,
+// so there is no separate STT runtime to carry.
 //
-// Model: any sherpa-onnx whisper export extracted to a folder (encoder + decoder .onnx
-// and tokens.txt), e.g. sherpa-onnx-whisper-base.en from
-// https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models
-// The conventional folder C:\tools\sherpa-stt\sherpa-onnx-whisper-base.en is picked up
-// automatically; override with SHERPA_STT_DIR. Other sherpa ASR families (zipformer
-// streaming, Parakeet, SenseVoice) drop into the same folder convention later.
+// Model families are AUTO-DETECTED from the files in the model folder:
+//   * encoder + decoder + JOINER .onnx  -> NeMo transducer (e.g. Parakeet tdt - the
+//     current top open English model on ASR leaderboards; recommended).
+//   * encoder + decoder .onnx           -> Whisper ONNX export (identical weights to
+//     the Whisper.net engine).
+// Extract any model from https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models
+// under C:\tools\sherpa-stt\ - the first folder containing .onnx files is used;
+// override with SHERPA_STT_DIR.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -43,15 +44,33 @@ public sealed class SherpaSpeechRecognizer : SpeechRecognizer
 
     protected override string EngineName => "SherpaOnnx";
 
-    /// <summary>The conventional model folder, overridable with SHERPA_STT_DIR.</summary>
-    public static string DefaultModelDir =>
-        Environment.GetEnvironmentVariable("SHERPA_STT_DIR")
-            ?? @"C:\tools\sherpa-stt\sherpa-onnx-whisper-base.en";
+    /// <summary>The model folder: SHERPA_STT_DIR, else the first folder under
+    /// C:\tools\sherpa-stt containing .onnx files (keep one model there, or set the env var).</summary>
+    public static string DefaultModelDir
+    {
+        get
+        {
+            var env = Environment.GetEnvironmentVariable("SHERPA_STT_DIR");
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                return env;
+            }
+            const string root = @"C:\tools\sherpa-stt";
+            return Directory.Exists(root)
+                ? Directory.EnumerateDirectories(root)
+                      .OrderBy(d => d)
+                      .FirstOrDefault(d => Directory.EnumerateFiles(d, "*.onnx").Any())
+                : null;
+        }
+    }
 
     /// <summary>True when a sherpa STT model folder is on disk (used for engine selection).</summary>
-    public static bool FilesPresent() =>
-        Directory.Exists(DefaultModelDir) &&
-        Directory.EnumerateFiles(DefaultModelDir, "*encoder*.onnx").Any();
+    public static bool FilesPresent()
+    {
+        var dir = DefaultModelDir;
+        return dir != null && Directory.Exists(dir) &&
+               Directory.EnumerateFiles(dir, "*encoder*.onnx").Any();
+    }
 
     public SherpaSpeechRecognizer(string modelDir = null)
     {
@@ -66,25 +85,44 @@ public sealed class SherpaSpeechRecognizer : SpeechRecognizer
 
     private static OfflineRecognizer CreateEngine(string modelDir)
     {
-        // Prefer the int8 quantised pair when present: ~4x smaller and faster on CPU for a
+        // Prefer the int8 quantised files when present: ~4x smaller and faster on CPU for a
         // negligible accuracy cost; fall back to the fp32 files.
         string Pick(string kind) =>
             Directory.EnumerateFiles(modelDir, $"*{kind}.int8.onnx").FirstOrDefault()
-            ?? Directory.EnumerateFiles(modelDir, $"*{kind}.onnx").FirstOrDefault()
-            ?? throw new FileNotFoundException($"No {kind} .onnx found in {modelDir}.");
+            ?? Directory.EnumerateFiles(modelDir, $"*{kind}.onnx").FirstOrDefault();
+
+        var encoder = Pick("encoder") ?? throw new FileNotFoundException($"No encoder .onnx found in {modelDir}.");
+        var decoder = Pick("decoder") ?? throw new FileNotFoundException($"No decoder .onnx found in {modelDir}.");
+        var joiner = Pick("joiner");
 
         var config = new OfflineRecognizerConfig();
-        config.ModelConfig.Whisper.Encoder = Pick("encoder");
-        config.ModelConfig.Whisper.Decoder = Pick("decoder");
-        config.ModelConfig.Whisper.Language = "en";
-        config.ModelConfig.Whisper.Task = "transcribe";
+        if (joiner != null)
+        {
+            // NeMo transducer (encoder/decoder/joiner), e.g. Parakeet tdt.
+            config.ModelConfig.Transducer.Encoder = encoder;
+            config.ModelConfig.Transducer.Decoder = decoder;
+            config.ModelConfig.Transducer.Joiner = joiner;
+            config.ModelConfig.ModelType = "nemo_transducer";
+        }
+        else
+        {
+            // Whisper ONNX export (encoder/decoder).
+            config.ModelConfig.Whisper.Encoder = encoder;
+            config.ModelConfig.Whisper.Decoder = decoder;
+            config.ModelConfig.Whisper.Language = "en";
+            config.ModelConfig.Whisper.Task = "transcribe";
+        }
         config.ModelConfig.Tokens = Directory.EnumerateFiles(modelDir, "*tokens.txt").First();
         config.ModelConfig.NumThreads = Math.Clamp(Environment.ProcessorCount / 2, 1, 4);
-        config.ModelConfig.Provider = "cpu";
+        // "cpu" (default), "directml" (any DX12 GPU on Windows - the deployed onnxruntime
+        // build already supports it) or "cuda" (needs the CUDA build of sherpa-onnx).
+        // sherpa falls back to CPU itself if the requested provider is unavailable.
+        config.ModelConfig.Provider = Environment.GetEnvironmentVariable("SHERPA_STT_PROVIDER") ?? "cpu";
 
         var recognizer = new OfflineRecognizer(config);
-        logger.LogInformation("sherpa-onnx STT loaded {Encoder}.",
-            Path.GetFileName(config.ModelConfig.Whisper.Encoder));
+        logger.LogInformation("sherpa-onnx STT loaded {Model} ({Family}).",
+            Path.GetFileName(Path.TrimEndingDirectorySeparator(modelDir)),
+            joiner != null ? "nemo transducer" : "whisper");
         return recognizer;
     }
 

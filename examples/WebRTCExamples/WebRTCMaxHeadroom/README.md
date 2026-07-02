@@ -1,27 +1,26 @@
 # WebRTC Max Headroom Avatar
 
-A demo that streams a stylised **Max Headroom** style talking avatar to a WebRTC
-browser. The face is rendered with SkiaSharp, speech is synthesised by a pluggable
-TTS engine — local **Piper** or cloud **ElevenLabs** — and the mouth is lip-synced
-to an **amplitude envelope** of that audio.
-An optional local LLM generates the replies. You can **talk to** the avatar with
-your microphone (speech-to-text via local **Whisper** or cloud **ElevenLabs**), or
-type into the Say / Ask boxes — both drive the same reply pipeline. With the local
-engines everything runs offline with no cloud dependency, so the avatar can be
-containerised and deployed to Kubernetes.
+A demo that streams a **Max Headroom** talking avatar to a WebRTC browser — either a
+photoreal **Wav2Lip** head driven from a single photo, or a stylised SkiaSharp cartoon.
+Speech is synthesised in-process by **sherpa-onnx** (Piper voices), replies come from an
+in-process **LLamaSharp** LLM, and you can **talk to** the avatar with your microphone
+(speech-to-text via **Parakeet**, also in-process) or type into the Say / Ask boxes —
+both drive the same reply pipeline. The whole stack runs offline inside one .NET
+process, so the avatar containerises and deploys as a single service. Cloud engines
+(ElevenLabs, OpenAI-compatible LLM gateways) remain available as alternatives.
 
 ```
- mic (browser)  ─► WebRTC audio ─► Whisper STT (local) ─┐
- Ask box  ────────────────────────────────────────────┤
-                                                       ▼
- local LLM (optional)             Piper TTS (local)
+ mic (browser)  ─► WebRTC audio ─► Parakeet STT (in-process) ─┐
+ Ask box  ───────────────────────────────────────────────────┤
+                                                              ▼
+ LLamaSharp LLM (in-process)      sherpa-onnx TTS (in-process)
    text  ─────────────►  text  ───────────────►  16kHz PCM  ─────►  AudioExtrasSource ─► WebRTC audio
                                          │
                                          └──►  PushAudio(PCM windows)  ─►  IAvatarRenderer
-                                                                          │  (MaxHeadroom SkiaSharp)
-                                                                          │  raw BGR frames
+                                                                          │  (Wav2Lip photoreal
+                                                                          │   or SkiaSharp cartoon)
                                                                           ▼
-                                                          VideoEncoderEndPoint (VP8) ─► WebRTC video
+                                                            H264/VP8 encode ─► WebRTC video
 ```
 
 The speaker talks to the renderer only through **`IAvatarRenderer`** (BeginSpeech / PushAudio /
@@ -32,7 +31,7 @@ SkiaSharp, no external process), or the `NeuralAvatarRenderer` (`neural` — the
 Python sidecar, see [neural/README.md](neural/README.md)). This mirrors how LiveKit's avatar
 agents swap `tavus.AvatarSession` for `bithuman.AvatarSession` behind one contract.
 
-With `wav2lip` + sherpa-onnx TTS + LLamaSharp + Whisper.net, **every dependency runs in-process**:
+With `wav2lip` + sherpa-onnx TTS/STT + LLamaSharp, **every dependency runs in-process**:
 deployment is `dotnet publish` plus model files on disk — no Python, no venvs, no servers.
 
 ## Pieces
@@ -46,13 +45,13 @@ deployment is `dotnet publish` plus model files on disk — no Python, no venvs,
 | `NeuralAvatarRenderer.cs` | The same photoreal head via the Python Wav2Lip **sidecar** (`neural/`) over a WebSocket — kept as the reference implementation and for GPU/host splits. Selected with `AVATAR_RENDERER=neural`; see [neural/README.md](neural/README.md). |
 | `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, and push real-time audio windows to the `IAvatarRenderer`). Concrete engines only implement `SynthesiseAsync`. |
 | `SherpaTtsSpeaker.cs` | Local **in-process** engine — sherpa-onnx runs the same Piper VITS voices natively (NuGet carries the binaries incl. the espeak-ng phonemizer), so there is no external TTS process at all. The preferred local engine; set `SHERPA_MODEL_DIR`. |
-| `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server or per-utterance child process (both out-of-process Python). Returns 16-bit PCM for the base class to play. |
+| `PiperTtsSpeaker.cs` | Legacy out-of-process Piper (Python) engine, superseded by `SherpaTtsSpeaker` which runs the same voices in-process. Kept for `PIPER_*` env compatibility. |
 | `ElevenLabsTtsSpeaker.cs` | Cloud ElevenLabs engine — POSTs to the API requesting raw `pcm_16000`. Best quality, but paid/online. Used when `ELEVENLABS_API_KEY` is set. |
 | `ElevenLabsStreamingTtsSpeaker.cs` | Low-latency ElevenLabs engine — WebSocket fed by the LLM token stream, audio played as it arrives, mouth driven by each chunk's amplitude. Enabled with `ELEVENLABS_STREAMING=true`. |
 | `IAvatarSpeaker.cs` | The speaking contract: `IAvatarSpeaker` (speak text) and `IStreamingAvatarSpeaker` (speak a text stream), so the batch and streaming engines plug in uniformly. |
 | `SpeechRecognizer.cs` | Base class for the STT engines: owns the streaming front-end (energy VAD that buffers the 8kHz mic PCM into utterances). Concrete engines only implement `TranscribeAsync`. |
-| `SherpaSpeechRecognizer.cs` | Local **in-process** STT — sherpa-onnx running the same Whisper base.en weights (ONNX export), sharing the TTS engine's native stack. Preferred when its model folder exists; validate with `--stt-test` (a TTS→STT round trip). |
-| `WhisperSpeechRecognizer.cs` | Local Whisper.net speech-to-text — resamples each utterance to 16kHz and transcribes it offline. The fallback STT when no sherpa STT model is present. |
+| `SherpaSpeechRecognizer.cs` | Local **in-process** STT via sherpa-onnx, sharing the TTS engine's native stack. Auto-detects the model family (NeMo transducer like Parakeet, or Whisper ONNX exports). Preferred when a model folder exists; validate with `--stt-test` (a TTS→STT round trip). |
+| `WhisperSpeechRecognizer.cs` | Zero-setup STT fallback (Whisper.net; auto-downloads its ggml model on first run) — used only when no sherpa STT model folder is present. |
 | `ElevenLabsSpeechRecognizer.cs` | Cloud ElevenLabs "scribe" speech-to-text — POSTs each utterance (as a WAV) to the API. Used when `ELEVENLABS_API_KEY` is set. |
 | `ElevenLabsStreamingSpeechRecognizer.cs` | Low-latency realtime STT — streams the 8kHz mic over a WebSocket (Scribe v2) with server-side VAD. Enabled with `ELEVENLABS_STREAMING=true`. |
 | `ISpeechRecognizer.cs` | The listening contract (`StartAsync` / `Write` / `OnRecognized`), so the batch and streaming recognisers plug in uniformly. |
@@ -65,8 +64,9 @@ deployment is `dotnet publish` plus model files on disk — no Python, no venvs,
 ## Everything in-process (the default)
 
 The app runs its whole AI stack **inside the one .NET process** — speech-to-text
-(Whisper.net), text-to-speech (sherpa-onnx), the LLM (LLamaSharp) and the photoreal
-Wav2Lip avatar (onnxruntime + SkiaSharp). There is nothing to install beyond the .NET
+(sherpa-onnx running Parakeet), text-to-speech (sherpa-onnx running Piper voices), the
+LLM (LLamaSharp) and the photoreal Wav2Lip avatar (onnxruntime + SkiaSharp). There is
+nothing to install beyond the .NET
 SDK: every dependency is a NuGet package, and the models are plain files. Each engine
 looks in a conventional folder and activates automatically when its files are present,
 so after the one-time downloads below **no environment variables are needed** — just
@@ -80,10 +80,12 @@ New-Item -ItemType Directory -Force C:\tools\sherpa-tts | Out-Null
 Invoke-WebRequest -Uri "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high.tar.bz2" -OutFile C:\tools\sherpa-tts\voice.tar.bz2
 tar -xjf C:\tools\sherpa-tts\voice.tar.bz2 -C C:\tools\sherpa-tts; Remove-Item C:\tools\sherpa-tts\voice.tar.bz2
 
-# 1b. STT model (optional but recommended: the same Whisper base.en weights Whisper.net
-#     uses, run through sherpa-onnx so STT and TTS share one native stack).
+# 1b. STT model (optional but recommended). Parakeet tdt 0.6b is the top open English
+#     model on ASR leaderboards; the model family (NeMo transducer vs Whisper export) is
+#     auto-detected from the folder contents, so any model from the sherpa-onnx asr-models
+#     release works - e.g. swap in sherpa-onnx-whisper-base.en for a smaller/faster model.
 New-Item -ItemType Directory -Force C:\tools\sherpa-stt | Out-Null
-Invoke-WebRequest -Uri "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-base.en.tar.bz2" -OutFile C:\tools\sherpa-stt\model.tar.bz2
+Invoke-WebRequest -Uri "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2" -OutFile C:\tools\sherpa-stt\model.tar.bz2
 tar -xjf C:\tools\sherpa-stt\model.tar.bz2 -C C:\tools\sherpa-stt; Remove-Item C:\tools\sherpa-stt\model.tar.bz2
 
 # 2. LLM (any chat-tuned GGUF dropped in C:\tools\llm is picked up automatically).
@@ -99,14 +101,14 @@ Invoke-WebRequest -Uri "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-G
 #    generating a matte with rembg - only needed when you change the persona).
 ```
 
-The STT model (Whisper ggml) downloads itself on first run. Sanity-check each engine
-without a browser: `dotnet run -- --tts-test "hi"`, `-- --llm-test "hi"`,
+Sanity-check each engine without a browser: `dotnet run -- --tts-test "hi"`,
+`-- --stt-test "hi"` (a TTS→STT round trip), `-- --llm-test "hi"`,
 `-- --avatar-test <raw-pcm> <out-dir>`.
 
 | Engine | Conventional path (auto-detected) | Override |
 |---|---|---|
 | TTS | `C:\tools\sherpa-tts\vits-piper-en_US-ryan-high` | `SHERPA_MODEL_DIR` |
-| STT | `C:\tools\sherpa-stt\sherpa-onnx-whisper-base.en` (falls back to Whisper.net) | `SHERPA_STT_DIR` |
+| STT | first model folder under `C:\tools\sherpa-stt` (else Whisper.net auto-downloads a fallback) | `SHERPA_STT_DIR` |
 | LLM | first `*.gguf` in `C:\tools\llm` | `LLM_GGUF` (+ `LLM_GPU_LAYERS`) |
 | Avatar model | `C:\tools\wav2lip\wav2lip-onnx\checkpoints\wav2lip_gan.onnx` | `WAV2LIP_ONNX` |
 | Persona / matte | `C:\tools\wav2lip\persona.{jpg,png,webp}` / `persona_alpha.png` | `NEURAL_PERSONA` / `NEURAL_MATTE` |
@@ -114,139 +116,18 @@ without a browser: `dotnet run -- --tts-test "hi"`, `-- --llm-test "hi"`,
 | Renderer choice | `wav2lip` when its files exist, else the cartoon | `AVATAR_RENDERER` (`wav2lip`/`neural`/`cartoon`) |
 
 When a model folder is missing the app degrades gracefully (cartoon renderer, verbatim
-replies, no speech) — and the sections below describe the out-of-process and cloud
-alternatives (Piper, Ollama/LM Studio, ElevenLabs, the Python sidecar), which all still
-work and take priority per their own env vars.
+replies, Whisper.net fallback STT) — and the sections below describe the cloud
+alternatives (ElevenLabs, OpenAI-compatible LLM gateways), which take priority per
+their own env vars.
 
-## Prerequisites
+## Cloud alternatives
 
-1. **Text-to-speech.** The easiest option is the **in-process sherpa-onnx engine** — no
-   Python, no server, no child process; the NuGet package carries the native binaries and
-   it runs the same Piper voices. Download any `vits-piper-*` archive from the
-   [sherpa-onnx TTS model releases](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models),
-   extract it, and point the app at the folder:
-
-   ```powershell
-   $url = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high.tar.bz2"
-   Invoke-WebRequest -Uri $url -OutFile C:\tools\sherpa-tts\voice.tar.bz2
-   tar -xjf C:\tools\sherpa-tts\voice.tar.bz2 -C C:\tools\sherpa-tts
-   $env:SHERPA_MODEL_DIR = "C:\tools\sherpa-tts\vits-piper-en_US-ryan-high"
-
-   # Sanity check: synthesises a phrase to tts_test.wav and exits.
-   dotnet run -- --tts-test "Max Headroom here."
-   ```
-
-   The alternatives below (out-of-process **Piper**, cloud **ElevenLabs**) still work;
-   engine priority is ElevenLabs (if `ELEVENLABS_API_KEY` set) > sherpa-onnx (if
-   `SHERPA_MODEL_DIR` set) > Piper.
-
-   <details>
-   <summary>Alternative: out-of-process Piper (Python)</summary>
-
-   Piper is now the [OHF-Voice/piper1-gpl](https://github.com/OHF-Voice/piper1-gpl)
-   rewrite, distributed as a Python package (`pip install piper-tts`) and run as
-   `python -m piper`. You need Python 3 plus a downloaded voice (a `.onnx` and its
-   `.onnx.json`, fetched with `piper.download_voices`). Voices are browsable at the
-   [Piper voices repo](https://huggingface.co/rhasspy/piper-voices) (samples at
-   <https://rhasspy.github.io/piper-samples/>).
-
-   **Windows**
-   ```powershell
-   # Install Piper into a virtual environment.
-   py -3 -m venv C:\tools\piper-venv
-   C:\tools\piper-venv\Scripts\pip install piper-tts
-
-   # Download a voice (writes en_US-ryan-high.onnx + .onnx.json into the data dir).
-   C:\tools\piper-venv\Scripts\python -m piper.download_voices en_US-ryan-high --data-dir C:\tools\piper-voices
-
-   # Point the app at the interpreter + voice. PIPER_MODEL is the voice NAME; PIPER_DATA_DIR locates it.
-   $env:PIPER_PATH     = "C:\tools\piper-venv\Scripts\python.exe"
-   $env:PIPER_MODEL    = "en_US-ryan-high"
-   $env:PIPER_DATA_DIR = "C:\tools\piper-voices"
-
-   # Sanity check: should write a WAV you can play.
-   & $env:PIPER_PATH -m piper -m $env:PIPER_MODEL --data-dir $env:PIPER_DATA_DIR -f test.wav -- "Max Headroom here."
-   ```
-
-   **Linux**
-   ```bash
-   # Install Piper into a virtual environment.
-   python3 -m venv /opt/piper-venv
-   /opt/piper-venv/bin/pip install piper-tts
-
-   # Download a voice (writes en_US-ryan-high.onnx + .onnx.json into the data dir).
-   /opt/piper-venv/bin/python -m piper.download_voices en_US-ryan-high --data-dir /opt/piper-voices
-
-   # Point the app at the interpreter + voice. PIPER_MODEL is the voice NAME; PIPER_DATA_DIR locates it.
-   export PIPER_PATH=/opt/piper-venv/bin/python
-   export PIPER_MODEL=en_US-ryan-high
-   export PIPER_DATA_DIR=/opt/piper-voices
-
-   # Sanity check: should write a WAV you can play.
-   "$PIPER_PATH" -m piper -m "$PIPER_MODEL" --data-dir "$PIPER_DATA_DIR" -f test.wav -- "Max Headroom here."
-   ```
-   `PIPER_PATH` may instead point at the `piper` console script if your install puts one
-   on PATH; the app detects a `python`/`python3` interpreter and runs `python -m piper`
-   automatically. If you have a voice `.onnx` on disk already, you can set `PIPER_MODEL`
-   to its full path and omit `PIPER_DATA_DIR`.
-
-   > **The above (child-process) mode reloads the voice model on every utterance, so it
-   > is slow — slower than Azure.** Prefer the HTTP server below, which loads the model
-   > once.
-
-   ### Faster: the Piper HTTP server (recommended)
-
-   Run Piper once as a server (model stays loaded) and the app POSTs each utterance to it.
-   Install the `http` extra, then start the server alongside the app:
-
-      **Windows**
-   ```powershell
-   C:\tools\piper-venv\Scripts\pip install "piper-tts[http]"
-   & $env:PIPER_PATH -m piper.http_server -m $env:PIPER_MODEL --data-dir $env:PIPER_DATA_DIR --host 127.0.0.1 --port 5000
-   ```
-
-   ```bash
-   # Linux (Windows is the same with the venv Scripts\ paths).
-   /opt/piper-venv/bin/pip install "piper-tts[http]"
-   /opt/piper-venv/bin/python -m piper.http_server \
-     -m en_US-ryan-high --data-dir /opt/piper-voices --host 127.0.0.1 --port 5000
-   ```
-
-   Then point the app at it and **unset** the process-mode vars (or just leave them — the
-   HTTP URL takes priority):
-
-   ```bash
-   export PIPER_HTTP_URL=http://127.0.0.1:5000
-   ```
-   ```powershell
-   $env:PIPER_HTTP_URL = "http://127.0.0.1:5000"
-   ```
-
-   The synthesis endpoint is the **server root** (`POST /`) on piper-tts ≤ 1.4.2, so
-   `PIPER_HTTP_URL` is just the base URL. (Newer dev builds moved it to `/synthesize`; if
-   you run one of those, set `PIPER_HTTP_URL=http://127.0.0.1:5000/synthesize`.) Quick
-   check that the server is up (writes a WAV):
-   ```bash
-   curl -X POST -H 'Content-Type: application/json' \
-     -d '{ "text": "Max Headroom here." }' -o test.wav http://127.0.0.1:5000/
-   ```
-
-   In Kubernetes, run the Piper server as a **sidecar container** in the same pod and set
-   `PIPER_HTTP_URL=http://127.0.0.1:5000` — the app and Piper share the pod's localhost.
-   (With sherpa-onnx no sidecar is needed at all.)
-
-   </details>
-
-   Without any TTS configured the avatar still renders but cannot speak or listen.
-
-   ### Cloud alternative: ElevenLabs
-
-   For the most natural voices you can use [ElevenLabs](https://elevenlabs.io) instead of
-   Piper. It is a **paid cloud service** (so it reintroduces an external dependency and a
-   per-character cost — the opposite of the offline goal), but the quality is the best of
-   the options here. Setting an API key switches **both** the voice (TTS) and the listening
-   (STT, via the ElevenLabs "scribe" model) to ElevenLabs, taking priority over Piper and
-   Whisper:
+1. **ElevenLabs (speech).** For the most natural voices you can use
+   [ElevenLabs](https://elevenlabs.io). It is a **paid cloud service** (so it reintroduces
+   an external dependency and a per-character cost — the opposite of the offline goal),
+   but the quality is the best of the options here. Setting an API key switches **both**
+   the voice (TTS) and the listening (STT, via the ElevenLabs "scribe" model) to
+   ElevenLabs, taking priority over the local engines:
 
    ```powershell
    $env:ELEVENLABS_API_KEY   = "<your key>"
