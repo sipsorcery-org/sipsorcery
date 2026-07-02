@@ -206,9 +206,13 @@ class Program
         if (llmTestIdx >= 0)
         {
             var prompt = llmTestIdx + 1 < argv.Length ? argv[llmTestIdx + 1] : "What do you think of television these days?";
+            // Deliberately race the warm-up against the question - the production shape that
+            // crashed llama.cpp before inference was serialised inside the client.
+            var warmup = _llm.WarmUpAsync();
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var reply = await _llm.GenerateReplyAsync(prompt);
             _logger.LogInformation("LLM reply in {Ms} ms: {Reply}", sw.ElapsedMilliseconds, reply);
+            await warmup;
             (_llm as IDisposable)?.Dispose();
             return;
         }

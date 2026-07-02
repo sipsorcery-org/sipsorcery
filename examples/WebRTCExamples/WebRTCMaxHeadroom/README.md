@@ -365,7 +365,6 @@ dotnet run -- --snapshot      # writes maxheadroom_visemeN.png files
   (it phonemises via eSpeak NG) and map phonemes→viseme ids instead of using the
   amplitude envelope. Tune the bands in `MaxHeadroomVideoSource.VisemeForLevel`
   (the amplitude→viseme heuristic now lives in the renderer, behind `PushAudio`).
-- Video is VP8 via the libvpx `VideoEncoderEndPoint` (same as `WebRTCGetStartedLibvpx`).
 - Audio is G.711 from `AudioExtrasSource.SendAudioFromStream` (Piper PCM resampled to 16kHz).
   The audio track is send/recv and pinned to PCMU, so the received mic is a deterministic
   8kHz stream the recogniser consumes; speech-to-text is therefore telephone-grade. Pinning

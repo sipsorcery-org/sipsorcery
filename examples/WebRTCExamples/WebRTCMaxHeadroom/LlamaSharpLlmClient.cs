@@ -22,9 +22,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using LLama;
 using LLama.Common;
+using LLama.Native;
 using LLama.Sampling;
 using Microsoft.Extensions.Logging;
 
@@ -37,6 +39,36 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
     private readonly LLamaWeights _weights;
     private readonly StatelessExecutor _executor;
     private readonly string _modelPath;
+
+    // A StatelessExecutor recycles one llama_context across calls, so CONCURRENT InferAsync
+    // calls corrupt each other's batch state and die in a native GGML_ASSERT (seen when the
+    // startup warm-up overlapped the first user question). Serialise every inference.
+    private readonly SemaphoreSlim _inferLock = new(1, 1);
+
+    static LlamaSharpLlmClient()
+    {
+        // llama.cpp writes its own very chatty log (KV cache layout, graph reserves, model
+        // metadata dumps, ...) straight to stdout, bypassing the app's logging. Intercept it:
+        // keep errors/warnings, drop the informational spam. Must be set before the first
+        // native call, hence the static constructor.
+        NativeLogConfig.llama_log_set((level, message) =>
+        {
+            var text = message?.TrimEnd('\n');
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+            if (level == LLamaLogLevel.Error)
+            {
+                logger.LogWarning("llama.cpp: {Message}", text);
+            }
+            else if (level == LLamaLogLevel.Warning)
+            {
+                logger.LogDebug("llama.cpp: {Message}", text);
+            }
+            // Info/Debug/Continue: dropped.
+        });
+    }
 
     public bool IsConfigured => true;   // constructed only when a model file exists.
 
@@ -66,6 +98,7 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
     /// </summary>
     public async Task WarmUpAsync()
     {
+        await _inferLock.WaitAsync().ConfigureAwait(false);
         try
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -77,10 +110,15 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
         {
             logger.LogWarning(excp, "LLamaSharp warm-up failed (first reply will be slow).");
         }
+        finally
+        {
+            _inferLock.Release();
+        }
     }
 
     public async Task<string> GenerateReplyAsync(string prompt)
     {
+        await _inferLock.WaitAsync().ConfigureAwait(false);
         try
         {
             var sb = new StringBuilder();
@@ -96,6 +134,10 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
             logger.LogWarning(excp, "LLamaSharp inference failed, speaking the prompt verbatim.");
             return prompt;
         }
+        finally
+        {
+            _inferLock.Release();
+        }
     }
 
     public async IAsyncEnumerable<string> StreamReplyAsync(string prompt)
@@ -103,20 +145,29 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
         var buffer = new StringBuilder();
         bool anyYielded = false;
 
-        await foreach (var token in InferAsync(prompt).ConfigureAwait(false))
+        // Held for the whole enumeration: the underlying context must not be shared.
+        await _inferLock.WaitAsync().ConfigureAwait(false);
+        try
         {
-            buffer.Append(token);
-
-            string sentence;
-            while ((sentence = LlmShared.TakeSentence(buffer)) != null)
+            await foreach (var token in InferAsync(prompt).ConfigureAwait(false))
             {
-                if (sentence.Length == 0)
+                buffer.Append(token);
+
+                string sentence;
+                while ((sentence = LlmShared.TakeSentence(buffer)) != null)
                 {
-                    continue;
+                    if (sentence.Length == 0)
+                    {
+                        continue;
+                    }
+                    anyYielded = true;
+                    yield return sentence;
                 }
-                anyYielded = true;
-                yield return sentence;
             }
+        }
+        finally
+        {
+            _inferLock.Release();
         }
 
         var remainder = buffer.ToString().Trim();
@@ -150,5 +201,9 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
         return _executor.InferAsync(templated, inferenceParams);
     }
 
-    public void Dispose() => _weights?.Dispose();
+    public void Dispose()
+    {
+        _weights?.Dispose();
+        _inferLock?.Dispose();
+    }
 }

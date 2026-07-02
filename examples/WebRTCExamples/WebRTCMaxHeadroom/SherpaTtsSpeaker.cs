@@ -85,7 +85,10 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var tts = _engines.GetOrAdd(Path.GetFullPath(modelDir), CreateEngine);
-            tts.Generate("Warm up.", 1.0f, 0);
+            lock (tts)   // shared engine; concurrent Generate is not safe.
+            {
+                tts.Generate("Warm up.", 1.0f, 0);
+            }
             logger.LogInformation("sherpa-onnx warmed up in {Ms} ms.", sw.ElapsedMilliseconds);
         }
         catch (Exception excp)
@@ -99,7 +102,13 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
     {
         return Task.Run(() =>
         {
-            var audio = _tts.Generate(text, _speed, speakerId: 0);
+            OfflineTtsGeneratedAudio audio;
+            // The engine is shared app-wide (per-connection speakers + the startup preload);
+            // serialise Generate - concurrent calls on one native instance are not safe.
+            lock (_tts)
+            {
+                audio = _tts.Generate(text, _speed, speakerId: 0);
+            }
             var floats = audio.Samples;
             var samples = new short[floats.Length];
             for (int i = 0; i < floats.Length; i++)
