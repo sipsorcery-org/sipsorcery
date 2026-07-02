@@ -57,8 +57,8 @@ public sealed class PiperTtsSpeaker : LipSyncTtsSpeaker
     /// <param name="model">A voice name (resolved under <paramref name="dataDir"/>) or a full path to a .onnx voice.</param>
     /// <param name="dataDir">Optional directory holding downloaded voices (Piper's --data-dir).</param>
     public PiperTtsSpeaker(string httpUrl, string piperPath, string model, string dataDir,
-        MaxHeadroomVideoSource video, AudioExtrasSource audio, int visemeLeadMs = 150)
-        : base(video, audio, visemeLeadMs)
+        IAvatarRenderer renderer, AudioExtrasSource audio, int visemeLeadMs = 150)
+        : base(renderer, audio, visemeLeadMs)
     {
         _httpUrl = string.IsNullOrWhiteSpace(httpUrl) ? null : httpUrl.TrimEnd('/');
         _piperPath = piperPath;

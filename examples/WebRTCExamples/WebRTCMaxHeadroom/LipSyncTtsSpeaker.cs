@@ -37,27 +37,19 @@ public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<LipSyncTtsSpeaker>();
 
     protected const int TargetRate = 16000;      // SendAudioFromStream consumes 16kHz mono PCM.
-    private const int EnvelopeFrameMs = 30;      // Mouth update granularity / RMS window.
-
-    // Amplitude bands (fraction of the utterance's peak RMS) -> candidate viseme ids, picked from
-    // the 0-21 shape table in MaxHeadroomVideoSource. Rotating within a band adds a little life so
-    // the mouth doesn't sit on one shape. Openness roughly increases with loudness.
-    private static readonly int[] LowVisemes = { 19, 6, 14 };   // ~0.2 open
-    private static readonly int[] MidVisemes = { 4, 1 };        // ~0.4 open
-    private static readonly int[] HighVisemes = { 2, 11, 9 };   // ~0.6-0.8 open
+    private const int EnvelopeFrameMs = 30;      // Audio window granularity handed to the renderer.
 
     /// <summary>Shared HTTP client for the HTTP-based engines (Piper server, ElevenLabs).</summary>
     protected static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-    private readonly MaxHeadroomVideoSource _video;
+    private readonly IAvatarRenderer _renderer;
     private readonly AudioExtrasSource _audio;
     private readonly int _visemeLeadMs;
     private readonly SemaphoreSlim _speakLock = new(1, 1);
-    private int _visemeRotation;
 
-    protected LipSyncTtsSpeaker(MaxHeadroomVideoSource video, AudioExtrasSource audio, int visemeLeadMs)
+    protected LipSyncTtsSpeaker(IAvatarRenderer renderer, AudioExtrasSource audio, int visemeLeadMs)
     {
-        _video = video;
+        _renderer = renderer;
         _audio = audio;
         _visemeLeadMs = visemeLeadMs;
     }
@@ -93,28 +85,50 @@ public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
             }
 
             var samples = sampleRate == TargetRate ? pcm : Resample(pcm, sampleRate, TargetRate);
-            var envelope = BuildEnvelope(samples);
 
             logger.LogInformation("[{Engine}] Synthesised {Samples} samples ({Ms} ms).",
                 EngineName, samples.Length, samples.Length * 1000 / TargetRate);
 
-            _video.IsSpeaking = true;
-            var stopwatch = Stopwatch.StartNew();
+            _renderer.BeginSpeech();
 
-            // Walk the amplitude envelope in real time alongside playback, leading the audio by
-            // _visemeLeadMs so the mouth lands in sync once the slower video path reaches the viewer.
-            var mouthTask = Task.Run(async () =>
+            int frameSamples = TargetRate * EnvelopeFrameMs / 1000;
+            Task mouthTask = Task.CompletedTask;
+
+            if (_renderer.PacesAudioInternally)
             {
-                for (int i = 0; i < envelope.Length; i++)
+                // The renderer paces itself (neural sidecar): hand it the WHOLE utterance up
+                // front so its model's look-ahead never waits on real-time delivery, then give
+                // the slower video path a head start before the audio track plays.
+                for (int start = 0; start < samples.Length; start += frameSamples)
                 {
-                    var delay = (long)i * EnvelopeFrameMs - _visemeLeadMs - stopwatch.ElapsedMilliseconds;
-                    if (delay > 0)
-                    {
-                        await Task.Delay((int)delay).ConfigureAwait(false);
-                    }
-                    _video.CurrentViseme = VisemeForLevel(envelope[i]);
+                    int count = Math.Min(frameSamples, samples.Length - start);
+                    _renderer.PushAudio(new ReadOnlySpan<short>(samples, start, count), TargetRate);
                 }
-            });
+                if (_visemeLeadMs > 0)
+                {
+                    await Task.Delay(_visemeLeadMs).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                // The renderer reacts instantly (cartoon): walk the audio in real time alongside
+                // playback, leading by _visemeLeadMs so the face lands in sync once the slower
+                // video path reaches the viewer.
+                var stopwatch = Stopwatch.StartNew();
+                mouthTask = Task.Run(async () =>
+                {
+                    for (int start = 0, i = 0; start < samples.Length; start += frameSamples, i++)
+                    {
+                        var delay = (long)i * EnvelopeFrameMs - _visemeLeadMs - stopwatch.ElapsedMilliseconds;
+                        if (delay > 0)
+                        {
+                            await Task.Delay((int)delay).ConfigureAwait(false);
+                        }
+                        int count = Math.Min(frameSamples, samples.Length - start);
+                        _renderer.PushAudio(new ReadOnlySpan<short>(samples, start, count), TargetRate);
+                    }
+                });
+            }
 
             await _audio.SendAudioFromStream(ToStream(samples), AudioSamplingRatesEnum.Rate16KHz)
                 .ConfigureAwait(false);
@@ -127,57 +141,9 @@ public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
         }
         finally
         {
-            _video.CurrentViseme = 0;
-            _video.IsSpeaking = false;
+            _renderer.EndSpeech();
             _speakLock.Release();
         }
-    }
-
-    /// <summary>Per-frame RMS envelope, normalised to the utterance's peak (0..1) so the mouth adapts to volume.</summary>
-    private static float[] BuildEnvelope(short[] samples)
-    {
-        int frame = TargetRate * EnvelopeFrameMs / 1000;
-        if (frame <= 0)
-        {
-            return Array.Empty<float>();
-        }
-
-        int frames = (samples.Length + frame - 1) / frame;
-        var rms = new float[frames];
-        float peak = 1f;
-
-        for (int f = 0; f < frames; f++)
-        {
-            int start = f * frame;
-            int end = Math.Min(start + frame, samples.Length);
-            double sumSq = 0;
-            for (int i = start; i < end; i++)
-            {
-                double s = samples[i];
-                sumSq += s * s;
-            }
-            float v = (float)Math.Sqrt(sumSq / Math.Max(1, end - start));
-            rms[f] = v;
-            if (v > peak) { peak = v; }
-        }
-
-        for (int f = 0; f < frames; f++)
-        {
-            rms[f] /= peak;
-        }
-        return rms;
-    }
-
-    /// <summary>Maps a normalised loudness level (0..1) to a viseme id, rotating within each band for liveliness.</summary>
-    private int VisemeForLevel(float level)
-    {
-        if (level < 0.15f)
-        {
-            return 0; // closed / silence
-        }
-
-        int[] band = level < 0.40f ? LowVisemes : level < 0.70f ? MidVisemes : HighVisemes;
-        return band[_visemeRotation++ % band.Length];
     }
 
     /// <summary>Linear resample of 16-bit mono PCM from <paramref name="srcRate"/> to <paramref name="dstRate"/>.</summary>

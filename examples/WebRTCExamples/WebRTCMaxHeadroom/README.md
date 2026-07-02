@@ -17,18 +17,28 @@ containerised and deployed to Kubernetes.
  local LLM (optional)             Piper TTS (local)
    text  ─────────────►  text  ───────────────►  16kHz PCM  ─────►  AudioExtrasSource ─► WebRTC audio
                                          │
-                                         └──►  amplitude envelope  ─►  MaxHeadroomVideoSource (SkiaSharp)
+                                         └──►  PushAudio(PCM windows)  ─►  IAvatarRenderer
+                                                                          │  (MaxHeadroom SkiaSharp)
                                                                           │  raw BGR frames
                                                                           ▼
                                                           VideoEncoderEndPoint (VP8) ─► WebRTC video
 ```
 
+The speaker talks to the renderer only through **`IAvatarRenderer`** (BeginSpeech / PushAudio /
+EndSpeech), so the animation engine is swappable: the in-box `MaxHeadroomVideoSource` (SkiaSharp
+cartoon; lip-sync is an amplitude→viseme heuristic) or a `NeuralAvatarRenderer` (a photoreal Wav2Lip
+talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` — see
+[neural/README.md](neural/README.md)). This mirrors how LiveKit's avatar agents swap
+`tavus.AvatarSession` for `bithuman.AvatarSession` behind one contract.
+
 ## Pieces
 
 | File | Role |
 |------|------|
-| `MaxHeadroomVideoSource.cs` | `IVideoSource` that renders the head/mouth/glitch with SkiaSharp and emits raw BGR frames. Mouth shape is driven by `CurrentViseme`. |
-| `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, drive the mouth from an RMS amplitude envelope). Concrete engines only implement `SynthesiseAsync`. |
+| `IAvatarRenderer.cs` | The swappable renderer seam: an `IVideoSource` driven by speech audio (`BeginSpeech` / `PushAudio` / `EndSpeech`). The same decoupling LiveKit's `AvatarSession` and bitHuman's `push_audio()` use. |
+| `MaxHeadroomVideoSource.cs` | `IAvatarRenderer` that renders the head/mouth/glitch with SkiaSharp and emits raw BGR frames. `PushAudio` maps each window's loudness onto one of the 0-21 viseme mouth shapes. |
+| `NeuralAvatarRenderer.cs` | The other `IAvatarRenderer` shape: a photoreal talking head. `PushAudio` streams PCM to a Python Wav2Lip **sidecar** (`neural/`) over a WebSocket and the returned lip-synced frames become the video. Selected with `AVATAR_RENDERER=neural`; see [neural/README.md](neural/README.md). |
+| `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, and push real-time audio windows to the `IAvatarRenderer`). Concrete engines only implement `SynthesiseAsync`. |
 | `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server (recommended) or per-utterance child process. Returns 16-bit PCM for the base class to play. |
 | `ElevenLabsTtsSpeaker.cs` | Cloud ElevenLabs engine — POSTs to the API requesting raw `pcm_16000`. Best quality, but paid/online. Used when `ELEVENLABS_API_KEY` is set. |
 | `ElevenLabsStreamingTtsSpeaker.cs` | Low-latency ElevenLabs engine — WebSocket fed by the LLM token stream, audio played as it arrives, mouth driven by each chunk's amplitude. Enabled with `ELEVENLABS_STREAMING=true`. |
@@ -248,7 +258,8 @@ dotnet run -- --snapshot      # writes maxheadroom_visemeN.png files
   `MaxHeadroomVideoSource._visemeShapes`. It is approximate compared to Azure's
   phoneme-accurate visemes; for tighter sync, extract Piper's phoneme sequence
   (it phonemises via eSpeak NG) and map phonemes→viseme ids instead of using the
-  amplitude envelope. Tune the bands in `PiperTtsSpeaker.VisemeForLevel`.
+  amplitude envelope. Tune the bands in `MaxHeadroomVideoSource.VisemeForLevel`
+  (the amplitude→viseme heuristic now lives in the renderer, behind `PushAudio`).
 - Video is VP8 via the libvpx `VideoEncoderEndPoint` (same as `WebRTCGetStartedLibvpx`).
 - Audio is G.711 from `AudioExtrasSource.SendAudioFromStream` (Piper PCM resampled to 16kHz).
   The audio track is send/recv and pinned to PCMU, so the received mic is a deterministic

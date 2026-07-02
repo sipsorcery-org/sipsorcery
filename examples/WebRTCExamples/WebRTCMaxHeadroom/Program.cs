@@ -92,7 +92,7 @@ class Program
     private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;
 
     // The demo drives a single connected viewer.
-    private static MaxHeadroomVideoSource _videoSource;
+    private static IAvatarRenderer _videoSource;
     private static AudioExtrasSource _audioSource;
     private static IAvatarSpeaker _speaker;
     private static ISpeechRecognizer _recognizer;
@@ -284,7 +284,7 @@ class Program
     {
         var pc = new RTCPeerConnection(null);
 
-        var videoSource = new MaxHeadroomVideoSource(new FFmpegVideoEncoder());
+        IAvatarRenderer videoSource = CreateRenderer(new FFmpegVideoEncoder());
         var videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
         videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
@@ -402,20 +402,37 @@ class Program
     }
 
     /// <summary>
+    /// Builds the avatar renderer (the swappable IAvatarRenderer): the in-box SkiaSharp cartoon by
+    /// default, or the NeuralAvatarRenderer sketch when AVATAR_RENDERER=neural. Nothing else in the
+    /// pipeline changes - the speaker and peer-connection wiring only see IAvatarRenderer.
+    /// </summary>
+    private static IAvatarRenderer CreateRenderer(IVideoEncoder encoder)
+    {
+        var kind = Environment.GetEnvironmentVariable("AVATAR_RENDERER");
+        if (string.Equals(kind, "neural", StringComparison.OrdinalIgnoreCase))
+        {
+            var sidecarUrl = Environment.GetEnvironmentVariable("NEURAL_SIDECAR_URL") ?? "ws://127.0.0.1:5002";
+            _logger.LogInformation("Using the neural avatar renderer (AVATAR_RENDERER=neural), sidecar {Url}.", sidecarUrl);
+            return new NeuralAvatarRenderer(encoder, sidecarUrl);
+        }
+        return new MaxHeadroomVideoSource(encoder);
+    }
+
+    /// <summary>
     /// Builds the TTS speaker from configuration: ElevenLabs (cloud) takes priority if an API key
     /// is set, otherwise Piper (local). Returns null if no TTS is configured.
     /// </summary>
-    private static IAvatarSpeaker CreateSpeaker(MaxHeadroomVideoSource video, AudioExtrasSource audio)
+    private static IAvatarSpeaker CreateSpeaker(IAvatarRenderer renderer, AudioExtrasSource audio)
     {
         if (!string.IsNullOrWhiteSpace(_elevenLabsKey))
         {
             return _elevenLabsStreaming
-                ? new ElevenLabsStreamingTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs)
-                : new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs);
+                ? new ElevenLabsStreamingTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, renderer, audio, _visemeLeadMs)
+                : new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, renderer, audio, _visemeLeadMs);
         }
         if (PiperConfigured())
         {
-            return new PiperTtsSpeaker(_piperHttpUrl, _piperPath, _piperModel, _piperDataDir, video, audio, _visemeLeadMs);
+            return new PiperTtsSpeaker(_piperHttpUrl, _piperPath, _piperModel, _piperDataDir, renderer, audio, _visemeLeadMs);
         }
         return null;
     }
