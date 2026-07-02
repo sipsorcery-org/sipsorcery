@@ -139,7 +139,11 @@ class Program
             return;
         }
 
-        _sherpaModelDir = Environment.GetEnvironmentVariable("SHERPA_MODEL_DIR");
+        // In-process is the default: each engine has a conventional model path and is used
+        // automatically when its files are present (env vars override; see the README's
+        // "Everything in-process" section).
+        _sherpaModelDir = Environment.GetEnvironmentVariable("SHERPA_MODEL_DIR")
+            ?? @"C:\tools\sherpa-tts\vits-piper-en_US-ryan-high";
         _piperHttpUrl = Environment.GetEnvironmentVariable("PIPER_HTTP_URL");
         _piperPath = Environment.GetEnvironmentVariable("PIPER_PATH");
         _piperModel = Environment.GetEnvironmentVariable("PIPER_MODEL");
@@ -155,6 +159,32 @@ class Program
 
         // Synthesise a phrase to a WAV and exit - validates a TTS engine without a browser.
         var argv = Environment.GetCommandLineArgs();
+
+        // Golden-file check of the C# mel front-end against the Python reference:
+        //   --mel-test <raw-int16-pcm> <reference-csv>
+        // (generate the reference with the Python sidecar's audio.py; see neural/README.md).
+        int melTestIdx = Array.IndexOf(argv, "--mel-test");
+        if (melTestIdx >= 0 && melTestIdx + 2 < argv.Length)
+        {
+            RunMelTest(argv[melTestIdx + 1], argv[melTestIdx + 2]);
+            return;
+        }
+
+        // Render in-process Wav2Lip frames from raw PCM to PNGs and exit:
+        //   --avatar-test <raw-int16-pcm> <out-dir>
+        int avatarTestIdx = Array.IndexOf(argv, "--avatar-test");
+        if (avatarTestIdx >= 0 && avatarTestIdx + 2 < argv.Length)
+        {
+            var bytes = File.ReadAllBytes(argv[avatarTestIdx + 1]);
+            var pcm = new short[bytes.Length / 2];
+            Buffer.BlockCopy(bytes, 0, pcm, 0, pcm.Length * 2);
+            using var renderer = new Wav2LipAvatarRenderer(encoder: null);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            renderer.TestRenderFrames(pcm, argv[avatarTestIdx + 2]);
+            _logger.LogInformation("Rendered 50 in-process frames in {Ms} ms ({PerFrame:F1} ms/frame) to {Dir}.",
+                sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / 50.0, argv[avatarTestIdx + 2]);
+            return;
+        }
         int ttsTestIdx = Array.IndexOf(argv, "--tts-test");
         if (ttsTestIdx >= 0)
         {
@@ -181,6 +211,21 @@ class Program
             _logger.LogInformation("LLM reply in {Ms} ms: {Reply}", sw.ElapsedMilliseconds, reply);
             (_llm as IDisposable)?.Dispose();
             return;
+        }
+
+        // Warm the in-process engines in the background so the first call/reply/utterance
+        // doesn't pay their one-time costs (weights page-in, DirectML kernel compilation,
+        // first-synthesis setup). Fire-and-forget: the app serves while they warm.
+        _ = _llm.WarmUpAsync();
+        if (SherpaConfigured())
+        {
+            _ = SherpaTtsSpeaker.PreloadAsync(_sherpaModelDir);
+        }
+        var rendererKind = Environment.GetEnvironmentVariable("AVATAR_RENDERER");
+        if (string.Equals(rendererKind, "wav2lip", StringComparison.OrdinalIgnoreCase) ||
+            (string.IsNullOrWhiteSpace(rendererKind) && Wav2LipAvatarRenderer.FilesPresent()))
+        {
+            _ = Wav2LipAvatarRenderer.PreloadAsync();
         }
 
         var builder = WebApplication.CreateBuilder();
@@ -430,6 +475,21 @@ class Program
     private static IAvatarRenderer CreateRenderer(IVideoEncoder encoder)
     {
         var kind = Environment.GetEnvironmentVariable("AVATAR_RENDERER");
+
+        // Default: the in-process Wav2Lip renderer whenever its model + persona files are
+        // present (the cartoon needs nothing, so it is the fallback). AVATAR_RENDERER
+        // overrides: wav2lip | neural (Python sidecar) | cartoon.
+        if (string.IsNullOrWhiteSpace(kind))
+        {
+            kind = Wav2LipAvatarRenderer.FilesPresent() ? "wav2lip" : "cartoon";
+            _logger.LogInformation("AVATAR_RENDERER not set; defaulting to {Kind}.", kind);
+        }
+
+        if (string.Equals(kind, "wav2lip", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation("Using the IN-PROCESS Wav2Lip avatar renderer.");
+            return new Wav2LipAvatarRenderer(encoder);
+        }
         if (string.Equals(kind, "neural", StringComparison.OrdinalIgnoreCase))
         {
             var sidecarUrl = Environment.GetEnvironmentVariable("NEURAL_SIDECAR_URL") ?? "ws://127.0.0.1:5002";
@@ -486,6 +546,47 @@ class Program
             samples.Length * 1000 / Math.Max(1, rate), sw.ElapsedMilliseconds, path);
     }
 
+    /// <summary>
+    /// Compares the C# MelSpectrogram against a Python-generated reference: raw int16 PCM in,
+    /// CSV of the librosa mel out. Reports max/mean absolute difference (--mel-test).
+    /// </summary>
+    private static void RunMelTest(string pcmPath, string csvPath)
+    {
+        var bytes = File.ReadAllBytes(pcmPath);
+        var pcm = new short[bytes.Length / 2];
+        Buffer.BlockCopy(bytes, 0, pcm, 0, pcm.Length * 2);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var mel = new MelSpectrogram().Compute(pcm);
+        sw.Stop();
+
+        var lines = File.ReadAllLines(csvPath);
+        int rows = lines.Length;
+        int cols = lines[0].Split(',').Length;
+        _logger.LogInformation("C# mel [{M},{T}] in {Ms} ms; reference [{RM},{RT}].",
+            mel.GetLength(0), mel.GetLength(1), sw.ElapsedMilliseconds, rows, cols);
+
+        if (mel.GetLength(0) != rows || mel.GetLength(1) != cols)
+        {
+            _logger.LogError("SHAPE MISMATCH - the STFT framing does not match librosa.");
+            return;
+        }
+
+        double maxDiff = 0, sumDiff = 0;
+        for (int m = 0; m < rows; m++)
+        {
+            var parts = lines[m].Split(',');
+            for (int t = 0; t < cols; t++)
+            {
+                double diff = Math.Abs(mel[m, t] - double.Parse(parts[t], System.Globalization.CultureInfo.InvariantCulture));
+                if (diff > maxDiff) { maxDiff = diff; }
+                sumDiff += diff;
+            }
+        }
+        _logger.LogInformation("Mel diff vs Python reference: max {Max:E3}, mean {Mean:E3} (range is [-4,4]).",
+            maxDiff, sumDiff / (rows * cols));
+    }
+
     /// <summary>Minimal 16-bit mono PCM WAV writer for the --tts-test output.</summary>
     private static void WriteWav(string path, short[] samples, int sampleRate)
     {
@@ -522,7 +623,15 @@ class Program
     /// </summary>
     private static ILlmClient CreateLlm()
     {
+        // In-process by default: use the conventional GGUF location when present.
         var gguf = Environment.GetEnvironmentVariable("LLM_GGUF");
+        if (string.IsNullOrWhiteSpace(gguf))
+        {
+            var conventional = @"C:\tools\llm";
+            gguf = Directory.Exists(conventional)
+                ? Directory.EnumerateFiles(conventional, "*.gguf").FirstOrDefault()
+                : null;
+        }
         if (!string.IsNullOrWhiteSpace(gguf) && File.Exists(gguf))
         {
             int.TryParse(Environment.GetEnvironmentVariable("LLM_GPU_LAYERS"), out var gpuLayers);

@@ -59,6 +59,26 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
             Path.GetFileName(ggufPath), gpuLayers);
     }
 
+    /// <summary>
+    /// Runs a single-token inference to page the memory-mapped weights in from disk and set
+    /// up llama.cpp's allocations - otherwise those costs (~10s for a ~2GB model on a cold
+    /// file cache) land on the user's first question.
+    /// </summary>
+    public async Task WarmUpAsync()
+    {
+        try
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var warmParams = new InferenceParams { MaxTokens = 1 };
+            await foreach (var _ in _executor.InferAsync("Hi", warmParams).ConfigureAwait(false)) { }
+            logger.LogInformation("LLamaSharp warmed up in {Ms} ms.", sw.ElapsedMilliseconds);
+        }
+        catch (Exception excp)
+        {
+            logger.LogWarning(excp, "LLamaSharp warm-up failed (first reply will be slow).");
+        }
+    }
+
     public async Task<string> GenerateReplyAsync(string prompt)
     {
         try

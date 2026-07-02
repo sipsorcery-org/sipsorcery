@@ -36,6 +36,10 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
 {
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<SherpaTtsSpeaker>();
 
+    // Speakers are created per peer connection, but the voice model is heavy (~100MB) and
+    // stateless across utterances - share one engine per model directory for the app's life.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, OfflineTts> _engines = new();
+
     private readonly OfflineTts _tts;
     private readonly float _speed;
 
@@ -46,6 +50,12 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
     public SherpaTtsSpeaker(string modelDir, IAvatarRenderer renderer, AudioExtrasSource audio,
         int visemeLeadMs = 150, float speed = 1.0f)
         : base(renderer, audio, visemeLeadMs)
+    {
+        _tts = _engines.GetOrAdd(Path.GetFullPath(modelDir), CreateEngine);
+        _speed = speed;
+    }
+
+    private static OfflineTts CreateEngine(string modelDir)
     {
         var modelPath = Directory.EnumerateFiles(modelDir, "*.onnx").FirstOrDefault()
             ?? throw new FileNotFoundException($"No .onnx voice model found in {modelDir}.");
@@ -59,12 +69,30 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
         config.Model.NumThreads = Math.Clamp(Environment.ProcessorCount / 2, 1, 4);
         config.Model.Provider = "cpu";   // VITS synthesis is comfortably real-time on CPU.
 
-        _tts = new OfflineTts(config);
-        _speed = speed;
-
+        var tts = new OfflineTts(config);
         logger.LogInformation("sherpa-onnx TTS loaded {Model} ({Rate}Hz, {Speakers} speaker(s)).",
-            Path.GetFileName(modelPath), _tts.SampleRate, _tts.NumSpeakers);
+            Path.GetFileName(modelPath), tts.SampleRate, tts.NumSpeakers);
+        return tts;
     }
+
+    /// <summary>
+    /// Loads the shared engine and pays the first-synthesis warm-up at app start, so the
+    /// first utterance of the first call isn't seconds slower than the rest.
+    /// </summary>
+    public static Task PreloadAsync(string modelDir) => Task.Run(() =>
+    {
+        try
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var tts = _engines.GetOrAdd(Path.GetFullPath(modelDir), CreateEngine);
+            tts.Generate("Warm up.", 1.0f, 0);
+            logger.LogInformation("sherpa-onnx warmed up in {Ms} ms.", sw.ElapsedMilliseconds);
+        }
+        catch (Exception excp)
+        {
+            logger.LogWarning(excp, "sherpa-onnx warm-up failed (first utterance will be slow).");
+        }
+    });
 
     /// <summary>Synthesises in-process; sherpa-onnx returns float samples in [-1,1].</summary>
     protected override Task<(short[] samples, int sampleRate)> SynthesiseAsync(string text)
@@ -85,5 +113,6 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
     /// <summary>Exposes synthesis for the --tts-test smoke check (no playback pipeline).</summary>
     public Task<(short[] samples, int sampleRate)> TestSynthesiseAsync(string text) => SynthesiseAsync(text);
 
-    public void Dispose() => _tts?.Dispose();
+    /// <summary>The engine is shared for the app's lifetime (speakers are per-connection).</summary>
+    public void Dispose() { }
 }

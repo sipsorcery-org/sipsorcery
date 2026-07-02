@@ -31,6 +31,13 @@ public interface ILlmClient
     /// <summary>Returns the whole in-character reply in one shot (falls back to the prompt on failure).</summary>
     Task<string> GenerateReplyAsync(string prompt);
 
+    /// <summary>
+    /// Pays any one-time first-inference costs up front (weights page-in, context allocation)
+    /// so the first real reply isn't ~10s slower than the rest. No-op for HTTP clients - the
+    /// remote server owns its own warm state.
+    /// </summary>
+    Task WarmUpAsync() => Task.CompletedTask;
+
     /// <summary>Streams the reply one sentence at a time as tokens arrive.</summary>
     IAsyncEnumerable<string> StreamReplyAsync(string prompt);
 }

@@ -25,11 +25,15 @@ containerised and deployed to Kubernetes.
 ```
 
 The speaker talks to the renderer only through **`IAvatarRenderer`** (BeginSpeech / PushAudio /
-EndSpeech), so the animation engine is swappable: the in-box `MaxHeadroomVideoSource` (SkiaSharp
-cartoon; lip-sync is an amplitude→viseme heuristic) or a `NeuralAvatarRenderer` (a photoreal Wav2Lip
-talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` — see
-[neural/README.md](neural/README.md)). This mirrors how LiveKit's avatar agents swap
-`tavus.AvatarSession` for `bithuman.AvatarSession` behind one contract.
+EndSpeech), so the animation engine is swappable via `AVATAR_RENDERER`: the in-box
+`MaxHeadroomVideoSource` (SkiaSharp cartoon; lip-sync is an amplitude→viseme heuristic), the
+**fully in-process** `Wav2LipAvatarRenderer` (`wav2lip` — photoreal Wav2Lip via onnxruntime +
+SkiaSharp, no external process), or the `NeuralAvatarRenderer` (`neural` — the same head via a
+Python sidecar, see [neural/README.md](neural/README.md)). This mirrors how LiveKit's avatar
+agents swap `tavus.AvatarSession` for `bithuman.AvatarSession` behind one contract.
+
+With `wav2lip` + sherpa-onnx TTS + LLamaSharp + Whisper.net, **every dependency runs in-process**:
+deployment is `dotnet publish` plus model files on disk — no Python, no venvs, no servers.
 
 ## Pieces
 
@@ -37,7 +41,9 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
 |------|------|
 | `IAvatarRenderer.cs` | The swappable renderer seam: an `IVideoSource` driven by speech audio (`BeginSpeech` / `PushAudio` / `EndSpeech`). The same decoupling LiveKit's `AvatarSession` and bitHuman's `push_audio()` use. |
 | `MaxHeadroomVideoSource.cs` | `IAvatarRenderer` that renders the head/mouth/glitch with SkiaSharp and emits raw BGR frames. `PushAudio` maps each window's loudness onto one of the 0-21 viseme mouth shapes. |
-| `NeuralAvatarRenderer.cs` | The other `IAvatarRenderer` shape: a photoreal talking head. `PushAudio` streams PCM to a Python Wav2Lip **sidecar** (`neural/`) over a WebSocket and the returned lip-synced frames become the video. Selected with `AVATAR_RENDERER=neural`; see [neural/README.md](neural/README.md). |
+| `Wav2LipAvatarRenderer.cs` | The photoreal talking head, fully **in-process**: Wav2Lip via onnxruntime (DirectML/CPU), the validated `MelSpectrogram` front-end, and SkiaSharp compositing (matte, animated background, VHS grade, sway + blinks). No Python, no sidecar. Selected with `AVATAR_RENDERER=wav2lip`. |
+| `MelSpectrogram.cs` | C# port of Wav2Lip's librosa mel front-end, validated against the Python output to ~1e-6 with `--mel-test`. |
+| `NeuralAvatarRenderer.cs` | The same photoreal head via the Python Wav2Lip **sidecar** (`neural/`) over a WebSocket — kept as the reference implementation and for GPU/host splits. Selected with `AVATAR_RENDERER=neural`; see [neural/README.md](neural/README.md). |
 | `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, and push real-time audio windows to the `IAvatarRenderer`). Concrete engines only implement `SynthesiseAsync`. |
 | `SherpaTtsSpeaker.cs` | Local **in-process** engine — sherpa-onnx runs the same Piper VITS voices natively (NuGet carries the binaries incl. the espeak-ng phonemizer), so there is no external TTS process at all. The preferred local engine; set `SHERPA_MODEL_DIR`. |
 | `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server or per-utterance child process (both out-of-process Python). Returns 16-bit PCM for the base class to play. |
@@ -54,6 +60,55 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
 | `LocalLlmClient.cs` | OpenAI-compatible HTTP chat client (Ollama / LM Studio / hosted gateway) for generating in-character replies. |
 | `Program.cs` | ASP.NET host: `/offer` (send/recv WebRTC), `/say`, `/ask`. Routes both the Ask box and recognised speech through one shared `AskAsync`. |
 | `wwwroot/index.html` | Browser client: connect (captures the mic), a mic mute toggle, plus the Say / Ask text boxes. |
+
+## Everything in-process (the default)
+
+The app runs its whole AI stack **inside the one .NET process** — speech-to-text
+(Whisper.net), text-to-speech (sherpa-onnx), the LLM (LLamaSharp) and the photoreal
+Wav2Lip avatar (onnxruntime + SkiaSharp). There is nothing to install beyond the .NET
+SDK: every dependency is a NuGet package, and the models are plain files. Each engine
+looks in a conventional folder and activates automatically when its files are present,
+so after the one-time downloads below **no environment variables are needed** — just
+`dotnet run`.
+
+One-time model downloads (~4.2 GB total):
+
+```powershell
+# 1. TTS voice (sherpa-onnx runs Piper voices natively; pick any vits-piper-* voice).
+New-Item -ItemType Directory -Force C:\tools\sherpa-tts | Out-Null
+Invoke-WebRequest -Uri "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high.tar.bz2" -OutFile C:\tools\sherpa-tts\voice.tar.bz2
+tar -xjf C:\tools\sherpa-tts\voice.tar.bz2 -C C:\tools\sherpa-tts; Remove-Item C:\tools\sherpa-tts\voice.tar.bz2
+
+# 2. LLM (any chat-tuned GGUF dropped in C:\tools\llm is picked up automatically).
+New-Item -ItemType Directory -Force C:\tools\llm | Out-Null
+Invoke-WebRequest -Uri "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf" -OutFile C:\tools\llm\Llama-3.2-3B-Instruct-Q4_K_M.gguf
+
+# 3. Avatar model + persona. The Wav2Lip ONNX checkpoint is distributed via Google Drive
+#    (https://github.com/instant-high/wav2lip-onnx links it) - download checkpoints.zip in
+#    a browser and extract wav2lip_gan.onnx to:
+#        C:\tools\wav2lip\wav2lip-onnx\checkpoints\wav2lip_gan.onnx
+#    Then drop a front-facing face photo as C:\tools\wav2lip\persona.jpg (.png/.webp fine)
+#    and its figure matte as C:\tools\wav2lip\persona_alpha.png (see neural/README.md for
+#    generating a matte with rembg - only needed when you change the persona).
+```
+
+The STT model (Whisper ggml) downloads itself on first run. Sanity-check each engine
+without a browser: `dotnet run -- --tts-test "hi"`, `-- --llm-test "hi"`,
+`-- --avatar-test <raw-pcm> <out-dir>`.
+
+| Engine | Conventional path (auto-detected) | Override |
+|---|---|---|
+| TTS | `C:\tools\sherpa-tts\vits-piper-en_US-ryan-high` | `SHERPA_MODEL_DIR` |
+| LLM | first `*.gguf` in `C:\tools\llm` | `LLM_GGUF` (+ `LLM_GPU_LAYERS`) |
+| Avatar model | `C:\tools\wav2lip\wav2lip-onnx\checkpoints\wav2lip_gan.onnx` | `WAV2LIP_ONNX` |
+| Persona / matte | `C:\tools\wav2lip\persona.{jpg,png,webp}` / `persona_alpha.png` | `NEURAL_PERSONA` / `NEURAL_MATTE` |
+| Face box / eyes | baked defaults for the bundled persona | `NEURAL_FACE_BOX` / `NEURAL_EYES` |
+| Renderer choice | `wav2lip` when its files exist, else the cartoon | `AVATAR_RENDERER` (`wav2lip`/`neural`/`cartoon`) |
+
+When a model folder is missing the app degrades gracefully (cartoon renderer, verbatim
+replies, no speech) — and the sections below describe the out-of-process and cloud
+alternatives (Piper, Ollama/LM Studio, ElevenLabs, the Python sidecar), which all still
+work and take priority per their own env vars.
 
 ## Prerequisites
 

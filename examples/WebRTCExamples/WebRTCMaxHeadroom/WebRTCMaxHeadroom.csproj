@@ -30,6 +30,14 @@
          Swap/add a GPU backend package (e.g. .Backend.Vulkan) to offload layers. -->
     <PackageReference Include="LLamaSharp" Version="0.27.0" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
+    <!-- IN-PROCESS Wav2Lip avatar (Wav2LipAvatarRenderer): onnxruntime runs the lip-sync
+         model (DirectML uses any DX12 GPU on Windows, CPU elsewhere) and MathNet provides
+         the FFT for the librosa-compatible mel front-end - replaces the Python sidecar. -->
+    <!-- Version pinned to match the onnxruntime.dll sherpa-onnx bundles: both packages ship
+         the same native file name, and the DML-enabled build must be the one deployed (it
+         also serves sherpa's CPU use). -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
