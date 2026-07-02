@@ -98,6 +98,7 @@ class Program
     private static ISpeechRecognizer _recognizer;
     private static LocalLlmClient _llm;
 
+    private static string _sherpaModelDir;
     private static string _piperHttpUrl;
     private static string _piperPath;
     private static string _piperModel;
@@ -138,6 +139,7 @@ class Program
             return;
         }
 
+        _sherpaModelDir = Environment.GetEnvironmentVariable("SHERPA_MODEL_DIR");
         _piperHttpUrl = Environment.GetEnvironmentVariable("PIPER_HTTP_URL");
         _piperPath = Environment.GetEnvironmentVariable("PIPER_PATH");
         _piperModel = Environment.GetEnvironmentVariable("PIPER_MODEL");
@@ -151,9 +153,19 @@ class Program
         _whisperModel = Environment.GetEnvironmentVariable("WHISPER_MODEL");
         if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
 
+        // Synthesise a phrase to a WAV and exit - validates a TTS engine without a browser.
+        var argv = Environment.GetCommandLineArgs();
+        int ttsTestIdx = Array.IndexOf(argv, "--tts-test");
+        if (ttsTestIdx >= 0)
+        {
+            var text = ttsTestIdx + 1 < argv.Length ? argv[ttsTestIdx + 1] : "Max Headroom here, live and in stereo.";
+            await RunTtsTest(text);
+            return;
+        }
+
         if (!TtsConfigured())
         {
-            _logger.LogWarning("No TTS configured (set ELEVENLABS_API_KEY, or PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
+            _logger.LogWarning("No TTS configured (set ELEVENLABS_API_KEY, SHERPA_MODEL_DIR, or PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
         }
 
         _llm = new LocalLlmClient(
@@ -420,7 +432,8 @@ class Program
 
     /// <summary>
     /// Builds the TTS speaker from configuration: ElevenLabs (cloud) takes priority if an API key
-    /// is set, otherwise Piper (local). Returns null if no TTS is configured.
+    /// is set, then sherpa-onnx (local, in-process), then Piper (local, out-of-process).
+    /// Returns null if no TTS is configured.
     /// </summary>
     private static IAvatarSpeaker CreateSpeaker(IAvatarRenderer renderer, AudioExtrasSource audio)
     {
@@ -430,11 +443,51 @@ class Program
                 ? new ElevenLabsStreamingTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, renderer, audio, _visemeLeadMs)
                 : new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, renderer, audio, _visemeLeadMs);
         }
+        if (SherpaConfigured())
+        {
+            return new SherpaTtsSpeaker(_sherpaModelDir, renderer, audio, _visemeLeadMs);
+        }
         if (PiperConfigured())
         {
             return new PiperTtsSpeaker(_piperHttpUrl, _piperPath, _piperModel, _piperDataDir, renderer, audio, _visemeLeadMs);
         }
         return null;
+    }
+
+    /// <summary>
+    /// Synthesises <paramref name="text"/> with the configured local in-process TTS and writes
+    /// a WAV next to the app - a quick engine check with no WebRTC involved (--tts-test).
+    /// </summary>
+    private static async Task RunTtsTest(string text)
+    {
+        if (!SherpaConfigured())
+        {
+            _logger.LogError("--tts-test requires SHERPA_MODEL_DIR pointing at an extracted vits-piper voice.");
+            return;
+        }
+
+        using var speaker = new SherpaTtsSpeaker(_sherpaModelDir, renderer: null, audio: null);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var (samples, rate) = await speaker.TestSynthesiseAsync(text);
+        sw.Stop();
+
+        var path = Path.Combine(Environment.CurrentDirectory, "tts_test.wav");
+        WriteWav(path, samples, rate);
+        _logger.LogInformation("Synthesised {Ms} ms of audio in {Elapsed} ms -> {Path}",
+            samples.Length * 1000 / Math.Max(1, rate), sw.ElapsedMilliseconds, path);
+    }
+
+    /// <summary>Minimal 16-bit mono PCM WAV writer for the --tts-test output.</summary>
+    private static void WriteWav(string path, short[] samples, int sampleRate)
+    {
+        using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
+        using var bw = new BinaryWriter(fs);
+        int dataLen = samples.Length * sizeof(short);
+        bw.Write("RIFF"u8); bw.Write(36 + dataLen); bw.Write("WAVE"u8);
+        bw.Write("fmt "u8); bw.Write(16); bw.Write((short)1); bw.Write((short)1);
+        bw.Write(sampleRate); bw.Write(sampleRate * sizeof(short)); bw.Write((short)sizeof(short)); bw.Write((short)16);
+        bw.Write("data"u8); bw.Write(dataLen);
+        foreach (var s in samples) { bw.Write(s); }
     }
 
     /// <summary>
@@ -453,9 +506,13 @@ class Program
         return new WhisperSpeechRecognizer(_whisperModel);
     }
 
-    /// <summary>True if any TTS engine is configured (ElevenLabs or Piper).</summary>
+    /// <summary>True if any TTS engine is configured (ElevenLabs, sherpa-onnx or Piper).</summary>
     private static bool TtsConfigured() =>
-        !string.IsNullOrWhiteSpace(_elevenLabsKey) || PiperConfigured();
+        !string.IsNullOrWhiteSpace(_elevenLabsKey) || SherpaConfigured() || PiperConfigured();
+
+    /// <summary>True if the in-process sherpa-onnx TTS is configured (a voice model directory).</summary>
+    private static bool SherpaConfigured() =>
+        !string.IsNullOrWhiteSpace(_sherpaModelDir) && Directory.Exists(_sherpaModelDir);
 
     /// <summary>True if Piper TTS is configured, either via the HTTP server or the child-process mode.</summary>
     private static bool PiperConfigured() =>

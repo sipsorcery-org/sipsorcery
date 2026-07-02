@@ -39,7 +39,8 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
 | `MaxHeadroomVideoSource.cs` | `IAvatarRenderer` that renders the head/mouth/glitch with SkiaSharp and emits raw BGR frames. `PushAudio` maps each window's loudness onto one of the 0-21 viseme mouth shapes. |
 | `NeuralAvatarRenderer.cs` | The other `IAvatarRenderer` shape: a photoreal talking head. `PushAudio` streams PCM to a Python Wav2Lip **sidecar** (`neural/`) over a WebSocket and the returned lip-synced frames become the video. Selected with `AVATAR_RENDERER=neural`; see [neural/README.md](neural/README.md). |
 | `LipSyncTtsSpeaker.cs` | Base class for the TTS engines: owns the shared pipeline (resample to 16kHz, stream to the audio track, and push real-time audio windows to the `IAvatarRenderer`). Concrete engines only implement `SynthesiseAsync`. |
-| `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server (recommended) or per-utterance child process. Returns 16-bit PCM for the base class to play. |
+| `SherpaTtsSpeaker.cs` | Local **in-process** engine — sherpa-onnx runs the same Piper VITS voices natively (NuGet carries the binaries incl. the espeak-ng phonemizer), so there is no external TTS process at all. The preferred local engine; set `SHERPA_MODEL_DIR`. |
+| `PiperTtsSpeaker.cs` | Local Piper engine — HTTP server or per-utterance child process (both out-of-process Python). Returns 16-bit PCM for the base class to play. |
 | `ElevenLabsTtsSpeaker.cs` | Cloud ElevenLabs engine — POSTs to the API requesting raw `pcm_16000`. Best quality, but paid/online. Used when `ELEVENLABS_API_KEY` is set. |
 | `ElevenLabsStreamingTtsSpeaker.cs` | Low-latency ElevenLabs engine — WebSocket fed by the LLM token stream, audio played as it arrives, mouth driven by each chunk's amplitude. Enabled with `ELEVENLABS_STREAMING=true`. |
 | `IAvatarSpeaker.cs` | The speaking contract: `IAvatarSpeaker` (speak text) and `IStreamingAvatarSpeaker` (speak a text stream), so the batch and streaming engines plug in uniformly. |
@@ -54,7 +55,30 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
 
 ## Prerequisites
 
-1. **Piper** for text-to-speech. Piper is now the [OHF-Voice/piper1-gpl](https://github.com/OHF-Voice/piper1-gpl)
+1. **Text-to-speech.** The easiest option is the **in-process sherpa-onnx engine** — no
+   Python, no server, no child process; the NuGet package carries the native binaries and
+   it runs the same Piper voices. Download any `vits-piper-*` archive from the
+   [sherpa-onnx TTS model releases](https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models),
+   extract it, and point the app at the folder:
+
+   ```powershell
+   $url = "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high.tar.bz2"
+   Invoke-WebRequest -Uri $url -OutFile C:\tools\sherpa-tts\voice.tar.bz2
+   tar -xjf C:\tools\sherpa-tts\voice.tar.bz2 -C C:\tools\sherpa-tts
+   $env:SHERPA_MODEL_DIR = "C:\tools\sherpa-tts\vits-piper-en_US-ryan-high"
+
+   # Sanity check: synthesises a phrase to tts_test.wav and exits.
+   dotnet run -- --tts-test "Max Headroom here."
+   ```
+
+   The alternatives below (out-of-process **Piper**, cloud **ElevenLabs**) still work;
+   engine priority is ElevenLabs (if `ELEVENLABS_API_KEY` set) > sherpa-onnx (if
+   `SHERPA_MODEL_DIR` set) > Piper.
+
+   <details>
+   <summary>Alternative: out-of-process Piper (Python)</summary>
+
+   Piper is now the [OHF-Voice/piper1-gpl](https://github.com/OHF-Voice/piper1-gpl)
    rewrite, distributed as a Python package (`pip install piper-tts`) and run as
    `python -m piper`. You need Python 3 plus a downloaded voice (a `.onnx` and its
    `.onnx.json`, fetched with `piper.download_voices`). Voices are browsable at the
@@ -144,6 +168,9 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
 
    In Kubernetes, run the Piper server as a **sidecar container** in the same pod and set
    `PIPER_HTTP_URL=http://127.0.0.1:5000` — the app and Piper share the pod's localhost.
+   (With sherpa-onnx no sidecar is needed at all.)
+
+   </details>
 
    Without any TTS configured the avatar still renders but cannot speak or listen.
 

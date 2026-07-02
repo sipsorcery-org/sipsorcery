@@ -71,6 +71,13 @@ cube-corner backdrop** (three coloured faces meeting at a slowly moving vertex).
 - **No freeze during silence**: the sidecar emits frames continuously at 25 fps, so the
   background keeps animating even when Max is silent (the mouth just holds idle). This is
   the video analogue of the always-on audio clock.
+- **Liveness**: the figure gets a smooth micro-sway plus occasional held pose "snaps"
+  (the stuttery jerks that were the original Max's signature), done by warping the
+  figure+matte together against the background, and pseudo-random ~200ms blinks that
+  stretch the lid skin over each detected eye (eyes lost in shadow are skipped - patching
+  an invisible eye only creates artifacts). All idle motion continues during silence.
+  For richer motion (gaze, expression) the upgrade path is a neural-puppetry model
+  (LivePortrait-class) behind this same sidecar contract, not a 3D rewrite.
 
 ## Notes / limitations
 

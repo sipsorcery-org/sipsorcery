@@ -127,7 +127,7 @@ class Wav2LipRenderer:
             self.alpha = self._zoom(self._compute_matte(persona, matte_path))
             self._post = self._post_map()
             self._w_fg = np.ascontiguousarray(self.alpha[..., 0])          # HxW float32.
-            self._w_bg = np.ascontiguousarray(1.0 - self._w_fg)
+            self._w_one = np.ones_like(self._w_fg)                         # for 1 - warped w.
             # Grade folded to an affine colour transform: desaturate 12%, dim to 92% (the
             # lift/wash and warm cast live in the bias, pre-multiplied by the post map).
             # Everything is staged for saturating uint8 cv2 ops - the hot path has no
@@ -142,6 +142,9 @@ class Wav2LipRenderer:
             self._bg_cache_idx = -1
         else:
             self.alpha = None
+
+        # Liveness: eye rects (for blinks) found once on the static persona.
+        self._eyes = self._detect_eyes(persona, self.box) if dynamic_bg else []
 
         # Precomputed idle mouth (closed, from a silence mel) reused for every silent frame, so
         # the continuous emitter never has to run inference when Max isn't speaking.
@@ -170,8 +173,9 @@ class Wav2LipRenderer:
     BG_EVERY = 3   # re-render the (slowly drifting) background every Nth frame.
 
     def _finish(self, mouth96, idx):
-        """Full output frame: paste mouth, zoom the figure, composite over the animated bg,
-        then the VHS grade + scanline/vignette post-pass. Hot path - cv2 SIMD throughout."""
+        """Full output frame: paste mouth, apply liveness (blink + head sway), zoom the
+        figure, composite over the animated bg, then the VHS grade + scanline/vignette
+        post-pass. Hot path - cv2 SIMD throughout."""
         fg = self._compose(mouth96)
         if not self.dynamic_bg:
             return np.ascontiguousarray(fg)
@@ -180,11 +184,112 @@ class Wav2LipRenderer:
             self._bg_cache = self._background(idx)
             self._bg_cache_idx = idx
 
-        comp = cv2.blendLinear(self._zoom(fg), self._bg_cache, self._w_fg, self._w_bg)
+        blink = self._blink_amount(idx)
+        if blink > 0.0:
+            self._apply_blink(fg, blink)               # persona coords, before the zoom.
+
+        zfg = self._zoom(fg)
+        # Head sway/jerk: the same small affine moves the figure AND its matte against the
+        # animated background, which reads as body motion.
+        M = self._pose_matrix(idx)
+        zfg = cv2.warpAffine(zfg, M, (TARGET_W, TARGET_H), flags=cv2.INTER_LINEAR,
+                             borderMode=cv2.BORDER_REPLICATE)
+        w_fg = cv2.warpAffine(self._w_fg, M, (TARGET_W, TARGET_H), flags=cv2.INTER_LINEAR,
+                              borderMode=cv2.BORDER_CONSTANT, borderValue=0.0)
+        w_bg = cv2.subtract(self._w_one, w_fg)
+
+        comp = cv2.blendLinear(zfg, self._bg_cache, w_fg, w_bg)
         out = cv2.transform(comp, self._grade_m)                          # desat + dim.
         out = cv2.multiply(out, self._post3_u8, scale=1.0 / 255.0)        # scanline/vignette.
         out = cv2.add(out, self._grade_bias_u8)                           # wash + warm cast.
         return out
+
+    # --- Liveness: idle motion so the avatar never reads as a frozen photo ---------------
+
+    def _pose_matrix(self, idx):
+        """Small head transform per frame: a smooth micro-sway plus the occasional held
+        offset "snap" - the stuttery pose jumps that were Max Headroom's signature look."""
+        t = idx / FPS
+        dx = 2.5 * np.sin(t * 0.7) + 1.5 * np.sin(t * 1.31)
+        dy = 1.2 * np.sin(t * 0.9 + 1.0)
+        rot = 0.7 * np.sin(t * 0.53)
+
+        period = 3.7                                   # a jerk every few seconds...
+        k = int(t / period)
+        if (t - k * period) < 0.24:                    # ...held for a few frames.
+            rng = (k * 2654435761) & 0xFFFF            # deterministic pseudo-random pose.
+            dx += ((rng % 9) - 4) * 1.6
+            dy += (((rng >> 4) % 5) - 2) * 1.0
+            rot += (((rng >> 8) % 5) - 2) * 0.6
+
+        M = cv2.getRotationMatrix2D((TARGET_W / 2.0, TARGET_H * 0.55), rot, 1.0)
+        M[0, 2] += dx
+        M[1, 2] += dy
+        return M
+
+    def _blink_amount(self, idx):
+        """0..1 eyelid closure. A ~200ms triangular blink lands at a pseudo-random point in
+        each ~3.3s window, so blinks feel irregular but need no state."""
+        t = idx / FPS
+        period = 3.3
+        k = int(t / period)
+        start = ((k * 40503) & 0xFFFF) % 100 / 100.0 * (period - 0.3)
+        ph = (t - k * period) - start
+        if 0.0 <= ph < 0.20:
+            return 1.0 - abs(ph / 0.10 - 1.0)
+        return 0.0
+
+    def _apply_blink(self, fg, amount):
+        """Close the eyes by STRETCHING the lid skin just above each eye down over it (never
+        the brow - sliding the full strip dragged the eyebrow down as a dark smear). The
+        seam is feathered; at VHS blur levels it reads as a closing lid."""
+        for (x, y, w, h) in self._eyes:
+            cover = int(h * amount)
+            if cover <= 2:
+                continue
+            strip_h = max(3, int(h * 0.35))            # lid skin below the brow.
+            strip = fg[y - strip_h:y, x:x + w]
+            patch = cv2.resize(strip, (w, cover), interpolation=cv2.INTER_LINEAR)
+            fg[y:y + cover, x:x + w] = patch
+            # Feather the bottom seam of the lid into the remaining eye.
+            y0 = max(0, y + cover - 3)
+            y1 = min(fg.shape[0], y + cover + 3)
+            fg[y0:y1, x:x + w] = cv2.GaussianBlur(fg[y0:y1, x:x + w], (1, 5), 0)
+
+    @staticmethod
+    def _detect_eyes(persona, face_box):
+        """One-time eye boxes on the persona via OpenCV's bundled Haar eye cascade. Returns
+        up to two rects (x, y, w, h) clamped so a same-height strip above each is in-frame;
+        empty when detection fails (blinking is then disabled). If only ONE eye is found
+        (e.g. the other is in deep shadow, as on the Max photo), it is mirrored across the
+        face's centreline so the blink isn't a wink."""
+        cascade = cv2.CascadeClassifier(
+            os.path.join(cv2.data.haarcascades, "haarcascade_eye.xml"))
+        gray = cv2.cvtColor(persona, cv2.COLOR_BGR2GRAY)
+        found = cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=6,
+                                         minSize=(24, 24))
+        # Keep the two largest in the upper half of the frame (eyes, not nostrils/mouth).
+        found = [f for f in found if f[1] + f[3] / 2 < persona.shape[0] * 0.55]
+        found = sorted(found, key=lambda f: f[2] * f[3], reverse=True)[:2]
+
+        if len(found) == 1:
+            x, y, w, h = found[0]
+            face_cx = (face_box[2] + face_box[3]) / 2.0
+            mx = int(2 * face_cx - (x + w / 2.0) - w / 2.0)   # mirrored left edge.
+            if 0 <= mx <= persona.shape[1] - w:
+                found = [found[0], (mx, y, w, h)]
+
+        eyes = []
+        for (x, y, w, h) in sorted(found, key=lambda f: f[0]):
+            if y - h < 0:
+                continue
+            # An eye lost in deep shadow is invisible to the viewer, so patching it only
+            # creates a bright block artifact - skip it; the lit eye carries the blink.
+            if gray[y:y + h, x:x + w].mean() < 55:
+                continue
+            eyes.append((int(x), int(y), int(w), int(h)))
+        print(f"Blink eyes: {eyes if eyes else 'none found - blinking disabled'}", flush=True)
+        return eyes
 
     @staticmethod
     def _zoom(img):
