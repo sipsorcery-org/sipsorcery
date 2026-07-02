@@ -1,0 +1,134 @@
+//-----------------------------------------------------------------------------
+// Filename: LlamaSharpLlmClient.cs
+//
+// Description: IN-PROCESS reply generation using LLamaSharp (llama.cpp bindings,
+// https://github.com/SciSharp/LLamaSharp). Runs the same GGUF models Ollama serves,
+// but inside this process - no external LLM server to install, start or monitor.
+// Point LLM_GGUF at a .gguf chat model (e.g. Llama-3.2-3B-Instruct-Q4_K_M.gguf).
+//
+// The model's own chat template (from the GGUF metadata) is applied via LLamaTemplate,
+// so the system persona and user prompt are formatted exactly as the model expects.
+// Inference runs on the CPU by default; set LLM_GPU_LAYERS (and add a GPU backend
+// package such as LLamaSharp.Backend.Vulkan) to offload layers to the GPU.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using LLama;
+using LLama.Common;
+using LLama.Sampling;
+using Microsoft.Extensions.Logging;
+
+namespace demo;
+
+public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
+{
+    private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<LlamaSharpLlmClient>();
+
+    private readonly LLamaWeights _weights;
+    private readonly StatelessExecutor _executor;
+    private readonly string _modelPath;
+
+    public bool IsConfigured => true;   // constructed only when a model file exists.
+
+    public string Description => $"in-process LLamaSharp with model {Path.GetFileName(_modelPath)}";
+
+    public LlamaSharpLlmClient(string ggufPath, int gpuLayers = 0)
+    {
+        _modelPath = ggufPath;
+
+        var parameters = new ModelParams(ggufPath)
+        {
+            ContextSize = 4096,          // plenty for a one-liner persona; keeps memory modest.
+            GpuLayerCount = gpuLayers,   // 0 = CPU; needs a GPU backend package to matter.
+        };
+
+        _weights = LLamaWeights.LoadFromFile(parameters);
+        _executor = new StatelessExecutor(_weights, parameters);
+
+        logger.LogInformation("LLamaSharp loaded {Model} ({GpuLayers} GPU layers).",
+            Path.GetFileName(ggufPath), gpuLayers);
+    }
+
+    public async Task<string> GenerateReplyAsync(string prompt)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            await foreach (var token in InferAsync(prompt).ConfigureAwait(false))
+            {
+                sb.Append(token);
+            }
+            var reply = sb.ToString().Trim();
+            return reply.Length > 0 ? reply : prompt;
+        }
+        catch (Exception excp)
+        {
+            logger.LogWarning(excp, "LLamaSharp inference failed, speaking the prompt verbatim.");
+            return prompt;
+        }
+    }
+
+    public async IAsyncEnumerable<string> StreamReplyAsync(string prompt)
+    {
+        var buffer = new StringBuilder();
+        bool anyYielded = false;
+
+        await foreach (var token in InferAsync(prompt).ConfigureAwait(false))
+        {
+            buffer.Append(token);
+
+            string sentence;
+            while ((sentence = LlmShared.TakeSentence(buffer)) != null)
+            {
+                if (sentence.Length == 0)
+                {
+                    continue;
+                }
+                anyYielded = true;
+                yield return sentence;
+            }
+        }
+
+        var remainder = buffer.ToString().Trim();
+        if (remainder.Length > 0)
+        {
+            anyYielded = true;
+            yield return remainder;
+        }
+
+        if (!anyYielded)
+        {
+            yield return prompt;
+        }
+    }
+
+    /// <summary>Formats the persona + prompt with the model's own chat template and streams tokens.</summary>
+    private IAsyncEnumerable<string> InferAsync(string prompt)
+    {
+        var template = new LLamaTemplate(_weights);
+        template.Add("system", LlmShared.SystemPrompt);
+        template.Add("user", prompt);
+        template.AddAssistant = true;
+        var templated = Encoding.UTF8.GetString(template.Apply());
+
+        var inferenceParams = new InferenceParams
+        {
+            MaxTokens = 120,   // one or two punchy sentences.
+            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.8f },
+        };
+
+        return _executor.InferAsync(templated, inferenceParams);
+    }
+
+    public void Dispose() => _weights?.Dispose();
+}

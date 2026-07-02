@@ -96,7 +96,7 @@ class Program
     private static AudioExtrasSource _audioSource;
     private static IAvatarSpeaker _speaker;
     private static ISpeechRecognizer _recognizer;
-    private static LocalLlmClient _llm;
+    private static ILlmClient _llm;
 
     private static string _sherpaModelDir;
     private static string _piperHttpUrl;
@@ -168,11 +168,20 @@ class Program
             _logger.LogWarning("No TTS configured (set ELEVENLABS_API_KEY, SHERPA_MODEL_DIR, or PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
         }
 
-        _llm = new LocalLlmClient(
-            Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
-            Environment.GetEnvironmentVariable("LLM_MODEL"),
-            Environment.GetEnvironmentVariable("LLM_API_KEY"));
-        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? $"configured with endpoint {_llm.Endpoint} and model {_llm.Model}" : " not configured (text will be spoken verbatim)");
+        _llm = CreateLlm();
+        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? $"configured with {_llm.Description}" : " not configured (text will be spoken verbatim)");
+
+        // Generate one in-character reply and exit - validates the LLM without a browser.
+        int llmTestIdx = Array.IndexOf(argv, "--llm-test");
+        if (llmTestIdx >= 0)
+        {
+            var prompt = llmTestIdx + 1 < argv.Length ? argv[llmTestIdx + 1] : "What do you think of television these days?";
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var reply = await _llm.GenerateReplyAsync(prompt);
+            _logger.LogInformation("LLM reply in {Ms} ms: {Reply}", sw.ElapsedMilliseconds, reply);
+            (_llm as IDisposable)?.Dispose();
+            return;
+        }
 
         var builder = WebApplication.CreateBuilder();
         builder.Host.UseSerilog();
@@ -504,6 +513,25 @@ class Program
                 : new ElevenLabsSpeechRecognizer(_elevenLabsKey, _elevenLabsSttModel);
         }
         return new WhisperSpeechRecognizer(_whisperModel);
+    }
+
+    /// <summary>
+    /// Builds the LLM client: in-process LLamaSharp when LLM_GGUF points at a model file,
+    /// otherwise the HTTP client for an OpenAI-compatible endpoint (Ollama / LM Studio /
+    /// hosted gateway) - which is also the "not configured" fallback that echoes prompts.
+    /// </summary>
+    private static ILlmClient CreateLlm()
+    {
+        var gguf = Environment.GetEnvironmentVariable("LLM_GGUF");
+        if (!string.IsNullOrWhiteSpace(gguf) && File.Exists(gguf))
+        {
+            int.TryParse(Environment.GetEnvironmentVariable("LLM_GPU_LAYERS"), out var gpuLayers);
+            return new LlamaSharpLlmClient(gguf, gpuLayers);
+        }
+        return new LocalLlmClient(
+            Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
+            Environment.GetEnvironmentVariable("LLM_MODEL"),
+            Environment.GetEnvironmentVariable("LLM_API_KEY"));
     }
 
     /// <summary>True if any TTS engine is configured (ElevenLabs, sherpa-onnx or Piper).</summary>

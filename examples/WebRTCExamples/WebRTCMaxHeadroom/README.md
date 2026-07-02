@@ -49,7 +49,9 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
 | `ElevenLabsSpeechRecognizer.cs` | Cloud ElevenLabs "scribe" speech-to-text — POSTs each utterance (as a WAV) to the API. Used when `ELEVENLABS_API_KEY` is set. |
 | `ElevenLabsStreamingSpeechRecognizer.cs` | Low-latency realtime STT — streams the 8kHz mic over a WebSocket (Scribe v2) with server-side VAD. Enabled with `ELEVENLABS_STREAMING=true`. |
 | `ISpeechRecognizer.cs` | The listening contract (`StartAsync` / `Write` / `OnRecognized`), so the batch and streaming recognisers plug in uniformly. |
-| `LocalLlmClient.cs` | Optional OpenAI-compatible chat client (Ollama / LM Studio / llama.cpp) for generating in-character replies. |
+| `ILlmClient.cs` | The reply-generation contract (one-shot + sentence stream) both LLM clients implement, plus the shared Max persona prompt. |
+| `LlamaSharpLlmClient.cs` | **In-process** LLM via LLamaSharp (llama.cpp) — runs the same GGUF models as Ollama with no external server. Set `LLM_GGUF`. |
+| `LocalLlmClient.cs` | OpenAI-compatible HTTP chat client (Ollama / LM Studio / hosted gateway) for generating in-character replies. |
 | `Program.cs` | ASP.NET host: `/offer` (send/recv WebRTC), `/say`, `/ask`. Routes both the Ask box and recognised speech through one shared `AskAsync`. |
 | `wwwroot/index.html` | Browser client: connect (captures the mic), a mic mute toggle, plus the Say / Ask text boxes. |
 
@@ -219,9 +221,28 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
    $env:WHISPER_MODEL = "C:\models\ggml-base.en.bin"
    ```
 
-3. (Optional) A local LLM exposing an OpenAI-compatible chat endpoint, e.g.
-   [Ollama](https://ollama.com). Without one, `/ask` just speaks the prompt verbatim
-   (no in-character reply generation).
+3. (Optional) A local LLM for in-character replies. Without one, `/ask` just speaks the
+   prompt verbatim. The easiest option is the **in-process LLamaSharp engine** — llama.cpp
+   inside the app (the same engine Ollama wraps), no server to run. Point `LLM_GGUF` at
+   any chat-tuned GGUF file:
+
+   ```powershell
+   # Download a small instruct model (~1.9 GB).
+   Invoke-WebRequest -Uri "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf" -OutFile C:\tools\llm\Llama-3.2-3B-Instruct-Q4_K_M.gguf
+   $env:LLM_GGUF = "C:\tools\llm\Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+
+   # Sanity check: generates one in-character reply and exits.
+   dotnet run -- --llm-test "What do you think of television these days?"
+   ```
+
+   Inference is CPU by default; to offload to a GPU add a LLamaSharp backend package
+   (e.g. `LLamaSharp.Backend.Vulkan`) and set `LLM_GPU_LAYERS=-1`.
+
+   <details>
+   <summary>Alternative: an OpenAI-compatible endpoint (Ollama / LM Studio / hosted)</summary>
+
+   Any server exposing an OpenAI-compatible chat endpoint works, e.g.
+   [Ollama](https://ollama.com). `LLM_GGUF` takes priority when both are set.
 
    **Windows**
    ```powershell
@@ -259,6 +280,8 @@ talking head backed by a Python sidecar, selected with `AVATAR_RENDERER=neural` 
    A hosted OpenAI-compatible gateway works too — set `LLM_ENDPOINT` to its URL,
    `LLM_MODEL` accordingly (e.g. `anthropic/claude-3.5-sonnet` on OpenRouter), and
    `LLM_API_KEY` to your key. The client sends it as a Bearer token.
+
+   </details>
 
 ## Run
 

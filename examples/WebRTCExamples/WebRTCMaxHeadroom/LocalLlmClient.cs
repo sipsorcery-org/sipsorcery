@@ -35,12 +35,9 @@ using Microsoft.Extensions.Logging;
 
 namespace demo;
 
-public class LocalLlmClient
+public class LocalLlmClient : ILlmClient
 {
-    private const string SYSTEM_PROMPT =
-        "You are Max Headroom, the stuttering, wisecracking 1980s computer-generated TV host. " +
-        "Reply in one or two short, punchy, slightly sarcastic sentences. Keep it light and witty. " +
-        "Plain text only, no stage directions or emojis.";
+    private const string SYSTEM_PROMPT = LlmShared.SystemPrompt;
 
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<LocalLlmClient>();
 
@@ -53,6 +50,8 @@ public class LocalLlmClient
     public string Model { get { return _model; } }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_endpoint);
+
+    public string Description => $"endpoint {_endpoint} and model {_model}";
 
     public LocalLlmClient(string endpoint, string model, string apiKey = null)
     {

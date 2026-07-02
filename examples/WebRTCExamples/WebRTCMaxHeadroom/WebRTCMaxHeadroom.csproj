@@ -25,6 +25,11 @@
          same Piper VITS voices natively (it bundles the espeak-ng phonemizer), replacing the
          out-of-process Piper Python server - one less external process to orchestrate. -->
     <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.3" />
+    <!-- Local, offline, IN-PROCESS LLM (LlamaSharpLlmClient). LLamaSharp is llama.cpp - the
+         same engine Ollama wraps - so the same GGUF models run with no external server.
+         Swap/add a GPU backend package (e.g. .Backend.Vulkan) to offload layers. -->
+    <PackageReference Include="LLamaSharp" Version="0.27.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
   </ItemGroup>
 
   <ItemGroup>
