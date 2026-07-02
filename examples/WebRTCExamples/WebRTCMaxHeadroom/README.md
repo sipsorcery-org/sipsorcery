@@ -51,7 +51,8 @@ deployment is `dotnet publish` plus model files on disk — no Python, no venvs,
 | `ElevenLabsStreamingTtsSpeaker.cs` | Low-latency ElevenLabs engine — WebSocket fed by the LLM token stream, audio played as it arrives, mouth driven by each chunk's amplitude. Enabled with `ELEVENLABS_STREAMING=true`. |
 | `IAvatarSpeaker.cs` | The speaking contract: `IAvatarSpeaker` (speak text) and `IStreamingAvatarSpeaker` (speak a text stream), so the batch and streaming engines plug in uniformly. |
 | `SpeechRecognizer.cs` | Base class for the STT engines: owns the streaming front-end (energy VAD that buffers the 8kHz mic PCM into utterances). Concrete engines only implement `TranscribeAsync`. |
-| `WhisperSpeechRecognizer.cs` | Local Whisper.net speech-to-text — resamples each utterance to 16kHz and transcribes it offline. The default STT. |
+| `SherpaSpeechRecognizer.cs` | Local **in-process** STT — sherpa-onnx running the same Whisper base.en weights (ONNX export), sharing the TTS engine's native stack. Preferred when its model folder exists; validate with `--stt-test` (a TTS→STT round trip). |
+| `WhisperSpeechRecognizer.cs` | Local Whisper.net speech-to-text — resamples each utterance to 16kHz and transcribes it offline. The fallback STT when no sherpa STT model is present. |
 | `ElevenLabsSpeechRecognizer.cs` | Cloud ElevenLabs "scribe" speech-to-text — POSTs each utterance (as a WAV) to the API. Used when `ELEVENLABS_API_KEY` is set. |
 | `ElevenLabsStreamingSpeechRecognizer.cs` | Low-latency realtime STT — streams the 8kHz mic over a WebSocket (Scribe v2) with server-side VAD. Enabled with `ELEVENLABS_STREAMING=true`. |
 | `ISpeechRecognizer.cs` | The listening contract (`StartAsync` / `Write` / `OnRecognized`), so the batch and streaming recognisers plug in uniformly. |
@@ -79,6 +80,12 @@ New-Item -ItemType Directory -Force C:\tools\sherpa-tts | Out-Null
 Invoke-WebRequest -Uri "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high.tar.bz2" -OutFile C:\tools\sherpa-tts\voice.tar.bz2
 tar -xjf C:\tools\sherpa-tts\voice.tar.bz2 -C C:\tools\sherpa-tts; Remove-Item C:\tools\sherpa-tts\voice.tar.bz2
 
+# 1b. STT model (optional but recommended: the same Whisper base.en weights Whisper.net
+#     uses, run through sherpa-onnx so STT and TTS share one native stack).
+New-Item -ItemType Directory -Force C:\tools\sherpa-stt | Out-Null
+Invoke-WebRequest -Uri "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-base.en.tar.bz2" -OutFile C:\tools\sherpa-stt\model.tar.bz2
+tar -xjf C:\tools\sherpa-stt\model.tar.bz2 -C C:\tools\sherpa-stt; Remove-Item C:\tools\sherpa-stt\model.tar.bz2
+
 # 2. LLM (any chat-tuned GGUF dropped in C:\tools\llm is picked up automatically).
 New-Item -ItemType Directory -Force C:\tools\llm | Out-Null
 Invoke-WebRequest -Uri "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf" -OutFile C:\tools\llm\Llama-3.2-3B-Instruct-Q4_K_M.gguf
@@ -99,6 +106,7 @@ without a browser: `dotnet run -- --tts-test "hi"`, `-- --llm-test "hi"`,
 | Engine | Conventional path (auto-detected) | Override |
 |---|---|---|
 | TTS | `C:\tools\sherpa-tts\vits-piper-en_US-ryan-high` | `SHERPA_MODEL_DIR` |
+| STT | `C:\tools\sherpa-stt\sherpa-onnx-whisper-base.en` (falls back to Whisper.net) | `SHERPA_STT_DIR` |
 | LLM | first `*.gguf` in `C:\tools\llm` | `LLM_GGUF` (+ `LLM_GPU_LAYERS`) |
 | Avatar model | `C:\tools\wav2lip\wav2lip-onnx\checkpoints\wav2lip_gan.onnx` | `WAV2LIP_ONNX` |
 | Persona / matte | `C:\tools\wav2lip\persona.{jpg,png,webp}` / `persona_alpha.png` | `NEURAL_PERSONA` / `NEURAL_MATTE` |

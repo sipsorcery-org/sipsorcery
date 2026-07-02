@@ -127,6 +127,14 @@ class Program
 
         _logger.LogInformation("WebRTC Max Headroom Avatar Demo");
 
+        // Windows timers default to ~15.6ms resolution, which stretches the 25fps render
+        // timer to ~46ms ticks - video falls behind the (correctly paced) audio and the lip
+        // sync drifts. Ask for 1ms resolution, the same fix the Python sidecar needed.
+        if (OperatingSystem.IsWindows())
+        {
+            _ = TimeBeginPeriod(1);
+        }
+
         // Quick visual sanity check: render a few frames to PNG and exit.
         if (Array.Exists(Environment.GetCommandLineArgs(), a => a == "--snapshot"))
         {
@@ -193,6 +201,16 @@ class Program
             return;
         }
 
+        // TTS -> STT round trip and exit: synthesises a phrase with sherpa TTS then transcribes
+        // it with the sherpa STT engine - validates both without a browser (--stt-test).
+        int sttTestIdx = Array.IndexOf(argv, "--stt-test");
+        if (sttTestIdx >= 0)
+        {
+            var text = sttTestIdx + 1 < argv.Length ? argv[sttTestIdx + 1] : "The quick brown fox jumps over the lazy dog.";
+            await RunSttTest(text);
+            return;
+        }
+
         if (!TtsConfigured())
         {
             _logger.LogWarning("No TTS configured (set ELEVENLABS_API_KEY, SHERPA_MODEL_DIR, or PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
@@ -224,6 +242,10 @@ class Program
         if (SherpaConfigured())
         {
             _ = SherpaTtsSpeaker.PreloadAsync(_sherpaModelDir);
+        }
+        if (SherpaSpeechRecognizer.FilesPresent())
+        {
+            _ = SherpaSpeechRecognizer.PreloadAsync();
         }
         var rendererKind = Environment.GetEnvironmentVariable("AVATAR_RENDERER");
         if (string.Equals(rendererKind, "wav2lip", StringComparison.OrdinalIgnoreCase) ||
@@ -591,6 +613,40 @@ class Program
             maxDiff, sumDiff / (rows * cols));
     }
 
+    /// <summary>
+    /// Round-trips text through the in-process pipeline the live call uses: sherpa TTS
+    /// synthesises it, the PCM is downsampled to the mic path's 8kHz, and the configured
+    /// STT engine transcribes it back (--stt-test).
+    /// </summary>
+    private static async Task RunSttTest(string text)
+    {
+        if (!SherpaConfigured() || !SherpaSpeechRecognizer.FilesPresent())
+        {
+            _logger.LogError("--stt-test needs both the sherpa TTS voice and STT model folders (see the README).");
+            return;
+        }
+
+        using var speaker = new SherpaTtsSpeaker(_sherpaModelDir, renderer: null, audio: null);
+        var (samples, rate) = await speaker.TestSynthesiseAsync(text);
+
+        // Down to the 8kHz the mic path delivers (matches the live PCMU audio track).
+        var pcm8k = new short[(int)((long)samples.Length * 8000 / rate)];
+        double step = rate / 8000.0;
+        for (int i = 0; i < pcm8k.Length; i++)
+        {
+            double pos = i * step;
+            int i0 = (int)pos;
+            int i1 = Math.Min(i0 + 1, samples.Length - 1);
+            pcm8k[i] = (short)(samples[i0] + (samples[i1] - samples[i0]) * (pos - i0));
+        }
+
+        var recognizer = new SherpaSpeechRecognizer();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var transcript = await recognizer.TestTranscribeAsync(pcm8k);
+        _logger.LogInformation("STT round trip in {Ms} ms.\n  said:  {Said}\n  heard: {Heard}",
+            sw.ElapsedMilliseconds, text, transcript.Trim());
+    }
+
     /// <summary>Minimal 16-bit mono PCM WAV writer for the --tts-test output.</summary>
     private static void WriteWav(string path, short[] samples, int sampleRate)
     {
@@ -616,6 +672,12 @@ class Program
             return _elevenLabsStreaming
                 ? new ElevenLabsStreamingSpeechRecognizer(_elevenLabsKey, _elevenLabsSttRealtimeModel)
                 : new ElevenLabsSpeechRecognizer(_elevenLabsKey, _elevenLabsSttModel);
+        }
+        // Same Whisper weights either way; sherpa-onnx shares the TTS engine's native stack
+        // so Whisper.net is only used when no sherpa STT model folder is present.
+        if (SherpaSpeechRecognizer.FilesPresent())
+        {
+            return new SherpaSpeechRecognizer();
         }
         return new WhisperSpeechRecognizer(_whisperModel);
     }
@@ -659,6 +721,9 @@ class Program
     private static bool PiperConfigured() =>
         !string.IsNullOrWhiteSpace(_piperHttpUrl) ||
         (!string.IsNullOrWhiteSpace(_piperPath) && !string.IsNullOrWhiteSpace(_piperModel));
+
+    [System.Runtime.InteropServices.DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+    private static extern uint TimeBeginPeriod(uint milliseconds);
 
     private static async Task<string> ReadBody(HttpRequest request)
     {

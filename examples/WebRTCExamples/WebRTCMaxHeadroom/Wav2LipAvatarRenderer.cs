@@ -171,12 +171,15 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
     private bool _melDirty;
     private bool _melRefreshRunning;
     private volatile bool _speaking;
-    private int _mouthFrame;
+    private int _mouthFrame = -1;                       // last rendered mouth frame index.
     private byte[] _lastMouth;                          // last live 96x96 BGR mouth.
+    private readonly System.Diagnostics.Stopwatch _speechClock = new();   // utterance wall clock.
 
     // Render loop.
     private Timer _renderTimer;
     private int _renderBusy;                            // non-reentrancy guard for the timer.
+    private readonly System.Diagnostics.Stopwatch _videoClock = new();    // for truthful RTP durations.
+    private long _lastEmitMs = -1;
     private SKBitmap _bgCache;
     private int _bgCacheIdx = int.MinValue;
     private int _frameIdx;
@@ -236,8 +239,9 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
             _melMatrix = null;
             _melSolidCols = 0;
             _melDirty = false;
-            _mouthFrame = 0;
+            _mouthFrame = -1;
             _lastMouth = null;
+            _speechClock.Restart();
             _speaking = true;
         }
     }
@@ -276,6 +280,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         if (!_isStarted)
         {
             _isStarted = true;
+            _videoClock.Restart();
             _renderTimer.Change(0, 1000 / FPS);
         }
         return Task.CompletedTask;
@@ -319,7 +324,16 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
                 _formatManager.SelectedFormat.Codec);
             if (encoded != null)
             {
-                OnVideoSourceEncodedSample?.Invoke(VIDEO_SAMPLING_RATE / FPS, encoded);
+                // Truthful RTP durations: a fixed 3600/frame lets the video RTP clock fall
+                // behind wall time whenever a tick runs long or drops, and the browser's
+                // RTCP-based A/V sync then plays the video (and its lip sync) late. Advance
+                // the clock by the ACTUAL elapsed time between emitted frames instead.
+                long now = _videoClock.ElapsedMilliseconds;
+                uint durationRtpTS = _lastEmitMs < 0
+                    ? VIDEO_SAMPLING_RATE / FPS
+                    : (uint)Math.Clamp((now - _lastEmitMs) * (VIDEO_SAMPLING_RATE / 1000), 900, 4 * 3600);
+                _lastEmitMs = now;
+                OnVideoSourceEncodedSample?.Invoke(durationRtpTS, encoded);
             }
         }
         catch (Exception excp)
@@ -335,9 +349,12 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         }
     }
 
-    /// <summary>The mouth for this tick: the next live one if its mel window is ready (holding
-    /// the previous while audio catches up), else idle. Kicks a background mel refresh when
-    /// new PCM is waiting - the O(100ms) recompute never runs on the render thread.</summary>
+    /// <summary>The mouth for this tick, ANCHORED TO THE UTTERANCE WALL CLOCK. The audio track
+    /// is paced in real time, so wall time since BeginSpeech IS the audio timeline; deriving
+    /// the mouth frame from it (rather than counting ticks) means slow or dropped render ticks
+    /// jump to the correct frame instead of accumulating lip-sync lag. Holds the previous
+    /// mouth if its mel isn't ready, else idle. Kicks a background mel refresh when new PCM
+    /// is waiting - the O(100ms) recompute never runs on the render thread.</summary>
     private byte[] NextMouth()
     {
         if (!_speaking)
@@ -345,14 +362,19 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
             return _idleMouth;
         }
 
+        // The frame whose audio is sounding now (the speaker starts playback _visemeLeadMs
+        // after BeginSpeech, which covers the video path's extra latency).
+        int target = (int)(_speechClock.ElapsedMilliseconds * FPS / 1000);
+
         float[,] mel;
+        int solid;
         bool wantRefresh;
         lock (_audioLock)
         {
             mel = _melMatrix;
-            int start = (int)(_mouthFrame * MEL_PER_FRAME);
+            solid = _melSolidCols;
             wantRefresh = _melDirty && !_melRefreshRunning &&
-                          (mel == null || start + MEL_STEP > _melSolidCols);
+                          (mel == null || (int)(target * MEL_PER_FRAME) + MEL_STEP > solid);
             if (wantRefresh) { _melRefreshRunning = true; }
         }
 
@@ -363,11 +385,13 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
 
         if (mel != null)
         {
-            int start = (int)(_mouthFrame * MEL_PER_FRAME);
-            if (start + MEL_STEP <= _melSolidCols)
+            // Clamp to the last frame whose mel window is fully within the solid columns.
+            int maxFrame = (int)((solid - MEL_STEP) / MEL_PER_FRAME);
+            int frame = Math.Min(target, maxFrame);
+            if (frame > _mouthFrame)
             {
-                _lastMouth = Infer(mel, start);
-                _mouthFrame++;
+                _mouthFrame = frame;
+                _lastMouth = Infer(mel, (int)(frame * MEL_PER_FRAME));
             }
         }
         return _lastMouth ?? _idleMouth;
