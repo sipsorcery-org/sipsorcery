@@ -197,7 +197,7 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
 
             if (_renderer.PacesAudioInternally)
             {
-                // Self-pacing renderer (neural sidecar): hand it the whole chunk before playback
+                // Self-pacing renderer (the Wav2Lip head): hand it the whole chunk before playback
                 // so the model's look-ahead has as much audio as we do.
                 for (int start = 0; start < chunk.Length; start += frameSamples)
                 {

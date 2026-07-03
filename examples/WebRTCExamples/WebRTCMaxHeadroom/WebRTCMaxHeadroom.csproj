@@ -16,14 +16,10 @@
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
-    <!-- Local, offline speech-to-text. The Runtime package carries the native whisper.cpp
-         binaries for win-x64 / linux-x64 / osx, so it works in a Linux container with no GPU.
-         The whole avatar runs offline with no cloud dependency. -->
-    <PackageReference Include="Whisper.net" Version="1.8.1" />
-    <PackageReference Include="Whisper.net.Runtime" Version="1.8.1" />
-    <!-- Local, offline, IN-PROCESS text-to-speech (SherpaTtsSpeaker). sherpa-onnx runs the
-         same Piper VITS voices natively (it bundles the espeak-ng phonemizer), replacing the
-         out-of-process Piper Python server - one less external process to orchestrate. -->
+    <!-- Local, offline, IN-PROCESS speech: sherpa-onnx does BOTH text-to-speech
+         (SherpaTtsSpeaker, running Piper VITS voices - it bundles the espeak-ng phonemizer)
+         and speech-to-text (SherpaSpeechRecognizer, running Parakeet or Whisper ONNX
+         exports). One native runtime for the whole speech stack, no external processes. -->
     <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.3" />
     <!-- Local, offline, IN-PROCESS LLM (LlamaSharpLlmClient). LLamaSharp is llama.cpp - the
          same engine Ollama wraps - so the same GGUF models run with no external server.

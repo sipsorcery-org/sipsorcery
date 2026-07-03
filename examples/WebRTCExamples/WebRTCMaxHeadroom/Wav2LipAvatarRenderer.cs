@@ -2,7 +2,7 @@
 // Filename: Wav2LipAvatarRenderer.cs
 //
 // Description: The fully IN-PROCESS photoreal avatar - a C# port of the Python
-// neural sidecar (neural/neural_sidecar.py). Wav2Lip runs via onnxruntime
+// prototype sidecar it was developed against (see git history). Wav2Lip runs via onnxruntime
 // (DirectML on any DX12 GPU, CPU fallback), the mel front-end is the validated
 // MelSpectrogram port, and all compositing (mouth paste, matte blend, animated
 // cube-corner background, VHS grade, head sway + blinks) is SkiaSharp. No Python,

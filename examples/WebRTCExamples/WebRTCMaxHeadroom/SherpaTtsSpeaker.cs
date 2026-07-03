@@ -5,10 +5,9 @@
 // (https://github.com/k2-fsa/sherpa-onnx) - one of the avatar's TTS engines (see
 // LipSyncTtsSpeaker for the shared playback / lip-sync pipeline).
 //
-// sherpa-onnx runs the same Piper VITS voices as the PiperTtsSpeaker, but as a native
-// library inside this process (the NuGet carries the binaries, including the espeak-ng
-// phonemizer that made Piper need Python). Compared to the Piper engine there is no
-// child process, no HTTP server and no venv to orchestrate - just a model directory.
+// sherpa-onnx runs Piper VITS voices as a native library inside this process (the NuGet
+// carries the binaries, including the espeak-ng phonemizer that used to require Python).
+// No child process, no HTTP server, no venv - just a model directory.
 //
 // Voice models: any "vits-piper-*" archive from
 // https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models extracted to a folder

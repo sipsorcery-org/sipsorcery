@@ -14,10 +14,9 @@
 //   * MaxHeadroomVideoSource - the in-box SkiaSharp cartoon. PushAudio computes a short
 //     RMS window and maps loudness onto one of the 0-21 viseme mouth shapes. The face is
 //     drawn procedurally, so "lip-sync" is an amplitude heuristic.
-//   * NeuralAvatarRenderer  - a sketch of the other shape: PushAudio would feed the PCM
-//     straight into an audio-to-video model (Wav2Lip / SadTalker / bitHuman-style) whose
-//     emitted frames become the encoded samples. The face is a photoreal model, so
-//     lip-sync is done by the model, not the caller.
+//   * Wav2LipAvatarRenderer - the photoreal head: PushAudio feeds the PCM to the Wav2Lip
+//     audio-to-video model (via onnxruntime) whose emitted frames become the encoded
+//     samples. The face is a photo, so lip-sync is done by the model, not the caller.
 //
 // The speaker (LipSyncTtsSpeaker and ElevenLabsStreamingTtsSpeaker) only sees this
 // interface, so neither knows or cares which renderer is behind it - exactly like
@@ -26,10 +25,10 @@
 // Contract / threading:
 //   * BeginSpeech is called once before an utterance, EndSpeech once after (the renderer
 //     should return the face to a neutral/closed state on EndSpeech).
-//   * PushAudio is called repeatedly *between* those, roughly in real time, with small
-//     windows of 16-bit mono PCM as the audio plays. Implementations must treat it as a
-//     synchronous, non-blocking hand-off (copy what they need and return); it is invoked
-//     from a timing loop that also paces the audio track.
+//   * PushAudio is called repeatedly *between* those - paced to playback, or as fast as
+//     available, per PacesAudioInternally - with windows of 16-bit mono PCM.
+//     Implementations must treat it as a synchronous, non-blocking hand-off (copy what
+//     they need and return).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -46,16 +45,16 @@ namespace demo;
 /// <summary>
 /// A video source whose animation is driven by speech audio. See the file header for the
 /// rationale; implementations are <see cref="MaxHeadroomVideoSource"/> (SkiaSharp cartoon)
-/// and <see cref="NeuralAvatarRenderer"/> (audio-to-video model sketch).
+/// and <see cref="Wav2LipAvatarRenderer"/> (photoreal audio-to-video model).
 /// </summary>
 public interface IAvatarRenderer : IVideoSource, IDisposable
 {
     /// <summary>
-    /// True when the renderer buffers and paces speech audio itself (e.g. the neural sidecar's
-    /// 25fps emitter): the speaker should push audio AS FAST AS IT IS AVAILABLE so the model's
-    /// look-ahead never starves. False when the renderer reacts to <see cref="PushAudio"/>
-    /// immediately (the cartoon's amplitude heuristic): the speaker must pace pushes to real
-    /// time alongside playback.
+    /// True when the renderer buffers and paces speech audio itself (e.g. the Wav2Lip
+    /// renderer's 25fps loop): the speaker should push audio AS FAST AS IT IS AVAILABLE so
+    /// the model's look-ahead never starves. False when the renderer reacts to
+    /// <see cref="PushAudio"/> immediately (the cartoon's amplitude heuristic): the speaker
+    /// must pace pushes to real time alongside playback.
     /// </summary>
     bool PacesAudioInternally { get; }
 

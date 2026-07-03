@@ -243,7 +243,7 @@ namespace demo
                 using (var canvas = new SKCanvas(_bitmap))
                 {
                     DrawScene(canvas, _frameCount);
-                    //ApplyGlitch(canvas, _frameCount);
+                    ApplyGlitch(canvas, _frameCount);
                 }
 
                 BgraToBgr(_bitmap.GetPixelSpan(), _bgrBuffer);

@@ -3,15 +3,10 @@
 //
 // Description: Base class for the avatar's text-to-speech "speakers". It owns the
 // shared pipeline - serialise utterances, resample to 16kHz, stream the PCM to the
-// WebRTC audio track, and drive the mouth from an amplitude (RMS) envelope of the
-// audio - so each concrete engine only has to implement SynthesiseAsync (text in,
-// 16-bit mono PCM + sample rate out). Implementations: PiperTtsSpeaker (local) and
-// ElevenLabsTtsSpeaker (cloud).
-//
-// None of these engines emit a viseme timeline (only Azure did), so lip-sync is
-// reconstructed here: a short-window RMS envelope of the synthesised speech drives
-// the mouth openness (louder => more open), mapped onto a handful of the existing
-// 0-21 viseme shapes in MaxHeadroomVideoSource.
+// WebRTC audio track, and hand the audio to the IAvatarRenderer that animates the
+// face - so each concrete engine only has to implement SynthesiseAsync (text in,
+// 16-bit mono PCM + sample rate out). Implementations: SherpaTtsSpeaker (local,
+// in-process) and ElevenLabsTtsSpeaker (cloud).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -39,7 +34,7 @@ public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
     protected const int TargetRate = 16000;      // SendAudioFromStream consumes 16kHz mono PCM.
     private const int EnvelopeFrameMs = 30;      // Audio window granularity handed to the renderer.
 
-    /// <summary>Shared HTTP client for the HTTP-based engines (Piper server, ElevenLabs).</summary>
+    /// <summary>Shared HTTP client for the HTTP-based engines (ElevenLabs).</summary>
     protected static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     private readonly IAvatarRenderer _renderer;
@@ -96,7 +91,7 @@ public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
 
             if (_renderer.PacesAudioInternally)
             {
-                // The renderer paces itself (neural sidecar): hand it the WHOLE utterance up
+                // The renderer paces itself (the Wav2Lip head): hand it the WHOLE utterance up
                 // front so its model's look-ahead never waits on real-time delivery, then give
                 // the slower video path a head start before the audio track plays.
                 for (int start = 0; start < samples.Length; start += frameSamples)
