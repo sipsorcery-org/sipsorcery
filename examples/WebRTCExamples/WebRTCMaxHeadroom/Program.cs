@@ -1,64 +1,39 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: A WebRTC demo that serves a stylised "Max Headroom" talking
-// avatar. Video is rendered with SkiaSharp (MaxHeadroomVideoSource), speech is
-// synthesised by a pluggable TTS engine - local Piper (PiperTtsSpeaker) or cloud
-// ElevenLabs (ElevenLabsTtsSpeaker), both via the shared LipSyncTtsSpeaker base -
-// and the mouth is lip-synced to an amplitude envelope of that audio. An optional
-// local LLM (Ollama / LM Studio / llama.cpp) generates the replies (LocalLlmClient).
-// With Piper everything runs offline, so the avatar can be containerised and deployed
-// to Kubernetes.
+// Description: A WebRTC demo that serves a "Max Headroom" talking avatar - a photoreal
+// Wav2Lip head (Wav2LipAvatarRenderer) or a SkiaSharp cartoon (MaxHeadroomVideoSource).
+// The whole AI stack runs IN-PROCESS by default: TTS and STT via sherpa-onnx
+// (SherpaTtsSpeaker / SherpaSpeechRecognizer), replies via LLamaSharp
+// (LlamaSharpLlmClient) and the lip-sync model via onnxruntime. Each engine activates
+// automatically when its model files are present in the conventional folders (see the
+// README's "Everything in-process" section) - no env vars needed.
 //
 // You can also TALK to the avatar: the browser sends its microphone over the same
-// WebRTC connection, the server decodes it and runs local, offline speech-to-text
-// (WhisperSpeechRecognizer / Whisper.net), and each recognised utterance is routed
-// through the same LLM->speak path as /ask. Speaking and the Say/Ask text boxes are
-// parallel inputs.
+// WebRTC connection, the server decodes it and runs local speech-to-text, and each
+// recognised utterance is routed through the same LLM->speak path as /ask. Speaking
+// and the Say/Ask text boxes are parallel inputs.
 //
 // Endpoints:
 //   POST /offer  - WebRTC SDP offer/answer exchange (called by the browser). The
 //                  audio track is send/recv: the avatar voice out, the mic in.
 //   POST /say    - body = text. Speaks the text verbatim.
-//   POST /ask    - body = prompt. Runs the prompt through the local LLM (if
-//                  configured) and speaks the reply (same path as speaking to it).
+//   POST /ask    - body = prompt. Runs the prompt through the LLM (if configured)
+//                  and speaks the reply (same path as speaking to it).
 //
-// Configuration (environment variables):
-//
-// Engine selection - if ELEVENLABS_API_KEY is set, ElevenLabs is used for BOTH the voice
-// (TTS) and the listening (STT); otherwise Piper (TTS) + Whisper (STT) run locally:
-//   ELEVENLABS_API_KEY   - cloud TTS + STT (best quality, paid). When set, ElevenLabs is used.
-//   ELEVENLABS_VOICE_ID  - optional TTS voice id (default "21m00Tcm4TlvDq8ikWAM", "Rachel").
-//   ELEVENLABS_MODEL     - optional TTS model id (default "eleven_turbo_v2_5").
-//   ELEVENLABS_STT_MODEL - optional batch STT model id (default "scribe_v1").
-//   ELEVENLABS_STREAMING - optional "true" to use the low-latency WebSocket engines: TTS fed
-//                          the LLM token stream (ElevenLabsStreamingTtsSpeaker) and realtime
-//                          STT that streams the mic with server-side VAD
-//                          (ElevenLabsStreamingSpeechRecognizer). Default is the batch engines.
-//   ELEVENLABS_STT_REALTIME_MODEL - optional realtime STT model id (default "scribe_v2_realtime").
-//
-// Piper TTS (local, offline) - pick ONE mode:
-//   PIPER_HTTP_URL       - recommended, the synthesis endpoint of a running `piper.http_server`.
-//                          The voice loads once server-side, so this is much faster than
-//                          spawning Piper per utterance. For piper-tts <= 1.4.2 this is the
-//                          server root (e.g. http://localhost:5000); newer builds use
-//                          .../synthesize. The app POSTs JSON {"text": ...} to this URL.
-//   PIPER_PATH           - child-process mode, the Piper command: a `piper` console script,
-//                          or a Python interpreter ("python"/"python3"), launched as
-//                          `python -m piper`. Reloads the model every utterance (slow).
-//   PIPER_MODEL          - required with PIPER_PATH: a voice name (resolved under
-//                          PIPER_DATA_DIR) or a full path to a .onnx voice (.onnx.json sibling).
-//   PIPER_DATA_DIR       - optional, directory holding downloaded voices (Piper's --data-dir);
-//                          used when PIPER_MODEL is a voice name rather than a path.
-//   WHISPER_MODEL        - optional path to a ggml Whisper model for local speech-to-text.
-//                          Defaults to ggml-base.en.bin in the app directory, downloaded
-//                          once on first run if absent (override source with WHISPER_MODEL_URL).
-//   VISEME_LEAD_MS       - optional, ms to lead the mouth ahead of the audio (default 0).
-//   LLM_ENDPOINT         - optional OpenAI-compatible chat completions URL.
-//                          Local:      http://localhost:11434/v1/chat/completions (Ollama)
-//                          OpenRouter: https://openrouter.ai/api/v1/chat/completions
-//   LLM_MODEL            - optional, e.g. llama3.2 or anthropic/claude-3.5-sonnet
-//   LLM_API_KEY          - optional, required only for hosted gateways (OpenRouter/OpenAI).
+// Configuration (environment variables, all optional):
+//   SHERPA_MODEL_DIR / SHERPA_STT_DIR / SHERPA_STT_PROVIDER - sherpa TTS/STT model
+//                          folder overrides and STT execution provider.
+//   LLM_GGUF / LLM_GPU_LAYERS - in-process LLM model path + GPU offload layers.
+//   LLM_ENDPOINT / LLM_MODEL / LLM_API_KEY - OpenAI-compatible endpoint alternative
+//                          (Ollama / LM Studio / hosted gateway).
+//   AVATAR_RENDERER      - wav2lip | cartoon. Defaults to wav2lip when its model
+//                          files exist.
+//   WAV2LIP_ONNX / NEURAL_PERSONA / NEURAL_MATTE / NEURAL_FACE_BOX / NEURAL_EYES -
+//                          avatar model, persona image, matte and persona geometry.
+//   VISEME_LEAD_MS       - ms to lead the mouth ahead of the audio (default 0).
+//   ELEVENLABS_API_KEY (+ ELEVENLABS_VOICE_ID/MODEL/STT_MODEL/STREAMING/...) - cloud
+//                          speech engines; when set they take priority for TTS + STT.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -92,23 +67,19 @@ class Program
     private static Microsoft.Extensions.Logging.ILogger _logger = NullLogger.Instance;
 
     // The demo drives a single connected viewer.
-    private static MaxHeadroomVideoSource _videoSource;
+    private static IAvatarRenderer _videoSource;
     private static AudioExtrasSource _audioSource;
     private static IAvatarSpeaker _speaker;
     private static ISpeechRecognizer _recognizer;
-    private static LocalLlmClient _llm;
+    private static ILlmClient _llm;
 
-    private static string _piperHttpUrl;
-    private static string _piperPath;
-    private static string _piperModel;
-    private static string _piperDataDir;
+    private static string _sherpaModelDir;
     private static string _elevenLabsKey;
     private static string _elevenLabsVoiceId;
     private static string _elevenLabsModel;
     private static string _elevenLabsSttModel;
     private static string _elevenLabsSttRealtimeModel;
     private static bool _elevenLabsStreaming;
-    private static string _whisperModel;
     private static int _visemeLeadMs = 0;
 
     static async Task Main()
@@ -126,6 +97,14 @@ class Program
 
         _logger.LogInformation("WebRTC Max Headroom Avatar Demo");
 
+        // Windows timers default to ~15.6ms resolution, which stretches the 25fps render
+        // timer to ~46ms ticks - video falls behind the (correctly paced) audio and the lip
+        // sync drifts. Ask for 1ms resolution, the same fix the Python sidecar needed.
+        if (OperatingSystem.IsWindows())
+        {
+            _ = TimeBeginPeriod(1);
+        }
+
         // Quick visual sanity check: render a few frames to PNG and exit.
         if (Array.Exists(Environment.GetCommandLineArgs(), a => a == "--snapshot"))
         {
@@ -138,29 +117,107 @@ class Program
             return;
         }
 
-        _piperHttpUrl = Environment.GetEnvironmentVariable("PIPER_HTTP_URL");
-        _piperPath = Environment.GetEnvironmentVariable("PIPER_PATH");
-        _piperModel = Environment.GetEnvironmentVariable("PIPER_MODEL");
-        _piperDataDir = Environment.GetEnvironmentVariable("PIPER_DATA_DIR");
+        // In-process is the default: each engine has a conventional model path and is used
+        // automatically when its files are present (env vars override; see the README's
+        // "Everything in-process" section).
+        _sherpaModelDir = Environment.GetEnvironmentVariable("SHERPA_MODEL_DIR")
+            ?? @"C:\tools\sherpa-tts\vits-piper-en_US-ryan-high";
         _elevenLabsKey = Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY");
         _elevenLabsVoiceId = Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID") ?? "21m00Tcm4TlvDq8ikWAM"; // "Rachel".
         _elevenLabsModel = Environment.GetEnvironmentVariable("ELEVENLABS_MODEL") ?? "eleven_turbo_v2_5";
         _elevenLabsSttModel = Environment.GetEnvironmentVariable("ELEVENLABS_STT_MODEL") ?? "scribe_v1";
         _elevenLabsSttRealtimeModel = Environment.GetEnvironmentVariable("ELEVENLABS_STT_REALTIME_MODEL") ?? "scribe_v2_realtime";
         _elevenLabsStreaming = string.Equals(Environment.GetEnvironmentVariable("ELEVENLABS_STREAMING"), "true", StringComparison.OrdinalIgnoreCase);
-        _whisperModel = Environment.GetEnvironmentVariable("WHISPER_MODEL");
         if (int.TryParse(Environment.GetEnvironmentVariable("VISEME_LEAD_MS"), out var lead)) { _visemeLeadMs = lead; }
+
+        // Synthesise a phrase to a WAV and exit - validates a TTS engine without a browser.
+        var argv = Environment.GetCommandLineArgs();
+
+        // Golden-file check of the C# mel front-end against a librosa-generated reference:
+        //   --mel-test <raw-int16-pcm> <reference-csv>
+        // (the reference was produced with Wav2Lip's Python audio.py; see MelSpectrogram.cs).
+        int melTestIdx = Array.IndexOf(argv, "--mel-test");
+        if (melTestIdx >= 0 && melTestIdx + 2 < argv.Length)
+        {
+            RunMelTest(argv[melTestIdx + 1], argv[melTestIdx + 2]);
+            return;
+        }
+
+        // Render in-process Wav2Lip frames from raw PCM to PNGs and exit:
+        //   --avatar-test <raw-int16-pcm> <out-dir>
+        int avatarTestIdx = Array.IndexOf(argv, "--avatar-test");
+        if (avatarTestIdx >= 0 && avatarTestIdx + 2 < argv.Length)
+        {
+            var bytes = File.ReadAllBytes(argv[avatarTestIdx + 1]);
+            var pcm = new short[bytes.Length / 2];
+            Buffer.BlockCopy(bytes, 0, pcm, 0, pcm.Length * 2);
+            using var renderer = new Wav2LipAvatarRenderer(encoder: null);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            renderer.TestRenderFrames(pcm, argv[avatarTestIdx + 2]);
+            _logger.LogInformation("Rendered 50 in-process frames in {Ms} ms ({PerFrame:F1} ms/frame) to {Dir}.",
+                sw.ElapsedMilliseconds, sw.ElapsedMilliseconds / 50.0, argv[avatarTestIdx + 2]);
+            return;
+        }
+        int ttsTestIdx = Array.IndexOf(argv, "--tts-test");
+        if (ttsTestIdx >= 0)
+        {
+            var text = ttsTestIdx + 1 < argv.Length ? argv[ttsTestIdx + 1] : "Max Headroom here, live and in stereo.";
+            await RunTtsTest(text);
+            return;
+        }
+
+        // TTS -> STT round trip and exit: synthesises a phrase with sherpa TTS then transcribes
+        // it with the sherpa STT engine - validates both without a browser (--stt-test).
+        int sttTestIdx = Array.IndexOf(argv, "--stt-test");
+        if (sttTestIdx >= 0)
+        {
+            var text = sttTestIdx + 1 < argv.Length ? argv[sttTestIdx + 1] : "The quick brown fox jumps over the lazy dog.";
+            await RunSttTest(text);
+            return;
+        }
 
         if (!TtsConfigured())
         {
-            _logger.LogWarning("No TTS configured (set ELEVENLABS_API_KEY, or PIPER_HTTP_URL, or PIPER_PATH + PIPER_MODEL). The avatar will render but cannot speak or listen.");
+            _logger.LogWarning("No TTS configured (download a voice folder to C:\\tools\\sherpa-tts or set SHERPA_MODEL_DIR / ELEVENLABS_API_KEY). The avatar will render but cannot speak or listen.");
         }
 
-        _llm = new LocalLlmClient(
-            Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
-            Environment.GetEnvironmentVariable("LLM_MODEL"),
-            Environment.GetEnvironmentVariable("LLM_API_KEY"));
-        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? $"configured with endpoint {_llm.Endpoint} and model {_llm.Model}" : " not configured (text will be spoken verbatim)");
+        _llm = CreateLlm();
+        _logger.LogInformation("Local LLM {State}.", _llm.IsConfigured ? $"configured with {_llm.Description}" : " not configured (text will be spoken verbatim)");
+
+        // Generate one in-character reply and exit - validates the LLM without a browser.
+        int llmTestIdx = Array.IndexOf(argv, "--llm-test");
+        if (llmTestIdx >= 0)
+        {
+            var prompt = llmTestIdx + 1 < argv.Length ? argv[llmTestIdx + 1] : "What do you think of television these days?";
+            // Deliberately race the warm-up against the question - the production shape that
+            // crashed llama.cpp before inference was serialised inside the client.
+            var warmup = _llm.WarmUpAsync();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var reply = await _llm.GenerateReplyAsync(prompt);
+            _logger.LogInformation("LLM reply in {Ms} ms: {Reply}", sw.ElapsedMilliseconds, reply);
+            await warmup;
+            (_llm as IDisposable)?.Dispose();
+            return;
+        }
+
+        // Warm the in-process engines in the background so the first call/reply/utterance
+        // doesn't pay their one-time costs (weights page-in, DirectML kernel compilation,
+        // first-synthesis setup). Fire-and-forget: the app serves while they warm.
+        _ = _llm.WarmUpAsync();
+        if (SherpaConfigured())
+        {
+            _ = SherpaTtsSpeaker.PreloadAsync(_sherpaModelDir);
+        }
+        if (SherpaSpeechRecognizer.FilesPresent())
+        {
+            _ = SherpaSpeechRecognizer.PreloadAsync();
+        }
+        var rendererKind = Environment.GetEnvironmentVariable("AVATAR_RENDERER");
+        if (string.Equals(rendererKind, "wav2lip", StringComparison.OrdinalIgnoreCase) ||
+            (string.IsNullOrWhiteSpace(rendererKind) && Wav2LipAvatarRenderer.FilesPresent()))
+        {
+            _ = Wav2LipAvatarRenderer.PreloadAsync();
+        }
 
         var builder = WebApplication.CreateBuilder();
         builder.Host.UseSerilog();
@@ -284,7 +341,7 @@ class Program
     {
         var pc = new RTCPeerConnection(null);
 
-        var videoSource = new MaxHeadroomVideoSource(new FFmpegVideoEncoder());
+        IAvatarRenderer videoSource = CreateRenderer(new FFmpegVideoEncoder());
         var videoTrack = new MediaStreamTrack(videoSource.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
         videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
@@ -312,21 +369,24 @@ class Program
             // Recognised utterances run through the same LLM->speak path as /ask, so typing a prompt and
             // speaking one are parallel inputs to the exact same pipeline.
             recognizer = CreateRecognizer();
-            recognizer.OnRecognized += text => _ = AskAsync(text);
-
-            var micDecoder = new AudioEncoder();
-            var pcmuFormat = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU);
-            pc.OnAudioFrameReceived += frame =>
+            if (recognizer != null)
             {
-                try
+                recognizer.OnRecognized += text => _ = AskAsync(text);
+
+                var micDecoder = new AudioEncoder();
+                var pcmuFormat = new AudioFormat(SDPWellKnownMediaFormatsEnum.PCMU);
+                pc.OnAudioFrameReceived += frame =>
                 {
-                    recognizer.Write(micDecoder.DecodeAudio(frame.EncodedAudio, pcmuFormat));
-                }
-                catch (Exception excp)
-                {
-                    _logger.LogWarning("Failed to decode received microphone audio: {Error}", excp.Message);
-                }
-            };
+                    try
+                    {
+                        recognizer.Write(micDecoder.DecodeAudio(frame.EncodedAudio, pcmuFormat));
+                    }
+                    catch (Exception excp)
+                    {
+                        _logger.LogWarning("Failed to decode received microphone audio: {Error}", excp.Message);
+                    }
+                };
+            }
         }
 
         pc.onconnectionstatechange += async (state) =>
@@ -396,34 +456,173 @@ class Program
         }
         if (_speaker == null)
         {
-            return Results.BadRequest("No TTS configured. Set ELEVENLABS_API_KEY, or PIPER_HTTP_URL (or PIPER_PATH + PIPER_MODEL), then restart.");
+            return Results.BadRequest("No TTS configured. Download a voice folder to C:\\tools\\sherpa-tts or set SHERPA_MODEL_DIR / ELEVENLABS_API_KEY, then restart.");
         }
         return null;
     }
 
     /// <summary>
-    /// Builds the TTS speaker from configuration: ElevenLabs (cloud) takes priority if an API key
-    /// is set, otherwise Piper (local). Returns null if no TTS is configured.
+    /// Builds the avatar renderer (the swappable IAvatarRenderer): the in-process Wav2Lip head
+    /// when its model files are present, else the SkiaSharp cartoon. Nothing else in the
+    /// pipeline changes - the speaker and peer-connection wiring only see IAvatarRenderer.
     /// </summary>
-    private static IAvatarSpeaker CreateSpeaker(MaxHeadroomVideoSource video, AudioExtrasSource audio)
+    private static IAvatarRenderer CreateRenderer(IVideoEncoder encoder)
+    {
+        var kind = Environment.GetEnvironmentVariable("AVATAR_RENDERER");
+
+        // Default: the in-process Wav2Lip renderer whenever its model + persona files are
+        // present (the cartoon needs nothing, so it is the fallback). AVATAR_RENDERER
+        // overrides: wav2lip | cartoon.
+        if (string.IsNullOrWhiteSpace(kind))
+        {
+            kind = Wav2LipAvatarRenderer.FilesPresent() ? "wav2lip" : "cartoon";
+            _logger.LogInformation("AVATAR_RENDERER not set; defaulting to {Kind}.", kind);
+        }
+
+        if (string.Equals(kind, "wav2lip", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation("Using the IN-PROCESS Wav2Lip avatar renderer.");
+            return new Wav2LipAvatarRenderer(encoder);
+        }
+        return new MaxHeadroomVideoSource(encoder);
+    }
+
+    /// <summary>
+    /// Builds the TTS speaker from configuration: ElevenLabs (cloud) takes priority if an API key
+    /// is set, otherwise the local in-process sherpa-onnx engine.
+    /// Returns null if no TTS is configured.
+    /// </summary>
+    private static IAvatarSpeaker CreateSpeaker(IAvatarRenderer renderer, AudioExtrasSource audio)
     {
         if (!string.IsNullOrWhiteSpace(_elevenLabsKey))
         {
             return _elevenLabsStreaming
-                ? new ElevenLabsStreamingTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs)
-                : new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, video, audio, _visemeLeadMs);
+                ? new ElevenLabsStreamingTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, renderer, audio, _visemeLeadMs)
+                : new ElevenLabsTtsSpeaker(_elevenLabsKey, _elevenLabsVoiceId, _elevenLabsModel, renderer, audio, _visemeLeadMs);
         }
-        if (PiperConfigured())
+        if (SherpaConfigured())
         {
-            return new PiperTtsSpeaker(_piperHttpUrl, _piperPath, _piperModel, _piperDataDir, video, audio, _visemeLeadMs);
+            return new SherpaTtsSpeaker(_sherpaModelDir, renderer, audio, _visemeLeadMs);
         }
         return null;
+    }
+
+    /// <summary>
+    /// Synthesises <paramref name="text"/> with the configured local in-process TTS and writes
+    /// a WAV next to the app - a quick engine check with no WebRTC involved (--tts-test).
+    /// </summary>
+    private static async Task RunTtsTest(string text)
+    {
+        if (!SherpaConfigured())
+        {
+            _logger.LogError("--tts-test requires SHERPA_MODEL_DIR pointing at an extracted vits-piper voice.");
+            return;
+        }
+
+        using var speaker = new SherpaTtsSpeaker(_sherpaModelDir, renderer: null, audio: null);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var (samples, rate) = await speaker.TestSynthesiseAsync(text);
+        sw.Stop();
+
+        var path = Path.Combine(Environment.CurrentDirectory, "tts_test.wav");
+        WriteWav(path, samples, rate);
+        _logger.LogInformation("Synthesised {Ms} ms of audio in {Elapsed} ms -> {Path}",
+            samples.Length * 1000 / Math.Max(1, rate), sw.ElapsedMilliseconds, path);
+    }
+
+    /// <summary>
+    /// Compares the C# MelSpectrogram against a Python-generated reference: raw int16 PCM in,
+    /// CSV of the librosa mel out. Reports max/mean absolute difference (--mel-test).
+    /// </summary>
+    private static void RunMelTest(string pcmPath, string csvPath)
+    {
+        var bytes = File.ReadAllBytes(pcmPath);
+        var pcm = new short[bytes.Length / 2];
+        Buffer.BlockCopy(bytes, 0, pcm, 0, pcm.Length * 2);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var mel = new MelSpectrogram().Compute(pcm);
+        sw.Stop();
+
+        var lines = File.ReadAllLines(csvPath);
+        int rows = lines.Length;
+        int cols = lines[0].Split(',').Length;
+        _logger.LogInformation("C# mel [{M},{T}] in {Ms} ms; reference [{RM},{RT}].",
+            mel.GetLength(0), mel.GetLength(1), sw.ElapsedMilliseconds, rows, cols);
+
+        if (mel.GetLength(0) != rows || mel.GetLength(1) != cols)
+        {
+            _logger.LogError("SHAPE MISMATCH - the STFT framing does not match librosa.");
+            return;
+        }
+
+        double maxDiff = 0, sumDiff = 0;
+        for (int m = 0; m < rows; m++)
+        {
+            var parts = lines[m].Split(',');
+            for (int t = 0; t < cols; t++)
+            {
+                double diff = Math.Abs(mel[m, t] - double.Parse(parts[t], System.Globalization.CultureInfo.InvariantCulture));
+                if (diff > maxDiff) { maxDiff = diff; }
+                sumDiff += diff;
+            }
+        }
+        _logger.LogInformation("Mel diff vs Python reference: max {Max:E3}, mean {Mean:E3} (range is [-4,4]).",
+            maxDiff, sumDiff / (rows * cols));
+    }
+
+    /// <summary>
+    /// Round-trips text through the in-process pipeline the live call uses: sherpa TTS
+    /// synthesises it, the PCM is downsampled to the mic path's 8kHz, and the configured
+    /// STT engine transcribes it back (--stt-test).
+    /// </summary>
+    private static async Task RunSttTest(string text)
+    {
+        if (!SherpaConfigured() || !SherpaSpeechRecognizer.FilesPresent())
+        {
+            _logger.LogError("--stt-test needs both the sherpa TTS voice and STT model folders (see the README).");
+            return;
+        }
+
+        using var speaker = new SherpaTtsSpeaker(_sherpaModelDir, renderer: null, audio: null);
+        var (samples, rate) = await speaker.TestSynthesiseAsync(text);
+
+        // Down to the 8kHz the mic path delivers (matches the live PCMU audio track).
+        var pcm8k = new short[(int)((long)samples.Length * 8000 / rate)];
+        double step = rate / 8000.0;
+        for (int i = 0; i < pcm8k.Length; i++)
+        {
+            double pos = i * step;
+            int i0 = (int)pos;
+            int i1 = Math.Min(i0 + 1, samples.Length - 1);
+            pcm8k[i] = (short)(samples[i0] + (samples[i1] - samples[i0]) * (pos - i0));
+        }
+
+        var recognizer = new SherpaSpeechRecognizer();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var transcript = await recognizer.TestTranscribeAsync(pcm8k);
+        _logger.LogInformation("STT round trip in {Ms} ms.\n  said:  {Said}\n  heard: {Heard}",
+            sw.ElapsedMilliseconds, text, transcript.Trim());
+    }
+
+    /// <summary>Minimal 16-bit mono PCM WAV writer for the --tts-test output.</summary>
+    private static void WriteWav(string path, short[] samples, int sampleRate)
+    {
+        using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
+        using var bw = new BinaryWriter(fs);
+        int dataLen = samples.Length * sizeof(short);
+        bw.Write("RIFF"u8); bw.Write(36 + dataLen); bw.Write("WAVE"u8);
+        bw.Write("fmt "u8); bw.Write(16); bw.Write((short)1); bw.Write((short)1);
+        bw.Write(sampleRate); bw.Write(sampleRate * sizeof(short)); bw.Write((short)sizeof(short)); bw.Write((short)16);
+        bw.Write("data"u8); bw.Write(dataLen);
+        foreach (var s in samples) { bw.Write(s); }
     }
 
     /// <summary>
     /// Builds the STT recogniser from configuration: ElevenLabs (cloud) if an API key is set -
     /// realtime WebSocket when ELEVENLABS_STREAMING is on, otherwise the batch scribe API - and
-    /// local Whisper when no key is set. Mirrors the TTS engine choice in CreateSpeaker.
+    /// the local in-process sherpa-onnx engine when its model folder is present. Returns null
+    /// when neither is available (the avatar then speaks but cannot listen).
     /// </summary>
     private static ISpeechRecognizer CreateRecognizer()
     {
@@ -433,17 +632,51 @@ class Program
                 ? new ElevenLabsStreamingSpeechRecognizer(_elevenLabsKey, _elevenLabsSttRealtimeModel)
                 : new ElevenLabsSpeechRecognizer(_elevenLabsKey, _elevenLabsSttModel);
         }
-        return new WhisperSpeechRecognizer(_whisperModel);
+        if (SherpaSpeechRecognizer.FilesPresent())
+        {
+            return new SherpaSpeechRecognizer();
+        }
+        _logger.LogWarning("No STT configured (download a model folder to C:\\tools\\sherpa-stt or set SHERPA_STT_DIR / ELEVENLABS_API_KEY). The avatar can speak but not listen.");
+        return null;
     }
 
-    /// <summary>True if any TTS engine is configured (ElevenLabs or Piper).</summary>
-    private static bool TtsConfigured() =>
-        !string.IsNullOrWhiteSpace(_elevenLabsKey) || PiperConfigured();
+    /// <summary>
+    /// Builds the LLM client: in-process LLamaSharp when LLM_GGUF points at a model file,
+    /// otherwise the HTTP client for an OpenAI-compatible endpoint (Ollama / LM Studio /
+    /// hosted gateway) - which is also the "not configured" fallback that echoes prompts.
+    /// </summary>
+    private static ILlmClient CreateLlm()
+    {
+        // In-process by default: use the conventional GGUF location when present.
+        var gguf = Environment.GetEnvironmentVariable("LLM_GGUF");
+        if (string.IsNullOrWhiteSpace(gguf))
+        {
+            var conventional = @"C:\tools\llm";
+            gguf = Directory.Exists(conventional)
+                ? Directory.EnumerateFiles(conventional, "*.gguf").FirstOrDefault()
+                : null;
+        }
+        if (!string.IsNullOrWhiteSpace(gguf) && File.Exists(gguf))
+        {
+            int.TryParse(Environment.GetEnvironmentVariable("LLM_GPU_LAYERS"), out var gpuLayers);
+            return new LlamaSharpLlmClient(gguf, gpuLayers);
+        }
+        return new LocalLlmClient(
+            Environment.GetEnvironmentVariable("LLM_ENDPOINT"),
+            Environment.GetEnvironmentVariable("LLM_MODEL"),
+            Environment.GetEnvironmentVariable("LLM_API_KEY"));
+    }
 
-    /// <summary>True if Piper TTS is configured, either via the HTTP server or the child-process mode.</summary>
-    private static bool PiperConfigured() =>
-        !string.IsNullOrWhiteSpace(_piperHttpUrl) ||
-        (!string.IsNullOrWhiteSpace(_piperPath) && !string.IsNullOrWhiteSpace(_piperModel));
+    /// <summary>True if any TTS engine is configured (ElevenLabs or sherpa-onnx).</summary>
+    private static bool TtsConfigured() =>
+        !string.IsNullOrWhiteSpace(_elevenLabsKey) || SherpaConfigured();
+
+    /// <summary>True if the in-process sherpa-onnx TTS is configured (a voice model directory).</summary>
+    private static bool SherpaConfigured() =>
+        !string.IsNullOrWhiteSpace(_sherpaModelDir) && Directory.Exists(_sherpaModelDir);
+
+    [System.Runtime.InteropServices.DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+    private static extern uint TimeBeginPeriod(uint milliseconds);
 
     private static async Task<string> ReadBody(HttpRequest request)
     {

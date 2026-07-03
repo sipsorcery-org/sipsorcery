@@ -6,12 +6,13 @@
 // buffers the decoded 8kHz 16-bit mono microphone PCM (pushed in via Write), and once
 // it sees ~0.6s of trailing silence (or a hard length cap) hands the completed
 // utterance to a single background worker. Concrete engines only implement
-// TranscribeAsync (utterance PCM in, text out): WhisperSpeechRecognizer (local) and
-// ElevenLabsSpeechRecognizer (cloud).
+// TranscribeAsync (utterance PCM in, text out): SherpaSpeechRecognizer (local,
+// in-process) and ElevenLabsSpeechRecognizer (cloud).
 //
 // This segmentation exists because neither engine is a true streaming recogniser -
-// Whisper transcribes a complete chunk, and the ElevenLabs scribe API takes a complete
-// audio file - so the avatar listens utterance-by-utterance rather than continuously.
+// both transcribe a complete chunk - so the avatar listens utterance-by-utterance
+// rather than continuously. (A streaming zipformer model via sherpa-onnx could replace
+// this VAD with server-side endpointing.)
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

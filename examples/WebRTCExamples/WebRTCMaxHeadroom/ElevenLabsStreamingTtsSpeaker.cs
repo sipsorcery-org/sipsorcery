@@ -48,31 +48,23 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<ElevenLabsStreamingTtsSpeaker>();
 
     private const int TargetRate = 16000;     // output_format=pcm_16000 -> 16-bit mono PCM at 16kHz.
-    private const int EnvelopeFrameMs = 30;   // Mouth update granularity / RMS window.
-    private const double AmplitudeRef = 4000;  // Fixed RMS reference so openness is consistent across chunks.
-
-    // Amplitude bands -> candidate viseme ids from the 0-21 shape table in MaxHeadroomVideoSource.
-    private static readonly int[] LowVisemes = { 19, 6, 14 };
-    private static readonly int[] MidVisemes = { 4, 1 };
-    private static readonly int[] HighVisemes = { 2, 11, 9 };
+    private const int EnvelopeFrameMs = 30;   // Audio window granularity handed to the renderer.
 
     private readonly string _apiKey;
     private readonly string _voiceId;
     private readonly string _modelId;
-    private readonly MaxHeadroomVideoSource _video;
+    private readonly IAvatarRenderer _renderer;
     private readonly AudioExtrasSource _audio;
     private readonly int _visemeLeadMs;
     private readonly SemaphoreSlim _speakLock = new(1, 1);
 
-    private int _visemeRotation;
-
     public ElevenLabsStreamingTtsSpeaker(string apiKey, string voiceId, string modelId,
-        MaxHeadroomVideoSource video, AudioExtrasSource audio, int visemeLeadMs = 150)
+        IAvatarRenderer renderer, AudioExtrasSource audio, int visemeLeadMs = 150)
     {
         _apiKey = apiKey;
         _voiceId = voiceId;
         _modelId = modelId;
-        _video = video;
+        _renderer = renderer;
         _audio = audio;
         _visemeLeadMs = visemeLeadMs;
     }
@@ -109,7 +101,7 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
             await SendJsonAsync(ws, new { text = " ", voice_settings = new { stability = 0.5, similarity_boost = 0.8 } }, ct)
                 .ConfigureAwait(false);
 
-            _video.IsSpeaking = true;
+            _renderer.BeginSpeech();
 
             var sender = Task.Run(() => SendTextAsync(ws, textChunks, ct), ct);
             var player = Task.Run(() => PlayAsync(audioQueue, ct), ct);
@@ -133,8 +125,7 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
         {
             cts.Cancel();
             audioQueue.Writer.TryComplete();
-            _video.CurrentViseme = 0;
-            _video.IsSpeaking = false;
+            _renderer.EndSpeech();
             _speakLock.Release();
         }
     }
@@ -187,12 +178,14 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
     }
 
     /// <summary>
-    /// Plays queued PCM chunks in order. For each chunk, a short concurrent task walks that chunk's
-    /// amplitude envelope and updates the mouth viseme while the (blocking) play call runs, so the
-    /// mouth stays locked to the audio that is actually sounding.
+    /// Plays queued PCM chunks in order. For each chunk, a short concurrent task walks the chunk in
+    /// real time and hands each audio window to the renderer while the (blocking) play call runs, so
+    /// the face stays locked to the audio that is actually sounding.
     /// </summary>
     private async Task PlayAsync(Channel<short[]> audioQueue, CancellationToken ct)
     {
+        int frameSamples = TargetRate * EnvelopeFrameMs / 1000;
+
         await foreach (var chunk in audioQueue.Reader.ReadAllAsync(ct).ConfigureAwait(false))
         {
             if (chunk.Length == 0)
@@ -200,27 +193,39 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
                 continue;
             }
 
-            var envelope = BuildEnvelope(chunk);
-            var stopwatch = Stopwatch.StartNew();
+            Task mouth = Task.CompletedTask;
 
-            var mouth = Task.Run(async () =>
+            if (_renderer.PacesAudioInternally)
             {
-                for (int i = 0; i < envelope.Length; i++)
+                // Self-pacing renderer (the Wav2Lip head): hand it the whole chunk before playback
+                // so the model's look-ahead has as much audio as we do.
+                for (int start = 0; start < chunk.Length; start += frameSamples)
                 {
-                    var delay = (long)i * EnvelopeFrameMs - _visemeLeadMs - stopwatch.ElapsedMilliseconds;
-                    if (delay > 0)
-                    {
-                        await Task.Delay((int)delay, ct).ConfigureAwait(false);
-                    }
-                    _video.CurrentViseme = VisemeForLevel(envelope[i]);
+                    int count = Math.Min(frameSamples, chunk.Length - start);
+                    _renderer.PushAudio(new ReadOnlySpan<short>(chunk, start, count), TargetRate);
                 }
-            }, ct);
+            }
+            else
+            {
+                var stopwatch = Stopwatch.StartNew();
+                mouth = Task.Run(async () =>
+                {
+                    for (int start = 0, i = 0; start < chunk.Length; start += frameSamples, i++)
+                    {
+                        var delay = (long)i * EnvelopeFrameMs - _visemeLeadMs - stopwatch.ElapsedMilliseconds;
+                        if (delay > 0)
+                        {
+                            await Task.Delay((int)delay, ct).ConfigureAwait(false);
+                        }
+                        int count = Math.Min(frameSamples, chunk.Length - start);
+                        _renderer.PushAudio(new ReadOnlySpan<short>(chunk, start, count), TargetRate);
+                    }
+                }, ct);
+            }
 
             await _audio.SendAudioFromStream(ToStream(chunk), AudioSamplingRatesEnum.Rate16KHz).ConfigureAwait(false);
             await mouth.ConfigureAwait(false);
         }
-
-        _video.CurrentViseme = 0; // close the mouth once the last chunk has played.
     }
 
     /// <summary>Reads one (possibly multi-frame) text message off the socket; null if it closed.</summary>
@@ -240,45 +245,6 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
         while (!result.EndOfMessage);
 
         return Encoding.UTF8.GetString(ms.ToArray());
-    }
-
-    /// <summary>Per-frame RMS envelope of a chunk, normalised by a fixed reference (0..1) for consistent openness.</summary>
-    private static float[] BuildEnvelope(short[] samples)
-    {
-        int frame = TargetRate * EnvelopeFrameMs / 1000;
-        if (frame <= 0 || samples.Length == 0)
-        {
-            return Array.Empty<float>();
-        }
-
-        int frames = (samples.Length + frame - 1) / frame;
-        var levels = new float[frames];
-        for (int f = 0; f < frames; f++)
-        {
-            int start = f * frame;
-            int end = Math.Min(start + frame, samples.Length);
-            double sumSq = 0;
-            for (int i = start; i < end; i++)
-            {
-                double s = samples[i];
-                sumSq += s * s;
-            }
-            double rms = Math.Sqrt(sumSq / Math.Max(1, end - start));
-            levels[f] = (float)Math.Min(1.0, rms / AmplitudeRef);
-        }
-        return levels;
-    }
-
-    /// <summary>Maps a normalised loudness level (0..1) to a viseme id, rotating within each band for liveliness.</summary>
-    private int VisemeForLevel(float level)
-    {
-        if (level < 0.15f)
-        {
-            return 0; // closed / silence
-        }
-
-        int[] band = level < 0.40f ? LowVisemes : level < 0.70f ? MidVisemes : HighVisemes;
-        return band[_visemeRotation++ % band.Length];
     }
 
     private async Task SendJsonAsync(ClientWebSocket ws, object payload, CancellationToken ct)

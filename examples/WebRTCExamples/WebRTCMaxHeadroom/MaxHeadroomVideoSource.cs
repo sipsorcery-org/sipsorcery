@@ -32,7 +32,7 @@ using SkiaSharp;
 
 namespace demo
 {
-    public class MaxHeadroomVideoSource : IVideoSource, IDisposable
+    public class MaxHeadroomVideoSource : IAvatarRenderer
     {
         public const int WIDTH = 640;
         public const int HEIGHT = 480;
@@ -40,6 +40,16 @@ namespace demo
         private const int VIDEO_SAMPLING_RATE = 90000;
         private const int DEFAULT_FRAMES_PER_SECOND = 25;
         private const int H264_SUGGESTED_FORMAT_ID = 100;
+
+        // Lip-sync heuristic (the "how do I turn audio into a face" logic that a neural renderer
+        // would do with a model). A window's RMS is normalised by a fixed reference to a 0..1
+        // loudness, then mapped onto a handful of the 0-21 viseme mouth shapes below. This lives
+        // here - not in the speaker - because it is specific to how THIS renderer animates.
+        private const int EnvelopeRmsRef = 4000;
+        private static readonly int[] LowVisemes = { 19, 6, 14 };   // ~0.2 open
+        private static readonly int[] MidVisemes = { 4, 1 };        // ~0.4 open
+        private static readonly int[] HighVisemes = { 2, 11, 9 };   // ~0.6-0.8 open
+        private int _visemeRotation;
 
         public static readonly List<VideoFormat> SupportedFormats = new List<VideoFormat>
         {
@@ -99,6 +109,55 @@ namespace demo
 
         /// <summary>When true a little extra "live" jitter/glitch is added.</summary>
         public bool IsSpeaking { get => _isSpeaking; set => _isSpeaking = value; }
+
+        // --- IAvatarRenderer: driven by the speaker's audio ---------------------------------
+
+        /// <summary>The amplitude heuristic reacts instantly, so pushes must be paced to playback.</summary>
+        public bool PacesAudioInternally => false;
+
+        /// <summary>Enter the talking state (adds glitch liveliness while an utterance plays).</summary>
+        public void BeginSpeech() => _isSpeaking = true;
+
+        /// <summary>
+        /// Drive the mouth from a window of the audio that is currently sounding: take its RMS,
+        /// normalise to a 0..1 loudness and pick a viseme. A neural renderer would instead enqueue
+        /// this PCM to its model; here the "model" is the amplitude->viseme mapping.
+        /// </summary>
+        public void PushAudio(ReadOnlySpan<short> pcm16, int sampleRate)
+        {
+            if (pcm16.Length == 0)
+            {
+                return;
+            }
+
+            double sumSq = 0;
+            for (int i = 0; i < pcm16.Length; i++)
+            {
+                double s = pcm16[i];
+                sumSq += s * s;
+            }
+            float level = (float)Math.Min(1.0, Math.Sqrt(sumSq / pcm16.Length) / EnvelopeRmsRef);
+            _currentViseme = VisemeForLevel(level);
+        }
+
+        /// <summary>Leave the talking state and close the mouth.</summary>
+        public void EndSpeech()
+        {
+            _currentViseme = 0;
+            _isSpeaking = false;
+        }
+
+        /// <summary>Maps a normalised loudness level (0..1) to a viseme id, rotating within each band for liveliness.</summary>
+        private int VisemeForLevel(float level)
+        {
+            if (level < 0.15f)
+            {
+                return 0; // closed / silence
+            }
+
+            int[] band = level < 0.40f ? LowVisemes : level < 0.70f ? MidVisemes : HighVisemes;
+            return band[_visemeRotation++ % band.Length];
+        }
 
         public event RawVideoSampleDelegate OnVideoSourceRawSample;
         public event EncodedSampleDelegate OnVideoSourceEncodedSample;
