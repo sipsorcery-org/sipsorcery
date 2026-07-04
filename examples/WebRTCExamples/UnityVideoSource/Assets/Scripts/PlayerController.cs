@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using UnityEngine;
 //using UnityEngine.InputSystem;
@@ -9,6 +10,8 @@ using SIPSorcery.Media;
 using SIPSorceryMedia.Abstractions;
 using SIPSorcery.Net;
 using System.Threading;
+using WebSocketSharp.Server;
+using Vpx.Net;
 
 public class PlayerController : MonoBehaviour
 {
@@ -38,7 +41,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    async void Start()
+    void Start()
     {
         rb = GetComponent<Rigidbody>();
         count = 0;
@@ -50,7 +53,7 @@ public class PlayerController : MonoBehaviour
         _mainCamDupRenderTexture = texture;
         _mainCamTexture2D = new Texture2D(texture.width, texture.height);
 
-        await _webRtcPeer.Start();
+        _webRtcPeer.Start();
     }
 
     //void OnMove(InputValue movementValue)
@@ -124,34 +127,29 @@ public class PlayerController : MonoBehaviour
 
 public class WebRTCPeer
 {
-    private const string REST_SIGNALING_SERVER = "https://sipsorcery.cloud/api/webrtcsignal";
-    private const string REST_SIGNALING_MY_ID = "uni";
-    private const string REST_SIGNALING_THEIR_ID = "bro";
+    private const int WEBSOCKET_PORT = 8081;
 
     private static Microsoft.Extensions.Logging.ILogger logger;
 
     private WebRTCRestSignalingPeer _webrtcRestSignaling;
-    public SIPSorceryMedia.Encoders.VideoEncoderEndPoint VideoEncoderEndPoint { get; }
+    public Vp8NetVideoEncoderEndPoint VideoEncoderEndPoint { get; }
     private CancellationTokenSource _cts;
 
     public WebRTCPeer()
     {
         logger = SIPSorcery.LogFactory.CreateLogger("webrtc");
 
-        VideoEncoderEndPoint = new SIPSorceryMedia.Encoders.VideoEncoderEndPoint();
+        VideoEncoderEndPoint = new Vp8NetVideoEncoderEndPoint();
         _cts = new CancellationTokenSource();
-
-        _webrtcRestSignaling = new WebRTCRestSignalingPeer(
-            REST_SIGNALING_SERVER,
-            REST_SIGNALING_MY_ID,
-            REST_SIGNALING_THEIR_ID,
-            this.CreatePeerConnection);
     }
 
-    public Task Start()
+    public void Start()
     {
-        return _webrtcRestSignaling.Start(_cts);
-        //return Task.CompletedTask;
+        var webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT);
+        webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
+        webSocketServer.Start();
+
+        logger.LogInformation($"Waiting for web socket connections on {webSocketServer.Address}:{webSocketServer.Port}...");
     }
 
     public void Close(string reason)
