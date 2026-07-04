@@ -107,6 +107,10 @@ Invoke-WebRequest -Uri "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-G
   C:\tools\rembg-venv\Scripts\pip install "rembg[cpu]" pillow
   C:\tools\rembg-venv\Scripts\python -c "from rembg import remove, new_session; from PIL import Image; import numpy as np; s=new_session('u2net_human_seg'); a=np.array(remove(Image.open(r'C:\tools\wav2lip\persona.jpg').convert('RGB'), session=s).split()[-1]); Image.fromarray(a).resize((640,480)).save(r'C:\tools\wav2lip\persona_alpha.png')"
   ```
+  The figure must be **white on black**; if your tool emits the opposite (dark figure on a
+  light background) the head shows the background through a transparent hole. The renderer
+  auto-detects and flips an inverted matte (logging a warning), but regenerating it the right
+  way round is cleaner.
 
 - the **face box and eye rects** for the new face: set `NEURAL_FACE_BOX=y1,y2,x1,x2` and
   `NEURAL_EYES=x,y,w,h` (coordinates at 640x480 — eyeball them in any image editor). The
