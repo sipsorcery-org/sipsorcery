@@ -638,7 +638,9 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
 
         float vx = (float)(bw * 0.46 + 20 * Math.Cos(t * 0.13));
         float vy = (float)(bh * 0.76 + 12 * Math.Sin(t * 0.11));
-        double aL = (45.0 + 3.0 * Math.Sin(t * 0.08)) * Math.PI / 180.0;
+        // Shallow, near-symmetric louvres per the reference (~15-18 deg from horizontal), meeting at
+        // the central vertical seam - not the old steep 45 deg left wall.
+        double aL = (17.0 + 3.0 * Math.Sin(t * 0.08)) * Math.PI / 180.0;
         double aR = (15.0 + 3.0 * Math.Sin(t * 0.06 + 1.0)) * Math.PI / 180.0;
         float diag = (float)Math.Sqrt(bw * bw + bh * bh);
         float R = 2f * diag;
@@ -652,11 +654,13 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
         float degR = (float)(Math.Atan2(dR.Item2, dR.Item1) * 180.0 / Math.PI);
 
         // (wedge start, wedge end, rule dir or null for floor, hue)
+        // hue0 is HALF the final Skia hue (it is *2 below). Per the reference: left wall magenta
+        // (~300), right wall green (~120), floor a purple blend behind the shoulders.
         var regions = new (float a1, float a2, (float, float)? dir, float hue)[]
         {
-            (degL, 270f, dL, 96f),      // left wall.
-            (-90f, degR, dR, 118f),     // right wall.
-            (degR, degL, null, 136f),   // floor: rules parallel to the LEFT wall's.
+            (degL, 270f, dL, 150f),     // left wall  -> ~300 magenta.
+            (-90f, degR, dR, 60f),      // right wall -> ~120 green.
+            (degR, degL, null, 30f),    // floor: rules parallel to the LEFT wall's (~60 yellow).
         };
 
         for (int f = 0; f < regions.Length; f++)
@@ -791,10 +795,30 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
             unsafe
             {
                 var px = (byte*)resized.GetPixels().ToPointer();
-                for (int p = 0; p < m.Length; p++)
-                {
-                    m[p] = Math.Clamp((px[p * 4] / 255f - 0.08f) / 0.24f, 0f, 1f);   // boost weak alpha.
-                }
+                for (int p = 0; p < m.Length; p++) { m[p] = px[p * 4] / 255f; }   // raw gray 0..1.
+            }
+
+            // Detect polarity. The code expects figure = white (alpha 1), background = black (0),
+            // but some tools emit the opposite (figure dark on a light background). The top band of a
+            // centred bust portrait is background, so it should be ~0; if it is bright, the matte is
+            // inverted - flip it rather than punching the figure through as a transparent hole.
+            int topRows = Math.Max(1, (int)(HEIGHT * 0.06));
+            double topSum = 0;
+            for (int y = 0; y < topRows; y++)
+            {
+                for (int x = 0; x < WIDTH; x++) { topSum += m[y * WIDTH + x]; }
+            }
+            bool inverted = topSum / (topRows * WIDTH) > 0.5;
+            if (inverted)
+            {
+                logger.LogWarning("Matte {Path} looks inverted (figure dark on light); auto-inverting. " +
+                    "Regenerate it with the figure white to silence this.", mattePath);
+            }
+
+            for (int p = 0; p < m.Length; p++)
+            {
+                float g = inverted ? 1f - m[p] : m[p];
+                m[p] = Math.Clamp((g - 0.08f) / 0.24f, 0f, 1f);   // boost weak alpha.
             }
 
             int y0 = (int)(0.70 * HEIGHT);
