@@ -1,0 +1,234 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff771ccdf4150419d9ff4d342b069aae, type: 3}
+  m_Name: s1.9 Play mode
+  m_EditorClassIdentifier: 
+  Title:
+    m_Untranslated: Enter Play mode
+  m_Paragraphs:
+    m_Items:
+    - m_Type: 9
+      Title:
+        m_Untranslated: 
+      Text:
+        m_Untranslated: 
+      m_CodeSample: 
+      m_PostInstructionImage: {fileID: 0}
+      m_Tutorial: {fileID: 0}
+      m_Image: {fileID: 2800000, guid: a1a07f4ed17094980b985896487f7a6d, type: 3}
+      m_VideoUrl: 
+      m_Video: {fileID: 0}
+      m_Media:
+        m_ContentType: 1
+        m_Image: {fileID: 2800000, guid: 9c6c9ba081ed543928470219870eda66, type: 3}
+        m_VideoClip: {fileID: 32900000, guid: bde849b6c2756c341b130bbe263b000e, type: 3}
+        m_Url: 
+        m_AutoStart: 0
+        m_Loop: 0
+      m_CriteriaCompletion: 0
+      m_Criteria:
+        m_Items: []
+      m_MaskingSettings:
+        m_MaskingEnabled: 1
+        m_UnmaskedViews:
+        - m_SelectorType: 1
+          m_ViewType:
+            m_TypeName: UnityEditor.Toolbar, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_FocusEditorWindow: 0
+          m_EditorWindowType:
+            m_TypeName: UnityEditor.SceneView, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_AlternateEditorWindowTypes:
+            m_Items: []
+          m_MaskType: 0
+          m_MaskSizeModifier: 0
+          m_UnmaskedControls: []
+        - m_SelectorType: 1
+          m_ViewType:
+            m_TypeName: UnityEditor.Toolbar, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_FocusEditorWindow: 0
+          m_EditorWindowType:
+            m_TypeName: UnityEditor.GameView, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_AlternateEditorWindowTypes:
+            m_Items: []
+          m_MaskType: 0
+          m_MaskSizeModifier: 0
+          m_UnmaskedControls: []
+        - m_SelectorType: 0
+          m_ViewType:
+            m_TypeName: UnityEditor.Toolbar, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_FocusEditorWindow: 0
+          m_EditorWindowType:
+            m_TypeName: UnityEditor.GameView, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_AlternateEditorWindowTypes:
+            m_Items: []
+          m_MaskType: 0
+          m_MaskSizeModifier: 0
+          m_UnmaskedControls:
+          - m_SelectorMode: 5
+            m_SelectorMatchType: 0
+            m_GUIContent:
+              m_Text: 
+              m_Image: {fileID: 0}
+              m_Tooltip: 
+              m_TextWithWhitespace: 
+            m_ControlName: Play
+            m_PropertyPath: 
+            m_TargetType:
+              m_TypeName: 
+            m_GUIStyleName: 
+            m_ObjectReference:
+              m_SceneObjectReference:
+                m_SceneGuid: 
+                m_GameObjectGuid: 
+                m_SerializedComponentType:
+                  m_TypeName: 
+                m_ComponentIndex: 0
+                m_AssetObject: {fileID: 0}
+                m_Prefab: {fileID: 0}
+              m_FutureObjectReference: {fileID: 0}
+            m_VisualElementClassName: 
+            m_VisualElementName: Play
+            m_VisualElementTypeName: 
+      m_Summary: 
+      m_Description: 
+      m_InstructionBoxTitle: 
+      m_InstructionText: 
+      m_TutorialButtonText: 
+    - m_Type: 0
+      Title:
+        m_Untranslated: 
+      Text:
+        m_Untranslated: 'You''ll use <b>Play mode</b> to preview your game in the
+          <b>Game</b> view. In Play mode, you''ll see and hear what users will see
+          and hear. '
+      m_CodeSample: 
+      m_PostInstructionImage: {fileID: 0}
+      m_Tutorial: {fileID: 0}
+      m_Image: {fileID: 0}
+      m_VideoUrl: 
+      m_Video: {fileID: 0}
+      m_Media:
+        m_ContentType: 0
+        m_Image: {fileID: 0}
+        m_VideoClip: {fileID: 0}
+        m_Url: 
+        m_AutoStart: 1
+        m_Loop: 1
+      m_CriteriaCompletion: 0
+      m_Criteria:
+        m_Items: []
+      m_MaskingSettings:
+        m_MaskingEnabled: 0
+        m_UnmaskedViews: []
+      m_Summary: 
+      m_Description: 
+      m_InstructionBoxTitle: 
+      m_InstructionText: 
+      m_TutorialButtonText: 
+    - m_Type: 1
+      Title:
+        m_Untranslated: INSTRUCTIONS
+      Text:
+        m_Untranslated: "<b>1</b>.  Select the <b>Play/Stop</b> button at the top
+          of the Editor window to enter Play mode.\n\n<b>2</b>.  Use the arrow keys
+          or the WASD keys on your keyboard to make the robot walk. \n\n<b>3</b>. 
+          Press the spacebar to jump and move your mouse to look around.\n\n<b>Tip</b>: 
+          Click in the <b>Game</b> view to lock and hide your mouse cursor. Press
+          <b>Escape</b> to view your cursor again.\n\n<b>4</b>.  Have the robot collect
+          the star at the top of the small yellow box.\n\n<b>5</b>.  When you're
+          ready, select the <b>Play/Stop</b> button again to exit Play mode. \n\n<b>Note</b>: 
+          You can hold <b>Shift</b> to make the robot run!"
+      m_CodeSample: 
+      m_PostInstructionImage: {fileID: 0}
+      m_Tutorial: {fileID: 0}
+      m_Image: {fileID: 0}
+      m_VideoUrl: 
+      m_Video: {fileID: 0}
+      m_Media:
+        m_ContentType: 0
+        m_Image: {fileID: 0}
+        m_VideoClip: {fileID: 0}
+        m_Url: 
+        m_AutoStart: 1
+        m_Loop: 1
+      m_CriteriaCompletion: 0
+      m_Criteria:
+        m_Items: []
+      m_MaskingSettings:
+        m_MaskingEnabled: 0
+        m_UnmaskedViews: []
+      m_Summary: 
+      m_Description: 
+      m_InstructionBoxTitle: 
+      m_InstructionText: 
+      m_TutorialButtonText: 
+  m_CameraSettings:
+    m_CameraMode: 0
+    m_FocusMode: 0
+    m_Orthographic: 0
+    m_Size: 0
+    m_Pivot: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 0, y: 0, z: 0, w: 0}
+    m_FrameObject:
+      m_SceneGuid: 
+      m_GameObjectGuid: 
+      m_SerializedComponentType:
+        m_TypeName: 
+      m_ComponentIndex: 0
+      m_AssetObject: {fileID: 0}
+      m_Prefab: {fileID: 0}
+    m_Enabled: 0
+  NextButton:
+    m_Untranslated: Next
+  DoneButton:
+    m_Untranslated: Done
+  m_CompletedSound: {fileID: 0}
+  m_FaqEntries: []
+  m_AutoAdvance: 0
+  Showing:
+    m_PersistentCalls:
+      m_Calls: []
+  Shown:
+    m_PersistentCalls:
+      m_Calls: []
+  Staying:
+    m_PersistentCalls:
+      m_Calls: []
+  CriteriaValidated:
+    m_PersistentCalls:
+      m_Calls: []
+  MaskingSettingsChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  NonMaskingSettingsChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnBeforePageShown:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnAfterPageShown:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnTutorialPageStay:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnBeforeTutorialQuit:
+    m_PersistentCalls:
+      m_Calls: []
+  m_NextButton: Next
+  m_DoneButton: Done

@@ -1,0 +1,180 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff771ccdf4150419d9ff4d342b069aae, type: 3}
+  m_Name: s2.4_Look around
+  m_EditorClassIdentifier: 
+  Title:
+    m_Untranslated: Look around
+  m_Paragraphs:
+    m_Items:
+    - m_Type: 9
+      Title:
+        m_Untranslated: 
+      Text:
+        m_Untranslated: 
+      m_CodeSample: 
+      m_PostInstructionImage: {fileID: 0}
+      m_Tutorial: {fileID: 0}
+      m_Image: {fileID: 2800000, guid: 562fc4ae3d26440deaca11b42889507a, type: 3}
+      m_VideoUrl: 
+      m_Video: {fileID: 32900000, guid: 286e378fdbf914d4c9514e9d58560890, type: 3}
+      m_Media:
+        m_ContentType: 1
+        m_Image: {fileID: 0}
+        m_VideoClip: {fileID: 32900000, guid: c64325762dabfb1478abf235a56bcc12, type: 3}
+        m_Url: 
+        m_AutoStart: 0
+        m_Loop: 0
+      m_CriteriaCompletion: 0
+      m_Criteria:
+        m_Items: []
+      m_MaskingSettings:
+        m_MaskingEnabled: 1
+        m_UnmaskedViews:
+        - m_SelectorType: 1
+          m_ViewType:
+            m_TypeName: 
+          m_FocusEditorWindow: 0
+          m_EditorWindowType:
+            m_TypeName: UnityEditor.SceneView, UnityEditor.CoreModule, Version=0.0.0.0,
+              Culture=neutral, PublicKeyToken=null
+          m_AlternateEditorWindowTypes:
+            m_Items: []
+          m_MaskType: 0
+          m_MaskSizeModifier: 0
+          m_UnmaskedControls: []
+      m_Summary: 
+      m_Description: 
+      m_InstructionBoxTitle: 
+      m_InstructionText: 
+      m_TutorialButtonText: 
+    - m_Type: 0
+      Title:
+        m_Untranslated: 
+      Text:
+        m_Untranslated: Your skybox looks great! Use the following techniques to
+          look around and admire the skybox in all directions.
+      m_CodeSample: 
+      m_PostInstructionImage: {fileID: 0}
+      m_Tutorial: {fileID: 0}
+      m_Image: {fileID: 0}
+      m_VideoUrl: 
+      m_Video: {fileID: 0}
+      m_Media:
+        m_ContentType: 0
+        m_Image: {fileID: 0}
+        m_VideoClip: {fileID: 0}
+        m_Url: 
+        m_AutoStart: 1
+        m_Loop: 1
+      m_CriteriaCompletion: 0
+      m_Criteria:
+        m_Items: []
+      m_MaskingSettings:
+        m_MaskingEnabled: 0
+        m_UnmaskedViews: []
+      m_Summary: 
+      m_Description: 
+      m_InstructionBoxTitle: 
+      m_InstructionText: 
+      m_TutorialButtonText: 
+    - m_Type: 1
+      Title:
+        m_Untranslated: INSTRUCTIONS
+      Text:
+        m_Untranslated: "<b>1</b>.  In the top-left corner of the <b>Scene</b> view,
+          select the <b>View</b> tool (hand) from the <b>Tool</b> overlay.\n\n<b>2</b>. 
+          In the <b>Scene</b> view, left-click and drag with your mouse to pan your
+          view from side to side. \n\nThis allows you to move around in 3D space.\n\n<b>3</b>. 
+          Instead of clicking as you typically would, right-click and drag with your
+          mouse or touchpad to look around. \n\nThis allows you to stay in one spot
+          and rotate your view.\n\n<b>Note</b>: If you're using a laptop and touchpad,
+          the way you right-click will vary."
+      m_CodeSample: 
+      m_PostInstructionImage: {fileID: 0}
+      m_Tutorial: {fileID: 0}
+      m_Image: {fileID: 0}
+      m_VideoUrl: 
+      m_Video: {fileID: 0}
+      m_Media:
+        m_ContentType: 0
+        m_Image: {fileID: 0}
+        m_VideoClip: {fileID: 0}
+        m_Url: 
+        m_AutoStart: 1
+        m_Loop: 1
+      m_CriteriaCompletion: 0
+      m_Criteria:
+        m_Items: []
+      m_MaskingSettings:
+        m_MaskingEnabled: 0
+        m_UnmaskedViews: []
+      m_Summary: 
+      m_Description: 
+      m_InstructionBoxTitle: 
+      m_InstructionText: 
+      m_TutorialButtonText: 
+  m_CameraSettings:
+    m_CameraMode: 0
+    m_FocusMode: 0
+    m_Orthographic: 0
+    m_Size: 0
+    m_Pivot: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 0, y: 0, z: 0, w: 1}
+    m_FrameObject:
+      m_SceneGuid: 
+      m_GameObjectGuid: 
+      m_SerializedComponentType:
+        m_TypeName: 
+      m_ComponentIndex: 0
+      m_AssetObject: {fileID: 0}
+      m_Prefab: {fileID: 0}
+    m_Enabled: 0
+  NextButton:
+    m_Untranslated: Next
+  DoneButton:
+    m_Untranslated: Done
+  m_CompletedSound: {fileID: 0}
+  m_FaqEntries: []
+  m_AutoAdvance: 0
+  Showing:
+    m_PersistentCalls:
+      m_Calls: []
+  Shown:
+    m_PersistentCalls:
+      m_Calls: []
+  Staying:
+    m_PersistentCalls:
+      m_Calls: []
+  CriteriaValidated:
+    m_PersistentCalls:
+      m_Calls: []
+  MaskingSettingsChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  NonMaskingSettingsChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnBeforePageShown:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnAfterPageShown:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnTutorialPageStay:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnBeforeTutorialQuit:
+    m_PersistentCalls:
+      m_Calls: []
+  m_NextButton: Next
+  m_DoneButton: Done

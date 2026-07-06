@@ -1,0 +1,104 @@
+.containercard {
+    background-color: #414141;
+    border-color: rgba(0,0,0,0.15);
+    flex-direction: column;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-width: 1px;
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+#TutorialStepBox1 {
+   font-size: 18px;
+   color: #030000;
+}
+
+
+#InstructionTitle {
+   font-size: 16px;
+   padding-bottom: 10px;
+   color: #030000;
+}
+
+#InstructionDescription {
+   font-size: 16px;
+   color: #030000;
+}
+
+#lblPageTitle {
+   font-size: 20px;
+   color: black;
+}
+
+
+HyperlinkLabel {
+    color: #3271AE;
+    border-bottom-color: #3271AE;
+    border-bottom-width: 1px;
+}
+
+.video-play-button {
+    background-image: resource("Icons/Animation.Play.png");
+}
+
+.video-popup-button {
+    background-image: resource("Icons/Animation.Play.png");
+}
+
+/****************************
+*  THEME SPECIFIC COLORS
+****************************/
+
+.container {
+    background-color: #DEDDDE;
+}
+
+.container--header-large {
+    border-color: rgba(0,0,0,0.2);
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0,0,0,0.15);
+}
+
+.card:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
+
+
+.container--tutorial {
+    border-top-color: rgba(0, 0, 0, 0.05);
+    background-color: rgb(225, 225, 225);
+}
+
+.container--instruction {
+    background-color: rgb(255, 255, 255);
+    border-bottom-color: rgba(0, 0, 0, 0.15);
+}
+
+.container--tutorial-actions {
+    border-color: rgba(0,0,0,0.1);
+}
+
+.container--welcome-dialog-content {
+    background-color: rgb(221, 221, 221);
+}
+
+.container--welcome-dialog-actions {
+    border-color: rgba(0,0,0,0.1);
+}
+
+.icon--tutorial-error-checkmark {
+    background-image: url('/Packages/com.unity.learn.iet-framework/Editor/UI/Images/Icons/ErrorLight.png');
+}
+
+.image--instruction-arrow {
+    background-color: #0089E4;
+}
+
+.tutorial-code-sample {
+    border-color: rgba(0.5,0.5,0.5,0.5);
+}

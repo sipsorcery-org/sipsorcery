@@ -1,0 +1,14 @@
+# Unity generated folders.
+[Ll]ibrary/
+[Tt]emp/
+[Ll]ogs/
+[Oo]bj/
+[Uu]serSettings/
+
+# Managed plugins are produced by copy-plugins.ps1 (only the .meta files are tracked).
+Assets/Plugins/*.dll
+
+# The repo root .gitignore ignores *.meta globally (a Visual C++ artifact pattern that
+# predates Unity). Unity .meta files MUST be tracked - the scene references scripts by
+# the GUID stored in them - so re-include them for this project.
+!*.meta

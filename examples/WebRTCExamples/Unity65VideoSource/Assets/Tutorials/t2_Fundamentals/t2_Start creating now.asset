@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f107dc6d4c984c45bdafd3bb15f98f0, type: 3}
+  m_Name: t2_Start creating now
+  m_EditorClassIdentifier: 
+  TutorialTitle:
+    m_Untranslated: The 3D fundamentals
+  m_ProgressTrackingEnabled: 1
+  m_LessonId: 8e5f7a12-526b-45cc-9210-4babcd4bc180
+  m_Version: 1
+  m_ReturnToPreviousScenes: 0
+  m_SceneManagementBehavior: 1
+  m_Scenes: []
+  m_DefaultSceneCameraSettings:
+    m_CameraMode: 0
+    m_FocusMode: 0
+    m_Orthographic: 0
+    m_Size: 0
+    m_Pivot: {x: 0, y: 0, z: 0}
+    m_Rotation: {x: 0, y: 0, z: 0, w: 0}
+    m_FrameObject:
+      m_SceneGuid: 
+      m_GameObjectGuid: 
+      m_SerializedComponentType:
+        m_TypeName: 
+      m_ComponentIndex: 0
+      m_AssetObject: {fileID: 0}
+      m_Prefab: {fileID: 0}
+    m_Enabled: 0
+  m_WindowLayout: {fileID: 0}
+  m_Pages:
+    m_Items:
+    - {fileID: 11400000, guid: 01609422f7b3f9544b8af022b239020b, type: 2}
+    - {fileID: 11400000, guid: db2df8ed3b9b1c34ab37c133e34ce7b3, type: 2}
+    - {fileID: 11400000, guid: f887899778dc4ba4a8a828def157cf70, type: 2}
+    - {fileID: 11400000, guid: ea62241553a5c7249a940c916ed2b33a, type: 2}
+    - {fileID: 11400000, guid: 1c3c20fc40c834c9d8d6e746932136ab, type: 2}
+    - {fileID: 11400000, guid: a061b759ce81f0541a3ee10d91dc03f2, type: 2}
+    - {fileID: 11400000, guid: ed101923fedf54946a514f79776d361f, type: 2}
+    - {fileID: 11400000, guid: af1afcf345d441f42804f525138f2a4a, type: 2}
+    - {fileID: 11400000, guid: 4112c1ae292ae54419b97f722a7e3588, type: 2}
+    - {fileID: 11400000, guid: fa678c9c9127048398b62d9172d9d847, type: 2}
+    - {fileID: 11400000, guid: cc728cfdc9a374c4fa847ead9c929785, type: 2}
+    - {fileID: 11400000, guid: 9b01cfd5474d34b6395215b03589d8ad, type: 2}
+  CompletionDialog: {fileID: 0}
+  Modified:
+    m_PersistentCalls:
+      m_Calls: []
+  Initiated:
+    m_PersistentCalls:
+      m_Calls: []
+  PageInitiated:
+    m_PersistentCalls:
+      m_Calls: []
+  GoingBack:
+    m_PersistentCalls:
+      m_Calls: []
+  Completed:
+    m_PersistentCalls:
+      m_Calls: []
+  Quit:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Scene: {fileID: 0}
+  m_TutorialTitle: 

@@ -1,0 +1,109 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89305aa391d1c5141bbe1628d930a2c5, type: 3}
+  m_Name: get-started-with-unity
+  m_EditorClassIdentifier: 
+  Modified:
+    m_PersistentCalls:
+      m_Calls: []
+  ParentContainer: {fileID: 0}
+  OrderInView: 0
+  BackgroundImage: {fileID: 2800000, guid: e13f56ce5319d4e8fb86d941d9a37c8d, type: 3}
+  Title:
+    m_Untranslated: Get started with Unity
+  Subtitle:
+    m_Untranslated: 
+  Description:
+    m_Untranslated: 
+  ProjectLayout: {fileID: 102900000, guid: d134903b5a25c3c408818857f9d9de1b, type: 3}
+  Sections:
+  - OrderInView: 0
+    Heading:
+      m_Untranslated: The Unity interface
+    Text:
+      m_Untranslated: 'Learn the basics of the Unity Editor. Estimated time: 5 minutes.'
+    Metadata: 
+    Url: 
+    Image: {fileID: 2800000, guid: e8a0c292d2a1e7d42ac847d727b673e7, type: 3}
+    Tutorial: {fileID: 11400000, guid: efdb476ac9307944ebb503fb0fe421f5, type: 2}
+  - OrderInView: 1
+    Heading:
+      m_Untranslated: The 3D fundamentals
+    Text:
+      m_Untranslated: 'Learn the fundamentals of 3D navigation and creation In Unity.
+        Estimated time: 20 minutes.'
+    Metadata: 
+    Url: 
+    Image: {fileID: 2800000, guid: ee64a6b5933dd4020ad8232fea261ced, type: 3}
+    Tutorial: {fileID: 11400000, guid: 900a9fef70eab054eb4b551b11f0e64e, type: 2}
+  - OrderInView: 2
+    Heading:
+      m_Untranslated: Explore the possibilities
+    Text:
+      m_Untranslated: 'Take your scene to the next level with animation, audio, lighting,
+        and more! Estimated time: 15 minutes.'
+    Metadata: 
+    Url: 
+    Image: {fileID: 2800000, guid: b1e1fa411612c374f981aac1173a3012, type: 3}
+    Tutorial: {fileID: 11400000, guid: eea9ec24783e92d488e02265aef9f7c6, type: 2}
+  - OrderInView: 3
+    Heading:
+      m_Untranslated: Share your game (optional)
+    Text:
+      m_Untranslated: 'Upload your project to Unity Play so you can share with friends!
+        Estimated time: 10-30 minutes. '
+    Metadata: 
+    Url: 
+    Image: {fileID: 2800000, guid: 57fd157869e86cb43a30acf5f1c60efc, type: 3}
+    Tutorial: {fileID: 11400000, guid: e724a911bee784ee3b860ca40a45f5f3, type: 2}
+  - OrderInView: 4
+    Heading:
+      m_Untranslated: Future learning
+    Text:
+      m_Untranslated: 'Find out how to launch to the next step in your Unity learning
+        journey! '
+    Metadata: 
+    Url: 
+    Image: {fileID: 2800000, guid: 4b290361983d35f4cb73ddf651f1dc1f, type: 3}
+    Tutorial: {fileID: 11400000, guid: 6b283ecb52dec3349a4d20456f0d9709, type: 2}
+  FaqEntries:
+  - Question: Why does my scene look distorted?
+    Answer: If your scene's perspective looks strange, you most likely accidentally
+      entered <b>Isometric mode.</b> To get back to a normal perspective, click on
+      the cube at the center of the Scene view gizmo, which can be found in the upper-right
+      corner of the Scene view.
+  - Question: I'm lost in the Scene view.
+    Answer: If you need to recenter your view of the Scene, try double-clicking on
+      the <b>Ground</b> GameObject in the Hierarchy window.
+  - Question: I accidentally did something. How do I undo?
+    Answer: 'You can undo most actions by pressing <b>Ctrl+Z</b> (macOS: <b>Cmd+Z</b>).
+      Some actions, such as changing settings in the Scene view, cannot be undone.
+      In this case, try searching on Google, Unity Discussions, or your favorite
+      AI Chatbot. '
+  - Question: How do I navigate in the Scene view?
+    Answer: 'To look around, hold right-click and drag (how you right-click on a
+      trackpad can vary, depending on the computer). To fly around the scene, use
+      the arrow keys. <b>Note:</b> You can also hold right-click and use the WASD
+      keys to fly through the scene. '
+  - Question: The scene view looks like a dark blue grid.
+    Answer: 'You have most likely entered Prefab editing mode. To exit prefab editing
+      mode, go to the Hierarchy window and select the left-arrow to the left of the
+      prefab name.  Select image to expand The Scene view will return to the regular
+      view of your scene. '
+  - Question: Why can't I edit my scene?
+    Answer: "If you can't edit your scene, it's possible you're still in Play mode
+      or that you've gone into the Game view. Make sure you exit Play mode by clicking
+      the Stop button at the top of the Unity Editor. Also make sure that you're
+      in the Scene view window \u2014\_not the Game view window."
+  - Question: 'Are there shortcuts for the different Scene view tools? '
+    Answer: 'Unity''s scene view tools can be accessed with the first keys in the
+      top row of your keyboard:  Q (pan), W (move/translate), E (rotate), R (scale). '

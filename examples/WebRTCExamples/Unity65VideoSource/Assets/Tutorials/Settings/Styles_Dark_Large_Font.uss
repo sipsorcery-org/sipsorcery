@@ -1,0 +1,72 @@
+.container--tutorial {
+    border-top-color: rgba(255, 255, 255, 0.05);
+    background-color: #2E2E2E;
+}
+
+#TutorialStepBox1 {
+   font-size: 18px;
+}
+
+#InstructionTitle {
+   font-size: 16px;
+   padding-bottom: 10px;
+   color: #FFFCFC;
+}
+
+
+#InstructionDescription {
+   font-size: 16px;
+}
+
+#lblPageTitle {
+   font-size: 20px;
+   color: white;
+}
+
+.container {
+    background-color: #353535;
+}
+
+.container--tutorial-actions {
+    border-color: rgba(0,0,0,0.3);
+}
+
+.container--tutorial-link-icon {
+    border-left-color: #212421;
+    background-image: resource('GoToDashboard@2x');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.container--header-large {
+    border-color: rgba(255,255,255,0.1);
+}
+
+.card {
+    background-color: #414141;
+    border-color: #212421;
+}
+
+.card:hover {
+    background-color: #4A4A4A;
+}
+
+.container--instruction {
+    background-color: #414141;
+    border-bottom-color: rgba(0, 0, 0, 0.4);
+}
+
+.container--welcome-dialog-content {
+    background-color: #2E2E2E;
+}
+
+.container--welcome-dialog-actions {
+    border-color: rgba(0,0,0,0.5);
+}
+
+.icon--tutorial-error-checkmark {
+    background-image: url('/Packages/com.unity.learn.iet-framework/Editor/UI/Images/Icons/ErrorDark.png');
+}
+
+.faq-report-icon {
+    background-image: resource('GoToDashboard@2x');
+}
