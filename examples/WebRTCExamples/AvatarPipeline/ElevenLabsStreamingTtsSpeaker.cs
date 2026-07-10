@@ -53,13 +53,13 @@ public sealed class ElevenLabsStreamingTtsSpeaker : IStreamingAvatarSpeaker
     private readonly string _apiKey;
     private readonly string _voiceId;
     private readonly string _modelId;
-    private readonly IAvatarRenderer _renderer;
+    private readonly IAvatarMouth _renderer;
     private readonly AudioExtrasSource _audio;
     private readonly int _visemeLeadMs;
     private readonly SemaphoreSlim _speakLock = new(1, 1);
 
     public ElevenLabsStreamingTtsSpeaker(string apiKey, string voiceId, string modelId,
-        IAvatarRenderer renderer, AudioExtrasSource audio, int visemeLeadMs = 150)
+        IAvatarMouth renderer, AudioExtrasSource audio, int visemeLeadMs = 150)
     {
         _apiKey = apiKey;
         _voiceId = voiceId;

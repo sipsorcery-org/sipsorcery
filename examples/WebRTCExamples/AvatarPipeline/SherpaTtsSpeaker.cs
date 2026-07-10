@@ -46,7 +46,7 @@ public sealed class SherpaTtsSpeaker : LipSyncTtsSpeaker, IDisposable
 
     /// <param name="modelDir">Folder holding a Piper VITS voice: the .onnx model, tokens.txt
     /// and the espeak-ng-data directory (an extracted sherpa-onnx vits-piper-* archive).</param>
-    public SherpaTtsSpeaker(string modelDir, IAvatarRenderer renderer, AudioExtrasSource audio,
+    public SherpaTtsSpeaker(string modelDir, IAvatarMouth renderer, AudioExtrasSource audio,
         int visemeLeadMs = 150, float speed = 1.0f)
         : base(renderer, audio, visemeLeadMs)
     {

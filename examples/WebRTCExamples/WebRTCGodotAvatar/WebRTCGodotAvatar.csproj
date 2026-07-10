@@ -1,0 +1,24 @@
+<Project Sdk="Godot.NET.Sdk/4.6.3">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+    <!-- Override any repo-wide LangVersion: the Godot source generators emit C# 9+ syntax. -->
+    <LangVersion>latest</LangVersion>
+    <!-- The gd_cubism addon's C# helper scripts (addons/gd_cubism/cs) use unsafe blocks. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The gd_cubism addon bundles example scripts that target an older API version and don't
+         compile; the Live2D model uses the native GDCubismUserModel via ClassDB, not these. -->
+    <Compile Remove="addons/gd_cubism/example/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Pure-C# WebRTC + VP8 (no native FFmpeg). -->
+    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+    <ProjectReference Include="..\..\..\src\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- The shared avatar speech/AI pipeline (TTS/STT/LLM + the IAvatarMouth seam), the same
+         library the WebRTCMaxHeadroom demo uses. sherpa-onnx + LLamaSharp come transitively. -->
+    <ProjectReference Include="..\AvatarPipeline\AvatarPipeline.csproj" />
+  </ItemGroup>
+</Project>

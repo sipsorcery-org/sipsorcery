@@ -16,27 +16,20 @@
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
-    <!-- Local, offline, IN-PROCESS speech: sherpa-onnx does BOTH text-to-speech
-         (SherpaTtsSpeaker, running Piper VITS voices - it bundles the espeak-ng phonemizer)
-         and speech-to-text (SherpaSpeechRecognizer, running Parakeet or Whisper ONNX
-         exports). One native runtime for the whole speech stack, no external processes. -->
-    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.3" />
-    <!-- Local, offline, IN-PROCESS LLM (LlamaSharpLlmClient). LLamaSharp is llama.cpp - the
-         same engine Ollama wraps - so the same GGUF models run with no external server.
-         Swap/add a GPU backend package (e.g. .Backend.Vulkan) to offload layers. -->
-    <PackageReference Include="LLamaSharp" Version="0.27.0" />
-    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
     <!-- IN-PROCESS Wav2Lip avatar (Wav2LipAvatarRenderer): onnxruntime runs the lip-sync
          model (DirectML uses any DX12 GPU on Windows, CPU elsewhere) and MathNet provides
          the FFT for the librosa-compatible mel front-end - replaces the Python sidecar. -->
-    <!-- Version pinned to match the onnxruntime.dll sherpa-onnx bundles: both packages ship
-         the same native file name, and the DML-enabled build must be the one deployed (it
-         also serves sherpa's CPU use). -->
+    <!-- Version pinned to match the onnxruntime.dll sherpa-onnx bundles (sherpa comes via the
+         AvatarPipeline reference): both packages ship the same native file name, and the
+         DML-enabled build must be the one deployed (it also serves sherpa's CPU use). -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The engine-agnostic speech/AI pipeline (TTS/STT/LLM + the IAvatarMouth seam); the sherpa
+         and LLamaSharp packages come transitively from here. -->
+    <ProjectReference Include="..\AvatarPipeline\AvatarPipeline.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
   </ItemGroup>

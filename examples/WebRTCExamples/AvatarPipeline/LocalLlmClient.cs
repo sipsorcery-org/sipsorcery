@@ -37,7 +37,7 @@ namespace demo;
 
 public class LocalLlmClient : ILlmClient
 {
-    private const string SYSTEM_PROMPT = LlmShared.SystemPrompt;
+    private readonly string _systemPrompt;
 
     private static readonly ILogger logger = SIPSorcery.LogFactory.CreateLogger<LocalLlmClient>();
 
@@ -53,10 +53,11 @@ public class LocalLlmClient : ILlmClient
 
     public string Description => $"endpoint {_endpoint} and model {_model}";
 
-    public LocalLlmClient(string endpoint, string model, string apiKey = null)
+    public LocalLlmClient(string endpoint, string model, string apiKey = null, string systemPrompt = null)
     {
         _endpoint = endpoint;
         _model = string.IsNullOrWhiteSpace(model) ? "llama3.2" : model;
+        _systemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? LlmShared.SystemPrompt : systemPrompt;
 
         // A key is only needed for hosted gateways (OpenRouter, OpenAI, ...). Local
         // servers like Ollama ignore it, so it is safe to leave unset for those.
@@ -88,7 +89,7 @@ public class LocalLlmClient : ILlmClient
                 Stream = false,
                 Messages = new[]
                 {
-                    new ChatMessage { Role = "system", Content = SYSTEM_PROMPT },
+                    new ChatMessage { Role = "system", Content = _systemPrompt },
                     new ChatMessage { Role = "user", Content = prompt }
                 }
             };
@@ -170,7 +171,7 @@ public class LocalLlmClient : ILlmClient
                 Stream = true,
                 Messages = new[]
                 {
-                    new ChatMessage { Role = "system", Content = SYSTEM_PROMPT },
+                    new ChatMessage { Role = "system", Content = _systemPrompt },
                     new ChatMessage { Role = "user", Content = prompt }
                 }
             })

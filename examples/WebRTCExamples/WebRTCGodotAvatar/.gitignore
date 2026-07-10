@@ -1,0 +1,14 @@
+# Godot build/import cache and .NET output.
+.godot/
+.mono/
+bin/
+obj/
+*.log
+
+# Third-party Godot addons - install from the Godot AssetLib (see README).
+/addons/
+
+# Avatar models are user-provided and often licensed; keep them out of the repo.
+/Models/*.vrm
+/Models/*.vrm.import
+/Models/Live2D/

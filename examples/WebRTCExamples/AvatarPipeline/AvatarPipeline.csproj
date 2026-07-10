@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The engine-agnostic avatar speech/AI pipeline, shared by the WebRTCMaxHeadroom (SkiaSharp /
+       Wav2Lip renderers) and WebRTCGodotAvatar (Godot VRM renderer) demos. It depends only on the
+       IAvatarMouth seam + SIPSorcery, never on any renderer, so the animation engine is swappable.
+       TTS + STT run on sherpa-onnx; the LLM runs in-process on LLamaSharp (llama.cpp). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <RootNamespace>demo</RootNamespace>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.3" />
+    <PackageReference Include="LLamaSharp" Version="0.27.0" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -48,7 +48,7 @@ public sealed class ElevenLabsTtsSpeaker : LipSyncTtsSpeaker
     /// <param name="voiceId">Voice id to synthesise with (e.g. "21m00Tcm4TlvDq8ikWAM" for "Rachel").</param>
     /// <param name="modelId">Model id, e.g. "eleven_turbo_v2_5" (low latency) or "eleven_multilingual_v2".</param>
     public ElevenLabsTtsSpeaker(string apiKey, string voiceId, string modelId,
-        IAvatarRenderer renderer, AudioExtrasSource audio, int visemeLeadMs = 150)
+        IAvatarMouth renderer, AudioExtrasSource audio, int visemeLeadMs = 150)
         : base(renderer, audio, visemeLeadMs)
     {
         _apiKey = apiKey;
