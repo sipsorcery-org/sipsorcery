@@ -17,7 +17,7 @@
          "sipsorcery-diags" command. -->
     <ToolCommandName>sipsorcery-diags</ToolCommandName>
     <PackageId>SIPSorcery.Diagnostics</PackageId>
-    <Version>0.1.0-beta</Version>
+    <Version>0.2.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
     <Description>Diagnostics and benchmarking CLI for SIP and WebRTC, built on the SIPSorcery library: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Probe/test tooling (not a general softphone); human and agent friendly with JSON output and meaningful exit codes. For routing streams and the Cloudflare/LiveKit/OpenAI fabric verbs see the SIPSorcery.Cli tool.</Description>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>

@@ -16,7 +16,7 @@
          tool is "sipsorcery-diags"). -->
     <ToolCommandName>sipsorcery</ToolCommandName>
     <PackageId>SIPSorcery.Cli</PackageId>
-    <Version>0.1.0-beta</Version>
+    <Version>0.2.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
     <Description>SIPSorcery CLI: route and bridge live media streams between SIP, WebRTC and the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime), built on the SIPSorcery library. A stream is the primitive; verbs attach edges to it. Human and agent friendly with JSON output and meaningful exit codes.</Description>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>

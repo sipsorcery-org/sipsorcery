@@ -76,7 +76,8 @@
     <RepositoryBranch>master</RepositoryBranch>
     <PolyArgumentExceptions>true</PolyArgumentExceptions>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v10.0.11: Add support for additional video codecs (VP9, AV1, H265). WHIP and WHEP support. Bug fixes.
+    <PackageReleaseNotes>-v10.0.12: Fix for SCTP packet zero length infinite loop vulnerability.
+-v10.0.11: Add support for additional video codecs (VP9, AV1, H265). WHIP and WHEP support. Bug fixes.
 -v10.0.10: Bug fixes. Adjust restriction on remote peer endpoints when blocking WebRTC RTP traffic.
 -v10.0.9: Fix for RTP and STUN packet minimum length DoS vulnerability.
 -v10.0.8: Bug fixes.
@@ -105,9 +106,9 @@
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.11</Version>
-    <AssemblyVersion>10.0.11</AssemblyVersion>
-    <FileVersion>10.0.11</FileVersion>
+    <Version>10.0.12</Version>
+    <AssemblyVersion>10.0.12</AssemblyVersion>
+    <FileVersion>10.0.12</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
