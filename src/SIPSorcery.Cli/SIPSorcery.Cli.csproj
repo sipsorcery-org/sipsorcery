@@ -35,21 +35,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="System.CommandLine" />
     <!-- Used by the livekit: route edges (publish into / subscribe to a room) to mint access tokens and
          for the protobuf signalling. Targets netstandard2.0 so it is compatible with the net8.0 tool. -->
-    <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.2" />
+    <PackageReference Include="Livekit.Server.Sdk.Dotnet" />
     <!-- The OpenAI.Realtime library returns Either<Error, T>; this is the underlying type. -->
-    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
+    <PackageReference Include="LanguageExt.Core" />
     <!-- Speech-to-text and text-to-speech for the "bridge ... agent" voice agent. Same package the
          WebRTCMaxHeadroom example uses; a heavy native dependency, a candidate to move behind an
          optional agent plugin later so the core tool stays lean. -->
-    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.40.0" />
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" />
     <!-- Renders the bridge agent avatar (the Max Headroom face, MaxHeadroomVideoSource). Another
          heavy/native dependency, reinforcing the future optional-avatar-plugin direction. -->
-    <PackageReference Include="SkiaSharp" Version="2.88.8" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
 
   <ItemGroup>

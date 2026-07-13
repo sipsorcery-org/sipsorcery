@@ -1,0 +1,18 @@
+<Project>
+
+  <!-- Shared central package versions for the SIPSorcery test projects that use Central Package
+       Management (test/unit and test/integration). This file only declares versions; it is not
+       auto-imported. Each participating project's Directory.Packages.props enables CPM and imports
+       this file so the two test projects stay on identical dependency versions (see issue #1605).
+       Other projects under test/ are intentionally not included. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk"     Version="18.5.1" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console"      Version="6.1.1" />
+    <PackageVersion Include="Serilog.Sinks.XUnit"        Version="3.0.19" />
+    <PackageVersion Include="xunit"                      Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.console"       Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio"  Version="2.8.2" />
+  </ItemGroup>
+
+</Project>
