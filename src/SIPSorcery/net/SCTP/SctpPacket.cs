@@ -184,7 +184,23 @@ namespace SIPSorcery.Net
 
             while (posn < length)
             {
+                if (length - posn < SctpChunk.SCTP_CHUNK_HEADER_LENGTH)
+                {
+                    throw new ApplicationException("The SCTP packet buffer was too short to contain a complete chunk header.");
+                }
+
                 byte chunkType = buffer[posn];
+
+                uint chunkLength = SctpChunk.GetChunkLengthFromHeader(buffer, posn, false);
+                if (chunkLength < SctpChunk.SCTP_CHUNK_HEADER_LENGTH)
+                {
+                    throw new ApplicationException($"The SCTP chunk length was invalid. The minimum length is {SctpChunk.SCTP_CHUNK_HEADER_LENGTH} bytes but the packet specified {chunkLength} bytes.");
+                }
+
+                if (posn + chunkLength > length)
+                {
+                    throw new ApplicationException($"The SCTP packet buffer was too short. Required {chunkLength} chunk bytes but only {length - posn} available.");
+                }
 
                 if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
                 {
@@ -216,7 +232,7 @@ namespace SIPSorcery.Net
                     break;
                 }
 
-                posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
+                posn += (int)SctpPadding.PadTo4ByteBoundary((int)chunkLength);
             }
 
             return (chunks, unrecognisedChunks);
