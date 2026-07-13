@@ -14,9 +14,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+    <PackageReference Include="LanguageExt.Core" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -39,7 +39,8 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageTags>OpenAI WebRTC SIPSorcery Real-time</PackageTags>
-    <PackageReleaseNotes>-v10.0.11: Updated for main sipsorcery library release.
+    <PackageReleaseNotes>-v10.0.12: Updated for main sipsorcery library release.
+-v10.0.11: Updated for main sipsorcery library release.
 -v10.0.10: Updated for main sipsorcery library release.
 -v10.0.9: Updated for main sipsorcery library release.
 -v10.0.8: Fixes for OpenAI model changes.
@@ -52,9 +53,9 @@
 -v8.0.1-pre: Initial version.
 </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.11</Version>
-    <AssemblyVersion>10.0.11</AssemblyVersion>
-    <FileVersion>10.0.11</FileVersion>
+    <Version>10.0.12</Version>
+    <AssemblyVersion>10.0.12</AssemblyVersion>
+    <FileVersion>10.0.12</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

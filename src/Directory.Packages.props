@@ -1,0 +1,40 @@
+<Project>
+
+  <!-- Central Package Management for the shipped SIPSorcery library projects under src/.
+       Package versions are declared once here; individual project files reference packages
+       without a Version attribute and inherit the version below. This keeps the NuGet
+       dependency versions of the packaged libraries in sync (see issue #1605). Scope is
+       limited to src/ so the examples and test projects are unaffected. To add a package,
+       add a PackageVersion here and a versionless PackageReference in the project. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="BouncyCastle.Cryptography"                 Version="2.6.2" />
+    <PackageVersion Include="Concentus"                                 Version="2.2.2" />
+    <PackageVersion Include="DnsClient"                                 Version="1.8.0" />
+    <PackageVersion Include="FFmpeg.AutoGen"                            Version="8.1.0" />
+    <PackageVersion Include="LanguageExt.Core"                          Version="4.4.9" />
+    <PackageVersion Include="Livekit.Server.Sdk.Dotnet"                 Version="1.2.2" />
+    <PackageVersion Include="Makaretu.Dns.Multicast"                    Version="0.27.0" />
+    <PackageVersion Include="Microsoft.Bcl.HashCode"                    Version="6.0.0" />
+    <PackageVersion Include="Microsoft.CognitiveServices.Speech"        Version="1.40.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http"                 Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Logging"              Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console"      Version="8.0.1" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub"               Version="10.0.203" />
+    <PackageVersion Include="NAudio"                                    Version="2.3.0" />
+    <PackageVersion Include="Polyfill"                                  Version="10.7.0" />
+    <PackageVersion Include="SIPSorcery.WebSocketSharp"                 Version="0.0.1" />
+    <PackageVersion Include="SkiaSharp"                                 Version="2.88.8" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux"              Version="2.88.8" />
+    <PackageVersion Include="System.CommandLine"                        Version="2.0.0" />
+    <PackageVersion Include="System.Memory"                             Version="4.6.3" />
+    <PackageVersion Include="System.Net.Security"                       Version="4.3.2" />
+    <PackageVersion Include="System.Net.WebSockets.Client"              Version="4.3.2" />
+    <PackageVersion Include="System.ValueTuple"                         Version="4.5.0" />
+  </ItemGroup>
+
+</Project>
