@@ -18,8 +18,8 @@ VP8 → WebRTC path and the speech pipeline, and delegates rendering to a swappa
 - **`VrmAvatarModel`** — a 3D VRM humanoid with a Camera3D + lights, posed into an A-pose, framed
   head-and-shoulders. Mouth driven by the VRoid `Fcl_MTH_*` morph targets.
 - **`Live2DAvatarModel`** — a 2D Cubism model via the **gd_cubism** GDExtension, framed
-  head-and-shoulders. Mouth driven by `ParamMouthOpenY` from the model's `cubism_epilogue` effect
-  (so lip-sync overrides the idle motion; see the code comments).
+  head-and-shoulders. Mouth driven by `ParamMouthOpenY` from the model's `cubism_process` effect
+  (after motions but before drawable vertices update; see the code comments).
 
 Common to both:
 
@@ -139,12 +139,13 @@ with no name auto-picks the first model found under `Models/Live2D/`, and `--ava
 the Ren model. The `*.model3.json` filename may be anything (the folder is scanned), so keep the
 vendor's filenames — only the containing `<Name>` folder matters.
 
-**Per-model tuning.** Most models render correctly with the defaults. A few older Cubism samples
-(e.g. Ren) only render every part under *draw order* instead of the dynamic *render order*; that is
-a per-model override in the `Live2DConfigs` registry in `Scripts/AvatarStreamer.cs`, keyed by folder
-name (`Live2DAvatarConfig { UseDrawOrder = true }`). It drives a `use_draw_order` property added to
-the gd_cubism addon (part of `patches/gd_cubism-sdk-5-r.5.patch`). If a new model renders with parts
-missing or mis-layered, try adding a `UseDrawOrder = true` entry for it.
+**Per-model tuning.** Most models render correctly with the defaults. Overrides live in the
+`Live2DConfigs` registry in `Scripts/AvatarStreamer.cs`, keyed by folder name. Ren supplies explicit
+foreground face details and closed/open mouth drawable sets because gd_cubism does not layer those
+drawables correctly; the mouth sets are cross-faded using the lip-sync value. `UseDrawOrder = true`
+is also available for models that need static draw order instead of dynamic render order. It drives
+a `use_draw_order` property added to the gd_cubism addon (part of
+`patches/gd_cubism-sdk-5-r.5.patch`).
 
 ### 5. (optional) Speech / LLM models
 The **local speech/LLM models** the Max demo uses go in the conventional folders — each engine is
@@ -168,6 +169,14 @@ boxes. The page also has an **avatar dropdown + Switch** button: it swaps the li
 dropping the WebRTC session (the model's nodes are rebuilt inside the capture viewport, so the stream
 just keeps showing whatever is now rendered). VRM targets must already be imported (Live2D needs no
 import); the switcher is served from `GET /avatars` and driven by `POST /avatar <kind[:name]>`.
+
+For Live2D models with authored `*.motion3.json` animations, the page also shows a **motion tester**
+with Play, Loop, Stop and Play all controls. It refreshes when the avatar changes and labels unnamed
+motion groups using their filenames. The catalogue is served by `GET /motions`; playback uses
+`POST /motion` with `{ "group": "Tap", "index": 0, "loop": false }`, and `POST /motion/stop`
+stops it. Authored motions temporarily control the model's pose and expression while TTS continues
+to control the lip-sync parameters. Playing anything other than `Idle[0]` smoothly zooms out to fit
+the model's full canvas; when it finishes, the view returns to the portrait crop and `Idle[0]` loops.
 
 On the **first** launch `run-demo.ps1` opens the project once in the headless Godot editor to import
 the assets — the VRM importer and the Live2D texture import are editor-only and don't run when the
@@ -206,13 +215,15 @@ So the voice **follows the avatar** (including when switched at runtime), you ca
 
 ```
 Models/
-  Alice.vrm                        # flat: uses the kind default (VRM → female)
-  female/Bella.vrm                 # → female voice
-  male/Bob.vrm                     # → male voice
-  Live2D/mao/runtime/…             # flat: kind default (Live2D → male)
+  vrm/Alice.vrm                    # no gender: uses the kind default (VRM → female)
+  vrm/female/Bella.vrm             # → female voice
+  vrm/male/Bob.vrm                 # → male voice
+  Live2D/mao/runtime/…             # no gender: kind default (Live2D → male)
   Live2D/female/chitose/runtime/…  # → female voice
   Live2D/male/natori/runtime/…     # → male voice
 ```
+
+(A legacy flat `Models/<name>.vrm` still works too — e.g. the default `Models/UserAvatar.vrm`.)
 
 Both layouts work together — the gender folder is optional and just sets the default; `-Gender` and
 `-Voice` still override it. Selection is by name regardless of folder (`--avatar live2d:chitose`

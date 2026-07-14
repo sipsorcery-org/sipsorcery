@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Media;
@@ -35,7 +36,11 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     private SubViewport _viewport = null!;
     private IAvatarModel _model = null!;   // VRM (3D) or Live2D (2D), chosen at launch.
     private volatile string? _pendingAvatarSwitch;   // set by POST /avatar (HTTP thread), applied in _Process.
+    private readonly ConcurrentQueue<AvatarMotionCommand> _pendingMotionCommands = new();
     private string _avatarsJson = "[]";              // available avatar specs, served to the web UI.
+    private volatile string _motionsJson = "{\"avatar\":\"\",\"motions\":[]}";
+    private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+    private sealed record AvatarMotionCommand(bool Stop, string Group = "", int Index = 0, bool Loop = false);
     private double _time;
     private float _mouthOpen;
     private float _audioLevel;
@@ -95,6 +100,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         BuildViewport();
         (_model, _avatarGender) = CreateAvatarModel(kind, modelName);
         _model.Build(_viewport);
+        UpdateMotionCatalog(CanonicalAvatarSpec(kind, modelName));
         BuildInterface();
         BuildAvatarsJson();
 
@@ -288,16 +294,44 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         if (pending != null)
         {
             _pendingAvatarSwitch = null;
+            while (_pendingMotionCommands.TryDequeue(out _)) { }
             SwitchAvatar(pending);
         }
 
-        _time += delta;
-        UpdateAudioLevel();
+        while (_pendingMotionCommands.TryDequeue(out var command))
+        {
+            if (_model is not IAvatarMotionController motions)
+            {
+                continue;
+            }
+            if (command.Stop)
+            {
+                motions.StopMotion();
+            }
+            else if (!motions.PlayMotion(command.Group, command.Index, command.Loop))
+            {
+                GD.PushWarning($"Motion '{command.Group}' index {command.Index} is not available on the active avatar.");
+            }
+        }
 
-        // Smooth the mouth toward the current audio level, then let the active model apply it
-        // (VRM morph targets or Cubism parameters) alongside its own blink/breath/sway liveness.
-        var target = Mathf.Clamp(_audioLevel, 0, 1);
-        _mouthOpen = Mathf.Lerp(_mouthOpen, target, (float)Math.Min(1, delta * (target > _mouthOpen ? 22 : 18)));
+        _time += delta;
+        bool speaking = _speaking; // Snapshot the off-thread TTS state once for this render frame.
+        if (speaking)
+        {
+            UpdateAudioLevel();
+
+            // Smooth the mouth toward the current audio level while speech is active.
+            var target = Mathf.Clamp(_audioLevel, 0, 1);
+            _mouthOpen = Mathf.Lerp(_mouthOpen, target,
+                (float)Math.Min(1, delta * (target > _mouthOpen ? 22 : 18)));
+        }
+        else
+        {
+            // Do not leave a stale speech envelope on the model. In particular, Ren's
+            // ParamMouthOpenY must be exactly zero at idle rather than merely converging to zero.
+            _audioLevel = 0f;
+            _mouthOpen = 0f;
+        }
         _model.Update(delta, _time, _mouthOpen);
 
         CaptureFrame();
@@ -317,6 +351,12 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         var (kind, name) = ParseAvatarSpec(spec);
         GD.Print($"Switching avatar to {kind}{(name is null ? "" : $" ({name})")}.");
 
+        // Stop native motion playback before its gd_cubism node is queued for deletion. This avoids
+        // carrying an active motion queue through the deferred teardown when models are switched.
+        if (_model is IAvatarMotionController currentMotions)
+        {
+            currentMotions.StopMotion(returnToIdle: false);
+        }
         foreach (var child in _viewport.GetChildren())
         {
             child.QueueFree();
@@ -325,7 +365,29 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         _avatarKind = kind;
         (_model, _avatarGender) = CreateAvatarModel(kind, name);
         _model.Build(_viewport);
+        UpdateMotionCatalog(spec.Trim());
         ApplyVoice(ResolveVoiceDir());   // re-resolve the voice so it follows the new avatar's gender.
+    }
+
+    private void UpdateMotionCatalog(string avatarSpec)
+    {
+        IReadOnlyList<AvatarMotionInfo> motions = _model is IAvatarMotionController controller
+            ? controller.Motions
+            : Array.Empty<AvatarMotionInfo>();
+        _motionsJson = JsonSerializer.Serialize(new { avatar = avatarSpec, motions }, WebJsonOptions);
+    }
+
+    private static string CanonicalAvatarSpec(string kind, string? name)
+    {
+        if (kind == "ren")
+        {
+            return $"live2d:{name ?? "ren"}";
+        }
+        if (kind is "live2d" or "cubism")
+        {
+            return name == null ? "live2d" : $"live2d:{name}";
+        }
+        return name == null ? kind : $"{kind}:{name}";
     }
 
     /// <summary>Builds the JSON array of available avatar specs (each VRM under Models/ and each
@@ -412,8 +474,14 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     private static readonly System.Collections.Generic.Dictionary<string, Live2DAvatarConfig> Live2DConfigs =
         new(StringComparer.OrdinalIgnoreCase)
     {
-        // Ren (older Cubism sample) only renders its mouth under draw order.
-        ["ren"] = new Live2DAvatarConfig { UseDrawOrder = true },
+        // gd_cubism does not preserve Ren's closed/open mouth layer ordering. Use normal render
+        // order for the model, then cross-fade the two mouth drawable sets from the speech level.
+        ["ren"] = new Live2DAvatarConfig
+        {
+            ForegroundDrawableIds = new[] { "ArtMesh44", "ArtMesh45" },
+            ClosedMouthDrawableIds = new[] { "ArtMesh47", "ArtMesh48" },
+            OpenMouthDrawableIds = new[] { "ArtMesh49", "ArtMesh50", "ArtMesh51", "ArtMesh52" },
+        },
     };
 
     /// <summary>Builds the VRM avatar for <paramref name="name"/> and returns its inferred voice
@@ -681,10 +749,9 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     private void UpdateAudioLevel()
     {
-        // Driven by real TTS audio: while speaking, the mouth follows the RMS of the PCM the
-        // speaker is playing on the audio track; otherwise it snaps closed. Fast attack tracks
-        // syllables; brisk release stops the mouth promptly when speech ends.
-        float target = _speaking ? Mathf.Clamp(_speechLevel * SpeechToMouthGain, 0f, 1f) : 0f;
+        // Driven by real TTS audio while speaking. The idle path in _Process resets the complete
+        // mouth envelope directly so a stale high RMS value can never hold the mouth open.
+        float target = Mathf.Clamp(_speechLevel * SpeechToMouthGain, 0f, 1f);
         float rate = target > _audioLevel ? 0.6f : 0.5f;
         _audioLevel = Mathf.Lerp(_audioLevel, target, rate);
     }
@@ -818,6 +885,30 @@ public partial class AvatarStreamer : Node, IAvatarMouth
                 {
                     await WriteResponse(ctx, _avatarsJson, "application/json").ConfigureAwait(false);
                 }
+                else if (ctx.Request.HttpMethod == "GET" && ctx.Request.Url?.AbsolutePath == "/motions")
+                {
+                    await WriteResponse(ctx, _motionsJson, "application/json").ConfigureAwait(false);
+                }
+                else if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/motion/stop")
+                {
+                    _pendingMotionCommands.Enqueue(new AvatarMotionCommand(Stop: true));
+                    await WriteResponse(ctx, "ok", "text/plain").ConfigureAwait(false);
+                }
+                else if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/motion")
+                {
+                    using var reader = new StreamReader(ctx.Request.InputStream);
+                    string body = await reader.ReadToEndAsync().ConfigureAwait(false);
+                    if (TryParseMotionCommand(body, out var command))
+                    {
+                        _pendingMotionCommands.Enqueue(command);
+                        await WriteResponse(ctx, "ok", "text/plain").ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        ctx.Response.StatusCode = 400;
+                        await WriteResponse(ctx, "expected { group, index, loop }", "text/plain").ConfigureAwait(false);
+                    }
+                }
                 else if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/avatar")
                 {
                     using var reader = new StreamReader(ctx.Request.InputStream);
@@ -843,6 +934,35 @@ public partial class AvatarStreamer : Node, IAvatarMouth
                 GD.PushError($"HTTP handler error: {excp.Message}");
                 try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
             }
+        }
+    }
+
+    private static bool TryParseMotionCommand(string body, out AvatarMotionCommand command)
+    {
+        command = new AvatarMotionCommand(Stop: false);
+        try
+        {
+            using var json = JsonDocument.Parse(body);
+            var root = json.RootElement;
+            if (!root.TryGetProperty("group", out var groupElement) ||
+                groupElement.ValueKind != JsonValueKind.String ||
+                !root.TryGetProperty("index", out var indexElement) ||
+                !indexElement.TryGetInt32(out int index) || index < 0)
+            {
+                return false;
+            }
+            bool loop = root.TryGetProperty("loop", out var loopElement) &&
+                loopElement.ValueKind == JsonValueKind.True;
+            command = new AvatarMotionCommand(
+                Stop: false,
+                Group: groupElement.GetString() ?? "",
+                Index: index,
+                Loop: loop);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 
@@ -946,6 +1066,14 @@ public partial class AvatarStreamer : Node, IAvatarMouth
   <select id='avatarSel'></select>
   <button onclick='switchAvatar()'>Switch avatar</button>
 </div>
+<div id='motionPanel' style='margin-top:10px'>
+  <select id='motionSel' style='min-width:300px'></select>
+  <button id='motionPlay' onclick='playSelectedMotion(false)'>Play</button>
+  <button id='motionLoop' onclick='playSelectedMotion(true)'>Loop</button>
+  <button id='motionStop' onclick='stopMotion()'>Stop</button>
+  <button id='motionAll' onclick='playAllMotions()'>Play all</button>
+  <div id='motionStatus' style='margin-top:4px;color:#a9c2d6'></div>
+</div>
 <div style='margin-top:10px'>
   <input id='say' placeholder='Type something for the avatar to say' style='width:420px'/>
   <button onclick='say()'>Say</button>
@@ -958,6 +1086,10 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 <p id='status' style='color:#7dd3fc'></p>
 <p id='reply' style='color:#a9c2d6'></p>
 <script>
+let activeMotions = [];
+let playAllToken = 0;
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 async function connect() {
   const pc = new RTCPeerConnection();
   pc.ontrack = e => { document.getElementById('v').srcObject = e.streams[0]; };
@@ -986,14 +1118,97 @@ async function loadAvatars() {
     list.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
   } catch (e) {}
 }
+function renderMotions(data) {
+  activeMotions = data.motions || [];
+  const sel = document.getElementById('motionSel');
+  sel.innerHTML = '';
+  activeMotions.forEach((motion, i) => {
+    const option = document.createElement('option');
+    const group = motion.group || 'Ungrouped';
+    const duration = motion.durationSeconds > 0 ? ' (' + motion.durationSeconds.toFixed(2) + 's)' : '';
+    option.value = i;
+    option.textContent = group + ' / ' + motion.index + ' - ' + motion.name + duration;
+    sel.appendChild(option);
+  });
+  const available = activeMotions.length > 0;
+  ['motionPlay', 'motionLoop', 'motionStop', 'motionAll'].forEach(id => {
+    document.getElementById(id).disabled = !available;
+  });
+  document.getElementById('motionStatus').textContent = available
+    ? activeMotions.length + ' authored motion' + (activeMotions.length === 1 ? '' : 's')
+    : 'No authored motions for this avatar';
+  if (data.avatar) {
+    const avatarSel = document.getElementById('avatarSel');
+    if ([...avatarSel.options].some(option => option.value === data.avatar)) {
+      avatarSel.value = data.avatar;
+    }
+  }
+}
+async function loadMotions(expectedAvatar) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    try {
+      const response = await fetch('/motions?t=' + Date.now());
+      const data = await response.json();
+      if (!expectedAvatar || data.avatar === expectedAvatar) {
+        renderMotions(data);
+        return;
+      }
+    } catch (e) {}
+    await delay(50);
+  }
+  document.getElementById('motionStatus').textContent = 'Timed out loading motions';
+}
 async function switchAvatar() {
   const s = document.getElementById('avatarSel').value;
   if (s) {
+    playAllToken++;
     await fetch('/avatar', { method: 'POST', body: s });
+    document.getElementById('status').textContent = 'switching to ' + s;
+    await loadMotions(s);
     document.getElementById('status').textContent = 'switched to ' + s;
   }
 }
-loadAvatars();
+async function sendMotion(motion, loop) {
+  const response = await fetch('/motion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ group: motion.group, index: motion.index, loop: loop })
+  });
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+  const group = motion.group || 'Ungrouped';
+  document.getElementById('motionStatus').textContent =
+    (loop ? 'Looping ' : 'Playing ') + group + ' / ' + motion.index + ' - ' + motion.name;
+}
+async function playSelectedMotion(loop) {
+  playAllToken++;
+  const motion = activeMotions[Number(document.getElementById('motionSel').value)];
+  if (motion) {
+    try { await sendMotion(motion, loop); }
+    catch (e) { document.getElementById('motionStatus').textContent = e.message; }
+  }
+}
+async function stopMotion() {
+  playAllToken++;
+  await fetch('/motion/stop', { method: 'POST' });
+  document.getElementById('motionStatus').textContent = 'Motion stopped';
+}
+async function playAllMotions() {
+  const token = ++playAllToken;
+  const motions = activeMotions.slice();
+  for (let i = 0; i < motions.length && token === playAllToken; i++) {
+    document.getElementById('motionSel').value = i;
+    try { await sendMotion(motions[i], false); }
+    catch (e) { document.getElementById('motionStatus').textContent = e.message; return; }
+    const duration = motions[i].durationSeconds > 0 ? motions[i].durationSeconds : 2;
+    await delay((duration + 0.35) * 1000);
+  }
+  if (token === playAllToken) {
+    document.getElementById('motionStatus').textContent = 'Finished all motions';
+  }
+}
+loadAvatars().then(() => loadMotions());
 async function say() {
   const t = document.getElementById('say').value;
   if (t) { await fetch('/say', { method: 'POST', body: t }); }
