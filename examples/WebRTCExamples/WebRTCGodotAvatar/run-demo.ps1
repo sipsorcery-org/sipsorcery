@@ -36,14 +36,14 @@ if (-not $isLive2D) {
     $target = Join-Path $root '.godot\imported'
     # Gate on the selected model's imported .scn (named by the .vrm filename regardless of folder).
     $vrmName = if ($name) { $name } else { 'UserAvatar' }
-    # The .vrm may sit flat under Models\ or in an optional gender folder Models\vrm\female|male\.
-    $vrmFile = @("Models\vrm\female\$vrmName.vrm", "Models\vrm\male\$vrmName.vrm", "Models\$vrmName.vrm") |
+    # The .vrm may sit flat under Models\ or in an optional gender folder Models\female|male\.
+    $vrmFile = @("Models\female\$vrmName.vrm", "Models\male\$vrmName.vrm", "Models\$vrmName.vrm") |
         ForEach-Object { Join-Path $root $_ } | Where-Object { Test-Path $_ } | Select-Object -First 1
     $imported = Get-ChildItem $target -Filter "$vrmName.vrm-*.scn" -ErrorAction SilentlyContinue |
         Where-Object { $_.Length -gt 1MB }
     if (-not $imported) {
         if (-not $vrmFile) {
-            throw "$vrmName.vrm not found under Models\ (or Models\vrm\female|male\) - drop a .vrm avatar there (see README)."
+            throw "$vrmName.vrm not found under Models\ (or Models\female|male\) - drop a .vrm avatar there (see README)."
         }
         Write-Host "Importing $vrmName.vrm (one-time, headless editor)..."
         Start-Process -FilePath $godot -ArgumentList '--path', $root, '--editor', '--headless' -PassThru | Out-Null

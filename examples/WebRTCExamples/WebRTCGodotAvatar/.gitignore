@@ -12,8 +12,4 @@ obj/
 /ThirdParty/
 
 # Avatar models are user-provided and often licensed; keep them out of the repo.
-/Models/*.vrm
-/Models/*.vrm.import
-/Models/female
-/Models/male
-/Models/Live2D/
+/Models/

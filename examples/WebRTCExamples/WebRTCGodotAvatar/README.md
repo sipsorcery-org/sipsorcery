@@ -207,8 +207,8 @@ So the voice **follows the avatar** (including when switched at runtime), you ca
 ```
 Models/
   Alice.vrm                        # flat: uses the kind default (VRM → female)
-  vrm/female/Bella.vrm             # → female voice
-  vrm/male/Bob.vrm                 # → male voice
+  female/Bella.vrm                 # → female voice
+  male/Bob.vrm                     # → male voice
   Live2D/mao/runtime/…             # flat: kind default (Live2D → male)
   Live2D/female/chitose/runtime/…  # → female voice
   Live2D/male/natori/runtime/…     # → male voice

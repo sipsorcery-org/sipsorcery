@@ -341,7 +341,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             first = false;
         }
 
-        // VRM: flat Models/*.vrm plus gendered Models/vrm/{female,male}/*.vrm.
+        // VRM: legacy Models/*.vrm and Models/vrm/*.vrm plus gendered Models/vrm/{female,male}/*.vrm.
         void AddVrmsIn(string dir)
         {
             using var d = DirAccess.Open(dir);
@@ -355,6 +355,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             }
         }
         AddVrmsIn("res://Models");
+        AddVrmsIn("res://Models/vrm");
         foreach (var gender in GenderDirs) { AddVrmsIn($"res://Models/vrm/{gender}"); }
 
         // Live2D: flat Models/Live2D/<name>/ plus gendered Models/Live2D/{female,male}/<name>/.
@@ -416,13 +417,18 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     };
 
     /// <summary>Builds the VRM avatar for <paramref name="name"/> and returns its inferred voice
-    /// gender (from a Models/vrm/female|male folder, or null for the flat Models/&lt;name&gt;.vrm).</summary>
+    /// gender (from a Models/vrm/female|male folder, or null for a non-gendered location).</summary>
     private static (IAvatarModel, string?) CreateVrmModel(string? name)
     {
         var (path, gender) = ResolveVrmPath(name ?? "UserAvatar");
         return (new VrmAvatarModel(path ?? "res://Models/UserAvatar.vrm"), gender);
     }
 
+    /// <summary>
+    /// Resolves a VRM to (res:// path, gender). Gender folders <c>Models/vrm/female|male/</c> are
+    /// checked first, then the non-gendered locations <c>Models/vrm/&lt;name&gt;.vrm</c> and the legacy
+    /// flat <c>Models/&lt;name&gt;.vrm</c>.
+    /// </summary>
     private static (string? path, string? gender) ResolveVrmPath(string name)
     {
         foreach (var gender in GenderDirs)
@@ -433,8 +439,15 @@ public partial class AvatarStreamer : Node, IAvatarMouth
                 return (p, gender);
             }
         }
-        string flat = $"res://Models/{name}.vrm";
-        return Godot.FileAccess.FileExists(flat) ? (flat, null) : (null, null);
+        foreach (var dir in new[] { "res://Models/vrm", "res://Models" })
+        {
+            string p = $"{dir}/{name}.vrm";
+            if (Godot.FileAccess.FileExists(p))
+            {
+                return (p, null);
+            }
+        }
+        return (null, null);
     }
 
     /// <summary>
