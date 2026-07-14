@@ -1,6 +1,10 @@
 ; Engine configuration file.
-; WebRTCGodotAvatar - a VRM (3D) or Live2D (2D) avatar rendered in Godot, streamed over WebRTC
-; (SIPSorcery), driven by the shared AvatarPipeline speech/AI stack (TTS + STT + LLM).
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -8,16 +12,16 @@ config_version=5
 
 config/name="WebRTC Godot VRM Avatar"
 run/main_scene="res://Main.tscn"
-config/features=PackedStringArray("4.6", "C#")
-
-[dotnet]
-
-project/assembly_name="WebRTCGodotAvatar"
+config/features=PackedStringArray("4.7", "C#")
 
 [display]
 
 window/size/viewport_width=760
 window/size/viewport_height=560
+
+[dotnet]
+
+project/assembly_name="WebRTCGodotAvatar"
 
 [editor_plugins]
 

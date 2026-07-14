@@ -1,4 +1,4 @@
-// Streams a VRM avatar, rendered and animated entirely in-process by Godot/C#, to a browser
+﻿// Streams a VRM avatar, rendered and animated entirely in-process by Godot/C#, to a browser
 // over WebRTC using SIPSorcery. The avatar-driving half (VRM load + blink/gaze/breath/head +
 // simulated-speech lipsync onto VRoid facial morph targets) mirrors the CodexGodot prototype;
 // the world is rendered into a fixed-size SubViewport whose frames are read back each tick,
@@ -34,6 +34,8 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     // --- Rendering / avatar (built in code, inside a SubViewport) -------------------------
     private SubViewport _viewport = null!;
     private IAvatarModel _model = null!;   // VRM (3D) or Live2D (2D), chosen at launch.
+    private volatile string? _pendingAvatarSwitch;   // set by POST /avatar (HTTP thread), applied in _Process.
+    private string _avatarsJson = "[]";              // available avatar specs, served to the web UI.
     private double _time;
     private float _mouthOpen;
     private float _audioLevel;
@@ -51,17 +53,20 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     private Label _status = null!;
 
     // --- Speech (Max-demo pipeline, in-process) -------------------------------------------
-    private const string MaleVoiceDir = @"C:\tools\sherpa-tts\vits-piper-en_US-ryan-high";
-    // Female Piper voices tried (in order) for the VRM; falls back to the male voice if none exist.
+    private const string SherpaTtsDir = @"C:\tools\sherpa-tts";
+    private const string MaleVoiceDir = SherpaTtsDir + @"\vits-piper-en_US-ryan-high";
+    // Female Piper voices tried (in order); falls back to the male voice if none exist.
     private static readonly string[] FemaleVoiceDirs =
     {
-        @"C:\tools\sherpa-tts\vits-piper-en_US-hfc_female-medium",
-        @"C:\tools\sherpa-tts\vits-piper-en_US-amy-medium",
-        @"C:\tools\sherpa-tts\vits-piper-en_US-amy-low",
-        @"C:\tools\sherpa-tts\vits-piper-en_US-kathleen-low",
+        SherpaTtsDir + @"\vits-piper-en_US-hfc_female-medium",
+        SherpaTtsDir + @"\vits-piper-en_US-amy-medium",
+        SherpaTtsDir + @"\vits-piper-en_US-amy-low",
+        SherpaTtsDir + @"\vits-piper-en_US-kathleen-low",
     };
     private const float SpeechToMouthGain = 7.0f;   // RMS of speech (~0.1) -> mouth openness (0..1).
     private string _avatarKind = "vrm";
+    private string? _avatarGender;                   // inferred from the model's female/male folder, if any.
+    private string? _currentVoiceDir;                // the active TTS voice folder (avoids needless reloads).
     private const string LlmGgufPath = @"C:\tools\llm\Llama-3.2-3B-Instruct-Q4_K_M.gguf";
 
     // The avatar's personality (LLM system prompt). Adjustable here or via the AVATAR_PERSONA
@@ -84,12 +89,14 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     public override void _Ready()
     {
-        _avatarKind = ResolveAvatarKind();
-        GD.Print($"Avatar model: {_avatarKind}");
+        var (kind, modelName) = ResolveAvatar();
+        _avatarKind = kind;
+        GD.Print($"Avatar model: {kind}{(modelName is null ? "" : $" ({modelName})")}");
         BuildViewport();
-        _model = CreateAvatarModel(_avatarKind);
+        (_model, _avatarGender) = CreateAvatarModel(kind, modelName);
         _model.Build(_viewport);
         BuildInterface();
+        BuildAvatarsJson();
 
         // VP8 encoder endpoint (pure managed). Encoded frames are pushed straight to whatever
         // peer connection is currently live.
@@ -126,27 +133,38 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         GD.Print($"Avatar streamer running. Browse to http://localhost:{HttpPort} and click Connect.");
     }
 
-    private void TryCreateSpeaker()
+    /// <summary>
+    /// Creates (or replaces) the TTS speaker for <paramref name="voiceDir"/>. No-op if that voice is
+    /// already active, so switching between avatars of the same gender does not reload the model.
+    /// </summary>
+    private void ApplyVoice(string voiceDir)
     {
-        // Text-to-speech (voice out + mouth). The VRM uses a female voice when one is installed;
-        // the Live2D "Ren" character keeps the male voice.
-        var voiceDir = ResolveVoiceDir();
-        if (System.IO.Directory.Exists(voiceDir))
+        if (voiceDir == _currentVoiceDir && _speaker != null)
         {
-            try
-            {
-                _speaker = new SherpaTtsSpeaker(voiceDir, this, _audioSource);
-                GD.Print($"Sherpa TTS speaker created ({System.IO.Path.GetFileName(voiceDir)}).");
-            }
-            catch (Exception excp)
-            {
-                GD.PushError($"Failed to create Sherpa TTS speaker: {excp}");
-            }
+            return;
         }
-        else
+        if (!System.IO.Directory.Exists(voiceDir))
         {
             GD.PushWarning($"Sherpa voice model not found at {voiceDir}; the avatar will render but not speak.");
+            return;
         }
+        try
+        {
+            (_speaker as IDisposable)?.Dispose();
+            _speaker = new SherpaTtsSpeaker(voiceDir, this, _audioSource);
+            _currentVoiceDir = voiceDir;
+            GD.Print($"Sherpa TTS voice: {System.IO.Path.GetFileName(voiceDir)}.");
+        }
+        catch (Exception excp)
+        {
+            GD.PushError($"Failed to create Sherpa TTS speaker: {excp}");
+        }
+    }
+
+    private void TryCreateSpeaker()
+    {
+        // Text-to-speech: the voice follows the avatar's gender folder (see ResolveVoiceDir).
+        ApplyVoice(ResolveVoiceDir());
 
         // Large language model (turns recognised/typed text into a reply). Optional: falls back to
         // speaking the prompt verbatim when no model is present.
@@ -265,6 +283,14 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     public override void _Process(double delta)
     {
+        // Apply a pending avatar switch (requested from the HTTP thread) on the main thread.
+        var pending = _pendingAvatarSwitch;
+        if (pending != null)
+        {
+            _pendingAvatarSwitch = null;
+            SwitchAvatar(pending);
+        }
+
         _time += delta;
         UpdateAudioLevel();
 
@@ -278,6 +304,79 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     }
 
     // --- Scene construction ---------------------------------------------------------------
+
+    /// <summary>
+    /// Swaps the live avatar without dropping the WebRTC session: frees the current model's nodes
+    /// from the capture viewport and builds the requested one in their place. Must run on the main
+    /// thread (called from _Process). The stream keeps flowing - the encoder just reads whatever the
+    /// viewport now renders. Note: switching to a VRM whose scene has not been imported yet will fail
+    /// to load; Live2D models need no import.
+    /// </summary>
+    private void SwitchAvatar(string spec)
+    {
+        var (kind, name) = ParseAvatarSpec(spec);
+        GD.Print($"Switching avatar to {kind}{(name is null ? "" : $" ({name})")}.");
+
+        foreach (var child in _viewport.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        _avatarKind = kind;
+        (_model, _avatarGender) = CreateAvatarModel(kind, name);
+        _model.Build(_viewport);
+        ApplyVoice(ResolveVoiceDir());   // re-resolve the voice so it follows the new avatar's gender.
+    }
+
+    /// <summary>Builds the JSON array of available avatar specs (each VRM under Models/ and each
+    /// Live2D model folder) served to the web UI's switcher.</summary>
+    private void BuildAvatarsJson()
+    {
+        var sb = new StringBuilder("[");
+        bool first = true;
+        void Add(string spec)
+        {
+            if (!first) { sb.Append(','); }
+            sb.Append('"').Append(spec).Append('"');
+            first = false;
+        }
+
+        // VRM: flat Models/*.vrm plus gendered Models/vrm/{female,male}/*.vrm.
+        void AddVrmsIn(string dir)
+        {
+            using var d = DirAccess.Open(dir);
+            if (d == null) { return; }
+            foreach (var file in d.GetFiles())
+            {
+                if (file.EndsWith(".vrm", StringComparison.OrdinalIgnoreCase))
+                {
+                    Add("vrm:" + file.Substring(0, file.Length - 4));
+                }
+            }
+        }
+        AddVrmsIn("res://Models");
+        foreach (var gender in GenderDirs) { AddVrmsIn($"res://Models/vrm/{gender}"); }
+
+        // Live2D: flat Models/Live2D/<name>/ plus gendered Models/Live2D/{female,male}/<name>/.
+        void AddLive2DIn(string dir)
+        {
+            using var d = DirAccess.Open(dir);
+            if (d == null) { return; }
+            foreach (var sub in d.GetDirectories())
+            {
+                if (sub is "female" or "male") { continue; }
+                if (FindModel3Json($"{dir}/{sub}/runtime") != null)
+                {
+                    Add("live2d:" + sub);
+                }
+            }
+        }
+        AddLive2DIn("res://Models/Live2D");
+        foreach (var gender in GenderDirs) { AddLive2DIn($"res://Models/Live2D/{gender}"); }
+
+        sb.Append(']');
+        _avatarsJson = sb.ToString();
+    }
 
     private void BuildViewport()
     {
@@ -296,21 +395,182 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         container.AddChild(_viewport);
     }
 
-    private static IAvatarModel CreateAvatarModel(string kind) => kind switch
+    // Optional voice-gender folders: a model under Models/<type>/female or /male infers that voice
+    // gender (overridable with --gender / --voice). Checked in this order; flat layout has no gender.
+    private static readonly string[] GenderDirs = { "female", "male" };
+
+    private static (IAvatarModel model, string? gender) CreateAvatarModel(string kind, string? name) => kind switch
     {
-        "live2d" or "ren" or "cubism" => new Live2DAvatarModel(),
-        _ => new VrmAvatarModel(),
+        "ren" => CreateLive2DModel(name ?? "ren"),   // the 'ren' alias defaults to the Ren model
+        "live2d" or "cubism" => CreateLive2DModel(name),
+        _ => CreateVrmModel(name),
     };
 
+    // Per-model Live2D overrides, keyed by the model folder name (case-insensitive). Unlisted models
+    // use the defaults (render order). Add an entry when a model needs tuning.
+    private static readonly System.Collections.Generic.Dictionary<string, Live2DAvatarConfig> Live2DConfigs =
+        new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Ren (older Cubism sample) only renders its mouth under draw order.
+        ["ren"] = new Live2DAvatarConfig { UseDrawOrder = true },
+    };
+
+    /// <summary>Builds the VRM avatar for <paramref name="name"/> and returns its inferred voice
+    /// gender (from a Models/vrm/female|male folder, or null for the flat Models/&lt;name&gt;.vrm).</summary>
+    private static (IAvatarModel, string?) CreateVrmModel(string? name)
+    {
+        var (path, gender) = ResolveVrmPath(name ?? "UserAvatar");
+        return (new VrmAvatarModel(path ?? "res://Models/UserAvatar.vrm"), gender);
+    }
+
+    private static (string? path, string? gender) ResolveVrmPath(string name)
+    {
+        foreach (var gender in GenderDirs)
+        {
+            string p = $"res://Models/vrm/{gender}/{name}.vrm";
+            if (Godot.FileAccess.FileExists(p))
+            {
+                return (p, gender);
+            }
+        }
+        string flat = $"res://Models/{name}.vrm";
+        return Godot.FileAccess.FileExists(flat) ? (flat, null) : (null, null);
+    }
+
     /// <summary>
-    /// Voice model directory for the current avatar: a female Piper voice for the VRM (when one is
-    /// installed), the male Ryan voice for the Live2D "Ren" character. Falls back to the male voice
-    /// when no female voice is present on disk.
+    /// Builds the Live2D avatar for <paramref name="name"/> (or the first model found when
+    /// null/missing) and returns its inferred voice gender. Gender folders
+    /// (<c>Models/Live2D/female|male/</c>) are checked before the flat <c>Models/Live2D/&lt;name&gt;/</c>.
+    /// gd_cubism reads the model at runtime, so no Godot import is needed - just drop the folder in.
+    /// </summary>
+    private static (IAvatarModel, string?) CreateLive2DModel(string? name)
+    {
+        var (path, folder, gender) = ResolveLive2D(name);
+        if (path is null)
+        {
+            GD.PushError("No Live2D model found. Add one under Models/Live2D/[female|male/]<name>/runtime/.");
+            return (new Live2DAvatarModel(), null);
+        }
+        var config = Live2DConfigs.GetValueOrDefault(folder) ?? new Live2DAvatarConfig();
+        return (new Live2DAvatarModel(path, config), gender);
+    }
+
+    /// <summary>
+    /// Resolves a Live2D model to (model3.json path, folder name, gender). With a name it checks the
+    /// gender folders then the flat location; with no name (or a miss) it auto-discovers the first
+    /// model, preferring gendered folders. Gender is null for flat (non-gendered) models.
+    /// </summary>
+    private static (string? path, string folder, string? gender) ResolveLive2D(string? name)
+    {
+        if (!string.IsNullOrEmpty(name))
+        {
+            foreach (var gender in GenderDirs)
+            {
+                var p = FindModel3Json($"res://Models/Live2D/{gender}/{name}/runtime");
+                if (p != null)
+                {
+                    return (p, name, gender);
+                }
+            }
+            var flat = FindModel3Json($"res://Models/Live2D/{name}/runtime");
+            if (flat != null)
+            {
+                return (flat, name, null);
+            }
+            GD.PushWarning($"No Live2D model '{name}'; using the first one found.");
+        }
+
+        foreach (var gender in GenderDirs)
+        {
+            using var genderDir = DirAccess.Open($"res://Models/Live2D/{gender}");
+            if (genderDir != null)
+            {
+                foreach (var sub in genderDir.GetDirectories())
+                {
+                    var p = FindModel3Json($"res://Models/Live2D/{gender}/{sub}/runtime");
+                    if (p != null)
+                    {
+                        return (p, sub, gender);
+                    }
+                }
+            }
+        }
+
+        using (var root = DirAccess.Open("res://Models/Live2D"))
+        {
+            if (root != null)
+            {
+                foreach (var sub in root.GetDirectories())
+                {
+                    if (sub is "female" or "male")
+                    {
+                        continue;
+                    }
+                    var p = FindModel3Json($"res://Models/Live2D/{sub}/runtime");
+                    if (p != null)
+                    {
+                        return (p, sub, null);
+                    }
+                }
+            }
+        }
+        return (null, "", null);
+    }
+
+    /// <summary>Returns the first <c>*.model3.json</c> in <paramref name="dir"/> (a res:// path), or null.</summary>
+    private static string? FindModel3Json(string dir)
+    {
+        using var da = DirAccess.Open(dir);
+        if (da == null)
+        {
+            return null;
+        }
+        foreach (var file in da.GetFiles())
+        {
+            if (file.EndsWith(".model3.json", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"{dir}/{file}";
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Voice model directory, resolved in priority order:
+    /// <list type="number">
+    /// <item>an exact voice via <c>--voice</c> / <c>AVATAR_VOICE</c> (a folder under
+    /// <c>C:\tools\sherpa-tts</c>, given as the full folder name or the short suffix, e.g.
+    /// <c>amy-medium</c> -> <c>vits-piper-en_US-amy-medium</c>);</item>
+    /// <item>a gender via <c>--gender</c> / <c>AVATAR_GENDER</c> (<c>male</c> / <c>female</c>);</item>
+    /// <item>otherwise the avatar's default (VRM -> female, Live2D -> male).</item>
+    /// </list>
+    /// A female selection with no female voice installed falls back to the male voice.
     /// </summary>
     private string ResolveVoiceDir()
     {
-        bool isLive2D = _avatarKind is "live2d" or "ren" or "cubism";
-        if (!isLive2D)
+        // 1. Exact voice override.
+        var voice = ResolveArg("--voice", "AVATAR_VOICE");
+        if (!string.IsNullOrWhiteSpace(voice))
+        {
+            var dir = ResolveVoicePath(voice);
+            if (System.IO.Directory.Exists(dir))
+            {
+                return dir;
+            }
+            GD.PushWarning($"Requested voice '{voice}' not found at {dir}; falling back to a default voice.");
+        }
+
+        // 2. Explicit --gender, else the gender inferred from the model's folder, else the kind
+        //    default (VRM -> female, Live2D -> male).
+        var gender = (ResolveArg("--gender", "AVATAR_GENDER") ?? _avatarGender)?.Trim().ToLowerInvariant();
+        bool female = gender switch
+        {
+            "female" or "f" or "woman" => true,
+            "male" or "m" or "man" => false,
+            _ => _avatarKind is not ("live2d" or "ren" or "cubism"),
+        };
+
+        if (female)
         {
             foreach (var dir in FemaleVoiceDirs)
             {
@@ -323,32 +583,72 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         return MaleVoiceDir;
     }
 
-    /// <summary>
-    /// Avatar selection: <c>--avatar &lt;vrm|ren&gt;</c> (space- or =-separated) passed after
-    /// <c>--</c> on the Godot command line, or the <c>AVATAR_MODEL</c> environment variable.
-    /// Defaults to the VRM.
-    /// </summary>
-    private static string ResolveAvatarKind()
+    /// <summary>Resolves a voice name to a sherpa-tts folder: the exact folder if it exists,
+    /// otherwise the conventional <c>vits-piper-en_US-&lt;name&gt;</c> form.</summary>
+    private static string ResolveVoicePath(string voice)
     {
-        string kind = "vrm";
+        voice = voice.Trim();
+        string exact = System.IO.Path.Combine(SherpaTtsDir, voice);
+        if (System.IO.Directory.Exists(exact))
+        {
+            return exact;
+        }
+        return System.IO.Path.Combine(SherpaTtsDir, $"vits-piper-en_US-{voice}");
+    }
+
+    /// <summary>
+    /// Reads a launch option from <c>--flag value</c> / <c>--flag=value</c> (after <c>--</c> on the
+    /// Godot command line) or the given environment variable, which takes precedence. Returns null
+    /// when neither is set.
+    /// </summary>
+    private static string? ResolveArg(string flag, string envVar)
+    {
+        string? value = null;
         var args = OS.GetCmdlineUserArgs();
+        string eq = flag + "=";
         for (int i = 0; i < args.Length; i++)
         {
-            if (args[i].StartsWith("--avatar=", StringComparison.OrdinalIgnoreCase))
+            if (args[i].StartsWith(eq, StringComparison.OrdinalIgnoreCase))
             {
-                kind = args[i].Substring("--avatar=".Length);
+                value = args[i].Substring(eq.Length);
             }
-            else if (args[i].Equals("--avatar", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            else if (args[i].Equals(flag, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
             {
-                kind = args[i + 1];
+                value = args[i + 1];
             }
         }
-        var env = System.Environment.GetEnvironmentVariable("AVATAR_MODEL");
+        var env = System.Environment.GetEnvironmentVariable(envVar);
         if (!string.IsNullOrWhiteSpace(env))
         {
-            kind = env;
+            value = env;
         }
-        return kind.Trim().ToLowerInvariant();
+        return value;
+    }
+
+    /// <summary>
+    /// Avatar selection: <c>--avatar &lt;kind&gt;[:&lt;name&gt;]</c> (space- or =-separated) passed after
+    /// <c>--</c> on the Godot command line, or the <c>AVATAR_MODEL</c> environment variable. The
+    /// optional <c>:name</c> picks a specific model: <c>vrm:Alice</c> -> <c>Models/Alice.vrm</c>,
+    /// <c>live2d:Haru</c> -> <c>Models/Live2D/Haru/runtime/*.model3.json</c>. Defaults to the VRM
+    /// (<c>Models/UserAvatar.vrm</c>). Returns the lower-cased kind and the model name, or null when
+    /// no name was given (use the default model).
+    /// </summary>
+    private static (string kind, string? name) ResolveAvatar()
+        => ParseAvatarSpec(ResolveArg("--avatar", "AVATAR_MODEL") ?? "vrm");
+
+    /// <summary>Parses a <c>&lt;kind&gt;[:&lt;name&gt;]</c> avatar spec into a lower-cased kind and an
+    /// optional (case-preserved) model name.</summary>
+    private static (string kind, string? name) ParseAvatarSpec(string spec)
+    {
+        spec = spec.Trim();
+        int colon = spec.IndexOf(':');
+        string kind = (colon >= 0 ? spec.Substring(0, colon) : spec).Trim().ToLowerInvariant();
+        string? name = colon >= 0 ? spec.Substring(colon + 1).Trim() : null;
+        if (string.IsNullOrEmpty(name))
+        {
+            name = null;
+        }
+        return (kind, name);
     }
 
     private void BuildInterface()
@@ -501,6 +801,25 @@ public partial class AvatarStreamer : Node, IAvatarMouth
                         await WriteResponse(ctx, "no TTS configured", "text/plain").ConfigureAwait(false);
                     }
                 }
+                else if (ctx.Request.HttpMethod == "GET" && ctx.Request.Url?.AbsolutePath == "/avatars")
+                {
+                    await WriteResponse(ctx, _avatarsJson, "application/json").ConfigureAwait(false);
+                }
+                else if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/avatar")
+                {
+                    using var reader = new StreamReader(ctx.Request.InputStream);
+                    string spec = (await reader.ReadToEndAsync().ConfigureAwait(false)).Trim();
+                    if (!string.IsNullOrWhiteSpace(spec))
+                    {
+                        _pendingAvatarSwitch = spec;   // applied on the main thread in _Process.
+                        await WriteResponse(ctx, "ok", "text/plain").ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        ctx.Response.StatusCode = 400;
+                        await WriteResponse(ctx, "missing avatar spec", "text/plain").ConfigureAwait(false);
+                    }
+                }
                 else
                 {
                     await WriteResponse(ctx, IndexHtml, "text/html").ConfigureAwait(false);
@@ -611,6 +930,10 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 <video id='v' autoplay playsinline controls style='width:640px;height:480px;background:#000'></video><br/>
 <button onclick='connect()'>Connect</button>
 <div style='margin-top:10px'>
+  <select id='avatarSel'></select>
+  <button onclick='switchAvatar()'>Switch avatar</button>
+</div>
+<div style='margin-top:10px'>
   <input id='say' placeholder='Type something for the avatar to say' style='width:420px'/>
   <button onclick='say()'>Say</button>
 </div>
@@ -642,6 +965,22 @@ async function connect() {
   await pc.setRemoteDescription(await resp.json());
   document.getElementById('status').textContent = 'connected';
 }
+async function loadAvatars() {
+  try {
+    const list = await (await fetch('/avatars')).json();
+    const sel = document.getElementById('avatarSel');
+    sel.innerHTML = '';
+    list.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+  } catch (e) {}
+}
+async function switchAvatar() {
+  const s = document.getElementById('avatarSel').value;
+  if (s) {
+    await fetch('/avatar', { method: 'POST', body: s });
+    document.getElementById('status').textContent = 'switched to ' + s;
+  }
+}
+loadAvatars();
 async function say() {
   const t = document.getElementById('say').value;
   if (t) { await fetch('/say', { method: 'POST', body: t }); }

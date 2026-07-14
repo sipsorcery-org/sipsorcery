@@ -6,7 +6,18 @@ using System;
 // the VRoid Fcl_MTH_* morph targets. (Extracted from the original single-file AvatarStreamer.)
 public sealed class VrmAvatarModel : IAvatarModel
 {
-    private const string ModelPath = "res://Models/UserAvatar.vrm";
+    private const string DefaultModelPath = "res://Models/UserAvatar.vrm";
+
+    private readonly string _modelPath;
+
+    /// <summary>
+    /// Creates the VRM avatar. <paramref name="modelPath"/> is the <c>res://</c> path of the .vrm
+    /// (an imported scene); defaults to <c>Models/UserAvatar.vrm</c>.
+    /// </summary>
+    public VrmAvatarModel(string modelPath = DefaultModelPath)
+    {
+        _modelPath = modelPath;
+    }
 
     private Node3D _avatar = null!;
     private MeshInstance3D? _headMesh;
@@ -57,10 +68,10 @@ public sealed class VrmAvatarModel : IAvatarModel
         };
         viewport.AddChild(environment);
 
-        var packed = GD.Load<PackedScene>(ModelPath);
+        var packed = GD.Load<PackedScene>(_modelPath);
         if (packed == null)
         {
-            GD.PushError("UserAvatar.vrm could not be loaded.");
+            GD.PushError($"VRM model could not be loaded from {_modelPath}.");
             return;
         }
 
@@ -108,9 +119,62 @@ public sealed class VrmAvatarModel : IAvatarModel
             return;
         }
 
+        int leftArm = ResolveUpperArmBone(skeleton, left: true);
+        int rightArm = ResolveUpperArmBone(skeleton, left: false);
+        if (leftArm < 0 || rightArm < 0)
+        {
+            GD.PushWarning(
+                $"VRM upper-arm bones not found (left={leftArm}, right={rightArm}); the avatar will " +
+                "keep its imported pose (typically a T-pose). The model uses an unrecognised bone " +
+                "naming convention - extend ResolveUpperArmBone in VrmAvatarModel.cs.");
+            return;
+        }
+
         float swing = Mathf.DegToRad(62);
-        RotateBoneInSkeletonSpace(skeleton, "LeftUpperArm", Vector3.Back, swing);    // Back = +Z
-        RotateBoneInSkeletonSpace(skeleton, "RightUpperArm", Vector3.Back, -swing);
+        RotateBoneInSkeletonSpace(skeleton, leftArm, Vector3.Back, swing);    // Back = +Z
+        RotateBoneInSkeletonSpace(skeleton, rightArm, Vector3.Back, -swing);
+    }
+
+    /// <summary>
+    /// Resolves the left/right upper-arm bone index across VRM exporters, which do not agree on
+    /// humanoid bone names: Godot/UniVRM use "LeftUpperArm", VRoid uses "J_Bip_L_UpperArm", Blender
+    /// uses "upper_arm.L", etc. Tries the common spellings, then falls back to a side-aware pattern
+    /// match on the skeleton's bone list. Returns -1 if no upper-arm bone can be identified.
+    /// </summary>
+    private static int ResolveUpperArmBone(Skeleton3D skeleton, bool left)
+    {
+        string[] candidates = left
+            ? new[] { "LeftUpperArm", "J_Bip_L_UpperArm", "UpperArm.L", "upper_arm.L", "LeftArm", "Left arm" }
+            : new[] { "RightUpperArm", "J_Bip_R_UpperArm", "UpperArm.R", "upper_arm.R", "RightArm", "Right arm" };
+        foreach (var name in candidates)
+        {
+            int i = skeleton.FindBone(name);
+            if (i >= 0)
+            {
+                return i;
+            }
+        }
+
+        for (int i = 0; i < skeleton.GetBoneCount(); i++)
+        {
+            string nm = skeleton.GetBoneName(i).ToLowerInvariant();
+            if (!nm.Contains("upperarm") && !nm.Contains("upper_arm"))
+            {
+                continue;
+            }
+            bool isLeft = nm.Contains("left") || nm.Contains("_l_") || nm.EndsWith("_l") || nm.EndsWith(".l");
+            bool isRight = nm.Contains("right") || nm.Contains("_r_") || nm.EndsWith("_r") || nm.EndsWith(".r");
+            if (left && isLeft && !isRight)
+            {
+                return i;
+            }
+            if (!left && isRight && !isLeft)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /// <summary>
@@ -119,9 +183,8 @@ public sealed class VrmAvatarModel : IAvatarModel
     /// is conjugated into the parent's frame - this makes the axis behave predictably regardless of
     /// the rig's baked bone roll.
     /// </summary>
-    private static void RotateBoneInSkeletonSpace(Skeleton3D skeleton, string boneName, Vector3 axis, float radians)
+    private static void RotateBoneInSkeletonSpace(Skeleton3D skeleton, int idx, Vector3 axis, float radians)
     {
-        int idx = skeleton.FindBone(boneName);
         if (idx < 0)
         {
             return;
