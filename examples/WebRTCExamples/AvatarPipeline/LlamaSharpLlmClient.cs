@@ -39,6 +39,7 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
     private readonly LLamaWeights _weights;
     private readonly StatelessExecutor _executor;
     private readonly string _modelPath;
+    private readonly string _systemPrompt;
 
     // A StatelessExecutor recycles one llama_context across calls, so CONCURRENT InferAsync
     // calls corrupt each other's batch state and die in a native GGML_ASSERT (seen when the
@@ -74,9 +75,11 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
 
     public string Description => $"in-process LLamaSharp with model {Path.GetFileName(_modelPath)}";
 
-    public LlamaSharpLlmClient(string ggufPath, int gpuLayers = 0)
+    /// <param name="systemPrompt">Persona/system prompt; defaults to <see cref="LlmShared.SystemPrompt"/>.</param>
+    public LlamaSharpLlmClient(string ggufPath, int gpuLayers = 0, string systemPrompt = null)
     {
         _modelPath = ggufPath;
+        _systemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? LlmShared.SystemPrompt : systemPrompt;
 
         var parameters = new ModelParams(ggufPath)
         {
@@ -187,7 +190,7 @@ public sealed class LlamaSharpLlmClient : ILlmClient, IDisposable
     private IAsyncEnumerable<string> InferAsync(string prompt)
     {
         var template = new LLamaTemplate(_weights);
-        template.Add("system", LlmShared.SystemPrompt);
+        template.Add("system", _systemPrompt);
         template.Add("user", prompt);
         template.AddAssistant = true;
         var templated = Encoding.UTF8.GetString(template.Apply());

@@ -45,30 +45,10 @@ namespace demo;
 /// <summary>
 /// A video source whose animation is driven by speech audio. See the file header for the
 /// rationale; implementations are <see cref="MaxHeadroomVideoSource"/> (SkiaSharp cartoon)
-/// and <see cref="Wav2LipAvatarRenderer"/> (photoreal audio-to-video model).
+/// and <see cref="Wav2LipAvatarRenderer"/> (photoreal audio-to-video model). The mouth contract
+/// lives in <see cref="IAvatarMouth"/> (in the shared AvatarPipeline library) so it can be reused
+/// by renderers that are not themselves in-process video sources (e.g. the Godot VRM demo).
 /// </summary>
-public interface IAvatarRenderer : IVideoSource, IDisposable
+public interface IAvatarRenderer : IAvatarMouth, IVideoSource, IDisposable
 {
-    /// <summary>
-    /// True when the renderer buffers and paces speech audio itself (e.g. the Wav2Lip
-    /// renderer's 25fps loop): the speaker should push audio AS FAST AS IT IS AVAILABLE so
-    /// the model's look-ahead never starves. False when the renderer reacts to
-    /// <see cref="PushAudio"/> immediately (the cartoon's amplitude heuristic): the speaker
-    /// must pace pushes to real time alongside playback.
-    /// </summary>
-    bool PacesAudioInternally { get; }
-
-    /// <summary>Called once at the start of an utterance so the renderer can enter its "talking" state.</summary>
-    void BeginSpeech();
-
-    /// <summary>
-    /// Feeds a window of 16-bit mono PCM to the renderer, which uses it to drive the face.
-    /// Called repeatedly between <see cref="BeginSpeech"/> and <see cref="EndSpeech"/> - paced
-    /// to playback, or as fast as available, per <see cref="PacesAudioInternally"/>.
-    /// Must not block.
-    /// </summary>
-    void PushAudio(ReadOnlySpan<short> pcm16, int sampleRate);
-
-    /// <summary>Called once at the end of an utterance; the renderer should return the face to neutral.</summary>
-    void EndSpeech();
 }

@@ -37,12 +37,12 @@ public abstract class LipSyncTtsSpeaker : IAvatarSpeaker
     /// <summary>Shared HTTP client for the HTTP-based engines (ElevenLabs).</summary>
     protected static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-    private readonly IAvatarRenderer _renderer;
+    private readonly IAvatarMouth _renderer;
     private readonly AudioExtrasSource _audio;
     private readonly int _visemeLeadMs;
     private readonly SemaphoreSlim _speakLock = new(1, 1);
 
-    protected LipSyncTtsSpeaker(IAvatarRenderer renderer, AudioExtrasSource audio, int visemeLeadMs)
+    protected LipSyncTtsSpeaker(IAvatarMouth renderer, AudioExtrasSource audio, int visemeLeadMs)
     {
         _renderer = renderer;
         _audio = audio;

@@ -1,0 +1,58 @@
+--- a/addons/vrm/importer/v1/vrmc/vrmc_materials_mtoon.gd
++++ b/addons/vrm/importer/v1/vrmc/vrmc_materials_mtoon.gd
+@@ -222,7 +222,7 @@
+ 
+ 
+ # Called when the node enters the scene tree for the first time.
+-func _import_post(gstate, root):
++func _import_post(gstate, root) -> Error:
+     # Guard: skip if there are no MToon materials to process.
+     var materials: Array[Material] = gstate.get_materials()
+     var has_mtoon := false
+@@ -236,7 +236,7 @@
+         VRMLogger.debug(
+             "vrmc_materials_mtoon.gd", "_import_post: no MToon materials found, skipping"
+         )
+-        return
++        return OK
+ 
+     VRMLogger.info(
+         "vrmc_materials_mtoon.gd", "_import_post: processing %d materials" % materials.size()
+@@ -310,3 +310,4 @@
+                 )
+ 
+     # FIXME: due to head duplication, do we now have some meshes which are not in gltf state?
++    return OK
+--- a/addons/vrm/importer/v1/vrmc/vrmc_materials_hdr_emissive_multiplier.gd
++++ b/addons/vrm/importer/v1/vrmc/vrmc_materials_hdr_emissive_multiplier.gd
+@@ -11,7 +11,7 @@
+ 
+ 
+ # Called when the node enters the scene tree for the first time.
+-func _import_post(state, root):
++func _import_post(state, root) -> Error:
+     var materials = state.materials
+     for i in range(materials.size()):
+         var material: Material = materials[i]
+@@ -26,6 +26,7 @@
+                 material.emission_energy_multiplier = khr_emissive["emissiveStrength"]
+             elif vrmc_emissive.has("emissiveMultiplier"):
+                 material.emission_energy_multiplier = vrmc_emissive["emissiveMultiplier"]
++    return OK
+ 
+ 
+ func _export(state: GLTFState, extensions = PackedStringArray()) -> Error:
+@@ -38,7 +39,7 @@
+ 
+ 
+ # Called when the node enters the scene tree for the first time.
+-func _export_post(state: GLTFState):
++func _export_post(state: GLTFState) -> Error:
+     var materials = state.materials
+     for i in range(materials.size()):
+         var material: Material = materials[i]
+@@ -51,3 +52,4 @@
+                 json_material["extensions"]["KHR_materials_emissive_strength"] = {
+                     "emissiveStrength": material.emission_energy_multiplier,
+                 }
++    return OK

@@ -91,6 +91,7 @@
     <Project Path="examples/Softphone/SIPSorcery.SoftPhone.csproj" />
   </Folder>
   <Folder Name="/examples/WebRTCExamples/">
+    <Project Path="examples/WebRTCExamples/AvatarPipeline/AvatarPipeline.csproj" />
     <Project Path="examples/WebRTCExamples/CloudflareSfu/CloudflareSfu.csproj" />
     <Project Path="examples/WebRTCExamples/CloudflareTurn/CloudflareTurn.csproj" />
     <Project Path="examples/WebRTCExamples/FfmpegToWebRTC/FfmpegToWebRTC.csproj" />
