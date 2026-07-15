@@ -18,6 +18,7 @@
 
 using System.CommandLine;
 using System.Diagnostics;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -61,6 +62,11 @@ public sealed class SipRegisterCommand : CommandBase
             Description = "The account password used to authenticate the registration."
         };
 
+        var digestStoreOption = new Option<string?>("--digest-store")
+        {
+            Description = "A digest store used to authenticate the registration instead of --password."
+        };
+
         var expiryOption = new Option<int>("--expiry")
         {
             Description = "The requested registration expiry in seconds.",
@@ -84,6 +90,7 @@ public sealed class SipRegisterCommand : CommandBase
         command.Arguments.Add(destinationArg);
         command.Options.Add(usernameOption);
         command.Options.Add(passwordOption);
+        command.Options.Add(digestStoreOption);
         command.Options.Add(expiryOption);
         command.Options.Add(durationOption);
         command.Options.Add(keepOption);
@@ -94,6 +101,7 @@ public sealed class SipRegisterCommand : CommandBase
             parseResult.GetValue(destinationArg)!,
             parseResult.GetValue(usernameOption),
             parseResult.GetValue(passwordOption),
+            parseResult.GetValue(digestStoreOption),
             parseResult.GetValue(expiryOption),
             parseResult.GetValue(durationOption),
             parseResult.GetValue(keepOption),
@@ -106,7 +114,7 @@ public sealed class SipRegisterCommand : CommandBase
         return command;
     }
 
-    private static async Task<int> RunAsync(string destination, string? username, string? password, int expiry,
+    private static async Task<int> RunAsync(string destination, string? username, string? password, string? digestFile, int expiry,
         int durationSeconds, bool keep, string? hep, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
@@ -117,6 +125,29 @@ public sealed class SipRegisterCommand : CommandBase
             return WriteResult(asJson,
                 new RegisterResult(false, destination, string.Empty, expiry, 0, false, parseError),
                 ExitCodes.InvalidArgument);
+        }
+
+        if (!string.IsNullOrWhiteSpace(password) && !string.IsNullOrWhiteSpace(digestFile))
+        {
+            return WriteResult(asJson,
+                new RegisterResult(false, dstUri.ToString(), string.Empty, expiry, 0, false,
+                    "Options '--password' and '--digest-store' cannot be combined."),
+                ExitCodes.InvalidArgument);
+        }
+
+        HTTPDigestStore? digestStore = null;
+        if (!string.IsNullOrWhiteSpace(digestFile))
+        {
+            try
+            {
+                digestStore = HTTPDigestStore.ReadFromFile(digestFile);
+            }
+            catch (Exception excp) when (excp is ArgumentException or IOException or UnauthorizedAccessException)
+            {
+                return WriteResult(asJson,
+                    new RegisterResult(false, dstUri.ToString(), string.Empty, expiry, 0, false, excp.Message),
+                    ExitCodes.InvalidArgument);
+            }
         }
 
         username ??= dstUri.User;
@@ -150,7 +181,31 @@ public sealed class SipRegisterCommand : CommandBase
             sipTransport.EnableTraceLogs();
         }
 
-        var regUserAgent = new SIPRegistrationUserAgent(sipTransport, username, password ?? string.Empty, registrar, expiry);
+        SIPRegistrationUserAgent regUserAgent;
+        if (digestStore != null)
+        {
+            SIPURI sipAccountAOR = dstUri.CopyOf();
+            sipAccountAOR.User = username;
+
+            // Match the simple constructor's default contact: let the transport fill in the actual address at send time.
+            SIPURI contactURI = new SIPURI(sipAccountAOR.Scheme, IPAddress.Any, 0);
+
+            regUserAgent = new SIPRegistrationUserAgent(
+                sipTransport,
+                null,
+                sipAccountAOR,
+                digestStore.GetHA1Digest,
+                username,
+                null,
+                registrar,
+                contactURI,
+                expiry,
+                null);
+        }
+        else
+        {
+            regUserAgent = new SIPRegistrationUserAgent(sipTransport, username, password ?? string.Empty, registrar, expiry);
+        }
 
         var outcome = new TaskCompletionSource<(bool Success, string? Error)>(TaskCreationOptions.RunContinuationsAsynchronously);
 
