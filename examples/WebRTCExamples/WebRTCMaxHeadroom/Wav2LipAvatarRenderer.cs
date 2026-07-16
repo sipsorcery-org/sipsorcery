@@ -75,16 +75,23 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
     private static InferenceSession GetSharedSession(string modelPath) =>
         _sessions.GetOrAdd(Path.GetFullPath(modelPath), path =>
         {
-            // DirectML (any DX12 GPU) with CPU fallback.
+            // DirectML (any DX12 GPU) on Windows; the Linux container uses CPU onnxruntime.
             var so = new SessionOptions { EnableMemoryPattern = false, ExecutionMode = ExecutionMode.ORT_SEQUENTIAL };
-            try
+            if (OperatingSystem.IsWindows())
             {
-                so.AppendExecutionProvider_DML(0);
-                logger.LogInformation("Wav2Lip (in-process) using the DirectML execution provider.");
+                try
+                {
+                    so.AppendExecutionProvider_DML(0);
+                    logger.LogInformation("Wav2Lip (in-process) using the DirectML execution provider.");
+                }
+                catch (Exception)
+                {
+                    logger.LogWarning("DirectML unavailable; Wav2Lip runs on CPU (may not hold 25fps).");
+                }
             }
-            catch (Exception)
+            else
             {
-                logger.LogWarning("DirectML unavailable; Wav2Lip runs on CPU (may not hold 25fps).");
+                logger.LogInformation("Wav2Lip (in-process) using the CPU execution provider.");
             }
             return new InferenceSession(path, so);
         });
