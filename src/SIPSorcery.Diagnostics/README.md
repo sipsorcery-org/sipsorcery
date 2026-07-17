@@ -43,6 +43,10 @@ sipsorcery-diags sip call 100@pbx.example.com -u user --password pass --play ton
 sipsorcery-diags sip register sipsorcery.com -u myuser --password mypass
 sipsorcery-diags sip register tls:sip.example.com -u myuser --password mypass -d 30  # hold 30s then remove
 sipsorcery-diags sip register sipsorcery.com -u myuser --password mypass --keep      # leave registered
+sipsorcery-diags sip register sipsorcery.com -u myuser --digest-store myuser.digest
+
+# SIP digest: create a digest store file for passwordless registration.
+sipsorcery-diags sip digest --username myuser --realm sipsorcery.com --password mypass --out myuser.digest
 
 # SIP load: generate concurrent OPTIONS load and report aggregate timing/success stats.
 sipsorcery-diags sip load myserver.org -c 1000 -x 25            # 1000 requests, 25 in flight at once

@@ -40,6 +40,7 @@ sipCommand.Subcommands.Add(new SipOptionsCommand().Build());
 sipCommand.Subcommands.Add(new SipCallCommand().Build());
 sipCommand.Subcommands.Add(new SipRegisterCommand().Build());
 sipCommand.Subcommands.Add(new SipLoadCommand().Build());
+sipCommand.Subcommands.Add(new SipDigestCommand().Build());
 rootCommand.Subcommands.Add(sipCommand);
 
 var stunCommand = new Command("stun", "STUN operations: public address lookups, NAT diagnostics.");

@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SIPSorcery.Cli\SIPSorcery.Cli.csproj" />
     <ProjectReference Include="..\..\src\SIPSorcery.Cli.Common\SIPSorcery.Cli.Common.csproj" />
+    <ProjectReference Include="..\..\src\SIPSorcery.Diagnostics\SIPSorcery.Diagnostics.csproj" />
   </ItemGroup>
 
 </Project>

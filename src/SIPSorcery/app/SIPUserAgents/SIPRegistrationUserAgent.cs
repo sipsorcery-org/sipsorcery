@@ -45,6 +45,7 @@ namespace SIPSorcery.SIP.App
         private SIPURI m_sipAccountAOR;
         private string m_authUsername;
         private string m_password;
+        private GetHA1DigestDelegate m_getHA1Digest;
         private string m_realm;
         private string m_registrarHost;
         private SIPURI m_contactURI;
@@ -200,6 +201,40 @@ namespace SIPSorcery.SIP.App
             m_maxRegisterAttempts = maxRegisterAttempts;
             m_exitOnUnequivocalFailure = exitOnUnequivocalFailure;
             m_exit = true;
+        }
+
+        public SIPRegistrationUserAgent(
+            SIPTransport sipTransport,
+            SIPEndPoint outboundProxy,
+            SIPURI sipAccountAOR,
+            GetHA1DigestDelegate getHA1Digest,
+            string authUsername,
+            string realm,
+            string registrarHost,
+            SIPURI contactURI,
+            int expiry,
+            string[] customHeaders,
+            int maxRegistrationAttemptTimeout = DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT,
+            int registerFailureRetryInterval = DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL,
+            int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS,
+            bool exitOnUnequivocalFailure = true)
+            : this(
+                sipTransport,
+                outboundProxy,
+                sipAccountAOR,
+                authUsername,
+                string.Empty,
+                realm,
+                registrarHost,
+                contactURI,
+                expiry,
+                customHeaders,
+                maxRegistrationAttemptTimeout,
+                registerFailureRetryInterval,
+                maxRegisterAttempts,
+                exitOnUnequivocalFailure)
+        {
+            m_getHA1Digest = getHA1Digest;
         }
 
         public void Start()
@@ -508,8 +543,37 @@ namespace SIPSorcery.SIP.App
             m_attempts++;
 
             string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
-            var authenticatedRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(
-                sipResponse.Header.AuthenticationHeaders, username, m_password);
+            var challenges = sipResponse.Header.AuthenticationHeaders;
+            SIPRequest authenticatedRequest = null;
+            if (m_getHA1Digest != null)
+            {
+                // If an HA1 resolver exists, then it is the main option without fallback to a password.
+                authenticatedRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(challenges, username, m_getHA1Digest);
+                if (authenticatedRequest == null)
+                {
+                    logger.LogWarning("No HA1 credential is available for any of the server challenges.");
+                }
+            }
+            else if (m_password != null)
+            {
+                authenticatedRequest = sipTransaction.TransactionRequest.DuplicateAndAuthenticate(challenges, username, m_password);
+            }
+            else
+            {
+                logger.LogWarning("No password provided to respond to server challenges.");
+            }
+
+            if (authenticatedRequest == null)
+            {
+                m_exit = m_exitOnUnequivocalFailure;
+
+                logger.LogWarning("Registration unequivocal failure with {Status} for {SIPAccountAOR}. No further registration attempts will be made: {Exit}.", sipResponse.Status, m_sipAccountAOR, m_exit);
+                string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
+                RegistrationFailed?.Invoke(m_sipAccountAOR, sipResponse, $"Registration failed with {(int)sipResponse.Status} {reasonPhrase}.");
+
+                m_waitForRegistrationMRE.Set();
+                return;
+            }
 
             SIPEndPoint registrarSIPEndPoint = m_outboundProxy;
             if (registrarSIPEndPoint == null)
