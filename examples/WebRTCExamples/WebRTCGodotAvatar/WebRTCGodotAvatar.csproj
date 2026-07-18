@@ -21,6 +21,9 @@
     <!-- Pure-C# WebRTC + VP8 (no native FFmpeg). -->
     <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
     <ProjectReference Include="..\..\..\src\SIPSorcery.VP8\SIPSorcery.VP8.csproj" />
+    <!-- Optional native encoder (VIDEO_ENCODER=ffmpeg): only used when FFmpeg 8 shared
+         libraries are present at runtime, e.g. the Linux container image. -->
+    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <!-- The shared avatar speech/AI pipeline (TTS/STT/LLM + the IAvatarMouth seam), the same
          library the WebRTCMaxHeadroom demo uses. sherpa-onnx + LLamaSharp come transitively. -->
     <ProjectReference Include="..\AvatarPipeline\AvatarPipeline.csproj" />

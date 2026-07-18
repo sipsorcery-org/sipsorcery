@@ -1,0 +1,63 @@
+# Render-throughput test: can software-rendered Godot (llvmpipe/Lavapipe) hold 25fps
+# for the VRM avatar at 640x480 on GPU-less k8s vCPUs?
+#
+# Build (from the repo root):
+#   docker build -f examples/WebRTCExamples/WebRTCGodotAvatar/Dockerfile.renderbench -t godot-avatar-renderbench .
+# Run (mimic the DOKS pod's cpu limit):
+#   docker run --rm --cpus=3 godot-avatar-renderbench
+# Watch for the "[bench] engine_fps=... captured_fps=... encode_ms=..." lines (every 5s).
+#
+# The image deliberately contains no speech/LLM models: RENDER_BENCH=1 drives a synthetic
+# mouth and runs the full capture -> BGR -> VP8 pipeline without a WebRTC peer.
+
+# FFmpeg.AutoGen 8.1 binds to libavcodec.so.62 (FFmpeg 8). Debian's ffmpeg package is
+# older, so use the same checksum-verified shared build the Max image uses.
+FROM debian:bookworm-slim AS ffmpeg
+ARG FFMPEG_URL=https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-30-13-34/ffmpeg-n8.1.2-21-gce3c09c101-linux64-lgpl-shared-8.1.tar.xz
+ARG FFMPEG_SHA256=bc60572d89533c7987e7cfbb654eba4d35122a77885c6938483dd7ef8219cde9
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates xz-utils \
+    && curl --fail --location --retry 3 "$FFMPEG_URL" --output /tmp/ffmpeg.tar.xz \
+    && echo "$FFMPEG_SHA256  /tmp/ffmpeg.tar.xz" | sha256sum --check --strict \
+    && mkdir /opt/ffmpeg \
+    && tar --extract --xz --file /tmp/ffmpeg.tar.xz --strip-components=1 --directory /opt/ffmpeg \
+    && test -f /opt/ffmpeg/lib/libavcodec.so.62 \
+    && rm /tmp/ffmpeg.tar.xz
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+
+# Xvfb (virtual display), llvmpipe (software GL) and Lavapipe (software Vulkan) plus the
+# X client libraries Godot's linuxbsd platform links against.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      unzip wget ca-certificates xvfb \
+      libgl1-mesa-dri mesa-vulkan-drivers libegl1 \
+      libx11-6 libxcursor1 libxinerama1 libxrandr2 libxi6 libxext6 libxrender1 \
+      libxkbcommon0 fontconfig libdbus-1-3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Godot 4.7 .NET (mono) linux build - the editor binary doubles as the runtime and
+# performs the one-time headless asset import (VRM -> scene conversion).
+RUN wget -q https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_mono_linux_x86_64.zip -O /tmp/godot.zip \
+    && unzip -q /tmp/godot.zip -d /opt/godot \
+    && rm /tmp/godot.zip \
+    && ln -s "/opt/godot/Godot_v4.7-stable_mono_linux_x86_64/Godot_v4.7-stable_mono_linux.x86_64" /usr/local/bin/godot
+
+WORKDIR /work
+COPY . .
+
+WORKDIR /work/examples/WebRTCExamples/WebRTCGodotAvatar
+RUN dotnet build
+
+# Headless import pass (VRM importer is editor-only). Non-fatal warnings are expected:
+# the gd_cubism extension (Windows-only native lib) is absent from this image.
+RUN godot --headless --path . --import || true
+
+COPY --from=ffmpeg /opt/ffmpeg /opt/ffmpeg
+
+ENV RENDER_BENCH=1 \
+    LIBGL_ALWAYS_SOFTWARE=1 \
+    VIDEO_ENCODER=ffmpeg \
+    LD_LIBRARY_PATH=/opt/ffmpeg/lib
+
+EXPOSE 8081
+
+CMD ["xvfb-run", "-a", "-s", "-screen 0 1280x800x24", "godot", "--path", ".", "--audio-driver", "Dummy"]

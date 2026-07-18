@@ -1,0 +1,20 @@
+# BuildKit per-Dockerfile ignore (overrides the repo root .dockerignore for this build).
+# Whitelist: only what the Godot avatar example needs. Keeps the 240M Models dir (bar one
+# VRM), Live2D native builds and unrelated repo content out of the context.
+*
+!Directory.Build.props
+!Directory.Build.targets
+!src/Directory.*
+!src/SIPSorceryMedia.Abstractions/**
+!src/SIPSorceryMedia.FFmpeg/**
+!src/SIPSorcery/**
+!src/SIPSorcery.VP8/**
+!examples/WebRTCExamples/AvatarPipeline/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/**
+**/bin/**
+**/obj/**
+**/.godot/**
+examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/**
+examples/WebRTCExamples/WebRTCGodotAvatar/Models/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/Models/UserAvatar.vrm
+examples/WebRTCExamples/WebRTCGodotAvatar/addons/gd_cubism/**

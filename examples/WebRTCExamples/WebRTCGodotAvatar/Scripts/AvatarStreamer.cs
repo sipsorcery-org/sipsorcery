@@ -52,10 +52,26 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     private Thread _encodeThread = null!;
     private readonly CancellationTokenSource _cts = new();
 
-    private Vp8NetVideoEncoderEndPoint _encoder = null!;
+    // The encoder is either the pure-C# VP8 endpoint (default: no native dependencies, the
+    // Windows dev path) or FFmpeg's native encoder (VIDEO_ENCODER=ffmpeg: ~10x faster VP8 for
+    // Linux containers where software rendering leaves no CPU budget for managed encoding).
+    private IVideoSource _encoder = null!;
+    private Action _forceKeyFrame = null!;
     private volatile RTCPeerConnection? _pc;
     private HttpListener? _http;
     private Label _status = null!;
+
+    // --- Render benchmark mode (RENDER_BENCH=1) -------------------------------------------
+    // Runs the full capture -> BGR -> VP8 pipeline without a WebRTC peer and prints stage
+    // timings every 5s. Used to measure software-rendered (llvmpipe/Lavapipe) throughput in
+    // containers; a synthetic speech envelope keeps the mouth morphs exercised.
+    private static readonly bool RenderBench = System.Environment.GetEnvironmentVariable("RENDER_BENCH") == "1";
+    private long _benchCaptured;
+    private long _benchEncoded;
+    private long _benchReadbackUs;
+    private long _benchToBgrUs;
+    private long _benchEncodeUs;
+    private double _benchLastReport;
 
     // --- Speech (Max-demo pipeline, in-process) -------------------------------------------
     private const string SherpaTtsDir = @"C:\tools\sherpa-tts";
@@ -104,9 +120,25 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         BuildInterface();
         BuildAvatarsJson();
 
-        // VP8 encoder endpoint (pure managed). Encoded frames are pushed straight to whatever
-        // peer connection is currently live.
-        _encoder = new Vp8NetVideoEncoderEndPoint();
+        // VP8 encoder endpoint. Encoded frames are pushed straight to whatever peer connection
+        // is currently live. VIDEO_ENCODER=ffmpeg selects the native FFmpeg encoder (requires
+        // FFmpeg 8 shared libraries, e.g. LD_LIBRARY_PATH=/opt/ffmpeg/lib in the container);
+        // the default is the pure managed VP8 encoder, which needs no native dependencies.
+        if (string.Equals(System.Environment.GetEnvironmentVariable("VIDEO_ENCODER"), "ffmpeg",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var ffmpegEncoder = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            ffmpegEncoder.RestrictFormats(f => f.Codec == VideoCodecsEnum.VP8);
+            _encoder = ffmpegEncoder;
+            _forceKeyFrame = ffmpegEncoder.ForceKeyFrame;
+            GD.Print("Video encoder: FFmpeg (native).");
+        }
+        else
+        {
+            var vp8Encoder = new Vp8NetVideoEncoderEndPoint();
+            _encoder = vp8Encoder;
+            _forceKeyFrame = vp8Encoder.ForceKeyFrame;
+        }
         _encoder.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
         {
             var pc = _pc;
@@ -118,6 +150,13 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
         _encodeThread = new Thread(EncodeLoop) { IsBackground = true, Name = "vp8-encode" };
         _encodeThread.Start();
+
+        if (RenderBench)
+        {
+            // No peer/negotiation in bench mode: pick the first VP8 format so the encoder runs.
+            _encoder.SetVideoSourceFormat(_encoder.GetVideoSourceFormats()[0]);
+            GD.Print("[bench] RENDER_BENCH=1: capture+encode running without a WebRTC peer.");
+        }
 
         // Audio: a continuous PCMU source (Silence between utterances keeps the A/V clock steady).
         // Encoded audio is forwarded to whatever peer connection is currently live, mirroring the
@@ -315,6 +354,12 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         }
 
         _time += delta;
+        if (RenderBench)
+        {
+            // Synthetic speech envelope so mouth morph updates are part of the measured cost.
+            _speechLevel = 0.5f + 0.5f * (float)Math.Sin(_time * 3.0);
+            _speaking = true;
+        }
         bool speaking = _speaking; // Snapshot the off-thread TTS state once for this render frame.
         if (speaking)
         {
@@ -760,18 +805,26 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     private void CaptureFrame()
     {
-        var pc = _pc;
-        if (pc == null || pc.connectionState != RTCPeerConnectionState.connected)
+        if (!RenderBench)
         {
-            return;
+            var pc = _pc;
+            if (pc == null || pc.connectionState != RTCPeerConnectionState.connected)
+            {
+                return;
+            }
         }
         var now = Time.GetTicksMsec() / 1000.0;
         if (now < _nextCaptureTime)
         {
             return;
         }
-        _nextCaptureTime = now + 1.0 / Fps;
+        // Drift-free pacing: advance by the frame interval rather than from "now", otherwise
+        // every tick that lands just after the deadline pushes the schedule out and the real
+        // capture rate lands well under Fps (e.g. ~15fps at a 28fps engine rate). Clamp so a
+        // render stall causes at most one immediate catch-up frame, never a burst.
+        _nextCaptureTime = Math.Max(_nextCaptureTime + 1.0 / Fps, now);
 
+        long t0 = RenderBench ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
         var image = _viewport.GetTexture().GetImage();
         if (image == null)
         {
@@ -781,6 +834,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         {
             image.Convert(Image.Format.Rgba8);
         }
+        long t1 = RenderBench ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
 
         int w = image.GetWidth();
         int h = image.GetHeight();
@@ -788,6 +842,27 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         if (!_encodeQueue.TryAdd((w, h, bgr)))
         {
             // Encoder still busy with the previous frame - drop this one.
+        }
+
+        if (RenderBench)
+        {
+            long t2 = System.Diagnostics.Stopwatch.GetTimestamp();
+            _benchCaptured++;
+            _benchReadbackUs += (t1 - t0) * 1_000_000 / System.Diagnostics.Stopwatch.Frequency;
+            _benchToBgrUs += (t2 - t1) * 1_000_000 / System.Diagnostics.Stopwatch.Frequency;
+            if (now - _benchLastReport >= 5.0)
+            {
+                long captured = _benchCaptured, encoded = Interlocked.Read(ref _benchEncoded);
+                double secs = _benchLastReport == 0 ? now : now - _benchLastReport;
+                GD.Print($"[bench] engine_fps={Engine.GetFramesPerSecond():F1} " +
+                         $"captured_fps={captured / secs:F1} encoded_fps={encoded / secs:F1} " +
+                         $"readback_ms={(captured > 0 ? _benchReadbackUs / 1000.0 / captured : 0):F1} " +
+                         $"tobgr_ms={(captured > 0 ? _benchToBgrUs / 1000.0 / captured : 0):F1} " +
+                         $"encode_ms={(encoded > 0 ? Interlocked.Read(ref _benchEncodeUs) / 1000.0 / encoded : 0):F1}");
+                _benchCaptured = 0; _benchReadbackUs = 0; _benchToBgrUs = 0;
+                Interlocked.Exchange(ref _benchEncoded, 0); Interlocked.Exchange(ref _benchEncodeUs, 0);
+                _benchLastReport = now;
+            }
         }
     }
 
@@ -813,7 +888,14 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         {
             foreach (var (w, h, bgr) in _encodeQueue.GetConsumingEnumerable(_cts.Token))
             {
+                long t0 = RenderBench ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
                 _encoder.ExternalVideoSourceRawSample(FrameDurationMs, w, h, bgr, VideoPixelFormatsEnum.Bgr);
+                if (RenderBench)
+                {
+                    long t1 = System.Diagnostics.Stopwatch.GetTimestamp();
+                    Interlocked.Increment(ref _benchEncoded);
+                    Interlocked.Add(ref _benchEncodeUs, (t1 - t0) * 1_000_000 / System.Diagnostics.Stopwatch.Frequency);
+                }
             }
         }
         catch (OperationCanceledException) { }
@@ -1013,7 +1095,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             if (media == SDPMediaTypesEnum.video &&
                 report?.Feedback?.Header.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI)
             {
-                _encoder.ForceKeyFrame();
+                _forceKeyFrame();
             }
         };
 
