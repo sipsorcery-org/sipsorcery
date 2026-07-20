@@ -18,6 +18,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using Serilog;
+using Serilog.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 using Vpx.Net;
 using demo;   // Max-demo speech pipeline (IAvatarMouth / IAvatarSpeaker / SherpaTtsSpeaker).
@@ -87,8 +89,27 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     private const float SpeechToMouthGain = 7.0f;   // RMS of speech (~0.1) -> mouth openness (0..1).
     private string _avatarKind = "vrm";
     private string? _avatarGender;                   // inferred from the model's female/male folder, if any.
-    private string? _currentVoiceDir;                // the active TTS voice folder (avoids needless reloads).
+    private string? _currentVoiceDir;                // active Sherpa voice folder or ElevenLabs voice id (avoids needless reloads).
     private const string LlmGgufPath = @"C:\tools\llm\Llama-3.2-3B-Instruct-Q4_K_M.gguf";
+
+    // ElevenLabs (cloud TTS/STT): same env vars as the Max demo. Takes priority over the local
+    // Sherpa engine whenever an API key is configured - no local model files/PVC required.
+    private static string? ElevenLabsKey => System.Environment.GetEnvironmentVariable("ELEVENLABS_API_KEY");
+    // ELEVENLABS_VOICE_ID_MALE/_FEMALE follow the avatar's gender the same way the Sherpa
+    // MaleVoiceDir/FemaleVoiceDirs pair does; ELEVENLABS_VOICE_ID (no suffix) is an explicit
+    // override that always wins, for anyone who just wants one voice regardless of avatar.
+    private static string ElevenLabsVoiceIdMale =>
+        System.Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID_MALE") ?? "N2lVS1w4EtoT3dr4eOWO"; // Callum.
+    private static string ElevenLabsVoiceIdFemale =>
+        System.Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID_FEMALE") ?? "21m00Tcm4TlvDq8ikWAM"; // Rachel.
+    private static string ElevenLabsModel =>
+        System.Environment.GetEnvironmentVariable("ELEVENLABS_MODEL") ?? "eleven_turbo_v2_5";
+    private static string ElevenLabsSttModel =>
+        System.Environment.GetEnvironmentVariable("ELEVENLABS_STT_MODEL") ?? "scribe_v1";
+    private static string ElevenLabsSttRealtimeModel =>
+        System.Environment.GetEnvironmentVariable("ELEVENLABS_STT_REALTIME_MODEL") ?? "scribe_v2_realtime";
+    private static bool ElevenLabsStreaming =>
+        string.Equals(System.Environment.GetEnvironmentVariable("ELEVENLABS_STREAMING"), "true", StringComparison.OrdinalIgnoreCase);
 
     // The avatar's personality (LLM system prompt). Adjustable here or via the AVATAR_PERSONA
     // environment variable - this is the one knob that gives the VRM its own character.
@@ -110,6 +131,19 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     public override void _Ready()
     {
+        // Wires SIPSorcery's internal logging (ICE agent, DTLS, RTP) to the console. Without
+        // this SIPSorcery.LogFactory stays on its default null logger and ICE/connection
+        // failures - the exact case a WebRTC-on-k8s debugging session needs - are invisible;
+        // only the app's own GD.Print calls would show up in `kubectl logs`.
+        var minLevel = string.Equals(System.Environment.GetEnvironmentVariable("SIPSORCERY_LOG_DEBUG"), "1")
+            ? Serilog.Events.LogEventLevel.Debug
+            : Serilog.Events.LogEventLevel.Information;
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Is(minLevel)
+            .WriteTo.Console()
+            .CreateLogger();
+        SIPSorcery.LogFactory.Set(new SerilogLoggerFactory(Log.Logger));
+
         var (kind, modelName) = ResolveAvatar();
         _avatarKind = kind;
         GD.Print($"Avatar model: {kind}{(modelName is null ? "" : $" ({modelName})")}");
@@ -178,12 +212,55 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         GD.Print($"Avatar streamer running. Browse to http://localhost:{HttpPort} and click Connect.");
     }
 
+    /// <summary>Same gender resolution <see cref="ResolveVoiceDir"/> uses for Sherpa, exposed
+    /// separately so ElevenLabs voice selection can follow the avatar's gender too: explicit
+    /// --gender/AVATAR_GENDER override, else the avatar's own folder-inferred gender, else the
+    /// kind default (VRM -> female, Live2D -> male).</summary>
+    private bool IsFemaleAvatar()
+    {
+        var gender = (ResolveArg("--gender", "AVATAR_GENDER") ?? _avatarGender)?.Trim().ToLowerInvariant();
+        return gender switch
+        {
+            "female" or "f" or "woman" => true,
+            "male" or "m" or "man" => false,
+            _ => _avatarKind is not ("live2d" or "ren" or "cubism"),
+        };
+    }
+
     /// <summary>
-    /// Creates (or replaces) the TTS speaker for <paramref name="voiceDir"/>. No-op if that voice is
-    /// already active, so switching between avatars of the same gender does not reload the model.
+    /// Creates (or replaces) the TTS speaker for the current avatar's gender: ElevenLabs (cloud)
+    /// when an API key is configured, otherwise the local Sherpa voice at <paramref name="voiceDir"/>.
+    /// No-op if the resolved voice is already active, so switching between avatars of the same
+    /// gender does not reload anything.
     /// </summary>
     private void ApplyVoice(string voiceDir)
     {
+        if (!string.IsNullOrWhiteSpace(ElevenLabsKey))
+        {
+            // ELEVENLABS_VOICE_ID (no suffix) is an explicit override that always wins;
+            // otherwise follow the avatar's gender like the Sherpa path does.
+            var voiceId = System.Environment.GetEnvironmentVariable("ELEVENLABS_VOICE_ID")
+                ?? (IsFemaleAvatar() ? ElevenLabsVoiceIdFemale : ElevenLabsVoiceIdMale);
+            if (voiceId == _currentVoiceDir && _speaker != null)
+            {
+                return;
+            }
+            try
+            {
+                (_speaker as IDisposable)?.Dispose();
+                _speaker = ElevenLabsStreaming
+                    ? new ElevenLabsStreamingTtsSpeaker(ElevenLabsKey, voiceId, ElevenLabsModel, this, _audioSource)
+                    : new ElevenLabsTtsSpeaker(ElevenLabsKey, voiceId, ElevenLabsModel, this, _audioSource);
+                _currentVoiceDir = voiceId;
+                GD.Print($"ElevenLabs TTS voice: {voiceId} (streaming={ElevenLabsStreaming}).");
+            }
+            catch (Exception excp)
+            {
+                GD.PushError($"Failed to create ElevenLabs TTS speaker: {excp}");
+            }
+            return;
+        }
+
         if (voiceDir == _currentVoiceDir && _speaker != null)
         {
             return;
@@ -208,11 +285,14 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     private void TryCreateSpeaker()
     {
-        // Text-to-speech: the voice follows the avatar's gender folder (see ResolveVoiceDir).
+        // Text-to-speech: the voice follows the avatar's gender either way (see ApplyVoice /
+        // ResolveVoiceDir) - ElevenLabs (cloud) when an API key is configured, no local model
+        // files needed, otherwise the local Sherpa voice.
         ApplyVoice(ResolveVoiceDir());
 
-        // Large language model (turns recognised/typed text into a reply). Optional: falls back to
-        // speaking the prompt verbatim when no model is present.
+        // Large language model (turns recognised/typed text into a reply). Priority: local GGUF,
+        // then a remote OpenAI-compatible endpoint (LLM_ENDPOINT/LLM_MODEL/LLM_API_KEY - same env
+        // vars as the Max demo), then verbatim speaking as the "not configured" fallback.
         try
         {
             if (System.IO.File.Exists(LlmGgufPath))
@@ -223,7 +303,19 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             }
             else
             {
-                GD.PushWarning($"LLM model not found at {LlmGgufPath}; text will be spoken verbatim.");
+                var endpoint = System.Environment.GetEnvironmentVariable("LLM_ENDPOINT");
+                if (!string.IsNullOrWhiteSpace(endpoint))
+                {
+                    _llm = new LocalLlmClient(endpoint,
+                        System.Environment.GetEnvironmentVariable("LLM_MODEL"),
+                        System.Environment.GetEnvironmentVariable("LLM_API_KEY"),
+                        systemPrompt: Persona);
+                    GD.Print($"LLM configured: {_llm.Description}.");
+                }
+                else
+                {
+                    GD.PushWarning($"LLM model not found at {LlmGgufPath} and LLM_ENDPOINT is not set; text will be spoken verbatim.");
+                }
             }
         }
         catch (Exception excp)
@@ -231,24 +323,38 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             GD.PushError($"Failed to load LLM (speaking verbatim instead): {excp}");
         }
 
-        // Speech-to-text (browser microphone -> text). Optional.
+        // Speech-to-text (browser microphone -> text). ElevenLabs (cloud) takes priority when
+        // configured - realtime WebSocket when ELEVENLABS_STREAMING is on, otherwise the batch
+        // scribe API - falling back to the local Sherpa engine otherwise. Optional either way.
         try
         {
-            if (SherpaSpeechRecognizer.FilesPresent())
+            ISpeechRecognizer? recognizer = null;
+            if (!string.IsNullOrWhiteSpace(ElevenLabsKey))
             {
-                var recognizer = new SherpaSpeechRecognizer();
+                recognizer = ElevenLabsStreaming
+                    ? new ElevenLabsStreamingSpeechRecognizer(ElevenLabsKey, ElevenLabsSttRealtimeModel)
+                    : new ElevenLabsSpeechRecognizer(ElevenLabsKey, ElevenLabsSttModel);
+                GD.Print($"ElevenLabs STT recogniser created (streaming={ElevenLabsStreaming}).");
+            }
+            else if (SherpaSpeechRecognizer.FilesPresent())
+            {
+                recognizer = new SherpaSpeechRecognizer();
+                _ = SherpaSpeechRecognizer.PreloadAsync();
+                GD.Print("Sherpa STT recogniser created.");
+            }
+            else
+            {
+                GD.PushWarning("No STT configured (Sherpa model not found, ELEVENLABS_API_KEY not set); the avatar can speak but not listen.");
+            }
+
+            if (recognizer != null)
+            {
                 recognizer.OnRecognized += text =>
                 {
                     GD.Print($"Recognised: {text}");
                     _ = AskAsync(text);
                 };
                 _recognizer = recognizer;
-                _ = SherpaSpeechRecognizer.PreloadAsync();
-                GD.Print("Sherpa STT recogniser created.");
-            }
-            else
-            {
-                GD.PushWarning("Sherpa STT model not found; the avatar can speak but not listen.");
             }
         }
         catch (Exception excp)
@@ -688,15 +794,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
         // 2. Explicit --gender, else the gender inferred from the model's folder, else the kind
         //    default (VRM -> female, Live2D -> male).
-        var gender = (ResolveArg("--gender", "AVATAR_GENDER") ?? _avatarGender)?.Trim().ToLowerInvariant();
-        bool female = gender switch
-        {
-            "female" or "f" or "woman" => true,
-            "male" or "m" or "man" => false,
-            _ => _avatarKind is not ("live2d" or "ren" or "cubism"),
-        };
-
-        if (female)
+        if (IsFemaleAvatar())
         {
             foreach (var dir in FemaleVoiceDirs)
             {
@@ -909,10 +1007,21 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     private void StartHttpListener()
     {
+        // Bind all interfaces when possible (needed when serving through a container/ingress);
+        // on Windows the wildcard prefix needs admin rights, so fall back to localhost-only.
         _http = new HttpListener();
-        _http.Prefixes.Add($"http://localhost:{HttpPort}/");
-        _http.Prefixes.Add($"http://127.0.0.1:{HttpPort}/");
-        _http.Start();
+        _http.Prefixes.Add($"http://*:{HttpPort}/");
+        try
+        {
+            _http.Start();
+        }
+        catch (HttpListenerException)
+        {
+            _http = new HttpListener();
+            _http.Prefixes.Add($"http://localhost:{HttpPort}/");
+            _http.Prefixes.Add($"http://127.0.0.1:{HttpPort}/");
+            _http.Start();
+        }
         Task.Run(() => HttpLoop(_cts.Token));
     }
 
@@ -1008,7 +1117,11 @@ public partial class AvatarStreamer : Node, IAvatarMouth
                 }
                 else
                 {
-                    await WriteResponse(ctx, IndexHtml, "text/html").ConfigureAwait(false);
+                    // Same STUN_URL the server's own offer handler uses (see HandleOffer),
+                    // so the client and server always agree on which STUN server to trust.
+                    var stunUrl = System.Environment.GetEnvironmentVariable("STUN_URL") ?? "";
+                    var page = IndexHtml.Replace("__STUN_URL__", stunUrl);
+                    await WriteResponse(ctx, page, "text/html").ConfigureAwait(false);
                 }
             }
             catch (Exception excp)
@@ -1064,18 +1177,38 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             throw new ApplicationException("Could not parse SDP offer.");
         }
 
+       Log.Logger.Debug("SDP offer:\n{Offer}", offer.sdp);
+
         _pc?.Close("replaced");
-        var pc = new RTCPeerConnection();
 
-        var videoTrack = new MediaStreamTrack(_encoder.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
-        pc.addTrack(videoTrack);
-        pc.OnVideoFormatsNegotiated += formats => _encoder.SetVideoSourceFormat(formats[0]);
+        // X_ICEIncludeAllInterfaceAddresses: gather a host candidate on every local
+        // interface rather than just the OS-chosen default route. Without this, under
+        // hostNetwork on k8s, only one (arbitrary) interface gets a candidate; the Max demo
+        // deployment sets this and enumerates 5 (public eth0, VPC eth1, cilium_host, DO
+        // anchor, cpbridge) - more chances for a connectivity check to land on a working pair.
+        // STUN_URL (e.g. stun:stun.cloudflare.com) lets the peer connection learn its
+        // server-reflexive address too - needed when serving from k8s/behind NAT.
+        var config = new RTCConfiguration { X_ICEIncludeAllInterfaceAddresses = true };
+        if (System.Environment.GetEnvironmentVariable("STUN_URL") is { Length: > 0 } stunUrl)
+        {
+            config.iceServers = new List<RTCIceServer> { new() { urls = stunUrl } };
+        }
+        var pc = new RTCPeerConnection(config);
 
+        // Audio added before video: SIPSorcery emits m-lines (and the BUNDLE's ICE candidates,
+        // which only appear on one of them) in track-add order. Max and webrtc-isalive both add
+        // audio first, ending up with candidates on the FIRST bundled m-line; this app added
+        // video first, putting candidates on the second m-line - the one concrete difference
+        // found between an SDP that connects and one that never leaves ICE state 'new'.
         // Audio track is SendRecv: the avatar voice goes out, and the browser microphone comes in
         // (the mic feed is where speech-to-text will hook in the next stage).
         var audioTrack = new MediaStreamTrack(_audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
         pc.addTrack(audioTrack);
         pc.OnAudioFormatsNegotiated += formats => _audioSource.SetAudioSourceFormat(formats[0]);
+
+        var videoTrack = new MediaStreamTrack(_encoder.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
+        pc.addTrack(videoTrack);
+        pc.OnVideoFormatsNegotiated += formats => _encoder.SetVideoSourceFormat(formats[0]);
 
         // Inbound microphone: decode the received PCMU RTP to 8kHz PCM and feed speech-to-text.
         // Recognised utterances run the same AskAsync path as the /ask endpoint.
@@ -1124,10 +1257,40 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
         pc.setRemoteDescription(offer);
         var answer = pc.createAnswer();
+
+        // WAIT_FOR_ICE_GATHERING_TO_SEND_ANSWER=true: hold the answer until ICE gathering
+        // completes so it carries the host/srflx candidates. Neither this page nor the server
+        // trickles candidates, so an early answer would leave the browser with no address to
+        // send media to (the k8s/ingress case; same setting as the Max demo deployment).
+        bool waitForIce = string.Equals(
+            System.Environment.GetEnvironmentVariable("WAIT_FOR_ICE_GATHERING_TO_SEND_ANSWER"),
+            "true", StringComparison.OrdinalIgnoreCase);
+        var gatheringDone = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (waitForIce)
+        {
+            pc.onicegatheringstatechange += state =>
+            {
+                if (state == RTCIceGatheringState.complete) { gatheringDone.TrySetResult(true); }
+            };
+        }
+
         pc.setLocalDescription(answer).Wait();
 
+        if (waitForIce && pc.iceGatheringState != RTCIceGatheringState.complete)
+        {
+            Task.WhenAny(gatheringDone.Task, Task.Delay(TimeSpan.FromSeconds(5))).Wait();
+        }
+
         _pc = pc;
-        return answer.toJSON();
+
+        Log.Logger.Debug("SDP Answer:\n{Answer}", answer.sdp);
+
+        // Re-serialise after the wait so the SDP includes the gathered candidates.
+        return new RTCSessionDescriptionInit
+        {
+            type = RTCSdpType.answer,
+            sdp = pc.localDescription.sdp.ToString()
+        }.toJSON();
     }
 
     public override void _ExitTree()
@@ -1173,24 +1336,38 @@ let playAllToken = 0;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function connect() {
+  const status = document.getElementById('status');
+  // No STUN server needed here: the server already advertises a real public host candidate
+  // (it isn't behind NAT), which is enough on its own - the browser's connectivity check
+  // toward that address is what the server needs to discover the browser's reachable
+  // address (as a peer-reflexive candidate), regardless of what the browser advertised.
   const pc = new RTCPeerConnection();
   pc.ontrack = e => { document.getElementById('v').srcObject = e.streams[0]; };
-  pc.addTransceiver('video', { direction: 'recvonly' });
+  pc.oniceconnectionstatechange = () => { status.textContent = 'ice: ' + pc.iceConnectionState; };
+  // Audio added before video: the answerer's m-line order must mirror the offer's, and the
+  // BUNDLE's ICE candidates only end up on one of them - putting audio first here matches
+  // Max/webrtc-isalive (both audio-first end to end), which connect; this app had video
+  // first end to end, which never got past ICE state 'new'.
   // Try to add the microphone (sendrecv) so the avatar can also listen; fall back to
   // receive-only audio if the mic is unavailable or denied.
+  status.textContent = 'requesting microphone...';
   try {
     const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
     mic.getAudioTracks().forEach(t => pc.addTrack(t, mic));
   } catch (err) {
     pc.addTransceiver('audio', { direction: 'recvonly' });
   }
+  pc.addTransceiver('video', { direction: 'recvonly' });
+  status.textContent = 'creating offer...';
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  await new Promise(r => { if (pc.iceGatheringState === 'complete') r();
-    else pc.onicegatheringstatechange = () => pc.iceGatheringState === 'complete' && r(); });
+  // Sent immediately, not after waiting for ICE gathering to complete: the offer's own
+  // candidates don't matter here (see the STUN comment above), so there's nothing to gain
+  // from waiting, and it only adds latency to every connection.
+  status.textContent = 'sending offer...';
   const resp = await fetch('/offer', { method: 'POST', body: JSON.stringify(pc.localDescription) });
   await pc.setRemoteDescription(await resp.json());
-  document.getElementById('status').textContent = 'connected';
+  status.textContent = 'connected (ice: ' + pc.iceConnectionState + ')';
 }
 async function loadAvatars() {
   try {
