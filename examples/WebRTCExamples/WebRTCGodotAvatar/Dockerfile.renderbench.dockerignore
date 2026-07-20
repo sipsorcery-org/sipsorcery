@@ -1,6 +1,8 @@
 # BuildKit per-Dockerfile ignore (overrides the repo root .dockerignore for this build).
-# Whitelist: only what the Godot avatar example needs. Keeps the 240M Models dir (bar one
-# VRM), Live2D native builds and unrelated repo content out of the context.
+# Whitelist: only what the Godot avatar example needs. Bundles every avatar (VRM + Live2D
+# models) and the subset of ThirdParty/gd_cubism the Dockerfile's gdcubism stage needs to
+# compile the Linux Live2D extension (source + godot-cpp + the license-gated Cubism SDK,
+# which must already be on disk - it cannot be fetched during the build).
 *
 !Directory.Build.props
 !Directory.Build.targets
@@ -15,6 +17,17 @@
 **/obj/**
 **/.godot/**
 examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/**
-examples/WebRTCExamples/WebRTCGodotAvatar/Models/**
-!examples/WebRTCExamples/WebRTCGodotAvatar/Models/UserAvatar.vrm
-examples/WebRTCExamples/WebRTCGodotAvatar/addons/gd_cubism/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/SConstruct
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/SConspage
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/bi.scons
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/src/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/doc_classes/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/godot-cpp/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/demo/addons/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/thirdparty/CubismSdkForNative-5-r.5/Core/**
+!examples/WebRTCExamples/WebRTCGodotAvatar/ThirdParty/gd_cubism/thirdparty/CubismSdkForNative-5-r.5/Framework/**
+# The gd_cubism addon bin/ carries only Windows dlls on disk; the image gets its Linux .so
+# from the gdcubism build stage instead (and the .gdextension + C# wrappers come from the
+# addon folder as normal). Keep the Windows binaries out of the context.
+examples/WebRTCExamples/WebRTCGodotAvatar/addons/gd_cubism/bin/**
+**/.git/**
