@@ -24,6 +24,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.SoftPhone.Signalling;
@@ -46,7 +47,8 @@ namespace SIPSorcery.SoftPhone
         private const int ZINDEX_TOP = 10;
         private const int REGISTRATION_EXPIRY = 180;
 
-        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftPhone>();
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftPhone>();
+        private string _logPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SIPSorcery", "Softphone.log");
 
 
         private string m_sipUsername = SIPSoftPhoneState.Settings.SIPUsername;
@@ -68,7 +70,15 @@ namespace SIPSorcery.SoftPhone
         {
             InitializeComponent();
 
-            SIPSorceryMedia.FFmpeg.FFmpegInit.Initialise(SIPSorceryMedia.FFmpeg.FfmpegLogLevelEnum.AV_LOG_VERBOSE, null, logger);
+            InitLogger();
+
+            //if(!m_useAudioScope)
+            //{
+            //    _audioScope0Border.Visibility = Visibility.Collapsed;
+            //    //OpenGLDraw = "AudioScopeDraw0" OpenGLInitialized = "AudioScopeInitialized0"
+            //    AudioScope0.IsEnabled = false;
+            //    AudioScope0.Visibility = Visibility.Hidden;
+            //}
 
             _clientVideoStates =
             [
@@ -97,6 +107,23 @@ namespace SIPSorcery.SoftPhone
             }
 
             DataObject.AddPastingHandler(_rttOutgoingBox, _rttOutgoingBox_OnPaste);
+        }
+
+        private void InitLogger()
+        {
+            if (SIPSoftPhoneState.Settings.EnableLog)
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Debug()
+                    .Enrich.FromLogContext()
+                    .WriteTo.Debug()
+                    .WriteTo.Console()
+                    .WriteTo.File(_logPath)
+                    .CreateLogger();
+
+                var factory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.Logger);
+                SIPSorcery.LogFactory.Set(factory);
+            }
         }
 
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -824,7 +851,12 @@ namespace SIPSorcery.SoftPhone
                 statusHistory.RemoveAt(10);
             }
             string statusHistoryString = statusHistory.Aggregate("Previous states:" + Environment.NewLine,
-                    (accu, item) => accu += $"{Environment.NewLine} {item.Time.ToString("yyyy-MM-dd HH:mm:ss")}: {item.Message}");
+                    (accu, item) => accu += $"{Environment.NewLine} {item.Time:yyyy-MM-dd HH:mm:ss}: {item.Message}");
+
+            if (SIPSoftPhoneState.Settings.EnableLog)
+            {
+                statusHistoryString += Environment.NewLine + Environment.NewLine + $"Logfile: {_logPath}";
+            }
 
             Dispatcher.DoOnUIThread(() =>
             {
