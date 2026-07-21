@@ -59,6 +59,7 @@
     <PackageVersion Include="Serilog.Sinks.Debug"                                   Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File"                                    Version="7.0.0" />
     <PackageVersion Include="SharpGL.WinForms"                                      Version="3.1.1" />
+	<PackageVersion Include="SipLib"												Version="1.1.0" />
     <PackageVersion Include="SIPSorcery.WebSocketSharp"                             Version="0.0.1" />
     <PackageVersion Include="SIPSorceryMedia.Encoders"                              Version="10.0.4" />
     <!-- Held at 2.x deliberately. ImageSharp.Drawing 3.x replaces the

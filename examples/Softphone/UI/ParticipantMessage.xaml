@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="SIPSorcery.SoftPhone.UI.ParticipantMessage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SIPSorcery.SoftPhone.UI"
+             mc:Ignorable="d" 
+             d:DesignHeight="80" d:DesignWidth="600">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        
+        <TextBlock x:Name="m_displayName" />
+        <TextBlock Grid.Column="1" x:Name="m_Separator" Text=": " />
+        <TextBox Grid.Column="2" x:Name="m_messageContent" Background="Transparent" BorderThickness="0" />
+    </Grid>
+</UserControl>

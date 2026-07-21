@@ -15,6 +15,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,6 +26,8 @@ using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.SoftPhone.Signalling;
+using SIPSorcery.SoftPhone.UI;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
@@ -44,10 +48,14 @@ namespace SIPSorcery.SoftPhone
 
         private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftPhone>();
 
+
         private string m_sipUsername = SIPSoftPhoneState.Settings.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.Settings.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.Settings.SIPServer;
         private SoftphoneVideoSourcesEnum m_videoSource = SIPSoftPhoneState.Settings.VideoSource;
+        private SIPClient currentRttClient = null;
+        private int lastRemoteRttMsgIndex = 0;
+        private List<(DateTime Time, string Message)> statusHistory = new();
 
         private SIPTransportManager _sipTransportManager;
         private List<SIPClient> _sipClients;
@@ -87,11 +95,20 @@ namespace SIPSorcery.SoftPhone
                 };
                 _stunClient.Run();
             }
+
+            DataObject.AddPastingHandler(_rttOutgoingBox, _rttOutgoingBox_OnPaste);
         }
 
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
             await Initialize();
+            InitializeUi();
+        }
+
+        private void InitializeUi()
+        {
+            _uriEntryDropDown.ItemsSource = SIPSoftPhoneState.Settings.QuickDialEntries;
+            _uriEntry2DropDown.ItemsSource = SIPSoftPhoneState.Settings.QuickDialEntries;
         }
 
         /// <summary>
@@ -110,6 +127,7 @@ namespace SIPSorcery.SoftPhone
                 sipClient.StatusMessage += (client, message) => { SetStatusText(m_signallingStatus, message); };
                 sipClient.RemotePutOnHold += RemotePutOnHold;
                 sipClient.RemoteTookOffHold += RemoteTookOffHold;
+                sipClient.TextReceived += TextReceived;
 
                 _sipClients.Add(sipClient);
             }
@@ -124,6 +142,7 @@ namespace SIPSorcery.SoftPhone
             }
 
             listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
+            Title += $" - sip:{m_sipUsername}@{m_sipServer}";
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
                 _sipTransportManager.SIPTransport,
@@ -196,12 +215,20 @@ namespace SIPSorcery.SoftPhone
                     _client1Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
                 });
+            }
 
-                if (_sipClients?.Count > 1 && _sipClients[1] != null)
-                {
-                    _sipClients[1].OnRemoteVideo -= OnClientOneVideoSinkSample;
-                    _sipClients[1].OnAudioScopeFrame -= OnClientOneAudioScopeFrame;
-                }
+            Dispatcher.DoOnUIThread(() =>
+            {
+                _videoArea.Visibility = _client0Video.Visibility == Visibility.Visible || _client1Video.Visibility == Visibility.Visible
+                    ? Visibility.Visible : Visibility.Collapsed;
+            });
+
+            UpdateRttSendingState();
+
+            if (_sipClients?.Count > 1 && _sipClients[1] != null)
+            {
+                _sipClients[1].OnRemoteVideo -= OnClientOneVideoSinkSample;
+                _sipClients[1].OnAudioScopeFrame -= OnClientOneAudioScopeFrame;
             }
         }
 
@@ -278,10 +305,12 @@ namespace SIPSorcery.SoftPhone
                     m_holdButton.Visibility = Visibility.Visible;
 
                     m_call2ActionsGrid.IsEnabled = true;
+                    _useAudio2.IsChecked = true;
 
                     if (_sipClients[0].HasVideo)
                     {
                         _sipClients[0].OnRemoteVideo += OnClientZeroVideoSinkSample;
+                        _videoArea.Visibility = Visibility.Visible;
                         _client0Video.Visibility = Visibility.Visible;
                     }
                     else if (m_videoSource is SoftphoneVideoSourcesEnum.AudioScope)
@@ -291,6 +320,13 @@ namespace SIPSorcery.SoftPhone
                         _sipClients[0].OnAudioScopeFrame += OnClientZeroAudioScopeFrame;
                         _client0Video.Visibility = Visibility.Visible;
                     }
+
+                    _uriEntryDropDown.Text = client.Dialogue.RemoteTarget.ToString();
+
+                    //if (m_useAudioScope)
+                    //{
+                    //    _sipClients[0].MediaSession.OnAudioScopeSampleReady += _audioScope0.ProcessSample;
+                    //}
                 });
             }
             else if (client == _sipClients[1])
@@ -310,6 +346,7 @@ namespace SIPSorcery.SoftPhone
                     if (_sipClients[1].HasVideo)
                     {
                         _sipClients[1].OnRemoteVideo += OnClientOneVideoSinkSample;
+                        _videoArea.Visibility = Visibility.Visible;
                         _client1Video.Visibility = Visibility.Visible;
                     }
                     else if (m_videoSource is SoftphoneVideoSourcesEnum.AudioScope)
@@ -319,6 +356,8 @@ namespace SIPSorcery.SoftPhone
                         _sipClients[1].OnAudioScopeFrame += OnClientOneAudioScopeFrame;
                         _client1Video.Visibility = Visibility.Visible;
                     }
+
+                    _uriEntry2DropDown.Text = client.Dialogue.RemoteTarget.ToString();
                 });
 
                 if (_sipClients[0].IsCallActive)
@@ -336,6 +375,8 @@ namespace SIPSorcery.SoftPhone
                     });
                 }
             }
+
+            UpdateRttSendingState();
         }
 
         private void OnClientZeroVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
@@ -356,22 +397,30 @@ namespace SIPSorcery.SoftPhone
         private async void CallButton_Click(object sender, RoutedEventArgs e)
         {
             SIPClient client = (sender == m_callButton) ? _sipClients[0] : _sipClients[1];
+            string destination1 = _uriEntryDropDown.Text;
+            string destination2 = _uriEntry2DropDown.Text;
+            bool useAudio, useVideo, useText;
 
-            if (client == _sipClients[0] && m_uriEntryTextBox.Text.IsNullOrBlank())
+            if (client == _sipClients[0] && destination1.IsNullOrBlank())
             {
                 SetStatusText(m_signallingStatus, "No call destination was specified.");
             }
-            else if (client == _sipClients[1] && m_uriEntry2TextBox.Text.IsNullOrBlank())
+            else if (client == _sipClients[1] && destination2.IsNullOrBlank())
             {
                 SetStatusText(m_signallingStatus, "No call destination was specified.");
             }
             else
             {
                 string callDestination = null;
+                SIPProtocolsEnum protocol = SIPProtocolsEnum.udp;
 
                 if (client == _sipClients[0])
                 {
-                    callDestination = m_uriEntryTextBox.Text;
+                    callDestination = destination1;
+                    useAudio = _useAudio.IsChecked ?? true;
+                    useVideo = _useVideo.IsChecked ?? true;
+                    useText = _useText.IsChecked ?? true;
+                    protocol = (SIPProtocolsEnum)m_protocolSelection.SelectedValue;
 
                     SetStatusText(m_signallingStatus, $"calling {callDestination}.");
 
@@ -389,7 +438,11 @@ namespace SIPSorcery.SoftPhone
                         m_offHoldButton.Visibility = Visibility.Visible;
                     }
 
-                    callDestination = m_uriEntry2TextBox.Text;
+                    callDestination = destination2;
+                    useAudio = _useAudio2.IsChecked ?? true;
+                    useVideo = _useVideo2.IsChecked ?? true;
+                    useText = _useText2.IsChecked ?? true;
+                    protocol = (SIPProtocolsEnum)m_protocolSelection2.SelectedValue;
 
                     SetStatusText(m_signallingStatus, $"calling {callDestination}.");
 
@@ -397,9 +450,13 @@ namespace SIPSorcery.SoftPhone
                     m_cancel2Button.Visibility = Visibility.Visible;
                     m_bye2Button.Visibility = Visibility.Collapsed;
                 }
+                else
+                {
+                    return;
+                }
 
                 // Start SIP call.
-                await client.Call(callDestination);
+                await client.Call(callDestination, protocol, useAudio, useVideo, useText);
             }
         }
 
@@ -432,6 +489,7 @@ namespace SIPSorcery.SoftPhone
             var client = (sender == m_answerButton) ? _sipClients[0] : _sipClients[1];
 
             await AnswerCallAsync(client);
+            UpdateRttSendingState();
         }
 
         /// <summary>
@@ -472,11 +530,11 @@ namespace SIPSorcery.SoftPhone
 
             if (client == _sipClients[0])
             {
-                client.Redirect(m_uriEntryTextBox.Text);
+                client.Redirect(_uriEntryDropDown.Text);
             }
             else if (client == _sipClients[1])
             {
-                client.Redirect(m_uriEntry2TextBox.Text);
+                client.Redirect(_uriEntry2DropDown.Text);
             }
 
             ResetToCallStartState(client);
@@ -488,7 +546,7 @@ namespace SIPSorcery.SoftPhone
         private async void BlindTransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var client = (sender == m_transferButton) ? _sipClients[0] : _sipClients[1];
-            bool wasAccepted = await client.BlindTransfer(m_uriEntryTextBox.Text);
+            bool wasAccepted = await client.BlindTransfer(_uriEntryDropDown.Text);
 
             if (wasAccepted)
             {
@@ -500,6 +558,8 @@ namespace SIPSorcery.SoftPhone
             {
                 SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
             }
+
+            UpdateRttSendingState();
         }
 
         /// <summary>
@@ -513,6 +573,8 @@ namespace SIPSorcery.SoftPhone
             {
                 SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
             }
+
+            UpdateRttSendingState();
         }
 
         /// <summary>
@@ -581,6 +643,8 @@ namespace SIPSorcery.SoftPhone
                 m_offHold2Button.Visibility = Visibility.Visible;
                 await client.PutOnHold();
             }
+
+            UpdateRttSendingState();
         }
 
         /// <summary>
@@ -601,7 +665,149 @@ namespace SIPSorcery.SoftPhone
                 m_offHold2Button.Visibility = Visibility.Collapsed;
             }
 
-            await client.TakeOffHold();
+            client.TakeOffHold();
+            UpdateRttSendingState();
+        }
+
+        private void UpdateRttSendingState()
+        {
+            bool canSendText = _sipClients?.Any(c => c.IsCallActive && (c.RttEndPoint?.CanSendText ?? false)) ?? false;
+            Dispatcher.DoOnUIThread(() =>
+            {
+                _rttOutgoingBox.IsReadOnly = !canSendText;
+                _rttOutgoingBox.Background = _rttOutgoingBox.IsReadOnly ? Brushes.Gainsboro : Brushes.White;
+                _rttOutgoingBox.BorderBrush = _rttOutgoingBox.Background;
+                _rttOutgoingBoxBorder.BorderBrush = _rttOutgoingBox.Background;
+            });
+        }
+
+        private void TextReceived(SIPClient client, Signalling.TextEventArgs e)
+        {
+            if (client == currentRttClient)
+            {
+                UpdateRttMessageEntry(lastRemoteRttMsgIndex, e.Timestamp, e.Text);
+            }
+            else
+            {
+                // skip invalid contents for new remote user message - todo: possibly apply similar check (excluding backspace char!) for current message above
+                if (!e.Text.Any(c => Char.IsLetterOrDigit(c)))
+                {
+                    return;
+                }
+
+                // switch current client to create new message
+                currentRttClient = client;
+
+                string authorName = string.IsNullOrWhiteSpace(client.Dialogue.RemoteUserField.Name)
+                    ? client.Dialogue.RemoteUserField.URI.User
+                    : client.Dialogue.RemoteUserField.Name;
+                CreateRttMessageEntry(e.Timestamp, e.Text, authorName);
+            }
+        }
+
+        private void CreateRttMessageEntry(DateTime messageTime, string message, string remoteName = null)
+        {
+            bool isRemoteMessage = remoteName != null;
+            string authorName = remoteName ?? (string.IsNullOrEmpty(m_sipUsername) ? "me" : m_sipUsername);
+
+            Dispatcher.DoOnUIThread(() =>
+            {
+                var index = _rttConversationList.Items.Add(new ParticipantMessage(messageTime, authorName, message, isRemoteMessage));
+                _rttConversationList.ScrollIntoView(_rttConversationList.Items[index]);
+
+                // skip updating rtt message index for outgoing messages, for being able to support further updates to the last remote message
+                if (isRemoteMessage)
+                {
+                    lastRemoteRttMsgIndex = index;
+                }
+            });
+        }
+
+        private void UpdateRttMessageEntry(int messageIndex, DateTime messageTime, string newText)
+        {
+            Dispatcher.DoOnUIThread(() =>
+            {
+                if (_rttConversationList.Items[lastRemoteRttMsgIndex] is ParticipantMessage participantMsg)
+                {
+                    participantMsg.AddText(messageTime, newText);
+
+                    if (!participantMsg.IsOpen)
+                    {
+                        currentRttClient = null;
+                    }
+                }
+            });
+        }
+
+        // this is for user text input
+        private void _rttOutgoingBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.Text))
+            {
+                RttSendTextToAllClients(e.Text);
+            }
+        }
+
+        // this is for control chars
+        private void _rttOutgoingBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            string textToSend = null;
+
+            if (e.Key == System.Windows.Input.Key.Back)
+            {
+                textToSend = "\b";
+            }
+            else if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                textToSend = "\r";
+
+                string completeMessage = _rttOutgoingBox.Text.TrimEnd('\r');
+                _ = Task.Run(() => CreateRttMessageEntry(DateTime.Now, completeMessage));
+                _rttOutgoingBox.Clear();
+            }
+            else if (e.Key == System.Windows.Input.Key.Space)
+            {
+                textToSend = " ";
+            }
+
+            if (textToSend != null)
+            {
+                _sipClients.ForEach(client => _ = Task.Run(() => client.RttEndPoint?.SendText(textToSend)));
+            }
+        }
+
+        // this is for user pasting from clipboard
+        private void _rttOutgoingBox_OnPaste(object sender, DataObjectPastingEventArgs e)
+        {
+            var isText = e.SourceDataObject.GetDataPresent(DataFormats.UnicodeText, true);
+            if (!isText)
+            {
+                return;
+            }
+
+            var text = e.SourceDataObject.GetData(DataFormats.UnicodeText) as string;
+            RttSendTextToAllClients(text);
+        }
+
+        private void RttSendTextToAllClients(string text)
+        {
+            _sipClients.ForEach(client => client.RttEndPoint?.SendText(text));
+        }
+
+        private void _rttClear_Click(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.DoOnUIThread(() => _rttConversationList.Items.Clear());
+            currentRttClient = null;
+        }
+
+        private void _useText_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_rttArea != null)
+            {
+                _rttArea.Visibility = (_useText?.IsChecked ?? true) || (_useText2?.IsChecked ?? true)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
         }
 
         /// <summary>
@@ -611,9 +817,19 @@ namespace SIPSorcery.SoftPhone
         private void SetStatusText(TextBlock textBlock, string text)
         {
             logger.LogDebug(text);
+            statusHistory.Add((DateTime.Now, text));
+
+            if (statusHistory.Count > 10)
+            {
+                statusHistory.RemoveAt(10);
+            }
+            string statusHistoryString = statusHistory.Aggregate("Previous states:" + Environment.NewLine,
+                    (accu, item) => accu += $"{Environment.NewLine} {item.Time.ToString("yyyy-MM-dd HH:mm:ss")}: {item.Message}");
+
             Dispatcher.DoOnUIThread(() =>
             {
                 textBlock.Text = text;
+                textBlock.ToolTip = statusHistoryString;
             });
         }
 

@@ -79,6 +79,11 @@ namespace SIPSorcery.SoftPhone
         /// left empty a single UDP channel on the default SIP port will be used.
         /// </summary>
         public List<SIPSocketSettings> SIPSockets { get; set; } = new List<SIPSocketSettings>();
+
+        /// <summary>
+        /// Optional, dropdown entries in call destination fields
+        /// </summary>
+        public List<string> QuickDialEntries { get; set; } = new List<string>();
     }
 
     /// <summary>
