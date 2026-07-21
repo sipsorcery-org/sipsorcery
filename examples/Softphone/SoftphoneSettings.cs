@@ -84,6 +84,11 @@ namespace SIPSorcery.SoftPhone
         /// Optional, dropdown entries in call destination fields
         /// </summary>
         public List<string> QuickDialEntries { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Enables text log output
+        /// </summary>
+        public bool EnableLog { get; set; }
     }
 
     /// <summary>
