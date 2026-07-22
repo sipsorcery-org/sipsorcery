@@ -66,11 +66,12 @@ if (-not $isLive2D) {
     }
 }
 
-# Everything after '--' is forwarded to the game (OS.GetCmdlineUserArgs), where AvatarStreamer
-# reads '--avatar'.
-$gameArgs = @('--path', $root, '--', '--avatar', $Avatar)
+# The 2dog host owns the process. It forwards these values to Godot as user arguments, where
+# AvatarStreamer reads them through OS.GetCmdlineUserArgs().
+$hostProject = Join-Path $root 'WebRTCGodotAvatar.2dog\WebRTCGodotAvatar.2dog.csproj'
+$gameArgs = @('run', '--project', $hostProject, '--no-launch-profile', '--', '--', '--avatar', $Avatar)
 if ($Gender) { $gameArgs += @('--gender', $Gender) }
 if ($Voice) { $gameArgs += @('--voice', $Voice) }
-Start-Process -FilePath $godot -ArgumentList $gameArgs
-Write-Host "Godot launched with the '$Avatar' avatar$(if ($Voice) { " (voice: $Voice)" } elseif ($Gender) { " (gender: $Gender)" }). Browse to http://localhost:8081 and click Connect."
+Start-Process -FilePath 'dotnet' -WorkingDirectory $root -ArgumentList $gameArgs
+Write-Host "2dog launched the '$Avatar' avatar$(if ($Voice) { " (voice: $Voice)" } elseif ($Gender) { " (gender: $Gender)" }). Browse to http://localhost:8081 and click Connect."
 Write-Host "(The in-process LLM takes ~10-15s to load; the page answers once it is ready.)"

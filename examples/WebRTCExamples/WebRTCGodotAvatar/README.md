@@ -43,7 +43,7 @@ Common to both:
 - **Godot 4.7.x .NET** — the `Godot_v4.7-stable_mono_win64` editor (the C# "Godot Engine - .NET" / "mono" build, **not**
   the standard build). `run-demo.ps1` auto-discovers it anywhere under `C:\dev`; set the `GODOT`
   environment variable to the editor `.exe` if yours is elsewhere.
-- **.NET SDK 8.0+**, and a full checkout of this repo — the example references the in-repo
+- **.NET SDK 10.0+**, and a full checkout of this repo — the 2dog host references the in-repo
   `SIPSorcery` and `SIPSorcery.VP8` projects directly.
 - **For the Live2D native build only:** Python 3 with SCons, and the Visual Studio 2026
   **"Desktop development with C++"** workload (MSVC v143). Not needed for the VRM avatar, or if you
@@ -121,6 +121,10 @@ avatar won't render (the VRM avatar is unaffected).
 dotnet build     # in this folder; pulls in the in-repo SIPSorcery projects
 ```
 
+The sibling `WebRTCGodotAvatar.2dog` project references [`2dog.engine`](https://www.nuget.org/packages/2dog.engine).
+It starts Godot as an embedded `libgodot` library and pumps the main loop from the .NET host; the
+Godot project remains available for editor-based asset import and inspection.
+
 ### 4a. VRM model  *(3D avatar)*
 Drop any VRoid/VRM humanoid at `Models/UserAvatar.vrm`. A good free option is a **VRoid
 AvatarSample** or a model exported from **VRoid Studio**
@@ -181,7 +185,7 @@ the model's full canvas; when it finishes, the view returns to the portrait crop
 On the **first** launch `run-demo.ps1` opens the project once in the headless Godot editor to import
 the assets — the VRM importer and the Live2D texture import are editor-only and don't run when the
 game is launched directly. For a VRM avatar it imports the selected `Models/<name>.vrm`; for a Live2D
-avatar it runs a one-time texture-import pass (no VRM required). If a VRM ever fails to load, delete
+avatar it runs a one-time texture-import pass (no VRM required), then launches the 2dog host. If a VRM ever fails to load, delete
 `.godot/imported` and let it re-import. The in-process LLM then takes ~10–15s to load; the page
 answers once it is ready.
 

@@ -26,6 +26,7 @@
     <Project Path="examples/StunServer/StunServer.csproj" />
     <Project Path="examples/TurnServerExample/TurnServerExample.csproj" />
     <Project Path="examples/webrtccmdline/webrtccmdline.csproj" />
+    <Project Path="examples/WebRTCExamples/WebRTCGodotAvatar/WebRTCGodotAvatar.2dog/WebRTCGodotAvatar.2dog.csproj" />
   </Folder>
   <Folder Name="/examples/AzureExamples/">
     <Project Path="examples/AzureExamples/TextToPcm/TextToPcm.csproj" />
@@ -136,8 +137,8 @@
     <Project Path="examples/WebRTCScenarios/DataChannelStressTest/DataChannelStressTest.csproj" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/SIPSorcery.Cli/SIPSorcery.Cli.csproj" />
     <Project Path="src/SIPSorcery.Cli.Common/SIPSorcery.Cli.Common.csproj" />
+    <Project Path="src/SIPSorcery.Cli/SIPSorcery.Cli.csproj" />
     <Project Path="src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj" />
     <Project Path="src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj" />
     <Project Path="src/SIPSOrcery.VP8/SIPSorcery.VP8.csproj" />
