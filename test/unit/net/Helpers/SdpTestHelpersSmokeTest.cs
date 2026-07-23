@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SdpTestHelpersSmokeTest.cs
 //
 // Description: Smoke tests for the SDP test infrastructure
@@ -155,8 +155,8 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         [Fact]
         public void SdpNormaliser_ReplacesSessionIdAndPortAndIceCreds()
         {
-            string sdp = SdpFixtures.WebRtcAudioOfferOpus;
-            string normalised = SdpNormaliser.Normalise(sdp);
+            var sdp = SdpFixtures.WebRtcAudioOfferOpus;
+            var normalised = SdpNormaliser.Normalise(sdp);
 
             Assert.Contains("<SID> <SVER>", normalised);
             Assert.Contains("<UFRAG>", normalised);
@@ -188,8 +188,8 @@ namespace SIPSorcery.Net.UnitTests.Helpers
                 sdp2 = pc2.createOffer(new RTCOfferOptions()).sdp;
             }
 
-            string norm1 = SdpNormaliser.NormaliseCompact(sdp1);
-            string norm2 = SdpNormaliser.NormaliseCompact(sdp2);
+            var norm1 = SdpNormaliser.NormaliseCompact(sdp1);
+            var norm2 = SdpNormaliser.NormaliseCompact(sdp2);
 
             logger.LogDebug("Normalised offer 1:\n{Sdp}", norm1);
             logger.LogDebug("Normalised offer 2:\n{Sdp}", norm2);

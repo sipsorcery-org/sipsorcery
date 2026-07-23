@@ -154,7 +154,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string eventDialogInfoStr = $"<?xml version='1.0' encoding='utf-16'?><dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'> <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>  <state event='remote-bye' code='486'>terminated</state>  <duration>13</duration> </dialog></dialog-info>";
+            var eventDialogInfoStr = $"<?xml version='1.0' encoding='utf-16'?><dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'> <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>  <state event='remote-bye' code='486'>terminated</state>  <duration>13</duration> </dialog></dialog-info>";
 
             SIPEventDialogInfo dialogInfo = SIPEventDialogInfo.Parse(eventDialogInfoStr);
 
@@ -184,7 +184,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string eventDialogInfoStr = $"<?xml version='1.0' encoding='utf-16'?><dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'> <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>  <state event='remote-bye' code='486'>terminated</state>  <duration>13</duration> </dialog> <dialog id='4353458'>  <state>progressing</state> </dialog></dialog-info>";
+            var eventDialogInfoStr = $"<?xml version='1.0' encoding='utf-16'?><dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'> <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>  <state event='remote-bye' code='486'>terminated</state>  <duration>13</duration> </dialog> <dialog id='4353458'>  <state>progressing</state> </dialog></dialog-info>";
 
             SIPEventDialogInfo dialogInfo = SIPEventDialogInfo.Parse(eventDialogInfoStr);
 
@@ -208,7 +208,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string eventDialogInfoStr = $"<?xml version='1.0' encoding='utf-16'?><dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'> <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>  <state event='remote-bye' code='486'>terminated</state>  <duration>13</duration>  <local>   <identity>sip:109@sipsorcery.com;user=phone</identity>   <cseq>2</cseq>  </local>  <remote>   <identity display-name='Joe Bloggs'>sip:thisis@anonymous.invalid</identity>   <target uri='sip:user@10.1.1.7:5070' />   <cseq>1</cseq>  </remote> </dialog></dialog-info>";
+            var eventDialogInfoStr = $"<?xml version='1.0' encoding='utf-16'?><dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'> <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>  <state event='remote-bye' code='486'>terminated</state>  <duration>13</duration>  <local>   <identity>sip:109@sipsorcery.com;user=phone</identity>   <cseq>2</cseq>  </local>  <remote>   <identity display-name='Joe Bloggs'>sip:thisis@anonymous.invalid</identity>   <target uri='sip:user@10.1.1.7:5070' />   <cseq>1</cseq>  </remote> </dialog></dialog-info>";
 
             SIPEventDialogInfo dialogInfo = SIPEventDialogInfo.Parse(eventDialogInfoStr);
 

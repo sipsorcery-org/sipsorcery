@@ -127,16 +127,16 @@ public sealed class TestPatternSourceNode : ISourceNode
         _audioSource.OnAudioSourceEncodedSample += HandleAudioEncoded;
     }
 
-    private void HandleEncoded(uint durationRtpUnits, byte[] sample)
+    private void HandleEncoded(uint durationRtpUnits, ReadOnlyMemory<byte> sample)
     {
         _timestamp += durationRtpUnits;
-        OnFrame?.Invoke(MediaFrame.ForVideo(sample, _timestamp, _format, durationRtpUnits));
+        OnFrame?.Invoke(MediaFrame.ForVideo(sample.ToArray(), _timestamp, _format, durationRtpUnits));
     }
 
-    private void HandleAudioEncoded(uint durationRtpUnits, byte[] sample)
+    private void HandleAudioEncoded(uint durationRtpUnits, ReadOnlyMemory<byte> sample)
     {
         _audioTimestamp += durationRtpUnits;
-        OnFrame?.Invoke(MediaFrame.ForAudio(sample, _audioTimestamp, durationRtpUnits, _audioFormat));
+        OnFrame?.Invoke(MediaFrame.ForAudio(sample.ToArray(), _audioTimestamp, durationRtpUnits, _audioFormat));
     }
 
     public async Task StartAsync(CancellationToken ct)

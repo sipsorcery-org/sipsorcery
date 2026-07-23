@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -252,13 +254,7 @@ namespace SIPSorcery.SIP
 
         public void PrintPendingTransactions()
         {
-            logger.LogDebug("=== Pending Transactions ===");
-
-            var now = DateTime.Now;
-            foreach (var (_, transaction) in m_pendingTransactions)
-            {
-                logger.LogDebug("Pending transaction {TransactionRequestMethod} {TransactionState} {TransactionCreationTotalSeconds:0.##}s {TransactionRequestURI} ({TransactionId}).", transaction.TransactionRequest.Method, transaction.TransactionState, now.Subtract(transaction.Created).TotalSeconds, transaction.TransactionRequestURI, transaction.TransactionId);
-            }
+            logger.LogPendingTransactions(m_pendingTransactions);
         }
 
         public void Shutdown()
@@ -393,7 +389,7 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("InviteServer Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogUASInviteUnexpectedState(transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
@@ -427,7 +423,7 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("InviteClient Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogClientInviteUnexpectedState(transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
@@ -469,20 +465,20 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     default:
-                                                        logger.LogWarning("NonInvite Transaction entered an unexpected transaction state {TransactionState}.", transaction.TransactionState);
+                                                        logger.LogNonInviteUnexpectedState(transaction.TransactionState);
                                                         transaction.DeliveryFailed = true;
                                                         break;
                                                 }
                                                 break;
 
                                             default:
-                                                logger.LogWarning("Unrecognised transaction type {TransactionType}.", transaction.TransactionType);
+                                                logger.LogUnrecognisedTransactionType(transaction.TransactionType);
                                                 break;
                                         }
 
-                                        if (sendResult != SocketError.Success && sendResult != SocketError.InProgress)
+                                        if (sendResult is not SocketError.Success and not SocketError.InProgress)
                                         {
-                                            logger.LogWarning("SIP transaction send failed in state {TransactionState} with error {SendResult}.", transaction.TransactionState, sendResult);
+                                            logger.LogSIPTransactionSendFailed(transaction.TransactionState, sendResult);
 
                                             // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
                                             // or attempting to send to a UDP socket that has previously returned an ICMP error.
@@ -493,7 +489,7 @@ namespace SIPSorcery.SIP
                             }
                             catch (Exception excp)
                             {
-                                logger.LogError(excp, "Exception processing pending transactions. {ErrorMessage}", excp.Message);
+                                logger.LogPendingTransactionsException(excp);
                             }
                         }
 
@@ -505,7 +501,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception processing pending transactions. {ErrorMessage}", excp.Message);
+                logger.LogPendingTransactionsException(excp);
             }
         }
 
@@ -644,7 +640,7 @@ namespace SIPSorcery.SIP
 
                 foreach (var (_, transaction) in m_pendingTransactions)
                 {
-                    if (transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                    if (transaction.TransactionType is SIPTransactionTypesEnum.InviteClient or SIPTransactionTypesEnum.InviteServer)
                     {
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
@@ -706,8 +702,8 @@ namespace SIPSorcery.SIP
                             // - Calling: it means no response of any kind (provisional or final) was received from the server in time.
                             // - Trying: it means all we got was a "100 Trying" response without any follow up progress indications or final response.
 
-                            if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                                transaction.TransactionState == SIPTransactionStatesEnum.Trying)
+                            if (transaction.TransactionState is SIPTransactionStatesEnum.Calling or
+                                SIPTransactionStatesEnum.Trying)
                             {
                                 transaction.Expire(now);
                                 expiredTransactionIds.Add(transaction.TransactionId);
@@ -725,9 +721,9 @@ namespace SIPSorcery.SIP
                     }
                     else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                     {
-                        if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
-                           transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
-                           transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                        if (transaction.TransactionState is SIPTransactionStatesEnum.Calling or
+                           SIPTransactionStatesEnum.Trying or
+                           SIPTransactionStatesEnum.Proceeding)
                         {
                             //logger.LogWarning("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
                             transaction.Expire(now);
@@ -748,7 +744,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RemoveExpiredTransaction. {ErrorMessage}", excp.Message);
+                logger.LogRemoveExpiredTransactionException(excp);
             }
         }
 

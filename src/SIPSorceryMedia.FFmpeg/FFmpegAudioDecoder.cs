@@ -223,16 +223,16 @@ namespace SIPSorceryMedia.FFmpeg
 
         private unsafe void RunDecodeLoop()
         {
-            bool needToRestartAudio = false;
+            var needToRestartAudio = false;
 
             AVPacket* pkt = ffmpeg.av_packet_alloc();
             AVFrame* avFrame = ffmpeg.av_frame_alloc();
 
-            int eagain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
+            var eagain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
             int error;
 
-            bool canContinue = true;
-            bool managePacket = true;
+            var canContinue = true;
+            var managePacket = true;
 
             double firts_dpts = 0;
 
@@ -254,12 +254,18 @@ namespace SIPSorceryMedia.FFmpeg
                     {
                         managePacket = false;
                         if (error == eagain)
+                        {
                             ffmpeg.av_packet_unref(pkt);
+                        }
                         else
+                        {
                             canContinue = false;
+                        }
                     }
                     else
+                    {
                         managePacket = true;
+                    }
 
                     if (managePacket)
                     {
@@ -271,7 +277,7 @@ namespace SIPSorceryMedia.FFmpeg
                                 return;
                             }
 
-                            int recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);
+                            var recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);
                             while (recvRes >= 0)
                             {
 
@@ -287,16 +293,20 @@ namespace SIPSorceryMedia.FFmpeg
                                         original_dpts = dpts;
 
                                         if (firts_dpts == 0)
+                                        {
                                             firts_dpts = dpts;
+                                        }
 
                                         dpts -= firts_dpts;
                                     }
-                                    int sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
+                                    var sleep = (int)(dpts * 1000 - DateTime.Now.Subtract(startTime).TotalMilliseconds);
                                     //Console.WriteLine($"sleep {sleep} {Math.Min(_maxAudioFrameSpace, sleep)} - firts_dpts:{firts_dpts} - dpts:{dpts} - original_dpts:{original_dpts}");
 
 
                                     if (sleep > Helper.MIN_SLEEP_MILLISECONDS)
+                                    {
                                         ffmpeg.av_usleep((uint)(Math.Min(_maxAudioFrameSpace, sleep) * 1000));
+                                    }
                                 }
 
                                 recvRes = ffmpeg.avcodec_receive_frame(_audDecCtx, avFrame);

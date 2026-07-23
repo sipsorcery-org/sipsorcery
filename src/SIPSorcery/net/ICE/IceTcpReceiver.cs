@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -72,7 +74,7 @@ public class IceTcpReceiver : UdpReceiver
         catch (SocketException sockExcp)
         {
             m_isRunningReceive = false;
-            logger.LogWarning(sockExcp, "Socket error {SocketErrorCode} in IceTcpReceiver.BeginReceiveFrom. {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
+            logger.LogIceSocketWarning(sockExcp.SocketErrorCode, sockExcp.Message, sockExcp);
             //Close(sockExcp.Message);
         }
         catch (Exception excp)
@@ -81,7 +83,7 @@ public class IceTcpReceiver : UdpReceiver
             // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
             // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
             // case the socket can be considered to be unusable and there's no point trying another receive.
-            logger.LogError(excp, "Exception IceTcpReceiver.BeginReceiveFrom. {ErrorMessage}", excp.Message);
+            logger.LogIceSocketReceiveError(excp.Message, excp);
             Close(excp.Message);
         }
     }
@@ -153,19 +155,19 @@ public class IceTcpReceiver : UdpReceiver
             // In all cases the local socket is still perfectly usable — the error relates to a
             // single outbound send, not to the health of the receive path. The receive loop must
             // continue so that packets arriving from the (possibly new) remote endpoint are not lost.
-            logger.LogWarning(resetSockExcp, "SocketException RtpIceChannel.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
+            logger.LogIceSocketEndReceiveWarning(resetSockExcp.SocketErrorCode, resetSockExcp.Message, resetSockExcp);
         }
         catch (SocketException sockExcp)
         {
             // Other socket errors are also non-fatal for a UDP receive path. The same transient
             // scenarios described above apply.
-            logger.LogWarning(sockExcp, "SocketException RtpIceChannel.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
+            logger.LogIceSocketEndReceiveWarning(sockExcp.SocketErrorCode, sockExcp.Message, sockExcp);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
         catch (Exception excp)
         {
-            logger.LogError(excp, "Exception IceTcpReceiver.EndReceiveFrom. {ErrorMessage}", excp.Message);
+            logger.LogIceTcpReceiveError(excp.Message, excp);
             Close(excp.Message);
         }
         finally
@@ -232,7 +234,7 @@ public class IceTcpReceiver : UdpReceiver
 
                         var newOffset = recvRemainingSegment.Offset + stunMsgBytes;
                         var newCount = recvRemainingSegment.Count - stunMsgBytes;
-                        if (newCount > STUNHeader.STUN_HEADER_LENGTH && newOffset >= 0)
+                        if (newCount >= STUNHeader.STUN_HEADER_LENGTH && newOffset >= 0)
                         {
                             recvRemainingSegment = new ArraySegment<byte>(recvRemainingSegment.Array, newOffset, newCount);
                         }

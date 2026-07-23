@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using Microsoft.Extensions.Logging;
@@ -94,7 +96,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception parsing RTSP response. {ErrorMessage}", excp.Message);
+                logger.LogRtspResponseParseError(excp.Message, excp);
                 throw new ApplicationException($"There was an exception parsing an RTSP response. {excp.Message}");
             }
         }
@@ -121,7 +123,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTSPResponse ToString. {ErrorMessage}", excp.Message);
+                logger.LogRtspResponseToStringError(excp.Message, excp);
                 throw;
             }
         }

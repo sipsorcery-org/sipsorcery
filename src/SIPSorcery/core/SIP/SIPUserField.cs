@@ -16,6 +16,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
@@ -166,7 +168,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUserField ToString. {Message}", excp.Message);
+                logger.LogSIPUserFieldToStringException(excp);
                 throw;
             }
         }
@@ -188,7 +190,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPUserField ToParameterlessString. {Message}", excp.Message);
+                logger.LogSIPUserFieldToParameterlessStringException(excp);
                 throw;
             }
         }

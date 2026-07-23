@@ -225,7 +225,7 @@ namespace SIPSorcery.Net.UnitTests
             var completed = await Task.WhenAny(parseTask, Task.Delay(TimeSpan.FromSeconds(2)));
 
             Assert.True(completed == parseTask, "SctpPacket.Parse did not return, the zero-length chunk parser hang has regressed.");
-            await Assert.ThrowsAsync<ApplicationException>(() => parseTask);
+            await Assert.ThrowsAsync<SipSorceryException>(() => parseTask);
         }
 
         /// <summary>

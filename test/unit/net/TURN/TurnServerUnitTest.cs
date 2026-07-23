@@ -180,7 +180,7 @@ namespace SIPSorcery.Net.UnitTests
                 a => a.AttributeType == STUNAttributeTypesEnum.ErrorCode);
             Assert.NotNull(errorAttr);
             Assert.True(errorAttr.Value.Length >= 4);
-            int errorCode = errorAttr.Value[2] * 100 + errorAttr.Value[3];
+            var errorCode = errorAttr.Value.Span[2] * 100 + errorAttr.Value.Span[3];
             Assert.Equal(401, errorCode);
 
             // Should contain REALM

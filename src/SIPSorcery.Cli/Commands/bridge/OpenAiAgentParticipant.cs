@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: OpenAiAgentParticipant.cs
 //
 // Description: The "openai" bridge endpoint: a voice agent backed by the OpenAI
@@ -106,7 +106,7 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
             _avatar.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
             {
                 _videoTimestamp += durationRtpUnits;
-                OnFrame?.Invoke(MediaFrame.ForVideo(sample, _videoTimestamp, _h264, durationRtpUnits));
+                OnFrame?.Invoke(MediaFrame.ForVideo(sample.ToArray(), _videoTimestamp, _h264, durationRtpUnits));
             };
         }
     }
@@ -194,7 +194,7 @@ public sealed class OpenAiAgentParticipant : IBridgeParticipant, IGreetable, ITr
             return;
         }
 
-        OnFrame?.Invoke(MediaFrame.ForAudio(frame.EncodedAudio, 0, ToRtpUnits(frame), AudioCommonlyUsedFormats.OpusWebRTC));
+        OnFrame?.Invoke(MediaFrame.ForAudio(frame.EncodedAudio.ToArray(), 0, ToRtpUnits(frame), AudioCommonlyUsedFormats.OpusWebRTC));
         Interlocked.Increment(ref _voiceFrames);
         Interlocked.Add(ref _voiceBytes, frame.EncodedAudio.Length);
 

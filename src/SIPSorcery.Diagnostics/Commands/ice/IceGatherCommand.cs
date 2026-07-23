@@ -215,13 +215,17 @@ public sealed class IceGatherCommand : CommandBase
             stopwatch.Stop();
 
             var candidates = iceChannel.Candidates
-                .Select(x => new CandidateResult(
-                    x.type.ToString(),
-                    x.protocol.ToString(),
-                    x.address,
-                    x.port,
-                    string.IsNullOrWhiteSpace(x.relatedAddress) ? null : x.relatedAddress,
-                    x.relatedPort > 0 ? x.relatedPort : null))
+                .Select(x =>
+                {
+                    Debug.Assert(x.address is not null);
+                    return new CandidateResult(
+                        x.type.ToString(),
+                        x.protocol.ToString(),
+                        x.address,
+                        x.port,
+                        string.IsNullOrWhiteSpace(x.relatedAddress) ? null : x.relatedAddress,
+                        x.relatedPort > 0 ? x.relatedPort : null);
+                })
                 .ToList();
 
             if (completed != gatheringComplete.Task)

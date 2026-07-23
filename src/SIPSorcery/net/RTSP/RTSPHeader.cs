@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,29 +109,26 @@ namespace SIPSorcery.Net
                     var fieldName = field[fieldKeyValueRange[0]];
                     var fieldValue = field[fieldKeyValueRange[1]];
 
-                    if (fieldName.Equals(CLIENT_RTP_PORT_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
+                    switch (fieldName)
                     {
-                        transportHeader.ClientRTPPortRange = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(DESTINATION_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.Destination = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(SERVER_RTP_PORT_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.ServerRTPPortRange = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(SOURCE_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.Source = fieldValue.Trim().ToString();
-                    }
-                    else if (fieldName.Equals(MODE_FIELD_NAME, StringComparison.OrdinalIgnoreCase))
-                    {
-                        transportHeader.Mode = fieldValue.Trim().ToString();
-                    }
-                    else
-                    {
-                        logger.LogWarning("An RTSP Transport header parameter was not recognised: {Field}", field.ToString());
+                        case var fn when (CLIENT_RTP_PORT_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.ClientRTPPortRange = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (DESTINATION_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.Destination = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (SERVER_RTP_PORT_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.ServerRTPPortRange = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (SOURCE_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.Source = fieldValue.Trim().ToString();
+                            break;
+                        case var fn when (MODE_FIELD_NAME.Equals(fn, StringComparison.OrdinalIgnoreCase)):
+                            transportHeader.Mode = fieldValue.Trim().ToString();
+                            break;
+                        default:
+                            logger.LogRtspUnrecognisedHeaderParameter(field);
+                            break;
                     }
 
                     fieldIndex++;
@@ -392,12 +391,12 @@ namespace SIPSorcery.Net
 
                         if (delimiterIndex == -1)
                         {
-                            logger.LogError("Invalid RTSP header, ignoring. header={HeaderLine}.", headerLine);
+                            logger.LogRtspInvalidHeaderIgnoring(headerLine);
 
                             try
                             {
                                 string errorHeaders = String.Join(m_CRLF, headersCollection);
-                                logger.LogError("Full Invalid Headers: {ErrorHeaders}", errorHeaders);
+                                logger.LogRtspFullInvalidHeaders(errorHeaders);
                             }
                             catch { }
 
@@ -429,11 +428,11 @@ namespace SIPSorcery.Net
 
                             if (string.IsNullOrWhiteSpace(headerValue))
                             {
-                                logger.LogWarning("Invalid RTSP header, the {HeaderName} was empty.", RTSPHeaders.RTSP_HEADER_CONTENTLENGTH);
+                                logger.LogRtspContentLengthEmptyWarning(RTSPHeaders.RTSP_HEADER_CONTENTLENGTH);
                             }
                             else if (!Int32.TryParse(headerValue.Trim(), out rtspHeader.ContentLength))
                             {
-                                logger.LogWarning("Invalid RTSP header, the {HeaderName} was not a valid 32 bit integer, {HeaderValue}.", RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, headerValue);
+                                logger.LogRtspContentLengthNotIntWarning(RTSPHeaders.RTSP_HEADER_CONTENTLENGTH, headerValue);
                             }
                         }
                         #endregion
@@ -445,12 +444,12 @@ namespace SIPSorcery.Net
                             if (string.IsNullOrWhiteSpace(headerValue))
                             {
                                 rtspHeader.CSeqParserError = RTSPHeaderParserError.CSeqEmpty;
-                                logger.LogWarning("Invalid RTSP header, the {HeaderName} was empty.", RTSPHeaders.RTSP_HEADER_CSEQ);
+                                logger.LogRtspCseqEmptyWarning(RTSPHeaders.RTSP_HEADER_CSEQ);
                             }
                             else if (!Int32.TryParse(headerValue.Trim(), out rtspHeader.CSeq))
                             {
                                 rtspHeader.CSeqParserError = RTSPHeaderParserError.CSeqNotValidInteger;
-                                logger.LogWarning("Invalid SIP header, the {HeaderName} was not a valid 32 bit integer, {HeaderValue}.", RTSPHeaders.RTSP_HEADER_CSEQ, headerValue);
+                                logger.LogRtspCseqNotIntWarning(RTSPHeaders.RTSP_HEADER_CSEQ, headerValue);
                             }
                         }
                         #endregion
@@ -475,7 +474,7 @@ namespace SIPSorcery.Net
                     }
                     catch (Exception parseExcp)
                     {
-                        logger.LogError(parseExcp, "Error parsing RTSP header '{HeaderLine}'. {ErrorMessage}", headerLine, parseExcp.Message);
+                        logger.LogRtspHeaderParseError(headerLine, parseExcp.Message, parseExcp);
                         throw;
                     }
                 }
@@ -490,7 +489,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseRTSPHeaders. {ErrorMessage}", excp.Message);
+                logger.LogRtspParseHeadersError(excp.Message, excp);
                 throw;
             }
         }
@@ -547,7 +546,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception RTSPHeader ToString. {ErrorMessage}", excp.Message);
+                logger.LogRtspHeaderToStringError(excp.Message, excp);
                 throw;
             }
         }

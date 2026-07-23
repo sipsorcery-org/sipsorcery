@@ -19,159 +19,235 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Org.BouncyCastle.Tls;
 using SIPSorcery.Net.SharpSRTP.DTLS;
 using SIPSorcery.Net.SharpSRTP.DTLSSRTP;
 using SIPSorcery.Net.SharpSRTP.SRTP;
 
-namespace SIPSorcery.Net
+namespace SIPSorcery.Net;
+
+public delegate void OnDataReadyEvent(byte[] data);
+public delegate void OnDtlsAlertEvent(TlsAlertLevelsEnum alertLevel, TlsAlertTypesEnum alertType, string alertDescription);
+
+public class DtlsSrtpTransport : DatagramTransport
 {
-    public delegate void OnDataReadyEvent(byte[] data);
-    public delegate void OnDtlsAlertEvent(TlsAlertLevelsEnum alertLevel, TlsAlertTypesEnum alertType, string alertDescription);
+    public const int MAXIMUM_MTU = 1472; // 1500 - 20 (IP) - 8 (UDP)
+    public const int DTLS_RETRANSMISSION_CODE = -1;
 
-    public class DtlsSrtpTransport : DatagramTransport
+    private IDtlsSrtpPeer _connection;
+
+    private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
+    private Certificate? _peerCertificate;
+
+    public DatagramTransport? Transport { get; internal set; }
+    public bool IsClient { get { return _connection is DtlsSrtpClient; } }
+    public SrtpKeys? Keys { get; private set; }
+
+    public ThreadSafeSrtpSessionContext? Context { get; private set; }
+
+    public int TimeoutMilliseconds { get { return _connection.TimeoutMilliseconds; } set { _connection.TimeoutMilliseconds = value; } }
+
+    public event OnDataReadyEvent? OnDataReady;
+
+    public event OnDtlsAlertEvent? OnAlert;
+
+    public DtlsSrtpTransport(IDtlsSrtpPeer connection)
     {
-        public const int MAXIMUM_MTU = 1472; // 1500 - 20 (IP) - 8 (UDP)
-        public const int DTLS_RETRANSMISSION_CODE = -1;
+        this._connection = connection;
+        this._connection.OnSessionStarted += DtlsSrtpTransport_OnSessionStarted;
+        this._connection.OnAlert += DtlsSrtpTransport_OnAlert;
+    }
 
-        private IDtlsSrtpPeer _connection;
+    private void DtlsSrtpTransport_OnSessionStarted(object? sender, DtlsSessionStartedEventArgs e)
+    {
+        this._peerCertificate = e.PeerCertificate;
+        this.Context = new ThreadSafeSrtpSessionContext(e.Context);
+    }
 
-        private ConcurrentQueue<byte[]> _data = new ConcurrentQueue<byte[]>();
-        private Certificate _peerCertificate;
+    private void DtlsSrtpTransport_OnAlert(object? sender, DtlsAlertEventArgs args)
+    {
+        OnAlert?.Invoke(args.Level, args.AlertType, args.Description);
+    }
 
-        public DatagramTransport Transport { get; internal set; }
-        public bool IsClient { get { return _connection is DtlsSrtpClient; } }
-        public SrtpKeys Keys { get; private set; }
+    public bool DoHandshake(out string? handshakeError)
+    {
+        var transport = _connection.DoHandshake(out handshakeError, this, null);
+        Transport = transport;
+        return string.IsNullOrEmpty(handshakeError);
+    }
 
-        public ThreadSafeSrtpSessionContext Context { get; private set; }
+    public bool IsHandshakeComplete()
+    {
+        return Transport is not null;
+    }
 
-        public int TimeoutMilliseconds { get { return _connection.TimeoutMilliseconds; } set { _connection.TimeoutMilliseconds = value; } }
+    public int ProtectRTP(ReadOnlyMemory<byte> payload, Memory<byte> output, out int outputBufferLength)
+    {
+        Debug.Assert(Context is not null);
 
-        public event OnDataReadyEvent OnDataReady;
-
-        public event OnDtlsAlertEvent OnAlert;
-
-        public DtlsSrtpTransport(IDtlsSrtpPeer connection)
+#if NET8_0_OR_GREATER
+        var result = Context.ProtectRtp(payload.Span, output.Span, out outputBufferLength);
+#else
+        if (!MemoryMarshal.TryGetArray(payload, out var payloadSegment))
         {
-            this._connection = connection;
-            this._connection.OnSessionStarted += DtlsSrtpTransport_OnSessionStarted;
-            this._connection.OnAlert += DtlsSrtpTransport_OnAlert;
+            throw new ArgumentException("The payload memory must be backed by an array.", nameof(payload));
         }
-
-        private void DtlsSrtpTransport_OnSessionStarted(object sender, DtlsSessionStartedEventArgs e)
+        if (!MemoryMarshal.TryGetArray(output, out ArraySegment<byte> outputSegment)
+            || outputSegment is not { Offset: 0, Array: { } outputArray })
         {
-            this._peerCertificate = e.PeerCertificate;
-            this.Context = new ThreadSafeSrtpSessionContext(e.Context);
+            throw new ArgumentException("The output memory must be backed by an array with 0 offset.", nameof(output));
         }
+        var result = Context.ProtectRtp(payloadSegment, outputArray, out outputBufferLength);
+#endif
 
-        private void DtlsSrtpTransport_OnAlert(object sender, DtlsAlertEventArgs args)
+        return result;
+    }
+
+    public int UnprotectRTP(ReadOnlyMemory<byte> payload, Memory<byte> output, out int outputBufferLength)
+    {
+        Debug.Assert(Context is not null);
+
+#if NET8_0_OR_GREATER
+        var result = Context.UnprotectRtp(payload.Span, output.Span, out outputBufferLength);
+#else
+        if (!MemoryMarshal.TryGetArray(payload, out var payloadSegment))
         {
-            OnAlert?.Invoke(args.Level, args.AlertType, args.Description);
+            throw new ArgumentException("The payload memory must be backed by an array.", nameof(payload));
         }
-
-        public bool DoHandshake(out string handshakeError)
+        if (!MemoryMarshal.TryGetArray(output, out ArraySegment<byte> outputSegment)
+            || outputSegment is not { Offset: 0, Array: { } outputArray })
         {
-            DtlsTransport transport = _connection.DoHandshake(out handshakeError, this, null);
-            Transport = transport;
-            return string.IsNullOrEmpty(handshakeError);
+            throw new ArgumentException("The output memory must be backed by an array with 0 offset.", nameof(output));
         }
+        var result = Context.UnprotectRtp(payloadSegment, outputArray, out outputBufferLength);
+#endif
 
-        public bool IsHandshakeComplete()
+        return result;
+    }
+
+    public int ProtectRTCP(ReadOnlyMemory<byte> payload, Memory<byte> output, out int outputBufferLength)
+    {
+        Debug.Assert(Context is not null);
+
+#if NET8_0_OR_GREATER
+        var result = Context.ProtectRtcp(payload.Span, output.Span, out outputBufferLength);
+#else
+        if (!MemoryMarshal.TryGetArray(payload, out var payloadSegment))
         {
-            return Transport != null;
+            throw new ArgumentException("The payload memory must be backed by an array.", nameof(payload));
         }
-
-        public int ProtectRTP(byte[] payload, int length, out int outputBufferLength)
+        if (!MemoryMarshal.TryGetArray(output, out ArraySegment<byte> outputSegment)
+            || outputSegment is not { Offset: 0, Array: { } outputArray })
         {
-            return Context.ProtectRtp(payload, length, out outputBufferLength);
+            throw new ArgumentException("The output memory must be backed by an array with 0 offset.", nameof(output));
         }
+        var result = Context.ProtectRtcp(payloadSegment, outputArray, out outputBufferLength);
+#endif
 
-        public int UnprotectRTP(byte[] payload, int length, out int outputBufferLength)
-        {
-            return Context.UnprotectRtp(payload, length, out outputBufferLength);
-        }        
+        return result;
+    }
 
-        public int ProtectRTCP(byte[] payload, int length, out int outputBufferLength)
+    public int UnprotectRTCP(ReadOnlyMemory<byte> payload, Memory<byte> output, out int outputBufferLength)
+    {
+        Debug.Assert(Context is not null);
+
+#if NET8_0_OR_GREATER
+        var result = Context.UnprotectRtcp(payload.Span, output.Span, out outputBufferLength);
+#else
+        if (!MemoryMarshal.TryGetArray(payload, out var payloadSegment))
         {
-            return Context.ProtectRtcp(payload, length, out outputBufferLength);
+            throw new ArgumentException("The payload memory must be backed by an array.", nameof(payload));
         }
-
-        public int UnprotectRTCP(byte[] payload, int length, out int outputBufferLength)
+        if (!MemoryMarshal.TryGetArray(output, out ArraySegment<byte> outputSegment)
+            || outputSegment is not { Offset: 0, Array: { } outputArray })
         {
-            return Context.UnprotectRtcp(payload, length, out outputBufferLength);
+            throw new ArgumentException("The output memory must be backed by an array with 0 offset.", nameof(output));
         }
+        var result = Context.UnprotectRtcp(payloadSegment, outputArray, out outputBufferLength);
+#endif
 
-        public Certificate GetRemoteCertificate()
+        return result;
+    }
+
+    public Certificate? GetRemoteCertificate()
+    {
+        return _peerCertificate;
+    }
+
+    public int GetReceiveLimit() => MAXIMUM_MTU;
+
+    public int GetSendLimit() => MAXIMUM_MTU;
+
+    // TODO: Optimize to avoid array copy.
+    public void WriteToRecvStream(byte[] buffer) // remoteEndPoint = "127.0.0.1:80"
+    {
+        _data.Enqueue(buffer);
+    }
+
+    public void Close()
+    {
+        var transport = Transport;
+        if (transport != null)
         {
-            return _peerCertificate;
+            Transport = null;
+            transport.Close();
         }
+    }
 
-        public int GetReceiveLimit() => MAXIMUM_MTU;
-
-        public int GetSendLimit() => MAXIMUM_MTU;
-
-        public void WriteToRecvStream(byte[] buffer)
+    public int Receive(byte[] buf, int off, int len, int waitMillis)
+    {
+        var t = 0L;
+        while (true)
         {
-            _data.Enqueue(buffer);
-        }
-
-        public void Close()
-        {
-            var transport = Transport;
-            if (transport != null)
+            if (_data.TryDequeue(out var data))
             {
-                Transport = null;
-                transport.Close();
+                Buffer.BlockCopy(data, 0, buf, off, data.Length);
+                return data.Length;
             }
-        }
-
-        public int Receive(byte[] buf, int off, int len, int waitMillis)
-        {
-            long t = 0;
-            while(true)
+            else
             {
-                if (_data.TryDequeue(out var data))
+                System.Threading.Thread.Sleep(25);
+                t += 25;
+                if (t > waitMillis)
                 {
-                    Buffer.BlockCopy(data, 0, buf, off, data.Length);
-                    return data.Length;
-                }
-                else
-                {
-                    System.Threading.Thread.Sleep(25);
-                    t += 25;
-                    if (t > waitMillis)
-                    {
-                        return -1;
-                    }
+                    return -1;
                 }
             }
+        }
+    }
+
+    public void Send(byte[] buf, int off, int len)
+    {
+        if (OnDataReady is not { } onDataReady)
+        {
+            return;
         }
 
-        public void Send(byte[] buf, int off, int len)
+        if (off != 0 || len < buf.Length)
         {
-            if (off != 0 || len < buf.Length)
-            {
-                buf = buf.AsSpan(off, len).ToArray();
-            }
-            OnDataReady?.Invoke(buf);
+            buf = buf.AsSpan(off, len).ToArray();
         }
+
+        onDataReady(buf);
+    }
 
 #if NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-        public int Receive(Span<byte> buffer, int waitMillis)
+    public int Receive(Span<byte> buffer, int waitMillis)
+    {
+        byte[] buff = buffer.ToArray();
+        int len = Receive(buff, 0, buff.Length, waitMillis);
+        if (len > 0)
         {
-            byte[] buff = buffer.ToArray();
-            int len = Receive(buff, 0, buff.Length, waitMillis);
-            if (len > 0)
-            {
-                buff.AsSpan(0, len).CopyTo(buffer);
-            }
-            return len;
+            buff.AsSpan(0, len).CopyTo(buffer);
         }
-
-        public void Send(ReadOnlySpan<byte> buffer)
-        {
-            Send(buffer.ToArray(), 0, buffer.Length);
-        }
-#endif
+        return len;
     }
+
+    public void Send(ReadOnlySpan<byte> buffer)
+    {
+        Send(buffer.ToArray(), 0, buffer.Length);
+    }
+#endif
 }

@@ -378,7 +378,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPSession duplicateSession = new RTPSession(false, false, false, IPAddress.Loopback, rtpEndPoint.Port);
             MediaStreamTrack duplicateTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum.PCMU) });
-            Assert.Throws<ApplicationException>(() => duplicateSession.addTrack(duplicateTrack));
+            Assert.Throws<SipSorceryException>(() => duplicateSession.addTrack(duplicateTrack));
 
             localSession.Close(null);
         }

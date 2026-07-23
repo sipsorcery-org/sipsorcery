@@ -31,32 +31,32 @@ public struct TextFormat
     : this(format.FormatID, format.FormatName, format.ClockRate, format.Parameters)
     { }
 
-    public TextFormat(TextCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
-    : this(formatID, codec.ToString(), clockRate, parameters)
+    public TextFormat(TextCodecsEnum codec, int formatID, int clockRate = DEFAULT_CLOCK_RATE, string? parameters = null)
+    : this(formatID, codec.ToStringFast(), clockRate, parameters)
     { }
 
     /// <summary>
     /// Creates a new text format based on a dynamic codec (or an unsupported well known codec).
     /// </summary>
-    public TextFormat(int formatID, string formatName, int clockRate = DEFAULT_CLOCK_RATE, string parameters = null)
+    public TextFormat(int formatID, string formatName, int clockRate = DEFAULT_CLOCK_RATE, string? parameters = null)
     {
         if (formatID < 0)
         {
             // Note format ID's less than the dynamic start range are allowed as the codec list
             // does not currently support all well known codecs.
-            throw new ApplicationException("The format ID for an TextFormat must be greater than 0.");
+            throw new SipSorceryMediaException("The format ID for an TextFormat must be greater than 0.");
         }
         else if (formatID > DYNAMIC_ID_MAX)
         {
-            throw new ApplicationException($"The format ID for an TextFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
+            throw new SipSorceryMediaException($"The format ID for an TextFormat exceeded the maximum allowed vale of {DYNAMIC_ID_MAX}.");
         }
         else if (string.IsNullOrWhiteSpace(formatName))
         {
-            throw new ApplicationException($"The format name must be provided for a TextFormat.");
+            throw new SipSorceryMediaException($"The format name must be provided for a TextFormat.");
         }
         else if (clockRate <= 0)
         {
-            throw new ApplicationException($"The clock rate for a TextFormat must be greater than 0.");
+            throw new SipSorceryMediaException($"The clock rate for a TextFormat must be greater than 0.");
         }
 
         FormatID = formatID;
@@ -64,7 +64,7 @@ public struct TextFormat
         ClockRate = clockRate;
         Parameters = parameters;
 
-        if (Enum.TryParse<TextCodecsEnum>(FormatName, out var textCodec))
+        if (TextCodecsEnumExtensions.TryParse(FormatName, out var textCodec))
         {
             Codec = textCodec;
         }
@@ -106,5 +106,5 @@ public struct TextFormat
     /// Example:
     /// a=fmtp:100 98/98/98
     /// </remarks>
-    public string Parameters { get; set; }
+    public string? Parameters { get; set; }
 }

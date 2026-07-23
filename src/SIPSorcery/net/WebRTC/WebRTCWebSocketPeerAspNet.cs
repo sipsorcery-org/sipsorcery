@@ -15,6 +15,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net.WebSockets;
 using System.Text;
@@ -89,16 +91,15 @@ public class WebRTCWebSocketPeerAspNet
 
     public async Task Run()
     {
-        _logger.LogDebug("Web socket client connection established.");
+        _logger.LogSocketConnectionEstablished();
 
         _pc = await CreatePeerConnection(_peerConnectionConfig);
 
         _pc.onicecandidate += async (iceCandidate) =>
         {
-            _logger.LogDebug("Got local ICE candidate, {Candidate}.", iceCandidate.candidate);
+            _logger.LogLocalIceCandidate(iceCandidate.candidate);
 
-            if (_pc.signalingState == RTCSignalingState.have_remote_offer ||
-                _pc.signalingState == RTCSignalingState.stable)
+            if (_pc.signalingState is RTCSignalingState.have_remote_offer or RTCSignalingState.stable)
             {
                 await SendMessageAsync(iceCandidate.toJSON());
             }
@@ -106,7 +107,7 @@ public class WebRTCWebSocketPeerAspNet
 
         _pc.onconnectionstatechange += (state) =>
         {
-            _logger.LogDebug("{caller} peer connection state changed to {state}.", nameof(WebRTCWebSocketPeerAspNet),  state);
+            _logger.LogPeerConnectionStateChanged(nameof(WebRTCWebSocketPeerAspNet), state);
 
             if(state == RTCPeerConnectionState.connected)
             {
@@ -128,7 +129,7 @@ public class WebRTCWebSocketPeerAspNet
                 while (!_cts.Token.IsCancellationRequested && _webSocket.State == WebSocketState.Open)
                 {
                     await Task.Delay(KeepAliveTime);
-                    _logger.LogTrace("Sending signaling channel keep alive 'ping'.");
+                    _logger.LogKeepAlivePing();
                     await SendMessageAsync("ping");
                 }
             });
@@ -140,12 +141,12 @@ public class WebRTCWebSocketPeerAspNet
 
     private async Task SendOffer()
     {
-        _logger.LogDebug("Generating SDP offer to send to web socket client.");
+        _logger.LogGeneratingSdpOffer();
 
         var offerSdp = _pc.createOffer(OfferOptions);
         await _pc.setLocalDescription(offerSdp);
 
-        _logger.LogDebug("Sending SDP offer to web socket client.");
+        _logger.LogSendingSdpOffer();
 
         try
         {
@@ -153,13 +154,13 @@ public class WebRTCWebSocketPeerAspNet
         }
         catch (Exception ex)
         {
-            _logger.LogError("An error has occurred sending web socket message to client.\n{Exception}.", ex);
+            _logger.LogSendMessageError(ex);
         }
     }
 
     private async Task StartReceivingAsync(CancellationToken cancellationToken)
     {
-        _logger.LogDebug("{name} commenced start receiving.", nameof(WebRTCWebSocketPeerAspNet));
+        _logger.LogReceiveLoopCommenced(nameof(WebRTCWebSocketPeerAspNet));
 
         var buffer = new byte[1024 * 4];
 
@@ -170,7 +171,7 @@ public class WebRTCWebSocketPeerAspNet
                 var receiveResult = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
                 if (receiveResult.MessageType == WebSocketMessageType.Close)
                 {
-                    _logger.LogDebug("{name} close message received from remote web socket client.", nameof(WebRTCWebSocketPeerAspNet));
+                    _logger.LogCloseMessageReceived(nameof(WebRTCWebSocketPeerAspNet));
 
                     await Close();
                     break;
@@ -183,22 +184,22 @@ public class WebRTCWebSocketPeerAspNet
         }
         catch (System.OperationCanceledException)
         {
-            _logger.LogDebug("{caller} stopped due to application cancellation request.", nameof(StartReceivingAsync));
+            _logger.LogReceiveLoopCancelled(nameof(StartReceivingAsync));
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error while receiving WebSocket message: {Exception}", ex.ToString());
+            _logger.LogReceiveError(ex);
         }
     }
 
     private async Task OnMessage(WebSocketReceiveResult receiveResult, byte[] buffer)
     {
         string message = Encoding.UTF8.GetString(buffer, 0, receiveResult.Count);
-        _logger.LogDebug("Received message: {Message}", message);
+        _logger.LogReceivedMessage(message);
 
         if (RTCIceCandidateInit.TryParse(message, out var iceCandidateInit))
         {
-            _logger.LogDebug("Got remote ICE candidate.");
+            _logger.LogGotRemoteIceCandidateSimple();
 
             bool useCandidate = true;
             if (FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
@@ -208,7 +209,7 @@ public class WebRTCWebSocketPeerAspNet
 
             if (!useCandidate)
             {
-                _logger.LogDebug("Excluding ICE candidate due to filter: {Candidate}", iceCandidateInit.candidate);
+                _logger.LogWebRtcSignalingPeerExcludeIceCandidate(iceCandidateInit.candidate);
             }
             else
             {
@@ -217,12 +218,12 @@ public class WebRTCWebSocketPeerAspNet
         }
         else if (RTCSessionDescriptionInit.TryParse(message, out var descriptionInit))
         {
-            _logger.LogDebug("Got remote SDP, type {DescriptionType}.", descriptionInit.type);
+            _logger.LogWebSocketClientGotRemoteSdp(descriptionInit.type);
 
             var result = _pc.setRemoteDescription(descriptionInit);
             if (result != SetDescriptionResultEnum.OK)
             {
-                _logger.LogWarning("Failed to set remote description, {Result}\n{remoteSDP}.", result, descriptionInit.sdp);
+                _logger.LogFailedSetRemoteDescriptionWithSDP(result, descriptionInit.sdp);
                 _pc.Close("failed to set remote description");
                 await this.Close();
             }
@@ -233,20 +234,20 @@ public class WebRTCWebSocketPeerAspNet
                     var answerSdp = _pc.createAnswer(AnswerOptions);
                     await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
-                    _logger.LogDebug("Sending SDP answer to client.");
+                    _logger.LogSdpAnswerToClient();
                     await SendMessageAsync(answerSdp.toJSON());
                 }
             }
         }
         else
         {
-            _logger.LogWarning("WebSocket server could not parse JSON message. {MessageData}", message);
+            _logger.LogWebSocketParseError(message);
         }
     }
 
     public async Task Close()
     {
-        _logger.LogDebug("WebSocket connection closed.");
+        _logger.LogConnectionClosed();
 
         // Cancel the receive loop.
         if (!_cts.IsCancellationRequested)
@@ -265,7 +266,7 @@ public class WebRTCWebSocketPeerAspNet
     /// </summary>
     private async Task SendMessageAsync(string message)
     {
-        _logger.LogDebug("{name} sending message to remote web socket client.", nameof(WebRTCWebSocketPeerAspNet));
+        _logger.LogSendingMessageToRemoteWebSocketClient(nameof(WebRTCWebSocketPeerAspNet));
 
         var messageBytes = Encoding.UTF8.GetBytes(message);
         var messageSegment = new ArraySegment<byte>(messageBytes);

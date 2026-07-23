@@ -28,6 +28,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -226,7 +227,7 @@ namespace SIPSorcery
             }
         }
 
-        private static void ForwardVideoFrameToSIP(IPEndPoint remoteEP, uint timestamp, byte[] frame, VideoFormat format)
+        private static void ForwardVideoFrameToSIP(IPEndPoint remoteEP, uint timestamp, ReadOnlyMemory<byte> frame, VideoFormat format)
         {
             if (_rtpSession != null && !_rtpSession.IsClosed)
             {
@@ -234,7 +235,7 @@ namespace SIPSorcery
             }
         }
 
-        private static void ForwardVideoFrameToPeerConnection(IPEndPoint remoteEP, uint timestamp, byte[] frame, VideoFormat format)
+        private static void ForwardVideoFrameToPeerConnection(IPEndPoint remoteEP, uint timestamp, ReadOnlyMemory<byte> frame, VideoFormat format)
         {
             if (_peerConnection != null && _peerConnection.connectionState == RTCPeerConnectionState.connected)
             {

@@ -18,20 +18,34 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="Concentus" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="DnsClient" />
     <PackageReference Include="Makaretu.Dns.Multicast" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+
+    <PackageReference Include="NetEscapades.EnumGenerators" NoWarn="NU5104">
+        <!-- Source generator for enums. -->
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Polyfills for older frameworks. -->
+  <ItemGroup>
     <PackageReference Include="Polyfill">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <PolyArgumentExceptions>true</PolyArgumentExceptions>
+    <PolyPublic>true</PolyPublic>
+  </PropertyGroup>
+
+  <ItemGroup>
     <PackageReference Include="SIPSorcery.WebSocketSharp" />
     <PackageReference Include="System.Net.WebSockets.Client" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
-
-    <!-- The packages below are transitive references included to overcome vulnerabilities in a top level package. -->
-    <PackageReference Include="System.Net.Security" /> <!-- Vuln version referenced by System.Net.WebSockets.Client. -->
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0'">
@@ -43,12 +57,36 @@
     <PackageReference Include="System.ValueTuple" />
   </ItemGroup>
 
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <PackageReference Include="System.Collections.Immutable" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" />
+    <PackageReference Include="System.IO.Pipelines" />
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+    <PackageReference Include="Microsoft.Bcl.Cryptography" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="System.IO.Pipelines" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net462;net5.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
     <LangVersion>14.0</LangVersion>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <NoWarn>$(NoWarn);SYSLIB0050</NoWarn>
@@ -74,7 +112,6 @@
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>master</RepositoryBranch>
-    <PolyArgumentExceptions>true</PolyArgumentExceptions>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
     <PackageReleaseNotes>-v10.0.12: Fix for SCTP packet zero length infinite loop vulnerability.
 -v10.0.11: Add support for additional video codecs (VP9, AV1, H265). WHIP and WHEP support. Bug fixes.
@@ -109,6 +146,10 @@
     <Version>10.0.12</Version>
     <AssemblyVersion>10.0.12</AssemblyVersion>
     <FileVersion>10.0.12</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8604</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">

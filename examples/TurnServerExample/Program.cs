@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
 // Description: An example TURN server (RFC 5766) console application that
@@ -104,13 +104,13 @@ namespace TurnServerExample
             var challenge = await ReceiveStun(stream);
             var errorAttr = challenge.Attributes.FirstOrDefault(
                 a => a.AttributeType == STUNAttributeTypesEnum.ErrorCode);
-            int errorCode = errorAttr.Value[2] * 100 + errorAttr.Value[3];
+            int errorCode = errorAttr.Value.Span[2] * 100 + errorAttr.Value.Span[3];
             Console.WriteLine($"[Client] Got {errorCode} challenge with REALM and NONCE.");
 
             // Extract nonce from the challenge
             var nonce = Encoding.UTF8.GetString(
                 challenge.Attributes.First(
-                    a => a.AttributeType == STUNAttributeTypesEnum.Nonce).Value);
+                    a => a.AttributeType == STUNAttributeTypesEnum.Nonce).Value.Span);
 
             Console.WriteLine("[Client] Sending authenticated Allocate...");
             var authReq = new STUNMessage(STUNMessageTypesEnum.Allocate);
@@ -191,12 +191,12 @@ namespace TurnServerExample
                     while (read < remaining)
                         read += await stream.ReadAsync(full, 4 + read, remaining - read);
 
-                    var dataInd = STUNMessage.ParseSTUNMessage(full, full.Length);
+                    var dataInd = STUNMessage.ParseSTUNMessage(full);
                     var dataAttr = dataInd.Attributes.FirstOrDefault(
                         a => a.AttributeType == STUNAttributeTypesEnum.Data);
                     if (dataAttr != null)
                     {
-                        Console.WriteLine($"[Client] Received via relay: \"{Encoding.UTF8.GetString(dataAttr.Value)}\"\n");
+                        Console.WriteLine($"[Client] Received via relay: \"{Encoding.UTF8.GetString(dataAttr.Value.Span)}\"\n");
                     }
                 }
             }
@@ -229,8 +229,9 @@ namespace TurnServerExample
 
         static async Task SendStun(NetworkStream stream, STUNMessage msg, byte[] hmacKey = null)
         {
-            var bytes = msg.ToByteBuffer(hmacKey, false);
-            await stream.WriteAsync(bytes, 0, bytes.Length);
+            var bytes = new byte[msg.GetByteBufferSize(hmacKey, false)];
+            msg.WriteToBuffer(bytes, hmacKey, false);
+            await stream.WriteAsync(bytes);
             await stream.FlushAsync();
         }
 
@@ -250,7 +251,7 @@ namespace TurnServerExample
             while (read < remaining)
                 read += await stream.ReadAsync(full, 4 + read, remaining - read);
 
-            return STUNMessage.ParseSTUNMessage(full, full.Length);
+            return STUNMessage.ParseSTUNMessage(full);
         }
 
         #endregion

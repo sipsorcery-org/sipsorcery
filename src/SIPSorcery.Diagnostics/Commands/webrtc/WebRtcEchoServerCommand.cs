@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebRtcEchoServerCommand.cs
 //
 // Description: The "sipsorcery webrtc echo-server" verb. Acts as a WebRTC echo
@@ -355,7 +355,7 @@ public sealed class WebRtcEchoServerCommand : CommandBase
 
         // Echo received RTP straight back to the sender.
         pc.OnRtpPacketReceived += (remoteEndPoint, media, rtpPacket) =>
-            pc.SendRtpRaw(media, rtpPacket.Payload, rtpPacket.Header.Timestamp, rtpPacket.Header.MarkerBit, rtpPacket.Header.PayloadType);
+            pc.SendRtpRaw(media, rtpPacket.Payload.Span, rtpPacket.Header.Timestamp, rtpPacket.Header.MarkerBit, rtpPacket.Header.PayloadType);
 
         pc.ondatachannel += (dc) =>
         {

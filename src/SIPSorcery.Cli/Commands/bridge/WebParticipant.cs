@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebParticipant.cs
 //
 // Description: The "web" bridge endpoint: a browser, as a microphone + speaker,
@@ -55,7 +55,7 @@ public sealed class WebParticipant : IBridgeParticipant, IConnectable
         // decodes the payload (duration unused), but the openai endpoint re-sends it on its own track,
         // so carry the real frame duration (its RTP clock units) for that direction.
         _bridge.OnMicFrameReceived += frame =>
-            OnFrame?.Invoke(MediaFrame.ForAudio(frame.EncodedAudio, 0, ToRtpUnits(frame), AudioCommonlyUsedFormats.OpusWebRTC));
+            OnFrame?.Invoke(MediaFrame.ForAudio(frame.EncodedAudio.ToArray(), 0, ToRtpUnits(frame), AudioCommonlyUsedFormats.OpusWebRTC));
 
         _bridge.OnBrowserConnected += () => Connected?.Invoke();
         _bridge.OnBrowserDisconnected += () => _completion.TrySetResult();

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: AV1PacketiserUnitTest.cs
 //
 // Description: Unit tests for AV1 RTP packetisation and depacketisation.
@@ -42,16 +42,13 @@ namespace SIPSorcery.Net.UnitTests
 
             for (ushort i = 0; i < packets.Count; i++)
             {
-                var packet = new RTPPacket
+                var header = new RTPHeader
                 {
-                    Header = new RTPHeader
-                    {
-                        SequenceNumber = i,
-                        Timestamp = 90000,
-                        MarkerBit = packets[i].IsLast ? 1 : 0
-                    },
-                    Payload = packets[i].Payload
+                    SequenceNumber = i,
+                    Timestamp = 90000,
+                    MarkerBit = packets[i].IsLast ? 1 : 0
                 };
+                var packet = new RTPPacket(header, packets[i].Payload);
 
                 reconstructedFrame = framer.GotRtpPacket(packet);
             }
@@ -75,16 +72,13 @@ namespace SIPSorcery.Net.UnitTests
 
             for (ushort i = 0; i < packets.Count; i++)
             {
-                var packet = new RTPPacket
+                var header = new RTPHeader
                 {
-                    Header = new RTPHeader
-                    {
-                        SequenceNumber = i,
-                        Timestamp = 180000,
-                        MarkerBit = packets[i].IsLast ? 1 : 0
-                    },
-                    Payload = packets[i].Payload
+                    SequenceNumber = i,
+                    Timestamp = 180000,
+                    MarkerBit = packets[i].IsLast ? 1 : 0
                 };
+                var packet = new RTPPacket(header, packets[i].Payload);
 
                 reconstructedFrame = framer.GotRtpPacket(packet);
             }

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionCreateOfferUnitTest.cs
 //
 // Description: Characterization tests for RTCPeerConnection.createOffer.

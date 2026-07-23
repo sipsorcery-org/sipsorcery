@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Runtime.Serialization;
@@ -331,7 +333,7 @@ namespace SIPSorcery.SIP
             }
             catch(Exception excp)
             {
-                logger.LogWarning(excp, "Failed to parse UserParameters, error: {ErrorMessage}", excp.Message);
+                logger.LogFailedParseUserParametersWarning(excp);
             }
         }
 
@@ -450,7 +452,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseSIPURI (URI={Uri}). {ErrorMessage}", uri, excp.Message);
+                logger.LogParseSIPURIStringException(uri, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "Unknown error parsing SIP URI.");
             }
         }
@@ -519,7 +521,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPURI ToString. {ErrorMessage}", excp.Message);
+                logger.LogSIPURIToStringException(excp);
                 throw;
             }
         }
@@ -548,7 +550,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPURI ToParamaterlessString. {ErrorMessage}", excp.Message);
+                logger.LogSIPURIParameterlessStringException(excp);
                 throw;
             }
         }

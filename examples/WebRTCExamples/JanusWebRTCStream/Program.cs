@@ -15,9 +15,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -86,7 +88,7 @@ namespace demo
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(videoSink.GetVideoSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(videoTrack);
-            pc.OnVideoFrameReceived += videoSink.GotVideoFrame;
+            pc.OnVideoFrameReceived += (remoteEndPoint, timestamp, frame, format) => videoSink.GotVideoFrame(remoteEndPoint, timestamp, frame.ToArray(), format);
             videoSource.OnVideoSourceEncodedSample += pc.SendVideo;
 
             pc.OnVideoFormatsNegotiated += (formats) =>

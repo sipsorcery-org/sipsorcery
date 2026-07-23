@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WhipWhepClient.cs
 //
 // Description: A convenience client for the WHIP (WebRTC-HTTP Ingestion Protocol,
@@ -31,6 +31,8 @@
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+
+#nullable disable
 
 using System;
 using System.Net.Http;

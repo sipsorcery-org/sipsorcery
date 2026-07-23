@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -314,7 +316,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception GetKeyValuePairsFromQuoted. {ErrorMessage}", excp.Message);
+                logger.LogGetKeyValuePairsFromQuotedException(excp);
                 throw;
             }
         }

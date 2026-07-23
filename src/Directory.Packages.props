@@ -11,48 +11,73 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
+  <!-- Global package versions (used across all target frameworks). -->
   <ItemGroup>
+
     <PackageVersion Include="BouncyCastle.Cryptography"                     Version="2.6.2" />
+    <PackageVersion Include="CommunityToolkit.HighPerformance"              Version="8.4.2" />
     <PackageVersion Include="Concentus"                                     Version="2.2.2" />
     <PackageVersion Include="DnsClient"                                     Version="1.8.0" />
     <PackageVersion Include="FFmpeg.AutoGen"                                Version="8.1.0" />
     <PackageVersion Include="LanguageExt.Core"                              Version="4.4.9" />
     <PackageVersion Include="Livekit.Server.Sdk.Dotnet"                     Version="1.2.2" />
     <PackageVersion Include="Makaretu.Dns.Multicast"                        Version="0.27.0" />
+    <PackageVersion Include="Microsoft.Bcl.Cryptography"                    Version="10.0.10" />
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Bcl.Memory"                          Version="10.0.10" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.40.0" />
     <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool"               Version="10.0.10" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub"                   Version="10.0.203" />
     <PackageVersion Include="NAudio"                                        Version="2.3.0" />
+    <PackageVersion Include="NetEscapades.EnumGenerators"                   Version="1.0.0-beta21" />
     <PackageVersion Include="Polyfill"                                      Version="11.0.1" />
     <PackageVersion Include="SIPSorcery.WebSocketSharp"                     Version="0.0.1" />
     <PackageVersion Include="SkiaSharp"                                     Version="2.88.8" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux"                  Version="2.88.8" />
     <PackageVersion Include="System.CommandLine"                            Version="2.0.0" />
+    <PackageVersion Include="System.Collections.Immutable"                  Version="10.0.10" />
+    <PackageVersion Include="System.Diagnostics.DiagnosticSource"           Version="10.0.10" />
+    <PackageVersion Include="System.IO.Pipelines"                           Version="10.0.10" />
     <PackageVersion Include="System.Memory"                                 Version="4.6.3" />
     <PackageVersion Include="System.Net.Security"                           Version="4.3.2" />
     <PackageVersion Include="System.Net.WebSockets.Client"                  Version="4.3.2" />
+    <PackageVersion Include="System.Text.Json"                              Version="10.0.10" />
 
   </ItemGroup>
 
   <ItemGroup Condition="('$(TargetFramework)' == 'net9.0') OR $(TargetFramework.StartsWith('net9.0-windows'))">
 
+    <PackageVersion Update="Microsoft.Bcl.Cryptography"                     Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Bcl.Memory"                           Version="9.0.18" />
     <PackageVersion Update="Microsoft.Extensions.Http"                      Version="9.0.18" />
     <PackageVersion Update="Microsoft.Extensions.Logging"                   Version="9.0.18" />
     <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"      Version="9.0.18" />
     <PackageVersion Update="Microsoft.Extensions.Logging.Console"           Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                Version="9.0.18" />
+    <PackageVersion Update="System.Collections.Immutable"                   Version="9.0.18" />
+    <PackageVersion Update="System.Diagnostics.DiagnosticSource"            Version="9.0.18" />
+    <PackageVersion Update="System.IO.Pipelines"                            Version="9.0.18" />
+    <PackageVersion Update="System.Text.Json"                               Version="9.0.18" />
 
   </ItemGroup>
 
   <ItemGroup Condition="('$(TargetFramework)' != 'net10.0') AND !$(TargetFramework.StartsWith('net10.0-windows')) AND ('$(TargetFramework)' != 'net9.0') AND !$(TargetFramework.StartsWith('net9.0-windows'))">
 
+    <PackageVersion Update="Microsoft.Bcl.Cryptography"                     Version="8.0.0" />
+    <PackageVersion Update="Microsoft.Bcl.Memory"                           Version="9.0.18" />
     <PackageVersion Update="Microsoft.Extensions.Http"                      Version="8.0.1" />
     <PackageVersion Update="Microsoft.Extensions.Logging"                   Version="8.0.1" />
     <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"      Version="8.0.3" />
     <PackageVersion Update="Microsoft.Extensions.Logging.Console"           Version="8.0.1" />
+    <PackageVersion Update="Microsoft.Extensions.ObjectPool"                Version="8.0.29" />
+    <PackageVersion Update="System.Collections.Immutable"                   Version="8.0.0" />
+    <PackageVersion Update="System.Diagnostics.DiagnosticSource"            Version="8.0.1" />
+    <PackageVersion Update="System.IO.Pipelines"                            Version="8.0.0" />
+    <PackageVersion Update="System.Text.Json"                               Version="8.0.6" />
 
   </ItemGroup>
 

@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Net;
 using System.Text;
@@ -55,7 +57,7 @@ namespace SIPSorcery.Net
                 }
                 else if (buffer.Length > RTSPConstants.RTSP_MAXIMUM_LENGTH)
                 {
-                    logger.LogError("RTSP message received that exceeded the maximum allowed message length, ignoring.");
+                    logger.LogRtspMaxMessageLength();
                     return null;
                 }
                 else if (!BufferUtils.HasString(buffer, 0, buffer.Length, RTSP_MESSAGE_IDENTIFIER, m_CRLF))
@@ -76,7 +78,7 @@ namespace SIPSorcery.Net
             {
                 message = message.Replace("\n", "LF");
                 message = message.Replace("\r", "CR");
-                logger.LogError(excp, "Exception ParseRTSPMessage. {ErrorMessage}\nRTSP Message={RtpMessage}.", message, excp.Message);
+                logger.LogRtspMessageParseBodyError(excp.Message, message);
                 return null;
             }
         }
@@ -128,13 +130,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.LogError("Error ParseRTSPMessage, there were no end of line characters in the string being parsed.");
+                    logger.LogRtspNoEOL();
                     return null;
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseRTSPMessage. {ErrorMessage}\nRTSP Message={RtpMessage}.", excp.Message, message);
+                logger.LogRtspMessageParseError(message, excp.Message);
                 return null;
             }
         }

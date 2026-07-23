@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebRtcVideoBenchCommand.cs
 //
 // Description: The "sipsorcery webrtc video-bench" verb. Benchmarks the video
@@ -39,6 +39,7 @@ using System.Diagnostics;
 using FFmpeg.AutoGen;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.FFmpeg;
 using Vpx.Net;
@@ -932,10 +933,7 @@ public sealed class WebRtcVideoBenchCommand : CommandBase
             Buffer.BlockCopy(vp8Header, 0, payload, 0, vp8Header.Length);
             Buffer.BlockCopy(frame, offset, payload, vp8Header.Length, payloadLength);
 
-            var rtpPacket = new RTPPacket
-            {
-                Payload = payload
-            };
+            var rtpPacket = new RTPPacket(payload);
             rtpPacket.Header.SyncSource = ssrc;
             rtpPacket.Header.SequenceNumber = seqnum++;
             rtpPacket.Header.Timestamp = timestamp;

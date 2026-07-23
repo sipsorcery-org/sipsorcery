@@ -284,12 +284,12 @@ namespace FFmpegFileAndDevicesTest
             return Task.FromResult(PeerConnection);
         }
 
-        private static void AudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, byte[] sample)
+        private static void AudioSource_OnAudioSourceEncodedSample(uint durationRtpUnits, ReadOnlyMemory<byte> sample)
         {
             PeerConnection.SendAudio(durationRtpUnits, sample);
 
             if (audioSink != null)
-                audioSink.GotAudioRtp(null, 0, 0, 0, 0, false, sample);
+                audioSink.GotAudioRtp(null, 0, 0, 0, 0, false, sample.ToArray());
         }
 
         /// <summary>

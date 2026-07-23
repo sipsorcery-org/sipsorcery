@@ -15,15 +15,14 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions;
 
-public delegate void EncodedTextSampleDelegate(byte[] sample);
-
 public interface ITextSource
 {
-    event EncodedTextSampleDelegate OnTextSourceEncodedSample;
+    event Action<byte[]> OnTextSourceEncodedSample;
     Task CloseText();
     TextFormat GetTextSourceFormat();
     void SetTextSourceFormat(TextFormat textFormat);

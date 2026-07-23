@@ -14,6 +14,8 @@
 // MIT, see https://github.com/zanders3/json/blob/master/LICENSE.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -51,7 +53,7 @@ namespace TinyJson
                 string str = item.ToString();
                 for (int i = 0; i < str.Length; ++i)
                 {
-                    if (str[i] < ' ' || str[i] == '"' || str[i] == '\\')
+                    if (str[i] is < ' ' or '"' or '\\')
                     {
                         stringBuilder.Append('\\');
                         int j = "\"\\\n\r\t\b\f".IndexOf(str[i]);

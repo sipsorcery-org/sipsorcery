@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Buffers;
 
 namespace SIPSorcery.Media
 {
@@ -11,30 +12,31 @@ namespace SIPSorcery.Media
         /// narrowband codec (G711 truncates at 4KHz) but are faithfully transmitted by
         /// wideband codecs such as OPUS and make upsampled audio sound harsh and metallic.
         /// </summary>
-        public static short[] Resample(short[] pcm, int inRate, int outRate)
+        public static void Resample(ReadOnlySpan<short> pcm, int inRate, int outRate, IBufferWriter<short> writer)
         {
             if (inRate == outRate || pcm.Length == 0)
             {
-                return pcm;
+                writer.Write(pcm);
+                return;
             }
 
-            int outLength = (int)((long)pcm.Length * outRate / inRate);
-            var resampled = new short[outLength];
-            double step = (double)inRate / outRate;
+            var outLength = (int)((long)pcm.Length * outRate / inRate);
+            var resampled = writer.GetSpan(outLength).Slice(0, outLength);
+            var step = (double)inRate / outRate;
 
-            for (int i = 0; i < outLength; i++)
+            for (var i = 0; i < outLength; i++)
             {
-                double srcPos = i * step;
-                int srcIndex = (int)srcPos;
-                double frac = srcPos - srcIndex;
+                var srcPos = i * step;
+                var srcIndex = (int)srcPos;
+                var frac = srcPos - srcIndex;
 
-                short s0 = pcm[srcIndex];
-                short s1 = pcm[Math.Min(srcIndex + 1, pcm.Length - 1)];
+                var s0 = pcm[srcIndex];
+                var s1 = pcm[Math.Min(srcIndex + 1, pcm.Length - 1)];
 
                 resampled[i] = (short)Math.Round(s0 + (s1 - s0) * frac);
             }
 
-            return resampled;
+            writer.Advance(outLength);
         }
     }
 }
