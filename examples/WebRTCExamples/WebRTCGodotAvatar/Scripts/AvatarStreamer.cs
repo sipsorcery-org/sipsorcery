@@ -24,8 +24,8 @@ using SIPSorceryMedia.Abstractions;
 using Vpx.Net;
 using demo;   // Max-demo speech pipeline (IAvatarMouth / IAvatarSpeaker / SherpaTtsSpeaker).
 
-// The Godot avatar is the IAvatarMouth: the TTS speaker feeds it synthesised PCM, which drives
-// the VRM mouth morphs. It is NOT an IVideoSource - it owns its own capture/VP8/WebRTC video path.
+// Godot and the Max demo's Wav2Lip/cartoon renderers can share this host. The selected renderer
+// owns the mouth/audio-to-video path; Godot additionally owns the scene and viewport capture path.
 public partial class AvatarStreamer : Node, IAvatarMouth
 {
     private const int Width = 640;
@@ -58,6 +58,12 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     // Windows dev path) or FFmpeg's native encoder (VIDEO_ENCODER=ffmpeg: ~10x faster VP8 for
     // Linux containers where software rendering leaves no CPU budget for managed encoding).
     private IVideoSource _encoder = null!;
+    private IVideoSource _godotEncoder = null!;
+    private IAvatarRenderer? _externalRenderer;
+    private string _rendererSelection = "godot";
+    private volatile string? _pendingRendererSelection;
+    private string? _rendererSelectionError;
+    private const string RendererOptionsJson = "[{\"id\":\"godot\",\"label\":\"Godot avatar\"},{\"id\":\"cartoon\",\"label\":\"Max cartoon\"},{\"id\":\"wav2lip\",\"label\":\"Wav2Lip\"}]";
     private Action _forceKeyFrame = null!;
     private volatile RTCPeerConnection? _pc;
     private HttpListener? _http;
@@ -129,6 +135,8 @@ public partial class AvatarStreamer : Node, IAvatarMouth
     private volatile bool _speaking;
     private volatile float _speechLevel;             // RMS of the latest pushed audio window.
 
+    private IAvatarMouth MouthRenderer => (IAvatarMouth?)_externalRenderer ?? this;
+
     public override void _Ready()
     {
         // Wires SIPSorcery's internal logging (ICE agent, DTLS, RTP) to the console. Without
@@ -153,34 +161,20 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         UpdateMotionCatalog(CanonicalAvatarSpec(kind, modelName));
         BuildInterface();
         BuildAvatarsJson();
-
-        // VP8 encoder endpoint. Encoded frames are pushed straight to whatever peer connection
-        // is currently live. VIDEO_ENCODER=ffmpeg selects the native FFmpeg encoder (requires
-        // FFmpeg 8 shared libraries, e.g. LD_LIBRARY_PATH=/opt/ffmpeg/lib in the container);
-        // the default is the pure managed VP8 encoder, which needs no native dependencies.
-        if (string.Equals(System.Environment.GetEnvironmentVariable("VIDEO_ENCODER"), "ffmpeg",
-                StringComparison.OrdinalIgnoreCase))
+        var startupRenderer = System.Environment.GetEnvironmentVariable("AVATAR_RENDERER")?.Trim().ToLowerInvariant();
+        if (startupRenderer is "godot" or "cartoon" or "wav2lip")
         {
-            var ffmpegEncoder = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
-            ffmpegEncoder.RestrictFormats(f => f.Codec == VideoCodecsEnum.VP8);
-            _encoder = ffmpegEncoder;
-            _forceKeyFrame = ffmpegEncoder.ForceKeyFrame;
-            GD.Print("Video encoder: FFmpeg (native).");
+            _pendingRendererSelection = startupRenderer;
         }
-        else
-        {
-            var vp8Encoder = new Vp8NetVideoEncoderEndPoint();
-            _encoder = vp8Encoder;
-            _forceKeyFrame = vp8Encoder.ForceKeyFrame;
-        }
-        _encoder.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
-        {
-            var pc = _pc;
-            if (pc != null && pc.connectionState == RTCPeerConnectionState.connected)
-            {
-                pc.SendVideo(durationRtpUnits, sample);
-            }
-        };
+        // The Godot renderer is the initial selection. A browser can replace it with the
+        // Wav2Lip or Max cartoon renderer before pressing Connect; the selected source is then
+        // attached to the same WebRTC video track during offer handling.
+        _godotEncoder = CreateGodotEncoder();
+        _encoder = _godotEncoder;
+        AttachVideoSource(_godotEncoder);
+        // Apply an optional AVATAR_RENDERER startup override synchronously. Browser selections
+        // arrive later through /renderer and are applied from _Process before /offer.
+        ApplyRendererSelection();
 
         _encodeThread = new Thread(EncodeLoop) { IsBackground = true, Name = "vp8-encode" };
         _encodeThread.Start();
@@ -210,6 +204,116 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
         StartHttpListener();
         GD.Print($"Avatar streamer running. Browse to http://localhost:{HttpPort} and click Connect.");
+    }
+
+    private IVideoSource CreateGodotEncoder()
+    {
+        // VIDEO_ENCODER=ffmpeg selects the native endpoint for the Godot viewport. The managed
+        // VP8 endpoint remains the default development path.
+        if (string.Equals(System.Environment.GetEnvironmentVariable("VIDEO_ENCODER"), "ffmpeg",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            var ffmpegEncoder = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
+            ffmpegEncoder.RestrictFormats(f => f.Codec == VideoCodecsEnum.VP8);
+            _forceKeyFrame = ffmpegEncoder.ForceKeyFrame;
+            GD.Print("Video encoder: FFmpeg (native).");
+            return ffmpegEncoder;
+        }
+
+        var vp8Encoder = new Vp8NetVideoEncoderEndPoint();
+        _forceKeyFrame = vp8Encoder.ForceKeyFrame;
+        return vp8Encoder;
+    }
+
+    private void AttachVideoSource(IVideoSource source)
+    {
+        source.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
+        {
+            var pc = _pc;
+            if (pc != null && pc.connectionState == RTCPeerConnectionState.connected)
+            {
+                pc.SendVideo(durationRtpUnits, sample);
+            }
+        };
+    }
+
+    private void ApplyRendererSelection()
+    {
+        var pending = _pendingRendererSelection;
+        if (pending == null)
+        {
+            return;
+        }
+        _pendingRendererSelection = null;
+        _rendererSelectionError = null;
+
+        if (_pc != null)
+        {
+            _rendererSelectionError = "Renderer selection is only available before Connect.";
+            return;
+        }
+
+        if (pending == _rendererSelection)
+        {
+            return;
+        }
+
+        try
+        {
+            if (pending == "godot")
+            {
+                (_externalRenderer as IDisposable)?.Dispose();
+                _externalRenderer = null;
+                _encoder = _godotEncoder;
+                _forceKeyFrame = _godotEncoder is SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint ffmpeg
+                    ? ffmpeg.ForceKeyFrame
+                    : _godotEncoder is Vp8NetVideoEncoderEndPoint vp8 ? vp8.ForceKeyFrame : () => { };
+                if (_audioSource != null) { RebindTtsSpeaker(); }
+                _rendererSelection = pending;
+                GD.Print("Renderer selected: Godot.");
+                return;
+            }
+
+            if (pending is not ("cartoon" or "wav2lip"))
+            {
+                throw new ArgumentException($"Unknown renderer '{pending}'.");
+            }
+
+            if (pending == "wav2lip" && !Wav2LipAvatarRenderer.FilesPresent())
+            {
+                throw new FileNotFoundException("Wav2Lip model/persona files are not configured.");
+            }
+
+            var externalEncoder = new SIPSorceryMedia.FFmpeg.FFmpegVideoEncoder();
+            IAvatarRenderer renderer = pending == "wav2lip"
+                ? new Wav2LipAvatarRenderer(externalEncoder)
+                : new MaxHeadroomVideoSource(externalEncoder);
+            AttachVideoSource(renderer);
+            _externalRenderer = renderer;
+            _encoder = renderer;
+            _forceKeyFrame = renderer switch
+            {
+                Wav2LipAvatarRenderer wav2Lip => wav2Lip.ForceKeyFrame,
+                MaxHeadroomVideoSource cartoon => cartoon.ForceKeyFrame,
+                _ => () => { },
+            };
+            if (_audioSource != null) { RebindTtsSpeaker(); }
+            _rendererSelection = pending;
+            GD.Print($"Renderer selected: {pending}.");
+        }
+        catch (Exception excp)
+        {
+            _rendererSelectionError = excp.Message;
+            GD.PushError($"Could not select renderer '{pending}': {excp.Message}");
+        }
+    }
+
+    private void RebindTtsSpeaker()
+    {
+        (_speaker as IDisposable)?.Dispose();
+        _speaker = null;
+        _currentVoiceDir = null;
+        ApplyVoice(ResolveVoiceDir());
     }
 
     /// <summary>Same gender resolution <see cref="ResolveVoiceDir"/> uses for Sherpa, exposed
@@ -249,8 +353,8 @@ public partial class AvatarStreamer : Node, IAvatarMouth
             {
                 (_speaker as IDisposable)?.Dispose();
                 _speaker = ElevenLabsStreaming
-                    ? new ElevenLabsStreamingTtsSpeaker(ElevenLabsKey, voiceId, ElevenLabsModel, this, _audioSource)
-                    : new ElevenLabsTtsSpeaker(ElevenLabsKey, voiceId, ElevenLabsModel, this, _audioSource);
+                    ? new ElevenLabsStreamingTtsSpeaker(ElevenLabsKey, voiceId, ElevenLabsModel, MouthRenderer, _audioSource)
+                    : new ElevenLabsTtsSpeaker(ElevenLabsKey, voiceId, ElevenLabsModel, MouthRenderer, _audioSource);
                 _currentVoiceDir = voiceId;
                 GD.Print($"ElevenLabs TTS voice: {voiceId} (streaming={ElevenLabsStreaming}).");
             }
@@ -273,7 +377,7 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         try
         {
             (_speaker as IDisposable)?.Dispose();
-            _speaker = new SherpaTtsSpeaker(voiceDir, this, _audioSource);
+            _speaker = new SherpaTtsSpeaker(voiceDir, MouthRenderer, _audioSource);
             _currentVoiceDir = voiceDir;
             GD.Print($"Sherpa TTS voice: {System.IO.Path.GetFileName(voiceDir)}.");
         }
@@ -434,6 +538,10 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
     public override void _Process(double delta)
     {
+        // Renderer selection is applied on Godot's main thread so the browser can make its
+        // choice before negotiation without racing scene/encoder state.
+        ApplyRendererSelection();
+
         // Apply a pending avatar switch (requested from the HTTP thread) on the main thread.
         var pending = _pendingAvatarSwitch;
         if (pending != null)
@@ -485,7 +593,12 @@ public partial class AvatarStreamer : Node, IAvatarMouth
         }
         _model.Update(delta, _time, _mouthOpen);
 
-        CaptureFrame();
+        // External Max renderers own their own timer and emit encoded samples directly. Godot
+        // alone needs the SubViewport readback/encode queue.
+        if (_externalRenderer == null)
+        {
+            CaptureFrame();
+        }
     }
 
     // --- Scene construction ---------------------------------------------------------------
@@ -1035,7 +1148,43 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
             try
             {
-                if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/offer")
+                if (ctx.Request.HttpMethod == "GET" && ctx.Request.Url?.AbsolutePath == "/renderers")
+                {
+                    await WriteResponse(ctx, RendererOptionsJson, "application/json").ConfigureAwait(false);
+                }
+                else if (ctx.Request.HttpMethod == "GET" && ctx.Request.Url?.AbsolutePath == "/renderer")
+                {
+                    var status = JsonSerializer.Serialize(new
+                    {
+                        selected = _rendererSelection,
+                        pending = _pendingRendererSelection,
+                        error = _rendererSelectionError,
+                        connected = _pc != null,
+                    }, WebJsonOptions);
+                    await WriteResponse(ctx, status, "application/json").ConfigureAwait(false);
+                }
+                else if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/renderer")
+                {
+                    using var reader = new StreamReader(ctx.Request.InputStream);
+                    var renderer = (await reader.ReadToEndAsync().ConfigureAwait(false)).Trim().ToLowerInvariant();
+                    if (renderer is not ("godot" or "cartoon" or "wav2lip"))
+                    {
+                        ctx.Response.StatusCode = 400;
+                        await WriteResponse(ctx, "expected godot, cartoon or wav2lip", "text/plain").ConfigureAwait(false);
+                    }
+                    else if (_pc != null)
+                    {
+                        ctx.Response.StatusCode = 409;
+                        await WriteResponse(ctx, "renderer must be selected before Connect", "text/plain").ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        _rendererSelectionError = null;
+                        _pendingRendererSelection = renderer;
+                        await WriteResponse(ctx, "ok", "text/plain").ConfigureAwait(false);
+                    }
+                }
+                else if (ctx.Request.HttpMethod == "POST" && ctx.Request.Url?.AbsolutePath == "/offer")
                 {
                     using var reader = new StreamReader(ctx.Request.InputStream);
                     string offerJson = await reader.ReadToEndAsync().ConfigureAwait(false);
@@ -1208,7 +1357,13 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 
         var videoTrack = new MediaStreamTrack(_encoder.GetVideoSourceFormats(), MediaStreamStatusEnum.SendOnly);
         pc.addTrack(videoTrack);
-        pc.OnVideoFormatsNegotiated += formats => _encoder.SetVideoSourceFormat(formats[0]);
+        pc.OnVideoFormatsNegotiated += formats =>
+        {
+            _encoder.SetVideoSourceFormat(formats[0]);
+            // Godot's external-source endpoint is driven by our SubViewport loop; the Max
+            // renderers use their own timers and must be explicitly started after negotiation.
+            _ = _encoder.StartVideo();
+        };
 
         // Inbound microphone: decode the received PCMU RTP to 8kHz PCM and feed speech-to-text.
         // Recognised utterances run the same AskAsync path as the /ask endpoint.
@@ -1306,7 +1461,11 @@ public partial class AvatarStreamer : Node, IAvatarMouth
 <body style='background:#111;color:#eee;font-family:sans-serif;text-align:center'>
 <h2>Godot VRM avatar over SIPSorcery WebRTC</h2>
 <video id='v' autoplay playsinline controls style='width:640px;height:480px;background:#000'></video><br/>
-<button onclick='connect()'>Connect</button>
+<button id='connectButton' onclick='connect()'>Connect</button>
+<div style='margin-top:10px'>
+  <label for='rendererSel'>Renderer before Connect: </label>
+  <select id='rendererSel'></select>
+</div>
 <div style='margin-top:10px'>
   <select id='avatarSel'></select>
   <button onclick='switchAvatar()'>Switch avatar</button>
@@ -1337,6 +1496,28 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function connect() {
   const status = document.getElementById('status');
+  const rendererSel = document.getElementById('rendererSel');
+  try {
+    status.textContent = 'starting ' + rendererSel.value + ' renderer...';
+    const selected = rendererSel.value;
+    const response = await fetch('/renderer', { method: 'POST', body: selected });
+    if (!response.ok) throw new Error(await response.text());
+    // Renderer construction (especially Wav2Lip model loading) occurs on Godot's main thread.
+    // Wait until that work has completed before sending the SDP offer.
+    let ready = false;
+    for (let attempt = 0; attempt < 2400; attempt++) {
+      const state = await (await fetch('/renderer?t=' + Date.now())).json();
+      if (state.error) throw new Error(state.error);
+      if (state.selected === selected && !state.pending) { ready = true; break; }
+      await delay(50);
+    }
+    if (!ready) throw new Error('timed out waiting for renderer initialization');
+    rendererSel.disabled = true;
+    document.getElementById('connectButton').disabled = true;
+  } catch (e) {
+    status.textContent = 'renderer selection failed: ' + e.message;
+    return;
+  }
   // No STUN server needed here: the server already advertises a real public host candidate
   // (it isn't behind NAT), which is enough on its own - the browser's connectivity check
   // toward that address is what the server needs to discover the browser's reachable
@@ -1375,6 +1556,14 @@ async function loadAvatars() {
     const sel = document.getElementById('avatarSel');
     sel.innerHTML = '';
     list.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+  } catch (e) {}
+}
+async function loadRenderers() {
+  try {
+    const list = await (await fetch('/renderers')).json();
+    const sel = document.getElementById('rendererSel');
+    sel.innerHTML = '';
+    list.forEach(r => { const o = document.createElement('option'); o.value = r.id; o.textContent = r.label; sel.appendChild(o); });
   } catch (e) {}
 }
 function renderMotions(data) {
@@ -1467,7 +1656,7 @@ async function playAllMotions() {
     document.getElementById('motionStatus').textContent = 'Finished all motions';
   }
 }
-loadAvatars().then(() => loadMotions());
+Promise.all([loadRenderers(), loadAvatars()]).then(() => loadMotions());
 async function say() {
   const t = document.getElementById('say').value;
   if (t) { await fetch('/say', { method: 'POST', body: t }); }

@@ -1,25 +1,30 @@
 # WebRTC Godot Avatar
 
-A talking avatar — a **3D VRM** model *or* a **2D Live2D (Cubism)** model — rendered entirely
-in-process by **Godot 4.7 (.NET / C#)** and streamed to a browser over **WebRTC** with SIPSorcery.
+A talking avatar — a **3D VRM**, **2D Live2D (Cubism)**, **Max cartoon**, or **Wav2Lip** model —
+rendered in-process by the 2dog/Godot host and streamed to a browser over **WebRTC** with SIPSorcery.
 It is the Godot counterpart to [`WebRTCMaxHeadroom`](../WebRTCMaxHeadroom): the same in-process
 speech/AI stack ([`AvatarPipeline`](../AvatarPipeline)) — sherpa-onnx TTS + STT and an LLamaSharp
-LLM — but the face is a Godot-rendered avatar instead of the SkiaSharp / Wav2Lip renderer.
+LLM — with a renderer selected in the browser before the WebRTC connection is established.
 
 You can **talk to it** (browser mic → speech-to-text → LLM → spoken reply) or type at it
 (`/say`, `/ask`).
 
 ## How it works
 
-The whole thing is one Godot process (`Scripts/AvatarStreamer.cs`), which owns the capture →
-VP8 → WebRTC path and the speech pipeline, and delegates rendering to a swappable
-[`IAvatarModel`](Scripts/IAvatarModel.cs):
+The whole thing is one .NET process (`Scripts/AvatarStreamer.cs`), which owns the WebRTC signalling,
+audio and speech pipeline. Before connecting, the browser selects a renderer. Godot renderers use
+the SubViewport capture path; the Max renderers emit their own encoded video frames through the
+shared [`IAvatarRenderer`](../WebRTCMaxHeadroom/IAvatarRenderer.cs) contract:
 
 - **`VrmAvatarModel`** — a 3D VRM humanoid with a Camera3D + lights, posed into an A-pose, framed
   head-and-shoulders. Mouth driven by the VRoid `Fcl_MTH_*` morph targets.
 - **`Live2DAvatarModel`** — a 2D Cubism model via the **gd_cubism** GDExtension, framed
   head-and-shoulders. Mouth driven by `ParamMouthOpenY` from the model's `cubism_process` effect
   (after motions but before drawable vertices update; see the code comments).
+- **Max cartoon** — the SkiaSharp renderer from [`WebRTCMaxHeadroom`](../WebRTCMaxHeadroom), using
+  the same amplitude-driven mouth animation as the original demo.
+- **Wav2Lip** — the in-process ONNX Runtime renderer from [`WebRTCMaxHeadroom`](../WebRTCMaxHeadroom),
+  driven by the synthesized speech PCM.
 
 Common to both:
 
@@ -48,6 +53,8 @@ Common to both:
 - **For the Live2D native build only:** Python 3 with SCons, and the Visual Studio 2026
   **"Desktop development with C++"** workload (MSVC v143). Not needed for the VRM avatar, or if you
   obtain a prebuilt `gd_cubism` binary.
+- **For Wav2Lip:** the same ONNX model and persona files used by `WebRTCMaxHeadroom` (see that
+  example's README). The Wav2Lip selector reports an error if those files are unavailable.
 
 > The Godot addons (`addons/`) and the avatar models (`Models/*.vrm`, `Models/Live2D/`) are
 > **deliberately kept out of git** — they are third-party and/or licensed (see `.gitignore`). A
@@ -168,11 +175,16 @@ With none of the speech models present the avatar still renders and streams; it 
 ./run-demo.ps1 -Avatar ren  # the 2D Live2D "Ren" avatar
 ```
 
-Then browse to <http://localhost:8081>, click **Connect**, and either speak or use the Say / Ask
-boxes. The page also has an **avatar dropdown + Switch** button: it swaps the live avatar without
+Then browse to <http://localhost:8081>, choose **Godot**, **Max cartoon**, or **Wav2Lip** in the
+renderer dropdown, and click **Connect**. Renderer selection is intentionally locked after
+negotiation; choose again by restarting the host. You can then speak or use the Say / Ask boxes.
+The page also has an **avatar dropdown + Switch** button: it swaps the live Godot avatar without
 dropping the WebRTC session (the model's nodes are rebuilt inside the capture viewport, so the stream
 just keeps showing whatever is now rendered). VRM targets must already be imported (Live2D needs no
 import); the switcher is served from `GET /avatars` and driven by `POST /avatar <kind[:name]>`.
+
+For automated runs, `AVATAR_RENDERER=godot|cartoon|wav2lip` selects the renderer before the page is
+opened. The browser dropdown uses the same selection path.
 
 For Live2D models with authored `*.motion3.json` animations, the page also shows a **motion tester**
 with Play, Loop, Stop and Play all controls. It refreshes when the avatar changes and labels unnamed

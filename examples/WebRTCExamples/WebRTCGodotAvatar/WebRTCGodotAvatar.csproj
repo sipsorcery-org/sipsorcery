@@ -19,6 +19,12 @@
     <!-- The 2dog executable is a separate .NET host project. Its Program.cs must not be
          compiled into the Godot project assembly referenced by that host. -->
     <Compile Remove="WebRTCGodotAvatar.2dog/**/*.cs" />
+    <!-- Reuse the Max demo's in-process renderer implementations. They implement the same
+         IAvatarRenderer contract and emit encoded video directly to the WebRTC track. -->
+    <Compile Include="..\WebRTCMaxHeadroom\IAvatarRenderer.cs" Link="Renderers\IAvatarRenderer.cs" />
+    <Compile Include="..\WebRTCMaxHeadroom\MaxHeadroomVideoSource.cs" Link="Renderers\MaxHeadroomVideoSource.cs" />
+    <Compile Include="..\WebRTCMaxHeadroom\MelSpectrogram.cs" Link="Renderers\MelSpectrogram.cs" />
+    <Compile Include="..\WebRTCMaxHeadroom\Wav2LipAvatarRenderer.cs" Link="Renderers\Wav2LipAvatarRenderer.cs" />
   </ItemGroup>
   <ItemGroup>
     <!-- Pure-C# WebRTC + VP8 (no native FFmpeg). -->
@@ -31,6 +37,13 @@
          this, SIPSorcery.LogFactory defaults to a null logger and ICE failures are invisible. -->
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4"
+                      Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4"
+                      Condition="!$([MSBuild]::IsOSPlatform('Windows'))" />
     <!-- The shared avatar speech/AI pipeline (TTS/STT/LLM + the IAvatarMouth seam), the same
          library the WebRTCMaxHeadroom demo uses. sherpa-onnx + LLamaSharp come transitively. -->
     <ProjectReference Include="..\AvatarPipeline\AvatarPipeline.csproj" />
