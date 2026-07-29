@@ -89,6 +89,16 @@ namespace SIPSorcery.SoftPhone
         /// Enables text log output
         /// </summary>
         public bool EnableLog { get; set; }
+
+        /// <summary>
+        /// The expiry value to request for the contact. This value can be rejected or overridden by the server.
+        /// </summary>
+        public int? RegisterExpiry { get; set; }
+
+        /// <summary>
+        /// Number of seconds between consecutive register requests in the event of failures or timeouts.
+        /// </summary>
+        public int RegisterRetryInSeconds { get; set; }
     }
 
     /// <summary>
