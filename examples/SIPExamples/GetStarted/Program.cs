@@ -32,8 +32,7 @@ var userAgent = new SIPUserAgent();
 IAudioEndPoint audioEndPoint =
     DefaultAudioEndPointFactory.Create(new AudioEncoder());
 
-((IAudioSource)audioEndPoint)
-    .RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
+audioEndPoint.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
 
 var voipMediaSession = new VoIPMediaSession(
     new MediaEndPoints

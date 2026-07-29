@@ -14,12 +14,20 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions;
 
 public interface IAudioEndPoint : IAudioSource, IAudioSink
 {
+    /// <summary>
+    /// Restricts the audio formats to those that match the filter. Resolves the diamond-inheritance
+    /// ambiguity that arises because both <see cref="IAudioSource"/> and <see cref="IAudioSink"/>
+    /// declare a <c>RestrictFormats</c> method with the same signature.
+    /// </summary>
+    new void RestrictFormats(Func<AudioFormat, bool> filter);
+
     /// <summary>
     /// Pauses the audio source and sink. The source will stop sending samples and the sink will stop receiving them.
     /// </summary>
