@@ -16,6 +16,11 @@ namespace SIPSorceryMedia.Platform
             bool disableSource = false,
             bool disableSink = false)
         {
+            if (audioEncoder == null)
+            {
+                throw new ArgumentNullException(nameof(audioEncoder));
+            }
+
 #if WINDOWS
             return new WindowsAudioEndPoint(
                 audioEncoder,

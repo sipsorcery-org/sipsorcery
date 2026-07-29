@@ -144,6 +144,8 @@
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
     <Project Path="src/SIPSorceryMedia.Abstractions/SIPSorceryMedia.Abstractions.csproj" />
     <Project Path="src/SIPSorceryMedia.FFmpeg/SIPSorceryMedia.FFmpeg.csproj" />
+    <Project Path="src/SIPSorceryMedia.MacOS/SIPSorceryMedia.MacOS.csproj" />
+    <Project Path="src/SIPSorceryMedia.Platform/SIPSorceryMedia.Platform.csproj" />
     <Project Path="src/SIPSorceryMedia.Windows/SIPSorceryMedia.Windows.csproj" />
   </Folder>
   <Properties Name="TestCaseManagementSettings" Scope="PostLoad">

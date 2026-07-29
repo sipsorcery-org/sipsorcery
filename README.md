@@ -25,6 +25,8 @@ This repository is the home of the **SIPSorcery** project - a comprehensive real
 | **SIPSorcery** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.svg)](https://www.nuget.org/packages/SIPSorcery) | Core library with SIP, WebRTC, RTP, ICE, STUN, and SDP support | [README](src/SIPSorcery/README.md) |
 | **SIPSorceryMedia.Abstractions** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Abstractions.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Abstractions) | Interfaces for audio/video encoders and device access | [README](src/SIPSorceryMedia.Abstractions/README.md) |
 | **SIPSorceryMedia.Windows** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Windows.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Windows) | Windows-specific audio capture and playback and video capture | [README](src/SIPSorceryMedia.Windows/README.md) |
+| **SIPSorceryMedia.MacOS** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.MacOS.svg)](https://www.nuget.org/packages/SIPSorceryMedia.MacOS) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.MacOS.svg)](https://www.nuget.org/packages/SIPSorceryMedia.MacOS) | macOS-specific audio capture and playback via AVFoundation | [README](src/SIPSorceryMedia.MacOS/README.md) |
+| **SIPSorceryMedia.Platform** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.Platform.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Platform) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.Platform.svg)](https://www.nuget.org/packages/SIPSorceryMedia.Platform) | Platform-agnostic factory that selects the right audio end-point for Windows or macOS | [README](src/SIPSorceryMedia.Platform/README.md) |
 | **SIPSorceryMedia.FFmpeg** | [![NuGet](https://img.shields.io/nuget/v/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorceryMedia.FFmpeg.svg)](https://www.nuget.org/packages/SIPSorceryMedia.FFmpeg) | Cross-platform media support using FFmpeg | [README](src/SIPSorceryMedia.FFmpeg/README.md) |
 | **SIPSorcery.OpenAI.Realtime** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.OpenAI.Realtime.svg)](https://www.nuget.org/packages/SIPSorcery.OpenAI.Realtime) | Support for OpenAI's Realtime WebRTC and SIP end points | [README](src/SIPSorcery.OpenAI.Realtime/README.md) |
 | **SIPSorcery.VP8** | [![NuGet](https://img.shields.io/nuget/v/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | [![NuGet](https://img.shields.io/nuget/dt/SIPSorcery.VP8.svg)](https://www.nuget.org/packages/SIPSorcery.VP8) | Pure C# VP8 video codec implementation | [README](src/SIPSorcery.VP8/README.md) |
@@ -63,8 +65,10 @@ The diagram below is a high level overview of a Real-time audio and video call b
 
 **Media End Points - Audio/Video Sinks and Sources:**
 
- - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Two separate library packages can be used depending on the runtime target:
-   - [SIPSorceryMedia.Windows](src/SIPSorceryMedia.Windows): A Windows specific library that provides audio capture and playback. 
+ - The main `SIPSorcery` library does not provide access to audio and video devices or native codecs. Several library packages can be used depending on the runtime target:
+   - [SIPSorceryMedia.Windows](src/SIPSorceryMedia.Windows): A Windows specific library that provides audio capture and playback.
+   - [SIPSorceryMedia.MacOS](src/SIPSorceryMedia.MacOS): A macOS specific library that provides audio capture and playback via AVFoundation.
+   - [SIPSorceryMedia.Platform](src/SIPSorceryMedia.Platform): A platform-agnostic factory that picks the right audio end-point at compile time (Windows or macOS).
    - [SIPSorceryMedia.FFmpeg](src/SIPSorceryMedia.FFmpeg/): A cross platform library that can be used for high performance video codecs using PInvoke and [FFmpeg](https://ffmpeg.org/).
 
  - This library includes audio codecs G711, G722, G729 and, thanks to [Concentus](https://github.com/lostromb/concentus), OPUS.
@@ -127,26 +131,36 @@ Class reference documentation and articles explaining common usage are available
 
 ## Getting Started VoIP
 
-The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia.Windows` library to play the received audio and only works on Windows (due to lack of .NET audio device support on non-Windows platforms).
+The simplest possible example to place an audio-only SIP call is shown below. The example uses the `SIPSorceryMedia.Platform` library which selects the appropriate audio end-point for the current OS (Windows or macOS).
 
 ````bash
-dotnet new console --name SIPGetStarted --framework net10.0 --target-framework-override net10.0-windows10.0.17763.0
+dotnet new console --name SIPGetStarted
 cd SIPGetStarted
 dotnet add package SIPSorcery
-dotnet add package SIPSorceryMedia.Windows
+dotnet add package SIPSorceryMedia.Platform
 # Paste the code below into Program.cs.
 dotnet run
 # If successful you will hear a "Hello World" announcement.
 ````
 
 ````csharp
-string DESTINATION = "music@iptel.org";
-        
+using SIPSorcery.Media;
+using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.Platform;
+
+const string DESTINATION = "music@iptel.org";
+
 Console.WriteLine("SIP Get Started");
 
-var userAgent = new SIPSorcery.SIP.App.SIPUserAgent();
-var winAudio = new SIPSorceryMedia.Windows.WindowsAudioEndPoint(new SIPSorcery.Media.AudioEncoder());
-var voipMediaSession = new SIPSorcery.Media.VoIPMediaSession(winAudio.ToMediaEndPoints());
+var userAgent = new SIPUserAgent();
+IAudioEndPoint audioEndPoint = DefaultAudioEndPointFactory.Create(new AudioEncoder());
+((IAudioSource)audioEndPoint).RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
+var voipMediaSession = new VoIPMediaSession(new MediaEndPoints
+{
+    AudioSource = audioEndPoint,
+    AudioSink   = audioEndPoint,
+});
 
 // Place the call and wait for the result.
 bool callResult = await userAgent.Call(DESTINATION, null, null, voipMediaSession);
