@@ -55,7 +55,7 @@ const string DESTINATION = "music@iptel.org";
 var userAgent = new SIPUserAgent();
 
 IAudioEndPoint audio = DefaultAudioEndPointFactory.Create(new AudioEncoder());
-((IAudioSource)audio).RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
+audio.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
 
 var session = new VoIPMediaSession(new MediaEndPoints
 {
