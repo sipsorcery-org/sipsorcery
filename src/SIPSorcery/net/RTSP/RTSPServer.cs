@@ -81,11 +81,11 @@ namespace SIPSorcery.Net
                 ThreadPool.QueueUserWorkItem(delegate
                 { PruneConnections(PRUNE_THREAD_NAME + m_localIPEndPoint.Port); });
 
-                logger.LogDebug("RTSP server listener created " + m_localIPEndPoint + ".");
+                logger.LogRtspServerListenerCreated(m_localIPEndPoint);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPServer Initialise. " + excp.Message);
+                logger.LogRtspServerInitializeError(excp.Message, excp);
                 throw excp;
             }
         }
@@ -96,7 +96,7 @@ namespace SIPSorcery.Net
             {
                 Thread.CurrentThread.Name = threadName;
 
-                logger.LogDebug("RTSP server socket on " + m_localIPEndPoint + " accept connections thread started.");
+                logger.LogRtspAcceptThreadStarted(m_localIPEndPoint);
 
                 while (!Closed)
                 {
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net
                         tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
                         IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-                        logger.LogDebug("RTSP server accepted connection from " + remoteEndPoint + ".");
+                        logger.LogRtspConnectionAccepted(remoteEndPoint);
 
                         RTSPConnection rtspClientConnection = new RTSPConnection(this, tcpClient.GetStream(), remoteEndPoint);
 
@@ -124,15 +124,15 @@ namespace SIPSorcery.Net
                     catch (Exception acceptExcp)
                     {
                         // This exception gets thrown if the remote end disconnects during the socket accept.
-                        logger.LogWarning("Exception RTSPServer  accepting socket (" + acceptExcp.GetType() + "). " + acceptExcp.Message);
+                        logger.LogRtspAcceptSocketWarning(acceptExcp.GetType().ToString(), acceptExcp.Message);
                     }
                 }
 
-                logger.LogDebug("RTSP server socket on " + m_localIPEndPoint + " listening halted.");
+                logger.LogRtspServerListenThreadStopped(m_localIPEndPoint);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPServer Listen. " + excp.Message);
+                logger.LogRtspServerListenError(excp.Message, excp);
             }
         }
 
@@ -152,7 +152,7 @@ namespace SIPSorcery.Net
             { }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception RTSPServer ReceiveCallback. " + excp.Message);
+                logger.LogRtspReceiveCallbackWarning(excp.Message, excp);
                 RTSPClientSocketDisconnected(rtspConnection.RemoteEndPoint);
             }
         }
@@ -169,7 +169,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.LogDebug("RTSP client socket from " + remoteEndPoint + " disconnected.");
+                logger.LogRtspClientDisconnected(remoteEndPoint);
 
                 lock (m_connectedSockets)
                 {
@@ -181,7 +181,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPClientDisconnected. " + excp.Message);
+                logger.LogRtspClientDisconnectedError(excp.Message, excp);
             }
         }
 
@@ -219,7 +219,7 @@ namespace SIPSorcery.Net
                 }
                 else if (m_localIPEndPoint.ToString() == dstEndPoint.ToString())
                 {
-                    logger.LogError("The RTSPServer blocked Send to " + dstEndPoint.ToString() + " as it was identified as a locally hosted TCP socket.\r\n" + Encoding.UTF8.GetString(buffer));
+                    logger.LogRtspBlockedSendError(dstEndPoint.ToString());
                     throw new ApplicationException("A Send call was made in RTSPServer to send to another local TCP socket.");
                 }
                 else
@@ -236,25 +236,25 @@ namespace SIPSorcery.Net
                         }
                         catch (SocketException)
                         {
-                            logger.LogWarning("RTSPServer could not send to TCP socket " + dstEndPoint + ", closing and removing.");
+                            logger.LogRtspSocketSendWarning(dstEndPoint);
                             rtspClientConnection.Stream.Close();
                             m_connectedSockets.Remove(dstEndPoint.ToString());
                         }
                     }
                     else
                     {
-                        logger.LogWarning("Could not send RTSP packet to TCP " + dstEndPoint + " as there was no current connection to the client, dropping message.");
+                        logger.LogRtspSocketSendWarnNoConnection(dstEndPoint);
                     }
                 }
             }
             catch (ApplicationException appExcp)
             {
-                logger.LogWarning("ApplicationException RTSPServer Send (sendto=>" + dstEndPoint + "). " + appExcp.Message);
+                logger.LogRtspSendToWarning(dstEndPoint.ToString(), appExcp.Message);
                 throw;
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception (" + excp.GetType().ToString() + ") RTSPServer Send (sendto=>" + dstEndPoint + "). " + excp.Message);
+                logger.LogRtspSendTypeError(excp.GetType().ToString(), dstEndPoint.ToString(), excp.Message);
                 throw;
             }
         }
@@ -268,7 +268,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPServer EndSend. " + excp.Message);
+                logger.LogRtspEndSendError(excp.Message, excp);
             }
         }
 
@@ -277,7 +277,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Close()
         {
-            logger.LogDebug("Closing RTSP server socket " + m_localIPEndPoint + ".");
+            logger.LogRtspCloseDebug(m_localIPEndPoint);
 
             Closed = true;
 
@@ -287,7 +287,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception listenerCloseExcp)
             {
-                logger.LogWarning("Exception RTSPServer Close (shutting down listener). " + listenerCloseExcp.Message);
+                logger.LogRtspCloseListenerWarning(listenerCloseExcp.Message, listenerCloseExcp);
             }
 
             foreach (RTSPConnection rtspConnection in m_connectedSockets.Values)
@@ -298,7 +298,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception connectionCloseExcp)
                 {
-                    logger.LogWarning("Exception RTSPServer Close (shutting down connection to " + rtspConnection.RemoteEndPoint + "). " + connectionCloseExcp.Message);
+                    logger.LogRtspCloseConnectionWarning(rtspConnection.RemoteEndPoint.ToString(), connectionCloseExcp.Message);
                 }
             }
         }
@@ -324,7 +324,7 @@ namespace SIPSorcery.Net
 
         private void RTPSocketDisconnected(string sessionID)
         {
-            logger.LogDebug("The RTP socket for RTSP session " + sessionID + " was disconnected.");
+            logger.LogRtspCloseSession(sessionID);
 
             lock (m_rtspSessions)
             {
@@ -369,7 +369,7 @@ namespace SIPSorcery.Net
                                     inactiveConnection = m_connectedSockets[inactiveConnectionKey];
                                     m_connectedSockets.Remove(inactiveConnectionKey);
 
-                                    logger.LogDebug("Pruning inactive RTSP connection on to remote end point " + inactiveConnection.RemoteEndPoint + ".");
+                                    logger.LogRtspPruningConnection(inactiveConnection.RemoteEndPoint);
                                     inactiveConnection.Close();
                                 }
 
@@ -383,7 +383,7 @@ namespace SIPSorcery.Net
                     }
                     catch (Exception pruneExcp)
                     {
-                        logger.LogError("Exception RTSPServer PruneConnections (pruning). " + pruneExcp.Message);
+                        logger.LogRtspPruneConnectionsError(pruneExcp.Message, pruneExcp);
                     }
 
                     // Check the list of active RTSP sessions for any that have stopped communicating or that have closed.
@@ -411,7 +411,7 @@ namespace SIPSorcery.Net
 
                                 if (!inactiveSession.IsClosed)
                                 {
-                                    logger.LogDebug("Closing inactive RTSP session for session ID " + inactiveSession.SessionID + " established from RTSP client on " + inactiveSession.RemoteEndPoint + " (started at " + inactiveSession.StartedAt + ", RTP last activity at " + inactiveSession.RTPLastActivityAt + ", control last activity at " + inactiveSession.ControlLastActivityAt + ", is closed " + inactiveSession.IsClosed + ").");
+                                    logger.LogRtspClosedInactiveSession(inactiveSession.SessionID, inactiveSession.RemoteEndPoint.ToString(), inactiveSession.StartedAt, inactiveSession.RTPLastActivityAt, inactiveSession.ControlLastActivityAt, inactiveSession.IsClosed);
                                     inactiveSession.Close();
                                 }
 
@@ -421,17 +421,17 @@ namespace SIPSorcery.Net
                     }
                     catch (Exception rtspSessExcp)
                     {
-                        logger.LogError("Exception RTSPServer checking for inactive RTSP sessions. " + rtspSessExcp);
+                        logger.LogRtspPruneInactiveSessionError(rtspSessExcp.Message, rtspSessExcp);
                     }
 
                     Thread.Sleep(PRUNE_CONNECTIONS_INTERVAL * 1000);
                 }
 
-                logger.LogDebug("RTSPServer socket on " + m_localIPEndPoint.ToString() + " pruning connections halted.");
+                logger.LogRtspPruningConnectionsHalted(m_localIPEndPoint);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception RTSPServer PruneConnections. " + excp.Message);
+                logger.LogRtspPruneConnectionsAllError(excp.Message, excp);
             }
         }
 
@@ -443,7 +443,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception Disposing RTSPServer. " + excp.Message);
+                logger.LogRtspDisposeError(excp.Message, excp);
             }
         }
     }

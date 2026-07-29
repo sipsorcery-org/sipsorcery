@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: AzureAgentParticipant.cs
 //
 // Description: The "agent" bridge endpoint: a locally-assembled voice agent that
@@ -30,6 +30,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Cli.Commands.Route;
 using SIPSorcery.Media;
@@ -124,7 +125,7 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
             _avatar.OnVideoSourceEncodedSample += (durationRtpUnits, sample) =>
             {
                 _videoTimestamp += durationRtpUnits;
-                OnFrame?.Invoke(MediaFrame.ForVideo(sample, _videoTimestamp, _h264, durationRtpUnits));
+                OnFrame?.Invoke(MediaFrame.ForVideo(sample.ToArray(), _videoTimestamp, _h264, durationRtpUnits));
             };
         }
     }
@@ -173,7 +174,10 @@ public sealed class AzureAgentParticipant : IBridgeParticipant, IGreetable, ITra
         try
         {
             short[] pcm48 = _micDecoder.DecodeAudio(frame.Payload, _opus48k);
-            short[] pcm = PcmResampler.Resample(pcm48, 48000, AzureTts.SampleRate);
+
+            using var pcmWriter = new ArrayPoolBufferWriter<short>(0);
+            PcmResampler.Resample(pcm48, 48000, AzureTts.SampleRate, pcmWriter);
+            var pcm = pcmWriter.WrittenSpan;
             _recognizer.Write(pcm);
 
             // Diagnostics (--verbose): confirm mic audio is reaching STT and at a usable level.

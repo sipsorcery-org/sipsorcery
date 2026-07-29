@@ -14,6 +14,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -52,7 +54,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public bool IsSuccessStatusCode
         {
-            get { return (StatusCode >= 200) && (StatusCode <= 204); }
+            get { return StatusCode is >= 200 and <= 204; }
         }
 
         /// <summary>
@@ -143,7 +145,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseSIPResponse: {SipMessage}. {ErrorMessage}", sipMessageBuffer.RawMessage, excp.Message);
+                logger.LogParseSIPResponseBufferException(sipMessageBuffer.RawMessage, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
         }
@@ -171,7 +173,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception ParseSIPResponse: {SipMessage}. {ErrorMessage}", sipMessageStr, excp.Message);
+                logger.LogParseSIPResponseStringException(sipMessageStr, excp);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
         }
@@ -288,7 +290,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPResponse.GetResponse. {ErrorMessage}", excp.Message);
+                logger.LogGetResponseException(excp);
                 throw;
             }
         }
@@ -325,7 +327,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPResponse.GetResponse. {ErrorMessage}", excp.Message);
+                logger.LogGetResponseException(excp);
                 throw;
             }
         }

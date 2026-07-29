@@ -72,9 +72,9 @@ public class HttpLoggingHandler : DelegatingHandler
         if (logDebugEnabled)
         {
             // Log request with better formatting.
-            _logger.LogDebug("🚀 HTTP Request [{RequestId}]", requestId);
-            _logger.LogDebug("  Method: {Method}", request.Method);
-            _logger.LogDebug("  URL: {RequestUri}", request.RequestUri);
+            _logger.LogHttpRequestMessage(requestId);
+            _logger.LogHttpMethodMessage(request.Method);
+            _logger.LogHttpRequestUriMessage(request.RequestUri);
 
             // Log headers in a more readable format.
             LogHeaders("  Request Headers:", request.Headers, SensitiveHeaders);
@@ -88,7 +88,7 @@ public class HttpLoggingHandler : DelegatingHandler
                     var requestBody = await request.Content.ReadAsStringAsync();
                     if (!string.IsNullOrEmpty(requestBody))
                     {
-                        _logger.LogDebug("  Request Body:\n{RequestBody}", FormatBody(requestBody));
+                        _logger.LogHttpRequestBodyMessage(FormatBody(requestBody));
                     }
                 }
             }
@@ -100,8 +100,7 @@ public class HttpLoggingHandler : DelegatingHandler
 
         // Log response with better formatting.
         var statusIcon = response.IsSuccessStatusCode ? "✅" : "❌";
-        _logger.LogInformation("{StatusIcon} HTTP Response [{RequestId}] - {StatusCode} {ReasonPhrase} ({ElapsedMs}ms)",
-            statusIcon, requestId, (int)response.StatusCode, response.ReasonPhrase, elapsedMilliseconds);
+        _logger.LogHttpResponseMessage(statusIcon, requestId, (int)response.StatusCode, response.ReasonPhrase ?? "", elapsedMilliseconds.TotalMilliseconds);
 
         if (logDebugEnabled)
         {
@@ -116,7 +115,7 @@ public class HttpLoggingHandler : DelegatingHandler
                     var responseBody = await response.Content.ReadAsStringAsync();
                     if (!string.IsNullOrEmpty(responseBody))
                     {
-                        _logger.LogDebug("  Response Body:\n{ResponseBody}", FormatBody(responseBody));
+                        _logger.LogHttpResponseBodyMessage(FormatBody(responseBody));
                     }
                 }
             }
@@ -132,14 +131,14 @@ public class HttpLoggingHandler : DelegatingHandler
             return;
         }
 
-        _logger.LogDebug(title);
+        _logger.LogHttpHeadersTitleMessage(title);
         foreach (var header in headers)
         {
             var isExcluded = excludeHeaderNames is not null &&
                              excludeHeaderNames.Any(h => string.Equals(h, header.Key, StringComparison.OrdinalIgnoreCase));
 
             var value = isExcluded ? "[REDACTED]" : string.Join(", ", header.Value ?? Array.Empty<string>());
-            _logger.LogDebug("    {HeaderName}: {HeaderValue}", header.Key, value);
+            _logger.LogHttpHeaderValueMessage(header.Key, value);
         }
     }
 

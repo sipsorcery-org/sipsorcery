@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SdpAssert.cs
 //
 // Description: Composable assertions for verifying SDP shapes produced by
@@ -49,7 +49,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         {
             Assert.NotNull(sdp);
             Assert.Equal(kinds.Length, sdp.Media.Count);
-            for (int i = 0; i < kinds.Length; i++)
+            for (var i = 0; i < kinds.Length; i++)
             {
                 Assert.Equal(
                     kinds[i].ToLowerInvariant(),
@@ -66,7 +66,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
             Assert.NotNull(sdp);
             // DTLS fingerprint may be declared at session level (Sdp.DtlsFingerprint)
             // or per-m-line (Media[i].DtlsFingerprint). Treat either as present.
-            bool any = !string.IsNullOrEmpty(sdp.DtlsFingerprint)
+            var any = !string.IsNullOrEmpty(sdp.DtlsFingerprint)
                        || sdp.Media.Any(m => !string.IsNullOrEmpty(m.DtlsFingerprint));
             Assert.True(any, "Expected at least one DTLS fingerprint in the SDP (session-level or m-line).");
         }
@@ -89,8 +89,8 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         public static void HasIceCredentials(SDP sdp)
         {
             Assert.NotNull(sdp);
-            bool sessionLevel = !string.IsNullOrEmpty(sdp.IceUfrag) && !string.IsNullOrEmpty(sdp.IcePwd);
-            bool anyMediaLevel = sdp.Media.Any(m => !string.IsNullOrEmpty(m.IceUfrag) && !string.IsNullOrEmpty(m.IcePwd));
+            var sessionLevel = !string.IsNullOrEmpty(sdp.IceUfrag) && !string.IsNullOrEmpty(sdp.IcePwd);
+            var anyMediaLevel = sdp.Media.Any(m => !string.IsNullOrEmpty(m.IceUfrag) && !string.IsNullOrEmpty(m.IcePwd));
             Assert.True(sessionLevel || anyMediaLevel,
                 "Expected ICE ufrag/pwd at the session level or on every m-line.");
         }
@@ -143,7 +143,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         public static void HasCodec(SDPMediaAnnouncement m, string codecName, int payloadId)
         {
             Assert.NotNull(m);
-            bool present = m.MediaFormats.Values.Any(f =>
+            var present = m.MediaFormats.Values.Any(f =>
                 f.ID == payloadId
                 && string.Equals(f.Name(), codecName, System.StringComparison.OrdinalIgnoreCase));
             Assert.True(present,
@@ -153,7 +153,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         public static void DoesNotHaveCodec(SDPMediaAnnouncement m, string codecName)
         {
             Assert.NotNull(m);
-            bool present = m.MediaFormats.Values.Any(f =>
+            var present = m.MediaFormats.Values.Any(f =>
                 string.Equals(f.Name(), codecName, System.StringComparison.OrdinalIgnoreCase));
             Assert.False(present,
                 $"Expected m={m.Media} to NOT advertise {codecName}.");

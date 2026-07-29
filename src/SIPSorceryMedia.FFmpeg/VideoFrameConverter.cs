@@ -80,12 +80,18 @@ namespace SIPSorceryMedia.FFmpeg
 
         private void EnsureNotDisposed()
         {
-            if (IsDisposed) { throw new ObjectDisposedException(nameof(VideoFrameConverter)); }
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(VideoFrameConverter));
+            }
         }
 
         public void Dispose()
         {
-            if (IsDisposed) { return; }
+            if (IsDisposed)
+            {
+                return;
+            }
 
             Marshal.FreeHGlobal(_convertedFrameBufferPtr);
             _convertedFrameBufferPtr = IntPtr.Zero;
@@ -152,8 +158,8 @@ namespace SIPSorceryMedia.FFmpeg
 
             ffmpeg.sws_scale(_pConvertContext, src, srcStride, 0, _srcHeight, _dstData, _dstLinesize).ThrowExceptionIfError();
 
-            int outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstWidth, _dstHeight, 1);
-            byte[] outputBuffer = new byte[outputBufferSize];
+            var outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstWidth, _dstHeight, 1);
+            var outputBuffer = new byte[outputBufferSize];
 
             fixed (byte* pOutData = outputBuffer)
             {
@@ -206,8 +212,8 @@ namespace SIPSorceryMedia.FFmpeg
 
             ffmpeg.sws_scale(_pConvertContext, frame.data, frame.linesize, 0, frame.height, _dstData, _dstLinesize).ThrowExceptionIfError();
 
-            int outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstWidth, _dstHeight, 1);
-            byte[] outputBuffer = new byte[outputBufferSize];
+            var outputBufferSize = ffmpeg.av_image_get_buffer_size(_dstPixelFormat, _dstWidth, _dstHeight, 1);
+            var outputBuffer = new byte[outputBufferSize];
 
             fixed (byte* pOutData = outputBuffer)
             {

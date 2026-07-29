@@ -79,7 +79,7 @@ public interface IWebRTCEndPoint
     /// </summary>
     /// <param name="durationMilliseconds">Duration of the frame in milliseconds.</param>
     /// <param name="encodedAudio">The Opus encoded audio payload.</param>
-    void SendAudio(uint durationMilliseconds, byte[] encodedAudio);
+    void SendAudio(uint durationMilliseconds, ReadOnlyMemory<byte> encodedAudio);
 
     /// <summary>
     /// Sends a control message across the data channel.

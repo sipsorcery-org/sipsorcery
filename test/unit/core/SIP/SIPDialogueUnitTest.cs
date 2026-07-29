@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr = 
+            var inviteReqStr = 
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -60,7 +60,7 @@ dummy";
             var sipReqBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummyEP, dummyEP);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipReqBuffer);
 
-            string okRespStr = 
+            var okRespStr = 
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>
@@ -101,7 +101,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr =
+            var inviteReqStr =
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -119,7 +119,7 @@ dummy";
             var sipReqBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummyEP, dummyEP);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipReqBuffer);
 
-            string okRespStr =
+            var okRespStr =
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>
@@ -159,7 +159,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr =
+            var inviteReqStr =
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -176,7 +176,7 @@ dummy";
             var sipReqBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummyEP, dummyEP);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipReqBuffer);
 
-            string okRespStr =
+            var okRespStr =
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>
@@ -219,7 +219,7 @@ dummy";
 
             SIPEndPoint dummyEP = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 5060));
 
-            string inviteReqStr =
+            var inviteReqStr =
 @"INVITE sip:dummy@127.0.0.1:12014 SIP/2.0
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27
 To: <sip:dummy@127.0.0.1:12014>
@@ -236,7 +236,7 @@ dummy";
             var sipReqBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummyEP, dummyEP);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipReqBuffer);
 
-            string okRespStr =
+            var okRespStr =
 @"SIP/2.0 200 OK
 Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013
 To: <sip:dummy@127.0.0.1:12014>

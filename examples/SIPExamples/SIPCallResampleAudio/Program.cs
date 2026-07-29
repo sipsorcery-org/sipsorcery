@@ -96,7 +96,7 @@ namespace demo
 
                 for (int index = 0; index < sample.Length; index++)
                 {
-                    short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
+                    short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample.Span[index]);
                     float s16 = pcm / 32768f;
 
                     for (int i = 0; i < _ratio; i++)

@@ -14,6 +14,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Linq;
 using System.Net;
@@ -64,7 +66,7 @@ namespace SIPSorcery.SIP
         public const int DNS_RETRIES_PER_SERVER = 1;
         public const int CACHE_FAILED_RESULTS_DURATION = 10;    // Cache failed DNS responses for this duration in seconds.
 
-        private static readonly ILogger logger = LogFactory.CreateLogger<SipDNS>();
+        private static readonly ILogger logger = LogFactory.CreateLogger(typeof(SIPDns).FullName!);
 
         /// <summary>
         /// Don't use IN_ANY queries by default. These are useful if a DNS server supports them as they can
@@ -320,7 +322,7 @@ namespace SIPSorcery.SIP
                                 host = srvHost;
                                 port = srvPort != 0 ? srvPort : port;
 
-                                logger.LogDebug("SIP DNS SRV for {uri} resolved to {host} and port {port}.", uri, host, port);
+                                SipLoggingExtensions.LogSipDnsSrvResolved(logger, uri, host, port);
                             }
                         }
                         catch (Exception srvExcp)
@@ -487,7 +489,7 @@ namespace SIPSorcery.SIP
 
                 if (addressList?.Length == 0)
                 {
-                    logger.LogWarning("Operating System DNS lookup failed for {MAddrOrHostAddress}.", uri.MAddrOrHostAddress);
+                    SipLoggingExtensions.LogDnsLookupFailed(logger, uri.MAddrOrHostAddress);
                     return null;
                 }
                 else

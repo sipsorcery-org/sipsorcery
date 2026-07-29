@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -31,13 +32,13 @@ public interface IVideoSink
     /// <summary>
     /// This event will be fired by the sink after is decodes a video frame from the RTP stream.
     /// </summary>
-    event VideoSinkSampleDecodedDelegate OnVideoSinkDecodedSample;
+    event VideoSinkSampleDecodedDelegate? OnVideoSinkDecodedSample;
 
-    event VideoSinkSampleDecodedFasterDelegate OnVideoSinkDecodedSampleFaster; // Avoid to use byte[] to improve performance
+    event VideoSinkSampleDecodedFasterDelegate? OnVideoSinkDecodedSampleFaster; // Avoid to use byte[] to improve performance
 
     void GotVideoRtp(IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload);
 
-    void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, byte[] payload, VideoFormat format);
+    void GotVideoFrame(IPEndPoint remoteEndPoint, uint timestamp, ReadOnlyMemory<byte> payload, VideoFormat format);
 
     List<VideoFormat> GetVideoSinkFormats();
 

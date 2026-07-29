@@ -1,4 +1,4 @@
-
+﻿
 
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,9 @@ namespace SIPSorceryMedia.FFmpeg.Interop.X11
         public static unsafe Display XOpenDisplay(sbyte* display)
         {
             lock (displayLock)
+            {
                 return sys_XOpenDisplay(display);
+            }
         }
 
         [DllImport(lib_x11, EntryPoint = "XCloseDisplay")]
@@ -43,11 +45,11 @@ namespace SIPSorceryMedia.FFmpeg.Interop.X11
             {
                 IntPtr display = XLib.XOpenDisplay(null);
                 IntPtr rootWindow = XLib.XDefaultRootWindow(display);
-                XRRMonitorInfo* monitors = XRandr.XRRGetMonitors(display, rootWindow, true, out int count);
-                for (int i = 0; i < count; i++)
+                XRRMonitorInfo* monitors = XRandr.XRRGetMonitors(display, rootWindow, true, out var count);
+                for (var i = 0; i < count; i++)
                 {
                     XRRMonitorInfo monitor = monitors[i];
-                    string nameAddition = monitor.Name == null ? "" : $" ({new string(monitor.Name)})";
+                    var nameAddition = monitor.Name == null ? "" : $" ({new string(monitor.Name)})";
 
                     Monitor m = new Monitor
                     {

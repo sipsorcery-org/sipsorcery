@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionBundleAndMidUnitTest.cs
 //
 // Description: Characterization tests for the BUNDLE group and per-m-line

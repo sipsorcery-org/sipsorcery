@@ -32,7 +32,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "sips:10.0.0.100:5060;lr;transport=tcp;";
+            var sipEndPointStr = "sips:10.0.0.100:5060;lr;transport=tcp;";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "10.0.0.100";
+            var sipEndPointStr = "10.0.0.100";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "sip:10.0.0.100";
+            var sipEndPointStr = "sip:10.0.0.100";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -84,7 +84,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "10.0.0.100:5065";
+            var sipEndPointStr = "10.0.0.100:5065";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -100,7 +100,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "10.0.0.100;transport=tcp";
+            var sipEndPointStr = "10.0.0.100;transport=tcp";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -118,7 +118,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "sips:10.0.0.100:5063";
+            var sipEndPointStr = "sips:10.0.0.100:5063";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "sip:10.0.0.100:5063;lr;tag=123;transport=tcp;tag2=abcd";
+            var sipEndPointStr = "sip:10.0.0.100:5063;lr;tag=123;transport=tcp;tag2=abcd";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -204,7 +204,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "udp:[::1]";
+            var sipEndPointStr = "udp:[::1]";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -223,7 +223,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "tcp:[::1]:6060";
+            var sipEndPointStr = "tcp:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -243,7 +243,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "sip:[::1]:6060";
+            var sipEndPointStr = "sip:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -263,7 +263,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "ws:[::1]:6060";
+            var sipEndPointStr = "ws:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -283,7 +283,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "wss:[fe80::54a9:d238:b2ee:ceb]:7060";
+            var sipEndPointStr = "wss:[fe80::54a9:d238:b2ee:ceb]:7060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -303,7 +303,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "udp:[::1];xid=1234567";
+            var sipEndPointStr = "udp:[::1];xid=1234567";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());
@@ -323,7 +323,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             logger.BeginScope(TestHelper.GetCurrentMethodName());
 
-            string sipEndPointStr = "udp:[::1];cid=123;xid=1234567";
+            var sipEndPointStr = "udp:[::1];cid=123;xid=1234567";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
 
             logger.LogDebug("SIPEndPoint={SIPEndPoint}.", sipEndPoint.ToString());

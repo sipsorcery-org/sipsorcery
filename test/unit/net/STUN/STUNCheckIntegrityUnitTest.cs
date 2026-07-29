@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: STUNCheckIntegrityUnitTest.cs
 //
 // Description: Unit tests for STUNMessage.CheckIntegrity with and without

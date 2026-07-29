@@ -88,7 +88,7 @@ namespace SIPSorcery.Net.SharpSRTP.SRTP
             };
         }
 
-        public static SrtpKeys CreateMasterKeys(string cryptoSuite, byte[] mki = null, byte[] useMasterKeySalt = null)
+        public static SrtpKeys CreateMasterKeys(string cryptoSuite, byte[]? mki = null, byte[]? useMasterKeySalt = null)
         {
             var srtpSecurityParams = SrtpCryptoSuites[cryptoSuite];
             int masterKeyLen = srtpSecurityParams.CipherKeyLength >> 3;

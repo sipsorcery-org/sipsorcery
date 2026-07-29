@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTSPHeaderUnitTest.cs
 //
 // Description: Unit tests for the RTSPHeader class, in particular the header

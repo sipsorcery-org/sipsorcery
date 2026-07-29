@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -47,7 +49,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else if (sipAccount.IsDisabled)
                 {
-                    logger.LogWarning("SIP account {SIPUsername}@{SIPDomain} is disabled for {Method}.", sipAccount.SIPUsername, sipAccount.SIPDomain, sipRequest.Method);
+                    logger.LogDisabledSIPAccountForMethod(sipAccount.SIPUsername, sipAccount.SIPDomain, sipRequest.Method);
 
                     return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Forbidden, null);
                 }
@@ -91,7 +93,7 @@ namespace SIPSorcery.SIP.App
                         // Check for stale nonces.
                         if (IsNonceStale(requestNonce))
                         {
-                            logger.LogWarning("Authentication failed stale nonce for realm={SIPDomain}, username={SIPUsername}, uri={URI}, nonce={Nonce}, method={Method}.", sipAccount.SIPDomain, sipAccount.SIPUsername, uri, requestNonce, sipRequest.Method);
+                            logger.LogStaleNonceAuthenticationFailure(sipAccount.SIPDomain, sipAccount.SIPUsername, uri, requestNonce, sipRequest.Method);
 
                             SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
                             return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);
@@ -122,7 +124,7 @@ namespace SIPSorcery.SIP.App
                             }
                             else
                             {
-                                logger.LogWarning("Authentication token check failed for realm={SIPDomain}, username={SIPUsername}, uri={Uri}, nonce={RequestNonce}, method={SipRequestMethod}.", sipAccount.SIPDomain, sipAccount.SIPUsername, uri, requestNonce, sipRequest.Method);
+                                logger.LogTokenCheckFailed(sipAccount.SIPDomain, sipAccount.SIPUsername, uri, requestNonce, sipRequest.Method);
 
                                 SIPAuthenticationHeader authHeader = new SIPAuthenticationHeader(SIPAuthorisationHeadersEnum.WWWAuthenticate, sipAccount.SIPDomain, GetNonce());
                                 return new SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum.Unauthorised, authHeader);

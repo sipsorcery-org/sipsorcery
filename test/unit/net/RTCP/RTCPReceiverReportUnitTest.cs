@@ -46,7 +46,7 @@ namespace SIPSorcery.Net.UnitTests
 
             uint rrSsrc = 5;
             byte fractionLost = 6;
-            int packetsLost = 7;
+            var packetsLost = 7;
             uint highestSeqNum = 8;
             uint jitter = 9;
             uint lastSRTimestamp = 10;
@@ -55,7 +55,7 @@ namespace SIPSorcery.Net.UnitTests
             var rr = new ReceptionReportSample(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
 
             var receiverReport = new RTCPReceiverReport(ssrc, new List<ReceptionReportSample> { rr });
-            byte[] buffer = receiverReport.GetBytes();
+            var buffer = receiverReport.GetBytes();
 
             RTCPReceiverReport parsedRR = new RTCPReceiverReport(buffer);
 
@@ -115,7 +115,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var rr = new ReceptionReportSample(5, 6, 7, 8, 9, 10, 11);
             var receiverReport = new RTCPReceiverReport(1, new List<ReceptionReportSample> { rr });
-            byte[] buffer = receiverReport.GetBytes();
+            var buffer = receiverReport.GetBytes();
 
             // Patch the reception report count (low 5 bits of the first byte) to claim 3 reports
             // when only 1 is present in the packet.

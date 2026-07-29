@@ -170,7 +170,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         private static SIPRequest ParseRequest(string method, string contact)
         {
-            string sipMsg =
+            var sipMsg =
                 $"{method} sip:bob@example.com SIP/2.0{m_CRLF}" +
                 $"Via: SIP/2.0/UDP 192.168.1.2:5065;branch=z9hG4bKregressiontest{m_CRLF}" +
                 $"From: <sip:alice@example.com>;tag=1{m_CRLF}" +

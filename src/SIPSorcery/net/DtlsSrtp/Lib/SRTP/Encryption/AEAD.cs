@@ -23,6 +23,8 @@ using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using System;
 using System.Buffers.Binary;
+using SIPSorcery.Sys;
+
 #if NET8_0_OR_GREATER
 using ReadOnlyBytes = System.ReadOnlySpan<byte>;
 using Bytes = System.Span<byte>;

@@ -19,6 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -27,391 +29,373 @@ using Org.BouncyCastle.Tls.Crypto;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Utilities.Encoders;
-using System;
-using System.Collections.Generic;
 
-namespace SIPSorcery.Net.SharpSRTP.DTLS
+namespace SIPSorcery.Net.SharpSRTP.DTLS;
+
+public class DtlsClient : DefaultTlsClient, IDtlsPeer
 {
-    public class DtlsClient : DefaultTlsClient, IDtlsPeer
+    private readonly object _syncRoot = new object();
+    private static readonly ILogger _logger = LogFactory.CreateLogger<DtlsClient>();
+
+    protected DatagramTransport? _clientDatagramTransport; // valid only for the current session
+
+    private TlsSession? _session;
+
+    public bool AutogenerateCertificate { get; set; } = true;
+
+    public int TimeoutMilliseconds { get; set; } = 20000;
+    public Certificate? Certificate { get; private set; }
+    public AsymmetricKeyParameter? CertificatePrivateKey { get; private set; }
+    public short CertificateSignatureAlgorithm { get; private set; }
+    public short CertificateHashAlgorithm { get; private set; }
+
+    public bool ForceUseExtendedMasterSecret { get; set; } = true;
+    public TlsServerCertificate? RemoteCertificate { get; private set; }
+    public Certificate? PeerCertificate { get { return RemoteCertificate?.Certificate; } }
+
+    public event EventHandler<DtlsHandshakeCompletedEventArgs>? OnHandshakeCompleted;
+    public event EventHandler<DtlsAlertEventArgs>? OnAlert;
+
+    public DtlsClient(
+        TlsSession? session = null,
+        Certificate? certificate = null,
+        AsymmetricKeyParameter? privateKey = null,
+        short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+        short certificateHashAlgorithm = HashAlgorithm.sha256)
+        : this(
+              new BcTlsCrypto(),
+              session,
+              certificate,
+              privateKey,
+              certificateSignatureAlgorithm,
+              certificateHashAlgorithm)
+    { }
+
+    public DtlsClient(
+        TlsCrypto crypto,
+        TlsSession? session = null,
+        Certificate? certificate = null,
+        AsymmetricKeyParameter? privateKey = null,
+        short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa,
+        short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
     {
-        private readonly object _syncRoot = new object();
-        private static readonly ILogger _logger = LogFactory.CreateLogger<DtlsClient>();
-        protected DatagramTransport _clientDatagramTransport = null;
-        private TlsSession _session;
+        this._session = session;
+        SetCertificate(certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm);
+    }
 
-        public bool AutogenerateCertificate { get; set; } = true;
+    public virtual void SetCertificate(Certificate? certificate, AsymmetricKeyParameter? privateKey, short signatureAlgorithm, short hashAlgorithm)
+    {
+        Certificate = certificate;
+        CertificatePrivateKey = privateKey;
+        CertificateSignatureAlgorithm = signatureAlgorithm;
+        CertificateHashAlgorithm = hashAlgorithm;
+    }
 
-        public int TimeoutMilliseconds { get; set; } = 20000;
-        public Certificate Certificate { get; private set; }
-        public AsymmetricKeyParameter CertificatePrivateKey { get; private set; }
-        public short CertificateSignatureAlgorithm { get; private set; }
-        public short CertificateHashAlgorithm { get; private set; }
+    public virtual void AutogenerateClientCertificate(bool isRsa)
+    {
+        var cert = DtlsCertificateUtils.GenerateCertificate(GetCertificateCommonName(), DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), isRsa);
+        SetCertificate(cert.Certificate, cert.PrivateKey, isRsa ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa, HashAlgorithm.sha256);
+    }
 
-        public bool ForceUseExtendedMasterSecret { get; set; } = true;
-        public TlsServerCertificate RemoteCertificate { get; private set; }
-        public Certificate PeerCertificate { get { return RemoteCertificate?.Certificate; } }
+    protected virtual string GetCertificateCommonName()
+    {
+        return "DTLS";
+    }
 
-        public event EventHandler<DtlsHandshakeCompletedEventArgs> OnHandshakeCompleted;
-        public event EventHandler<DtlsAlertEventArgs> OnAlert;
+    public override bool RequiresExtendedMasterSecret()
+    {
+        return ForceUseExtendedMasterSecret;
+    }
 
-        public DtlsClient(TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256)
-            : this(new BcTlsCrypto(), session, certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm)
-        { }
+    protected override ProtocolVersion[] GetSupportedVersions()
+    {
+        //return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv12);
+        return ProtocolVersion.DTLSv12.Only(); // ProtocolVersion.IsSupportedDtlsVersionClient currently does not support DTLS 1.3
+    }
 
-        public DtlsClient(TlsCrypto crypto, TlsSession session = null, Certificate certificate = null, AsymmetricKeyParameter privateKey = null, short certificateSignatureAlgorithm = SignatureAlgorithm.ecdsa, short certificateHashAlgorithm = HashAlgorithm.sha256) : base(crypto)
+    protected override int[] GetSupportedCipherSuites()
+    {
+        // TODO: review
+        if (CertificateSignatureAlgorithm == SignatureAlgorithm.rsa)
         {
-            this._session = session;
-            SetCertificate(certificate, privateKey, certificateSignatureAlgorithm, certificateHashAlgorithm);
-        }
-
-        public virtual void SetCertificate(Certificate certificate, AsymmetricKeyParameter privateKey, short signatureAlgorithm, short hashAlgorithm)
-        {
-            Certificate = certificate;
-            CertificatePrivateKey = privateKey;
-            CertificateSignatureAlgorithm = signatureAlgorithm;
-            CertificateHashAlgorithm = hashAlgorithm;
-        }
-
-        public virtual void AutogenerateClientCertificate(bool isRsa)
-        {
-            var cert = DtlsCertificateUtils.GenerateCertificate(GetCertificateCommonName(), DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(30), isRsa);
-            SetCertificate(cert.Certificate, cert.PrivateKey, isRsa ? SignatureAlgorithm.rsa : SignatureAlgorithm.ecdsa, HashAlgorithm.sha256);
-        }
-
-        protected virtual string GetCertificateCommonName()
-        {
-            return "DTLS";
-        }
-
-        public override bool RequiresExtendedMasterSecret()
-        {
-            return ForceUseExtendedMasterSecret;
-        }
-
-        protected override ProtocolVersion[] GetSupportedVersions()
-        {
-            //return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv12);
-            return ProtocolVersion.DTLSv12.Only(); // ProtocolVersion.IsSupportedDtlsVersionClient currently does not support DTLS 1.3
-        }
-
-        protected override int[] GetSupportedCipherSuites()
-        {
-            // TODO: review
-            if (CertificateSignatureAlgorithm == SignatureAlgorithm.rsa)
+            return new int[]
             {
-                return new int[]
-                {
-                    // TLS 1.3 cpihers
-                    //CipherSuite.TLS_AES_256_GCM_SHA384,
-                    //CipherSuite.TLS_AES_128_GCM_SHA256,
-                    //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+                // TLS 1.3 cpihers
+                //CipherSuite.TLS_AES_256_GCM_SHA384,
+                //CipherSuite.TLS_AES_128_GCM_SHA256,
+                //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
 
-                    // TLS 1.2 ciphers:
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-                };
+                // TLS 1.2 ciphers:
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+            };
+        }
+        else if (CertificateSignatureAlgorithm == SignatureAlgorithm.ecdsa)
+        {
+            // ECDSA certificates require matching cipher suites
+            return new int[]
+            {
+                // TLS 1.3 cpihers
+                //CipherSuite.TLS_AES_256_GCM_SHA384,
+                //CipherSuite.TLS_AES_128_GCM_SHA256,
+                //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+
+                // TLS 1.2 ciphers:
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+                CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+            };
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    public virtual DtlsTransport? DoHandshake(out string? handshakeError, DatagramTransport datagramTransport, DtlsRequest? request = null)
+    {
+        lock (_syncRoot)
+        {
+            DtlsTransport? transport = null;
+
+            try
+            {
+                var clientProtocol = new DtlsClientProtocol();
+                _clientDatagramTransport = datagramTransport;
+                transport = clientProtocol.Connect(this, datagramTransport);
+                _clientDatagramTransport = null;
             }
-            else if (CertificateSignatureAlgorithm == SignatureAlgorithm.ecdsa)
+            catch (Exception ex)
             {
-                // ECDSA certificates require matching cipher suites
-                return new int[]
-                {
-                    // TLS 1.3 cpihers
-                    //CipherSuite.TLS_AES_256_GCM_SHA384,
-                    //CipherSuite.TLS_AES_128_GCM_SHA256,
-                    //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+                handshakeError = ex.Message;
+                return null;
+            }
 
-                    // TLS 1.2 ciphers:
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-                };
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
+            handshakeError = null;
+            return transport;
+        }
+    }
+
+    public override TlsSession? GetSessionToResume()
+    {
+        return this._session;
+    }
+
+    public override int GetHandshakeTimeoutMillis() => TimeoutMilliseconds;
+
+    public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
+    {
+        _logger.LogDtlsClientAlertRaised(alertLevel, alertDescription, message, cause);
+    }
+
+    public override void NotifyAlertReceived(short level, short alertDescription)
+    {
+        _logger.LogDtlsClientAlertReceived(level, alertDescription);
+
+        TlsAlertTypesEnum alertType = TlsAlertTypesEnum.Unassigned;
+        if (Enum.IsDefined(typeof(TlsAlertTypesEnum), (int)alertDescription))
+        {
+            alertType = (TlsAlertTypesEnum)alertDescription;
         }
 
-        public virtual DtlsTransport DoHandshake(out string handshakeError, DatagramTransport datagramTransport, DtlsRequest request = null)
+        TlsAlertLevelsEnum alertLevel = TlsAlertLevelsEnum.Warn;
+        if (Enum.IsDefined(typeof(TlsAlertLevelsEnum), (int)alertLevel))
         {
-            lock (_syncRoot)
-            {
-                DtlsTransport transport = null;
+            alertLevel = (TlsAlertLevelsEnum)level;
+        }
 
-                try
+        OnAlert?.Invoke(this, new DtlsAlertEventArgs(alertLevel, alertType, AlertDescription.GetText(alertDescription)));
+    }
+
+    public override void NotifyServerVersion(ProtocolVersion serverVersion)
+    {
+        base.NotifyServerVersion(serverVersion);
+
+        _logger.LogDtlsClientNegotiated(serverVersion);
+    }
+
+    public override TlsAuthentication GetAuthentication()
+    {
+        return new DTlsAuthentication(m_context, this);
+    }
+
+    public override void NotifyHandshakeComplete()
+    {
+        base.NotifyHandshakeComplete();
+
+        ProtocolName protocolName = m_context.SecurityParameters.ApplicationProtocol;
+        if (protocolName != null)
+        {
+            _logger.LogDtlsClientAlpn(protocolName.GetUtf8Decoding());
+        }
+
+        TlsSession newSession = m_context.Session;
+        if (newSession != null)
+        {
+            if (newSession.IsResumable)
+            {
+                byte[] newSessionID = newSession.SessionID;
+                string hex = ToHexString(newSessionID);
+
+                if (_session != null && Arrays.AreEqual(_session.SessionID, newSessionID))
                 {
-                    DtlsClientProtocol clientProtocol = new DtlsClientProtocol();
-                    _clientDatagramTransport = datagramTransport;
-                    transport = clientProtocol.Connect(this, datagramTransport);
-                    _clientDatagramTransport = null;
+                    _logger.LogDtlsClientSessionResumed(hex);
                 }
-                catch (Exception ex)
+                else
                 {
-                    handshakeError = ex.Message;
+                    _logger.LogDtlsClientSessionEstablished(hex);
+                }
+
+                this._session = newSession;
+            }
+
+            byte[] tlsServerEndPoint = m_context.ExportChannelBinding(ChannelBinding.tls_server_end_point);
+            if (null != tlsServerEndPoint)
+            {
+                _logger.LogDtlsClientTlsServerEndPoint(ToHexString(tlsServerEndPoint));
+            }
+
+            byte[] tlsUnique = m_context.ExportChannelBinding(ChannelBinding.tls_unique);
+            _logger.LogDtlsClientTlsUnique(ToHexString(tlsUnique));
+        }
+
+        OnHandshakeCompleted?.Invoke(this, new DtlsHandshakeCompletedEventArgs(m_context.SecurityParameters));
+    }
+
+    public override IDictionary<int, byte[]> GetClientExtensions()
+    {
+        if (m_context.SecurityParameters.ClientRandom == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return base.GetClientExtensions();
+    }
+
+    public override void ProcessServerExtensions(IDictionary<int, byte[]> serverExtensions)
+    {
+        if (m_context.SecurityParameters.ServerRandom == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        base.ProcessServerExtensions(serverExtensions);
+    }
+
+    protected virtual string ToHexString(byte[] data)
+    {
+        return data == null ? "(null)" : Hex.ToHexString(data);
+    }
+
+    internal class DTlsAuthentication : TlsAuthentication
+    {
+        private readonly TlsContext _context;
+        private readonly DtlsClient _client;
+
+        public DTlsAuthentication(TlsContext context, DtlsClient client)
+        {
+            this._client = client ?? throw new ArgumentNullException(nameof(client));
+            this._context = context;
+        }
+
+        public void NotifyServerCertificate(TlsServerCertificate serverCertificate)
+        {
+            TlsCertificate[] chain = serverCertificate.Certificate.GetCertificateList();
+
+            _logger.LogDtlsClientServerCertificateChainReceived(chain);
+
+            bool isEmpty = serverCertificate == null || serverCertificate.Certificate == null || serverCertificate.Certificate.IsEmpty;
+
+            if (isEmpty)
+            {
+                throw new TlsFatalAlert(AlertDescription.bad_certificate);
+            }
+
+            TlsCertificate[] certPath = chain;
+
+            // store the certificate for further fingerprint validation
+            _client.RemoteCertificate = serverCertificate;
+
+            TlsUtilities.CheckPeerSigAlgs(_context, certPath);
+        }
+
+        public TlsCredentials? GetClientCredentials(CertificateRequest certificateRequest)
+        {
+            short[] certificateTypes = certificateRequest.CertificateTypes;
+            if (certificateTypes == null || (!Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign) && !Arrays.Contains(certificateTypes, ClientCertificateType.ecdsa_sign)))
+            {
+                return null;
+            }
+
+            if (_client.Certificate == null || _client.CertificatePrivateKey == null)
+            {
+                if (_client.AutogenerateCertificate)
+                {
+                    bool isRsa = IsServerCertificateRsa(_client.RemoteCertificate);
+                    _client.AutogenerateClientCertificate(isRsa);
+                }
+                else
+                {
+                    // no client certificate
                     return null;
                 }
-
-                handshakeError = null;
-                return transport;
-            }
-        }
-
-        public override TlsSession GetSessionToResume()
-        {
-            return this._session;
-        }
-
-        public override int GetHandshakeTimeoutMillis() => TimeoutMilliseconds;
-
-        public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
-        {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("DTLS client raised alert: {AlertLevel}, {AlertDescription}.",
-                    AlertLevel.GetText(alertLevel), AlertDescription.GetText(alertDescription));
-            }
-            if (message != null)
-            {
-                _logger.LogDebug("> {Message}", message);
-            }
-            if (cause != null)
-            {
-                _logger.LogDebug("> {Cause}", cause);
-            }
-        }
-
-        public override void NotifyAlertReceived(short level, short alertDescription)
-        {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("DTLS client received alert: {AlertLevel}, {AlertDescription}.",
-                    AlertLevel.GetText(level), AlertDescription.GetText(alertDescription));
             }
 
-            TlsAlertTypesEnum alertType = TlsAlertTypesEnum.Unassigned;
-            if (Enum.IsDefined(typeof(TlsAlertTypesEnum), (int)alertDescription))
+            var clientSigAlgs = _context.SecurityParameters.ClientSigAlgs;
+
+            SignatureAndHashAlgorithm? signatureAndHashAlgorithm = null;
+
+            foreach (SignatureAndHashAlgorithm alg in clientSigAlgs)
             {
-                alertType = (TlsAlertTypesEnum)alertDescription;
-            }
-
-            TlsAlertLevelsEnum alertLevel = TlsAlertLevelsEnum.Warn;
-            if (Enum.IsDefined(typeof(TlsAlertLevelsEnum), (int)alertLevel))
-            {
-                alertLevel = (TlsAlertLevelsEnum)level;
-            }
-
-            OnAlert?.Invoke(this, new DtlsAlertEventArgs(alertLevel, alertType, AlertDescription.GetText(alertDescription)));
-        }
-
-        public override void NotifyServerVersion(ProtocolVersion serverVersion)
-        {
-            base.NotifyServerVersion(serverVersion);
-
-            _logger.LogDebug("DTLS client negotiated {ServerVersion}.", serverVersion);
-        }
-
-        public override TlsAuthentication GetAuthentication()
-        {
-            return new DTlsAuthentication(m_context, this);
-        }
-
-        public override void NotifyHandshakeComplete()
-        {
-            base.NotifyHandshakeComplete();
-
-            ProtocolName protocolName = m_context.SecurityParameters.ApplicationProtocol;
-            if (protocolName != null)
-            {
-                if (_logger.IsEnabled(LogLevel.Debug))
+                if (alg.Signature == _client.CertificateSignatureAlgorithm && alg.Hash == _client.CertificateHashAlgorithm)
                 {
-                    _logger.LogDebug("Client ALPN: {ApplicationProtocol}.", protocolName.GetUtf8Decoding());
+                    signatureAndHashAlgorithm = alg;
+                    break;
                 }
             }
 
-            TlsSession newSession = m_context.Session;
-            if (newSession != null)
+            if (signatureAndHashAlgorithm == null)
             {
-                if (newSession.IsResumable)
-                {
-                    byte[] newSessionID = newSession.SessionID;
-                    string hex = ToHexString(newSessionID);
-
-                    if (_session != null && Arrays.AreEqual(_session.SessionID, newSessionID))
-                    {
-                        _logger.LogDebug("Client resumed session: {SessionIdHex}.", hex);
-                    }
-                    else
-                    {
-                        _logger.LogDebug("Client established session: {SessionIdHex}.", hex);
-                    }
-
-                    this._session = newSession;
-                }
-
-                byte[] tlsServerEndPoint = m_context.ExportChannelBinding(ChannelBinding.tls_server_end_point);
-                if (null != tlsServerEndPoint)
-                {
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Client 'tls-server-end-point': {TlsServerEndPoint}.", ToHexString(tlsServerEndPoint));
-                    }
-                }
-
-                byte[] tlsUnique = m_context.ExportChannelBinding(ChannelBinding.tls_unique);
-                if (_logger.IsEnabled(LogLevel.Debug))
-                {
-                    _logger.LogDebug("Client 'tls-unique': {TlsUnique}.", ToHexString(tlsUnique));
-                }
+                throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
             }
 
-            OnHandshakeCompleted?.Invoke(this, new DtlsHandshakeCompletedEventArgs(m_context.SecurityParameters));
+            return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(_context), (BcTlsCrypto)_context.Crypto, _client.CertificatePrivateKey, _client.Certificate, signatureAndHashAlgorithm);
         }
+    }
 
-        public override IDictionary<int, byte[]> GetClientExtensions()
+    public static bool IsServerCertificateRsa(TlsServerCertificate? serverCertificate)
+    {
+        if (serverCertificate == null || serverCertificate.Certificate == null || serverCertificate.Certificate.IsEmpty)
         {
-            if (m_context.SecurityParameters.ClientRandom == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            return base.GetClientExtensions();
+            throw new ArgumentNullException(nameof(serverCertificate));
         }
 
-        public override void ProcessServerExtensions(IDictionary<int, byte[]> serverExtensions)
+        var certList = serverCertificate.Certificate.GetCertificateList();
+        if (certList == null || certList.Length == 0)
         {
-            if (m_context.SecurityParameters.ServerRandom == null)
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            base.ProcessServerExtensions(serverExtensions);
+            throw new ArgumentException("Server certificate chain is empty.", nameof(serverCertificate));
         }
 
-        protected virtual string ToHexString(byte[] data)
+        var firstCertificate = X509CertificateStructure.GetInstance(certList[0].GetEncoded());
+        var algOid = firstCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
+
+        if (algOid.Equals(Org.BouncyCastle.Asn1.Pkcs.PkcsObjectIdentifiers.RsaEncryption))
         {
-            return data == null ? "(null)" : Hex.ToHexString(data);
+            return true;
         }
 
-        internal class DTlsAuthentication : TlsAuthentication
+        // Fallback: decode the public key and check its runtime type
+        var pubKey = Org.BouncyCastle.Security.PublicKeyFactory.CreateKey(firstCertificate.SubjectPublicKeyInfo);
+        if (pubKey is Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters)
         {
-            private readonly TlsContext _context;
-            private readonly DtlsClient _client;
-
-            public DTlsAuthentication(TlsContext context, DtlsClient client)
-            {
-                this._client = client ?? throw new ArgumentNullException(nameof(client));
-                this._context = context;
-            }
-
-            public void NotifyServerCertificate(TlsServerCertificate serverCertificate)
-            {
-                TlsCertificate[] chain = serverCertificate.Certificate.GetCertificateList();
-
-                _logger.LogDebug("DTLS client received server certificate chain of length {CertificateCount}.", chain.Length);
-                for (int i = 0; i != chain.Length; i++)
-                {
-                    X509CertificateStructure entry = X509CertificateStructure.GetInstance(chain[i].GetEncoded());
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("DTLS client fingerprint:SHA-256 {Fingerprint} ({Subject}).",
-                            DtlsCertificateUtils.Fingerprint(entry), entry.Subject);
-                    }
-                }
-
-                bool isEmpty = serverCertificate == null || serverCertificate.Certificate == null || serverCertificate.Certificate.IsEmpty;
-
-                if (isEmpty)
-                {
-                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
-                }
-
-                TlsCertificate[] certPath = chain;
-
-                // store the certificate for further fingerprint validation
-                _client.RemoteCertificate = serverCertificate;
-
-                TlsUtilities.CheckPeerSigAlgs(_context, certPath);
-            }
-
-            public TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
-            {
-                short[] certificateTypes = certificateRequest.CertificateTypes;
-                if (certificateTypes == null || (!Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign) && !Arrays.Contains(certificateTypes, ClientCertificateType.ecdsa_sign)))
-                {
-                    return null;
-                }
-
-                if (_client.Certificate == null || _client.CertificatePrivateKey == null)
-                {
-                    if (_client.AutogenerateCertificate)
-                    {
-                        bool isRsa = IsServerCertificateRsa(_client.RemoteCertificate);
-                        _client.AutogenerateClientCertificate(isRsa);
-                    }
-                    else
-                    {
-                        // no client certificate
-                        return null;
-                    }
-                }
-
-                var clientSigAlgs = _context.SecurityParameters.ClientSigAlgs;
-
-                SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-
-                foreach (SignatureAndHashAlgorithm alg in clientSigAlgs)
-                {
-                    if (alg.Signature == _client.CertificateSignatureAlgorithm && alg.Hash == _client.CertificateHashAlgorithm)
-                    {
-                        signatureAndHashAlgorithm = alg;
-                        break;
-                    }
-                }
-
-                if (signatureAndHashAlgorithm == null)
-                {
-                    throw new InvalidOperationException("DTLS Client does not support the selected certificate algorithm!");
-                }
-
-                return new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(_context), (BcTlsCrypto)_context.Crypto, _client.CertificatePrivateKey, _client.Certificate, signatureAndHashAlgorithm);
-            }
+            return true;
         }
 
-        public static bool IsServerCertificateRsa(TlsServerCertificate serverCertificate)
-        {
-            if (serverCertificate == null || serverCertificate.Certificate == null || serverCertificate.Certificate.IsEmpty)
-            {
-                throw new ArgumentNullException(nameof(serverCertificate));
-            }
-
-            var certList = serverCertificate.Certificate.GetCertificateList();
-            if (certList == null || certList.Length == 0)
-            {
-                throw new ArgumentException("Server certificate chain is empty.", nameof(serverCertificate));
-            }
-
-            var firstCertificate = X509CertificateStructure.GetInstance(certList[0].GetEncoded());
-            var algOid = firstCertificate.SubjectPublicKeyInfo.Algorithm.Algorithm;
-
-            if (algOid.Equals(Org.BouncyCastle.Asn1.Pkcs.PkcsObjectIdentifiers.RsaEncryption))
-            {
-                return true;
-            }
-
-            // Fallback: decode the public key and check its runtime type
-            var pubKey = Org.BouncyCastle.Security.PublicKeyFactory.CreateKey(firstCertificate.SubjectPublicKeyInfo);
-            if (pubKey is Org.BouncyCastle.Crypto.Parameters.RsaKeyParameters)
-            {
-                return true;
-            }
-
-            return false;
-        }
+        return false;
     }
 }

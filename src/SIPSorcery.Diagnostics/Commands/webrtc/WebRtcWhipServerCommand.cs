@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: WebRtcWhipServerCommand.cs
 //
 // Description: The "sipsorcery webrtc whip-server" verb. Acts as a WHIP
@@ -369,7 +369,7 @@ public sealed class WebRtcWhipServerCommand : CommandBase
 
                 if (videoSink.IsActive)
                 {
-                    videoSink.WriteFrame(frame, timestamp, format);
+                    videoSink.WriteFrame(frame.ToArray(), timestamp, format);
                 }
             };
 

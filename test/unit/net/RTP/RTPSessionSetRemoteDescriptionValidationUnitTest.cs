@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSessionSetRemoteDescriptionValidationUnitTest.cs
 //
 // Description: Characterization tests for the validation / guard-clause

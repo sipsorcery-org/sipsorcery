@@ -167,7 +167,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Candidate JSON: {CandidateJson}", candidate.toJSON());
 
-            bool parseResult = RTCIceCandidateInit.TryParse(candidate.toJSON(), out var init);
+            var parseResult = RTCIceCandidateInit.TryParse(candidate.toJSON(), out var init);
 
             Assert.True(parseResult);
 

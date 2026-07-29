@@ -44,7 +44,7 @@ namespace SIPSorcery.Net.UnitTests
             uint mediaSsrc = 44;
 
             RTCPFeedback rtcpPli = new RTCPFeedback(senderSsrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
-            byte[] buffer = rtcpPli.GetBytes();
+            var buffer = rtcpPli.GetBytes();
 
             logger.LogDebug("Serialised PLI feedback report: {Buffer}", BufferUtils.HexStr(buffer));
 
@@ -79,7 +79,7 @@ namespace SIPSorcery.Net.UnitTests
                 BitrateMantissa = 222242u,
                 FeedbackSSRC = 0x4a8eec30
             };
-            byte[] buffer = rtcpREMB.GetBytes();
+            var buffer = rtcpREMB.GetBytes();
 
             logger.LogDebug("Serialised REMB: {Buffer}", BufferUtils.HexStr(buffer));
 
@@ -118,7 +118,7 @@ namespace SIPSorcery.Net.UnitTests
                 BitrateMantissa = 222242u,
                 FeedbackSSRCs = new uint[]{0x4a8eec30,0x4a8eec44,0x4a8eec58}
             };
-            byte[] buffer = rtcpREMB.GetBytes();
+            var buffer = rtcpREMB.GetBytes();
 
             logger.LogDebug("Serialised REMB: {Buffer}", BufferUtils.HexStr(buffer));
 

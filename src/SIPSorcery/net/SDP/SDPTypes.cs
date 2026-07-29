@@ -21,7 +21,7 @@ using System;
 
 namespace SIPSorcery.Net;
 
-public class SDPMediaTypes
+public static class SDPMediaTypes
 {
     public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
     {
@@ -49,7 +49,7 @@ public enum MediaStreamStatusEnum
     Inactive = 3    // The offerer is not ready to send or receive packets.
 }
 
-public class MediaStreamStatusType
+public static class MediaStreamStatusType
 {
     public const string SEND_RECV_ATTRIBUTE = "a=sendrecv";
     public const string SEND_ONLY_ATTRIBUTE = "a=sendonly";

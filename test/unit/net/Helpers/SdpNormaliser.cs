@@ -162,7 +162,7 @@ namespace SIPSorcery.Net.UnitTests.Helpers
 
             // Apply replacements in a fixed order. Each regex is multiline-
             // anchored so they don't bleed across lines.
-            string s = sdp.Replace("\r\n", "\n");
+            var s = sdp.Replace("\r\n", "\n");
 
             s = OLineRegex().Replace(s, m =>
                 $"o={m.Groups["user"].Value} <SID> <SVER> {m.Groups["net"].Value} {m.Groups["addr"].Value} {m.Groups["host"].Value}");
@@ -212,10 +212,10 @@ namespace SIPSorcery.Net.UnitTests.Helpers
         /// </summary>
         public static string NormaliseCompact(string sdp)
         {
-            string normalised = Normalise(sdp);
+            var normalised = Normalise(sdp);
             if (normalised == null) { return null; }
             StringBuilder sb = new StringBuilder(normalised.Length);
-            foreach (string line in normalised.Split('\n'))
+            foreach (var line in normalised.Split('\n'))
             {
                 if (line.Length == 0) { continue; }
                 sb.Append(line).Append('\n');

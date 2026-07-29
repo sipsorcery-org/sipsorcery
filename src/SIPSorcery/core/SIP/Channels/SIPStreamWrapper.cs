@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPStreamWrapper.cs
 //
 // Description: Helper class for Stream with a thread-safe function WriteAsync.
@@ -12,6 +12,8 @@
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
+
+#nullable disable
 
 using System;
 using System.Collections.Generic;

@@ -89,7 +89,10 @@ class DataChannelStream : Stream
             }
             messageAvailable.Release();
         }
-        catch (ObjectDisposedException) { }
+        catch (ObjectDisposedException) 
+        {
+            log?.LogDebug("SemaphoreSlim disposed, ignoring as expected during shutdown.");
+        }
     }
 
     public override int Read(byte[] buffer, int offset, int count)

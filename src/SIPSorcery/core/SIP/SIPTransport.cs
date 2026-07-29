@@ -18,6 +18,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+#nullable disable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -52,9 +54,9 @@ namespace SIPSorcery.SIP
         private static readonly ILogger logger = LogFactory.CreateLogger<SIPTransport>();
 
         /// <summary>
-        /// Determines whether the transport later will queue incoming requests for processing on a separate thread of process
-        /// immediately on the same thread. Most SIP elements with the exception of Stateless Proxies will typically want to 
-        /// queue incoming SIP messages.
+        /// Determines whether the transport later will queue incoming requests for processing on a separate thread of
+        /// process immediately on the same thread. Most SIP elements with the exception of Stateless Proxies will
+        /// typically want to queue incoming SIP messages.
         /// </summary>
         private bool m_queueIncoming = true;
 
@@ -68,38 +70,36 @@ namespace SIPSorcery.SIP
         private readonly Encoding m_sipBodyEncoding;
 
         /// <summary>
-        /// If true allows this class to attempt to create a new SIP channel if a required protocol
-        /// is missing. Set to false to prevent new channels being created on demand.
-        /// Note that when listening SIP end points are required they will always need to be
-        /// created manually.
+        /// If true allows this class to attempt to create a new SIP channel if a required protocol is missing. Set to
+        /// false to prevent new channels being created on demand. Note that when listening SIP end points are required
+        /// they will always need to be created manually.
         /// </summary>
         public bool CanCreateMissingChannels { get; set; } = true;
 
         /// <summary>
-        /// The maximum number of SIP message receiving queues, if this number is exceeded, new messages will be discarded directly
-        /// Default:5000,Unlimited:0
+        /// The maximum number of SIP message receiving queues, if this number is exceeded, new messages will be
+        /// discarded directly Default:5000,Unlimited:0
         /// </summary>
         public int MaxInMessageQueueCount { get; set; } = 5000;
 
         /// <summary>
-        /// List of the SIP channels that have been opened and are under management by this instance.
-        /// The dictionary key is channel ID (previously was a serialised SIP end point).
+        /// List of the SIP channels that have been opened and are under management by this instance. The dictionary key
+        /// is channel ID (previously was a serialised SIP end point).
         /// </summary>
         private ConcurrentDictionary<string, SIPChannel> m_sipChannels = new ConcurrentDictionary<string, SIPChannel>();
 
         internal SIPTransactionEngine m_transactionEngine;
 
         /// <summary>
-        /// Default call to do DNS lookups for SIP URI's. In normal circumstances this property does not need to
-        /// be set manually and care needs to be taken if it is. Can be replaced for custom scenarios
-        /// and unit testing.
+        /// Default call to do DNS lookups for SIP URI's. In normal circumstances this property does not need to be set
+        /// manually and care needs to be taken if it is. Can be replaced for custom scenarios and unit testing.
         /// </summary>
         public ResolveSIPUriDelegateAsync ResolveSIPUriCallbackAsync;
 
         /// <summary>
-        /// Default call to do DNS lookups for SIP URI's from cache and avoid a time consuming full DNS lookup. 
-        /// In normal circumstances this property does not need to be set manually and care needs to be taken if 
-        /// it is. Can be replaced for custom scenarios and unit testing.
+        /// Default call to do DNS lookups for SIP URI's from cache and avoid a time consuming full DNS lookup. In
+        /// normal circumstances this property does not need to be set manually and care needs to be taken if it is. Can
+        /// be replaced for custom scenarios and unit testing.
         /// </summary>
         public ResolveSIPUriFromCacheDelegate ResolveSIPUriFromCacheCallback;
 
@@ -117,19 +117,19 @@ namespace SIPSorcery.SIP
         public event SIPTransactionResponseRetransmitDelegate SIPResponseRetransmitTraceEvent;
 
         /// <summary>
-        /// If set this host name (or IP address) will be set whenever the transport layer is asked to
-        /// do a substitution on the Contact URI. The substitution is requested by a request or response
-        /// setting the Contact URI host to IPAddress.Any ("0.0.0.0") or IPAddress.IPV6.Any ("::0").
+        /// If set this host name (or IP address) will be set whenever the transport layer is asked to do a substitution
+        /// on the Contact URI. The substitution is requested by a request or response setting the Contact URI host to
+        /// IPAddress.Any ("0.0.0.0") or IPAddress.IPV6.Any ("::0").
         /// <code>
         /// var sipRequest = GetRequest(
         ///   method,
         ///   uri,
         ///   new SIPToHeader(
-        ///     null, 
-        ///     new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp), 
+        ///     null,
+        ///     new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp),
         ///     null),
         ///   SIPFromHeader.GetDefaultSIPFromHeader(uri.Scheme));
-        ///   
+        /// 
         /// // Set the Contact header to a default value that lets the transport layer know to update it
         /// // when the sending socket is selected.
         /// sipRequest.Header.Contact = new List&lt;SIPContactHeader&gt;() { SIPContactHeader.GetDefaultSIPContactHeader() };
@@ -138,40 +138,33 @@ namespace SIPSorcery.SIP
         public string ContactHost;
 
         /// <summary>
-        /// Optional callback function that can be set to customise the headers on an outbound SIP request.
-        /// The callback is called BEFORE applying <seealso cref="ContactHost"/> which means do not set
-        /// both if the callback is intended to set the Contact URI.
-        /// Parameters:
-        ///  - SIPEndPoint: The local SIP end point the request will be sent from.
-        ///  - SIPEndPoint: The remote SIP end point the request has been resolved to.
-        ///  - SIPRequest: The SIP request being sent.
-        /// Returns: If the result is non-null it will be used to replace the current SIP Header
+        /// Optional callback function that can be set to customise the headers on an outbound SIP request. The callback
+        /// is called BEFORE applying <seealso cref="ContactHost"/> which means do not set both if the callback is
+        /// intended to set the Contact URI. Parameters: - SIPEndPoint: The local SIP end point the request will be sent
+        /// from. - SIPEndPoint: The remote SIP end point the request has been resolved to. - SIPRequest: The SIP
+        /// request being sent. Returns: If the result is non-null it will be used to replace the current SIP Header
         /// instance on the SIP Request. If null the original header will be left in place.
         /// </summary>
         public Func<SIPEndPoint, SIPEndPoint, SIPRequest, SIPHeader> CustomiseRequestHeader;
 
         /// <summary>
-        /// Optional function that can be set to customise the headers on an outbound SIP request.
-        /// The callback is called BEFORE applying <seealso cref="ContactHost"/> which means do not set
-        /// both if the callback is intended to set the Contact URI.
-        /// Parameters:
-        ///  - SIPEndPoint: The local SIP end point the request will be sent from.
-        ///  - SIPEndPoint: The remote SIP end point the request has been resolved to.
-        ///  - SIPRequest: The SIP request being sent.
-        /// Returns: If the result is non-null it will be used to replace the current SIP Header
-        /// instance on the SIP Request. If null the original header will be left in place.
+        /// Optional function that can be set to customise the headers on an outbound SIP request. The callback is
+        /// called BEFORE applying <seealso cref="ContactHost"/> which means do not set both if the callback is intended
+        /// to set the Contact URI. Parameters: - SIPEndPoint: The local SIP end point the request will be sent from. -
+        /// SIPEndPoint: The remote SIP end point the request has been resolved to. - SIPRequest: The SIP request being
+        /// sent. Returns: If the result is non-null it will be used to replace the current SIP Header instance on the
+        /// SIP Request. If null the original header will be left in place.
         /// </summary>
         public Func<SIPEndPoint, SIPEndPoint, SIPResponse, SIPHeader> CustomiseResponseHeader;
 
         /// <summary>
-        /// Warning: Do not set this property unless there is a specific problem with a remote
-        /// SIP User Agent accepting SIP retransmits. The effect of setting this property is
-        /// to only send each request and response for a transaction once, i.e. retransmits
-        /// timers firing will not cause additional sending of the requests or responses to be
-        /// put on the wire. SIP transaction processing will still occur as normal with the 
-        /// exception of not sending the retransmitted messages. It's also only likely to
-        /// be useful for cases where reliable transports, such as TCP and TLS, are being used,
-        /// since they are the ones where retransmits have been observed to be misidentified.
+        /// Warning: Do not set this property unless there is a specific problem with a remote SIP User Agent accepting
+        /// SIP retransmits. The effect of setting this property is to only send each request and response for a
+        /// transaction once, i.e. retransmits timers firing will not cause additional sending of the requests or
+        /// responses to be put on the wire. SIP transaction processing will still occur as normal with the exception of
+        /// not sending the retransmitted messages. It's also only likely to be useful for cases where reliable
+        /// transports, such as TCP and TLS, are being used, since they are the ones where retransmits have been
+        /// observed to be misidentified.
         /// </summary>
         /// <remarks>
         /// For additional context see https://lists.cs.columbia.edu/pipermail/sip-implementors/2013-January/028817.html
@@ -200,9 +193,9 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Warning: Do not set this property unless you explicitly require a very high number of 
-        /// in-flight SIP transactions. The default limit is high and increasing it is likely to
-        /// have a significant impact on CPU and memory performance.
+        /// Warning: Do not set this property unless you explicitly require a very high number of in-flight SIP
+        /// transactions. The default limit is high and increasing it is likely to have a significant impact on CPU and
+        /// memory performance.
         /// </summary>
         public static int MaxPendingTransactionsCount
         {
@@ -228,8 +221,9 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Allows the transport layer to be created to operate in a stateless mode.
         /// </summary>
-        /// <param name="stateless">If true the transport layer will NOT queue incoming messages
-        /// and will NOT use a transaction engine.</param>
+        /// <param name="stateless">
+        /// If true the transport layer will NOT queue incoming messages and will NOT use a transaction engine.
+        /// </param>
         /// <param name="sipEncoding"></param>
         /// <param name="sipBodyEncoding"></param>
         public SIPTransport(bool stateless, Encoding sipEncoding, Encoding sipBodyEncoding)
@@ -290,7 +284,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception AddSIPChannel. {ErrorMessage}", excp.Message);
+                logger.LogAddSIPChannelException(excp);
                 throw;
             }
         }
@@ -328,19 +322,18 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransport Shutdown. {ErrorMessage}", excp.Message);
+                logger.LogSIPTransportShutdownException(excp);
             }
         }
 
         /// <summary>
-        /// Event handler for messages received on all SIP channels assigned to this transport. There 
-        /// are two distinct modes of operation for processing messages depending on whether the queue
-        /// incoming variable is set. If it is then new messages get added to a queue and are processed on
-        /// a separate thread. If not then the message is processed on the same thread that received the 
-        /// message. Generally only applications that do minimal processing, such as a stateless SIP Proxy,
-        /// should do without the queueing. The biggest blocking risk is DNS. If the message is processed
-        /// on the SIP channel thread and results in a DNS lookup then new receives could be blocked for 
-        /// up to 10s.
+        /// Event handler for messages received on all SIP channels assigned to this transport. There are two distinct
+        /// modes of operation for processing messages depending on whether the queue incoming variable is set. If it is
+        /// then new messages get added to a queue and are processed on a separate thread. If not then the message is
+        /// processed on the same thread that received the message. Generally only applications that do minimal
+        /// processing, such as a stateless SIP Proxy, should do without the queueing. The biggest blocking risk is DNS.
+        /// If the message is processed on the SIP channel thread and results in a DNS lookup then new receives could be
+        /// blocked for up to 10s.
         /// </summary>
         /// <param name="sipChannel">The SIP channel that received the message.</param>
         /// <param name="localEndPoint">The local end point the message was received on.</param>
@@ -361,7 +354,7 @@ namespace SIPSorcery.SIP
                     // Keep the queue within size limits 
                     if (MaxInMessageQueueCount > 0 && m_inMessageQueue.Count >= MaxInMessageQueueCount)
                     {
-                        logger.LogWarning("SIPTransport queue full new message from {RemoteEndPoint} being discarded.", remoteEndPoint);
+                        logger.LogInMessageQueueFull(remoteEndPoint);
                     }
                     else
                     {
@@ -375,25 +368,26 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransport ReceiveMessage. {ErrorMessage}", excp.Message);
+                logger.LogSIPTransportReceiveMessageException(excp);
                 throw;
             }
         }
 
         /// <summary>
-        /// This function performs processing on a request to handle any actions that need to be taken based on the Route header.
+        /// This function performs processing on a request to handle any actions that need to be taken based on the
+        /// Route header.
         /// </summary>
         /// <remarks>
-        /// The main sections in the RFC3261 dealing with Route header processing are sections 12.2.1.1 for request processing and
-        /// 16.4 for proxy processing.
-        /// The steps to process requests for Route headers are:
-        ///  1. If route set is empty no further action is required, forward to destination resolved from request URI,
-        ///  2. If the request URI is identified as a value that was previously set as a Route by this SIP agent it means the
-        ///     previous hop was a strict router. Replace the request URI with the last Route header and go to next step,
-        ///  3. If the top most route header was set by this SIP agent then remove it and go to next step,
-        ///  4. If the top most route set does contain the lr parameter then forward to the destination resolved by it,
-        ///  5. If the top most route header does NOT contain the lr parameter is must be popped and inserted as the request URI
-        ///     and the original request URI must be added to the end of the route set, forward to destination resolved from request URI,
+        /// The main sections in the RFC3261 dealing with Route header processing are sections 12.2.1.1 for request
+        /// processing and 16.4 for proxy processing. The steps to process requests for Route headers are: 1. If route
+        /// set is empty no further action is required, forward to destination resolved from request URI, 2. If the
+        /// request URI is identified as a value that was previously set as a Route by this SIP agent it means the
+        /// previous hop was a strict router. Replace the request URI with the last Route header and go to next step, 3.
+        /// If the top most route header was set by this SIP agent then remove it and go to next step, 4. If the top
+        /// most route set does contain the lr parameter then forward to the destination resolved by it, 5. If the top
+        /// most route header does NOT contain the lr parameter is must be popped and inserted as the request URI and
+        /// the original request URI must be added to the end of the route set, forward to destination resolved from
+        /// request URI,
         /// </remarks>
         public void PreProcessRouteInfo(SIPRequest sipRequest)
         {
@@ -450,12 +444,14 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Allows raw bytes to be sent from one of the SIPTransport sockets. This should not be used for SIP payloads and instead is
-        /// provided to allow other types of payloads to be multiplexed on the SIP socket. Examples are sending NAT keep-alives and
-        /// STUN responses where it's useful to use the same socket as the SIP packets.
+        /// Allows raw bytes to be sent from one of the SIPTransport sockets. This should not be used for SIP payloads
+        /// and instead is provided to allow other types of payloads to be multiplexed on the SIP socket. Examples are
+        /// sending NAT keep-alives and STUN responses where it's useful to use the same socket as the SIP packets.
         /// </summary>
-        /// <param name="localSIPEndPoint">The local SIP end point to do the send from. Must match the local end point of one of
-        /// the SIP transports channels.</param>
+        /// <param name="localSIPEndPoint">
+        /// The local SIP end point to do the send from. Must match the local end point of one of the SIP transports
+        /// channels.
+        /// </param>
         /// <param name="dstEndPoint">The destination end point to send the buffer to.</param>
         /// <param name="buffer">The data buffer to send.</param>
         public Task<SocketError> SendRawAsync(SIPEndPoint localSIPEndPoint, SIPEndPoint dstEndPoint, byte[] buffer)
@@ -479,17 +475,20 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// This send method does NOT wait if a DNS lookup is required. Instead it relies on the
-        /// SIP retransmit logic to avoid to re-attempt the send at pre-defined intervals.
-        /// This type of send is suitable for requests that are part of a transaction or for 
-        /// SIP Proxy servers that are relying on the remote SIP agent to retransmit requests.
+        /// This send method does NOT wait if a DNS lookup is required. Instead it relies on the SIP retransmit logic to
+        /// avoid to re-attempt the send at pre-defined intervals. This type of send is suitable for requests that are
+        /// part of a transaction or for SIP Proxy servers that are relying on the remote SIP agent to retransmit
+        /// requests.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
-        /// <param name="waitForDns">If true the request will wait for any required DNS lookup to 
-        /// complete. This can potentially take many seconds. If false the DNS lookup will be
-        /// queued and the send will need to be called again.</param>
-        /// <returns>Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a 
-        /// failure response. Otherwise the result of the send attempt.</returns>
+        /// <param name="waitForDns">
+        /// If true the request will wait for any required DNS lookup to complete. This can potentially take many
+        /// seconds. If false the DNS lookup will be queued and the send will need to be called again.
+        /// </param>
+        /// <returns>
+        /// Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a failure response. Otherwise
+        /// the result of the send attempt.
+        /// </returns>
         public async Task<SocketError> SendRequestAsync(SIPRequest sipRequest, bool waitForDns = false)
         {
             if (sipRequest == null)
@@ -548,8 +547,8 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Sends a SIP request asynchronously. This method will attempt to find the most appropriate
-        /// local SIP channel in this SIP transport to send the request on.
+        /// Sends a SIP request asynchronously. This method will attempt to find the most appropriate local SIP channel
+        /// in this SIP transport to send the request on.
         /// </summary>
         /// <param name="dstEndPoint">The destination end point to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
@@ -625,11 +624,13 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Add a SIP transaction to the engine which then keeps track of whether a response/acknowledgement has been received.
-        /// For UDP "reliably" means retransmitting the message up to eleven times.
-        /// If no response is received then periodic retransmits are made for up to T1 x 64 seconds (defaults to 30 seconds with 11 retransmits).
+        /// Add a SIP transaction to the engine which then keeps track of whether a response/acknowledgement has been
+        /// received. For UDP "reliably" means retransmitting the message up to eleven times. If no response is received
+        /// then periodic retransmits are made for up to T1 x 64 seconds (defaults to 30 seconds with 11 retransmits).
         /// </summary>
-        /// <param name="sipTransaction">The SIP transaction encapsulating the SIP request or response that needs to be sent reliably.</param>
+        /// <param name="sipTransaction">
+        /// The SIP transaction encapsulating the SIP request or response that needs to be sent reliably.
+        /// </param>
         internal void AddTransaction(SIPTransaction sipTransaction)
         {
             if (sipTransaction == null)
@@ -639,7 +640,7 @@ namespace SIPSorcery.SIP
 
             if (m_transactionEngine == null)
             {
-                logger.LogWarning("SIP transport was requested to send a transaction in stateless mode (noop).");
+                logger.LogStatelessTransactionSendNoop();
             }
             else if (!m_transactionEngine.Exists(sipTransaction.TransactionId))
             {
@@ -648,30 +649,28 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Forwards a SIP response. There are two main cases for a SIP response to be forwarded:
-        /// - First case is when we have processed a request and are returning a response. In this case the response
-        ///   should be sent back on exactly the same socket the request came on.
-        /// - Second case is when we are acting as a Proxy and the response is on it's way back from the agent
-        ///   that processed the request. In this case it's highly likely the response needs to be forwarded to
-        ///   a different end point then the one it came from and it's also possible it will need to use a completely
-        ///   different channel to send on compared to the one it arrived on.
-        /// 
-        /// Forwarding logic:
-        /// - If the channel hints are set then an attempt will be made to use them to find an appropriate channel to
-        ///   send the response on. If the hinted channel can't be found or it is found but is the wrong protocol then
-        ///   move onto the next step,
-        /// - The information in the Top Via header will be used to find the best channel to forward the response on.
-        /// This is a special send method that relies on the SIP transaction retransmit logic to avoid
-        /// blocking when a DNS request is required. This type of send is suitable for responses that 
-        /// are part of a transaction or for SIP Proxy servers that are relying on the remote 
-        /// SIP agent to retransmit requests.
+        /// Forwards a SIP response. There are two main cases for a SIP response to be forwarded: - First case is when
+        /// we have processed a request and are returning a response. In this case the response should be sent back on
+        /// exactly the same socket the request came on. - Second case is when we are acting as a Proxy and the response
+        /// is on it's way back from the agent that processed the request. In this case it's highly likely the response
+        /// needs to be forwarded to a different end point then the one it came from and it's also possible it will need
+        /// to use a completely different channel to send on compared to the one it arrived on. Forwarding logic: - If
+        /// the channel hints are set then an attempt will be made to use them to find an appropriate channel to send
+        /// the response on. If the hinted channel can't be found or it is found but is the wrong protocol then move
+        /// onto the next step, - The information in the Top Via header will be used to find the best channel to forward
+        /// the response on. This is a special send method that relies on the SIP transaction retransmit logic to avoid
+        /// blocking when a DNS request is required. This type of send is suitable for responses that are part of a
+        /// transaction or for SIP Proxy servers that are relying on the remote SIP agent to retransmit requests.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
-        /// <returns>Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a 
-        /// failure response. Otherwise the result of the send attempt.</returns>
-        /// <param name="waitForDns">If true the request will wait for any required DNS lookup to 
-        /// complete. This can potentially take many seconds. If false the DNS lookup will be
-        /// queued and the send will need to be called again.</param>
+        /// <returns>
+        /// Will return InPorgress for a DNS cache miss. HostNotFound for a cache hit on a failure response. Otherwise
+        /// the result of the send attempt.
+        /// </returns>
+        /// <param name="waitForDns">
+        /// If true the request will wait for any required DNS lookup to complete. This can potentially take many
+        /// seconds. If false the DNS lookup will be queued and the send will need to be called again.
+        /// </param>
         public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse, bool waitForDns = false)
         {
             if (sipResponse == null)
@@ -680,7 +679,7 @@ namespace SIPSorcery.SIP
             }
             else if (sipResponse.Header.Vias?.TopViaHeader == null)
             {
-                logger.LogWarning("There was no top Via header on a SIP response from {RemoteSIPEndPoint} in SendResponseAsync, response dropped.", sipResponse.RemoteSIPEndPoint);
+                logger.LogResponseTopViaMissing(sipResponse.RemoteSIPEndPoint);
                 return SocketError.Fault;
             }
             else
@@ -755,7 +754,7 @@ namespace SIPSorcery.SIP
 
                 if (sendFromChannel == null)
                 {
-                    logger.LogWarning("An existing SIP channel could not be found to send response {ShortDescription}.", sipResponse.ShortDescription);
+                    logger.LogSendResponseChannelNotFound(sipResponse.ShortDescription);
                     return Task.FromResult(SocketError.NotConnected);
                 }
                 else
@@ -782,13 +781,15 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Checks specific SIP headers for "0.0.0.0" or "::0" strings and where found replaces them with the socket that the
-        /// request or response is being sent from. This mechanism is used to allow higher level agents to indicate they want to defer
-        /// the setting of those header fields to the transport class.
+        /// Checks specific SIP headers for "0.0.0.0" or "::0" strings and where found replaces them with the socket
+        /// that the request or response is being sent from. This mechanism is used to allow higher level agents to
+        /// indicate they want to defer the setting of those header fields to the transport class.
         /// </summary>
         /// <param name="sendFromSIPEndPoint">The IP end point the request or response is being sent from.</param>
-        /// <param name="header">The SIP header object to apply the adjustments to. The header object will be updated
-        /// in place with any header adjustments.</param>
+        /// <param name="header">
+        /// The SIP header object to apply the adjustments to. The header object will be updated in place with any
+        /// header adjustments.
+        /// </param>
         internal SIPHeader AdjustHeadersForEndPoint(SIPEndPoint sendFromSIPEndPoint, SIPHeader header)
         {
             IPEndPoint sendFromEndPoint = sendFromSIPEndPoint.GetIPEndPoint();
@@ -894,7 +895,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPTransport ProcessReceiveQueue. {ErrorMessage}", excp.Message);
+                logger.LogSIPTransportProcessReceiveQueueException(excp);
             }
             finally
             {
@@ -1008,15 +1009,14 @@ namespace SIPSorcery.SIP
                                             {
                                                 if (requestTransaction.TransactionFinalResponse != null)
                                                 {
-                                                    logger.LogWarning("Resending final response for {Method}, {URI}, cseq={CSeq}.", sipRequest.Method, sipRequest.URI, sipRequest.Header.CSeq);
+                                                    logger.LogResendingFinalResponse(sipRequest.Method, sipRequest.URI, sipRequest.Header.CSeq);
                                                     requestTransaction.OnRetransmitFinalResponse();
                                                     return SendResponseAsync(requestTransaction.TransactionFinalResponse);
                                                 }
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK)
                                             {
-                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed ||
-                                                    requestTransaction.TransactionState == SIPTransactionStatesEnum.Cancelled)
+                                                if (requestTransaction.TransactionState is SIPTransactionStatesEnum.Completed or SIPTransactionStatesEnum.Cancelled)
                                                 {
                                                     sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                     requestTransaction.ACKReceived(localEndPoint, remoteEndPoint, sipRequest);
@@ -1038,7 +1038,7 @@ namespace SIPSorcery.SIP
                                             }
                                             else
                                             {
-                                                logger.LogWarning("Transaction already exists, ignoring duplicate request, {Method} {URI}.", sipRequest.Method, sipRequest.URI.ToString());
+                                                logger.LogDuplicateRequestIgnoring(sipRequest.Method, sipRequest.URI);
                                             }
                                         }
                                         else if (m_transactionEngine != null && sipRequest.Method == SIPMethodsEnum.CANCEL &&
@@ -1117,22 +1117,24 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError(excp, "Exception SIPMessageReceived. {ErrorMessage}", excp.Message);
+                logger.LogSIPMessageReceivedException(excp);
                 SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, $"Exception SIPTransport. {excp.Message}", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
                 return Task.FromResult(SocketError.Fault);
             }
         }
 
         /// <summary>
-        /// Attempts to locate a SIP channel that can be used to communicate with a remote end point
-        /// over a specific SIP protocol.
+        /// Attempts to locate a SIP channel that can be used to communicate with a remote end point over a specific SIP
+        /// protocol.
         /// </summary>
         /// <param name="protocol">The SIP protocol required for the communication.</param>
         /// <param name="dst">The destination end point.</param>
-        /// <param name="channelIDHint">An optional channel ID that gives a hint as to the preferred 
-        /// channel to select.</param>
-        /// <param name="isForResponse">True if the channel is needed for a SIP response. New channels will not be
-        /// created to send responses.</param>
+        /// <param name="channelIDHint">
+        /// An optional channel ID that gives a hint as to the preferred channel to select.
+        /// </param>
+        /// <param name="isForResponse">
+        /// True if the channel is needed for a SIP response. New channels will not be created to send responses.
+        /// </param>
         /// <returns>If found a SIP channel or null if not.</returns>
         private SIPChannel GetSIPChannelForDestination(SIPProtocolsEnum protocol, IPEndPoint dst, string channelIDHint, bool isForResponse)
         {
@@ -1217,8 +1219,8 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Helper method for GetSIPChannelForDestination to do the SIP channel match check when it is known
-        /// exactly which SIP protocol and listening IP address we're after.
+        /// Helper method for GetSIPChannelForDestination to do the SIP channel match check when it is known exactly
+        /// which SIP protocol and listening IP address we're after.
         /// </summary>
         /// <param name="protocol">The SIP protocol to find a match for.</param>
         /// <param name="listeningAddress">The listening IP address to find a match for.</param>
@@ -1278,8 +1280,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="protocol">The transport protocol of the SIP channel to create.</param>
         /// <param name="addressFamily">Whether the channel should be created for IPv4 or IPv6.</param>
-        /// <param name="port">Optional. If specified channels that open a listener will attempt to 
-        /// use this port.</param>
+        /// <param name="port">
+        /// Optional. If specified channels that open a listener will attempt to use this port.
+        /// </param>
         /// <returns>A SIP channel if it was possible to create or null if not.</returns>
         public SIPChannel CreateChannel(SIPProtocolsEnum protocol, AddressFamily addressFamily, int port = 0)
         {
@@ -1303,7 +1306,7 @@ namespace SIPSorcery.SIP
                     sipChannel = new SIPClientWebSocketChannel();
                     break;
                 default:
-                    logger.LogWarning("Don't know how to create SIP channel for transport {protocol}.", protocol);
+                    logger.LogUnknownProtocolWarning(protocol);
                     break;
             }
 
@@ -1330,41 +1333,17 @@ namespace SIPSorcery.SIP
         /// </summary>
         public void EnableTraceLogs()
         {
-            SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
-            {
-                logger.LogDebug("Request received: {LocalEP}<-{RemoteEP} {StatusLine}", localEP, remoteEP, req.StatusLine);
-                logger.LogTrace("Request: {Request}", req.ToString());
-            };
+            SIPRequestInTraceEvent += (localEP, remoteEP, req) => logger.LogRequestReceived(localEP, remoteEP, req);
 
-            SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
-            {
-                logger.LogDebug("Request sent: {LocalEP}->{RemoteEP} {StatusLine}", localEP, remoteEP, req.StatusLine);
-                logger.LogTrace("Request sent: {Request}", req.ToString());
-            };
+            SIPRequestOutTraceEvent += (localEP, remoteEP, req) => logger.LogRequestSent(localEP, remoteEP, req);
 
-            SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                logger.LogDebug("Response received: {LocalEP}<-{RemoteEP} {ShortDescription}", localEP, remoteEP, resp.ShortDescription);
-                logger.LogTrace("Response received: {Response}", resp.ToString());
-            };
+            SIPResponseInTraceEvent += (localEP, remoteEP, resp) => logger.LogResponseReceived(localEP, remoteEP, resp);
 
-            SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
-            {
-                logger.LogDebug("Response sent: {LocalEP}->{RemoteEP} {ShortDescription}", localEP, remoteEP, resp.ShortDescription);
-                logger.LogTrace("Response sent: {Response}", resp.ToString());
-            };
+            SIPResponseOutTraceEvent += (localEP, remoteEP, resp) => logger.LogResponseSent(localEP, remoteEP, resp);
 
-            SIPRequestRetransmitTraceEvent += (tx, req, count) =>
-            {
-                logger.LogDebug("Request retransmit {Count} for request {StatusLine}, initial transmit {InitialTransmit}s ago.", count, req.StatusLine, DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###"));
-                logger.LogTrace("Request retransmitted: {Request}", req.ToString());
-            };
+            SIPRequestRetransmitTraceEvent += (tx, req, count) => logger.LogRequestRetransmit(count, req, tx.InitialTransmit);
 
-            SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
-            {
-                logger.LogDebug("Response retransmit {Count} for response {ShortDescription}, initial transmit {InitialTransmit}s ago.", count, resp.ShortDescription, DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###"));
-                logger.LogTrace("Response retransmitted: {Response}", resp.ToString());
-            };
+            SIPResponseRetransmitTraceEvent += (tx, resp, count) => logger.LogResponseRetransmit(count, resp, tx.InitialTransmit);
         }
     }
 }

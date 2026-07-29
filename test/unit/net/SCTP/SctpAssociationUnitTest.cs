@@ -276,7 +276,7 @@ namespace SIPSorcery.Net.UnitTests
                     {
                         var initAckPacket = base.GetInitAck(pkt, null);
                         var initAckBuffer = initAckPacket.GetBytes();
-                        Send(null, initAckBuffer, 0, initAckBuffer.Length);
+                        this.Send(null, initAckBuffer, 0, initAckBuffer.Length);
                     }
                     else if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.COOKIE_ECHO))
                     {
@@ -299,9 +299,9 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(string associationID, ReadOnlyMemory<byte> buffer, IDisposable memoryOwner = null)
         {
-            _output.Add(buffer.AsSpan(offset, length).ToArray());
+            _output.Add(buffer.ToArray());
         }
 
         public void Close()
