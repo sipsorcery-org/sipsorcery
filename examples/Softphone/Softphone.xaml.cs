@@ -48,7 +48,7 @@ namespace SIPSorcery.SoftPhone
         private const int REGISTRATION_EXPIRY = 180;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.LogFactory.CreateLogger<SoftPhone>();
-        private string _logPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SIPSorcery", "Softphone.log");
+        private string _logPath = string.Empty;
 
 
         private string m_sipUsername = SIPSoftPhoneState.Settings.SIPUsername;
@@ -113,6 +113,8 @@ namespace SIPSorcery.SoftPhone
         {
             if (SIPSoftPhoneState.Settings.EnableLog)
             {
+                _logPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SIPSorcery", $"{SIPSoftPhoneState.Settings.SIPFromName}.log");
+
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
                     .Enrich.FromLogContext()
@@ -169,17 +171,63 @@ namespace SIPSorcery.SoftPhone
             }
 
             listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
-            Title += $" - sip:{m_sipUsername}@{m_sipServer}";
+            string uri = $"sip:{m_sipUsername}@{m_sipServer}";
+            Title += $" - {uri}";
+
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
                 _sipTransportManager.SIPTransport,
                 m_sipUsername,
                 m_sipPassword,
                 m_sipServer,
-                REGISTRATION_EXPIRY,
-                sendUsernameInContactHeader: true);
+                SIPSoftPhoneState.Settings.RegisterExpiry ?? REGISTRATION_EXPIRY,
+                sendUsernameInContactHeader: true,
+                registerFailureRetryInterval: SIPSoftPhoneState.Settings.RegisterRetryInSeconds);
+
+            _sipRegistrationClient.RegistrationSuccessful += (uri, response) => UpdateServerRegistrationState("✅", uri.ToParameterlessString(), response);
+
+            Action<SIPURI, SIPResponse, string> registrationFailDelegate = (uri, response, error) => UpdateServerRegistrationState("❌", uri.ToParameterlessString(), response, error);
+            _sipRegistrationClient.RegistrationTemporaryFailure += registrationFailDelegate;
+            _sipRegistrationClient.RegistrationFailed += registrationFailDelegate;
 
             _sipRegistrationClient.Start();
+
+            if (!string.IsNullOrEmpty(m_sipUsername) && !string.IsNullOrEmpty(m_sipServer))
+            {
+                UpdateServerRegistrationState("🔄️", uri, null, null);
+            }
+            else
+            {
+                UpdateServerRegistrationState("⚪", uri, null, "no sip registration data");
+            }
+        }
+
+        private async void UpdateServerRegistrationState(string display, string uri, SIPResponse response, string error = null)
+        {
+            Dispatcher.DoOnUIThread(() =>
+            {
+                string state = error == null ? response == null ? "requested ..." : "successful" : $"FAILED: {error}";
+
+                _registrationState.Content = display;
+                _registrationState.ToolTip = $"Registration of '{uri}' on server {state}" +
+                    $"{(response == null ? string.Empty : $"{Environment.NewLine}{response}")}";
+            });
+
+            if (error != null)
+            {
+                // dirty delay without cancellation, to wait approximately as long as real retry waits
+                await Task.Delay(SIPSoftPhoneState.Settings.RegisterRetryInSeconds * 1000);
+
+                string currentDisplay = string.Empty;
+                Dispatcher.DoOnUIThread(() => currentDisplay = _registrationState.Content.ToString());
+
+                // as this was a dirty wait above without observing a cancellation token,
+                // check if a state change occurred meanwhile, which means this update is obsolete
+                if (display == currentDisplay)
+                {
+                    UpdateServerRegistrationState("🔄️", uri, null, null);
+                }
+            }
         }
 
         /// <summary>
@@ -216,6 +264,8 @@ namespace SIPSorcery.SoftPhone
                     m_offHoldButton.Visibility = Visibility.Collapsed;
                     _client0Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
+                    _uriEntryDropDown.IsEnabled = true;
+                    _protocolSelection.IsEnabled = true;
 
                     if (_sipClients?.Count > 0 && _sipClients[0] != null)
                     {
@@ -241,6 +291,8 @@ namespace SIPSorcery.SoftPhone
                     m_attendedTransferButton.Visibility = Visibility.Collapsed;
                     _client1Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
+                    _uriEntry2DropDown.IsEnabled = true;
+                    _protocolSelection2.IsEnabled = true;
                 });
             }
 
@@ -348,7 +400,9 @@ namespace SIPSorcery.SoftPhone
                         _client0Video.Visibility = Visibility.Visible;
                     }
 
-                    _uriEntryDropDown.Text = client.Dialogue.RemoteTarget.ToString();
+                    _uriEntryDropDown.Text = GetCallbackUri(client.Dialogue) ?? _uriEntryDropDown.Text;
+                    _uriEntryDropDown.IsEnabled = false;
+                    _protocolSelection.IsEnabled = false;
 
                     //if (m_useAudioScope)
                     //{
@@ -384,7 +438,9 @@ namespace SIPSorcery.SoftPhone
                         _client1Video.Visibility = Visibility.Visible;
                     }
 
-                    _uriEntry2DropDown.Text = client.Dialogue.RemoteTarget.ToString();
+                    _uriEntry2DropDown.Text = GetCallbackUri(client.Dialogue) ?? _uriEntry2DropDown.Text;
+                    _uriEntry2DropDown.IsEnabled = false;
+                    _protocolSelection2.IsEnabled = false;
                 });
 
                 if (_sipClients[0].IsCallActive)
@@ -404,6 +460,25 @@ namespace SIPSorcery.SoftPhone
             }
 
             UpdateRttSendingState();
+        }
+
+        private string GetCallbackUri(SIPDialogue dialogue)
+        {
+            string uri = null;
+
+            if (dialogue.Direction == SIPCallDirection.In)
+            {
+                // user is set for calls from a telephony server, but not for direct calls
+                uri = dialogue.RemoteTarget.User ?? dialogue.RemoteTarget.ToString();
+
+                // insert user name for remote targets from telephony server (cause remote target is the server only)
+                if (uri.Contains("sip:") && !uri.Contains('@'))
+                {
+                    uri = uri.Replace("sip:", "sip:unknown@");
+                }
+            }
+
+            return uri;
         }
 
         private void OnClientZeroVideoSinkSample(byte[] sample, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat)
@@ -447,7 +522,7 @@ namespace SIPSorcery.SoftPhone
                     useAudio = _useAudio.IsChecked ?? true;
                     useVideo = _useVideo.IsChecked ?? true;
                     useText = _useText.IsChecked ?? true;
-                    protocol = (SIPProtocolsEnum)m_protocolSelection.SelectedValue;
+                    protocol = (SIPProtocolsEnum)_protocolSelection.SelectedValue;
 
                     SetStatusText(m_signallingStatus, $"calling {callDestination}.");
 
@@ -469,7 +544,7 @@ namespace SIPSorcery.SoftPhone
                     useAudio = _useAudio2.IsChecked ?? true;
                     useVideo = _useVideo2.IsChecked ?? true;
                     useText = _useText2.IsChecked ?? true;
-                    protocol = (SIPProtocolsEnum)m_protocolSelection2.SelectedValue;
+                    protocol = (SIPProtocolsEnum)_protocolSelection2.SelectedValue;
 
                     SetStatusText(m_signallingStatus, $"calling {callDestination}.");
 
