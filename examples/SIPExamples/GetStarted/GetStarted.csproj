@@ -2,8 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>$(SIPSorceryDesktopTargetFramework)</TargetFramework>
     <LangVersion>9.0</LangVersion>
+
+    <ApplicationTitle>SIP Get Started</ApplicationTitle>
+    <ApplicationId>org.sipsorcery.examples.getstarted</ApplicationId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,9 +14,9 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
-        <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\SIPSorcery\SIPSorcery.csproj" />
+    <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Platform\SIPSorceryMedia.Platform.csproj" />
+  </ItemGroup>
 
 </Project>

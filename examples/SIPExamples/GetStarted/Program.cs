@@ -14,23 +14,34 @@
 // 02 Feb 2021  Aaron Clauson   Removed logging to make main logic more obvious.
 // 14 Jan 2024  Aaron Clauson   Updated target from netcoreapp3.1 to net8.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Media;
-using SIPSorceryMedia.Windows;
 using SIPSorceryMedia.Abstractions;
+using SIPSorceryMedia.Platform;
 
 const string DESTINATION = "music@iptel.org";
 Console.WriteLine("SIP Get Started");
 
 var userAgent = new SIPUserAgent();
-var winAudio = new WindowsAudioEndPoint(new AudioEncoder());
-winAudio.RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
-var voipMediaSession = new VoIPMediaSession(winAudio.ToMediaEndPoints());
+
+IAudioEndPoint audioEndPoint =
+    DefaultAudioEndPointFactory.Create(new AudioEncoder());
+
+((IAudioSource)audioEndPoint)
+    .RestrictFormats(x => x.Codec == AudioCodecsEnum.PCMU);
+
+var voipMediaSession = new VoIPMediaSession(
+    new MediaEndPoints
+    {
+        AudioSource = audioEndPoint,
+        AudioSink = audioEndPoint,
+    });
+
 voipMediaSession.AcceptRtpFromAny = true;
 
 // Place the call and wait for the result.

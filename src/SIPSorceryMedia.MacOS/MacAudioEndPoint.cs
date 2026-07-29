@@ -41,7 +41,7 @@ namespace SIPSorceryMedia.MacOS
     /// for microphone capture. It is suitable for initial testing but can later
     /// be replaced by AVAudioConverter for production-grade resampling.
     /// </remarks>
-    public sealed class MacAudioEndPoint : IAudioEndPoint, IDisposable
+    public class MacAudioEndPoint : IAudioEndPoint, IDisposable
     {
         private const int DEFAULT_DEVICE_CHANNELS = 1;
         private const int AUDIO_FRAME_MILLISECONDS = 20;
