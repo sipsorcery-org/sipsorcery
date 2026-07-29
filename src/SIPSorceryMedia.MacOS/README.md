@@ -29,6 +29,12 @@ The containing application must add an `NSMicrophoneUsageDescription`
 entry in its `Info.plist` before microphone capture will be granted by
 the OS.
 
+### Camera permission
+
+The containing application must add an `NSCameraUsageDescription`
+entry in its `Info.plist` before camera access will be granted by
+the OS.
+
 ## Installation
 
 ```bash
@@ -44,6 +50,7 @@ come in transitively.
 | Class | Implements | Purpose |
 |---|---|---|
 | `MacAudioEndPoint` | `IAudioEndPoint` (source + sink) | Microphone capture and speaker playback. Wraps AVAudioEngine with AVAudioInputNode (capture) and AVAudioPlayerNode (playback). |
+| `MacVideoEndPoint` | `IVideoEndPoint` (source + sink) | Camera capture and remote video decoding. Uses AVCaptureSession + AVCaptureVideoDataOutput for capture (BGRA pixel format) and delegates encoding/decoding to an `IVideoEncoder`. |
 
 Captured hardware PCM is converted to mono PCM16, resampled in managed
 code and emitted in fixed 20 ms codec frames. Decoded remote PCM16 is
