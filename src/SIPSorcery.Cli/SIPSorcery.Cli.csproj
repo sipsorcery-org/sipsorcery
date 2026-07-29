@@ -19,7 +19,7 @@
     <Version>0.2.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
     <Description>SIPSorcery CLI: route and bridge live media streams between SIP, WebRTC and the major realtime fabrics (Cloudflare Realtime, LiveKit) and AI agents (OpenAI Realtime), built on the SIPSorcery library. A stream is the primitive; verbs attach edges to it. Human and agent friendly with JSON output and meaningful exit codes.</Description>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -62,6 +62,7 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
     <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 

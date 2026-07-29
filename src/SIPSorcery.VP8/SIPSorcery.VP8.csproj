@@ -13,7 +13,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2026 Aaron Clauson</Copyright>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Title>SIPSorcery</Title>
     <Summary>A .NET library that implements the VP8 video codec.</Summary>
     <Description>
@@ -60,6 +60,7 @@ A .NET library that implements the VP8 video codec. This package is intended to 
   <ItemGroup>
      <None Include="icon.png" Pack="true" PackagePath="" />
      <None Include="README.md" Pack="true" PackagePath="" />
+     <None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>

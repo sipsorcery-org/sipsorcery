@@ -19,7 +19,7 @@
     <Authors>Aaron Clauson</Authors>
     <Copyright>Copyright © 2020-2026 Aaron Clauson</Copyright>
     <Company>SIP Sorcery PTY LTD</Company>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <Title>SIPSorceryMedia.Windows</Title>
     <Summary>Audio and video end points for Windows capture devices.</Summary>
     <Description>Provides audio and video device access for Windows for use with the main SIPSorcery real-time communications library.</Description>
@@ -71,6 +71,7 @@
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
 	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <PropertyGroup>
