@@ -7,7 +7,7 @@
     xmlns:sip="clr-namespace:SIPSorcery.SIP;assembly=SIPSorcery"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
     Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico"
-    MinHeight="560" MinWidth="600" Loaded="OnWindowLoaded" Height="560" Width="600">
+    MinHeight="560" MinWidth="700" Loaded="OnWindowLoaded" Height="560" Width="700">
 
     <Window.Resources>
         <ObjectDataProvider MethodName="GetValues" ObjectType="{x:Type sys:Enum}" x:Key="SIPProtocolsEnum">
@@ -43,7 +43,7 @@
                         <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
                     </Button>
                     <ComboBox x:Name="_uriEntryDropDown" FontSize="16" Margin="4,0,4,0" MinWidth="200" IsEditable="True" VerticalContentAlignment="Center" />
-                    <ComboBox x:Name="m_protocolSelection" ItemsSource="{Binding Source={StaticResource SIPProtocolsEnum}}" SelectedIndex="1" FontSize="16" VerticalContentAlignment="Center" />
+                    <ComboBox x:Name="_protocolSelection" ItemsSource="{Binding Source={StaticResource SIPProtocolsEnum}}" SelectedIndex="1" FontSize="16" VerticalContentAlignment="Center" />
                     <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0" IsDefault="True" />
@@ -69,7 +69,7 @@
                         <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
                     </Button>
                     <ComboBox x:Name="_uriEntry2DropDown" FontSize="16" Margin="4,0,4,0" MinWidth="200" IsEditable="True" VerticalContentAlignment="Center" />
-                    <ComboBox x:Name="m_protocolSelection2" ItemsSource="{Binding Source={StaticResource SIPProtocolsEnum}}" SelectedIndex="1" FontSize="16" VerticalContentAlignment="Center" />
+                    <ComboBox x:Name="_protocolSelection2" ItemsSource="{Binding Source={StaticResource SIPProtocolsEnum}}" SelectedIndex="1" FontSize="16" VerticalContentAlignment="Center" />
                     <Button x:Name="m_cancel2Button" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button x:Name="m_bye2Button" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
                     <Button x:Name="m_call2Button" Content="Call" Click="CallButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0"/>
@@ -177,8 +177,13 @@
 
             <Button Grid.Row="4" Width="60" Height="32" VerticalAlignment="Bottom" Click="ToggleKeyPad">Keypad</Button>
 
-            <StatusBar Grid.Row="5" VerticalAlignment="Bottom" Height="40" Margin="0,0,0,0">
-                <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
+            <StatusBar Grid.Row="5" VerticalAlignment="Bottom" Height="40">
+                <StatusBarItem>
+                    <Label x:Name="listeningEndPoint" ToolTip="Listening On">Socket State</Label>
+                </StatusBarItem>
+                <StatusBarItem DockPanel.Dock="Right" HorizontalContentAlignment="Right">
+                    <Label x:Name="_registrationState" ToolTip="Registration state on server">⚪</Label>
+                </StatusBarItem>
             </StatusBar>
         </Grid>
     </Grid>
