@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([System.OperatingSystem]::IsMacOS())">
+    <TargetFramework>net10.0-macos</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([System.OperatingSystem]::IsWindows())">
+    <ProjectReference Include="..\SIPSorceryMedia.Windows\SIPSorceryMedia.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([System.OperatingSystem]::IsMacOS())">
+    <ProjectReference Include="..\SIPSorceryMedia.MacOS\SIPSorceryMedia.MacOS.csproj" />
+  </ItemGroup>
+
+</Project>
