@@ -20,7 +20,7 @@
     <Version>0.2.0-beta</Version>
     <Authors>Aaron Clauson</Authors>
     <Description>Diagnostics and benchmarking CLI for SIP and WebRTC, built on the SIPSorcery library: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Probe/test tooling (not a general softphone); human and agent friendly with JSON output and meaningful exit codes. For routing streams and the Cloudflare/LiveKit/OpenAI fabric verbs see the SIPSorcery.Cli tool.</Description>
-    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://sipsorcery-org.github.io/sipsorcery/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sipsorcery-org/sipsorcery</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -51,6 +51,7 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
     <None Include="..\SIPSorcery\icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
