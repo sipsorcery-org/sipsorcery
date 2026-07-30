@@ -297,7 +297,7 @@ namespace SIPSorceryMedia.MacOS
         /// <returns>True if the session was successfully initialised.</returns>
         private bool InitialiseCaptureSession()
         {
-            var device = AVCaptureDevice.GetDefaultDevice("vide");
+            var device = AVCaptureDevice.GetDefaultDevice(NSString.Empty);
 
             if (device == null)
             {
