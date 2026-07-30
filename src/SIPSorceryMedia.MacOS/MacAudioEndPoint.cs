@@ -576,8 +576,13 @@ namespace SIPSorceryMedia.MacOS
                     try
                     {
                         byte[] encoded = _audioEncoder.EncodeAudio(frameBuffer, audioFormat);
+                        if (encoded == null)
+                        {
+                            continue;
+                        }
 
-                        OnAudioSourceEncodedSample?.Invoke((uint)encoded.Length, encoded);
+                        uint durationRtpUnits = (uint)((long)audioFormat.RtpClockRate * AUDIO_FRAME_MILLISECONDS / 1000);
+                        OnAudioSourceEncodedSample?.Invoke(durationRtpUnits, encoded);
 
                         OnAudioSourceEncodedFrameReady?.Invoke(new EncodedAudioFrame(
                             0, audioFormat, AUDIO_FRAME_MILLISECONDS, encoded));
