@@ -277,7 +277,7 @@ namespace SIPSorceryMedia.MacOS
             var names = new List<string>();
 
 #pragma warning disable CA1422
-            var devices = AVCaptureDevice.DevicesWithMediaType("vide");
+            var devices = AVCaptureDevice.DevicesWithMediaType("video");
 #pragma warning restore CA1422
 
             if (devices != null)
