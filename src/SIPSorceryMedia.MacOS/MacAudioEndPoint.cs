@@ -887,7 +887,7 @@ namespace SIPSorceryMedia.MacOS
 
                 // If the frame is larger than the pool buffer capacity (rare), fall back
                 // to a fresh allocation rather than silently truncating audio.
-                if ((int)buffer.Capacity < frameCount)
+                if ((int)buffer.FrameCapacity < frameCount)
                 {
                     buffer.Dispose();
                     buffer = new AVAudioPcmBuffer(_playbackFormat, (uint)frameCount);

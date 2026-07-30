@@ -277,7 +277,7 @@ namespace SIPSorceryMedia.MacOS
             var names = new List<string>();
 
 #pragma warning disable CA1422
-            var devices = AVCaptureDevice.DevicesWithMediaType(AVMediaType.Video);
+            var devices = AVCaptureDevice.DevicesWithMediaType("vide");
 #pragma warning restore CA1422
 
             if (devices != null)
@@ -297,7 +297,7 @@ namespace SIPSorceryMedia.MacOS
         /// <returns>True if the session was successfully initialised.</returns>
         private bool InitialiseCaptureSession()
         {
-            var device = AVCaptureDevice.GetDefaultDevice(AVMediaType.Video);
+            var device = AVCaptureDevice.GetDefaultDevice("vide");
 
             if (device == null)
             {
@@ -492,16 +492,16 @@ namespace SIPSorceryMedia.MacOS
                         return;
                     }
 
-                    pixelBuffer.Lock(CVOptionFlags.None);
+                    pixelBuffer.Lock(CVPixelBufferLock.None);
 
                     try
                     {
                         int width = (int)pixelBuffer.Width;
                         int height = (int)pixelBuffer.Height;
-                        nint bytesPerRow = pixelBuffer.BytesPerRow;
+                        int bytesPerRow = (int)pixelBuffer.BytesPerRow;
                         IntPtr baseAddress = pixelBuffer.BaseAddress;
 
-                        int bufferSize = (int)(height * bytesPerRow);
+                        int bufferSize = height * bytesPerRow;
                         byte[] rawBuffer = new byte[bufferSize];
                         Marshal.Copy(baseAddress, rawBuffer, 0, bufferSize);
 
@@ -520,7 +520,7 @@ namespace SIPSorceryMedia.MacOS
                             for (int row = 0; row < height; row++)
                             {
                                 Array.Copy(
-                                    rawBuffer, row * (int)bytesPerRow,
+                                    rawBuffer, row * bytesPerRow,
                                     bgraBuffer, row * expectedStride,
                                     expectedStride);
                             }
@@ -530,7 +530,7 @@ namespace SIPSorceryMedia.MacOS
                     }
                     finally
                     {
-                        pixelBuffer.Unlock(CVOptionFlags.None);
+                        pixelBuffer.Unlock(CVPixelBufferLock.None);
                     }
                 }
             }
