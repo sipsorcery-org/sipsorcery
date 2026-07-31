@@ -19,7 +19,7 @@ namespace SIPSorcery.SoftPhone.Signalling
     /// </remarks>
     public class TextEndPoint : ITextEndPoint
     {
-        private static ILogger _logger = SIPSorcery.LogFactory.CreateLogger<TextEndPoint>();
+        private static ILogger _logger;
         private bool _sinkDisabled;
         private bool _sourceDisabled;
         private bool _sinkStarted;
@@ -45,7 +45,7 @@ namespace SIPSorcery.SoftPhone.Signalling
         /// <param name="disableSink">Disables text sink: no text will be processed by this endpoint</param>
         public TextEndPoint(bool disableSource = false, bool disableSink = false)
         {
-            _logger = SIPSorcery.LogFactory.CreateLogger<TextEndPoint>();
+            _logger = LogFactory.CreateLogger<TextEndPoint>();
             _sourceDisabled = disableSource;
             _sinkDisabled = disableSink;
             _textFormatManager = new MediaFormatManager<TextFormat>(GetWellKnownTextFormats().ToList());
@@ -73,7 +73,11 @@ namespace SIPSorcery.SoftPhone.Signalling
                 return;
             }
 
-            _logger.LogTrace($"Incoming text from '{remoteEndPoint.Address}:{remoteEndPoint.Port}': {payload.Length} bytes");
+            if (SIPSoftPhoneState.Settings.EnableRttDumps)
+            {
+                string dump = Encoding.UTF8.GetString(payload.Skip(12).ToArray());
+                _logger.LogDebug($"Incoming text from '{remoteEndPoint.Address}:{remoteEndPoint.Port}': {payload.Length} bytes ({dump})");
+            }
             RtpPacket rtpPacket = new(payload);
             rtpPacket.SSRC = ssrc;
             rtpPacket.Marker = marker > 0;
@@ -236,7 +240,16 @@ namespace SIPSorcery.SoftPhone.Signalling
         private void _rttReceiver_RttCharactersReceived(string RxChars, string Source)
             => OnTextReceived?.Invoke(this, new TextEventArgs(Source, RxChars));
 
-        private void SendData(byte[] packetBytes) => OnTextSourceEncodedSample?.Invoke(packetBytes);
+        private void SendData(byte[] packetBytes)
+        {
+            OnTextSourceEncodedSample?.Invoke(packetBytes);
+
+            if (SIPSoftPhoneState.Settings.EnableRttDumps)
+            {
+                string dump = Encoding.UTF8.GetString(packetBytes.Skip(12).ToArray());
+                _logger.LogDebug("Sent {size} bytes of RTT data: {dump}", packetBytes.Length, dump);
+            }
+        }
 
         private RttParameters GetRttParams(TextFormat textFormat)
         {
