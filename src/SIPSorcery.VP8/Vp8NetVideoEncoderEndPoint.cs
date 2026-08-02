@@ -139,7 +139,7 @@ namespace Vpx.Net
             };
         }
 
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
         {
             if (!_isClosed)
             {

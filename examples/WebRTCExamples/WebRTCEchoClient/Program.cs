@@ -95,24 +95,24 @@ namespace demo
 
             #region Connect the video frames generated from the sink and source to the Windows form.
 
-            testPattern.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
+            testPattern.OnVideoSourceRawSample += static (uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
             {
                 if (_isFormActivated)
                 {
-                    _form?.BeginInvoke(new Action(() =>
+                    if (_form.Handle != IntPtr.Zero)
                     {
-                        if (_form.Handle != IntPtr.Zero)
+                        unsafe
                         {
-                            unsafe
+                            fixed (byte* s = sample)
                             {
-                                fixed (byte* s = sample)
+                                var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                _form?.BeginInvoke(new Action(() =>
                                 {
-                                    var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                                     _sourceVideoPicBox.Image = bmpImage;
-                                }
+                                }));
                             }
                         }
-                    }));
+                    }
                 }
             };
 
@@ -202,7 +202,7 @@ namespace demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static Microsoft.Extensions.Logging.ILogger AddConsoleLogger()
         {

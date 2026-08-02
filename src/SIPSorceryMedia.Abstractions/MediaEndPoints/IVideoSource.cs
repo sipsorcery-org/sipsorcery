@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions;
 
-public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
+public delegate void RawVideoSampleDelegate(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat);
 
 public delegate void RawVideoSampleFasterDelegate(uint durationMilliseconds, RawImage rawImage); // Avoid to use byte[] to improve performance
 
@@ -49,7 +49,7 @@ public interface IVideoSource
 
     void RestrictFormats(Func<VideoFormat, bool> filter);
 
-    void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat);
+    void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat);
 
     void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage); // Avoid to use byte[] to improve performance
 

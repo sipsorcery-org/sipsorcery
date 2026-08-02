@@ -26,7 +26,7 @@ public interface IVideoEncoder : IDisposable
     /// </summary>
     List<VideoFormat> SupportedFormats { get; }
 
-    byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
+    byte[] EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec);
 
     byte[] EncodeVideoFaster(RawImage rawImage, VideoCodecsEnum codec); // Avoid to use byte[] to improve performance
 

@@ -34,6 +34,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Encoders;
 using WebSocketSharp.Server;
 
@@ -91,7 +92,9 @@ namespace demo
             MediaStreamTrack audioTrack = new MediaStreamTrack(audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv);
             pc.addTrack(audioTrack);
 
-            testPatternSource.OnVideoSourceRawSample += videoEncoderEndPoint.ExternalVideoSourceRawSample;
+            testPatternSource.OnVideoSourceRawSample += (durationMilliseconds, width, height, sample, pixelFormat) =>
+                // TODO: converto to use ReadOnlySpan<byte> in VideoEncoderEndPoint.ExternalVideoSourceRawSample.
+                videoEncoderEndPoint.ExternalVideoSourceRawSample(durationMilliseconds, width, height, sample.ToArray(), pixelFormat);
             videoEncoderEndPoint.OnVideoSourceEncodedSample += pc.SendVideo;
             audioSource.OnAudioSourceEncodedSample += pc.SendAudio;
 

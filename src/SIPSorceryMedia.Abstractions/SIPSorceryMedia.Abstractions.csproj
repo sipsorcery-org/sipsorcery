@@ -59,7 +59,12 @@
 	<None Include="..\..\LICENSE.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Memory" />
+  </ItemGroup>
+
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 

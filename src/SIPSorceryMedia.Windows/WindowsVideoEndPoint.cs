@@ -14,8 +14,6 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +21,9 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
+using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
@@ -155,7 +156,7 @@ namespace SIPSorceryMedia.Windows
         public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
         public List<VideoFormat> GetVideoSinkFormats() => _videoFormatManager.GetSourceFormats();
         public void SetVideoSinkFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
              throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
 
         public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
@@ -598,9 +599,10 @@ namespace SIPSorceryMedia.Windows
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
-                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width * 3);
+                                            using var bufferWriter = new ArrayPoolBufferWriter<byte>();
+                                            PixelConverter.NV12toBGR(bufferWriter, nv12Buffer.AsSpan(), width, height, width * 3);
 
-                                            OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
+                                            OnVideoSourceRawSample(frameSpacing, width, height, bufferWriter.WrittenSpan, VideoPixelFormatsEnum.Bgr);
                                         }
                                     }
                                 }

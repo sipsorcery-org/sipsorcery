@@ -1,5 +1,4 @@
 <Project>
-
   <!-- Central Package Management for the shipped SIPSorcery library projects under src/.
        Package versions are declared once here; individual project files reference packages
        without a Version attribute and inherit the version below. This keeps the NuGet
@@ -10,7 +9,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageVersion Include="BouncyCastle.Cryptography"                     Version="2.7" />
     <PackageVersion Include="CommandLineParser"                             Version="2.9.1" />
@@ -62,23 +60,19 @@
     <PackageVersion Include="System.Net.WebSockets.Client"                  Version="4.3.2" />
 
   </ItemGroup>
-
   <ItemGroup Condition="('$(TargetFramework)' == 'net9.0') OR $(TargetFramework.StartsWith('net9.0-windows'))">
-
-	<!-- Add net9.0 specific versions here -->
-
+    <PackageVersion Update="Microsoft.Extensions.Http"                      Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Logging"                   Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"      Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Console"           Version="9.0.18" />
   </ItemGroup>
-
   <ItemGroup Condition="('$(TargetFramework)' != 'net10.0') AND !$(TargetFramework.StartsWith('net10.0-windows')) AND ('$(TargetFramework)' != 'net9.0') AND !$(TargetFramework.StartsWith('net9.0-windows'))">
-    
-	<!-- Add net8.0 specific versions here -->
-
+    <PackageVersion Update="Microsoft.Extensions.Http"                      Version="8.0.1" />
+    <PackageVersion Update="Microsoft.Extensions.Logging"                   Version="8.0.1" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"      Version="8.0.3" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Console"           Version="8.0.1" />
   </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-
-    <PackageVersion Include="System.ValueTuple"                             Version="4.6.2" />
-
+    <PackageVersion Include="System.ValueTuple" Version="4.6.2" />
   </ItemGroup>
-
 </Project>

@@ -202,7 +202,7 @@ public class FFmpegVideoEndPoint : IVideoSource, IVideoSink, IDisposable
     /// Encodes a raw video frame supplied by the application and raises <see cref="OnVideoSourceEncodedSample"/>
     /// with the result, ready for the RTP transport.
     /// </summary>
-    public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
+    public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
     {
         if (!_isClosed && OnVideoSourceEncodedSample != null)
         {

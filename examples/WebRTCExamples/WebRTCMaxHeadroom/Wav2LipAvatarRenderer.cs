@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: Wav2LipAvatarRenderer.cs
 //
 // Description: The fully IN-PROCESS photoreal avatar - a C# port of the Python
@@ -282,7 +282,7 @@ public sealed class Wav2LipAvatarRenderer : IAvatarRenderer
     public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
     public bool IsVideoSourcePaused() => _isPaused;
 
-    public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
+    public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
         throw new NotImplementedException("The Wav2Lip renderer generates its own frames from audio.");
     public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
         throw new NotImplementedException("The Wav2Lip renderer generates its own frames from audio.");

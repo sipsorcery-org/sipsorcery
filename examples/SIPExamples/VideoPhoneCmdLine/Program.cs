@@ -42,6 +42,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -76,8 +77,8 @@ namespace demo
         [Option("tp", Required = false, Default = true,
            HelpText = "If set will use a test pattern source instead of a webcam feed. Format \"--tp\".")]
         public bool TestPattern { get; set; }
-        
-        [Option("noaudio", Required = false, Default =false,
+
+        [Option("noaudio", Required = false, Default = false,
             HelpText = "If set will exclude the audio stream from the call. Format \"--noaudio\".")]
         public bool NoAudio { get; set; }
     }
@@ -121,7 +122,7 @@ namespace demo
                         OnVideoSinkDecodedSample(decoded.Sample, decoded.Width, decoded.Height, (int)(decoded.Width * 3), VideoPixelFormatsEnum.Bgr);
                     }
                 }
-                catch(Exception excp)
+                catch (Exception excp)
                 {
                     Console.WriteLine($"Exception decoding video. {excp.Message}");
                 }
@@ -330,18 +331,21 @@ namespace demo
                         };
                     }
 
-                    mediaEndPoints.VideoSource.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
+                    mediaEndPoints.VideoSource.OnVideoSourceRawSample += (durationMilliseconds, width, height, sample, pixelFormat) =>
                     {
                         if (_isFormActivated)
                         {
-                            _form?.BeginInvoke(new Action(() =>
+                            if (_form.Handle != IntPtr.Zero)
                             {
-                                if (_form.Handle != IntPtr.Zero)
+                                ArrayPoolBufferWriter<byte> buffer= null;
+                                int stride = width * 3;
+                                try
                                 {
-                                    int stride = width * 3;
                                     if (pixelFormat == VideoPixelFormatsEnum.I420)
                                     {
-                                        sample = PixelConverter.I420toBGR(sample, width, height, out stride);
+                                        buffer = new ArrayPoolBufferWriter<byte>();
+                                        PixelConverter.I420toBGR(buffer, sample, width, height, out stride);
+                                        sample = buffer.WrittenSpan;
                                     }
 
                                     if (_localVideoPicBox.Width != width || _localVideoPicBox.Height != height)
@@ -356,11 +360,18 @@ namespace demo
                                         fixed (byte* s = sample)
                                         {
                                             System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                            _localVideoPicBox.Image = bmpImage;
+                                            _form?.BeginInvoke(new Action(() =>
+                                            {
+                                                _localVideoPicBox.Image = bmpImage;
+                                            }));
                                         }
                                     }
                                 }
-                            }));
+                                finally
+                                {
+                                    buffer?.Dispose();
+                                }
+                            }
                         }
                     };
 

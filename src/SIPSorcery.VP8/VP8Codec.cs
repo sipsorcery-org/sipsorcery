@@ -14,8 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
@@ -166,7 +168,7 @@ namespace Vpx.Net
         /// </summary>
         public bool EnableIntraFallback { get; set; } = false;
 
-        public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        public byte[] EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             lock (_encoderLock)
             {
@@ -183,74 +185,84 @@ namespace Vpx.Net
                 // width * bytesPerPixel -- NOT width. Passing width here corrupts the
                 // conversion (it reads the source with the wrong row pitch, smearing /
                 // horizontally repeating the image) for every non-I420 input.
-                byte[] i420;
-                if (pixelFormat == VideoPixelFormatsEnum.I420)
+                ReadOnlySpan<byte> i420;
+                ArrayPoolBufferWriter<byte> buffer = null;
+                try
                 {
-                    i420 = sample;
-                }
-                else
-                {
-                    int bytesPerPixel;
-                    switch (pixelFormat)
+                    if (pixelFormat == VideoPixelFormatsEnum.I420)
                     {
-                        case VideoPixelFormatsEnum.Bgra:
-                        case VideoPixelFormatsEnum.Rgba:
-                            bytesPerPixel = 4;
-                            break;
-                        case VideoPixelFormatsEnum.Bgr:
-                        case VideoPixelFormatsEnum.Rgb:
-                            bytesPerPixel = 3;
-                            break;
-                        case VideoPixelFormatsEnum.NV12:
-                            bytesPerPixel = 1;
-                            break;
-                        default:
-                            bytesPerPixel = 1;
-                            break;
+                        i420 = sample;
                     }
-                    i420 = PixelConverter.ToI420(width, height, width * bytesPerPixel, sample, pixelFormat);
-                }
+                    else
+                    {
+                        int bytesPerPixel;
+                        switch (pixelFormat)
+                        {
+                            case VideoPixelFormatsEnum.Bgra:
+                            case VideoPixelFormatsEnum.Rgba:
+                                bytesPerPixel = 4;
+                                break;
+                            case VideoPixelFormatsEnum.Bgr:
+                            case VideoPixelFormatsEnum.Rgb:
+                                bytesPerPixel = 3;
+                                break;
+                            case VideoPixelFormatsEnum.NV12:
+                                bytesPerPixel = 1;
+                                break;
+                            default:
+                                bytesPerPixel = 1;
+                                break;
+                        }
+                        buffer = new ArrayPoolBufferWriter<byte>();
+                        PixelConverter.ToI420(buffer, width, height, width * bytesPerPixel, sample, pixelFormat);
+                        i420 = buffer.WrittenSpan;
+                    }
 
-                int ySize = width * height;
-                int cSize = (width / 2) * (height / 2);
-                if (i420.Length != ySize + 2 * cSize)
+                    var ySize = width * height;
+                    var cSize = (width / 2) * (height / 2);
+                    if (i420.Length != ySize + 2 * cSize)
+                    {
+                        throw new ArgumentException(
+                            $"I420 buffer length {i420.Length} does not match expected {ySize + 2 * cSize} for {width}x{height}.");
+                    }
+
+                    if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
+                    if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
+                    i420.Slice(0, ySize).CopyTo(_srcY);
+                    i420.Slice(ySize, cSize).CopyTo(_srcU);
+                    i420.Slice(ySize + cSize, cSize).CopyTo(_srcV);
+
+                    // Decide keyframe vs inter for this call.
+                    // - Forced keyframe (via ForceKeyFrame()): always keyframe.
+                    // - Frame counter reached interval: keyframe.
+                    // - First frame of stream / no valid reference: keyframe.
+                    // - Otherwise: inter (ZEROMV LAST_FRAME).
+                    var forceKey = _forceKeyFrame
+                                  || _framesSinceLastKeyframe == 0
+                                  || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
+                    _forceKeyFrame = false;
+
+                    byte[] result;
+                    if (forceKey)
+                    {
+                        result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
+                        _framesSinceLastKeyframe = 1;
+                    }
+                    else
+                    {
+                        // Inter (P) frame: ZEROMV referencing LAST_FRAME for
+                        // every macroblock. The reference frame is the
+                        // reconstruction of the previous keyframe / inter
+                        // frame, cached on the per-thread FrameEncoderBuffers.
+                        result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
+                        _framesSinceLastKeyframe++;
+                    }
+                    return result;
+                }
+                finally
                 {
-                    throw new ArgumentException(
-                        $"I420 buffer length {i420.Length} does not match expected {ySize + 2 * cSize} for {width}x{height}.");
+                    buffer?.Dispose();
                 }
-
-                if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
-                if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
-                Buffer.BlockCopy(i420, 0,             _srcY, 0, ySize);
-                Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);
-                Buffer.BlockCopy(i420, ySize + cSize, _srcV, 0, cSize);
-
-                // Decide keyframe vs inter for this call.
-                // - Forced keyframe (via ForceKeyFrame()): always keyframe.
-                // - Frame counter reached interval: keyframe.
-                // - First frame of stream / no valid reference: keyframe.
-                // - Otherwise: inter (ZEROMV LAST_FRAME).
-                bool forceKey = _forceKeyFrame
-                              || _framesSinceLastKeyframe == 0
-                              || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
-                _forceKeyFrame = false;
-
-                byte[] result;
-                if (forceKey)
-                {
-                    result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
-                    _framesSinceLastKeyframe = 1;
-                }
-                else
-                {
-                    // Inter (P) frame: ZEROMV referencing LAST_FRAME for
-                    // every macroblock. The reference frame is the
-                    // reconstruction of the previous keyframe / inter
-                    // frame, cached on the per-thread FrameEncoderBuffers.
-                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
-                    _framesSinceLastKeyframe++;
-                }
-                return result;
             }
         }
 
