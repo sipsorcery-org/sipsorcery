@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 #if NET8_0_OR_GREATER
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 #endif
-using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Buffers;
 
 namespace SIPSorceryMedia.Abstractions;
@@ -79,19 +77,19 @@ public class PixelConverter
                 output.Write(sample);
                 return;
             case VideoPixelFormatsEnum.Bgra:
-                 PixelConverter.BGRAtoI420(output, sample, width, height, stride);
+                PixelConverter.BGRAtoI420(output, sample, width, height, stride);
                 return;
             case VideoPixelFormatsEnum.Bgr:
-                 PixelConverter.BGRtoI420(output, sample, width, height, stride);
+                PixelConverter.BGRtoI420(output, sample, width, height, stride);
                 return;
             case VideoPixelFormatsEnum.Rgba:
-                 PixelConverter.RGBAtoI420(output, sample, width, height, stride);
+                PixelConverter.RGBAtoI420(output, sample, width, height, stride);
                 return;
             case VideoPixelFormatsEnum.Rgb:
-                 PixelConverter.RGBtoI420(output, sample, width, height, stride);
+                PixelConverter.RGBtoI420(output, sample, width, height, stride);
                 return;
             case VideoPixelFormatsEnum.NV12:
-                 PixelConverter.NV12toI420(output, sample, width, height);
+                PixelConverter.NV12toI420(output, sample, width, height);
                 return;
             default:
                 throw new ApplicationException($"Pixel format {pixelFormat} does not have an I420 conversion implemented.");
@@ -604,7 +602,7 @@ public class PixelConverter
 #else
 
         // De-interleave UV plane: NV12 has UV interleaved, I420 has separate U and V planes.
-        for (var row = 0; row < height; row++)
+        for (var row = 0; row < uvHeight; row++)
         {
             for (var col = 0; col < uvWidth; col++)
             {
@@ -772,7 +770,7 @@ public class PixelConverter
         InterleaveUVSimd(nv12, i420, i420UOffset, i420VOffset, nv12UvOffset, uvWidth, uvHeight);
 #else
         // Interleave UV plane: I420 has separate U and V planes, NV12 has UV interleaved.
-        for (var row = 0; row < height; row++)
+        for (var row = 0; row < uvHeight; row++)
         {
             for (var col = 0; col < uvWidth; col++)
             {
