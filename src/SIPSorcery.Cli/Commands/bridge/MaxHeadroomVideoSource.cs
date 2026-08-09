@@ -155,7 +155,7 @@ namespace SIPSorcery.Cli.Commands.Bridge
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         public bool IsVideoSourcePaused() => _isPaused;
 
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
             throw new NotImplementedException("The Max Headroom source generates its own frames.");
         public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
             throw new NotImplementedException("The Max Headroom source generates its own frames.");

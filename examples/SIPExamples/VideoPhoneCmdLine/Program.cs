@@ -337,15 +337,16 @@ namespace demo
                         {
                             if (_form.Handle != IntPtr.Zero)
                             {
+                                ReadOnlySpan<byte> sampleSpan = sample;
                                 ArrayPoolBufferWriter<byte> buffer= null;
-                                int stride = width * 3;
+                                var stride = width * 3;
                                 try
                                 {
                                     if (pixelFormat == VideoPixelFormatsEnum.I420)
                                     {
                                         buffer = new ArrayPoolBufferWriter<byte>();
-                                        PixelConverter.I420toBGR(buffer, sample, width, height, out stride);
-                                        sample = buffer.WrittenSpan;
+                                        PixelConverter.I420toBGR(buffer, sampleSpan, width, height, out stride);
+                                        sampleSpan = buffer.WrittenSpan;
                                     }
 
                                     if (_localVideoPicBox.Width != width || _localVideoPicBox.Height != height)
@@ -357,9 +358,9 @@ namespace demo
 
                                     unsafe
                                     {
-                                        fixed (byte* s = sample)
+                                        fixed (byte* s = sampleSpan)
                                         {
-                                            System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap(width, height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                            var bmpImage = new Bitmap(width, height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                                             _form?.BeginInvoke(new Action(() =>
                                             {
                                                 _localVideoPicBox.Image = bmpImage;
@@ -449,7 +450,7 @@ namespace demo
 
                                             fixed (byte* s = bmp)
                                             {
-                                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                                var bmpImage = new Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                                                 _remoteVideoPicBox.Image = bmpImage;
                                             }
                                         }

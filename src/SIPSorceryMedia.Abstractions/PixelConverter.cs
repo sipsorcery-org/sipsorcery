@@ -14,7 +14,6 @@ public class PixelConverter
     [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
     public static byte[] ToI420(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
     {
-#pragma warning disable CS0618 // Type or member is obsolete
         switch (pixelFormat)
         {
             case VideoPixelFormatsEnum.I420:
@@ -28,7 +27,6 @@ public class PixelConverter
             default:
                 throw new ApplicationException($"Pixel format {pixelFormat} does not have an I420 conversion implemented.");
         }
-#pragma warning restore CS0618 // Type or member is obsolete
     }
 
     [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
@@ -69,7 +67,6 @@ public class PixelConverter
     /// <param name="pixelFormat">The pixel format of the image.</param>
     public static void ToI420(IBufferWriter<byte> output, int width, int height, int stride, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
     {
-#pragma warning disable CS0618 // Type or member is obsolete
         switch (pixelFormat)
         {
             case VideoPixelFormatsEnum.I420:
@@ -94,7 +91,6 @@ public class PixelConverter
             default:
                 throw new ApplicationException($"Pixel format {pixelFormat} does not have an I420 conversion implemented.");
         }
-#pragma warning restore CS0618 // Type or member is obsolete
     }
 
     [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]

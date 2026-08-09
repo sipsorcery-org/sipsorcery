@@ -156,7 +156,7 @@ namespace SIPSorceryMedia.Windows
         public void SetVideoSourceFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
         public List<VideoFormat> GetVideoSinkFormats() => _videoFormatManager.GetSourceFormats();
         public void SetVideoSinkFormat(VideoFormat videoFormat) => _videoFormatManager.SetSelectedFormat(videoFormat);
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
              throw new ApplicationException("The Windows Video End Point does not support external samples. Use the video end point from SIPSorceryMedia.Encoders.");
 
         public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
@@ -602,7 +602,7 @@ namespace SIPSorceryMedia.Windows
                                             using var bufferWriter = new ArrayPoolBufferWriter<byte>();
                                             PixelConverter.NV12toBGR(bufferWriter, nv12Buffer.AsSpan(), width, height, width * 3);
 
-                                            OnVideoSourceRawSample(frameSpacing, width, height, bufferWriter.WrittenSpan, VideoPixelFormatsEnum.Bgr);
+                                            OnVideoSourceRawSample(frameSpacing, width, height, bufferWriter.WrittenSpan.ToArray(), VideoPixelFormatsEnum.Bgr);
                                         }
                                     }
                                 }

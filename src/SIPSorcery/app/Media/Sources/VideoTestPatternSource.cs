@@ -118,7 +118,7 @@ namespace SIPSorcery.Media
         public void ForceKeyFrame() => _videoEncoder?.ForceKeyFrame();
         public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
         
-        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
+        public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
             throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
         
         public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>

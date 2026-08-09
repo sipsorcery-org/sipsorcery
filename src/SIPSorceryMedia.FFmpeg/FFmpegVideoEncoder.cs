@@ -76,7 +76,7 @@ namespace SIPSorceryMedia.FFmpeg
             _HwDeviceType = HWDeviceType;
         }
 
-        public byte[]? EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        public byte[]? EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             fixed (byte* pSample = sample)
             {

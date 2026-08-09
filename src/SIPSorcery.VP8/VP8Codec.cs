@@ -168,7 +168,7 @@ namespace Vpx.Net
         /// </summary>
         public bool EnableIntraFallback { get; set; } = false;
 
-        public byte[] EncodeVideo(int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
+        public byte[] EncodeVideo(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat, VideoCodecsEnum codec)
         {
             lock (_encoderLock)
             {
@@ -273,9 +273,9 @@ namespace Vpx.Net
                 if (_vp8Decoder == null)
                 {
                     _vp8Decoder = new vpx_codec_ctx_t();
-                    vpx_codec_iface_t algo = vp8_dx.vpx_codec_vp8_dx();
-                    vpx_codec_dec_cfg_t cfg = new vpx_codec_dec_cfg_t { threads = 1 };
-                    vpx_codec_err_t res = vpx_decoder.vpx_codec_dec_init(_vp8Decoder, algo, cfg, 0);
+                    var algo = vp8_dx.vpx_codec_vp8_dx();
+                    var cfg = new vpx_codec_dec_cfg_t { threads = 1 };
+                    var res = vpx_decoder.vpx_codec_dec_init(_vp8Decoder, algo, cfg, 0);
                 }
 
                 //logger.LogDebug($"Attempting to decode {frame.Length} bytes.");
@@ -291,7 +291,7 @@ namespace Vpx.Net
                     }
                 }
 
-                IntPtr iter = IntPtr.Zero;
+                var iter = IntPtr.Zero;
                 var img = vpx_decoder.vpx_codec_get_frame(_vp8Decoder, iter);
 
                 if (img == null)
@@ -300,15 +300,15 @@ namespace Vpx.Net
                 }
                 else
                 {
-                    int dwidth = (int)img.d_w;
-                    int dheight = (int)img.d_h;
-                    int sz = dwidth * dheight;
+                    var dwidth = (int)img.d_w;
+                    var dheight = (int)img.d_h;
+                    var sz = dwidth * dheight;
 
                     var yPlane = img.planes[0];
                     var uPlane = img.planes[1];
                     var vPlane = img.planes[2];
 
-                    byte[] decodedBuffer = new byte[dwidth * dheight * 3 / 2];
+                    var decodedBuffer = new byte[dwidth * dheight * 3 / 2];
 
                     for (uint row = 0; row < dheight; row++)
                     {
@@ -321,7 +321,9 @@ namespace Vpx.Net
                         }
                     }
 
-                    byte[] rgb = PixelConverter.I420toBGR(decodedBuffer, dwidth, dheight, out _);
+                    using var buffer = new ArrayPoolBufferWriter<byte>();
+                    PixelConverter.I420toBGR(buffer, decodedBuffer, dwidth, dheight, out _);
+                    var rgb = buffer.WrittenSpan.ToArray();
                     return new List<VideoSample> { new VideoSample { Width = img.d_w, Height = img.d_h, Sample = rgb } };
                 }
 

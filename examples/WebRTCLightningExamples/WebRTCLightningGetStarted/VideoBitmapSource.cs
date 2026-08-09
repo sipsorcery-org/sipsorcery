@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using SIPSorceryMedia.Abstractions;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace SIPSorcery.Media;
 
@@ -95,7 +96,7 @@ public class VideoBitmapSource : IVideoSource, IDisposable
     public void ForceKeyFrame() => _videoEncoder?.ForceKeyFrame();
     public bool HasEncodedVideoSubscribers() => OnVideoSourceEncodedSample != null;
 
-    public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat) =>
+    public void ExternalVideoSourceRawSample(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
         throw new NotImplementedException("The test pattern video source does not offer any encoding services for external sources.");
 
     public void ExternalVideoSourceRawSampleFaster(uint durationMilliseconds, RawImage rawImage) =>
@@ -166,7 +167,10 @@ public class VideoBitmapSource : IVideoSource, IDisposable
         var bitmapHeight = image.Height;
 
         var i420Buffer = ImageToI420(image);
-        var bgrBuffer = PixelConverter.I420toBGR(i420Buffer, bitmapWidth, bitmapHeight, out _);
+
+        using var buffer = new ArrayPoolBufferWriter<byte>();
+        PixelConverter.I420toBGR(buffer, i420Buffer, bitmapWidth, bitmapHeight, out _);
+        var bgrBuffer = buffer.WrittenSpan.ToArray();
 
         lock (_sendTimer)
         {

@@ -188,7 +188,7 @@ namespace demo
             return Task.FromResult(pc);
         }
 
-        private static void MesasureTestPatternSourceFrameRate(uint durationMilliseconds, int width, int height, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
+        private static void MesasureTestPatternSourceFrameRate(uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
             if (_startTime == DateTime.MinValue)
             {
