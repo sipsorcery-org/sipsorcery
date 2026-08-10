@@ -295,12 +295,56 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.True(receiver.ReArmCount < REARM_CAP, $"The receive loop re-armed {receiver.ReArmCount} times after the remote closed; it is spinning.");
                 Assert.False(receiver.IsRunningReceive);   // gone idle.
                 Assert.False(receiver.IsClosed);           // but still open so a reconnect can resume it.
+                Assert.True(receiver.IsEndOfStream);       // and the reason is visible to the send path.
+
+                // Socket.Connected is why the send path cannot work this out for itself. It still reports
+                // true even though the remote end has gone, which is what left SendOverTCP unable to tell a
+                // half closed connection from a live one.
+                Assert.True(client.Connected);
             }
             finally
             {
                 server?.Close();
                 client.Close();
                 listener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Pins the platform behaviour the end of stream handling is built on: a connected socket cannot be
+        /// reused. Socket.Connect throws InvalidOperationException after Socket.Disconnect whatever endpoint
+        /// is passed, so there is no recovering the connection in place and RtpIceChannel.SendOverTCP has to
+        /// report the failure rather than attempt a reconnect. If a future runtime relaxes this, this test
+        /// flags it and the send path could be revisited.
+        /// </summary>
+        [Fact]
+        public void DisconnectedSocket_CannotBeReconnectedInPlace()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var other = new TcpListener(IPAddress.Loopback, 0);
+            other.Start();
+
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            try
+            {
+                socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                socket.Connect((IPEndPoint)listener.LocalEndpoint);
+                listener.AcceptSocket().Close();
+
+                socket.Disconnect(true);   // reuseSocket: true, which still does not permit a sync reconnect.
+
+                Assert.Throws<InvalidOperationException>(() => socket.Connect((IPEndPoint)listener.LocalEndpoint));
+                Assert.Throws<InvalidOperationException>(() => socket.Connect((IPEndPoint)other.LocalEndpoint));
+            }
+            finally
+            {
+                socket.Close();
+                listener.Stop();
+                other.Stop();
             }
         }
 

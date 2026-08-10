@@ -27,10 +27,31 @@ public class IceTcpReceiver : UdpReceiver
     protected const int REVEIVE_TCP_BUFFER_SIZE = RECEIVE_BUFFER_SIZE * 2;
 
     protected int m_recvOffset;
+    protected bool m_isEndOfStream;
+
     public IceTcpReceiver(Socket socket, int mtu = REVEIVE_TCP_BUFFER_SIZE) : base(socket, mtu)
     {
         m_recvOffset = 0;
     }
+
+    /// <summary>
+    /// True once a receive has completed with zero bytes, which on a stream socket means the remote end
+    /// has closed the connection. Once set it stays set: the connection is finished and this receiver's
+    /// socket cannot serve another one.
+    /// </summary>
+    /// <remarks>
+    /// This is the reliable signal that the connection is gone. <see cref="Socket.Connected"/> is not: it
+    /// reports the state as of the last I/O operation and stays true after the remote end's FIN, so a half
+    /// closed connection still looks connected to any caller that checks it. Callers that need to know
+    /// whether the connection is usable should consult this as well.
+    /// <para>
+    /// There is no recovery in place. A connected socket cannot be reused once disconnected
+    /// (<see cref="Socket.Connect(EndPoint)"/> throws <see cref="InvalidOperationException"/> after
+    /// <see cref="Socket.Disconnect(bool)"/>, whatever endpoint is passed), so resuming means a new socket
+    /// and a new receiver.
+    /// </para>
+    /// </remarks>
+    public virtual bool IsEndOfStream => m_isEndOfStream;
 
     /// <summary>
     /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
@@ -97,6 +118,8 @@ public class IceTcpReceiver : UdpReceiver
         // must not be re-armed. Socket.Connected remains true after the peer's FIN, so the guard in
         // BeginReceiveFrom does not stop it: the re-arm would complete synchronously with zero bytes and
         // call straight back into this method, recursing until the process died with a StackOverflowException.
+        // It is also surfaced on IsEndOfStream so the send path can tell a half closed connection from a
+        // live one, which Socket.Connected cannot.
         bool endOfStream = false;
 
         try
@@ -188,8 +211,16 @@ public class IceTcpReceiver : UdpReceiver
         finally
         {
             m_isRunningReceive = false;
-            // On end of stream the receiver is left open but idle rather than closed, so the reconnect in
-            // RtpIceChannel.SendOverTCP (which re-arms while !IsRunningReceive && !IsClosed) can resume it.
+            // On end of stream the receiver is left open but idle rather than closed. Closing here would
+            // fire OnClosed and tear down state for what is a normal way for a connection to end. The flag
+            // is published after m_isRunningReceive is cleared so a caller that observes the receiver as
+            // idle also sees why it went idle, which is what RtpIceChannel.SendOverTCP checks before it
+            // tries to send anything else to that ICE server.
+            if (endOfStream)
+            {
+                m_isEndOfStream = true;
+            }
+
             if (!m_isClosed && !endOfStream)
             {
                 BeginReceiveFrom();
