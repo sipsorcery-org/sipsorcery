@@ -415,6 +415,16 @@ public class RTPChannel : IDisposable
 
                 var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
                 remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+
+                // The length guard above was applied to the original data indication, not to the relayed
+                // payload extracted from it. A data indication with no DATA attribute, or with a zero length
+                // one (STUNAttribute.ParseMessageAttributes leaves Value null in that case), leaves the
+                // payload null and the discriminator byte reads below would throw. Drop it here instead.
+                if (packet == null || packet.Length == 0)
+                {
+                    logger.LogWarning("RTPChannel dropped a TURN data indication from {RemoteEndPoint} with a missing or empty DATA attribute.", remoteEndPoint);
+                    return;
+                }
             }
 
             LastRtpDestination = remoteEndPoint;

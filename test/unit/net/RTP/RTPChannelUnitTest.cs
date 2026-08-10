@@ -263,5 +263,66 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug("Test complete.");
         }
+
+        /// <summary>
+        /// Test harness that drives the protected packet received handler directly, the same way the socket
+        /// receive loop does, so a malformed packet can be exercised without live socket traffic.
+        /// </summary>
+        private sealed class TestableRTPChannel : RTPChannel
+        {
+            public TestableRTPChannel() : base(false, IPAddress.Loopback) { }
+
+            public void Receive(byte[] packet) => OnRTPPacketReceived(null, RTPPort, new IPEndPoint(IPAddress.Loopback, 9), packet);
+        }
+
+        /// <summary>
+        /// A TURN data indication with no DATA attribute (or a zero length one) leaves the relayed payload
+        /// null after it is extracted, which is after the length guard on the original packet has already
+        /// run. The discriminator byte reads must not be reached with that null payload. On the ICE-over-TCP
+        /// receive path the resulting NullReferenceException closed the receiver outright, permanently
+        /// killing the relay path for the session.
+        /// </summary>
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void RtpChannelDataIndicationWithoutPayloadIsDropped(bool includeEmptyDataAttribute)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var dataIndication = new STUNMessage(STUNMessageTypesEnum.DataIndication);
+            if (includeEmptyDataAttribute)
+            {
+                dataIndication.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, new byte[0]));
+            }
+
+            var buffer = dataIndication.ToByteBuffer(null, false);
+
+            Assert.Equal(0x00, buffer[0]);
+            Assert.Equal(0x17, buffer[1]);
+
+            var channel = new TestableRTPChannel();
+
+            try
+            {
+                bool dataReceived = false;
+                bool stunReceived = false;
+                channel.OnRTPDataReceived += (lep, rep, pkt) => dataReceived = true;
+                channel.OnStunMessageReceived += (msg, rep, relayed) => stunReceived = true;
+
+                // Must not throw - previously a NullReferenceException on the null payload.
+                channel.Receive(buffer);
+
+                Assert.False(dataReceived);
+                Assert.False(stunReceived);
+                Assert.False(channel.IsClosed);
+            }
+            finally
+            {
+                channel.Close("normal");
+            }
+
+            logger.LogDebug("Test complete.");
+        }
     }
 }
