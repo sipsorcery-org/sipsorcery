@@ -650,6 +650,62 @@ namespace SIPSorcery.Net.UnitTests
             // If the cleanup timer already ran, allocation count could be 0
         }
 
+        /// <summary>
+        /// A UDP datagram arriving on the TURN port is unauthenticated and arbitrary, and the STUN parser
+        /// throws on input it does not recognise. Processing used to sit inside the receive loop but
+        /// outside any per datagram handler, so one malformed datagram unwound past the loop and ended it.
+        /// The loop is started fire and forget with no supervision, so nothing restarted it and the UDP
+        /// relay stayed down for every client until the process was restarted. The datagram must be
+        /// dropped and the loop must keep serving.
+        /// </summary>
+        /// <param name="malformed">
+        /// First case: an ApplicationException from the STUN header check, the first byte has bits set that
+        /// the parser rejects and it is not channel data. Second case: a datagram too short to hold a STUN
+        /// header, where the header parse returns null and dereferencing it throws.
+        /// </param>
+        [Theory]
+        [InlineData(new byte[] { 0x80, 0x00, 0x00, 0x00 })]
+        [InlineData(new byte[] { 0x00, 0x01, 0x00 })]
+        public async Task MalformedUdpDatagramDoesNotKillReceiveLoop(byte[] malformed)
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var (server, port) = CreateTurnServer(enableTcp: false, enableUdp: true);
+            var serverEndPoint = new IPEndPoint(IPAddress.Loopback, port);
+
+            using var client = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
+
+            // Confirm the relay is answering before the malformed datagram, so a failure after it cannot be
+            // blamed on the server never having started.
+            Assert.True(await UdpAllocateGetsChallenge(client, serverEndPoint),
+                "The TURN server did not answer a valid UDP request before the malformed datagram.");
+
+            await client.SendAsync(malformed, malformed.Length, serverEndPoint);
+            await Task.Delay(250);
+
+            Assert.True(await UdpAllocateGetsChallenge(client, serverEndPoint),
+                "The TURN server stopped answering UDP requests after a malformed datagram; the receive loop died.");
+        }
+
+        /// <summary>
+        /// Sends an unauthenticated Allocate over UDP and returns true if the 401 challenge comes back.
+        /// </summary>
+        private static async Task<bool> UdpAllocateGetsChallenge(UdpClient client, IPEndPoint serverEndPoint)
+        {
+            var request = BuildAllocateRequest().ToByteBuffer(null, false);
+            await client.SendAsync(request, request.Length, serverEndPoint);
+
+            var receiveTask = client.ReceiveAsync();
+            if (await Task.WhenAny(receiveTask, Task.Delay(3000)) != receiveTask)
+            {
+                return false;
+            }
+
+            var response = STUNMessage.ParseSTUNMessage(receiveTask.Result.Buffer, receiveTask.Result.Buffer.Length);
+
+            return response != null && response.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse;
+        }
+
         #region Test Helpers
 
         /// <summary>
