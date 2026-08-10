@@ -77,7 +77,8 @@
     <RepositoryBranch>master</RepositoryBranch>
     <PolyArgumentExceptions>true</PolyArgumentExceptions>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v10.0.13: Fix license file.
+    <PackageReleaseNotes>-v10.0.14: TurnServer marked experimental (diagnostic SIPSORCERY001); it is intended for development and testing, not production. Suppress the diagnostic to continue using it.
+-v10.0.13: Fix license file.
 -v10.0.12: Fix for SCTP packet zero length infinite loop vulnerability.
 -v10.0.11: Add support for additional video codecs (VP9, AV1, H265). WHIP and WHEP support. Bug fixes.
 -v10.0.10: Bug fixes. Adjust restriction on remote peer endpoints when blocking WebRTC RTP traffic.
