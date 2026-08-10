@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Filename: Wav2LipAvatarRenderer.cs
 //
 // Description: The fully IN-PROCESS photoreal avatar - a C# port of the Python

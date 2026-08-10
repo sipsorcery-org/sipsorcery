@@ -109,24 +109,24 @@ namespace demo
 
             #region Wire up the video source and sink to the picutre boxes.
 
-            videoSource.OnVideoSourceRawSample += (durationMilliseconds, width, height, sample, pixelFormat) =>
+            videoSource.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
             {
                 if (isFormActivated)
                 {
-                    if (form.Handle != IntPtr.Zero)
+                    form?.BeginInvoke(new Action(() =>
                     {
-                        unsafe
+                        if (form.Handle != IntPtr.Zero)
                         {
-                            fixed (byte* s = sample)
+                            unsafe
                             {
-                                var bmpImage = new Bitmap(width, height, width * 3, PixelFormat.Format24bppRgb, (IntPtr)s);
-                                form?.BeginInvoke(new Action(() =>
+                                fixed (byte* s = sample)
                                 {
+                                    var bmpImage = new Bitmap(width, height, width * 3, PixelFormat.Format24bppRgb, (IntPtr)s);
                                     localVideoPicBox.Image = bmpImage;
-                                }));
+                                }
                             }
                         }
-                    }
+                    }));
                 }
             };
 

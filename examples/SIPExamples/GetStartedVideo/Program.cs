@@ -116,24 +116,24 @@ namespace demo
 
             #region Connect the video frames generate from the sink and source to the Windows form.
 
-            testPattern.OnVideoSourceRawSample += (durationMilliseconds, width, height, sample, pixelFormat) =>
+            testPattern.OnVideoSourceRawSample += (uint durationMilliseconds, int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat) =>
             {
                 if (_isFormActivated)
                 {
-                    if (_form.Handle != IntPtr.Zero)
+                    _form?.BeginInvoke(new Action(() =>
                     {
-                        unsafe
+                        if (_form.Handle != IntPtr.Zero)
                         {
-                            fixed (byte* s = sample)
+                            unsafe
                             {
-                                var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
-                                _form?.BeginInvoke(new Action(() =>
+                                fixed (byte* s = sample)
                                 {
+                                    var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
                                     _localVideoPicBox.Image = bmpImage;
-                                }));
+                                }
                             }
                         }
-                    }
+                    }));
                 }
             };
 

@@ -22,7 +22,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using SIPSorceryMedia.Abstractions;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
-using CommunityToolkit.HighPerformance.Buffers;
 
 namespace SIPSorcery.Media;
 
@@ -167,10 +166,7 @@ public class VideoBitmapSource : IVideoSource, IDisposable
         var bitmapHeight = image.Height;
 
         var i420Buffer = ImageToI420(image);
-
-        using var buffer = new ArrayPoolBufferWriter<byte>();
-        PixelConverter.I420toBGR(buffer, i420Buffer, bitmapWidth, bitmapHeight, out _);
-        var bgrBuffer = buffer.WrittenSpan.ToArray();
+        var bgrBuffer = PixelConverter.I420toBGR(i420Buffer, bitmapWidth, bitmapHeight, out _);
 
         lock (_sendTimer)
         {
