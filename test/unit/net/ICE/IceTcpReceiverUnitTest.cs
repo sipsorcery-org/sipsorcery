@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -207,6 +209,123 @@ namespace SIPSorcery.Net.UnitTests
                 Assert.Empty(packets);
             }
             finally { socket.Close(); }
+        }
+
+        /// <summary>
+        /// A throw from the packet handler (e.g. a malformed TURN data indication) must not escape the
+        /// framing loop. If it did it would unwind into EndReceiveFrom, close the receiver and permanently
+        /// kill the ICE-over-TCP path for the session. The bad packet is dropped, the framing state stays
+        /// consistent and the next message on the stream is still delivered.
+        /// </summary>
+        [Fact]
+        public void ThrowingPacketHandler_DoesNotBreakFramingOrCloseReceiver()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+
+            try
+            {
+                var receiver = new TestableIceTcpReceiver(socket);
+                var delivered = new List<byte[]>();
+                receiver.OnPacketReceived += (r, port, ep, pkt) =>
+                {
+                    delivered.Add(pkt);
+                    if (delivered.Count == 1)
+                    {
+                        throw new NullReferenceException("Simulated malformed packet.");
+                    }
+                };
+
+                var bad = StunMessage("bad");
+                var good = StunMessage("good");
+
+                int extracted = receiver.Feed(bad.Concat(good).ToArray());
+
+                Assert.Equal(2, extracted);
+                Assert.Equal(2, delivered.Count);         // the throw did not abort the framing loop.
+                Assert.Equal(good, delivered[1]);
+                Assert.Equal(0, receiver.CachedOffset);   // fragmentation bookkeeping still ran.
+                Assert.False(receiver.IsClosed);          // receiver survives a bad packet.
+            }
+            finally { socket.Close(); }
+        }
+
+        /// <summary>
+        /// A zero byte receive on a stream socket is the end of stream indication, not an empty datagram.
+        /// Re-arming on it recursed (the re-arm completes synchronously with zero bytes and calls straight
+        /// back into EndReceiveFrom) until the process died with a StackOverflowException, which is not
+        /// catchable. Any TURN over TCP server closing the connection gracefully - idle timeout, restart -
+        /// was enough to trigger it. The receiver must instead go idle, staying open so that the reconnect
+        /// in RtpIceChannel.SendOverTCP can resume it.
+        ///
+        /// The harness caps the re-arm count rather than asserting on it after the fact, so a regression
+        /// fails this test instead of taking the test host down with it.
+        /// </summary>
+        [Fact]
+        public async Task RemoteGracefulClose_StopsReArmingWithoutClosing()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+
+            const int REARM_CAP = 50;
+
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+
+            var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            Socket server = null;
+
+            try
+            {
+                client.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                client.Connect((IPEndPoint)listener.LocalEndpoint);
+                server = listener.AcceptSocket();
+
+                var receiver = new CappedReceiver(client, REARM_CAP);
+                receiver.BeginReceiveFrom();
+                await Task.Delay(100);
+
+                // Graceful close from the far end - the receive completes with zero bytes.
+                server.Shutdown(SocketShutdown.Both);
+                server.Close();
+                server = null;
+                await Task.Delay(500);
+
+                Assert.True(receiver.ReArmCount < REARM_CAP, $"The receive loop re-armed {receiver.ReArmCount} times after the remote closed; it is spinning.");
+                Assert.False(receiver.IsRunningReceive);   // gone idle.
+                Assert.False(receiver.IsClosed);           // but still open so a reconnect can resume it.
+            }
+            finally
+            {
+                server?.Close();
+                client.Close();
+                listener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Counts re-arms and refuses to issue any past the cap, so an unbounded re-arm loop is contained
+        /// instead of overflowing the stack.
+        /// </summary>
+        private sealed class CappedReceiver : IceTcpReceiver
+        {
+            private readonly int _cap;
+            private int _reArmCount;
+
+            public CappedReceiver(Socket socket, int cap) : base(socket) { _cap = cap; }
+
+            public int ReArmCount => _reArmCount;
+
+            public override void BeginReceiveFrom()
+            {
+                if (Interlocked.Increment(ref _reArmCount) > _cap)
+                {
+                    return;
+                }
+
+                base.BeginReceiveFrom();
+            }
         }
 
         [Fact]

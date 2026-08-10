@@ -92,6 +92,13 @@ public class IceTcpReceiver : UdpReceiver
     /// <param name="ar">Contains the results of the receive.</param>
     protected override void EndReceiveFrom(IAsyncResult ar)
     {
+        // Set when a receive completes with zero bytes. On a stream socket that is the end of stream
+        // indication, not an empty datagram as it would be on the UDP receive path, so the receive loop
+        // must not be re-armed. Socket.Connected remains true after the peer's FIN, so the guard in
+        // BeginReceiveFrom does not stop it: the re-arm would complete synchronously with zero bytes and
+        // call straight back into this method, recursing until the process died with a StackOverflowException.
+        bool endOfStream = false;
+
         try
         {
             EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
@@ -103,6 +110,10 @@ public class IceTcpReceiver : UdpReceiver
                 if (bytesRead > 0)
                 {
                     ProcessRawBuffer(bytesRead + m_recvOffset, remoteEP as IPEndPoint);
+                }
+                else
+                {
+                    endOfStream = true;
                 }
             }
             else
@@ -138,6 +149,7 @@ public class IceTcpReceiver : UdpReceiver
                     }
                     else
                     {
+                        endOfStream = true;
                         break;
                     }
                 }
@@ -145,33 +157,40 @@ public class IceTcpReceiver : UdpReceiver
         }
         catch (SocketException resetSockExcp) when (resetSockExcp.SocketErrorCode == SocketError.ConnectionReset)
         {
-            // ConnectionReset is raised when the OS receives an ICMP "port unreachable" message.
-            // On a UDP socket this commonly occurs when:
-            //  - The remote party has not yet opened its RTP socket (e.g. during call setup),
-            //  - The remote endpoint changed (hold, transfer) and the old port is no longer listening,
-            //  - The remote process terminated and the OS rejected a subsequent outgoing packet.
-            // In all cases the local socket is still perfectly usable — the error relates to a
-            // single outbound send, not to the health of the receive path. The receive loop must
-            // continue so that packets arriving from the (possibly new) remote endpoint are not lost.
-            logger.LogWarning(resetSockExcp, "SocketException RtpIceChannel.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
+            // This is a connected TCP socket to a STUN/TURN server, so unlike the UDP case this is a real
+            // RST from the peer rather than a possibly spurious ICMP "port unreachable": the connection is
+            // genuinely gone. It is still not a reason to close the receiver. The socket is reconnected
+            // lazily by RtpIceChannel.SendOverTCP the next time a message needs to go to that ICE server,
+            // and that reconnect only re-arms this receive loop while the receiver has not been closed.
+            // Closing here would make the reconnect permanently unable to resume receiving. Re-arming is
+            // safe because BeginReceiveFrom returns immediately while the socket is not connected.
+            logger.LogWarning(resetSockExcp, "SocketException IceTcpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", resetSockExcp.SocketErrorCode, resetSockExcp.Message);
         }
         catch (SocketException sockExcp)
         {
-            // Other socket errors are also non-fatal for a UDP receive path. The same transient
-            // scenarios described above apply.
-            logger.LogWarning(sockExcp, "SocketException RtpIceChannel.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
+            // Other socket errors are handled the same way and for the same reason: the reconnect in
+            // SendOverTCP is what recovers the connection, and it needs this receiver left open to do it.
+            logger.LogWarning(sockExcp, "SocketException IceTcpReceiver.EndReceiveFrom ({SocketErrorCode}). {ErrorMessage}", sockExcp.SocketErrorCode, sockExcp.Message);
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
         catch (Exception excp)
         {
+            // A non-socket exception here almost always originates from processing a single inbound packet
+            // (e.g. a malformed STUN/TURN packet throwing in the packet-received handler). Closing the
+            // receiver on one bad packet permanently kills the ICE-over-TCP path for the session because
+            // Close sets m_isClosed and the re-arm in the finally block below then becomes a no-op. Log and
+            // drop the offending packet instead and let the receive loop continue, mirroring the
+            // drop-and-continue behaviour of the base UdpReceiver.EndReceiveFrom. Genuine socket failures
+            // are handled by the SocketException/ObjectDisposedException catches above.
             logger.LogError(excp, "Exception IceTcpReceiver.EndReceiveFrom. {ErrorMessage}", excp.Message);
-            Close(excp.Message);
         }
         finally
         {
             m_isRunningReceive = false;
-            if (!m_isClosed)
+            // On end of stream the receiver is left open but idle rather than closed, so the reconnect in
+            // RtpIceChannel.SendOverTCP (which re-arms while !IsRunningReceive && !IsClosed) can resume it.
+            if (!m_isClosed && !endOfStream)
             {
                 BeginReceiveFrom();
             }
@@ -228,7 +247,19 @@ public class IceTcpReceiver : UdpReceiver
                         byte[] packetBuffer = new byte[stunMsgBytes];
                         Buffer.BlockCopy(recvRemainingSegment.Array, recvRemainingSegment.Offset, packetBuffer, 0, stunMsgBytes);
 
-                        CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP, packetBuffer);
+                        // A throw from the packet handler must not escape the framing loop. Unwinding here
+                        // would leave m_recvOffset at the value set above and skip the fragmentation
+                        // bookkeeping at the end of the method, so the next read would be written at a stale
+                        // offset and every subsequent message on the stream would be mis-framed. Log the bad
+                        // packet, keep the framing state consistent and carry on with the rest of the buffer.
+                        try
+                        {
+                            CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP, packetBuffer);
+                        }
+                        catch (Exception excp)
+                        {
+                            logger.LogError(excp, "Exception IceTcpReceiver processing a received packet from {RemoteEndPoint}. {ErrorMessage}", remoteEP, excp.Message);
+                        }
 
                         var newOffset = recvRemainingSegment.Offset + stunMsgBytes;
                         var newCount = recvRemainingSegment.Count - stunMsgBytes;
