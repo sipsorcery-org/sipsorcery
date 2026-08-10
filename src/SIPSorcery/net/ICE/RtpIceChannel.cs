@@ -2367,6 +2367,28 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
+                        m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
+
+                        // Socket.Connected reports the state as of the last I/O operation and stays true
+                        // after the remote end closes the connection gracefully, so it cannot detect a half
+                        // closed connection on its own. The receiver can: a zero byte receive on a stream
+                        // socket is the end of stream.
+                        //
+                        // The connection cannot be recovered in place. A connected socket cannot be reused
+                        // once disconnected (Socket.Connect throws InvalidOperationException after
+                        // Socket.Disconnect regardless of the endpoint), and for a TURN server a new
+                        // connection is a new 5-tuple, so the allocation is gone with the old one and would
+                        // have to be re-established from scratch anyway. Reporting the failure is therefore
+                        // the correct outcome: the caller records it against the ICE server, which takes that
+                        // server out of the running and lets the checklist move to the next one. Without this
+                        // the send below is issued into a dead connection and the failure is only noticed
+                        // indirectly, once the retry and timeout heuristics happen to give up.
+                        if (rtpTcpReceiver != null && rtpTcpReceiver.IsEndOfStream)
+                        {
+                            logger.LogWarning("SendOverTCP the connection to ICE server {Uri} was closed by the remote party.", iceServer?._uri);
+                            return SocketError.NotConnected;
+                        }
+
                         if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint) || !equals(sendSocket.RemoteEndPoint as IPEndPoint, dstEndPoint))
                         {
                             if (sendSocket.Connected)
@@ -2380,7 +2402,6 @@ namespace SIPSorcery.Net
                         }
 
                         //Fix ReceiveFrom logic if any previous exception happens
-                        m_rtpTcpReceiverByUri.TryGetValue(iceServer?._uri, out IceTcpReceiver rtpTcpReceiver);
                         if (rtpTcpReceiver != null && !rtpTcpReceiver.IsRunningReceive && !rtpTcpReceiver.IsClosed)
                         {
                             rtpTcpReceiver.BeginReceiveFrom();
