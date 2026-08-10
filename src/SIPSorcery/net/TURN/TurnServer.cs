@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -186,6 +187,14 @@ namespace SIPSorcery.Net
     ///   <item>Allocation lifetime is not capped — clients can request arbitrarily long lifetimes.</item>
     ///   <item>No ALTERNATE-SERVER support.</item>
     /// </list>
+    /// <para>
+    /// Because of the above this type is marked with
+    /// <see cref="System.Diagnostics.CodeAnalysis.ExperimentalAttribute"/> and using it is a compile
+    /// error until the <c>SIPSORCERY001</c> diagnostic is suppressed, so that the limitations are
+    /// acknowledged rather than discovered in production. To suppress it for a project add
+    /// <c>&lt;NoWarn&gt;$(NoWarn);SIPSORCERY001&lt;/NoWarn&gt;</c> to the csproj, or use
+    /// <c>#pragma warning disable SIPSORCERY001</c> around the usage.
+    /// </para>
     /// <para><strong>Security considerations:</strong></para>
     /// <list type="bullet">
     ///   <item>Default credentials (<c>turn-user</c> / <c>turn-pass</c>) — callers MUST configure
@@ -211,6 +220,7 @@ namespace SIPSorcery.Net
     /// server.Dispose(); // or server.Stop();
     /// </code>
     /// </example>
+    [Experimental("SIPSORCERY001", UrlFormat = "https://github.com/sipsorcery-org/sipsorcery/blob/master/docs/diagnostics/{0}.md")]
     public class TurnServer : IDisposable
     {
         private const int PERMISSION_LIFETIME_SECONDS = 300; // RFC 5766 Section 8
@@ -389,6 +399,13 @@ namespace SIPSorcery.Net
 
             logger.LogInformation("TURN server started on {Address}:{Port} (TCP={Tcp}, UDP={Udp}).",
                 _config.ListenAddress, _config.Port, _config.EnableTcp, _config.EnableUdp);
+
+            // The compile time SIPSORCERY001 diagnostic can be suppressed once and then forgotten, so the
+            // same caveat is repeated here for whoever is looking at the logs of a running process.
+            logger.LogWarning("TURN server is intended for development, testing and small scale or embedded " +
+                "scenarios and is not hardened for production use. It has no nonce validation, no rate limiting " +
+                "or per-IP allocation caps and no TLS/DTLS on the control channel. Use coturn or an equivalent " +
+                "for production deployments.");
         }
 
         /// <summary>

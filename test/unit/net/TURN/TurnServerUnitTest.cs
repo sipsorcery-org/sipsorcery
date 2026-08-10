@@ -24,6 +24,10 @@ using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
 using Xunit;
 
+// TurnServer is marked experimental because it is not hardened for production use. These tests are
+// exercising it deliberately, so the diagnostic is suppressed for this file.
+#pragma warning disable SIPSORCERY001
+
 namespace SIPSorcery.Net.UnitTests
 {
     [Trait("Category", "unit")]
