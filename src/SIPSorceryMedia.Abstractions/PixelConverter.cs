@@ -135,6 +135,7 @@ public class PixelConverter
 
         var outputSize = ySize + uvSize;
         var buffer = bufferWriter.GetSpan(outputSize);
+        buffer.Clear();
 
         for (var row = 0; row < height; row++)
         {
@@ -201,6 +202,7 @@ public class PixelConverter
 
         var outputSize = ySize + uvSize;
         var buffer = bufferWriter.GetSpan(outputSize);
+        buffer.Clear();
 
         // RGB: Byte order is Red, Green, Blue.
         for (var row = 0; row < height; row++)
@@ -268,6 +270,7 @@ public class PixelConverter
 
         var outputSize = ySize + uvSize;
         var buffer = output.GetSpan(outputSize).Slice(0, outputSize);
+        buffer.Clear();
 
         // BGR: Byte order is Blue, Green, Red.
         for (var row = 0; row < height; row++)
@@ -327,6 +330,7 @@ public class PixelConverter
 
         var outputSize = ySize + uvSize;
         var buffer = output.GetSpan(outputSize).Slice(0, outputSize);
+        buffer.Clear();
 
         // BGRA: Byte order is Blue, Green, Red, Alpha.
         for (var row = 0; row < height; row++)
@@ -397,6 +401,7 @@ public class PixelConverter
 
         var outputSize = height * stride;
         var rgb = output.GetSpan(outputSize).Slice(0, outputSize);
+        rgb.Clear();
 
         for (var row = 0; row < height; row++)
         {
@@ -463,6 +468,7 @@ public class PixelConverter
 
         var outputSize = height * stride;
         var bgr = output.GetSpan(outputSize).Slice(0, outputSize);
+        bgr.Clear();
 
         for (var row = 0; row < height; row++)
         {
@@ -527,6 +533,7 @@ public class PixelConverter
 
         var outputSize = height * stride;
         var bgr = output.GetSpan(outputSize).Slice(0, outputSize);
+        bgr.Clear();
 
         for (var row = 0; row < height; row++)
         {
@@ -584,6 +591,7 @@ public class PixelConverter
         }
 
         var i420 = output.GetSpan(outputSize).Slice(0, outputSize);
+        i420.Clear();
 
         // Copy Y plane (same layout in both formats).
         nv12.Slice(0, ySize).CopyTo(i420);
@@ -753,6 +761,7 @@ public class PixelConverter
         }
 
         var nv12 = output.GetSpan(outputSize).Slice(0, outputSize);
+        nv12.Clear();
 
         // Copy Y plane (same layout in both formats).
         i420.Slice(0, ySize).CopyTo(nv12);
