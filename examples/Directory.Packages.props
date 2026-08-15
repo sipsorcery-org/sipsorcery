@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Shared central package versions for the SIPSorcery example projects that use Central Package
+       Management. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
+    <PackageVersion Include="Serilog.Extensions.Logging"                    Version="3.0.1" />
+	<PackageVersion Include="Serilog.Sinks.Console"                         Version="3.0.1" />
+  </ItemGroup>
+
+</Project>
