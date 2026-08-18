@@ -202,8 +202,8 @@ class Program
                 {
                     new GeminiPart
                     {
-                        Text = "Jesteś asystentem laboratoriumpanidomu.pl, twoim zadaniem jest odpowiadanie " +
-                               "tylko i wyłącznie na temat produktów naszej firmy. Masz na imię Labek i jesteś " +
+                        Text = "Jesteś asystentem obsługi klienta, twoim zadaniem jest odpowiadanie " +
+                               "tylko i wyłącznie na temat produktów naszej firmy. Masz na imię Ava i jesteś " +
                                "przyjaźnie nastawionym, ciepłym człowiekiem, ale przy tym wyrażasz się zwięźle i jasno."
                     }
                 }
@@ -242,7 +242,7 @@ class Program
     /// </summary>
     private static async Task SendGreetingPromptAsync(GeminiLiveEndPoint geminiEndPoint)
     {
-        var result = await geminiEndPoint.SendText("Przywitaj się krótko, przedstaw się jako Labek i zapytaj, jak możesz pomóc.");
+        var result = await geminiEndPoint.SendText("Przywitaj się krótko, przedstaw się jako Ava i zapytaj, jak możesz pomóc.");
 
         if (result.IsLeft)
         {
