@@ -1,18 +1,40 @@
 <Project>
 
   <!-- Shared central package versions for the SIPSorcery test projects that use Central Package
-       Management (test/unit and test/integration). This file only declares versions; it is not
-       auto-imported. Each participating project's Directory.Packages.props enables CPM and imports
-       this file so the two test projects stay on identical dependency versions (see issue #1605).
-       Other projects under test/ are intentionally not included. -->
+       Management. This file only declares versions; it is not auto-imported. Each participating
+       project has its own Directory.Packages.props that enables CPM and imports this file, so the
+       participants stay on identical dependency versions (see issue #1605).
+
+       Participating projects are exactly those with a Directory.Packages.props of their own under
+       test/ — currently all of them import this file. To add another, give it the same two-line
+       Directory.Packages.props and drop the Version attributes from its PackageReference items. -->
+  <PropertyGroup>
+    <!-- Lets the security pins at the bottom of this file lift *transitive* versions, which is
+         the only way to reach them: nothing here references them directly. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk"     Version="18.5.1" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="MartinCostello.Logging.XUnit" Version="0.7.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk"     Version="18.9.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console"      Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.XUnit"        Version="3.0.19" />
+	<PackageVersion Include="System.Drawing.Common"      Version="10.0.11" />
     <PackageVersion Include="xunit"                      Version="2.9.3" />
     <PackageVersion Include="xunit.runner.console"       Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio"  Version="2.8.2" />
+    <PackageVersion Include="xunit.runner.visualstudio"  Version="4.0.0" />
+
+    <!-- Transitive security pins, not direct dependencies — same chain as in
+         src/Directory.Packages.props:
+             SIPSorcery -> Makaretu.Dns.Multicast 0.27.0 -> IPNetwork2 2.1.2
+                        -> NETStandard.Library 1.6.1 -> System.Net.Http 4.3.0
+         Both carry High advisories (GHSA-7jgj-8wvc-jh57, GHSA-cmhx-cq75-c4mj) and
+         Makaretu.Dns.Multicast 0.27.0 is already the newest release, so these lift the resolved
+         transitive versions to the patched ones instead. -->
+    <PackageVersion Include="System.Net.Http"            Version="4.3.4" />
+    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
 </Project>

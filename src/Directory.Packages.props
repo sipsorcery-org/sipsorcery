@@ -12,28 +12,52 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="BouncyCastle.Cryptography"                     Version="2.6.2" />
-    <PackageVersion Include="Concentus"                                     Version="2.2.2" />
+    <PackageVersion Include="BouncyCastle.Cryptography"                     Version="2.7" />
+    <PackageVersion Include="CommandLineParser"                             Version="2.9.1" />
+	<PackageVersion Include="Concentus"                                     Version="2.2.2" />
     <PackageVersion Include="DnsClient"                                     Version="1.8.0" />
     <PackageVersion Include="FFmpeg.AutoGen"                                Version="8.1.0" />
     <PackageVersion Include="LanguageExt.Core"                              Version="4.4.9" />
     <PackageVersion Include="Livekit.Server.Sdk.Dotnet"                     Version="1.2.2" />
     <PackageVersion Include="Makaretu.Dns.Multicast"                        Version="0.27.0" />
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
-    <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.40.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.10" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub"                   Version="10.0.203" />
-    <PackageVersion Include="NAudio"                                        Version="2.3.0" />
-    <PackageVersion Include="Polyfill"                                      Version="11.0.1" />
+    <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console"          Version="10.0.11" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub"                   Version="10.0.400" />
+    <PackageVersion Include="NAudio"                                        Version="3.0.0" />
+    <!-- NAudio 3.0 ships two asset groups: net9.0 and net9.0-windows10.0.19041. A project on a
+         *lower* Windows platform version than 19041 silently resolves the plain net9.0 group,
+         which pulls NAudio.Core only — so WaveOutEvent/WaveInEvent (NAudio.WinMM) disappear and
+         the build fails with CS0246. NAudio.WinMM itself targets net9.0-windows7.0, so referencing
+         it directly restores those types without forcing every consumer up to 19041. -->
+    <PackageVersion Include="NAudio.WinMM"                                  Version="3.0.0" />
+    <PackageVersion Include="Polyfill"                                      Version="11.2.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging"                    Version="10.0.0" />
+	<PackageVersion Include="Serilog.Sinks.Console"                         Version="6.1.1" />
     <PackageVersion Include="SIPSorcery.WebSocketSharp"                     Version="0.0.1" />
-    <PackageVersion Include="SkiaSharp"                                     Version="2.88.8" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux"                  Version="2.88.8" />
-    <PackageVersion Include="System.CommandLine"                            Version="2.0.0" />
+	<PackageVersion Include="SIPSorceryMedia.Encoders"                      Version="10.0.4" />
+    <PackageVersion Include="SkiaSharp"                                     Version="4.151.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux"                  Version="4.151.1" />
+    <PackageVersion Include="System.CommandLine"                            Version="2.0.11" />
+	<PackageVersion Include="System.Drawing.Common"                         Version="10.0.11" />
     <PackageVersion Include="System.Memory"                                 Version="4.6.3" />
+    <!-- Transitive security pins, not direct dependencies. Nothing here references these; they
+         arrive four levels down:
+             SIPSorcery -> Makaretu.Dns.Multicast 0.27.0 -> IPNetwork2 2.1.2
+                        -> NETStandard.Library 1.6.1 -> System.Net.Http 4.3.0
+         NETStandard.Library 1.6.1 is the netstandard1.x meta-package and drags in the whole
+         System.* 4.3.0 family, two of which carry High advisories (GHSA-7jgj-8wvc-jh57 and
+         GHSA-cmhx-cq75-c4mj). Makaretu.Dns.Multicast 0.27.0 is already the newest release, so
+         there is no upstream fix to take.
+         CentralPackageTransitivePinningEnabled (above) lets these entries lift the resolved
+         transitive versions to the patched ones without adding real references. Pinning
+         IPNetwork2 forward instead would cut the chain at its source, but 2.1.2 -> 4.x is a major
+         jump that Makaretu was never compiled against. -->
+    <PackageVersion Include="System.Net.Http"                               Version="4.3.4" />
+    <PackageVersion Include="System.Text.RegularExpressions"                Version="4.3.1" />
     <PackageVersion Include="System.Net.Security"                           Version="4.3.2" />
     <PackageVersion Include="System.Net.WebSockets.Client"                  Version="4.3.2" />
 
