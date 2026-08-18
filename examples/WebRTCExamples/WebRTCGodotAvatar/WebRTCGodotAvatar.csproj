@@ -26,8 +26,8 @@
     <ProjectReference Include="..\..\..\src\SIPSorceryMedia.FFmpeg\SIPSorceryMedia.FFmpeg.csproj" />
     <!-- Wires SIPSorcery's internal logging (ICE agent, DTLS, RTP) to the console - without
          this, SIPSorcery.LogFactory defaults to a null logger and ICE failures are invisible. -->
-    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.2" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" VersionOverride="9.0.2" />
+    <PackageReference Include="Serilog.Sinks.Console" VersionOverride="6.0.0" />
     <!-- The shared avatar speech/AI pipeline (TTS/STT/LLM + the IAvatarMouth seam), the same
          library the WebRTCMaxHeadroom demo uses. sherpa-onnx + LLamaSharp come transitively. -->
     <ProjectReference Include="..\AvatarPipeline\AvatarPipeline.csproj" />

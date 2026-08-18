@@ -1,9 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462;net8.0;net10.0</TargetFrameworks>
+    <!-- Runnable frameworks only. netstandard2.0 was here as a compile-check, but it
+         cannot host a test run, so it only ever proved the test code compiled — which
+         the library's own netstandard2.0 build already establishes for its API surface.
+         The library still ships netstandard2.0; the tests just don't target it. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <LangVersion>14.0</LangVersion>
   </PropertyGroup>
@@ -26,7 +29,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup>

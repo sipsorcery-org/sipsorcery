@@ -2,6 +2,10 @@
   
   <ItemGroup>
     <PackageReference Include="NAudio" />
+    <!-- WaveOutEvent / WaveInEvent. Explicit because NAudio 3.0's meta-package only pulls
+         WinMM in via its net9.0-windows10.0.19041 group, which this project's platform
+         version (17763) cannot select. See the note in Directory.Packages.props. -->
+    <PackageReference Include="NAudio.WinMM" />
   </ItemGroup>
   
   <ItemGroup>
