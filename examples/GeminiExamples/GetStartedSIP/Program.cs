@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LanguageExt;
 using LanguageExt.Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -53,6 +54,15 @@ class Program
 
     private static readonly ConcurrentDictionary<string, SipToGeminiCall> _calls = new();
 
+    // Settings are read from the project's user secrets (dotnet user-secrets set GEMINI_API_KEY ...)
+    // as well as process environment variables. Environment variables are added last so they take
+    // precedence, keeping the documented "set GEMINI_API_KEY=..." workflow working unchanged.
+    private static IConfiguration BuildConfiguration() =>
+        new ConfigurationBuilder()
+            .AddUserSecrets<Program>(optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
     static async Task Main()
     {
         // Windows' console defaults to a legacy codepage that can't represent Polish diacritics
@@ -71,20 +81,21 @@ class Program
 
         Log.Logger.Information("SIP-to-Gemini Live Demo Program");
 
-        var geminiApiKey = Environment.GetEnvironmentVariable(ENV_VAR_GEMINI_API_KEY)
-            ?? Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+        var config = BuildConfiguration();
+
+        var geminiApiKey = config[ENV_VAR_GEMINI_API_KEY] ?? config["GOOGLE_API_KEY"];
         if (string.IsNullOrWhiteSpace(geminiApiKey))
         {
-            Log.Logger.Error("Please provide your Gemini API key as an environment variable. For example: set {EnvVar}=<your gemini api key>", ENV_VAR_GEMINI_API_KEY);
+            Log.Logger.Error("Please provide your Gemini API key as a user secret (dotnet user-secrets set {EnvVar} <your gemini api key>) or as an environment variable (set {EnvVar}=<your gemini api key>).", ENV_VAR_GEMINI_API_KEY);
             return;
         }
 
-        var sipServer = Environment.GetEnvironmentVariable(ENV_VAR_SIP_SERVER);
-        var sipUsername = Environment.GetEnvironmentVariable(ENV_VAR_SIP_USERNAME);
-        var sipPassword = Environment.GetEnvironmentVariable(ENV_VAR_SIP_PASSWORD);
+        var sipServer = config[ENV_VAR_SIP_SERVER];
+        var sipUsername = config[ENV_VAR_SIP_USERNAME];
+        var sipPassword = config[ENV_VAR_SIP_PASSWORD];
         if (string.IsNullOrWhiteSpace(sipServer) || string.IsNullOrWhiteSpace(sipUsername) || string.IsNullOrWhiteSpace(sipPassword))
         {
-            Log.Logger.Error("Please provide the SIP server, username and password as environment variables: {ServerVar}, {UsernameVar}, {PasswordVar}.", ENV_VAR_SIP_SERVER, ENV_VAR_SIP_USERNAME, ENV_VAR_SIP_PASSWORD);
+            Log.Logger.Error("Please provide the SIP server, username and password as user secrets or environment variables: {ServerVar}, {UsernameVar}, {PasswordVar}.", ENV_VAR_SIP_SERVER, ENV_VAR_SIP_USERNAME, ENV_VAR_SIP_PASSWORD);
             return;
         }
 
@@ -337,7 +348,13 @@ class Program
                     VoiceConfig = new GeminiVoiceConfig
                     {
                         PrebuiltVoiceConfig = new GeminiPrebuiltVoiceConfig { VoiceName = GeminiVoiceEnum.Puck }
-                    }
+                    },
+                    // Pin the recognition language. Automatic language ID is unstable on
+                    // narrowband (8kHz G.711) telephony audio: short Polish utterances came back
+                    // transcribed as Italian, Spanish and Japanese even though the phonetics were
+                    // recognised correctly. A system instruction does not fix this - it steers the
+                    // model's behaviour, not the audio understanding layer that picks the language.
+                    LanguageCode = "pl-PL"
                 }
             },
             SystemInstruction = new GeminiContent
@@ -346,12 +363,23 @@ class Program
                 {
                     new GeminiPart
                     {
-                        Text = "Rozmawiasz z kimś przez telefon, więc wypowiadaj się krótko i klarownie. " +
+                        Text = "Ta rozmowa odbywa się WYŁĄCZNIE po polsku. Rozmówca zawsze mówi po polsku, nawet jeśli nagranie jest niewyraźne lub ciche. Nigdy nie interpretuj jego wypowiedzi jako innego języka. Nigdy nie odpowiadaj w innym języku niż polski. Jeśli wypowiedź rozmówcy jest niezrozumiała, urwana albo nie brzmi jak sensowne polskie zdanie — poproś o powtórzenie. Nigdy nie domyślaj się, o co chodziło. Rozmawiasz z kimś przez telefon, więc wypowiadaj się krótko i klarownie. " +
                                "Jesteś asystentem laboratoriumpanidomu.pl, twoim zadaniem jest odpowiadanie " +
                                "tylko i wyłącznie na temat produktów naszej firmy. Masz na imię Labek i jesteś " +
                                "przyjaźnie nastawionym, ciepłym człowiekiem, ale przy tym wyrażasz się zwięźle i jasno.Dane odnośnie produktów: produkt: \"D-LUX płyn do czyszczenia fug 1 L\"\r\nmarka: \"D-LUX (Laboratorium Pani Domu)\"\r\ntyp: \"Silny koncentrat kwasowy do czyszczenia bez szorowania\"\r\nsklad_kluczowy: \"Kwas azotowy, kwas fosforowy, niejonowe środki powierzchniowo czynne <5%\"\r\nwydajnosc: \"ok. 20 m² / 1 L\"\r\n\r\nzastosowanie:\r\n  - \"Fugi cementowe (podłogowe i ścienne)\"\r\n  - \"Usuwanie kamienia z ceramiki sanitarnej (np. sedes)\"\r\n  - \"Brak odbarwiania i wypłukiwania spoin\"\r\n\r\nprzeciwwskazania_bezwzgledne:\r\n  - \"Powierzchnie wrażliwe na kwasy: kamień naturalny (marmur, trawertyn, granit itp.)\"\r\n  - \"Stosowanie na całej powierzchni naraz (należy robić etapami po 2 m²)\"\r\n  - \"Łączenie z innymi środkami chemicznymi (zwłaszcza z chlorem/innymi płynami do WC)\"\r\n\r\ninstrukcja_uzycia:\r\n  krok_1: \"Zwilżyć fugę wodą.\"\r\n  krok_2: \"Nanieść płyn (rozcieńczenie 1:1 lub koncentrat przy trudnym brudzie).\"\r\n  krok_3: \"Odczekać 30–45 sekund (maksymalnie 60 s; preparat zacznie się pienić).\"\r\n  krok_4: \"Zetrzeć brud ściereczką lub ręcznikiem papierowym (bez szorowania).\"\r\n  krok_5: \"Przemyć podłogę wodą z płynem uniwersalnym w celu neutralizacji kwasu.\"\r\n\r\nzasady_bezpieczenstwa_dla_bota:\r\n  - \"Zawsze przypominaj o rękawicach ochronnych i wietrzeniu pomieszczenia.\"\r\n  - \"Zalecaj próbę w mało widocznym miejscu.\"\r\n  - \"Przypominaj o neutralizacji podłogi wodą po zabiegu.\""
 
                     }
+                }
+            },
+            // The most misrecognised turns were the shortest ones ("Nie, dziekuje", ~1s). A turn
+            // that brief gives language identification very little to work with, and clipping its
+            // onset with VAD removes a large share of what is left. Pad the start of each detected
+            // turn so the first phoneme always survives.
+            RealtimeInputConfig = new GeminiRealtimeInputConfig
+            {
+                AutomaticActivityDetection = new GeminiAutomaticActivityDetection
+                {
+                    PrefixPaddingMs = 300
                 }
             },
             InputAudioTranscription = new GeminiAudioTranscriptionConfig(),

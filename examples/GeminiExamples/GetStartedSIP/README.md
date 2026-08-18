@@ -24,7 +24,21 @@ bridges the call audio to Google's [Gemini Live API](https://ai.google.dev/gemin
 - A SIP PBX (e.g. Asterisk) with an extension you can register as
 - A Gemini API key
 
-## Environment variables
+## Configuration
+
+Settings are read from user secrets first, then environment variables (which take precedence).
+
+User secrets (recommended — nothing lands in your shell history or the repo):
+
+```bash
+dotnet user-secrets set GEMINI_API_KEY your_gemini_api_key
+dotnet user-secrets set ASTERISK_SIP_SERVER sip:192.168.1.7
+dotnet user-secrets set ASTERISK_SIP_USERNAME your_sip_username
+dotnet user-secrets set ASTERISK_SIP_PASSWORD your_sip_password
+dotnet run
+```
+
+Or environment variables:
 
 ```bash
 set GEMINI_API_KEY=your_gemini_api_key
@@ -34,9 +48,9 @@ set ASTERISK_SIP_PASSWORD=your_sip_password
 dotnet run
 ```
 
-All four environment variables are required — the app exits with an error if any is missing.
-**Do not hardcode the password (or API key) in source** — always pass them via environment
-variables, and don't commit them.
+All four settings are required — the app exits with an error if any is missing.
+**Do not hardcode the password (or API key) in source** — always supply them via user secrets or
+environment variables, and don't commit them.
 
 ## Limitations
 
