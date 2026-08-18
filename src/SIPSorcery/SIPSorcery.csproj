@@ -77,7 +77,8 @@
     <RepositoryBranch>master</RepositoryBranch>
     <PolyArgumentExceptions>true</PolyArgumentExceptions>
     <PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-    <PackageReleaseNotes>-v10.0.15: Vulnerabiliy fixes for GHSA-jwjp-4649-v8jp, GHSA-pfvm-w89x-94jw and GHSA-mwf8-6m4x-pgmm. TurnServer marked experimental (diagnostic SIPSORCERY001); it is intended for development and testing, not production. Suppress the diagnostic to continue using it.
+    <PackageReleaseNotes>-v10.0.16: The SIP TLS channel now defaults to validating remote certificates. This is a BREAKING change if you use self signed certificates and you will neeed to explicitly set the bypass valdiation property on the channel to true.
+-v10.0.15: Vulnerabiliy fixes for GHSA-jwjp-4649-v8jp, GHSA-pfvm-w89x-94jw and GHSA-mwf8-6m4x-pgmm. TurnServer marked experimental (diagnostic SIPSORCERY001); it is intended for development and testing, not production. Suppress the diagnostic to continue using it.
 -v10.0.13: Fix license file.
 -v10.0.12: Fix for SCTP packet zero length infinite loop vulnerability.
 -v10.0.11: Add support for additional video codecs (VP9, AV1, H265). WHIP and WHEP support. Bug fixes.
@@ -109,9 +110,9 @@
 -v8.0.1-pre: Performance improvements (thanks to @weltmeyer). Add ECDSA as default option for WebRTC DTLS.
 -v8.0.0: RTP header extension improvements (thanks to @ChristopheI). Major version to 8 to reflect highest .net runtime supported.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <Version>10.0.15</Version>
-    <AssemblyVersion>10.0.15</AssemblyVersion>
-    <FileVersion>10.0.15</FileVersion>
+    <Version>10.0.16</Version>
+    <AssemblyVersion>10.0.16</AssemblyVersion>
+    <FileVersion>10.0.16</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="SourceLink">
