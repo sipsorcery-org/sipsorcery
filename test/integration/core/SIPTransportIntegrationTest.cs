@@ -363,8 +363,10 @@ namespace SIPSorcery.SIP.IntegrationTests
                 logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
                 var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 0);
+                serverChannel.BypassCertificateValidation = true;
                 serverChannel.DisableLocalTCPSocketsCheck = true;
                 var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.IPv6Loopback, 0));
+                clientChannel.BypassCertificateValidation = true;
                 clientChannel.DisableLocalTCPSocketsCheck = true;
 
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); }, cancelServer.Token);
@@ -434,8 +436,10 @@ namespace SIPSorcery.SIP.IntegrationTests
                 logger.LogDebug("Server Certificate loaded from file, Subject={Subject}, valid={Valid}.", serverCertificate.Subject, verifyCert);
 
                 var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+                serverChannel.BypassCertificateValidation = true;
                 serverChannel.DisableLocalTCPSocketsCheck = true;
                 var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
+                clientChannel.BypassCertificateValidation = true;
                 clientChannel.DisableLocalTCPSocketsCheck = true;
 
                 var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); }, cancelServer.Token);
@@ -709,10 +713,12 @@ namespace SIPSorcery.SIP.IntegrationTests
             serverCertificate.Verify();
 
             var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+            serverChannel.BypassCertificateValidation = true;
             serverChannel.DisableLocalTCPSocketsCheck = true;
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); }, cancelServer.Token);
 
             var tlsClientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
+            tlsClientChannel.BypassCertificateValidation = true;
             tlsClientChannel.DisableLocalTCPSocketsCheck = true;
 
             var tcpConnection = new TcpClient(new IPEndPoint(IPAddress.Loopback, 0));
