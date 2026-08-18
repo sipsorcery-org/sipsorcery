@@ -9,6 +9,10 @@
     <RootNamespace>GetStartedNetFramework</RootNamespace>
     <AssemblyName>GetStartedNetFramework</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <!-- Legacy non-SDK project on net472, with its own era-appropriate package pins
+         (Serilog 2.x, NAudio 1.x). Deliberately outside examples/Directory.Packages.props:
+         centralising it would mean five VersionOverrides and buy nothing. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>

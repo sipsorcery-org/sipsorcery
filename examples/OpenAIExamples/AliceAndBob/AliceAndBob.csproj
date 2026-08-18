@@ -12,12 +12,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LanguageExt.Core" Version="4.4.9" />
-    <PackageReference Include="MathNet.Filtering" Version="0.7.0" />
-    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <PackageReference Include="SharpGL.WinForms" Version="3.1.1" />
+    <PackageReference Include="LanguageExt.Core" />
+    <PackageReference Include="MathNet.Filtering" />
+    <PackageReference Include="MathNet.Numerics" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="SharpGL.WinForms" />
   </ItemGroup>
 
   <ItemGroup>

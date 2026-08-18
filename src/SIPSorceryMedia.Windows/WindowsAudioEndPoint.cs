@@ -54,7 +54,7 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Audio render device.
         /// </summary>
-        private WaveOutEvent _waveOutEvent;
+        private WaveOut _waveOutEvent;
 
         /// <summary>
         /// Buffer for audio samples to be rendered.
@@ -64,7 +64,7 @@ namespace SIPSorceryMedia.Windows
         /// <summary>
         /// Audio capture device.
         /// </summary>
-        private WaveInEvent _waveInEvent;
+        private WaveIn _waveInEvent;
 
         private IAudioEncoder _audioEncoder;
         private MediaFormatManager<AudioFormat> _audioFormatManager;
@@ -284,7 +284,7 @@ namespace SIPSorceryMedia.Windows
                     channels);
 
                 // Playback device.
-                _waveOutEvent = new WaveOutEvent();
+                _waveOutEvent = new WaveOut();
                 _waveOutEvent.DeviceNumber = audioOutDeviceIndex;
                 _waveProvider = new BufferedWaveProvider(_waveSinkFormat);
                 _waveProvider.DiscardOnBufferOverflow = true;
@@ -299,9 +299,9 @@ namespace SIPSorceryMedia.Windows
 
         private void InitCaptureDevice(int audioInDeviceIndex, int audioSourceSampleRate, int audioSourceChannels)
         {
-            if (WaveInEvent.DeviceCount > 0)
+            if (WaveIn.DeviceCount > 0)
             {
-                if (WaveInEvent.DeviceCount > audioInDeviceIndex)
+                if (WaveIn.DeviceCount > audioInDeviceIndex)
                 {
                     if (_waveInEvent != null)
                     {
@@ -314,7 +314,7 @@ namespace SIPSorceryMedia.Windows
                            DEVICE_BITS_PER_SAMPLE,
                            audioSourceChannels);
 
-                    _waveInEvent = new WaveInEvent();
+                    _waveInEvent = new WaveIn();
 
                     // Note NAudio recommends a buffer size of 100ms but codecs like Opus can only handle 20ms buffers.
                     _waveInEvent.BufferMilliseconds = DEFAULT_PLAYBACK_BUFFER_MILLISECONDS;
@@ -328,8 +328,8 @@ namespace SIPSorceryMedia.Windows
                 {
                     logger.LogWarning("The requested audio input device index {AudioInputDeviceIndex} exceeds the maximum index of {MaximumDeviceIndex}.",
                         audioInDeviceIndex,
-                        WaveInEvent.DeviceCount - 1);
-                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveInEvent.DeviceCount - 1}.");
+                        WaveIn.DeviceCount - 1);
+                    OnAudioSourceError?.Invoke($"The requested audio input device index {audioInDeviceIndex} exceeds the maximum index of {WaveIn.DeviceCount - 1}.");
                 }
             }
             else
