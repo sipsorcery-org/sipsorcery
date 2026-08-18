@@ -10,6 +10,7 @@
 // 13 Mar 2009	Aaron Clauson             Created, Hobart, Australia.
 // 16 Oct 2019  Aaron Clauson             Added IPv6 support.
 // 4 July 2022  Jean-Christophe Grondin   Added custom server certificate callback
+// 18 Aug 2026  Aaron Clauson             Changed bypass remote certificate validation default from true to false.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -42,7 +43,7 @@ namespace SIPSorcery.SIP
         /// Allows to ignore any ssl policy errors regarding the received certificate.
         /// Only applicable when no custom remote certificate validation is provided.
         /// </summary>
-        public bool BypassCertificateValidation { get; set; } = true;
+        public bool BypassCertificateValidation { get; set; } = false;
 
         public SIPTLSChannel(IPEndPoint endPoint, bool useDualMode = false, RemoteCertificateValidationCallback remoteCertificateValidation = null)
             : base(endPoint, SIPProtocolsEnum.tls, false, useDualMode)
