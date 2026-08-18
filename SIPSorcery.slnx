@@ -14,6 +14,7 @@
     <Project Path="test/FFmpegWebRtcReceiver/FFmpegWebRTCReceiver.csproj" />
     <Project Path="test/integration/SIPSorcery.IntegrationTests.csproj" />
     <Project Path="test/SIPSorcery.Cli.UnitTest/SIPSorcery.Cli.UnitTest.csproj" />
+    <Project Path="test/SIPSorcery.Gemini.Realtime.UnitTest/SIPSorcery.Gemini.Realtime.UnitTests.csproj" />
     <Project Path="test/SIPSorcery.OpenAI.Realtime.UnitTest/SIPSorcery.OpenAI.Realtime.UnitTests.csproj" />
     <Project Path="test/SIPSorcery.VP8.TestVectors/SIPSorcery.VP8.TestVectors.csproj" />
     <Project Path="test/SIPSorcery.VP8.UnitTest/SIPSorcery.VP8.UnitTest.csproj" />
@@ -32,6 +33,10 @@
   </Folder>
   <Folder Name="/examples/Miscellaneous/">
     <Project Path="examples/Miscellaneous/SctpClientTestConsole/SctpClientTestConsole.csproj" />
+  </Folder>
+  <Folder Name="/examples/Gemini/">
+    <Project Path="examples/GeminiExamples/GetStarted/GetStarted.csproj" />
+    <Project Path="examples/GeminiExamples/GetStartedSIP/GetStartedSIP.csproj" />
   </Folder>
   <Folder Name="/examples/OpenAI/">
     <Project Path="examples/OpenAIExamples/AliceAndBob/AliceAndBob.csproj" />
@@ -139,6 +144,7 @@
     <Project Path="src/SIPSorcery.Cli/SIPSorcery.Cli.csproj" />
     <Project Path="src/SIPSorcery.Cli.Common/SIPSorcery.Cli.Common.csproj" />
     <Project Path="src/SIPSorcery.Diagnostics/SIPSorcery.Diagnostics.csproj" />
+    <Project Path="src/SIPSorcery.Gemini.Realtime/SIPSorcery.Gemini.Realtime.csproj" />
     <Project Path="src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj" />
     <Project Path="src/SIPSOrcery.VP8/SIPSorcery.VP8.csproj" />
     <Project Path="src/SIPSorcery/SIPSorcery.csproj" />
