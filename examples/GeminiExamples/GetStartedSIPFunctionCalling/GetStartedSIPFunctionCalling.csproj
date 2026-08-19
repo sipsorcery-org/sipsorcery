@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-    <UserSecretsId>64326428-37c2-434a-a6a4-543185daa955</UserSecretsId>
+    <UserSecretsId>ee3a09ce-8fcc-4d7c-98de-e8d8e2cc7398</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

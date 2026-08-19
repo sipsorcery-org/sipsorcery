@@ -37,6 +37,7 @@
   <Folder Name="/examples/Gemini/">
     <Project Path="examples/GeminiExamples/GetStarted/GetStarted.csproj" />
     <Project Path="examples/GeminiExamples/GetStartedSIP/GetStartedSIP.csproj" />
+    <Project Path="examples/GeminiExamples/GetStartedSIPFunctionCalling/GetStartedSIPFunctionCalling.csproj" />
   </Folder>
   <Folder Name="/examples/OpenAI/">
     <Project Path="examples/OpenAIExamples/AliceAndBob/AliceAndBob.csproj" />
