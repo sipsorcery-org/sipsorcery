@@ -1015,22 +1015,33 @@ namespace SIPSorceryMedia.FFmpeg
                     logger.LogTrace("Negotiating pixel format for codec [{name}].", GetNameString(_encoderContext->codec->name));
                 }
 
-                var fmts = _encoderContext->codec->pix_fmts;
-                while (*fmts != AVPixelFormat.AV_PIX_FMT_NONE
-                    && sourcePixFmts?.Length > 0 && !sourcePixFmts.Contains(*fmts))
+                var supportedPixFmts = GetSupportedPixelFormats(_encoderContext, _encoderContext->codec);
+                if (supportedPixFmts.Length == 0)
                 {
-                    if (logger.IsEnabled(LogLevel.Trace))
-                    {
-                        logger.LogTrace("Skipping unsupported pixel format {fmt}.", *fmts);
-                    }
-                    fmts++;
+                    throw new ApplicationException($"Encoder {GetNameString(_encoderContext->codec->name)} does not report any supported pixel formats.");
                 }
 
+                // If no source formats were supplied, or none of them are supported, the encoder's
+                // preferred format, which is the first one it reports, is used.
                 var ret = false;
-                fmt = *fmts;
-                if (fmt == AVPixelFormat.AV_PIX_FMT_NONE)
+                fmt = supportedPixFmts[0];
+
+                if (sourcePixFmts?.Length > 0)
                 {
-                    fmt = _encoderContext->codec->pix_fmts[0];
+                    foreach (var supportedPixFmt in supportedPixFmts)
+                    {
+                        if (sourcePixFmts.Contains(supportedPixFmt))
+                        {
+                            fmt = supportedPixFmt;
+                            ret = true;
+                            break;
+                        }
+
+                        if (logger.IsEnabled(LogLevel.Trace))
+                        {
+                            logger.LogTrace("Skipping unsupported pixel format {fmt}.", supportedPixFmt);
+                        }
+                    }
                 }
                 else
                 {
