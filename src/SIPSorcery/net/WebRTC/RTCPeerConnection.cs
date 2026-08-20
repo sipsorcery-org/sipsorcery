@@ -319,6 +319,36 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCDataChannel> ondatachannel;
 
+        private Func<IPEndPoint, IPEndPoint> _remoteEndpointTranslator;
+
+        /// <summary>
+        /// Optional hook to normalize the source endpoint of received traffic before it's
+        /// compared against ICE candidates and the nominated pair. Used to reconcile the
+        /// address an in-process TURN relay socket uses when sending to a local destination
+        /// (a local interface IP) with the advertised relay address (typically a public IP
+        /// in <c>XOR-RELAYED-ADDRESS</c>).
+        ///
+        /// The delegate receives the observed source endpoint and returns either a
+        /// translated endpoint (when it recognizes the source as a known relay socket)
+        /// or <c>null</c> / the input unchanged when no translation applies.
+        ///
+        /// Setting this property also propagates the value to the underlying
+        /// <see cref="RtpIceChannel"/> so peer-reflexive candidate creation honours the
+        /// same mapping. When unset, behaviour is identical to prior versions.
+        /// </summary>
+        public Func<IPEndPoint, IPEndPoint> RemoteEndpointTranslator
+        {
+            get => _remoteEndpointTranslator;
+            set
+            {
+                _remoteEndpointTranslator = value;
+                if (_rtpIceChannel != null)
+                {
+                    _rtpIceChannel.RemoteEndpointTranslator = value;
+                }
+            }
+        }
+
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
@@ -632,9 +662,39 @@ namespace SIPSorcery.Net
         /// <param name="init">The answer/offer SDP from the remote party.</param>
         public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
         {
-            remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+            SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
-            SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+            // The remote DTLS fingerprint is checked before any session state is updated. Once the DTLS
+            // handshake has completed the remote peer's certificate is pinned for the lifetime of the
+            // connection. Changing the certificate requires a new DTLS handshake, and per RFC 8842 an ICE
+            // restart to go with it, neither of which are currently supported. The offer is rejected
+            // instead and it is left to the remote peer to decide whether to close the connection.
+            var fingerprintResult = GetRemoteDtlsFingerprint(remoteSdp, out string remoteFingerprintAttribute);
+            RTCDtlsFingerprint remoteFingerprint = null;
+
+            if (fingerprintResult == SetDescriptionResultEnum.DtlsFingerprintMissing)
+            {
+                logger.LogWarning("The DTLS fingerprint was missing from the remote party's session description.");
+                return SetDescriptionResultEnum.DtlsFingerprintMissing;
+            }
+            else if (fingerprintResult == SetDescriptionResultEnum.DtlsFingerprintConflict)
+            {
+                logger.LogWarning("The remote party's session description contained media announcements with different DTLS fingerprints. Remote description rejected.");
+                return SetDescriptionResultEnum.DtlsFingerprintConflict;
+            }
+            else if (!RTCDtlsFingerprint.TryParse(remoteFingerprintAttribute.Trim().ToLower(), out remoteFingerprint))
+            {
+                logger.LogWarning("The DTLS fingerprint was invalid or not supported.");
+                return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
+            }
+            else if (IsDtlsNegotiationComplete && !IsRemoteDtlsFingerprintMatch(remoteFingerprint))
+            {
+                logger.LogWarning("The DTLS fingerprint in the remote party's session description did not match the certificate from the completed DTLS handshake, expected {ExpectedFingerprint}, actual {RemoteFingerprint}. Remote description rejected.",
+                    RemotePeerDtlsFingerprint, remoteFingerprint);
+                return SetDescriptionResultEnum.DtlsFingerprintChanged;
+            }
+
+            remoteDescription = new RTCSessionDescription { type = init.type, sdp = remoteSdp };
 
             // Need to store uri/id of know extensions
             _rtpExtensionsUsed ??= new Dictionary<string, int>();
@@ -669,16 +729,14 @@ namespace SIPSorcery.Net
             {
                 string remoteIceUser = remoteSdp.IceUfrag;
                 string remoteIcePassword = remoteSdp.IcePwd;
-                string dtlsFingerprint = remoteSdp.DtlsFingerprint;
                 IceRolesEnum? remoteIceRole = remoteSdp.IceRole;
 
                 foreach (var ann in remoteSdp.Media)
                 {
-                    if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null || remoteIceRole == null)
+                    if (remoteIceUser == null || remoteIcePassword == null || remoteIceRole == null)
                     {
                         remoteIceUser = remoteIceUser ?? ann.IceUfrag;
                         remoteIcePassword = remoteIcePassword ?? ann.IcePwd;
-                        dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
                         remoteIceRole = remoteIceRole ?? ann.IceRole;
                     }
 
@@ -690,7 +748,6 @@ namespace SIPSorcery.Net
                         if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
                             ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
                         {
-                            dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
                             remoteIceRole = remoteIceRole ?? remoteSdp.IceRole;
                         }
                         else
@@ -724,24 +781,7 @@ namespace SIPSorcery.Net
                     _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
-                if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
-                {
-                    dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
-                    if (RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
-                    {
-                        RemotePeerDtlsFingerprint = remoteFingerprint;
-                    }
-                    else
-                    {
-                        logger.LogWarning("The DTLS fingerprint was invalid or not supported.");
-                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
-                    }
-                }
-                else
-                {
-                    logger.LogWarning("The DTLS fingerprint was missing from the remote party's session description.");
-                    return SetDescriptionResultEnum.DtlsFingerprintMissing;
-                }
+                RemotePeerDtlsFingerprint = remoteFingerprint;
 
                 // All browsers seem to have gone to trickling ICE candidates now but just
                 // in case one or more are given we can start the STUN dance immediately.
@@ -792,6 +832,68 @@ namespace SIPSorcery.Net
             }
 
             return setResult;
+        }
+
+        /// <summary>
+        /// Gets the DTLS fingerprint attribute from a remote session description. The session level
+        /// attribute is used if present with the media announcements used as a fallback.
+        /// </summary>
+        /// <remarks>
+        /// A single DTLS association is used for the whole session so every fingerprint in the session
+        /// description has to agree. A media announcement asking for a different certificate cannot be
+        /// honoured and is rejected rather than silently discarded. Announcements with a port of zero are
+        /// ignored, they have been rejected by the remote party and have no DTLS association of their own.
+        /// </remarks>
+        /// <param name="remoteSdp">The remote session description to extract the fingerprint from.</param>
+        /// <param name="fingerprint">If successful the fingerprint attribute that applies to the session.</param>
+        /// <returns>OK if a single fingerprint was found, otherwise the reason it could not be used.</returns>
+        private static SetDescriptionResultEnum GetRemoteDtlsFingerprint(SDP remoteSdp, out string fingerprint)
+        {
+            fingerprint = !string.IsNullOrWhiteSpace(remoteSdp.DtlsFingerprint) ? remoteSdp.DtlsFingerprint : null;
+
+            foreach (var ann in remoteSdp.Media)
+            {
+                // A port of zero indicates the media announcement has been rejected.
+                if (string.IsNullOrWhiteSpace(ann.DtlsFingerprint) || ann.Port == 0)
+                {
+                    continue;
+                }
+                else if (fingerprint == null)
+                {
+                    fingerprint = ann.DtlsFingerprint;
+                }
+                else if (!string.Equals(fingerprint.Trim(), ann.DtlsFingerprint.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return SetDescriptionResultEnum.DtlsFingerprintConflict;
+                }
+            }
+
+            return fingerprint == null ? SetDescriptionResultEnum.DtlsFingerprintMissing : SetDescriptionResultEnum.OK;
+        }
+
+        /// <summary>
+        /// Checks a fingerprint from a remote session description against the remote peer's certificate
+        /// from the completed DTLS handshake. The fingerprint is recalculated from the certificate rather
+        /// than compared against the previously supplied attribute so that a remote peer changing digest
+        /// algorithm, without changing its certificate, is not treated as a certificate change.
+        /// </summary>
+        /// <param name="fingerprint">The fingerprint from the remote session description.</param>
+        /// <returns>True if the fingerprint matches the remote peer's certificate. False if not.</returns>
+        private bool IsRemoteDtlsFingerprintMatch(RTCDtlsFingerprint fingerprint)
+        {
+            var remoteCertificate = _dtlsHandle?.GetRemoteCertificate();
+
+            if (remoteCertificate == null || remoteCertificate.IsEmpty)
+            {
+                // No verified certificate is available to compare against so fall back to the
+                // fingerprint that was pinned when the remote description was last set.
+                return RemotePeerDtlsFingerprint == null ||
+                    string.Equals(RemotePeerDtlsFingerprint.value, fingerprint.value, StringComparison.OrdinalIgnoreCase);
+            }
+
+            var certificateFingerprint = DtlsUtils.Fingerprint(fingerprint.algorithm, remoteCertificate.GetCertificateAt(0));
+
+            return string.Equals(certificateFingerprint.value, fingerprint.value, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -1422,37 +1524,6 @@ namespace SIPSorcery.Net
                 catch (Exception excp)
                 {
                     logger.LogError(excp, "Exception RTCPeerConnection.OnRTPDataReceived {ErrorMessage}", excp.Message);
-                }
-            }
-        }
-
-
-        private Func<IPEndPoint, IPEndPoint> _remoteEndpointTranslator;
-
-        /// <summary>
-        /// Optional hook to normalize the source endpoint of received traffic before it's
-        /// compared against ICE candidates and the nominated pair. Used to reconcile the
-        /// address an in-process TURN relay socket uses when sending to a local destination
-        /// (a local interface IP) with the advertised relay address (typically a public IP
-        /// in <c>XOR-RELAYED-ADDRESS</c>).
-        ///
-        /// The delegate receives the observed source endpoint and returns either a
-        /// translated endpoint (when it recognizes the source as a known relay socket)
-        /// or <c>null</c> / the input unchanged when no translation applies.
-        ///
-        /// Setting this property also propagates the value to the underlying
-        /// <see cref="RtpIceChannel"/> so peer-reflexive candidate creation honours the
-        /// same mapping. When unset, behaviour is identical to prior versions.
-        /// </summary>
-        public Func<IPEndPoint, IPEndPoint> RemoteEndpointTranslator
-        {
-            get => _remoteEndpointTranslator;
-            set
-            {
-                _remoteEndpointTranslator = value;
-                if (_rtpIceChannel != null)
-                {
-                    _rtpIceChannel.RemoteEndpointTranslator = value;
                 }
             }
         }
