@@ -1034,7 +1034,10 @@ namespace SIPSorcery.SIP
                                             else if (sipRequest.Method == SIPMethodsEnum.INVITE && (requestTransaction.TransactionState == SIPTransactionStatesEnum.Trying ||
                                                 requestTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding))
                                             {
-                                                return SendResponseAsync(requestTransaction.UnreliableProvisionalResponse);
+                                                if (requestTransaction.UnreliableProvisionalResponse != null)
+                                                {
+                                                    return SendResponseAsync(requestTransaction.UnreliableProvisionalResponse);
+                                                }
                                             }
                                             else
                                             {
