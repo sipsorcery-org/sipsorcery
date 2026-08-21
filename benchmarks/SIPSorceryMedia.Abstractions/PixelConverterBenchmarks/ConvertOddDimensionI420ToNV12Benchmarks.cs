@@ -9,16 +9,20 @@ public class ConvertOddDimensionI420ToNV12Benchmarks
 #if !LibVersion
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _nv12Writer = new();
 #endif
-    private byte[]? _oddI420;
-    private const int OddWidth = 5;
-    private const int OddHeight = 3;
 
-    [GlobalSetup]
-    public void GlobalSetup()
+    public IEnumerable<BenchmarkParams> GetImages()
     {
-        var i420 = File.ReadAllBytes("img/ref-i420.yuv");
-        _oddI420 = Utils.CreateOddDimensionBuffer(OddWidth, OddHeight);
+        yield return CreateBenchmarkParams("ref-i420.yuv", 5, 3);
+
+        static BenchmarkParams CreateBenchmarkParams(string image, int width, int height)
+        {
+            var bytes = Utils.LoadFromFile(image);
+            return new BenchmarkParams { Width = width, Height = height, Stride = -1, Bytes = Utils.CreateOddDimensionBuffer(width, height) };
+        }
     }
+
+    [ParamsSource(nameof(GetImages))]
+    public BenchmarkParams Image { get; set; }
 
     [IterationSetup]
     public void IterationSetup()
@@ -32,8 +36,7 @@ public class ConvertOddDimensionI420ToNV12Benchmarks
     [Benchmark]
     public int ConvertOddDimensionI420ToNV12Array()
     {
-        Debug.Assert(_oddI420 is not null);
-        var nv12 = PixelConverter.I420toNV12(_oddI420, OddWidth, OddHeight);
+        var nv12 = PixelConverter.I420toNV12(Image.Bytes, Image.Width, Image.Height);
         return nv12.Length;
     }
 
@@ -44,8 +47,7 @@ public class ConvertOddDimensionI420ToNV12Benchmarks
         return 0;
 #else
         Debug.Assert(_nv12Writer is not null);
-        Debug.Assert(_oddI420 is not null);
-        PixelConverter.I420toNV12(_nv12Writer, _oddI420.AsSpan(), OddWidth, OddHeight);
+        PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
         return _nv12Writer.WrittenCount;
 #endif
     }

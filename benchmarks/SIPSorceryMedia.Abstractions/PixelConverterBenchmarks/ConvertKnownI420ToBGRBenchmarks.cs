@@ -9,15 +9,20 @@ public class ConvertKnownI420ToBGRBenchmarks
 #if !LibVersion
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _bgrWriter = new();
 #endif
-    private byte[]? _i420;
-    private int _width = 640;
-    private int _height = 480;
 
-    [GlobalSetup]
-    public void GlobalSetup()
+    public IEnumerable<BenchmarkParams> GetImages()
     {
-        _i420 = File.ReadAllBytes("img/ref-i420.yuv");
+        yield return CreateBenchmarkParams("ref-i420.yuv", 640, 480);
+
+        static BenchmarkParams CreateBenchmarkParams(string image, int width, int height)
+        {
+            var bytes = Utils.LoadFromFile(image);
+            return new BenchmarkParams { Width = width, Height = height, Stride = -1, Bytes = bytes };
+        }
     }
+
+    [ParamsSource(nameof(GetImages))]
+    public BenchmarkParams Image { get; set; }
 
     [IterationSetup]
     public void IterationSetup()
@@ -29,22 +34,20 @@ public class ConvertKnownI420ToBGRBenchmarks
     }
 
     [Benchmark]
-    public int RoundtripBgr24ToI420Array()
+    public int ConvertKnownI420ToBGRArray()
     {
-        Debug.Assert(_i420 is not null);
-        var bgr = PixelConverter.I420toBGR(_i420, _width, _height, out _);
+        var bgr = PixelConverter.I420toBGR(Image.Bytes, Image.Width, Image.Height, out _);
         return bgr.Length;
     }
 
     [Benchmark]
-    public int RoundtripBgr24ToI420BufferWriter()
+    public int ConvertKnownI420ToBGRBufferWriter()
     {
 #if LibVersion
         return 0;
 #else
-        Debug.Assert(_i420 is not null);
         Debug.Assert(_bgrWriter is not null);
-        PixelConverter.I420toBGR(_bgrWriter, _i420, _width, _height, out _);
+        PixelConverter.I420toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, out _);
         return _bgrWriter.WrittenCount;
 #endif
     }

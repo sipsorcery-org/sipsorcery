@@ -9,15 +9,20 @@ public class ConvertI420ToNV12Benchmarks
 #if !LibVersion
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _nv12Writer = new();
 #endif
-    private byte[]? _i420;
-    private const int Width = 640;
-    private const int Height = 480;
 
-    [GlobalSetup]
-    public void GlobalSetup()
+    public IEnumerable<BenchmarkParams> GetImages()
     {
-        _i420 = File.ReadAllBytes("img/ref-i420.yuv");
+        yield return CreateBenchmarkParams("ref-i420.yuv", 640, 480);
+
+        static BenchmarkParams CreateBenchmarkParams(string image, int width, int height)
+        {
+            var bytes = Utils.LoadFromFile(image);
+            return new BenchmarkParams { Width = width, Height = height, Stride = -1, Bytes = bytes };
+        }
     }
+
+    [ParamsSource(nameof(GetImages))]
+    public BenchmarkParams Image { get; set; }
 
     [IterationSetup]
     public void IterationSetup()
@@ -31,8 +36,7 @@ public class ConvertI420ToNV12Benchmarks
     [Benchmark]
     public int ConvertI420ToNV12Array()
     {
-        Debug.Assert(_i420 is not null);
-        var nv12 = PixelConverter.I420toNV12(_i420, Width, Height);
+        var nv12 = PixelConverter.I420toNV12(Image.Bytes, Image.Width, Image.Height);
         return nv12.Length;
     }
 
@@ -42,9 +46,8 @@ public class ConvertI420ToNV12Benchmarks
 #if LibVersion
         return 0;
 #else
-        Debug.Assert(_i420 is not null);
         Debug.Assert(_nv12Writer is not null);
-        PixelConverter.I420toNV12(_nv12Writer, _i420.AsSpan(), Width, Height);
+        PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
         return _nv12Writer.WrittenCount;
 #endif
     }

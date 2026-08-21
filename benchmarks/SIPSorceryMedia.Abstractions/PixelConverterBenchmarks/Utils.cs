@@ -6,6 +6,8 @@ namespace PixelConverterBenchmarks;
 
 internal static class Utils
 {
+    private static readonly string _imageDirectory = Path.Combine(Path.GetDirectoryName(typeof(Utils).Assembly.Location)!, "img");
+
     public static byte[] BitmapToBuffer(Bitmap bitmap, out int stride)
     {
         BitmapData bmpdata = null;
@@ -39,5 +41,17 @@ internal static class Utils
         var uvSize = uvWidth * uvHeight * 2;
 
         return new byte[ySize + uvSize];
+    }
+
+    public static Bitmap LoadBitmap(string image)
+    {
+        var imagePath = Path.Combine(_imageDirectory, image);
+        return new Bitmap(imagePath);
+    }
+
+    public static byte[] LoadFromFile(string image)
+    {
+        var imagePath = Path.Combine(_imageDirectory, image);
+        return File.ReadAllBytes(imagePath);
     }
 }

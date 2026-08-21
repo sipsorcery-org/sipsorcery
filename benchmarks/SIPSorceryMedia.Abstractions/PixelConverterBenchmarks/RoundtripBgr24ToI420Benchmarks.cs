@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
@@ -11,22 +10,21 @@ public class RoundtripBgr24ToI420Benchmarks
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _i420Writer = new();
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _bgr24Writer = new();
 #endif
-    private byte[]? _bgr;
-    private int _width;
-    private int _height;
-    private int _stride;
 
-    [GlobalSetup]
-    public void GlobalSetup()
+    public IEnumerable<BenchmarkParams> GetImages()
     {
-        using var bmp = new Bitmap("img/ref-bgr24.bmp");
+        yield return CreateBenchmarkParams("ref-bgr24.bmp");
 
-        _bgr = Utils.BitmapToBuffer(bmp, out var stride);
-
-        _width = bmp.Width;
-        _height = bmp.Height;
-        _stride = stride;
+        static BenchmarkParams CreateBenchmarkParams(string image)
+        {
+            var bmp = Utils.LoadBitmap(image);
+            var bgr = Utils.BitmapToBuffer(bmp, out var stride);
+            return new BenchmarkParams { Width = bmp.Width, Height = bmp.Height, Stride = stride, Bytes = bgr };
+        }
     }
+
+    [ParamsSource(nameof(GetImages))]
+    public BenchmarkParams Image { get; set; }
 
     [IterationSetup]
     public void IterationSetup()
@@ -42,9 +40,8 @@ public class RoundtripBgr24ToI420Benchmarks
     [Benchmark]
     public int RoundtripBgr24ToI420Array()
     {
-        Debug.Assert(_bgr is not null);
-        var i420 = PixelConverter.BGRtoI420(_bgr, _width, _height, _stride);
-        var bgr24 = PixelConverter.I420toBGR(i420, _width, _height, out _);
+        var i420 = PixelConverter.BGRtoI420(Image.Bytes, Image.Width, Image.Height, Image.Stride);
+        var bgr24 = PixelConverter.I420toBGR(i420, Image.Width, Image.Height, out _);
         return i420.Length + bgr24.Length;
     }
 
@@ -54,11 +51,10 @@ public class RoundtripBgr24ToI420Benchmarks
 #if LibVersion
         return 0;
 #else
-        Debug.Assert(_bgr is not null);
         Debug.Assert(_i420Writer is not null);
         Debug.Assert(_bgr24Writer is not null);
-        PixelConverter.BGRtoI420(_i420Writer, _bgr.AsSpan(), _width, _height, _stride);
-        PixelConverter.I420toBGR(_bgr24Writer, _i420Writer.WrittenSpan, _width, _height, out _);
+        PixelConverter.BGRtoI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height, Image.Stride);
+        PixelConverter.I420toBGR(_bgr24Writer, _i420Writer.WrittenSpan, Image.Width, Image.Height, out _);
         return _i420Writer.WrittenCount + _bgr24Writer.WrittenCount;
 #endif
     }

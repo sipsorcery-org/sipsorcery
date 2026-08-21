@@ -27,7 +27,7 @@ internal sealed class Config : ManualConfig
 
             foreach (var targetRuntime in targetRuntimes)
             {
-                AddJob(Job.MediumRun
+                AddJob(Job.LongRun
                     .WithRuntime(targetRuntime)
                     .WithMsBuildArguments($"/p:LibVersion={version}")
                     .WithId(isBaseline ? version : _currentJobId)
@@ -70,18 +70,20 @@ internal sealed class Config : ManualConfig
             ImmutableArray<BenchmarkCase> benchmarksCases,
             Summary summary)
             => benchmarksCases
-                .OrderBy(b => b.Job.Environment.Runtime?.Name)
-                .ThenBy(b => b.Descriptor.WorkloadMethod.Name)
-                .ThenBy(b => b.Job.Id == _currentJobId ? 0 : 1)
-                .ThenByDescending(b => b.Job.Id);
+                .OrderBy(b => string.Join("|", b.Parameters.Items.Select(p => $"{p.Name}={p.Value}")))
+                .ThenBy(b => string.Equals(_currentJobId, b.Job.Id, StringComparison.Ordinal) ? 1 : 0)
+                .ThenBy(b => b.Job.Id)
+                .ThenBy(b => b.Descriptor.WorkloadMethod.Name);
 
         public string GetHighlightGroupKey(BenchmarkCase benchmarkCase)
-            => benchmarkCase.Job.Environment.Runtime?.Name;
+            => string.Join("|", benchmarkCase.Parameters.Items.Select(p => $"{p.Name}={p.Value}"));
 
         public string GetLogicalGroupKey(
             ImmutableArray<BenchmarkCase> allBenchmarksCases,
             BenchmarkCase benchmarkCase)
-            => benchmarkCase.Job.Environment.Runtime?.Name;
+            => string.Join(
+                "|",
+                benchmarkCase.Parameters.Items.Select(p => $"{p.Name}={p.Value}"));
 
         public IEnumerable<IGrouping<string, BenchmarkCase>> GetLogicalGroupOrder(
             IEnumerable<IGrouping<string, BenchmarkCase>> logicalGroups,

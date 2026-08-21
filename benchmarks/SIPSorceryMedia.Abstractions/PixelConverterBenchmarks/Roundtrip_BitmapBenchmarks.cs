@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
@@ -11,31 +10,24 @@ public class Roundtrip_BitmapBenchmarks
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _i420Writer = new();
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _rtBgrWriter = new();
 #endif
-    private byte[]? _bgr;
-    BenchmarkParams _params;
 
-    // Define the width/height pairs to test
-    record struct BenchmarkParams(int Width, int Height, int Stride);
-    public IEnumerable<(int Width, int Height)> DimensionPairs()
+    public IEnumerable<BenchmarkParams> GetImages()
     {
-        yield return (640, 480);
-        yield return (720, 405);
-        yield return (719, 404);
-        yield return (719, 405);
+        yield return CreateBenchmarkParams(640, 480);
+        yield return CreateBenchmarkParams(720, 405);
+        yield return CreateBenchmarkParams(719, 404);
+        yield return CreateBenchmarkParams(719, 405);
+
+        static BenchmarkParams CreateBenchmarkParams(int width, int height)
+        {
+            var bmp = Utils.LoadBitmap($"testpattern_{width}x{height}.bmp");
+            var bgr = Utils.BitmapToBuffer(bmp, out var stride);
+            return new BenchmarkParams { Width = width, Height = height, Stride = stride, Bytes = bgr };
+        }
     }
 
-    [ParamsSource(nameof(DimensionPairs))]
-    public (int Width, int Height) Dimensions { get; set; }
-
-    [GlobalSetup]
-    public void GlobalSetup()
-    {
-        using var bmp = new Bitmap($"img/testpattern_{Dimensions.Width}x{Dimensions.Height}.bmp");
-
-        _bgr = Utils.BitmapToBuffer(bmp, out var stride);
-
-        _params = new BenchmarkParams(Dimensions.Width, Dimensions.Height, stride);
-    }
+    [ParamsSource(nameof(GetImages))]
+    public BenchmarkParams Image { get; set; }
 
     [IterationSetup]
     public void IterationSetup()
@@ -51,9 +43,8 @@ public class Roundtrip_BitmapBenchmarks
     [Benchmark]
     public int RoundtripBgr24ToI420Array()
     {
-        Debug.Assert(_bgr is not null);
-        var i420 = PixelConverter.BGRtoI420(_bgr, Dimensions.Width, Dimensions.Height, _params.Stride);
-        var rtBgr = PixelConverter.I420toBGR(i420, Dimensions.Width, Dimensions.Height, out _);
+        var i420 = PixelConverter.BGRtoI420(Image.Bytes, Image.Width, Image.Height, Image.Stride);
+        var rtBgr = PixelConverter.I420toBGR(i420, Image.Width, Image.Height, out _);
         return i420.Length + rtBgr.Length;
     }
 
@@ -63,11 +54,10 @@ public class Roundtrip_BitmapBenchmarks
 #if LibVersion
         return 0;
 #else
-        Debug.Assert(_bgr is not null);
         Debug.Assert(_i420Writer is not null);
         Debug.Assert(_rtBgrWriter is not null);
-        PixelConverter.BGRtoI420(_i420Writer, _bgr.AsSpan(), Dimensions.Width, Dimensions.Height, _params.Stride);
-        PixelConverter.I420toBGR(_rtBgrWriter, _i420Writer.WrittenSpan, Dimensions.Width, Dimensions.Height, out _);
+        PixelConverter.BGRtoI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height, Image.Stride);
+        PixelConverter.I420toBGR(_rtBgrWriter, _i420Writer.WrittenSpan, Image.Width, Image.Height, out _);
         return _i420Writer.WrittenCount + _rtBgrWriter.WrittenCount;
 #endif
     }

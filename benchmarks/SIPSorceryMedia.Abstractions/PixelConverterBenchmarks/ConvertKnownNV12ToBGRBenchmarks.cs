@@ -9,17 +9,20 @@ public class ConvertKnownNV12ToBGRBenchmarks
 #if !LibVersion
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _bgrWriter = new();
 #endif
-    private byte[]? _nv12;
-    private int _width = 640;
-    private int _height = 480;
-    private int _stride;
 
-    [GlobalSetup]
-    public void GlobalSetup()
+    public IEnumerable<BenchmarkParams> GetImages()
     {
-        _nv12 = File.ReadAllBytes("img/ref-nv12.yuv");
-        _stride = _width * 3;
+        yield return CreateBenchmarkParams("ref-nv12.yuv", 640, 480);
+
+        static BenchmarkParams CreateBenchmarkParams(string image, int width, int height)
+        {
+            var bytes = Utils.LoadFromFile(image);
+            return new BenchmarkParams { Width = width, Height = height, Stride = width * 3, Bytes = bytes };
+        }
     }
+
+    [ParamsSource(nameof(GetImages))]
+    public BenchmarkParams Image { get; set; }
 
     [IterationSetup]
     public void IterationSetup()
@@ -31,22 +34,20 @@ public class ConvertKnownNV12ToBGRBenchmarks
     }
 
     [Benchmark]
-    public int RoundtripBgr24ToI420Array()
+    public int ConvertKnownNV12ToBGRArray()
     {
-        Debug.Assert(_nv12 is not null);
-        var bgr = PixelConverter.NV12toBGR(_nv12, _width, _height, _stride);
+        var bgr = PixelConverter.NV12toBGR(Image.Bytes, Image.Width, Image.Height, Image.Stride);
         return bgr.Length;
     }
 
     [Benchmark]
-    public int RoundtripBgr24ToI420BufferWriter()
+    public int ConvertKnownNV12ToBGRBufferWriter()
     {
 #if LibVersion
         return 0;
 #else
-        Debug.Assert(_nv12 is not null);
         Debug.Assert(_bgrWriter is not null);
-        PixelConverter.NV12toBGR(_bgrWriter, _nv12, _width, _height, _stride);
+        PixelConverter.NV12toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, Image.Stride);
         return _bgrWriter.WrittenCount;
 #endif
     }
