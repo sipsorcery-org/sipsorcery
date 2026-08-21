@@ -20,3 +20,7 @@ jobs:
       run: dotnet build SIPSorcery.slnf -c Release --no-restore
     - name: Test
       run:  dotnet test test/unit/SIPSorcery.UnitTests.csproj -c Release --no-restore --verbosity normal -f net10.0
+      # Restores on its own: the Gemini projects are not part of SIPSorcery.slnf, which is what the
+      # restore/build steps above cover.
+    - name: Test Gemini Realtime
+      run:  dotnet test test/SIPSorcery.Gemini.Realtime.UnitTest/SIPSorcery.Gemini.Realtime.UnitTests.csproj -c Release --verbosity normal

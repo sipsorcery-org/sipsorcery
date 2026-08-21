@@ -22,6 +22,7 @@
     <PackageVersion Include="Makaretu.Dns.Multicast"                        Version="0.27.0" />
     <PackageVersion Include="Microsoft.Bcl.HashCode"                        Version="6.0.0" />
     <PackageVersion Include="Microsoft.CognitiveServices.Speech"            Version="1.51.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http"                     Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging"                  Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions"     Version="10.0.11" />
@@ -65,13 +66,21 @@
 
   <ItemGroup Condition="('$(TargetFramework)' == 'net9.0') OR $(TargetFramework.StartsWith('net9.0-windows'))">
 
-	<!-- Add net9.0 specific versions here -->
+    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Http"                      Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Logging"                   Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"      Version="9.0.18" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Console"           Version="9.0.18" />
 
   </ItemGroup>
 
   <ItemGroup Condition="('$(TargetFramework)' != 'net10.0') AND !$(TargetFramework.StartsWith('net10.0-windows')) AND ('$(TargetFramework)' != 'net9.0') AND !$(TargetFramework.StartsWith('net9.0-windows'))">
-    
-	<!-- Add net8.0 specific versions here -->
+
+    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+    <PackageVersion Update="Microsoft.Extensions.Http"                      Version="8.0.1" />
+    <PackageVersion Update="Microsoft.Extensions.Logging"                   Version="8.0.1" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions"      Version="8.0.3" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Console"           Version="8.0.1" />
 
   </ItemGroup>
 

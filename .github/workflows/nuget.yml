@@ -41,7 +41,10 @@ jobs:
 
       - name: Pack SIPSorcery.OpenAI.Realtime
         run: dotnet pack src/SIPSorcery.OpenAI.Realtime/SIPSorcery.OpenAI.Realtime.csproj -c Release --no-build -o ./artifacts
-        
+
+      - name: Pack SIPSorcery.Gemini.Realtime
+        run: dotnet pack src/SIPSorcery.Gemini.Realtime/SIPSorcery.Gemini.Realtime.csproj -c Release --no-build -o ./artifacts
+
       - name: Pack SIPSorcery.VP8
         run: dotnet pack src/SIPSorcery.VP8/SIPSorcery.VP8.csproj -c Release --no-build -o ./artifacts
         
