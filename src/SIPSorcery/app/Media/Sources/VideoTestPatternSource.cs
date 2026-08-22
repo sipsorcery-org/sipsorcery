@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
@@ -272,8 +273,9 @@ namespace SIPSorcery.Media
         /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
         private void GenerateRawSample(int width, int height, byte[] i420Buffer)
         {
-            var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
-            OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height, bgr, VideoPixelFormatsEnum.Bgr);
+            using var bufferWriter = new ArrayPoolBufferWriter<byte>();
+            PixelConverter.I420toBGR(bufferWriter, i420Buffer.AsSpan(), width, height, out _);
+            OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height, bufferWriter.WrittenSpan.ToArray(), VideoPixelFormatsEnum.Bgr);
         }
 
         /// <summary>
