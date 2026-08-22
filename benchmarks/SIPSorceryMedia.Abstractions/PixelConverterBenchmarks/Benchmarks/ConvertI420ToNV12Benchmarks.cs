@@ -2,13 +2,12 @@
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
-namespace PixelConverterBenchmarks;
+namespace PixelConverterBenchmarks.Benchmarks;
 
-public class RoundtripI420ToNV12Benchmarks
+public class ConvertI420ToNV12Benchmarks
 {
 #if !LibVersion
-    CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte> _nv12Writer = new();
-    CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte> _i420Writer = new();
+    CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _nv12Writer = new();
 #endif
 
     public IEnumerable<BenchmarkParams> GetImages()
@@ -30,31 +29,26 @@ public class RoundtripI420ToNV12Benchmarks
     {
 #if !LibVersion
         Debug.Assert(_nv12Writer is not null);
-        Debug.Assert(_i420Writer is not null);
         _nv12Writer.Clear();
-        _i420Writer.Clear();
 #endif
     }
 
     [Benchmark]
-    public int RoundtripI420ToNV12Array()
+    public int ConvertI420ToNV12Array()
     {
         var nv12 = PixelConverter.I420toNV12(Image.Bytes, Image.Width, Image.Height);
-        var roundtripI420 = PixelConverter.NV12toI420(nv12, Image.Width, Image.Height);
-        return nv12.Length + roundtripI420.Length;
+        return nv12.Length;
     }
 
     [Benchmark]
-    public int RoundtripI420ToNV12BufferWriter()
+    public int ConvertI420ToNV12BufferWriter()
     {
 #if LibVersion
         return 0;
 #else
         Debug.Assert(_nv12Writer is not null);
-        Debug.Assert(_i420Writer is not null);
         PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
-        PixelConverter.NV12toI420(_i420Writer, _nv12Writer.WrittenSpan, Image.Width, Image.Height);
-        return _nv12Writer.WrittenCount + _i420Writer.WrittenCount;
+        return _nv12Writer.WrittenCount;
 #endif
     }
 }

@@ -2,12 +2,12 @@
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
-namespace PixelConverterBenchmarks;
+namespace PixelConverterBenchmarks.Benchmarks;
 
-public class ConvertI420ToNV12Benchmarks
+public class ConvertKnownI420ToBGRBenchmarks
 {
 #if !LibVersion
-    CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _nv12Writer = new();
+    CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _bgrWriter = new();
 #endif
 
     public IEnumerable<BenchmarkParams> GetImages()
@@ -28,27 +28,27 @@ public class ConvertI420ToNV12Benchmarks
     public void IterationSetup()
     {
 #if !LibVersion
-        Debug.Assert(_nv12Writer is not null);
-        _nv12Writer.Clear();
+        Debug.Assert(_bgrWriter is not null);
+        _bgrWriter.Clear();
 #endif
     }
 
     [Benchmark]
-    public int ConvertI420ToNV12Array()
+    public int ConvertKnownI420ToBGRArray()
     {
-        var nv12 = PixelConverter.I420toNV12(Image.Bytes, Image.Width, Image.Height);
-        return nv12.Length;
+        var bgr = PixelConverter.I420toBGR(Image.Bytes, Image.Width, Image.Height, out _);
+        return bgr.Length;
     }
 
     [Benchmark]
-    public int ConvertI420ToNV12BufferWriter()
+    public int ConvertKnownI420ToBGRBufferWriter()
     {
 #if LibVersion
         return 0;
 #else
-        Debug.Assert(_nv12Writer is not null);
-        PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
-        return _nv12Writer.WrittenCount;
+        Debug.Assert(_bgrWriter is not null);
+        PixelConverter.I420toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, out _);
+        return _bgrWriter.WrittenCount;
 #endif
     }
 }

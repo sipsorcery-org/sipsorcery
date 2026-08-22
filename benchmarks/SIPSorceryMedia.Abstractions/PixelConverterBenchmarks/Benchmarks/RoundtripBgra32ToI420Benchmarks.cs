@@ -2,7 +2,7 @@
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
-namespace PixelConverterBenchmarks;
+namespace PixelConverterBenchmarks.Benchmarks;
 
 public class RoundtripBgra32ToI420Benchmarks
 {

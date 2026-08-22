@@ -2,9 +2,9 @@
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
-namespace PixelConverterBenchmarks;
+namespace PixelConverterBenchmarks.Benchmarks;
 
-public class ConvertNv12ToI420Benchmarks
+public class ConvertOddDimensionNV12ToI420Banchmarks
 {
 #if !LibVersion
     CommunityToolkit.HighPerformance.Buffers.ArrayPoolBufferWriter<byte>? _i420Writer = new();
@@ -12,13 +12,7 @@ public class ConvertNv12ToI420Benchmarks
 
     public IEnumerable<BenchmarkParams> GetImages()
     {
-        yield return CreateBenchmarkParams("ref-nv12.yuv", 640, 480);
-
-        static BenchmarkParams CreateBenchmarkParams(string image, int width, int height)
-        {
-            var bytes = Utils.LoadFromFile(image);
-            return new BenchmarkParams { Width = width, Height = height, Stride = -1, Bytes = bytes };
-        }
+        yield return new BenchmarkParams { Width = -1, Height = -1, Stride = -1, Bytes = Utils.CreateOddDimensionBuffer(5, 3) };
     }
 
     [ParamsSource(nameof(GetImages))]
@@ -34,14 +28,14 @@ public class ConvertNv12ToI420Benchmarks
     }
 
     [Benchmark]
-    public int ConvertNV12ToI420Array()
+    public int ConvertOddDimensionNV12ToI420Array()
     {
         var i420 = PixelConverter.NV12toI420(Image.Bytes, Image.Width, Image.Height);
         return i420.Length;
     }
 
     [Benchmark]
-    public int ConvertNV12ToI420BufferWriter()
+    public int ConvertOddDimensionNV12ToI420BufferWriter()
     {
 #if LibVersion
         return 0;

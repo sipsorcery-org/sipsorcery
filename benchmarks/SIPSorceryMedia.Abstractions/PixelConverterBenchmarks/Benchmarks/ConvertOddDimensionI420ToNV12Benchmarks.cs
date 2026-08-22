@@ -2,7 +2,7 @@
 using BenchmarkDotNet.Attributes;
 using SIPSorceryMedia.Abstractions;
 
-namespace PixelConverterBenchmarks;
+namespace PixelConverterBenchmarks.Benchmarks;
 
 public class ConvertOddDimensionI420ToNV12Benchmarks
 {

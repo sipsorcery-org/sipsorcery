@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" Condition="'$(LibVersion)' == ''" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.2" />
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="$(LibVersion)" Condition="'$(LibVersion)' != ''" />
   </ItemGroup>
 
