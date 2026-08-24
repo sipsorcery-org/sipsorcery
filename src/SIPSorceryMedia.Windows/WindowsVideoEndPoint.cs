@@ -14,6 +14,8 @@
 // BDS BY-NC-SA restriction, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
+using SIPSorceryMedia.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +23,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using CommunityToolkit.HighPerformance.Buffers;
-using Microsoft.Extensions.Logging;
-using SIPSorceryMedia.Abstractions;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
@@ -599,10 +598,11 @@ namespace SIPSorceryMedia.Windows
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
-                                            using var bufferWriter = new ArrayPoolBufferWriter<byte>();
-                                            PixelConverter.NV12toBGR(bufferWriter, nv12Buffer.AsSpan(), width, height, width * 3);
+#pragma warning disable CS0618 // Type or member is obsolete
+                                            var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width * 3);
+#pragma warning restore CS0618 // Type or member is obsolete
 
-                                            OnVideoSourceRawSample(frameSpacing, width, height, bufferWriter.WrittenSpan.ToArray(), VideoPixelFormatsEnum.Bgr);
+                                            OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
                                         }
                                     }
                                 }

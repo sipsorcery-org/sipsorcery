@@ -14,10 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
@@ -185,84 +183,74 @@ namespace Vpx.Net
                 // width * bytesPerPixel -- NOT width. Passing width here corrupts the
                 // conversion (it reads the source with the wrong row pitch, smearing /
                 // horizontally repeating the image) for every non-I420 input.
-                ReadOnlySpan<byte> i420;
-                ArrayPoolBufferWriter<byte> buffer = null;
-                try
+                byte[] i420;
+                if (pixelFormat == VideoPixelFormatsEnum.I420)
                 {
-                    if (pixelFormat == VideoPixelFormatsEnum.I420)
-                    {
-                        i420 = sample;
-                    }
-                    else
-                    {
-                        int bytesPerPixel;
-                        switch (pixelFormat)
-                        {
-                            case VideoPixelFormatsEnum.Bgra:
-                            case VideoPixelFormatsEnum.Rgba:
-                                bytesPerPixel = 4;
-                                break;
-                            case VideoPixelFormatsEnum.Bgr:
-                            case VideoPixelFormatsEnum.Rgb:
-                                bytesPerPixel = 3;
-                                break;
-                            case VideoPixelFormatsEnum.NV12:
-                                bytesPerPixel = 1;
-                                break;
-                            default:
-                                bytesPerPixel = 1;
-                                break;
-                        }
-                        buffer = new ArrayPoolBufferWriter<byte>();
-                        PixelConverter.ToI420(buffer, width, height, width * bytesPerPixel, sample, pixelFormat);
-                        i420 = buffer.WrittenSpan;
-                    }
-
-                    var ySize = width * height;
-                    var cSize = (width / 2) * (height / 2);
-                    if (i420.Length != ySize + 2 * cSize)
-                    {
-                        throw new ArgumentException(
-                            $"I420 buffer length {i420.Length} does not match expected {ySize + 2 * cSize} for {width}x{height}.");
-                    }
-
-                    if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
-                    if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
-                    i420.Slice(0, ySize).CopyTo(_srcY);
-                    i420.Slice(ySize, cSize).CopyTo(_srcU);
-                    i420.Slice(ySize + cSize, cSize).CopyTo(_srcV);
-
-                    // Decide keyframe vs inter for this call.
-                    // - Forced keyframe (via ForceKeyFrame()): always keyframe.
-                    // - Frame counter reached interval: keyframe.
-                    // - First frame of stream / no valid reference: keyframe.
-                    // - Otherwise: inter (ZEROMV LAST_FRAME).
-                    var forceKey = _forceKeyFrame
-                                  || _framesSinceLastKeyframe == 0
-                                  || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
-                    _forceKeyFrame = false;
-
-                    byte[] result;
-                    if (forceKey)
-                    {
-                        result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
-                        _framesSinceLastKeyframe = 1;
-                    }
-                    else
-                    {
-                        // Inter (P) frame: ZEROMV referencing LAST_FRAME for
-                        // every macroblock. The reference frame is the
-                        // reconstruction of the previous keyframe / inter
-                        // frame, cached on the per-thread FrameEncoderBuffers.
-                        result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
-                        _framesSinceLastKeyframe++;
-                    }
-                    return result;
+                    i420 = sample;
                 }
-                finally
+                else
                 {
-                    buffer?.Dispose();
+                    int bytesPerPixel;
+                    switch (pixelFormat)
+                    {
+                        case VideoPixelFormatsEnum.Bgra:
+                        case VideoPixelFormatsEnum.Rgba:
+                            bytesPerPixel = 4;
+                            break;
+                        case VideoPixelFormatsEnum.Bgr:
+                        case VideoPixelFormatsEnum.Rgb:
+                            bytesPerPixel = 3;
+                            break;
+                        case VideoPixelFormatsEnum.NV12:
+                            bytesPerPixel = 1;
+                            break;
+                        default:
+                            bytesPerPixel = 1;
+                            break;
+                    }
+                    i420 = PixelConverter.ToI420(width, height, width * bytesPerPixel, sample, pixelFormat);
                 }
+
+                int ySize = width * height;
+                int cSize = (width / 2) * (height / 2);
+                if (i420.Length != ySize + 2 * cSize)
+                {
+                    throw new ArgumentException(
+                        $"I420 buffer length {i420.Length} does not match expected {ySize + 2 * cSize} for {width}x{height}.");
+                }
+
+                if (_srcY == null || _srcY.Length < ySize) { _srcY = new byte[ySize]; }
+                if (_srcU == null || _srcU.Length < cSize) { _srcU = new byte[cSize]; _srcV = new byte[cSize]; }
+                Buffer.BlockCopy(i420, 0,             _srcY, 0, ySize);
+                Buffer.BlockCopy(i420, ySize,         _srcU, 0, cSize);
+                Buffer.BlockCopy(i420, ySize + cSize, _srcV, 0, cSize);
+
+                // Decide keyframe vs inter for this call.
+                // - Forced keyframe (via ForceKeyFrame()): always keyframe.
+                // - Frame counter reached interval: keyframe.
+                // - First frame of stream / no valid reference: keyframe.
+                // - Otherwise: inter (ZEROMV LAST_FRAME).
+                bool forceKey = _forceKeyFrame
+                              || _framesSinceLastKeyframe == 0
+                              || _framesSinceLastKeyframe >= _keyframeIntervalFrames;
+                _forceKeyFrame = false;
+
+                byte[] result;
+                if (forceKey)
+                {
+                    result = frame_encoder.EncodeKeyframeWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers);
+                    _framesSinceLastKeyframe = 1;
+                }
+                else
+                {
+                    // Inter (P) frame: ZEROMV referencing LAST_FRAME for
+                    // every macroblock. The reference frame is the
+                    // reconstruction of the previous keyframe / inter
+                    // frame, cached on the per-thread FrameEncoderBuffers.
+                    result = frame_encoder.EncodeInterFrameWithBuffers(_srcY, _srcU, _srcV, width, height, _baseQIndex, _frameBuffers, EnableIntraFallback);
+                    _framesSinceLastKeyframe++;
+                }
+                return result;
             }
         }
 
@@ -273,9 +261,9 @@ namespace Vpx.Net
                 if (_vp8Decoder == null)
                 {
                     _vp8Decoder = new vpx_codec_ctx_t();
-                    var algo = vp8_dx.vpx_codec_vp8_dx();
-                    var cfg = new vpx_codec_dec_cfg_t { threads = 1 };
-                    var res = vpx_decoder.vpx_codec_dec_init(_vp8Decoder, algo, cfg, 0);
+                    vpx_codec_iface_t algo = vp8_dx.vpx_codec_vp8_dx();
+                    vpx_codec_dec_cfg_t cfg = new vpx_codec_dec_cfg_t { threads = 1 };
+                    vpx_codec_err_t res = vpx_decoder.vpx_codec_dec_init(_vp8Decoder, algo, cfg, 0);
                 }
 
                 //logger.LogDebug($"Attempting to decode {frame.Length} bytes.");
@@ -291,7 +279,7 @@ namespace Vpx.Net
                     }
                 }
 
-                var iter = IntPtr.Zero;
+                IntPtr iter = IntPtr.Zero;
                 var img = vpx_decoder.vpx_codec_get_frame(_vp8Decoder, iter);
 
                 if (img == null)
@@ -300,15 +288,15 @@ namespace Vpx.Net
                 }
                 else
                 {
-                    var dwidth = (int)img.d_w;
-                    var dheight = (int)img.d_h;
-                    var sz = dwidth * dheight;
+                    int dwidth = (int)img.d_w;
+                    int dheight = (int)img.d_h;
+                    int sz = dwidth * dheight;
 
                     var yPlane = img.planes[0];
                     var uPlane = img.planes[1];
                     var vPlane = img.planes[2];
 
-                    var decodedBuffer = new byte[dwidth * dheight * 3 / 2];
+                    byte[] decodedBuffer = new byte[dwidth * dheight * 3 / 2];
 
                     for (uint row = 0; row < dheight; row++)
                     {
@@ -321,9 +309,7 @@ namespace Vpx.Net
                         }
                     }
 
-                    using var buffer = new ArrayPoolBufferWriter<byte>();
-                    PixelConverter.I420toBGR(buffer, decodedBuffer, dwidth, dheight, out _);
-                    var rgb = buffer.WrittenSpan.ToArray();
+                    byte[] rgb = PixelConverter.I420toBGR(decodedBuffer, dwidth, dheight, out _);
                     return new List<VideoSample> { new VideoSample { Width = img.d_w, Height = img.d_h, Sample = rgb } };
                 }
 

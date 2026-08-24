@@ -21,7 +21,6 @@
   <ItemGroup>
     <PackageReference Include="Concentus" />
     <PackageReference Include="BouncyCastle.Cryptography" />
-    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="DnsClient" />
     <PackageReference Include="Makaretu.Dns.Multicast" />
     <PackageReference Include="Polyfill">

@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="NAudio" />
     <!-- WaveOutEvent / WaveInEvent. Explicit because NAudio 3.0's meta-package only pulls
          WinMM in via its net9.0-windows10.0.19041 group, which this project's platform

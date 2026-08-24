@@ -47,8 +47,8 @@ public class ConvertI420ToNV12Benchmarks
         return 0;
 #else
         Debug.Assert(_nv12Writer is not null);
-        PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
-        return _nv12Writer.WrittenCount;
+        var nv12BytesWritten = PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
+        return nv12BytesWritten;
 #endif
     }
 }

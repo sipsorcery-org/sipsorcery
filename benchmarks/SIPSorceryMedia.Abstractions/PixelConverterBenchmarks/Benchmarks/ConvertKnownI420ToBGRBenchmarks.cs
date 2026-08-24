@@ -47,8 +47,8 @@ public class ConvertKnownI420ToBGRBenchmarks
         return 0;
 #else
         Debug.Assert(_bgrWriter is not null);
-        PixelConverter.I420toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, out _);
-        return _bgrWriter.WrittenCount;
+        var bgrBytesWritten = PixelConverter.I420toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, out _);
+        return bgrBytesWritten;
 #endif
     }
 }

@@ -47,8 +47,8 @@ public class ConvertKnownNV12ToBGRBenchmarks
         return 0;
 #else
         Debug.Assert(_bgrWriter is not null);
-        PixelConverter.NV12toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, Image.Stride);
-        return _bgrWriter.WrittenCount;
+        var bgrBytesWritten = PixelConverter.NV12toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, Image.Stride);
+        return bgrBytesWritten;
 #endif
     }
 }

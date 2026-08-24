@@ -52,9 +52,9 @@ public class RoundtripNV12ToI420Benchmarks
 #else
         Debug.Assert(_nv12Writer is not null);
         Debug.Assert(_i420Writer is not null);
-        PixelConverter.NV12toI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
-        PixelConverter.I420toNV12(_nv12Writer, _i420Writer.WrittenSpan, Image.Width, Image.Height);
-        return _i420Writer.WrittenCount + _nv12Writer.WrittenCount;
+        var i420BytesWritten = PixelConverter.NV12toI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
+        var rtNv12BytesWritten = PixelConverter.I420toNV12(_nv12Writer, _i420Writer.WrittenSpan, Image.Width, Image.Height);
+        return i420BytesWritten + rtNv12BytesWritten;
 #endif
     }
 }

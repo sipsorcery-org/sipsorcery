@@ -67,10 +67,6 @@ A .NET library that implements the VP8 video codec. This package is intended to 
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.HighPerformance" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\SIPSorceryMedia.Abstractions\SIPSorceryMedia.Abstractions.csproj" />
   </ItemGroup>
 

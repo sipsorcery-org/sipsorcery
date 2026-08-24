@@ -54,9 +54,9 @@ public class RoundtripBgra32ToI420Benchmarks
 #else
         Debug.Assert(_i420Writer is not null);
         Debug.Assert(_bgrWriter is not null);
-        PixelConverter.RGBAtoI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height, Image.Stride);
-        PixelConverter.I420toBGR(_bgrWriter, _i420Writer.WrittenSpan, Image.Width, Image.Height, out _);
-        return _i420Writer.WrittenCount + _bgrWriter.WrittenCount;
+        var i420BytesWritten = PixelConverter.RGBAtoI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height, Image.Stride);
+        var rtBgrBytesWritten = PixelConverter.I420toBGR(_bgrWriter, _i420Writer.WrittenSpan, Image.Width, Image.Height, out _);
+        return i420BytesWritten + rtBgrBytesWritten;
 #endif
     }
 }
