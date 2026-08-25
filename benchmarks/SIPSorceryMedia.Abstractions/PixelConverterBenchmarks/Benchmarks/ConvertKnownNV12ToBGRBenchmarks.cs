@@ -24,15 +24,6 @@ public class ConvertKnownNV12ToBGRBenchmarks
     [ParamsSource(nameof(GetImages))]
     public BenchmarkParams Image { get; set; }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-#if !LibVersion
-        Debug.Assert(_bgrWriter is not null);
-        _bgrWriter.Clear();
-#endif
-    }
-
     [Benchmark]
     public int ConvertKnownNV12ToBGRArray()
     {
@@ -47,6 +38,7 @@ public class ConvertKnownNV12ToBGRBenchmarks
         return 0;
 #else
         Debug.Assert(_bgrWriter is not null);
+        _bgrWriter.Clear();
         var bgrBytesWritten = PixelConverter.NV12toBGR(_bgrWriter, Image.Bytes, Image.Width, Image.Height, Image.Stride);
         return bgrBytesWritten;
 #endif

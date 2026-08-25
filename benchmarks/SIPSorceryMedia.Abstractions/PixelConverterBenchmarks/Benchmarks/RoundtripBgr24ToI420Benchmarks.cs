@@ -26,17 +26,6 @@ public class RoundtripBgr24ToI420Benchmarks
     [ParamsSource(nameof(GetImages))]
     public BenchmarkParams Image { get; set; }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-#if !LibVersion
-        Debug.Assert(_i420Writer is not null);
-        Debug.Assert(_bgr24Writer is not null);
-        _i420Writer.Clear();
-        _bgr24Writer.Clear();
-#endif
-    }
-
     [Benchmark]
     public int RoundtripBgr24ToI420Array()
     {
@@ -53,6 +42,8 @@ public class RoundtripBgr24ToI420Benchmarks
 #else
         Debug.Assert(_i420Writer is not null);
         Debug.Assert(_bgr24Writer is not null);
+        _i420Writer.Clear();
+        _bgr24Writer.Clear();
         var i420BytesWritten = PixelConverter.BGRtoI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height, Image.Stride);
         var rtBgrBytesWritten = PixelConverter.I420toBGR(_bgr24Writer, _i420Writer.WrittenSpan, Image.Width, Image.Height, out _);
         return i420BytesWritten + rtBgrBytesWritten;

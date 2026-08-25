@@ -18,15 +18,6 @@ public class ConvertOddDimensionNV12ToI420Banchmarks
     [ParamsSource(nameof(GetImages))]
     public BenchmarkParams Image { get; set; }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-#if !LibVersion
-        Debug.Assert(_i420Writer is not null);
-        _i420Writer.Clear();
-#endif
-    }
-
     [Benchmark]
     public int ConvertOddDimensionNV12ToI420Array()
     {
@@ -41,6 +32,7 @@ public class ConvertOddDimensionNV12ToI420Banchmarks
         return 0;
 #else
         Debug.Assert(_i420Writer is not null);
+        _i420Writer.Clear();
         var i420BytesWritten = PixelConverter.NV12toI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
         return i420BytesWritten;
 #endif

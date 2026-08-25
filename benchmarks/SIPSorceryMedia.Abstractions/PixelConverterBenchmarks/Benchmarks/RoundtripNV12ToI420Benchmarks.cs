@@ -25,17 +25,6 @@ public class RoundtripNV12ToI420Benchmarks
     [ParamsSource(nameof(GetImages))]
     public BenchmarkParams Image { get; set; }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-#if !LibVersion
-        Debug.Assert(_nv12Writer is not null);
-        Debug.Assert(_i420Writer is not null);
-        _nv12Writer.Clear();
-        _i420Writer.Clear();
-#endif
-    }
-
     [Benchmark]
     public int RoundtripNV12ToI420Array()
     {
@@ -52,6 +41,8 @@ public class RoundtripNV12ToI420Benchmarks
 #else
         Debug.Assert(_nv12Writer is not null);
         Debug.Assert(_i420Writer is not null);
+        _nv12Writer.Clear();
+        _i420Writer.Clear();
         var i420BytesWritten = PixelConverter.NV12toI420(_i420Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
         var rtNv12BytesWritten = PixelConverter.I420toNV12(_nv12Writer, _i420Writer.WrittenSpan, Image.Width, Image.Height);
         return i420BytesWritten + rtNv12BytesWritten;

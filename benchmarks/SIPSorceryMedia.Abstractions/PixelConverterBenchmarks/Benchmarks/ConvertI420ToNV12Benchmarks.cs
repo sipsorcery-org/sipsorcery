@@ -24,15 +24,6 @@ public class ConvertI420ToNV12Benchmarks
     [ParamsSource(nameof(GetImages))]
     public BenchmarkParams Image { get; set; }
 
-    [IterationSetup]
-    public void IterationSetup()
-    {
-#if !LibVersion
-        Debug.Assert(_nv12Writer is not null);
-        _nv12Writer.Clear();
-#endif
-    }
-
     [Benchmark]
     public int ConvertI420ToNV12Array()
     {
@@ -47,6 +38,7 @@ public class ConvertI420ToNV12Benchmarks
         return 0;
 #else
         Debug.Assert(_nv12Writer is not null);
+        _nv12Writer.Clear();
         var nv12BytesWritten = PixelConverter.I420toNV12(_nv12Writer, Image.Bytes.AsSpan(), Image.Width, Image.Height);
         return nv12BytesWritten;
 #endif
