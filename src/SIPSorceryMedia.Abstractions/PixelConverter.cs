@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Buffers;
+
 #if NET8_0_OR_GREATER
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 #endif
-using System.Threading.Tasks;
 
 namespace SIPSorceryMedia.Abstractions
 {
     public class PixelConverter
     {
-        private static readonly Dictionary<int, ParallelOptions> _optDOP = new Dictionary<int, ParallelOptions>();
-
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] ToI420(int width, int height, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
@@ -43,6 +41,11 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="sample">The buffer containing the image data.</param>
         /// <param name="pixelFormat">The pixel format of the image.</param>
         /// <returns>If successful a buffer containing an I420 formatted image sample.</returns>
+        /// <remarks>
+        /// Use <see cref="ToI420(IBufferWriter{byte}, int, int, int, ReadOnlySpan{byte}, VideoPixelFormatsEnum)"/> overload in
+        /// order to reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] ToI420(int width, int height, int stride, byte[] sample, VideoPixelFormatsEnum pixelFormat)
         {
             switch (pixelFormat)
@@ -65,10 +68,49 @@ namespace SIPSorceryMedia.Abstractions
             }
         }
 
+        /// <summary>
+        /// Attempts to convert an image buffer into an I420 format.
+        /// </summary>
+        /// <param name="output">The buffer writer to write the I420 data to.</param>
+        /// <param name="width">The width of the image in pixels.</param>
+        /// <param name="height">The height of the image in pixels.</param>
+        /// <param name="stride">
+        /// The stride of the image. Currently this method can only convert RGB and BGR formats. For those formats the
+        /// stride is typically: width x bytes per pixel. For example for a 640x480 RGB sample stride=640x3. For a 640x480
+        /// BGRA sample stride=640x4. Note in some cases the stride could be greater than the width x bytes per pixel.
+        /// </param>
+        /// <param name="sample">The buffer containing the image data.</param>
+        /// <param name="pixelFormat">The pixel format of the image.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int ToI420(IBufferWriter<byte> output, int width, int height, int stride, ReadOnlySpan<byte> sample, VideoPixelFormatsEnum pixelFormat)
+        {
+            switch (pixelFormat)
+            {
+                case VideoPixelFormatsEnum.I420:
+                    // No conversion needed.
+                    output.Write(sample);
+                    return sample.Length;
+                case VideoPixelFormatsEnum.Bgra:
+                    return PixelConverter.BGRAtoI420(output, sample, width, height, stride);
+                case VideoPixelFormatsEnum.Bgr:
+                    return PixelConverter.BGRtoI420(output, sample, width, height, stride);
+                case VideoPixelFormatsEnum.Rgba:
+                    return PixelConverter.RGBAtoI420(output, sample, width, height, stride);
+                case VideoPixelFormatsEnum.Rgb:
+                    return PixelConverter.RGBtoI420(output, sample, width, height, stride);
+                case VideoPixelFormatsEnum.NV12:
+                    return PixelConverter.NV12toI420(output, sample, width, height);
+                default:
+                    throw new ApplicationException($"Pixel format {pixelFormat} does not have an I420 conversion implemented.");
+            }
+        }
+
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] RGBAtoI420(byte[] rgba, int width, int height)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return RGBAtoI420(rgba, width, height, width * 4);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -81,40 +123,80 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
         /// <remarks>
-        /// https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)
-        /// http://qiita.com/gomachan7/items/54d43693f943a0986e95
+        /// <para>
+        /// <sealso href="https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)">https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)</sealso>
+        /// <sealso href="http://qiita.com/gomachan7/items/54d43693f943a0986e95">http://qiita.com/gomachan7/items/54d43693f943a0986e95</sealso>
+        /// </para>
+        /// <para>
+        /// Use <see cref="RGBAtoI420(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, int)"/>
+        /// overload in order to reduce memory allocations.
+        /// </para>
         /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] RGBAtoI420(byte[] rgba, int width, int height, int stride, int dop = 1)
         {
-            if (rgba == null || rgba.Length < (stride * height))
+            RGBAtoI420Validation(rgba, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = new byte[outputSize];
+
+            RGBAtoI420Core(buffer, rgba, width, height, stride, uOffset, vOffset);
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Converts an RGBA sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="bufferWriter">The buffer writer to write the I420 data to.</param>
+        /// <param name="rgba">The RGBA image sample.</param>
+        /// <param name="width">The width in pixels of the RGBA sample.</param>
+        /// <param name="height">The height in pixels of the RGBA sample.</param>
+        /// <param name="stride">The stride of the RGBA sample.</param>
+        /// <remarks>
+        /// <sealso href="https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)">https://docs.microsoft.com/en-us/previous-versions/visualstudio/hh394035(v=vs.105)</sealso>
+        /// <sealso href="http://qiita.com/gomachan7/items/54d43693f943a0986e95">http://qiita.com/gomachan7/items/54d43693f943a0986e95</sealso>
+        /// </remarks>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int RGBAtoI420(IBufferWriter<byte> bufferWriter, ReadOnlySpan<byte> rgba, int width, int height, int stride)
+        {
+            RGBAtoI420Validation(rgba, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = bufferWriter.GetSpan(outputSize).Slice(0, outputSize);
+            buffer.Clear();
+
+            RGBAtoI420Core(buffer, rgba, width, height, stride, uOffset, vOffset);
+
+            bufferWriter.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void RGBAtoI420Validation(ReadOnlySpan<byte> rgba, int width, int height, int stride, out int uOffset, out int vOffset, out int outputSize)
+        {
+            if (rgba.Length < (stride * height))
             {
-                throw new ApplicationException($"RGBA buffer supplied to RGBAtoI420 was too small, expected {stride * height} but got {rgba?.Length}.");
+                throw new ApplicationException($"RGBA buffer supplied to RGBAtoI420 was too small, expected {stride * height} but got {rgba.Length}.");
             }
 
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            int uOffset = ySize;
-            int vOffset = ySize + uvSize / 2;
-            //int posn = 0;
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            uOffset = ySize;
+            vOffset = ySize + uvSize / 2;
+            outputSize = ySize + uvSize;
+        }
 
-            byte[] buffer = new byte[ySize + uvSize];
-
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void RGBAtoI420Core(Span<byte> buffer, ReadOnlySpan<byte> rgba, int width, int height, int stride, int uOffset, int vOffset)
+        {
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     r = rgba[row * stride + col * 4] & 0xff;
                     g = rgba[row * stride + col * 4 + 1] & 0xff;
                     b = rgba[row * stride + col * 4 + 2] & 0xff;
-                    //posn++; // Skip transparency byte.
 
                     y = (int)(0.299 * r + 0.587 * g + 0.114 * b);
                     u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
@@ -122,20 +204,20 @@ namespace SIPSorceryMedia.Abstractions
 
                     buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
-                    int uvposn = col / 2 + row / 2 * width / 2;
+                    var uvposn = col / 2 + row / 2 * width / 2;
 
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            });
-
-            return buffer;
+            }
         }
 
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] RGBtoI420(byte[] rgb, int width, int height)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return RGBtoI420(rgb, width, height, width * 3);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -147,32 +229,68 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="stride">The stride of the RGB sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="RGBtoI420(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, int)"/>
+        /// overload in order to reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] RGBtoI420(byte[] rgb, int width, int height, int stride, int dop = 1)
         {
-            if (rgb == null || rgb.Length < (stride * height))
+            RGBtoI420Validation(rgb, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = new byte[outputSize];
+
+            RGBtoI420Core(buffer, rgb, width, height, stride, uOffset, vOffset);
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Converts an RGB sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="bufferWriter">The buffer writer to write the I420 data to.</param>
+        /// <param name="rgb">The RGB image sample.</param>
+        /// <param name="width">The width in pixels of the RGB sample.</param>
+        /// <param name="height">The height in pixels of the RGB sample.</param>
+        /// <param name="stride">The stride of the RGB sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int RGBtoI420(IBufferWriter<byte> bufferWriter, ReadOnlySpan<byte> rgb, int width, int height, int stride)
+        {
+            RGBtoI420Validation(rgb, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = bufferWriter.GetSpan(outputSize).Slice(0, outputSize);
+            buffer.Clear();
+
+            RGBtoI420Core(buffer, rgb, width, height, stride, uOffset, vOffset);
+
+            bufferWriter.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void RGBtoI420Validation(ReadOnlySpan<byte> rgb, int width, int height, int stride, out int uOffset, out int vOffset, out int outputSize)
+        {
+            if (rgb.Length < (stride * height))
             {
-                throw new ApplicationException($"RGB buffer supplied to RGBtoI420 was too small, expected {stride * height} but got {rgb?.Length}.");
+                throw new ApplicationException($"RGB buffer supplied to RGBtoI420 was too small, expected {stride * height} but got {rgb.Length}.");
             }
 
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            int uOffset = ySize;
-            int vOffset = ySize + uvSize / 2;
-            //int posn = 0;
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            uOffset = ySize;
+            vOffset = ySize + uvSize / 2;
+            outputSize = ySize + uvSize;
+        }
 
-            byte[] buffer = new byte[ySize + uvSize];
-
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void RGBtoI420Core(Span<byte> buffer, ReadOnlySpan<byte> rgb, int width, int height, int stride, int uOffset, int vOffset)
+        {
+            // RGB: Byte order is Red, Green, Blue.
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     r = rgb[row * stride + col * 3] & 0xff;
                     g = rgb[row * stride + col * 3 + 1] & 0xff;
@@ -184,20 +302,20 @@ namespace SIPSorceryMedia.Abstractions
 
                     buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
-                    int uvposn = col / 2 + row / 2 * width / 2;
+                    var uvposn = col / 2 + row / 2 * width / 2;
 
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            });
-
-            return buffer;
+            }
         }
 
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] BGRtoI420(byte[] bgr, int width, int height)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return BGRtoI420(bgr, width, height, width * 3);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -209,32 +327,68 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="stride">The stride of the BGR sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="BGRtoI420(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] BGRtoI420(byte[] bgr, int width, int height, int stride, int dop = 1)
         {
-            if (bgr == null || bgr.Length < (stride * height))
+            BGRtoI420Validation(bgr, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = new byte[outputSize];
+
+            BGRtoI420Core(buffer, bgr, width, height, stride, uOffset, vOffset);
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Converts a BGR sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="output">The buffer writer to write the I420 data to.</param>
+        /// <param name="bgr">The BGR image sample.</param>
+        /// <param name="width">The width in pixels of the BGR sample.</param>
+        /// <param name="height">The height in pixels of the BGR sample.</param>
+        /// <param name="stride">The stride of the BGR sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int BGRtoI420(IBufferWriter<byte> output, ReadOnlySpan<byte> bgr, int width, int height, int stride)
+        {
+            BGRtoI420Validation(bgr, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = output.GetSpan(outputSize).Slice(0, outputSize);
+            buffer.Clear();
+
+            BGRtoI420Core(buffer, bgr, width, height, stride, uOffset, vOffset);
+
+            output.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void BGRtoI420Validation(ReadOnlySpan<byte> bgr, int width, int height, int stride, out int uOffset, out int vOffset, out int outputSize)
+        {
+            if (bgr.Length < (stride * height))
             {
-                throw new ApplicationException($"BGR buffer supplied to BGRtoI420 was too small, expected {stride * height} but got {bgr?.Length}.");
+                throw new ApplicationException($"BGR buffer supplied to BGRtoI420 was too small, expected {stride * height} but got {bgr.Length}.");
             }
 
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            int uOffset = ySize;
-            int vOffset = ySize + uvSize / 2;
-            //int posn = 0;
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            uOffset = ySize;
+            vOffset = ySize + uvSize / 2;
+            outputSize = ySize + uvSize;
+        }
 
-            byte[] buffer = new byte[ySize + uvSize];
-
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void BGRtoI420Core(Span<byte> buffer, ReadOnlySpan<byte> bgr, int width, int height, int stride, int uOffset, int vOffset)
+        {
+            // BGR: Byte order is Blue, Green, Red.
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     b = bgr[row * stride + col * 3] & 0xff;
                     g = bgr[row * stride + col * 3 + 1] & 0xff;
@@ -246,14 +400,12 @@ namespace SIPSorceryMedia.Abstractions
 
                     buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
-                    int uvposn = col / 2 + row / 2 * width / 2;
+                    var uvposn = col / 2 + row / 2 * width / 2;
 
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            });
-
-            return buffer;
+            }
         }
 
         /// <summary>
@@ -265,33 +417,69 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="stride">The stride of the BGRA sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="BGRAtoI420(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] BGRAtoI420(byte[] bgra, int width, int height, int stride, int dop = 1)
         {
-            if (bgra == null || bgra.Length < (stride * height))
+            BGRAtoI420Validation(bgra, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = new byte[outputSize];
+
+            BGRAtoI420Core(buffer, bgra, width, height, stride, uOffset, vOffset);
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Converts a BGRA sample to an I420 formatted sample.
+        /// </summary>
+        /// <param name="output">The buffer writer to write the I420 data to.</param>
+        /// <param name="bgra">The BGRA image sample.</param>
+        /// <param name="width">The width in pixels of the BGRA sample.</param>
+        /// <param name="height">The height in pixels of the BGRA sample.</param>
+        /// <param name="stride">The stride of the BGRA sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int BGRAtoI420(IBufferWriter<byte> output, ReadOnlySpan<byte> bgra, int width, int height, int stride)
+        {
+            BGRAtoI420Validation(bgra, width, height, stride, out var uOffset, out var vOffset, out var outputSize);
+
+            var buffer = output.GetSpan(outputSize).Slice(0, outputSize);
+            buffer.Clear();
+
+            BGRAtoI420Core(buffer, bgra, width, height, stride, uOffset, vOffset);
+
+            output.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void BGRAtoI420Validation(ReadOnlySpan<byte> bgra, int width, int height, int stride, out int uOffset, out int vOffset, out int outputSize)
+        {
+            if (bgra.Length < (stride * height))
             {
-                throw new ApplicationException($"BGRA buffer supplied to BGRAtoI420 was too small, expected {stride * height} but got {bgra?.Length}.");
+                throw new ApplicationException($"BGRA buffer supplied to BGRAtoI420 was too small, expected {stride * height} but got {bgra.Length}.");
             }
 
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            int uOffset = ySize;
-            int vOffset = ySize + uvSize / 2;
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            uOffset = ySize;
+            vOffset = ySize + uvSize / 2;
+            outputSize = ySize + uvSize;
+        }
 
-            byte[] buffer = new byte[ySize + uvSize];
-
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void BGRAtoI420Core(Span<byte> buffer, ReadOnlySpan<byte> bgra, int width, int height, int stride, int uOffset, int vOffset)
+        {
+            // BGRA: Byte order is Blue, Green, Red, Alpha.
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
-                    // BGRA: Byte order is Blue, Green, Red, Alpha.
                     b = bgra[row * stride + col * 4] & 0xff;
                     g = bgra[row * stride + col * 4 + 1] & 0xff;
                     r = bgra[row * stride + col * 4 + 2] & 0xff;
@@ -301,22 +489,22 @@ namespace SIPSorceryMedia.Abstractions
                     u = (int)(-0.147 * r - 0.289 * g + 0.436 * b) + 128;
                     v = (int)(0.615 * r - 0.515 * g - 0.100 * b) + 128;
 
-                    buffer[col + row * width] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
+                    var yIdx = col + row * width;
+                    buffer[yIdx] = (byte)(y > 255 ? 255 : y < 0 ? 0 : y);
 
-                    int uvposn = (col / 2) + (row / 2) * (width / 2);
+                    var uvposn = (col / 2) + (row / 2) * (width / 2);
                     buffer[uOffset + uvposn] = (byte)(u > 255 ? 255 : u < 0 ? 0 : u);
                     buffer[vOffset + uvposn] = (byte)(v > 255 ? 255 : v < 0 ? 0 : v);
                 }
-            });
-
-            return buffer;
+            }
         }
-
 
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] I420toRGB(byte[] data, int width, int height)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return I420toRGB(data, width, height, out _);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -328,35 +516,71 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="stride">The stride to use for the desintation RGB sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An RGB buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="I420toRGB(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, out int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] I420toRGB(byte[] data, int width, int height, out int stride, int dop = 1)
         {
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            if (data == null || data.Length < (ySize + uvSize))
+            I420toRGBValidation(data, width, height, out stride, out var uOffset, out var vOffset, out var lclStride, out var outputSize);
+
+            var rgb = new byte[outputSize];
+
+            I420toRGBCore(rgb, data, width, height, uOffset, vOffset, lclStride);
+
+            return rgb;
+        }
+
+        /// <summary>
+        /// Converts an I420 sample to an RGB formatted sample.
+        /// </summary>
+        /// <param name="output">The buffer writer to write the RGB data to.</param>
+        /// <param name="data">The I420 image sample.</param>
+        /// <param name="width">The width in pixels of the I420 sample.</param>
+        /// <param name="height">The height in pixels of the I420 sample.</param>
+        /// <param name="stride">The stride to use for the desintation RGB sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int I420toRGB(IBufferWriter<byte> output, ReadOnlySpan<byte> data, int width, int height, out int stride)
+        {
+            I420toRGBValidation(data, width, height, out stride, out var uOffset, out var vOffset, out var lclStride, out var outputSize);
+
+            var rgb = output.GetSpan(outputSize).Slice(0, outputSize);
+            rgb.Clear();
+
+            I420toRGBCore(rgb, data, width, height, uOffset, vOffset, lclStride);
+
+            output.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void I420toRGBValidation(ReadOnlySpan<byte> data, int width, int height, out int stride, out int uOffset, out int vOffset, out int lclStride, out int outputSize)
+        {
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            if (data.Length < (ySize + uvSize))
             {
-                throw new ApplicationException($"I420 buffer supplied to I420toRGB was too small, expected {ySize + uvSize} but got {data?.Length}.");
+                throw new ApplicationException($"I420 buffer supplied to I420toRGB was too small, expected {ySize + uvSize} but got {data.Length}.");
             }
 
-            int uOffset = ySize;
-            int vOffset = ySize + ySize / 4;
-            int lclStride = stride = (width * 3 + 3) / 4 * 4;
-            byte[] rgb = new byte[height * stride];
-            //int posn = 0;
+            uOffset = ySize;
+            vOffset = ySize + ySize / 4;
+            lclStride = stride = (width * 3 + 3) / 4 * 4;
+            outputSize = height * stride;
+        }
 
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void I420toRGBCore(Span<byte> rgb, ReadOnlySpan<byte> data, int width, int height, int uOffset, int vOffset, int lclStride)
+        {
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     y = data[col + row * width];
-                    int uvposn = col / 2 + row / 2 * width / 2;
+                    var uvposn = col / 2 + row / 2 * width / 2;
 
                     u = data[uOffset + uvposn] - 128;
                     v = data[vOffset + uvposn] - 128;
@@ -369,15 +593,15 @@ namespace SIPSorceryMedia.Abstractions
                     rgb[row * lclStride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
                     rgb[row * lclStride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
                 }
-            });
-
-            return rgb;
+            }
         }
 
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] I420toBGR(byte[] data, int width, int height)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return I420toBGR(data, width, height, out _);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -389,35 +613,71 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="stride">The stride to use for the desintation BGR sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>A BGR buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="I420toBGR(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, out int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] I420toBGR(byte[] data, int width, int height, out int stride, int dop = 1)
         {
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            if (data == null || data.Length < (ySize + uvSize))
+            I420toBGRValidation(data, width, height, out stride, out var uOffset, out var vOffset, out var lclStride, out var outputSize);
+
+            var bgr = new byte[outputSize];
+
+            I420toBGRCore(bgr, data, width, height, uOffset, vOffset, lclStride);
+
+            return bgr;
+        }
+
+        /// <summary>
+        /// Converts an I420 sample to an BGR formatted sample.
+        /// </summary>
+        /// <param name="output">The buffer writer to write the BGR data to.</param>
+        /// <param name="data">The I420 image sample.</param>
+        /// <param name="width">The width in pixels of the I420 sample.</param>
+        /// <param name="height">The height in pixels of the I420 sample.</param>
+        /// <param name="stride">The stride to use for the desintation BGR sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int I420toBGR(IBufferWriter<byte> output, ReadOnlySpan<byte> data, int width, int height, out int stride)
+        {
+            I420toBGRValidation(data, width, height, out stride, out var uOffset, out var vOffset, out var lclStride, out var outputSize);
+
+            var bgr = output.GetSpan(outputSize).Slice(0, outputSize);
+            bgr.Clear();
+
+            I420toBGRCore(bgr, data, width, height, uOffset, vOffset, lclStride);
+
+            output.Advance(height * lclStride);
+
+            return outputSize;
+        }
+
+        private static void I420toBGRValidation(ReadOnlySpan<byte> data, int width, int height, out int stride, out int uOffset, out int vOffset, out int lclStride, out int outputSize)
+        {
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            if (data.Length < (ySize + uvSize))
             {
-                throw new ApplicationException($"I420 buffer supplied to I420toBGR was too small, expected {ySize + uvSize} but got {data?.Length}.");
+                throw new ApplicationException($"I420 buffer supplied to I420toBGR was too small, expected {ySize + uvSize} but got {data.Length}.");
             }
 
-            int uOffset = ySize;
-            int vOffset = ySize + uvSize / 2;
-            var lclStride = stride = (width * 3 + 3) / 4 * 4;
-            byte[] bgr = new byte[height * stride];
-            //int posn = 0;
+            uOffset = ySize;
+            vOffset = ySize + uvSize / 2;
+            lclStride = stride = (width * 3 + 3) / 4 * 4;
+            outputSize = height * stride;
+        }
 
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void I420toBGRCore(Span<byte> bgr, ReadOnlySpan<byte> data, int width, int height, int uOffset, int vOffset, int lclStride)
+        {
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     y = data[col + row * width];
-                    int uvposn = col / 2 + row / 2 * width / 2;
+                    var uvposn = col / 2 + row / 2 * width / 2;
 
                     u = data[uOffset + uvposn] - 128;
                     v = data[vOffset + uvposn] - 128;
@@ -430,15 +690,15 @@ namespace SIPSorceryMedia.Abstractions
                     bgr[row * lclStride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
                     bgr[row * lclStride + col * 3 + 2] = (byte)(b > 255 ? 255 : b < 0 ? 0 : b);
                 }
-            });
-
-            return bgr;
+            }
         }
 
         [Obsolete("Use overload with stride parameter in order to deal with uneven dimensions.")]
         public static byte[] NV12toBGR(byte[] data, int width, int height)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             return NV12toBGR(data, width, height, width * 3);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -450,33 +710,69 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="stride">The stride to use for the desintation BGR sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>A BGR buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="NV12toBGR(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int, int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] NV12toBGR(byte[] data, int width, int height, int stride, int dop = 1)
         {
-            int ySize = width * height;
-            int uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
-            if (data == null || data.Length < (ySize + uvSize))
+            NV12toBGRValidation(data, width, height, stride, out var uvOffset, out var outputSize);
+
+            var bgr = new byte[outputSize];
+
+            NV12toBGRCore(bgr, data, width, height, stride, uvOffset);
+
+            return bgr;
+        }
+
+        /// <summary>
+        /// Converts an NV12 sample to an BGR formatted sample.
+        /// </summary>
+        /// <param name="output">The buffer writer to write the BGR data to.</param>
+        /// <param name="data">The NV12 image sample.</param>
+        /// <param name="width">The width in pixels of the NV12 sample.</param>
+        /// <param name="height">The height in pixels of the NV12 sample.</param>
+        /// <param name="stride">The stride to use for the desintation BGR sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int NV12toBGR(IBufferWriter<byte> output, ReadOnlySpan<byte> data, int width, int height, int stride)
+        {
+            NV12toBGRValidation(data, width, height, stride, out var uvOffset, out var outputSize);
+
+            var bgr = output.GetSpan(outputSize).Slice(0, outputSize);
+            bgr.Clear();
+
+            NV12toBGRCore(bgr, data, width, height, stride, uvOffset);
+
+            output.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void NV12toBGRValidation(ReadOnlySpan<byte> data, int width, int height, int stride, out int uvOffset, out int outputSize)
+        {
+            var ySize = width * height;
+            var uvSize = ((width + 1) / 2) * ((height + 1) / 2) * 2;
+            if (data.Length < (ySize + uvSize))
             {
-                throw new ApplicationException($"NV12 buffer supplied to NV12toBGR was too small, expected {ySize + uvSize} but got {data?.Length}.");
+                throw new ApplicationException($"NV12 buffer supplied to NV12toBGR was too small, expected {ySize + uvSize} but got {data.Length}.");
             }
 
-            int uvOffset = ySize;
-            byte[] bgr = new byte[height * stride];
-            //int posn = 0;
+            uvOffset = ySize;
+            outputSize = height * stride;
+        }
 
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
-            Parallel.For(0, height, _optDOP[dop], (row) =>
+        private static void NV12toBGRCore(Span<byte> bgr, ReadOnlySpan<byte> data, int width, int height, int stride, int uvOffset)
+        {
+            for (var row = 0; row < height; row++)
             {
                 int u, v, y;
                 int r, g, b;
 
-                for (int col = 0; col < width; col++)
+                for (var col = 0; col < width; col++)
                 {
                     y = data[col + row * width];
-                    int uvposn = row / 2 * width + col / 2 * 2;
+                    var uvposn = row / 2 * width + col / 2 * 2;
 
                     u = data[uvOffset + uvposn] - 128;
                     v = data[uvOffset + uvposn + 1] - 128;
@@ -489,9 +785,7 @@ namespace SIPSorceryMedia.Abstractions
                     bgr[row * stride + col * 3 + 1] = (byte)(g > 255 ? 255 : g < 0 ? 0 : g);
                     bgr[row * stride + col * 3 + 2] = (byte)(r > 255 ? 255 : r < 0 ? 0 : r);
                 }
-            });
-
-            return bgr;
+            }
         }
 
         /// <summary>
@@ -504,52 +798,92 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="height">The height in pixels of the NV12 sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An I420 buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="NV12toI420(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] NV12toI420(byte[] nv12, int width, int height, int dop = 1)
         {
-            int ySize = width * height;
-            int uvWidth = (width + 1) / 2;
-            int uvHeight = (height + 1) / 2;
-            int uvSize = uvWidth * uvHeight * 2;
+            NV12toI420Validation(nv12, width, height, out var ySize, out var uvWidth, out var uvHeight, out var outputSize);
 
-            if (nv12 == null || nv12.Length < (ySize + uvSize))
+            var i420 = new byte[outputSize];
+
+            NV12toI420Core(i420, nv12, width, height, ySize, ySize, uvWidth, uvHeight);
+
+            return i420;
+        }
+
+        /// <summary>
+        /// Converts an NV12 sample to an I420 formatted sample.
+        /// NV12: Y plane followed by interleaved UV plane (UVUVUV...).
+        /// I420: Y plane followed by U plane, then V plane (planar format).
+        /// </summary>
+        /// <param name="output">The buffer writer to write the I420 data to.</param>
+        /// <param name="nv12">The NV12 image sample.</param>
+        /// <param name="width">The width in pixels of the NV12 sample.</param>
+        /// <param name="height">The height in pixels of the NV12 sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int NV12toI420(IBufferWriter<byte> output, ReadOnlySpan<byte> nv12, int width, int height)
+        {
+            NV12toI420Validation(nv12, width, height, out var ySize, out var uvWidth, out var uvHeight, out var outputSize);
+
+            var i420 = output.GetSpan(outputSize).Slice(0, outputSize);
+            i420.Clear();
+
+            NV12toI420Core(i420, nv12, width, height, ySize, ySize, uvWidth, uvHeight);
+
+            output.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void NV12toI420Validation(ReadOnlySpan<byte> nv12, int width, int height, out int ySize, out int uvWidth, out int uvHeight, out int outputSize)
+        {
+            ySize = width * height;
+            uvWidth = (width + 1) / 2;
+            uvHeight = (height + 1) / 2;
+            var uvSize = uvWidth * uvHeight * 2;
+
+            outputSize = ySize + uvSize;
+            if (nv12.Length < outputSize)
             {
-                throw new ApplicationException($"NV12 buffer supplied to NV12toI420 was too small, expected {ySize + uvSize} but got {nv12?.Length}.");
+                throw new ApplicationException($"NV12 buffer supplied to NV12toI420 was too small, expected {outputSize} but got {nv12.Length}.");
             }
+        }
 
-            byte[] i420 = new byte[ySize + uvSize];
-
+        private static void NV12toI420Core(Span<byte> i420, ReadOnlySpan<byte> nv12, int width, int height, int ySize, int uvOffset, int uvWidth, int uvHeight)
+        {
             // Copy Y plane (same layout in both formats).
-            Buffer.BlockCopy(nv12, 0, i420, 0, ySize);
+            nv12.Slice(0, ySize).CopyTo(i420);
 
-            int nv12UvOffset = ySize;
-            int i420UOffset = ySize;
-            int i420VOffset = ySize + uvWidth * uvHeight;
+            var nv12UvOffset = ySize;
+            var i420UOffset = ySize;
+            var i420VOffset = ySize + uvWidth * uvHeight;
 
 #if NET8_0_OR_GREATER
             // Use SIMD for de-interleaving UV plane when available
-            DeinterleaveUVSimd(nv12, nv12UvOffset, i420, i420UOffset, i420VOffset, uvWidth, uvHeight);
+            DeinterleaveUVSimd(i420, nv12, nv12UvOffset, i420UOffset, i420VOffset, uvWidth, uvHeight);
 #else
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
 
             // De-interleave UV plane: NV12 has UV interleaved, I420 has separate U and V planes.
-            Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
+            for (var row = 0; row < uvHeight; row++)
             {
-                for (int col = 0; col < uvWidth; col++)
+                for (var col = 0; col < uvWidth; col++)
                 {
-                    int nv12Posn = nv12UvOffset + row * uvWidth * 2 + col * 2;
-                    int i420UPosn = i420UOffset + row * uvWidth + col;
-                    int i420VPosn = i420VOffset + row * uvWidth + col;
+                    var nv12Posn = nv12UvOffset + row * uvWidth * 2 + col * 2;
+                    var i420UPosn = i420UOffset + row * uvWidth + col;
+                    var i420VPosn = i420VOffset + row * uvWidth + col;
 
                     i420[i420UPosn] = nv12[nv12Posn];       // U
                     i420[i420VPosn] = nv12[nv12Posn + 1];   // V
                 }
-            });
+            }
 #endif
+        }
 
-            return i420;
+        private static void NV12toI420Core()
+        {
         }
 
 #if NET8_0_OR_GREATER
@@ -557,14 +891,14 @@ namespace SIPSorceryMedia.Abstractions
         /// SIMD-optimized de-interleave of UV plane from NV12 format (UVUVUV...) to I420 format (separate U and V planes).
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void DeinterleaveUVSimd(byte[] src, int srcOffset, byte[] dst, int dstUOffset, int dstVOffset, int uvWidth, int uvHeight)
+        private static void DeinterleaveUVSimd(Span<byte> dst, ReadOnlySpan<byte> src, int srcOffset, int dstUOffset, int dstVOffset, int uvWidth, int uvHeight)
         {
-            int totalUV = uvWidth * uvHeight;
-            int i = 0;
+            var totalUV = uvWidth * uvHeight;
+            var i = 0;
 
-            ref byte srcRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcOffset);
-            ref byte dstURef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstUOffset);
-            ref byte dstVRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstVOffset);
+            ref var srcRef = ref Unsafe.Add(ref MemoryMarshal.GetReference(src), srcOffset);
+            ref var dstURef = ref Unsafe.Add(ref MemoryMarshal.GetReference(dst), dstUOffset);
+            ref var dstVRef = ref Unsafe.Add(ref MemoryMarshal.GetReference(dst), dstVOffset);
 
             // Process 32 UV pairs at a time (64 bytes) using Vector256
             if (Vector256.IsHardwareAccelerated)
@@ -671,52 +1005,87 @@ namespace SIPSorceryMedia.Abstractions
         /// <param name="height">The height in pixels of the I420 sample.</param>
         /// <param name="dop">The degree of parallelism for converting.</param>
         /// <returns>An NV12 buffer representing the source image.</returns>
+        /// <remarks>
+        /// Use <see cref="I420toNV12(IBufferWriter{byte}, ReadOnlySpan{byte}, int, int)"/> overload in order to
+        /// reduce memory allocations.
+        /// </remarks>
+        [Obsolete("Use ReadOnlySpan<byte> overload in order to reduce memory allocations.")]
         public static byte[] I420toNV12(byte[] i420, int width, int height, int dop = 1)
         {
-            int ySize = width * height;
-            int uvWidth = (width + 1) / 2;
-            int uvHeight = (height + 1) / 2;
-            int uvSize = uvWidth * uvHeight * 2;
+            I420toNV12Validation(i420, width, height, out var ySize, out var uvWidth, out var uvHeight, out var outputSize);
 
-            if (i420 == null || i420.Length < (ySize + uvSize))
+            var nv12 = new byte[outputSize];
+
+            I420toNV12Core(nv12, i420, width, height, ySize, uvWidth, uvHeight);
+
+            return nv12;
+        }
+
+        /// <summary>
+        /// Converts an I420 sample to an NV12 formatted sample.
+        /// I420: Y plane followed by U plane, then V plane (planar format).
+        /// NV12: Y plane followed by interleaved UV plane (UVUVUV...).
+        /// </summary>
+        /// <param name="output">The buffer writer to write the NV12 data to.</param>
+        /// <param name="i420">The I420 image sample.</param>
+        /// <param name="width">The width in pixels of the I420 sample.</param>
+        /// <param name="height">The height in pixels of the I420 sample.</param>
+        /// <returns>The number of bytes written to the output buffer.</returns>
+        public static int I420toNV12(IBufferWriter<byte> output, ReadOnlySpan<byte> i420, int width, int height)
+        {
+            I420toNV12Validation(i420, width, height, out var ySize, out var uvWidth, out var uvHeight, out var outputSize);
+
+            var nv12 = output.GetSpan(outputSize).Slice(0, outputSize);
+            nv12.Clear();
+
+            I420toNV12Core(nv12, i420, width, height, ySize, uvWidth, uvHeight);
+
+            output.Advance(outputSize);
+
+            return outputSize;
+        }
+
+        private static void I420toNV12Validation(ReadOnlySpan<byte> i420, int width, int height, out int ySize, out int uvWidth, out int uvHeight, out int outputSize)
+        {
+            ySize = width * height;
+            uvWidth = (width + 1) / 2;
+            uvHeight = (height + 1) / 2;
+            var uvSize = uvWidth * uvHeight * 2;
+
+            outputSize = ySize + uvSize;
+            if (i420.Length < outputSize)
             {
-                throw new ApplicationException($"I420 buffer supplied to I420toNV12 was too small, expected {ySize + uvSize} but got {i420?.Length}.");
+                throw new ApplicationException($"I420 buffer supplied to I420toNV12 was too small, expected {outputSize} but got {i420.Length}.");
             }
+        }
 
-            byte[] nv12 = new byte[ySize + uvSize];
-
+        private static void I420toNV12Core(Span<byte> nv12, ReadOnlySpan<byte> i420, int width, int height, int ySize, int uvWidth, int uvHeight)
+        {
             // Copy Y plane (same layout in both formats).
-            Buffer.BlockCopy(i420, 0, nv12, 0, ySize);
+            i420.Slice(0, ySize).CopyTo(nv12);
 
-            int i420UOffset = ySize;
-            int i420VOffset = ySize + uvWidth * uvHeight;
-            int nv12UvOffset = ySize;
+            var i420UOffset = ySize;
+            var i420VOffset = ySize + uvWidth * uvHeight;
+            var nv12UvOffset = ySize;
 
 #if NET8_0_OR_GREATER
             // Use SIMD for interleaving U and V planes when available
-            InterleaveUVSimd(i420, i420UOffset, i420VOffset, nv12, nv12UvOffset, uvWidth, uvHeight);
+            InterleaveUVSimd(nv12, i420, i420UOffset, i420VOffset, nv12UvOffset, uvWidth, uvHeight);
 #else
-            if (!_optDOP.ContainsKey(dop))
-            {
-                _optDOP[dop] = new ParallelOptions() { MaxDegreeOfParallelism = dop };
-            }
-
             // Interleave UV plane: I420 has separate U and V planes, NV12 has UV interleaved.
-            Parallel.For(0, uvHeight, _optDOP[dop], (row) =>
+            for (var row = 0; row < uvHeight; row++)
             {
-                for (int col = 0; col < uvWidth; col++)
+                for (var col = 0; col < uvWidth; col++)
                 {
-                    int i420UPosn = i420UOffset + row * uvWidth + col;
-                    int i420VPosn = i420VOffset + row * uvWidth + col;
-                    int nv12Posn = nv12UvOffset + row * uvWidth * 2 + col * 2;
+                    var i420UPosn = i420UOffset + row * uvWidth + col;
+                    var i420VPosn = i420VOffset + row * uvWidth + col;
+                    var nv12Posn = nv12UvOffset + row * uvWidth * 2 + col * 2;
 
                     nv12[nv12Posn] = i420[i420UPosn];       // U
                     nv12[nv12Posn + 1] = i420[i420VPosn];   // V
                 }
-            });
+            }
 #endif
-
-            return nv12;
         }
 
 #if NET8_0_OR_GREATER
@@ -724,14 +1093,14 @@ namespace SIPSorceryMedia.Abstractions
         /// SIMD-optimized interleave of separate U and V planes from I420 format to NV12 format (UVUVUV...).
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void InterleaveUVSimd(byte[] src, int srcUOffset, int srcVOffset, byte[] dst, int dstOffset, int uvWidth, int uvHeight)
+        private static void InterleaveUVSimd(Span<byte> dst, ReadOnlySpan<byte> src, int srcUOffset, int srcVOffset, int dstOffset, int uvWidth, int uvHeight)
         {
-            int totalUV = uvWidth * uvHeight;
-            int i = 0;
+            var totalUV = uvWidth * uvHeight;
+            var i = 0;
 
-            ref byte srcURef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcUOffset);
-            ref byte srcVRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(src), srcVOffset);
-            ref byte dstRef = ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(dst), dstOffset);
+            ref var srcURef = ref Unsafe.Add(ref MemoryMarshal.GetReference(src), srcUOffset);
+            ref var srcVRef = ref Unsafe.Add(ref MemoryMarshal.GetReference(src), srcVOffset);
+            ref var dstRef = ref Unsafe.Add(ref MemoryMarshal.GetReference(dst), dstOffset);
 
             // Process 32 U/V values at a time using Vector256
             if (Vector256.IsHardwareAccelerated)
@@ -826,7 +1195,7 @@ namespace SIPSorceryMedia.Abstractions
             // Pattern for first 8 pairs: A0,B0,A1,B1,A2,B2,A3,B3,A4,B4,A5,B5,A6,B6,A7,B7
             var shuffleLowA = Vector128.Create((byte)0, 255, 1, 255, 2, 255, 3, 255, 4, 255, 5, 255, 6, 255, 7, 255);
             var shuffleLowB = Vector128.Create((byte)255, 0, 255, 1, 255, 2, 255, 3, 255, 4, 255, 5, 255, 6, 255, 7);
-            
+
             // Pattern for second 8 pairs: A8,B8,A9,B9,...,A15,B15
             var shuffleHighA = Vector128.Create((byte)8, 255, 9, 255, 10, 255, 11, 255, 12, 255, 13, 255, 14, 255, 15, 255);
             var shuffleHighB = Vector128.Create((byte)255, 8, 255, 9, 255, 10, 255, 11, 255, 12, 255, 13, 255, 14, 255, 15);

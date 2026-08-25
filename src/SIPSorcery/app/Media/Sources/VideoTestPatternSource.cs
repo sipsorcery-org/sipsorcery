@@ -272,7 +272,9 @@ namespace SIPSorcery.Media
         /// <param name="i420Buffer">The I420 buffer representing the test pattern.</param>
         private void GenerateRawSample(int width, int height, byte[] i420Buffer)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             var bgr = PixelConverter.I420toBGR(i420Buffer, width, height, out _);
+#pragma warning restore CS0618 // Type or member is obsolete
             OnVideoSourceRawSample?.Invoke((uint)_frameSpacing, width, height, bgr, VideoPixelFormatsEnum.Bgr);
         }
 

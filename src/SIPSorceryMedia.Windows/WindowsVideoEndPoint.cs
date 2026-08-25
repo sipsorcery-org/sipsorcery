@@ -598,7 +598,9 @@ namespace SIPSorceryMedia.Windows
                                                 frameSpacing = Convert.ToUInt32(DateTime.Now.Subtract(_lastFrameAt).TotalMilliseconds);
                                             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                                             var bgrBuffer = PixelConverter.NV12toBGR(nv12Buffer, width, height, width * 3);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                                             OnVideoSourceRawSample(frameSpacing, width, height, bgrBuffer, VideoPixelFormatsEnum.Bgr);
                                         }
