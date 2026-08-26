@@ -134,6 +134,7 @@ namespace demo
 
                         // Note GDI+'s Format24bppRgb is B,G,R in memory, hence the Bgr sample above.
                         Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
+                        _picBox.Image?.Dispose();       // Otherwise a GDI handle leaks for every frame.
                         _picBox.Image = bmpImage;
                     }
                     else
@@ -161,6 +162,7 @@ namespace demo
                             fixed (byte* s = bmp)
                             {
                                 Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
+                                _picBox.Image?.Dispose();   // Otherwise a GDI handle leaks for every frame.
                                 _picBox.Image = bmpImage;
                             }
                         }
