@@ -19,6 +19,8 @@ namespace SIPSorceryMedia.Abstractions
                 case VideoPixelFormatsEnum.I420:
                     return sample;
                 case VideoPixelFormatsEnum.Bgra:
+                    return PixelConverter.BGRAtoI420(sample, width, height, width * 4);
+                case VideoPixelFormatsEnum.Rgba:
                     return PixelConverter.RGBAtoI420(sample, width, height, width * 4);
                 case VideoPixelFormatsEnum.Bgr:
                     return PixelConverter.BGRtoI420(sample, width, height, width * 3);
