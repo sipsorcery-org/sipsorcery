@@ -62,5 +62,63 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Contains(msrpMediaTypes, sdpOffer);
             Assert.Contains(mediaDescription, sdpOffer);
         }
+
+        [Fact]
+        public void AddExtra_Attribute_AddsMediaAttribute()
+        {
+            var videoAttribute = $"a=x-video-{System.Guid.NewGuid():N}";
+            var audioAttribute = $"a=x-audio-{System.Guid.NewGuid():N}";
+            var sdp = SDP.ParseSDPDescription(
+                $"v=0{SDP.CRLF}" +
+                $"o=- {(uint)System.Guid.NewGuid().GetHashCode()} 0 IN IP4 127.0.0.1{SDP.CRLF}" +
+                $"s=sipsorcery{SDP.CRLF}" +
+                $"t=0 0{SDP.CRLF}" +
+                $"a=group:BUNDLE 0 1{SDP.CRLF}" +
+                $"m=video 9 UDP/TLS/RTP/SAVP 96{SDP.CRLF}" +
+                $"c=IN IP4 0.0.0.0{SDP.CRLF}" +
+                $"a=ice-ufrag:LYMS{SDP.CRLF}" +
+                $"a=ice-pwd:PAZQAZXCCWZZZIPRTUKOBHRH{SDP.CRLF}" +
+                $"a=mid:0{SDP.CRLF}" +
+                $"a=rtpmap:96 VP8/90000{SDP.CRLF}" +
+                $"a=sendonly{SDP.CRLF}" +
+                $"m=audio 9 UDP/TLS/RTP/SAVP 0{SDP.CRLF}" +
+                $"c=IN IP4 0.0.0.0{SDP.CRLF}" +
+                $"a=mid:1{SDP.CRLF}" +
+                $"a=rtpmap:0 PCMU/8000{SDP.CRLF}" +
+                "a=recvonly");
+            var before = sdp.ToString();
+
+            sdp.Media[0].AddExtra(videoAttribute);
+            sdp.Media[1].AddExtra(audioAttribute);
+
+            var expected = before
+                .Replace(
+                    $"{SDP.CRLF}a=sendonly",
+                    $"{SDP.CRLF}{videoAttribute}{SDP.CRLF}a=sendonly")
+                .Replace(
+                    $"{SDP.CRLF}a=recvonly",
+                    $"{SDP.CRLF}{audioAttribute}{SDP.CRLF}a=recvonly");
+            Assert.Equal(expected, sdp.ToString());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void AddExtra_NullOrWhiteSpaceAttribute_DoesNotAddMediaAttribute(string attribute)
+        {
+            var sdp = SDP.ParseSDPDescription(
+                $"v=0{SDP.CRLF}" +
+                $"o=- {(uint)System.Guid.NewGuid().GetHashCode()} 0 IN IP4 127.0.0.1{SDP.CRLF}" +
+                $"s=sipsorcery{SDP.CRLF}" +
+                $"t=0 0{SDP.CRLF}" +
+                $"m=audio 9 RTP/AVP 0{SDP.CRLF}" +
+                "a=rtpmap:0 PCMU/8000");
+            var before = sdp.ToString();
+
+            sdp.Media[0].AddExtra(attribute);
+
+            Assert.Equal(before, sdp.ToString());
+        }
     }
 }

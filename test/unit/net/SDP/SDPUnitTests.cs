@@ -1243,6 +1243,48 @@ a=sendrecv
             Assert.Equal(256000U, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().TIASBandwidth);
         }
 
+        [Fact]
+        public void AddExtra_Attribute_AddsSessionAttribute()
+        {
+            var attribute = $"a=x-{System.Guid.NewGuid():N}";
+            var sdp = SDP.ParseSDPDescription(
+                $"v=0{m_CRLF}" +
+                $"o=- {(uint)System.Guid.NewGuid().GetHashCode()} 0 IN IP4 127.0.0.1{m_CRLF}" +
+                $"s=sipsorcery{m_CRLF}" +
+                $"t=0 0{m_CRLF}" +
+                $"a=group:BUNDLE 0 1{m_CRLF}" +
+                $"m=video 9 RTP/AVP 96{m_CRLF}" +
+                $"c=IN IP4 0.0.0.0{m_CRLF}" +
+                $"a=mid:0{m_CRLF}" +
+                $"a=rtpmap:96 VP8/90000{m_CRLF}" +
+                $"m=audio 9 RTP/AVP 0{m_CRLF}" +
+                $"c=IN IP4 0.0.0.0{m_CRLF}" +
+                $"a=mid:1{m_CRLF}" +
+                "a=rtpmap:0 PCMU/8000");
+            var before = sdp.ToString();
+
+            sdp.AddExtra(attribute);
+
+            var expected = before.Replace(
+                $"{m_CRLF}m=video",
+                $"{m_CRLF}{attribute}{m_CRLF}m=video");
+            Assert.Equal(expected, sdp.ToString());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void AddExtra_NullOrWhiteSpaceAttribute_DoesNotAddSessionAttribute(string attribute)
+        {
+            var sdp = new SDP();
+            var before = sdp.ToString();
+
+            sdp.AddExtra(attribute);
+
+            Assert.Equal(before, sdp.ToString());
+        }
+
         [Theory]
         [InlineData(nameof(Helpers.SdpFixtures.AudioOnlyOfferPcmu), Helpers.SdpFixtures.AudioOnlyOfferPcmu   )]
         [InlineData(nameof(Helpers.SdpFixtures.AudioOfferPcmuWithDtmf), Helpers.SdpFixtures.AudioOfferPcmuWithDtmf)]
