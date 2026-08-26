@@ -115,18 +115,14 @@ namespace demo
             {
                 _form.BeginInvoke(new Action(() =>
                 {
-                    unsafe
+                    if(_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
                     {
-                        if(_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
-                        {
-                           logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {rawImage.Width}x{rawImage.Height}.");
-                            _picBox.Width = rawImage.Width;
-                            _picBox.Height = rawImage.Height;
-                        }
-
-                        Bitmap bmpImage = new Bitmap(rawImage.Width, rawImage.Height, rawImage.Stride, PixelFormat.Format24bppRgb, rawImage.Sample);
-                        _picBox.Image = bmpImage;
+                        logger.LogDebug($"Adjusting video display from {_picBox.Width}x{_picBox.Height} to {rawImage.Width}x{rawImage.Height}.");
+                        _picBox.Width = rawImage.Width;
+                        _picBox.Height = rawImage.Height;
                     }
+
+                    SetDisplayImage(rawImage.Width, rawImage.Height, rawImage.Stride, rawImage.Sample, rawImage.PixelFormat);
                 }));
             };
 
@@ -187,6 +183,61 @@ namespace demo
         private static void Pc_OnRtpPacketReceived(IPEndPoint remoteEndPoint, SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             
+        }
+
+        /// <summary>
+        /// Copies a decoded 24 bits per pixel sample into the display picture box.
+        /// </summary>
+        /// <remarks>
+        /// Two things to note. The sample must be copied rather than wrapped: the decoder re-uses a
+        /// single conversion buffer, so the pointer is only valid until the next frame arrives.
+        /// And GDI+'s Format24bppRgb is B,G,R in memory despite its name, so an Rgb sample needs its
+        /// red and blue channels swapped, otherwise skin tones show up blue.
+        /// </remarks>
+        private static unsafe void SetDisplayImage(int width, int height, int stride, IntPtr sample, VideoPixelFormatsEnum pixelFormat)
+        {
+            bool swapRedBlue = pixelFormat == VideoPixelFormatsEnum.Rgb;
+
+            if (!swapRedBlue && pixelFormat != VideoPixelFormatsEnum.Bgr)
+            {
+                logger.LogWarning($"Cannot display a decoded video sample with pixel format {pixelFormat}.");
+                return;
+            }
+
+            var bmpImage = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            var bmpData = bmpImage.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            try
+            {
+                for (int row = 0; row < height; row++)
+                {
+                    byte* src = (byte*)sample + row * stride;
+                    byte* dst = (byte*)bmpData.Scan0 + row * bmpData.Stride;
+
+                    if (swapRedBlue)
+                    {
+                        for (int col = 0; col < width; col++)
+                        {
+                            dst[col * 3] = src[col * 3 + 2];
+                            dst[col * 3 + 1] = src[col * 3 + 1];
+                            dst[col * 3 + 2] = src[col * 3];
+                        }
+                    }
+                    else
+                    {
+                        Buffer.MemoryCopy(src, dst, bmpData.Stride, width * 3);
+                    }
+                }
+            }
+            finally
+            {
+                bmpImage.UnlockBits(bmpData);
+            }
+
+            // Dispose the frame being replaced, otherwise the GDI handles accumulate.
+            var previousImage = _picBox.Image;
+            _picBox.Image = bmpImage;
+            previousImage?.Dispose();
         }
 
         private static X509Certificate2 LoadCertificate(string path)
