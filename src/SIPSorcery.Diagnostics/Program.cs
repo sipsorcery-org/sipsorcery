@@ -41,6 +41,7 @@ sipCommand.Subcommands.Add(new SipCallCommand().Build());
 sipCommand.Subcommands.Add(new SipRegisterCommand().Build());
 sipCommand.Subcommands.Add(new SipLoadCommand().Build());
 sipCommand.Subcommands.Add(new SipDigestCommand().Build());
+sipCommand.Subcommands.Add(new SipTransferCommand().Build());
 rootCommand.Subcommands.Add(sipCommand);
 
 var stunCommand = new Command("stun", "STUN operations: public address lookups, NAT diagnostics.");
