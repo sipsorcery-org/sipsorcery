@@ -101,6 +101,7 @@ namespace demo
                             fixed (byte* s = bmp)
                             {
                                 Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(bmp.Length / height), PixelFormat.Format24bppRgb, (IntPtr)s);
+                                _picBox.Image?.Dispose();   // Otherwise a GDI handle leaks for every frame.
                                 _picBox.Image = bmpImage;
                             }
                         }

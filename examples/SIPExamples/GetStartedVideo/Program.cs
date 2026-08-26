@@ -129,6 +129,7 @@ namespace demo
                                 fixed (byte* s = sample)
                                 {
                                     var bmpImage = new Bitmap(width, height, width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                    _localVideoPicBox.Image?.Dispose();      // Otherwise a GDI handle leaks for every frame.
                                     _localVideoPicBox.Image = bmpImage;
                                 }
                             }
@@ -150,6 +151,7 @@ namespace demo
                                 fixed (byte* s = bmp)
                                 {
                                     var bmpImage = new Bitmap((int)width, (int)height, stride, PixelFormat.Format24bppRgb, (IntPtr)s);
+                                    _remoteVideoPicBox.Image?.Dispose();     // Otherwise a GDI handle leaks for every frame.
                                     _remoteVideoPicBox.Image = bmpImage;
                                 }
                             }

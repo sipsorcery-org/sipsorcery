@@ -144,6 +144,7 @@ namespace test
                                         reference.As<IMemoryBufferByteAccess>().GetBuffer(out dataInBytes, out capacity);
 
                                         Bitmap bmpImage = new Bitmap((int)width, (int)height, (int)(capacity / height), PixelFormat.Format32bppArgb, (IntPtr)dataInBytes);
+                                        _picBox.Image?.Dispose();   // Otherwise a GDI handle leaks for every frame.
                                         _picBox.Image = bmpImage;
                                     }
                                 }
