@@ -123,7 +123,7 @@ namespace demo
             {
                 _form.BeginInvoke(new Action(() =>
                 {
-                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
+                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgr)
                     {
                         if (_picBox.Width != rawImage.Width || _picBox.Height != rawImage.Height)
                         {
@@ -142,7 +142,7 @@ namespace demo
             {
                 _form.BeginInvoke(new Action(() =>
                 {
-                    if (pixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
+                    if (pixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgr)
                     {
                         if (_picBox.Width != (int)width || _picBox.Height != (int)height)
                         {

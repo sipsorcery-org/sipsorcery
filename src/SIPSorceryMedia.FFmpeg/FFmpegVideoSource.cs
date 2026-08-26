@@ -192,7 +192,7 @@ namespace SIPSorceryMedia.FFmpeg
                             width, height,
                             srcfmt,
                             width, height,
-                            AVPixelFormat.AV_PIX_FMT_RGB24);
+                            AVPixelFormat.AV_PIX_FMT_BGR24);
                         logger.LogDebug("Frame format: [{fmt}]", srcfmt);
                     }
 
@@ -205,7 +205,7 @@ namespace SIPSorceryMedia.FFmpeg
                             Height = height,
                             Stride = frameBGR24->linesize[0],
                             Sample = (IntPtr)frameBGR24->data[0],
-                            PixelFormat = VideoPixelFormatsEnum.Rgb
+                            PixelFormat = VideoPixelFormatsEnum.Bgr
                         };
                         OnVideoSourceRawSampleFaster?.Invoke(timestampDuration, imageRawSample);
                     }

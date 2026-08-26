@@ -46,7 +46,7 @@ namespace SIPSorceryMedia.FFmpeg
         private AVPixelFormat? _negotiatedPixFmt;
 
         private VideoFrameConverter? _encoderPixelConverter;
-        private VideoFrameConverter? _i420ToRgb;
+        private VideoFrameConverter? _i420ToBgr;
         private bool _isEncoderInitialised = false;
         private bool _isDecoderInitialised = false;
         private object _encoderLock = new object();
@@ -134,7 +134,13 @@ namespace SIPSorceryMedia.FFmpeg
             var rawImageList = DecodeVideoFaster(encodedSample, pixelFormat, codec);
             foreach (var rawImage in rawImageList)
             {
-                yield return new VideoSample { Width = (uint)rawImage.Width, Height = (uint)rawImage.Height, Sample = rawImage.GetBuffer() };
+                yield return new VideoSample
+                {
+                    Width = (uint)rawImage.Width,
+                    Height = (uint)rawImage.Height,
+                    Sample = rawImage.GetBuffer(),
+                    PixelFormat = rawImage.PixelFormat
+                };
             }
         }
 
@@ -887,15 +893,18 @@ namespace SIPSorceryMedia.FFmpeg
                     width = decodedFrame->width;
                     height = decodedFrame->height;
 
-                    if (_i420ToRgb == null ||
-                        _i420ToRgb.SourceWidth != width ||
-                        _i420ToRgb.SourceHeight != height)
+                    if (_i420ToBgr == null ||
+                        _i420ToBgr.SourceWidth != width ||
+                        _i420ToBgr.SourceHeight != height)
                     {
-                        _i420ToRgb = new VideoFrameConverter(
+                        // BGR24 rather than RGB24 so the decoded sample matches the byte order every
+                        // Windows imaging stack expects (GDI+ Format24bppRgb, WPF Bgr24, WIC 24bppBGR)
+                        // and the other SIPSorcery video sinks, which all emit Bgr.
+                        _i420ToBgr = new VideoFrameConverter(
                             width, height,
                             (AVPixelFormat)decodedFrame->format,
                             width, height,
-                            AVPixelFormat.AV_PIX_FMT_RGB24);
+                            AVPixelFormat.AV_PIX_FMT_BGR24);
                     }
 
                     //logger.LogDebug($"[DecodeFaster]"
@@ -911,16 +920,16 @@ namespace SIPSorceryMedia.FFmpeg
                     //    + $" - decode_error_flags:[{decodedFrame->decode_error_flags}]"
                     //    );
 
-                    var frameI420 = _i420ToRgb.Convert(decodedFrame);
-                    if ((frameI420->width != 0) && (frameI420->height != 0))
+                    var frameBgr24 = _i420ToBgr.Convert(decodedFrame);
+                    if ((frameBgr24->width != 0) && (frameBgr24->height != 0))
                     {
                         RawImage imageRawSample = new RawImage
                         {
                             Width = width,
                             Height = height,
-                            Stride = frameI420->linesize[0],
-                            Sample = (IntPtr)frameI420->data[0],
-                            PixelFormat = VideoPixelFormatsEnum.Rgb
+                            Stride = frameBgr24->linesize[0],
+                            Sample = (IntPtr)frameBgr24->data[0],
+                            PixelFormat = VideoPixelFormatsEnum.Bgr
                         };
                         rgbFrames.Add(imageRawSample);
                     }

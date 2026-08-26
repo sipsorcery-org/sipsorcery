@@ -124,7 +124,7 @@ namespace demo
                 _form.BeginInvoke(new Action(() =>
                 {
 
-                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Rgb)
+                    if (rawImage.PixelFormat == SIPSorceryMedia.Abstractions.VideoPixelFormatsEnum.Bgr)
                     {
                         unsafe
                         {

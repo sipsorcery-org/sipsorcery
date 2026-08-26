@@ -309,8 +309,18 @@ namespace Vpx.Net
                         }
                     }
 
-                    byte[] rgb = PixelConverter.I420toBGR(decodedBuffer, dwidth, dheight, out _);
-                    return new List<VideoSample> { new VideoSample { Width = img.d_w, Height = img.d_h, Sample = rgb } };
+                    // Note the decoder always produces BGR regardless of the requested pixelFormat.
+                    byte[] bgr = PixelConverter.I420toBGR(decodedBuffer, dwidth, dheight, out _);
+                    return new List<VideoSample>
+                    {
+                        new VideoSample
+                        {
+                            Width = img.d_w,
+                            Height = img.d_h,
+                            Sample = bgr,
+                            PixelFormat = VideoPixelFormatsEnum.Bgr
+                        }
+                    };
                 }
 
                 return new List<VideoSample>();
