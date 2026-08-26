@@ -5,7 +5,7 @@
          cannot host a test run, so it only ever proved the test code compiled — which
          the library's own netstandard2.0 build already establishes for its API surface.
          The library still ships netstandard2.0; the tests just don't target it. -->
-    <TargetFrameworks>net8.0;net10.0;net481</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;net472</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <LangVersion>14.0</LangVersion>
