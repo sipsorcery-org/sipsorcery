@@ -634,6 +634,10 @@ namespace SIPSorceryMedia.FFmpeg
                                _encoderPixelConverter.SourceWidth != width ||
                                _encoderPixelConverter.SourceHeight != height)
                             {
+                                // Release the previous converter's buffer, otherwise every
+                                // resolution change leaks a full frame of unmanaged memory.
+                                _encoderPixelConverter?.Dispose();
+
                                 _encoderPixelConverter = new VideoFrameConverter(
                                    width, height,
                                    pixelFormat,
@@ -897,6 +901,12 @@ namespace SIPSorceryMedia.FFmpeg
                         _i420ToBgr.SourceWidth != width ||
                         _i420ToBgr.SourceHeight != height)
                     {
+                        // Release the previous converter's buffer, otherwise every resolution change
+                        // leaks a full frame of unmanaged memory. Note this invalidates the Sample
+                        // pointer of any RawImage already handed out, which is only valid until the
+                        // next decoded frame in any case.
+                        _i420ToBgr?.Dispose();
+
                         // BGR24 rather than RGB24 so the decoded sample matches the byte order every
                         // Windows imaging stack expects (GDI+ Format24bppRgb, WPF Bgr24, WIC 24bppBGR)
                         // and the other SIPSorcery video sinks, which all emit Bgr.
@@ -995,6 +1005,21 @@ namespace SIPSorceryMedia.FFmpeg
                 }
 
                 _frameTimer?.Stop();
+            }
+
+            // The pixel converters hold unmanaged frame buffers allocated with Marshal.AllocHGlobal.
+            // Take each converter's own lock rather than the one above so a decode or encode in
+            // flight cannot be pulled out from under.
+            lock (_encoderLock)
+            {
+                _encoderPixelConverter?.Dispose();
+                _encoderPixelConverter = null;
+            }
+
+            lock (_decoderLock)
+            {
+                _i420ToBgr?.Dispose();
+                _i420ToBgr = null;
             }
         }
 
