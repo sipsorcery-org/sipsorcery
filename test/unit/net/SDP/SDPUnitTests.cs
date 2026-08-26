@@ -1127,5 +1127,146 @@ a=ssrc-group:FID 3366495178 777490417";
             Assert.True(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
             Assert.True(sdp.Media[0].PortCount == 2, "The port count was not parsed correctly.");
         }
+
+        /// <summary>
+        /// Tests that parsing an SDP media format attribute for a Mission Critical Push To Talk (MCPTT)
+        /// announcement works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseMcpttMediaNameTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=application 55317 udp MCPTT
+a=fmtp:MCPTT mc_queueing;mc_priority=4";
+
+            var sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug("{sdp}", sdp.ToString());
+
+            var rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("MCPTT", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Key);
+            Assert.Equal("mc_queueing;mc_priority=4", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).Single().ApplicationMediaFormats.Single().Value.Fmtp);
+        }
+
+        /// <summary>
+        /// Tests that a description attribute can be successfully round tripped.
+        /// </summary>
+        [Fact]
+        public void DescriptionAttributeRoundTripMediaNameTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+i=A session description
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+i=speech
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=video 61682 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 192.168.11.50
+a=rtpmap:96 VP8/90000
+a=label:2
+i=video title
+a=sendrecv
+";
+
+            var sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug("{sdp}", sdp.ToString());
+
+            var rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("A session description", rndTripSdp.SessionDescription);
+            Assert.Equal("speech", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaDescription);
+            Assert.Equal("video title", rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaDescription);
+        }
+
+        /// <summary>
+        /// Tests that a TIAS bandwidth attribute (RFC3890) can be successfully round tripped.
+        /// </summary>
+        [Fact]
+        public void TIASBandwidthAttributeRoundTripMediaNameTest()
+        {
+            logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var sdpStr =
+                @"v=0
+o=root 5936658357711814578 0 IN IP4 0.0.0.0
+s=-
+t=0 0
+m=audio 55316 RTP/AVP 0 101
+a=rtpmap:0 PCMU/8000
+a=label:1
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=ptime:20
+a=sendrecv
+m=video 61682 UDP/TLS/RTP/SAVPF 96
+c=IN IP4 192.168.11.50
+b=TIAS:256000
+a=rtpmap:96 VP8/90000
+a=label:2
+a=sendrecv
+";
+
+            var sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug("{sdp}", sdp.ToString());
+
+            var rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal(256000U, rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().TIASBandwidth);
+        }
+
+        [Theory]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOnlyOfferPcmu), Helpers.SdpFixtures.AudioOnlyOfferPcmu   )]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOfferPcmuWithDtmf), Helpers.SdpFixtures.AudioOfferPcmuWithDtmf)]
+        [InlineData(nameof(Helpers.SdpFixtures.VideoOnlyOfferVp8), Helpers.SdpFixtures.VideoOnlyOfferVp8)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioVideoOfferAudioFirst), Helpers.SdpFixtures.AudioVideoOfferAudioFirst)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioVideoOfferVideoFirst), Helpers.SdpFixtures.AudioVideoOfferVideoFirst)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOfferSendOnly), Helpers.SdpFixtures.AudioOfferSendOnly)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOfferRecvOnly), Helpers.SdpFixtures.AudioOfferRecvOnly)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOfferInactive), Helpers.SdpFixtures.AudioOfferInactive)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOfferHoldNullConnectionAddress), Helpers.SdpFixtures.AudioOfferHoldNullConnectionAddress)]
+        [InlineData(nameof(Helpers.SdpFixtures.ReInviteRejectsVideoPortZero), Helpers.SdpFixtures.ReInviteRejectsVideoPortZero)]
+        [InlineData(nameof(Helpers.SdpFixtures.WebRtcAudioOfferOpus), Helpers.SdpFixtures.WebRtcAudioOfferOpus)]
+        [InlineData(nameof(Helpers.SdpFixtures.WebRtcAudioVideoOfferBundled), Helpers.SdpFixtures.WebRtcAudioVideoOfferBundled)]
+        [InlineData(nameof(Helpers.SdpFixtures.AudioOfferWithSdesCrypto), Helpers.SdpFixtures.AudioOfferWithSdesCrypto)]
+        [InlineData(nameof(Helpers.SdpFixtures.ChromeAudioVideoWebRtcOffer), Helpers.SdpFixtures.ChromeAudioVideoWebRtcOffer)]
+        [InlineData(nameof(Helpers.SdpFixtures.FirefoxAudioOnlyWebRtcOffer), Helpers.SdpFixtures.FirefoxAudioOnlyWebRtcOffer)]
+        public void ParseSDPDescription_DescriptionsParsedByOtherTests_ReturnsSdp(string scenario, string description)
+        {
+            logger.LogDebug("--> {MethodName}({Scenario})", TestHelper.GetCurrentMethodName(), scenario);
+            logger.BeginScope(TestHelper.GetCurrentMethodName());
+
+            var result = SDP.ParseSDPDescription(description);
+
+            Assert.True(result is not null, $"Failed to parse {scenario}.");
+        }
     }
 }
