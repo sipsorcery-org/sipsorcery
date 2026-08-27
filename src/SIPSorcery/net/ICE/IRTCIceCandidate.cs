@@ -13,6 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using SIPSorcery.Sys;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -117,30 +122,43 @@ namespace SIPSorcery.Net
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
-            return TinyJson.JSONWriter.ToJson(this);
+            return JsonSerializer.Serialize(
+                this,
+                SipSorceryJsonSerializerContext.Default.RTCIceCandidateInit);
         }
 
-        public static bool TryParse(string json, out RTCIceCandidateInit init)
+#nullable enable
+        public static bool TryParse(string json, [NotNullWhen(true)] out RTCIceCandidateInit? init)
         {
-            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
+            return TryParse(json.AsSpan(), out init);
+        }
 
+        public static bool TryParse(ReadOnlySpan<char> json, [NotNullWhen(true)] out RTCIceCandidateInit? init)
+        {
             init = null;
-
-            if (string.IsNullOrWhiteSpace(json))
+            if (json.IsEmptyOrWhiteSpace())
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                init.candidate != null &&
-                init.sdpMid != null;
+            try
+            {
+                init = JsonSerializer.Deserialize(
+                    json,
+                    SipSorceryJsonSerializerContext.Default.RTCIceCandidateInit);
             }
+            catch (JsonException)
+            {
+                return false;
+            }
+
+            // To qualify as parsed all required fields must be set.
+            return init is { } &&
+                init.candidate is { } &&
+                init.sdpMid is { };
         }
     }
+#nullable restore
 
     /// <summary>
     /// 
