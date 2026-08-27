@@ -42,12 +42,16 @@ using System.Net.Security;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.Diagnostics.Commands;
 
 public sealed class SipTransferCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 30;
+    private const string BlindMode = "blind";
+    private const string AttendedMode = "attended";
+
     private const int DEFAULT_CALL_DURATION_SECONDS = 5;
 
     /// <summary>
@@ -195,6 +199,17 @@ public sealed class SipTransferCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_CALL_DURATION_SECONDS
         };
 
+        var modeOption = new Option<string>("--mode")
+        {
+            Description =
+                "blind: the transferor refers the transferee straight to the target. " +
+                "attended: the transferor calls the target first and refers the transferee to " +
+                "that call, which the target then replaces.",
+            DefaultValueFactory = _ => BlindMode
+        };
+
+        modeOption.AcceptOnlyFromAmong(BlindMode, AttendedMode);
+
         var settleOption = new Option<int>("--settle")
         {
             Description =
@@ -216,6 +231,7 @@ public sealed class SipTransferCommand : CommandBase
         command.Options.Add(domainOption);
         command.Options.Add(basePortOption);
         command.Options.Add(callDurationOption);
+        command.Options.Add(modeOption);
         command.Options.Add(settleOption);
         command.Options.Add(hepOption);
         AddCommonOptions(command);
@@ -230,6 +246,7 @@ public sealed class SipTransferCommand : CommandBase
             parseResult.GetValue(domainOption),
             parseResult.GetValue(basePortOption),
             parseResult.GetValue(callDurationOption),
+            parseResult.GetValue(modeOption)!,
             parseResult.GetValue(settleOption),
             parseResult.GetValue(hepOption),
             parseResult.GetValue(TimeoutOption),
@@ -242,8 +259,8 @@ public sealed class SipTransferCommand : CommandBase
 
     private static async Task<int> RunAsync(
         string server, string transferor, string transferee, string target, string? transport, bool insecure,
-        string? domain, int basePort, int callDurationSeconds, int settleSeconds, string? hep,
-        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
+        string? domain, int basePort, int callDurationSeconds, string mode, int settleSeconds,
+        string? hep, int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(SipTransferCommand));
@@ -251,17 +268,17 @@ public sealed class SipTransferCommand : CommandBase
 
         if (!SipDestination.TryParse(server, out var serverUri, out var parseError))
         {
-            return Fail(asJson, server, parseError!, timeline, ExitCodes.InvalidArgument);
+            return Fail(asJson, server, mode, parseError!, timeline, ExitCodes.InvalidArgument);
         }
 
         if (!TryResolveProtocol(transport, serverUri, out var protocol, out string? transportError))
         {
-            return Fail(asJson, serverUri.ToString(), transportError!, timeline, ExitCodes.InvalidArgument);
+            return Fail(asJson, serverUri.ToString(), mode, transportError!, timeline, ExitCodes.InvalidArgument);
         }
 
         if (insecure && protocol != SIPProtocolsEnum.tls)
         {
-            return Fail(asJson, serverUri.ToString(),
+            return Fail(asJson, serverUri.ToString(), mode,
                 "Option '--insecure' only applies to '--transport tls'.", timeline, ExitCodes.InvalidArgument);
         }
 
@@ -288,7 +305,7 @@ public sealed class SipTransferCommand : CommandBase
         {
             if (!TryParseCredentials(spec, out string username, out string password))
             {
-                return Fail(asJson, serverUri.ToString(),
+                return Fail(asJson, serverUri.ToString(), mode,
                     $"Option '--{role}' must be in the form user:password.", timeline, ExitCodes.InvalidArgument);
             }
 
@@ -301,14 +318,14 @@ public sealed class SipTransferCommand : CommandBase
 
         if (hepError != null)
         {
-            return Fail(asJson, serverUri.ToString(), hepError, timeline, ExitCodes.InvalidArgument);
+            return Fail(asJson, serverUri.ToString(), mode, hepError, timeline, ExitCodes.InvalidArgument);
         }
 
         var outboundProxy = await SIPDns.ResolveAsync(serverUri, false, ct).ConfigureAwait(false);
 
         if (outboundProxy == null)
         {
-            return Fail(asJson, serverUri.ToString(),
+            return Fail(asJson, serverUri.ToString(), mode,
                 $"Could not resolve the SIP server \"{serverUri}\".", timeline, ExitCodes.TransportError);
         }
 
@@ -364,7 +381,7 @@ public sealed class SipTransferCommand : CommandBase
                 string failed = string.Join(", ", roles.Where(x => !x.Registered).Select(x => x.Name));
 
                 return WriteResult(asJson,
-                    new TransferResult(false, "blind", protocol.ToString(), serverUri.ToString(), domain,
+                    new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
                         roleResults, false, null, null, null, null, timeline.Events,
                         $"Registration failed for: {failed}."),
                     ExitCodes.Failed);
@@ -455,7 +472,7 @@ public sealed class SipTransferCommand : CommandBase
                 timeline.Add("callFailed", statusCode);
 
                 return WriteResult(asJson,
-                    new TransferResult(false, "blind", protocol.ToString(), serverUri.ToString(), domain,
+                    new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
                         roleResults, false, connectTimeMs, null, null, null, timeline.Events,
                         statusCode != null
                             ? $"The transferee did not answer: {statusCode} {failureResponse!.ReasonPhrase}."
@@ -478,6 +495,54 @@ public sealed class SipTransferCommand : CommandBase
             bool baselineMedia = transferorRole.Media is { TotalAudioPackets: > 0 }
                 && transfereeRole.Media is { TotalAudioPackets: > 0 };
 
+            bool attended = mode == AttendedMode;
+
+            // An attended transfer refers the transferee to a call the transferor is already in,
+            // so that call has to exist first. It runs on a second user agent because one holds a
+            // single dialogue, and the transferor needs to be talking to both parties at once.
+            var consultationReplaced =
+                new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            SIPUserAgent? consultation = null;
+
+            if (attended)
+            {
+                var (agent, media) = transferorRole.CreateConsultation();
+                consultation = agent;
+
+                // The target ending this call is how an attended transfer reports success: it
+                // hangs up the dialogue it was asked to replace once it has accepted the
+                // replacement. Nothing else tells the transferor the transfer landed.
+                agent.OnCallHungup += _ =>
+                {
+                    timeline.Add("consultationReplaced");
+                    consultationReplaced.TrySetResult(true);
+                };
+
+                Console.Error.WriteLine($"Transferor calling the target at {targetRole.Aor} to consult ...");
+
+                bool consulted = await agent.Call(
+                    targetRole.Aor.ToString(),
+                    transferorRole.Aor.User,
+                    parsed[0].Password,
+                    media.Session,
+                    timeoutSeconds).ConfigureAwait(false);
+
+                if (!consulted)
+                {
+                    timeline.Add("consultationFailed");
+
+                    return WriteResult(asJson,
+                        new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
+                            roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
+                            Describe(transferorRole.Media), Describe(transfereeRole.Media), timeline.Events,
+                            "The consultation call to the target was not answered."),
+                        ExitCodes.Failed);
+                }
+
+                timeline.Add("consultationAnswered");
+                Console.Error.WriteLine("Consultation call answered.");
+            }
+
             Console.Error.WriteLine($"Transferring the transferee to {targetRole.Aor} ...");
             timeline.Add("referSent", detail: targetRole.Aor.ToString());
 
@@ -485,12 +550,22 @@ public sealed class SipTransferCommand : CommandBase
 
             try
             {
-                accepted = await transferorRole.UserAgent.BlindTransfer(
-                    targetRole.Aor,
-                    TimeSpan.FromSeconds(timeoutSeconds),
-                    ct,
-                    username: transferorRole.Aor.User,
-                    password: parsed[0].Password).ConfigureAwait(false);
+                // The only difference on the wire is whether the Refer-To carries a Replaces. In
+                // the attended case it names the consultation dialogue, which is the one the
+                // target is holding and the one it is being asked to replace.
+                accepted = attended
+                    ? await transferorRole.UserAgent.AttendedTransfer(
+                        consultation!.Dialogue,
+                        TimeSpan.FromSeconds(timeoutSeconds),
+                        ct,
+                        username: transferorRole.Aor.User,
+                        password: parsed[0].Password).ConfigureAwait(false)
+                    : await transferorRole.UserAgent.BlindTransfer(
+                        targetRole.Aor,
+                        TimeSpan.FromSeconds(timeoutSeconds),
+                        ct,
+                        username: transferorRole.Aor.User,
+                        password: parsed[0].Password).ConfigureAwait(false);
             }
             catch (Exception excp)
             {
@@ -509,15 +584,21 @@ public sealed class SipTransferCommand : CommandBase
             // on the target being rung rather than on a fixed delay.
             if (accepted)
             {
+                // What is waited on differs by mode. A blind transfer has the target rung as a new
+                // call, so its incoming call handler fires. An attended one replaces a call the
+                // target already has, which the library accepts internally without raising that -
+                // so the signal is the consultation being hung up by the target instead.
                 await Task.WhenAny(
-                    targetCalled.Task,
+                    attended ? consultationReplaced.Task : targetCalled.Task,
                     Task.Delay(TimeSpan.FromSeconds(settleSeconds), ct)).ConfigureAwait(false);
 
                 // A moment beyond the answer for media to start arriving from the new end point.
                 await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
             }
 
-            bool targetAnswered = targetCalled.Task.IsCompletedSuccessfully;
+            bool targetAnswered = attended
+                ? consultationReplaced.Task.IsCompletedSuccessfully
+                : targetCalled.Task.IsCompletedSuccessfully;
 
             if (targetAnswered)
             {
@@ -585,24 +666,26 @@ public sealed class SipTransferCommand : CommandBase
 
             string? error =
                 !accepted ? "The transferee did not accept the REFER."
-                : !targetAnswered ? "The REFER was accepted but the target was never called."
+                : !targetAnswered ? (attended
+                    ? "The REFER was accepted but the target never replaced the consultation call."
+                    : "The REFER was accepted but the target was never called.")
                 : mediaSwitched == "no" ? "The target answered but the transferee's audio did not move to it."
                 : null;
 
             return WriteResult(asJson,
-                new TransferResult(transferred, "blind", protocol.ToString(), serverUri.ToString(), domain,
+                new TransferResult(transferred, mode, protocol.ToString(), serverUri.ToString(), domain,
                     roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
                     transferorLeg, transfereeLeg, timeline.Events, error, outcome),
                 transferred ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
         {
-            return Fail(asJson, serverUri.ToString(), "Cancelled.", timeline, ExitCodes.Timeout);
+            return Fail(asJson, serverUri.ToString(), mode, "Cancelled.", timeline, ExitCodes.Timeout);
         }
         catch (Exception excp)
         {
             logger.LogDebug(excp, "Unhandled exception running the transfer scenario.");
-            return Fail(asJson, serverUri.ToString(), excp.Message, timeline, ExitCodes.Failed);
+            return Fail(asJson, serverUri.ToString(), mode, excp.Message, timeline, ExitCodes.Failed);
         }
         finally
         {
@@ -709,9 +792,10 @@ public sealed class SipTransferCommand : CommandBase
             media.NegotiatedFormat.IsEmpty() ? null : $"{media.NegotiatedFormat.Codec}/{media.NegotiatedFormat.ClockRate}");
     }
 
-    private static int Fail(bool asJson, string server, string error, Timeline timeline, int exitCode) =>
+    private static int Fail(
+        bool asJson, string server, string mode, string error, Timeline timeline, int exitCode) =>
         WriteResult(asJson,
-            new TransferResult(false, "blind", string.Empty, server, string.Empty, Array.Empty<RoleResult>(),
+            new TransferResult(false, mode, string.Empty, server, string.Empty, Array.Empty<RoleResult>(),
                 false, null, null, null, null, timeline.Events, error),
             exitCode);
 

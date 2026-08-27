@@ -265,6 +265,27 @@ public sealed class TransferRole : IDisposable
         return Media;
     }
 
+    /// <summary>The second call this role is holding, for an attended transfer.</summary>
+    public SIPUserAgent? ConsultationAgent { get; private set; }
+
+    public RoleMedia? ConsultationMedia { get; private set; }
+
+    /// <summary>
+    /// Stands up a second user agent on this role's transport so it can hold two calls at once.
+    /// </summary>
+    /// <remarks>
+    /// An attended transfer needs the transferor talking to the transferee and to the target at
+    /// the same time, and a SIPUserAgent holds exactly one dialogue. A second agent on the same
+    /// transport is what a two line phone is: one registration, one Contact, two calls.
+    /// </remarks>
+    public (SIPUserAgent Agent, RoleMedia Media) CreateConsultation()
+    {
+        ConsultationAgent = new SIPUserAgent(Transport, _options.OutboundProxy);
+        ConsultationMedia = new RoleMedia($"{Name}-consult", _options.AudioSource, _logger);
+
+        return (ConsultationAgent, ConsultationMedia);
+    }
+
     /// <summary>
     /// Answers any incoming call with a fresh media session. Both the transferee (called by the
     /// transferor) and the target (called by the transferee after the REFER) need this.
@@ -323,16 +344,29 @@ public sealed class TransferRole : IDisposable
     /// </remarks>
     public async Task HangupAsync(TimeSpan settle)
     {
-        if (!UserAgent.IsCallActive)
+        var hungUp = false;
+
+        if (UserAgent.IsCallActive)
         {
-            return;
+            _logger.LogDebug("{Role} hanging up.", Name);
+            UserAgent.Hangup();
+            hungUp = true;
         }
 
-        _logger.LogDebug("{Role} hanging up.", Name);
+        // The consultation call of an attended transfer is normally gone by now: the target ends
+        // it when it accepts the call replacing it. It is hung up here for the runs where the
+        // transfer did not get that far.
+        if (ConsultationAgent?.IsCallActive == true)
+        {
+            _logger.LogDebug("{Role} hanging up its consultation call.", Name);
+            ConsultationAgent.Hangup();
+            hungUp = true;
+        }
 
-        UserAgent.Hangup();
-
-        await Task.Delay(settle, CancellationToken.None).ConfigureAwait(false);
+        if (hungUp)
+        {
+            await Task.Delay(settle, CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -342,6 +376,7 @@ public sealed class TransferRole : IDisposable
     public void Dispose()
     {
         Media?.Dispose();
+        ConsultationMedia?.Dispose();
         Transport.Shutdown();
     }
 }
