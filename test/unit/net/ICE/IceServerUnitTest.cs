@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: IceServerUnitTest.cs
 //
 // Description: Characterization tests for the IceServer per-server state machine
@@ -100,14 +100,54 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNSchemesEnum.stun, server.Uri.Scheme);
         }
 
+        [Theory]
+        [InlineData("stun:stun.example.com", STUNSchemesEnum.stun)]
+        [InlineData("stuns:stun.example.com", STUNSchemesEnum.stuns)]
+        [InlineData("turn:turn.example.com", STUNSchemesEnum.turn)]
+        [InlineData("turns:turn.example.com", STUNSchemesEnum.turns)]
+        public void ParseIceServer_AllSupportedSchemesArePreserved(string value, STUNSchemesEnum expectedScheme)
+        {
+            var server = IceServer.ParseIceServer(value);
+
+            Assert.Equal(expectedScheme, server.Uri.Scheme);
+        }
+
         [Fact]
         public void ParseIceServer_MultipleUrlsTakesFirst()
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
 
-            var server = IceServer.ParseIceServer("stun:stun1.example.com,stun:stun2.example.com");
+            var server = IceServer.ParseIceServer("stun:stun1.example.com, stun:stun2.example.com");
 
             Assert.Contains("stun1", server.Uri.ToString());
+        }
+
+        [Fact]
+        public void ParseIceServer_QuotedFieldsAreUnquoted()
+        {
+            var server = IceServer.ParseIceServer("\"turn:turn.example.com\";\"user1\";'pass1'");
+
+            Assert.Equal(STUNSchemesEnum.turn, server.Uri.Scheme);
+            Assert.Equal("user1", server._username);
+            Assert.Equal("pass1", server._password);
+        }
+
+        [Fact]
+        public void ParseIceServer_UnmatchedQuotesArePreserved()
+        {
+            var server = IceServer.ParseIceServer("stun:stun.example.com;'user\";\"pass'");
+
+            Assert.Equal("'user\"", server._username);
+            Assert.Equal("\"pass'", server._password);
+        }
+
+        [Fact]
+        public void ParseIceServer_WhiteSpaceCredentialsBecomeNull()
+        {
+            var server = IceServer.ParseIceServer("stun:stun.example.com; ; ");
+
+            Assert.Null(server._username);
+            Assert.Null(server._password);
         }
 
         [Fact]
@@ -120,10 +160,21 @@ namespace SIPSorcery.Net.UnitTests
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public void ParseIceServer_EmptyThrowsArgument(string value)
+        [InlineData(";user;pass")]
+        public void ParseIceServer_InvalidOrMissingUrlThrowsArgument(string value)
         {
             logger.LogDebug("--> {MethodName}", TestHelper.GetCurrentMethodName());
             Assert.Throws<ArgumentException>(() => IceServer.ParseIceServer(value));
+        }
+
+        [Fact]
+        public void ParseIceServer_SeparatorOnlyUrlUsesRawValue()
+        {
+            var server = IceServer.ParseIceServer(", ,;user;pass");
+
+            Assert.Equal(", ,", server.Uri.Host);
+            Assert.Equal("user", server._username);
+            Assert.Equal("pass", server._password);
         }
 
         // ---- Transaction id ----
