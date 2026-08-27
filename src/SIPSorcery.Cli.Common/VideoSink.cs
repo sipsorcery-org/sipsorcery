@@ -16,7 +16,7 @@
 // the dimensions parsed from the first key frame.
 //
 // Optionally a decoder can be supplied (see Create). In that mode the frames
-// are decoded in-process to raw RGB24 pixels and those are sent to the sink
+// are decoded in-process to raw 24bpp pixels and those are sent to the sink
 // instead of the encoded bitstream, so ffplay is started with the rawvideo
 // demuxer. This exercises the SIPSorcery decode path rather than ffplay's own
 // decoder, the difference being where the picture is decoded.
@@ -94,6 +94,7 @@ public sealed class VideoSink : IDisposable
     private int _framesWritten;
     private int _rawWidth;
     private int _rawHeight;
+    private string _rawPixelFormat = "bgr24";
 
     public bool IsActive => _mode != SinkMode.None;
     public bool IsStdout => _mode == SinkMode.Stdout;
@@ -115,7 +116,7 @@ public sealed class VideoSink : IDisposable
     /// <summary>
     /// Creates a sink for the given spec ("play", a file path, "-" for stdout, or null/empty for no
     /// sink). When <paramref name="decoder"/> is supplied the frames are decoded in-process to raw
-    /// RGB24 and that is sent to the sink, rather than the encoded bitstream. <paramref name="frameRate"/>
+    /// 24bpp pixels and that is sent to the sink, rather than the encoded bitstream. <paramref name="frameRate"/>
     /// (0 = unknown) sets the rawvideo playback rate for the decoded "play" path so ffplay does not
     /// throttle to its 25 fps default.
     /// </summary>
@@ -297,18 +298,19 @@ public sealed class VideoSink : IDisposable
     }
 
     /// <summary>
-    /// Decode path: decodes the frame in-process to raw RGB24 and writes that to the sink. ffplay is
-    /// started with the rawvideo demuxer so the picture has been through the SIPSorcery decoder
-    /// rather than ffplay's. Assumes the caller holds the lock.
+    /// Decode path: decodes the frame in-process to a packed 24 bits per pixel sample and writes that
+    /// to the sink. ffplay is started with the rawvideo demuxer so the picture has been through the
+    /// SIPSorcery decoder rather than ffplay's. Assumes the caller holds the lock.
     /// </summary>
     private void WriteDecodedFrame(byte[] frame, VideoFormat format)
     {
         IEnumerable<VideoSample> samples;
         try
         {
-            // The decoders (FFmpeg/VP8) always convert to packed 24-bit RGB regardless of the
-            // requested pixel format, so the sink is fixed at rgb24.
-            samples = _decoder!.DecodeVideo(frame, VideoPixelFormatsEnum.Rgb, format.Codec);
+            // The decoders ignore the requested pixel format and return whatever they actually
+            // produced, so the sink takes its pixel format from the first decoded sample rather
+            // than assuming one here.
+            samples = _decoder!.DecodeVideo(frame, VideoPixelFormatsEnum.Bgr, format.Codec);
         }
         catch (Exception excp)
         {
@@ -331,6 +333,13 @@ public sealed class VideoSink : IDisposable
             {
                 _rawWidth = width;
                 _rawHeight = height;
+
+                if (!TryGetFFmpegPixelFormat(sample.PixelFormat, out _rawPixelFormat))
+                {
+                    _logger.LogWarning("Decoded video pixel format {PixelFormat} is not supported by the raw video sink.", sample.PixelFormat);
+                    _failed = true;
+                    return;
+                }
 
                 if (!InitRaw())
                 {
@@ -360,12 +369,32 @@ public sealed class VideoSink : IDisposable
     }
 
     /// <summary>
-    /// Writes one decoded RGB24 frame, stripping any row padding the decoder's stride introduced so
-    /// the rawvideo stream is tightly packed at width*3 bytes per row.
+    /// Maps a decoded pixel format onto the equivalent FFmpeg rawvideo pixel format name. Only the
+    /// packed 24 bits per pixel formats the decoders produce are supported.
+    /// </summary>
+    private static bool TryGetFFmpegPixelFormat(VideoPixelFormatsEnum pixelFormat, out string name)
+    {
+        switch (pixelFormat)
+        {
+            case VideoPixelFormatsEnum.Bgr:
+                name = "bgr24";
+                return true;
+            case VideoPixelFormatsEnum.Rgb:
+                name = "rgb24";
+                return true;
+            default:
+                name = string.Empty;
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// Writes one decoded 24 bits per pixel frame, stripping any row padding the decoder's stride
+    /// introduced so the rawvideo stream is tightly packed at width*3 bytes per row.
     /// </summary>
     private void WriteRawRgb(byte[] buffer, int width, int height)
     {
-        int rowBytes = width * 3;                 // RGB24, 3 bytes per pixel.
+        int rowBytes = width * 3;                 // Packed 24bpp, 3 bytes per pixel.
         int stride = buffer.Length / height;
 
         if (stride == rowBytes)
@@ -386,8 +415,8 @@ public sealed class VideoSink : IDisposable
     }
 
     /// <summary>
-    /// Lazily starts the sink for decoded raw RGB24 output once the first frame's dimensions are
-    /// known. Play mode runs ffplay with the rawvideo demuxer; file/stdout get the raw pixels.
+    /// Lazily starts the sink for decoded raw 24bpp output once the first frame's dimensions and
+    /// pixel format are known. Play mode runs ffplay with the rawvideo demuxer; file/stdout get the raw pixels.
     /// </summary>
     private bool InitRaw()
     {
@@ -398,12 +427,12 @@ public sealed class VideoSink : IDisposable
                 case SinkMode.File:
                     _file = new FileStream(_filePath!, FileMode.Create, FileAccess.ReadWrite);
                     _out = _file;
-                    _logger.LogDebug("Writing decoded raw rgb24 {Width}x{Height} video to {FilePath}.", _rawWidth, _rawHeight, _filePath);
+                    _logger.LogDebug("Writing decoded raw {PixelFormat} {Width}x{Height} video to {FilePath}.", _rawPixelFormat, _rawWidth, _rawHeight, _filePath);
                     return true;
 
                 case SinkMode.Stdout:
                     _out = Console.OpenStandardOutput();
-                    Console.Error.WriteLine($"Writing decoded raw rgb24 {_rawWidth}x{_rawHeight} video to stdout.");
+                    Console.Error.WriteLine($"Writing decoded raw {_rawPixelFormat} {_rawWidth}x{_rawHeight} video to stdout.");
                     return true;
 
                 case SinkMode.Play:
@@ -414,7 +443,7 @@ public sealed class VideoSink : IDisposable
                     int rawFrameRate = Math.Max(_frameRate * 2, DEFAULT_RAW_FRAME_RATE);
                     var startInfo = new ProcessStartInfo("ffplay")
                     {
-                        Arguments = $"-hide_banner -loglevel error -fflags nobuffer -f rawvideo -pixel_format rgb24 -framerate {rawFrameRate} -video_size {_rawWidth}x{_rawHeight} -i -",
+                        Arguments = $"-hide_banner -loglevel error -fflags nobuffer -f rawvideo -pixel_format {_rawPixelFormat} -framerate {rawFrameRate} -video_size {_rawWidth}x{_rawHeight} -i -",
                         UseShellExecute = false,
                         RedirectStandardInput = true,
                         RedirectStandardError = true
@@ -436,12 +465,12 @@ public sealed class VideoSink : IDisposable
                     });
 
                     _out = _ffplay.StandardInput.BaseStream;
-                    Console.Error.WriteLine($"Rendering in-process decoded rgb24 {_rawWidth}x{_rawHeight} video with ffplay.");
+                    Console.Error.WriteLine($"Rendering in-process decoded {_rawPixelFormat} {_rawWidth}x{_rawHeight} video with ffplay.");
                     return true;
 
                 case SinkMode.Null:
                     _out = Stream.Null;
-                    _logger.LogDebug("Discarding decoded raw rgb24 {Width}x{Height} video (null sink).", _rawWidth, _rawHeight);
+                    _logger.LogDebug("Discarding decoded raw {PixelFormat} {Width}x{Height} video (null sink).", _rawPixelFormat, _rawWidth, _rawHeight);
                     return true;
 
                 default:
