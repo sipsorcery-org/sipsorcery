@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -251,40 +252,43 @@ namespace SIPSorcery.Net
             MessageMediaFormat = messageMediaFormat;
         }
 
-        public void ParseMediaFormats(string formatList)
-        {
-            if (!String.IsNullOrWhiteSpace(formatList))
-            {
-                var formatListSpan = formatList.AsSpan();
-                foreach (var formatIDRange in formatListSpan.SplitAny())
-                {
-                    var formatIDSpan = formatListSpan[formatIDRange];
+        public void ParseMediaFormats(string formatList) => ParseMediaFormats(formatList.AsSpan());
 
-                    if (Media == SDPMediaTypesEnum.application)
+        public void ParseMediaFormats(ReadOnlySpan<char> formatList)
+        {
+            formatList = formatList.Trim();
+            if (formatList.IsEmpty)
+            {
+                return;
+            }
+
+            foreach (var formatIDRange in formatList.SplitAny())
+            {
+                var formatIDSpan = formatList[formatIDRange];
+
+                if (Media == SDPMediaTypesEnum.application)
+                {
+                    var formatID = formatIDSpan.ToString();
+                    ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                }
+                else if (Media == SDPMediaTypesEnum.message)
+                {
+                    //TODO
+                }
+                else
+                {
+                    if (int.TryParse(formatIDSpan, out var id)
+                        && !MediaFormats.ContainsKey(id)
+                        && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                     {
-                        var formatID = formatIDSpan.ToString();
-                        ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
-                    }
-                    else if (Media == SDPMediaTypesEnum.message)
-                    {
-                        //TODO
-                    }
-                    else
-                    {
-                        if (int.TryParse(formatIDSpan, out var id)
-                            && !MediaFormats.ContainsKey(id)
-                            && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
+                        if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
+                            Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatIDSpan, out var wellKnown))
                         {
-                            var formatID = formatIDSpan.ToString();
-                            if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
-                                Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
-                            {
-                                MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
-                            }
-                            else
-                            {
-                                logger.LogWarning("Excluding unrecognised well known media format ID {FormatID}.", id);
-                            }
+                            MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
+                        }
+                        else
+                        {
+                            logger.LogWarning("Excluding unrecognised well known media format ID {FormatID}.", id);
                         }
                     }
                 }

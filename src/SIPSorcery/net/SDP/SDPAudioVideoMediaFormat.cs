@@ -42,6 +42,19 @@ namespace SIPSorcery.Net
 
         public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat() { _isEmpty = true };
 
+        private static readonly string[] s_wellKnownMediaFormatNames = CreateWellKnownMediaFormatNames();
+
+        private static string[] CreateWellKnownMediaFormatNames()
+        {
+            var names = new string[(int)SDPWellKnownMediaFormatsEnum.H263 + 1];
+            foreach (SDPWellKnownMediaFormatsEnum format in Enum.GetValues(typeof(SDPWellKnownMediaFormatsEnum)))
+            {
+                names[(int)format] = format.ToString();
+            }
+
+            return names;
+        }
+
         /// <summary>
         /// Indicates whether the format is for audio or video.
         /// </summary>
@@ -182,38 +195,37 @@ namespace SIPSorcery.Net
         {
             if (IsH264 || IsMJPEG || isH265)
             {
-                var parameters = ParseWebRtcParameters(Fmtp);
-                if (parameters.TryGetValue("packetization-mode", out string packetizationMode))
+                if (TryGetWebRtcParameter(Fmtp, "packetization-mode", out var packetizationMode) &&
+                    !packetizationMode.SequenceEqual("1".AsSpan()))
                 {
-                    if (packetizationMode != "1")
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
             return true;
         }
 
-        private static Dictionary<string, string> ParseWebRtcParameters(string input)
+        private static bool TryGetWebRtcParameter(string input, ReadOnlySpan<char> name, out ReadOnlySpan<char> value)
         {
-            var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            value = default;
             if (string.IsNullOrEmpty(input))
             {
-                return parameters;
+                return false;
             }
 
-            Span<Range> keyValueRange = stackalloc Range[3];
+            Span<Range> keyValueRange = stackalloc Range[2];
             var inputSpan = input.AsSpan();
             foreach (var pairRange in inputSpan.Split(';'))
             {
                 var pair = inputSpan[pairRange];
-                if (pair.Split(keyValueRange, '=') == 2)
+                if (pair.Split(keyValueRange, '=') == 2 &&
+                    pair[keyValueRange[0]].Trim().Equals(name, StringComparison.OrdinalIgnoreCase))
                 {
-                    parameters[pair[keyValueRange[0]].Trim().ToString()] = pair[keyValueRange[1]].Trim().ToString();
+                    value = pair[keyValueRange[1]].Trim();
+                    return true;
                 }
             }
 
-            return parameters;
+            return false;
         }
 
         private bool MatchesCodecName(string codecName)
@@ -357,10 +369,10 @@ namespace SIPSorcery.Net
             {
                 return name;
             }
-            else if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), ID))
+            else if ((uint)ID < (uint)s_wellKnownMediaFormatNames.Length)
             {
                 // If no rtpmap available then it must be a well known format.
-                return Enum.ToObject(typeof(SDPWellKnownMediaFormatsEnum), ID).ToString();
+                return s_wellKnownMediaFormatNames[ID];
             }
             else
             {
@@ -620,7 +632,7 @@ namespace SIPSorcery.Net
         /// <returns>An SDP media format with a compatible RTP event format.</returns>
         public static SDPAudioVideoMediaFormat GetCommonRtpEventFormat(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
         {
-            if (a == null || b == null || a.Count == 0 || b.Count() == 0)
+            if (a == null || b == null || a.Count == 0 || b.Count == 0)
             {
                 return Empty;
             }
