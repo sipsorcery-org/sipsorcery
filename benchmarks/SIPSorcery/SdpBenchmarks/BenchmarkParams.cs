@@ -13,20 +13,32 @@ public class BenchmarkParams
 
     public static IEnumerable<BenchmarkParams> GetScenarios()
     {
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOnlyOfferPcmu), SdpText = SdpFixtures.AudioOnlyOfferPcmu, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOnlyOfferPcmu) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOfferPcmuWithDtmf), SdpText = SdpFixtures.AudioOfferPcmuWithDtmf, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOfferPcmuWithDtmf) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.VideoOnlyOfferVp8), SdpText = SdpFixtures.VideoOnlyOfferVp8, Sdp = SDP.ParseSDPDescription(SdpFixtures.VideoOnlyOfferVp8) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioVideoOfferAudioFirst), SdpText = SdpFixtures.AudioVideoOfferAudioFirst, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioVideoOfferAudioFirst) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioVideoOfferVideoFirst), SdpText = SdpFixtures.AudioVideoOfferVideoFirst, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioVideoOfferVideoFirst) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOfferSendOnly), SdpText  = SdpFixtures.AudioOfferSendOnly, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOfferSendOnly) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOfferRecvOnly), SdpText = SdpFixtures.AudioOfferRecvOnly, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOfferRecvOnly) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOfferInactive), SdpText = SdpFixtures.AudioOfferInactive, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOfferInactive) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOfferHoldNullConnectionAddress), SdpText = SdpFixtures.AudioOfferHoldNullConnectionAddress, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOfferHoldNullConnectionAddress) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.ReInviteRejectsVideoPortZero), SdpText = SdpFixtures.ReInviteRejectsVideoPortZero, Sdp = SDP.ParseSDPDescription(SdpFixtures.ReInviteRejectsVideoPortZero) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.WebRtcAudioOfferOpus), SdpText = SdpFixtures.WebRtcAudioOfferOpus, Sdp = SDP.ParseSDPDescription(SdpFixtures.WebRtcAudioOfferOpus) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.WebRtcAudioVideoOfferBundled), SdpText = SdpFixtures.WebRtcAudioVideoOfferBundled, Sdp = SDP.ParseSDPDescription(SdpFixtures.WebRtcAudioVideoOfferBundled) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.AudioOfferWithSdesCrypto), SdpText = SdpFixtures.AudioOfferWithSdesCrypto, Sdp = SDP.ParseSDPDescription(SdpFixtures.AudioOfferWithSdesCrypto) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.ChromeAudioVideoWebRtcOffer), SdpText = SdpFixtures.ChromeAudioVideoWebRtcOffer, Sdp = SDP.ParseSDPDescription(SdpFixtures.ChromeAudioVideoWebRtcOffer) };
-        yield return new BenchmarkParams { Scenario = nameof(SdpFixtures.FirefoxAudioOnlyWebRtcOffer), SdpText = SdpFixtures.FirefoxAudioOnlyWebRtcOffer, Sdp = SDP.ParseSDPDescription(SdpFixtures.FirefoxAudioOnlyWebRtcOffer) };
+        yield return Create(nameof(SdpFixtures.AudioOnlyOfferPcmu), SdpFixtures.AudioOnlyOfferPcmu);
+        yield return Create(nameof(SdpFixtures.AudioOfferPcmuWithDtmf), SdpFixtures.AudioOfferPcmuWithDtmf);
+        yield return Create(nameof(SdpFixtures.VideoOnlyOfferVp8), SdpFixtures.VideoOnlyOfferVp8);
+        yield return Create(nameof(SdpFixtures.AudioVideoOfferAudioFirst), SdpFixtures.AudioVideoOfferAudioFirst);
+        yield return Create(nameof(SdpFixtures.AudioVideoOfferVideoFirst), SdpFixtures.AudioVideoOfferVideoFirst);
+        yield return Create(nameof(SdpFixtures.AudioOfferSendOnly), SdpFixtures.AudioOfferSendOnly);
+        yield return Create(nameof(SdpFixtures.AudioOfferRecvOnly), SdpFixtures.AudioOfferRecvOnly);
+        yield return Create(nameof(SdpFixtures.AudioOfferInactive), SdpFixtures.AudioOfferInactive);
+        yield return Create(nameof(SdpFixtures.AudioOfferHoldNullConnectionAddress), SdpFixtures.AudioOfferHoldNullConnectionAddress);
+        yield return Create(nameof(SdpFixtures.ReInviteRejectsVideoPortZero), SdpFixtures.ReInviteRejectsVideoPortZero);
+        yield return Create(nameof(SdpFixtures.WebRtcAudioOfferOpus), SdpFixtures.WebRtcAudioOfferOpus);
+        yield return Create(nameof(SdpFixtures.WebRtcAudioVideoOfferBundled), SdpFixtures.WebRtcAudioVideoOfferBundled);
+        yield return Create(nameof(SdpFixtures.AudioOfferWithSdesCrypto), SdpFixtures.AudioOfferWithSdesCrypto);
+        yield return Create(nameof(SdpFixtures.ChromeAudioVideoWebRtcOffer), SdpFixtures.ChromeAudioVideoWebRtcOffer);
+        yield return Create(nameof(SdpFixtures.FirefoxAudioOnlyWebRtcOffer), SdpFixtures.FirefoxAudioOnlyWebRtcOffer);
+        yield return Create(nameof(SdpFixtures.LargeWebRtcOffer), SdpFixtures.LargeWebRtcOffer);
+    }
+
+    /// <summary>
+    /// Creates a scenario from a fixture with its line endings normalized to CRLF, the SDP line ending (RFC 8866),
+    /// so the measured input does not depend on how git checked out the fixtures file (core.autocrlf).
+    /// </summary>
+    private static BenchmarkParams Create(string scenario, string sdpText)
+    {
+        var text = sdpText.ReplaceLineEndings("\r\n");
+
+        return new BenchmarkParams { Scenario = scenario, SdpText = text, Sdp = SDP.ParseSDPDescription(text) };
     }
 }

@@ -191,6 +191,87 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Empty(announcement.ApplicationMediaFormats);
         }
 
+        /// <summary>
+        /// Every defined static payload ID is recognised by the cached lookup.
+        /// </summary>
+        [Fact]
+        public void ParseMediaFormats_AllWellKnownFormats_AddsEveryFormat()
+        {
+            // Arrange
+
+            var knownIDs = System.Enum.GetValues(typeof(SDPWellKnownMediaFormatsEnum))
+                .Cast<SDPWellKnownMediaFormatsEnum>()
+                .Select(format => (int)format)
+                .ToArray();
+            var announcement = new SDPMediaAnnouncement();
+
+            // Act
+
+            announcement.ParseMediaFormats(string.Join(" ", knownIDs));
+
+            // Assert
+
+            Assert.Equal(knownIDs.OrderBy(id => id), announcement.MediaFormats.Keys.OrderBy(id => id));
+            Assert.All(announcement.MediaFormats, format => Assert.Equal(format.Key, format.Value.ID));
+        }
+
+        /// <summary>
+        /// Numeric spellings accepted by integer parsing still identify static payloads.
+        /// </summary>
+        [Theory]
+        [InlineData("0", 0)]
+        [InlineData("+8", 8)]
+        [InlineData("09", 9)]
+        [InlineData("00034", 34)]
+        public void ParseMediaFormats_NumericSpellings_AddsWellKnownFormat(string formatList, int expectedID)
+        {
+            // Arrange
+
+            var announcement = new SDPMediaAnnouncement();
+
+            // Act
+
+            announcement.ParseMediaFormats(formatList);
+
+            // Assert
+
+            var format = Assert.Single(announcement.MediaFormats);
+            Assert.Equal(expectedID, format.Key);
+            Assert.Equal(expectedID, format.Value.ID);
+        }
+
+        /// <summary>
+        /// Negative IDs, sparse holes, dynamic IDs and overflow do not become static formats.
+        /// </summary>
+        [Theory]
+        [InlineData("-2147483648")]
+        [InlineData("-1")]
+        [InlineData("1")]
+        [InlineData("2")]
+        [InlineData("19")]
+        [InlineData("25")]
+        [InlineData("30")]
+        [InlineData("35")]
+        [InlineData("95")]
+        [InlineData("96")]
+        [InlineData("127")]
+        [InlineData("2147483647")]
+        [InlineData("2147483648")]
+        public void ParseMediaFormats_NonStaticOrInvalidIDs_DoesNotAddFormats(string formatList)
+        {
+            // Arrange
+
+            var announcement = new SDPMediaAnnouncement();
+
+            // Act
+
+            announcement.ParseMediaFormats(formatList);
+
+            // Assert
+
+            Assert.Empty(announcement.MediaFormats);
+        }
+
         [Fact]
         public void ToString_DefaultAnnouncement_ReturnsMediaLine()
         {

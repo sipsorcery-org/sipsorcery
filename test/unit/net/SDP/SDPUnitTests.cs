@@ -1301,6 +1301,7 @@ a=sendrecv
         [InlineData(nameof(Helpers.SdpFixtures.AudioOfferWithSdesCrypto), Helpers.SdpFixtures.AudioOfferWithSdesCrypto)]
         [InlineData(nameof(Helpers.SdpFixtures.ChromeAudioVideoWebRtcOffer), Helpers.SdpFixtures.ChromeAudioVideoWebRtcOffer)]
         [InlineData(nameof(Helpers.SdpFixtures.FirefoxAudioOnlyWebRtcOffer), Helpers.SdpFixtures.FirefoxAudioOnlyWebRtcOffer)]
+        [InlineData(nameof(Helpers.SdpFixtures.LargeWebRtcOffer), Helpers.SdpFixtures.LargeWebRtcOffer)]
         public void ParseSDPDescription_DescriptionsParsedByOtherTests_ReturnsSdp(string scenario, string description)
         {
             logger.LogDebug("--> {MethodName}({Scenario})", TestHelper.GetCurrentMethodName(), scenario);

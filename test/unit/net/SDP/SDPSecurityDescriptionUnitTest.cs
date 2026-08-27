@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Polyfills;
@@ -157,6 +158,178 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Throws<FormatException>(() => SDPSecurityDescription.Parse("a=crypto:1 AES_CM_128_HMAC_SHA1_80 "));
             Assert.Throws<FormatException>(() => SDPSecurityDescription.Parse("a=crypto:1 AES_CM_HMAC_SHA1_80 inline:PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR|2^20|1:4"));
             Assert.Throws<FormatException>(() => SDPSecurityDescription.Parse("a=crypto:1 1 inline:PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR|2^20|1:4"));
+        }
+
+        /// <summary>
+        /// Each supported suite extracts the exact key and salt from both parser overloads.
+        /// </summary>
+        [Theory]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_80, 16, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32, 16, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.F8_128_HMAC_SHA1_80, 16, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AEAD_AES_128_GCM, 16, 12)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AEAD_AES_256_GCM, 32, 12)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_192_CM_HMAC_SHA1_80, 24, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_192_CM_HMAC_SHA1_32, 24, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_CM_192_HMAC_SHA1_80, 24, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_CM_192_HMAC_SHA1_32, 24, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_256_CM_HMAC_SHA1_80, 32, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_256_CM_HMAC_SHA1_32, 32, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_CM_256_HMAC_SHA1_80, 32, 14)]
+        [InlineData(SDPSecurityDescription.CryptoSuites.AES_CM_256_HMAC_SHA1_32, 32, 14)]
+        public void KeyParameterTryParse_SupportedSuite_DecodesExactKeyAndSalt(
+            SDPSecurityDescription.CryptoSuites suite, int keyLength, int saltLength)
+        {
+            // Arrange
+
+            var material = Enumerable.Range(0, keyLength + saltLength).Select(value => (byte)value).ToArray();
+            var keyText = "inline:" + Convert.ToBase64String(material);
+
+            // Act
+
+            var parsedString = SDPSecurityDescription.KeyParameter.TryParse(keyText, out var fromString, suite);
+            var parsedSpan = SDPSecurityDescription.KeyParameter.TryParse(keyText.AsSpan(), out var fromSpan, suite);
+
+            // Assert
+
+            Assert.True(parsedString);
+            Assert.True(parsedSpan);
+            Assert.Equal(material.Take(keyLength), fromString.Key);
+            Assert.Equal(material.Skip(keyLength), fromString.Salt);
+            Assert.Equal(fromString.Key, fromSpan.Key);
+            Assert.Equal(fromString.Salt, fromSpan.Salt);
+        }
+
+        /// <summary>
+        /// Extra decoded bytes are still ignored, including inputs larger than stack scratch space.
+        /// </summary>
+        [Theory]
+        [InlineData(31)]
+        [InlineData(46)]
+        [InlineData(63)]
+        [InlineData(64)]
+        [InlineData(65)]
+        [InlineData(256)]
+        [InlineData(4096)]
+        public void KeyParameterTryParse_ExtraKeyMaterial_IgnoresTrailingBytes(int materialLength)
+        {
+            // Arrange
+
+            var material = Enumerable.Range(0, materialLength).Select(value => (byte)(value % 256)).ToArray();
+            var keyText = "inline:" + Convert.ToBase64String(material);
+
+            // Act
+
+            var parsed = SDPSecurityDescription.KeyParameter.TryParse(keyText.AsSpan(), out var keyParameter);
+
+            // Assert
+
+            Assert.True(parsed);
+            Assert.Equal(material.Take(16), keyParameter.Key);
+            Assert.Equal(material.Skip(16).Take(14), keyParameter.Salt);
+        }
+
+        /// <summary>
+        /// Invalid suffixes reject partially decoded material on stack and pooled paths.
+        /// </summary>
+        [Theory]
+        [InlineData(30, "!")]
+        [InlineData(30, "=")]
+        [InlineData(30, "A")]
+        [InlineData(96, "!")]
+        [InlineData(96, "=")]
+        [InlineData(96, "A")]
+        public void KeyParameterTryParse_InvalidBase64_ReturnsFalse(int materialLength, string invalidSuffix)
+        {
+            // Arrange
+
+            var keyText = "inline:" + Convert.ToBase64String(new byte[materialLength]) + invalidSuffix;
+
+            // Act
+
+            var parsed = SDPSecurityDescription.KeyParameter.TryParse(keyText.AsSpan(), out var keyParameter);
+
+            // Assert
+
+            Assert.False(parsed);
+            Assert.Null(keyParameter);
+        }
+
+        /// <summary>
+        /// Valid Base64 must decode to enough bytes for both the key and salt.
+        /// </summary>
+        [Theory]
+        [InlineData(1)]
+        [InlineData(16)]
+        [InlineData(29)]
+        public void KeyParameterTryParse_ShortKeyMaterial_ReturnsFalse(int materialLength)
+        {
+            // Arrange
+
+            var keyText = "inline:" + Convert.ToBase64String(new byte[materialLength]);
+
+            // Act
+
+            var parsed = SDPSecurityDescription.KeyParameter.TryParse(keyText.AsSpan(), out var keyParameter);
+
+            // Assert
+
+            Assert.False(parsed);
+            Assert.Null(keyParameter);
+        }
+
+        /// <summary>
+        /// Lifetime and MKI fields remain optional and retain support for either ordering.
+        /// </summary>
+        [Theory]
+        [InlineData("", 0UL, 0U, 0U)]
+        [InlineData("|2^20", 1048576UL, 0U, 0U)]
+        [InlineData("|1:4", 0UL, 1U, 4U)]
+        [InlineData("|2^20|1:4", 1048576UL, 1U, 4U)]
+        [InlineData("|1:4|2^20", 1048576UL, 1U, 4U)]
+        public void KeyParameterTryParse_OptionalFields_PreservesValues(
+            string optionalFields, ulong expectedLifetime, uint expectedMkiValue, uint expectedMkiLength)
+        {
+            // Arrange
+
+            const string base64 = "PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR";
+            var keyText = "inline:" + base64 + optionalFields;
+
+            // Act
+
+            var parsed = SDPSecurityDescription.KeyParameter.TryParse(keyText.AsSpan(), out var keyParameter);
+
+            // Assert
+
+            Assert.True(parsed);
+            Assert.Equal(base64, keyParameter.KeySaltBase64);
+            Assert.Equal(expectedLifetime, keyParameter.LifeTime);
+            Assert.Equal(expectedMkiValue, keyParameter.MkiValue);
+            Assert.Equal(expectedMkiLength, keyParameter.MkiLength);
+        }
+
+        /// <summary>
+        /// Undefined crypto suites cannot produce decoded key parameters.
+        /// </summary>
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        [InlineData(int.MaxValue)]
+        public void KeyParameterTryParse_UnknownSuite_ReturnsFalse(int suite)
+        {
+            // Arrange
+
+            const string keyText = "inline:PS1uQCVeeCFCanVmcjkpPywjNWhcYD0mXXtxaVBR";
+
+            // Act
+
+            var parsed = SDPSecurityDescription.KeyParameter.TryParse(
+                keyText.AsSpan(), out var keyParameter, (SDPSecurityDescription.CryptoSuites)suite);
+
+            // Assert
+
+            Assert.False(parsed);
+            Assert.Null(keyParameter);
         }
 
         [Fact]
