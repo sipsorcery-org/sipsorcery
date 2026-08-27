@@ -49,6 +49,13 @@ public sealed class SipTransferCommand : CommandBase
 {
     private const int DEFAULT_TIMEOUT_SECONDS = 30;
     private const int DEFAULT_CALL_DURATION_SECONDS = 5;
+
+    /// <summary>
+    /// How long the transfer is given to complete after the REFER is accepted. The transferee
+    /// has to place a whole second call within it, so this is a call setup budget rather than a
+    /// settling delay.
+    /// </summary>
+    private const int DEFAULT_SETTLE_SECONDS = 10;
     private const int REGISTRATION_EXPIRY_SECONDS = 300;
 
     /// <summary>One step of the scenario, with the offset from the start of the run.</summary>
@@ -81,7 +88,26 @@ public sealed class SipTransferCommand : CommandBase
         MediaLeg? TransferorMedia,
         MediaLeg? TransfereeMedia,
         IReadOnlyList<TimelineEvent> Timeline,
-        string? Error);
+        string? Error,
+        TransferOutcome? Transfer = null);
+
+    /// <summary>
+    /// What the REFER actually achieved, as opposed to what it was answered with.
+    /// </summary>
+    /// <remarks>
+    /// Split out because a 202 says only that the transferee accepted the request. Everything
+    /// worth knowing happens after it: whether the transferee really called the target, whether
+    /// the target answered, and whether the audio moved. A server can return 202 and do nothing.
+    /// </remarks>
+    private sealed record TransferOutcome(
+        bool Accepted,
+        int? ReferStatus,
+        bool TargetCalled,
+        bool OriginalLegEnded,
+        string? MediaBefore,
+        string? MediaAfter,
+        string? MediaSwitched,
+        IReadOnlyList<string> Notifies);
 
     /// <summary>Collects the scenario steps with a millisecond offset from the start of the run.</summary>
     private sealed class Timeline
@@ -163,6 +189,14 @@ public sealed class SipTransferCommand : CommandBase
             DefaultValueFactory = _ => DEFAULT_CALL_DURATION_SECONDS
         };
 
+        var settleOption = new Option<int>("--settle")
+        {
+            Description =
+                "Seconds to wait after the REFER for the transferee to reach the target and its audio " +
+                "to move, before the outcome is judged.",
+            DefaultValueFactory = _ => DEFAULT_SETTLE_SECONDS
+        };
+
         var hepOption = HepCapture.CreateOption();
 
         var command = new Command("transfer",
@@ -176,6 +210,7 @@ public sealed class SipTransferCommand : CommandBase
         command.Options.Add(domainOption);
         command.Options.Add(basePortOption);
         command.Options.Add(callDurationOption);
+        command.Options.Add(settleOption);
         command.Options.Add(hepOption);
         AddCommonOptions(command);
 
@@ -189,6 +224,7 @@ public sealed class SipTransferCommand : CommandBase
             parseResult.GetValue(domainOption),
             parseResult.GetValue(basePortOption),
             parseResult.GetValue(callDurationOption),
+            parseResult.GetValue(settleOption),
             parseResult.GetValue(hepOption),
             parseResult.GetValue(TimeoutOption),
             parseResult.GetValue(JsonOption),
@@ -200,8 +236,8 @@ public sealed class SipTransferCommand : CommandBase
 
     private static async Task<int> RunAsync(
         string server, string transferor, string transferee, string target, string? transport, bool insecure,
-        string? domain, int basePort, int callDurationSeconds, string? hep, int timeoutSeconds, bool asJson,
-        bool verbose, CancellationToken ct)
+        string? domain, int basePort, int callDurationSeconds, int settleSeconds, string? hep,
+        int timeoutSeconds, bool asJson, bool verbose, CancellationToken ct)
     {
         using var loggerFactory = InitLogging(verbose);
         var logger = loggerFactory.CreateLogger(nameof(SipTransferCommand));
@@ -332,8 +368,51 @@ public sealed class SipTransferCommand : CommandBase
 
             // The transferee answers the transferor's call. The target is armed now as well: after
             // the REFER the transferee calls it without any further prompting from here.
+            var notifies = new List<string>();
+            var targetCalled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
             transfereeRole.AutoAnswer();
-            targetRole.AutoAnswer();
+
+            // The target records that it was rung as well as answering. That is the difference
+            // between "the transferee accepted the REFER" and "the transfer actually happened":
+            // a server can answer 202 and never place the second call.
+            targetRole.AutoAnswer(_ =>
+            {
+                timeline.Add("targetRinging");
+                targetCalled.TrySetResult(true);
+            });
+
+            // The call the transferee places to the target is built by the library from
+            // SIPConstants.SIP_DEFAULT_USERNAME with no credential, so a server that challenges
+            // the INVITE would fail the transfer for a reason that has nothing to do with
+            // transfers. This is the hook the library provides for exactly that.
+            transfereeRole.UserAgent.OnTransferCallDescriptorCreated += (descriptor, _) =>
+            {
+                descriptor.Username = transfereeRole.Aor.User;
+                descriptor.AuthUsername = transfereeRole.Aor.User;
+                descriptor.Password = parsed[1].Password;
+                descriptor.From = transfereeRole.Aor.ToString();
+
+                timeline.Add("transfereeCallingTarget", detail: descriptor.Uri);
+            };
+
+            // Recorded rather than required. The transferee's own REFER handling in the library
+            // has a TODO where the implicit subscription would be created, so against a
+            // SIPUserAgent transferee no NOTIFY arrives at all; a handset would send them.
+            transferorRole.UserAgent.OnTransferNotify += sipfrag =>
+            {
+                var line = sipfrag?.Split('\n').FirstOrDefault()?.Trim();
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    lock (notifies)
+                    {
+                        notifies.Add(line);
+                    }
+
+                    timeline.Add("notify", detail: line);
+                }
+            };
 
             var transferorMedia = transferorRole.CreateMedia();
             var callTimer = Stopwatch.StartNew();
@@ -386,9 +465,84 @@ public sealed class SipTransferCommand : CommandBase
                 Task.Delay(TimeSpan.FromSeconds(callDurationSeconds), ct), remoteHungup.Task).ConfigureAwait(false);
             callWindow.Stop();
 
-            // TODO (phase 2): fire the blind REFER here with transferorRole.UserAgent.BlindTransfer,
-            // record the NOTIFY sipfrag progression, then assert on the media switching to a new
-            // remote end point on the transferee and the original leg being torn down.
+            // Where the transferee is hearing audio from before the transfer. The comparison after
+            // it is the whole point: the library hands the same media session to the new call, so
+            // packet counts carry straight through and only the remote end point actually changes.
+            var mediaBefore = transfereeRole.Media?.DominantAudioRemote?.Key;
+            bool baselineMedia = transferorRole.Media is { TotalAudioPackets: > 0 }
+                && transfereeRole.Media is { TotalAudioPackets: > 0 };
+
+            Console.Error.WriteLine($"Transferring the transferee to {targetRole.Aor} ...");
+            timeline.Add("referSent", detail: targetRole.Aor.ToString());
+
+            bool accepted;
+
+            try
+            {
+                accepted = await transferorRole.UserAgent.BlindTransfer(
+                    targetRole.Aor,
+                    TimeSpan.FromSeconds(timeoutSeconds),
+                    ct,
+                    username: transferorRole.Aor.User,
+                    password: parsed[0].Password).ConfigureAwait(false);
+            }
+            catch (Exception excp)
+            {
+                accepted = false;
+                Console.Error.WriteLine($"The REFER threw: {excp.Message}");
+            }
+
+            timeline.Add(accepted ? "referAccepted" : "referRejected",
+                accepted ? (int)SIPResponseStatusCodesEnum.Accepted : null);
+
+            Console.Error.WriteLine(accepted
+                ? "REFER accepted. Waiting for the transferee to reach the target ..."
+                : "REFER was not accepted.");
+
+            // The transferee places the second call on its own once it has accepted, so this waits
+            // on the target being rung rather than on a fixed delay.
+            if (accepted)
+            {
+                await Task.WhenAny(
+                    targetCalled.Task,
+                    Task.Delay(TimeSpan.FromSeconds(settleSeconds), ct)).ConfigureAwait(false);
+
+                // A moment beyond the answer for media to start arriving from the new end point.
+                await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
+            }
+
+            bool targetAnswered = targetCalled.Task.IsCompletedSuccessfully;
+
+            if (targetAnswered)
+            {
+                timeline.Add("targetAnswered");
+            }
+
+            var mediaAfter = transfereeRole.Media?.DominantAudioRemote?.Key;
+
+            // Three-valued on purpose. "The audio did not move" and "there was never any audio to
+            // move" are different findings, and reporting the second as the first would blame the
+            // transfer for a media path that never worked - which is what happens when the roles
+            // all sit behind one NAT and the router will not hairpin their RTP.
+            string mediaSwitched =
+                !baselineMedia ? "not-assessed"
+                : mediaAfter != null && mediaAfter != mediaBefore ? "yes"
+                : "no";
+
+            if (mediaSwitched == "yes")
+            {
+                timeline.Add("mediaSwitched", detail: mediaAfter);
+            }
+
+            // The transferor's leg is finished with once the transfer is away: a blind transfer
+            // ends with the transferee hanging it up.
+            bool originalLegEnded = remoteHungup.Task.IsCompletedSuccessfully
+                || !transferorRole.UserAgent.IsCallActive;
+
+            if (originalLegEnded)
+            {
+                timeline.Add("originalLegEnded");
+            }
 
             var transferorLeg = Describe(transferorRole.Media);
             var transfereeLeg = Describe(transfereeRole.Media);
@@ -403,14 +557,41 @@ public sealed class SipTransferCommand : CommandBase
 
             await Task.WhenAll(roles.Select(x => x.UnregisterAsync())).ConfigureAwait(false);
 
-            bool bothHeardMedia = transferorLeg is { Packets: > 0 } && transfereeLeg is { Packets: > 0 };
+            string[] notified;
+
+            lock (notifies)
+            {
+                notified = notifies.ToArray();
+            }
+
+            var outcome = new TransferOutcome(
+                accepted,
+                accepted ? (int)SIPResponseStatusCodesEnum.Accepted : null,
+                targetAnswered,
+                originalLegEnded,
+                mediaBefore,
+                mediaAfter,
+                mediaSwitched,
+                notified);
+
+            // The transfer is judged on what it achieved, and media only counts against it when
+            // there was media to begin with. Note what is deliberately absent: the NOTIFY
+            // progression is recorded but not required, because a SIPUserAgent transferee never
+            // sends one - requiring it would fail every run for a gap in the transferee, not the
+            // server under test.
+            bool transferred = accepted && targetAnswered && mediaSwitched != "no";
+
+            string? error =
+                !accepted ? "The transferee did not accept the REFER."
+                : !targetAnswered ? "The REFER was accepted but the target was never called."
+                : mediaSwitched == "no" ? "The target answered but the transferee's audio did not move to it."
+                : null;
 
             return WriteResult(asJson,
-                new TransferResult(bothHeardMedia, "blind", protocol.ToString(), serverUri.ToString(), domain,
+                new TransferResult(transferred, "blind", protocol.ToString(), serverUri.ToString(), domain,
                     roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
-                    transferorLeg, transfereeLeg, timeline.Events,
-                    bothHeardMedia ? null : "The call was answered but audio did not flow in both directions."),
-                bothHeardMedia ? ExitCodes.Ok : ExitCodes.Failed);
+                    transferorLeg, transfereeLeg, timeline.Events, error, outcome),
+                transferred ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
         {

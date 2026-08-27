@@ -44,6 +44,7 @@ namespace SIPSorcery.SIP
                 //   to be detected for.
                 // This block is for the second case. The tx request has been received and the tx engine
                 // needs to be signalled that it is now at the request processing stage.
+                sipTransport.AddTransaction(this);
                 base.UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
             }
         }
