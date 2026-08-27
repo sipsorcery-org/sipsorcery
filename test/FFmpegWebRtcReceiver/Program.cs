@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
@@ -52,14 +53,13 @@ namespace demo
 
     class Program
     {
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
         private const int VIDEO_INITIAL_WIDTH = 640;
         private const int VIDEO_INITIAL_HEIGHT = 480;
 
         private static Form _form;
         private static PictureBox _picBox;
-        private static Bitmap _displayBmp;
+        private static Bitmap _spareBmp;   // Retired bitmap handed back by the UI thread for re-use.
         private static Options _options;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -112,19 +112,7 @@ namespace demo
             var videoEP = new SIPSorceryMedia.FFmpeg.FFmpegVideoEndPoint();
             videoEP.RestrictFormats(format => format.Codec == VideoCodecsEnum.H264);
 
-            videoEP.OnVideoSinkDecodedSampleFaster += (RawImage rawImage) =>
-            {
-                if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
-                {
-                    logger.LogError($"Cannot display decoded video sample, expected pixel format Bgr but got {rawImage.PixelFormat}.");
-                    return;
-                }
-
-                unsafe
-                {
-                    ShowFrame((byte*)rawImage.Sample, rawImage.Width, rawImage.Height, rawImage.Stride);
-                }
-            };
+            videoEP.OnVideoSinkDecodedSampleFaster += ShowFrame;
 
             RTCConfiguration config = new RTCConfiguration
             {
@@ -185,72 +173,51 @@ namespace demo
             
         }
 
-        /// <summary>
-        /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Called on the decoder's thread, not the UI thread, and deliberately so. The sample is only
-        /// valid for the duration of the event handler: the decoder converts every frame into the same
-        /// buffer, so deferring the copy to the UI thread would read a frame that has already been
-        /// overwritten. Only the display of the finished bitmap is marshalled to the form.
-        /// </para>
-        /// <para>
-        /// The bitmap is allocated once and re-used until the frame size changes. Allocating one per
-        /// frame costs several times more than the copy itself and, at 1080p and above, produces enough
-        /// garbage to stall the application.
-        /// </para>
-        /// <para>
-        /// Note GDI+'s Format24bppRgb is B,G,R in memory despite the name, which is why a Bgr sample
-        /// can be copied into it verbatim.
-        /// </para>
-        /// </remarks>
-        private static unsafe void ShowFrame(byte* sample, int width, int height, int stride)
+        private static void ShowFrame(RawImage rawImage)
         {
-            if (_displayBmp == null || _displayBmp.Width != width || _displayBmp.Height != height)
+            if (rawImage.PixelFormat != VideoPixelFormatsEnum.Bgr)
             {
-                logger.LogDebug($"Adjusting video display to {width}x{height}.");
-
-                var previous = _displayBmp;
-                _displayBmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
-
-                _form.BeginInvoke(new Action(() =>
-                {
-                    _picBox.Width = width;
-                    _picBox.Height = height;
-                    _picBox.Image = _displayBmp;
-                    previous?.Dispose();
-                }));
+                logger.LogError($"Cannot display decoded video sample, expected pixel format Bgr but got {rawImage.PixelFormat}.");
+                return;
             }
 
-            var bmpData = _displayBmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+            var bmp = Interlocked.Exchange(ref _spareBmp, null);
+
+            int width = rawImage.Width;
+            int height = rawImage.Height;
+
+            if (bmp == null || bmp.Width != width || bmp.Height != height)
+            {
+                bmp?.Dispose();
+                bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            }
+
+            var bmpData = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 
             try
             {
-                // GDI+ rounds its stride up to a multiple of four while the decoder's is exactly
-                // width * 3, so the two agree for any width that is a multiple of four. That covers
-                // every standard video resolution and lets the frame go in a single copy, which
-                // measures around 30% faster than a row at a time. Widths that are not a multiple
-                // of four, which cropped display sizes can produce, still need the row loop.
-                if (stride == bmpData.Stride)
-                {
-                    Buffer.MemoryCopy(sample, (byte*)bmpData.Scan0, (long)bmpData.Stride * height, (long)stride * height);
-                }
-                else
-                {
-                    for (int row = 0; row < height; row++)
-                    {
-                        Buffer.MemoryCopy(sample + row * stride, (byte*)bmpData.Scan0 + row * bmpData.Stride, bmpData.Stride, width * 3);
-                    }
-                }
+                rawImage.CopyTo(bmpData.Scan0, bmpData.Stride);
             }
             finally
             {
-                _displayBmp.UnlockBits(bmpData);
+                bmp.UnlockBits(bmpData);
             }
 
-            // Control.Invalidate is not documented as thread safe, so marshal it like any other UI call.
-            _form.BeginInvoke(new Action(() => _picBox.Invalidate()));
+            _form.BeginInvoke(new Action(() =>
+            {
+                if (_picBox.Width != width || _picBox.Height != height)
+                {
+                    logger.LogDebug($"Adjusting video display to {width}x{height}.");
+                    _picBox.Width = width;
+                    _picBox.Height = height;
+                }
+
+                var previous = _picBox.Image as Bitmap;
+                _picBox.Image = bmp;
+
+                // The previous picure box bitmap is no longer being painted so it can be used for the next frame copy.
+                Interlocked.Exchange(ref _spareBmp, previous)?.Dispose();
+            }));
         }
 
         private static X509Certificate2 LoadCertificate(string path)

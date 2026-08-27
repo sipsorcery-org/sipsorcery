@@ -6,6 +6,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	<LangVersion>12.0</LangVersion>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Disable warning for missing XML doc comments. -->
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
 	<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
