@@ -39,6 +39,12 @@ public class RawImage
     /// <summary>
     /// Pointer to an array of bytes that contains the pixel data.
     /// </summary>
+    /// <remarks>
+    /// When supplied by a decoder or capture source this points at memory owned by that component
+    /// and re-used for every frame, so it is only valid for the duration of the event handler it
+    /// was delivered to. Copy the pixels if the frame is needed after that, ideally into a bitmap
+    /// allocated once and re-used across frames.
+    /// </remarks>
     public IntPtr Sample { get; set; }
 
     /// <summary>
