@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTCPeerConnectionDtlsFingerprintUnitTest.cs
 //
 // Description: Unit tests for the handling of the DTLS fingerprint attribute in
@@ -368,6 +368,46 @@ namespace SIPSorcery.Net.UnitTests
 
             setter.Invoke(pc, new object[] { true });
             Assert.True(pc.IsDtlsNegotiationComplete);
+        }
+
+        /// <summary>
+        /// Tests inputs that cannot identify a supported fingerprint algorithm and value.
+        /// </summary>
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("sha-256")]
+        [InlineData("sha-999 AA:BB")]
+        public void TryParseInvalidDtlsFingerprintUnitTest(string value)
+        {
+            Assert.False(RTCDtlsFingerprint.TryParse(value, out var fingerprint));
+            Assert.Null(fingerprint);
+        }
+
+        /// <summary>
+        /// Tests parsing a fingerprint that uses a supported digest.
+        /// </summary>
+        [Fact]
+        public void TryParseValidDtlsFingerprintUnitTest()
+        {
+            Assert.True(RTCDtlsFingerprint.TryParse("sha-256 aa:bb", out var fingerprint));
+            Assert.Equal("sha-256", fingerprint.algorithm);
+            Assert.Equal("aa:bb", fingerprint.value);
+        }
+
+        /// <summary>
+        /// Tests the SDP representation, including the uppercase fingerprint required by Firefox.
+        /// </summary>
+        [Fact]
+        public void ToStringDtlsFingerprintUnitTest()
+        {
+            var fingerprint = new RTCDtlsFingerprint
+            {
+                algorithm = "sha-256",
+                value = "aa:bb:0c"
+            };
+
+            Assert.Equal("sha-256 AA:BB:0C", fingerprint.ToString());
         }
     }
 }
