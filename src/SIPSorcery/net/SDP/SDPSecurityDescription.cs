@@ -8,8 +8,13 @@
 // rj2
 
 using System;
+using System.Buffers;
+#if NET9_0_OR_GREATER
+using System.Collections.Frozen;
+#endif
 using System.Collections.Generic;
 using System.Text;
+using CommunityToolkit.HighPerformance.Buffers;
 using Polyfills;
 using SIPSorcery.Sys;
 
@@ -42,7 +47,8 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPSecurityDescription
     {
-        public const string CRYPTO_ATTRIBUE_PREFIX = "a=crypto:";
+        public const string CRYPTO_ATTRIBUTE_NAME = "crypto";
+        public const string CRYPTO_ATTRIBUE_PREFIX = $"a={CRYPTO_ATTRIBUTE_NAME}:";
         private static readonly char[] WHITE_SPACES = new char[] { ' ', '\t' };
         private const char SEMI_COLON = ';';
         private const string COLON = ":";
@@ -65,6 +71,7 @@ namespace SIPSorcery.Net
             AES_CM_256_HMAC_SHA1_80, //https://tools.ietf.org/html/rfc6188
             AES_CM_256_HMAC_SHA1_32 //https://tools.ietf.org/html/rfc6188
         }
+        private static readonly string[] s_cryptoSuiteNames = Enum.GetNames(typeof(CryptoSuites));
         private static readonly Dictionary<string, CryptoSuites> s_cryptoSuiteLookup = CreateCryptoSuiteLookup();
         private static Dictionary<string, CryptoSuites> CreateCryptoSuiteLookup()
         {
@@ -231,30 +238,34 @@ namespace SIPSorcery.Net
 
             public override string ToString()
             {
-                var s = new StringBuilder();
-                s.Append(KEY_METHOD).Append(COLON).Append(this.KeySaltBase64);
+                using var writer = new ArrayPoolBufferWriter<char>(4096);
+                WriteString(writer);
+                return writer.ToString();
+            }
+
+            public void WriteString(IBufferWriter<char> writer)
+            {
+                writer.Write(KEY_METHOD + COLON).Write(this.KeySaltBase64);
                 if (!string.IsNullOrWhiteSpace(this.LifeTimeString))
                 {
-                    s.Append(PIPE).Append(this.LifeTimeString);
+                    writer.Write(PIPE).Write(this.LifeTimeString);
                 }
                 else if (this.LifeTime > 0)
                 {
-                    s.Append(PIPE).Append(this.LifeTime);
+                    writer.Write(PIPE).Write(this.LifeTime);
                 }
 
                 if (this.MkiLength > 0 && this.MkiValue > 0)
                 {
-                    s.Append(PIPE).Append(this.MkiValue).Append(COLON).Append(this.MkiLength);
+                    writer.Write(PIPE).Write(this.MkiValue).Write(COLON).Write(this.MkiLength);
                 }
-
-                return s.ToString();
             }
 
             public static KeyParameter Parse(string keyParamString, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
             {
                 if (!TryParse(keyParamString, out var keyParam, cryptoSuite))
                 {
-                    throw new FormatException($"keyParam '{keyParamString}' is not recognized as a valid KEY_PARAM ");
+                    throw new FormatException($"{nameof(keyParamString)} '{keyParamString}' is not recognized as a valid KEY_PARAM ");
                 }
                 return keyParam;
             }
@@ -683,27 +694,43 @@ namespace SIPSorcery.Net
             }
             public override string ToString()
             {
-                if (this.SrtpSessionParam == SrtpSessionParams.unknown)
-                {
-                    return "";
-                }
+                using var writer = new ArrayPoolBufferWriter<char>(4096);
+                WriteString(writer);
+                return writer.ToString();
+            }
 
+            public void WriteString(IBufferWriter<char> writer)
+            {
                 switch (this.SrtpSessionParam)
                 {
                     case SrtpSessionParams.UNAUTHENTICATED_SRTP:
+                        writer.Write(nameof(SrtpSessionParams.UNAUTHENTICATED_SRTP));
+                        break;
                     case SrtpSessionParams.UNENCRYPTED_SRTP:
+                        writer.Write(nameof(SrtpSessionParams.UNENCRYPTED_SRTP));
+                        break;
                     case SrtpSessionParams.UNENCRYPTED_SRTCP:
-                        return this.SrtpSessionParam.ToString();
+                        writer.Write(nameof(SrtpSessionParams.UNENCRYPTED_SRTCP));
+                        break;
                     case SrtpSessionParams.wsh:
-                        return $"{WSH_PREFIX}{this.Wsh}";
+                        writer.Write(WSH_PREFIX).Write(this.Wsh);
+                        break;
                     case SrtpSessionParams.kdr:
-                        return $"{KDR_PREFIX}{this.Kdr}";
+                        writer.Write(KDR_PREFIX).Write(this.Kdr);
+                        break;
                     case SrtpSessionParams.fec_order:
-                        return $"{FEC_ORDER_PREFIX}{this.FecOrder.ToString()}";
+                        writer.Write(FEC_ORDER_PREFIX).Write(this.FecOrder switch
+                        {
+                            FecTypes.FEC_SRTP => nameof(FecTypes.FEC_SRTP),
+                            FecTypes.SRTP_FEC => nameof(FecTypes.SRTP_FEC),
+                            _ => this.FecOrder.ToString()
+                        });
+                        break;
                     case SrtpSessionParams.fec_key:
-                        return $"{FEC_KEY_PREFIX}{this.FecKey?.ToString()}";
+                        writer.Write(FEC_KEY_PREFIX);
+                        this.FecKey?.WriteString(writer);
+                        break;
                 }
-                return "";
             }
 
             public static SessionParameter Parse(string sessionParam, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
@@ -844,27 +871,39 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
+            using var writer = new ArrayPoolBufferWriter<char>(4096);
+            return WriteString(writer) ? writer.ToString() : null;
+        }
+
+        public bool WriteString(IBufferWriter<char> writer)
+        {
             if (this.Tag < 1 || this.CryptoSuite == CryptoSuites.unknown || this.KeyParams.Count < 1)
             {
-                return null;
+                return false;
             }
 
-            var s = new StringBuilder();
-            s.Append(CRYPTO_ATTRIBUE_PREFIX).Append(this.Tag).Append(WHITE_SPACE).Append(this.CryptoSuite).Append(WHITE_SPACE);
+            var cryptoSuiteIndex = (int)this.CryptoSuite;
+            var cryptoSuiteName = (uint)cryptoSuiteIndex < (uint)s_cryptoSuiteNames.Length
+                ? s_cryptoSuiteNames[cryptoSuiteIndex]
+                : this.CryptoSuite.ToString();
+
+            writer.Write(CRYPTO_ATTRIBUE_PREFIX).Write(this.Tag).Write(WHITE_SPACE).Write(cryptoSuiteName).Write(WHITE_SPACE);
             for (int i = 0; i < this.KeyParams.Count; i++)
             {
                 if (i > 0)
                 {
-                    s.Append(SEMI_COLON);
+                    writer.Write(SEMI_COLON);
                 }
 
-                s.Append(this.KeyParams[i].ToString());
+                this.KeyParams[i].WriteString(writer);
             }
             if (this.SessionParam != null)
             {
-                s.Append(WHITE_SPACE).Append(this.SessionParam.ToString());
+                writer.Write(WHITE_SPACE);
+                this.SessionParam.WriteString(writer);
             }
-            return s.ToString();
+
+            return true;
         }
 
         public static SDPSecurityDescription Parse(string cryptoLine)

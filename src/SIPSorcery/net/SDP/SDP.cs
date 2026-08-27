@@ -104,12 +104,13 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using CommunityToolkit.HighPerformance.Buffers;
 using Microsoft.Extensions.Logging;
-using Polyfills;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -1058,111 +1059,155 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var sdp = new StringBuilder();
-            sdp.Append("v=").Append(SDP_PROTOCOL_VERSION).Append(CRLF)
-                .Append("o=").Append(Owner).Append(CRLF)
-                .Append("s=").Append(SessionName).Append(CRLF);
+            using var writer = new ArrayPoolBufferWriter<char>(4096);
+            WriteString(writer);
+            return writer.ToString();
+        }
 
-            if (Connection != null)
+        public void WriteString(IBufferWriter<char> writer)
+        {
+            writer
+                .Write("v=").Write(SDP_PROTOCOL_VERSION).Write("\r\no=")
+                .Write(Username).Write(' ')
+                .Write(SessionId).Write(' ')
+                .Write(AnnouncementVersion).Write(' ')
+                .Write(NetworkType).Write(' ')
+                .Write(AddressType).Write(' ')
+                .Write(AddressOrHost).Write("\r\ns=")
+                .Write(SessionName).Write(CRLF);
+
+            Connection?.WriteString(writer);
+
+            foreach (var bandwidth in BandwidthAttributes)
             {
-                sdp.Append(Connection);
+                writer.Write("b=").Write(bandwidth).Write(CRLF);
             }
 
-            foreach (string bandwidth in BandwidthAttributes)
-            {
-                sdp.Append("b=").Append(bandwidth).Append(CRLF);
-            }
-
-            sdp.Append("t=").Append(Timing).Append(CRLF);
+            writer.Write("t=").Write(Timing).Write(CRLF);
 
             if (!string.IsNullOrWhiteSpace(IceUfrag))
             {
-                sdp.Append("a=").Append(ICE_UFRAG_ATTRIBUTE_PREFIX).Append(':').Append(IceUfrag).Append(CRLF);
+                writer.Write("a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":").Write(IceUfrag).Write(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(IcePwd))
             {
-                sdp.Append("a=").Append(ICE_PWD_ATTRIBUTE_PREFIX).Append(':').Append(IcePwd).Append(CRLF);
+                writer.Write("a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":").Write(IcePwd).Write(CRLF);
             }
 
-            if (IceRole != null)
+            if (IceRole is { } iceRole)
             {
-                sdp.Append("a=").Append(SDP.ICE_SETUP_ATTRIBUTE_PREFIX).Append(':').Append(IceRole).Append(CRLF);
+                writer.Write("a=" + ICE_SETUP_ATTRIBUTE_PREFIX + ":").Write(GetIceRoleName(iceRole)).Write(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(DtlsFingerprint))
             {
-                sdp.Append("a=").Append(DTLS_FINGERPRINT_ATTRIBUTE_PREFIX).Append(':').Append(DtlsFingerprint).Append(CRLF);
+                writer.Write("a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":").Write(DtlsFingerprint).Write(CRLF);
             }
 
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    sdp.Append("a=").Append(SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX).Append(':').Append(candidate).Append(CRLF);
+                    writer.Write("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX + ":").Write(candidate).Write(CRLF);
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(SessionDescription))
             {
-                sdp.Append("i=").Append(SessionDescription).Append(CRLF);
+                writer.Write("i=").Write(SessionDescription).Write(CRLF);
             }
 
             if (!string.IsNullOrWhiteSpace(URI))
             {
-                sdp.Append("u=").Append(URI).Append(CRLF);
+                writer.Write("u=").Write(URI).Write(CRLF);
             }
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
             {
-                foreach (string originatorAddress in OriginatorEmailAddresses)
+                foreach (var originatorAddress in OriginatorEmailAddresses)
                 {
                     if (!string.IsNullOrWhiteSpace(originatorAddress))
                     {
-                        sdp.Append("e=").Append(originatorAddress).Append(CRLF);
+                        writer.Write("e=").Write(originatorAddress).Write(CRLF);
                     }
                 }
             }
 
             if (OriginatorPhoneNumbers != null && OriginatorPhoneNumbers.Length > 0)
             {
-                foreach (string originatorNumber in OriginatorPhoneNumbers)
+                foreach (var originatorNumber in OriginatorPhoneNumbers)
                 {
                     if (!string.IsNullOrWhiteSpace(originatorNumber))
                     {
-                        sdp.Append("p=").Append(originatorNumber).Append(CRLF);
+                        writer.Write("p=").Write(originatorNumber).Write(CRLF);
                     }
                 }
             }
 
             if (Group != null)
             {
-                sdp.Append("a=").Append(GROUP_ATRIBUTE_PREFIX).Append(':').Append(Group).Append(CRLF);
+                writer.Write("a=" + GROUP_ATRIBUTE_PREFIX + ":").Write(Group).Write(CRLF);
             }
 
-            foreach (string extra in ExtraSessionAttributes)
+            foreach (var extra in ExtraSessionAttributes)
             {
                 if (!string.IsNullOrWhiteSpace(extra))
                 {
-                    sdp.Append(extra).Append(CRLF);
+                    writer.Write(extra).Write(CRLF);
                 }
             }
 
             if (SessionMediaStreamStatus != null)
             {
-                sdp.Append(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Append(CRLF);
+                writer.Write(MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus.Value)).Write(CRLF);
             }
 
-            //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
-            foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            if (IsMediaSorted(Media))
             {
-                if (media != null)
+                foreach (var media in Media)
                 {
-                    sdp.Append(media);
+                    media?.WriteString(writer);
+                }
+            }
+            else
+            {
+                var medias = Media.ToArray();
+                Array.Sort(medias, CompareMedia);
+
+                foreach (var media in medias)
+                {
+                    media?.WriteString(writer);
                 }
             }
 
-            return sdp.ToString();
+            static bool IsMediaSorted(List<SDPMediaAnnouncement> media)
+            {
+                for (var i = 1; i < media.Count; i++)
+                {
+                    if (CompareMedia(media[i - 1], media[i]) > 0)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            static int CompareMedia(SDPMediaAnnouncement x, SDPMediaAnnouncement y)
+            {
+                var comparison = x.MLineIndex.CompareTo(y.MLineIndex);
+                return comparison != 0 ? comparison : StringComparer.Ordinal.Compare(x.MediaID, y.MediaID);
+            }
+
+            // TODO: use https://www.nuget.org/packages/NetEscapades.EnumGenerators
+            static string GetIceRoleName(IceRolesEnum iceRole) => iceRole switch
+            {
+                IceRolesEnum.actpass => nameof(IceRolesEnum.actpass),
+                IceRolesEnum.passive => nameof(IceRolesEnum.passive),
+                IceRolesEnum.active => nameof(IceRolesEnum.active),
+                _ => iceRole.ToString()
+            };
         }
 
         /// <summary>

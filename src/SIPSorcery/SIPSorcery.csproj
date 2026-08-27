@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.HighPerformance" />
     <PackageReference Include="Concentus" />
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="DnsClient" />
