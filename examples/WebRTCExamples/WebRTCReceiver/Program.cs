@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CommandLine;
@@ -30,7 +31,6 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorceryMedia.Abstractions;
-using SIPSorceryMedia.Encoders;
 using SIPSorceryMedia.FFmpeg;
 using WebSocketSharp.Server;
 
@@ -53,16 +53,15 @@ namespace demo
 
     class Program
     {
-        private const string ffmpegLibFullPath = @"C:\ffmpeg-4.4.1-full_build-shared\bin"; //  /!\ A valid path to FFmpeg library
-
-        private const string STUN_URL = "stun:stun.sipsorcery.com";
         private const int WEBSOCKET_PORT = 8081;
         private const int VIDEO_INITIAL_WIDTH = 640;
         private const int VIDEO_INITIAL_HEIGHT = 480;
-
+        private static readonly TimeSpan KEY_FRAME_REQUEST_INTERVAL = TimeSpan.FromSeconds(2);
         private static Form _form;
         private static PictureBox _picBox;
         private static Bitmap _displayBmp;
+        private static System.Threading.Timer _keyFrameWatchdog;
+        private static bool _haveDecodedFrame;
         private static Options _options;
 
         private static Microsoft.Extensions.Logging.ILogger logger = NullLogger.Instance;
@@ -127,10 +126,34 @@ namespace demo
                     return;
                 }
 
-                unsafe
+                if (!_haveDecodedFrame)
                 {
-                    ShowFrame((byte*)rawImage.Sample, rawImage.Width, rawImage.Height, rawImage.Stride);
+                    // The stream is up, so stop asking for key frames.
+                    _haveDecodedFrame = true;
+                    _keyFrameWatchdog?.Dispose();
+                    _keyFrameWatchdog = null;
+                    logger.LogInformation("First video frame decoded, key frame requests stopped.");
                 }
+
+                // Hand the frame to the UI thread rather than copying it here. This callback runs on
+                // the WebRTC receive thread, which also services ICE and STUN on the same socket, so
+                // anything slow on it costs received packets. The first GDI+ call in a process takes
+                // several milliseconds while the library initialises, which is long enough to lose
+                // part of the arriving key frame and leave the decoder without its parameter sets.
+                // The cost is that the sample may have been overwritten by the next frame before the
+                // copy runs, which shows as tearing.
+                int width = rawImage.Width;
+                int height = rawImage.Height;
+                int stride = rawImage.Stride;
+                IntPtr sample = rawImage.Sample;
+
+                _form.BeginInvoke(new Action(() =>
+                {
+                    unsafe
+                    {
+                        ShowFrame((byte*)sample, width, height, stride);
+                    }
+                }));
             };
 
             videoEP.OnVideoSinkDecodedSample += (byte[] bmp, uint width, uint height, int stride, VideoPixelFormatsEnum pixelFormat) =>
@@ -141,13 +164,18 @@ namespace demo
                     return;
                 }
 
-                unsafe
+                // As above, the copy happens on the UI thread. The byte[] overload hands over a fresh
+                // array each frame so it stays alive as long as this closure does.
+                _form.BeginInvoke(new Action(() =>
                 {
-                    fixed (byte* s = bmp)
+                    unsafe
                     {
-                        ShowFrame(s, (int)width, (int)height, (int)(bmp.Length / height));
+                        fixed (byte* s = bmp)
+                        {
+                            ShowFrame(s, (int)width, (int)height, (int)(bmp.Length / height));
+                        }
                     }
-                }
+                }));
             };
 
             RTCConfiguration config = new RTCConfiguration
@@ -168,7 +196,20 @@ namespace demo
             //MediaStreamTrack videoTrack = new MediaStreamTrack(new VideoFormat(96, "VP8", 90000, "x-google-max-bitrate=5000000"), MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(videoTrack);
 
-            pc.OnVideoFrameReceived += videoEP.GotVideoFrame;
+            pc.OnVideoFrameReceived += (ep, ts, frame, fmt) =>
+            {
+                // Diagnostic: until the first frame decodes, show what each assembled frame actually
+                // contains. A healthy first frame has an SPS and a PPS followed by IDR slices. If the
+                // early frames are all non-IDR slices the key frame never arrived; if a frame claims a
+                // key frame but decode still fails, the frame was assembled from an incomplete set of
+                // RTP packets.
+                if (!_haveDecodedFrame)
+                {
+                    logger.LogInformation($"RX frame ts={ts} {frame.Length}B: {DescribeNals(frame)}");
+                }
+
+                videoEP.GotVideoFrame(ep, ts, frame, fmt);
+            };
             pc.OnVideoFormatsNegotiated += (formats) => videoEP.SetVideoSinkFormat(formats.First());
 
             pc.onconnectionstatechange += async (state) =>
@@ -181,7 +222,17 @@ namespace demo
                 }
                 else if (state == RTCPeerConnectionState.closed)
                 {
+                    _keyFrameWatchdog?.Dispose();
+                    _keyFrameWatchdog = null;
                     await videoEP.CloseVideo();
+                }
+                else if (state == RTCPeerConnectionState.connected)
+                {
+                    // Nothing can be decoded until a key frame arrives, because the H264 parameter
+                    // sets travel with it. If the first one is missed the sender will not send
+                    // another unsolicited, and every later frame fails with "non-existing PPS 0
+                    // referenced". Ask for one on connect and keep asking until a frame decodes.
+                    //_keyFrameWatchdog = new System.Threading.Timer(_ => RequestKeyFrame(pc), null, TimeSpan.Zero, KEY_FRAME_REQUEST_INTERVAL);
                 }
             };
 
@@ -196,13 +247,98 @@ namespace demo
         }
 
         /// <summary>
+        /// Asks the remote peer for a key frame with an RTCP Picture Loss Indication.
+        /// </summary>
+        /// <remarks>
+        /// Called on a timer until the first frame decodes. A receiver that misses the initial key
+        /// frame, which for H264 carries the SPS and PPS parameter sets, cannot decode anything that
+        /// follows and browsers do not send another without being asked. Requires the SAVPF profile,
+        /// which X_UseRtpFeedbackProfile above negotiates.
+        /// </remarks>
+        /// <summary>
+        /// Lists the NAL units in an Annex B frame, for diagnosing why a stream will not decode.
+        /// </summary>
+        private static string DescribeNals(byte[] frame)
+        {
+            var parts = new List<string>();
+            int i = 0;
+
+            while (i + 3 < frame.Length)
+            {
+                int scLen = 0;
+                if (frame[i] == 0 && frame[i + 1] == 0 && frame[i + 2] == 1)
+                {
+                    scLen = 3;
+                }
+                else if (i + 4 < frame.Length && frame[i] == 0 && frame[i + 1] == 0 && frame[i + 2] == 0 && frame[i + 3] == 1)
+                {
+                    scLen = 4;
+                }
+
+                if (scLen == 0)
+                {
+                    i++;
+                    continue;
+                }
+
+                int start = i + scLen;
+                if (start >= frame.Length)
+                {
+                    break;
+                }
+
+                int next = start;
+                while (next + 3 < frame.Length &&
+                       !(frame[next] == 0 && frame[next + 1] == 0 && frame[next + 2] == 1) &&
+                       !(frame[next] == 0 && frame[next + 1] == 0 && frame[next + 2] == 0 && frame[next + 3] == 1))
+                {
+                    next++;
+                }
+
+                if (next + 3 >= frame.Length)
+                {
+                    next = frame.Length;
+                }
+
+                int type = frame[start] & 0x1F;
+                string name = type == 1 ? "non-IDR slice" : type == 5 ? "IDR slice" : type == 6 ? "SEI"
+                    : type == 7 ? "SPS" : type == 8 ? "PPS" : type == 9 ? "AUD" : "other";
+                parts.Add($"{name}({type}) {next - start}B");
+                i = next;
+            }
+
+            return parts.Count == 0 ? "<no start codes>" : string.Join(", ", parts);
+        }
+
+        private static void RequestKeyFrame(RTCPeerConnection pc)
+        {
+            try
+            {
+                if (pc == null || pc.connectionState != RTCPeerConnectionState.connected ||
+                    pc.VideoLocalTrack == null || pc.VideoRemoteTrack == null)
+                {
+                    return;
+                }
+
+                logger.LogDebug($"Requesting a key frame from remote ssrc {pc.VideoRemoteTrack.Ssrc}.");
+
+                var pli = new RTCPFeedback(pc.VideoLocalTrack.Ssrc, pc.VideoRemoteTrack.Ssrc, PSFBFeedbackTypesEnum.PLI);
+                pc.SendRtcpFeedback(SDPMediaTypesEnum.video, pli);
+            }
+            catch (Exception excp)
+            {
+                logger.LogWarning($"Failed to request a key frame. {excp.Message}");
+            }
+        }
+
+        /// <summary>
         /// Copies a decoded 24 bits per pixel frame into a bitmap this application owns and displays it.
         /// </summary>
         /// <remarks>
-        /// Called on the decoder's thread, not the UI thread, and deliberately so. The sample is only
-        /// valid for the duration of the event handler: the decoder converts every frame into the same
-        /// buffer, so deferring the copy to the UI thread would read a frame that has already been
-        /// overwritten. Only the display of the finished bitmap is marshalled to the form.
+        /// Runs on the UI thread. The copy must not be done on the decoder's callback thread: that is
+        /// the WebRTC receive thread, which also services ICE and STUN on the same socket, and stalling
+        /// it loses packets. The trade is that the decoder re-uses one conversion buffer, so by the time
+        /// this runs the sample may already hold the next frame, which shows as tearing.
         /// 
         /// The bitmap is allocated once and re-used until the frame size changes. Allocating one per
         /// frame costs several times more than the copy itself and, at 1080p and above, produces enough
@@ -220,13 +356,10 @@ namespace demo
                 var previous = _displayBmp;
                 _displayBmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
 
-                _form.BeginInvoke(new Action(() =>
-                {
-                    _picBox.Width = width;
-                    _picBox.Height = height;
-                    _picBox.Image = _displayBmp;
-                    previous?.Dispose();
-                }));
+                _picBox.Width = width;
+                _picBox.Height = height;
+                _picBox.Image = _displayBmp;
+                previous?.Dispose();
             }
 
             var bmpData = _displayBmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
@@ -255,8 +388,7 @@ namespace demo
                 _displayBmp.UnlockBits(bmpData);
             }
 
-            // Control.Invalidate is not documented as thread safe, so marshal it like any other UI call.
-            _form.BeginInvoke(new Action(() => _picBox.Invalidate()));
+            _picBox.Invalidate();
         }
 
         private static X509Certificate2 LoadCertificate(string path)
