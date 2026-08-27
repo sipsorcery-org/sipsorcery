@@ -305,13 +305,42 @@ public sealed class TransferRole : IDisposable
         await Task.Delay(TimeSpan.FromMilliseconds(250), CancellationToken.None).ConfigureAwait(false);
     }
 
-    public void Dispose()
+    /// <summary>
+    /// Ends this role's call, if it still has one, and waits for the BYE transaction to finish.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="Dispose"/>, and awaited, for two reasons that both showed up as
+    /// BYEs retransmitting at the end of a run.
+    ///
+    /// Hangup only queues the request. Shutting the transport down straight afterwards means the
+    /// 200 has nowhere to arrive, so the transaction never completes and retransmits until it
+    /// times out - the same hazard the ring-timeout path already waits out.
+    ///
+    /// The wait also settles the other end. After a transfer the surviving call has one of these
+    /// roles at each end, and hanging both up at once leaves two BYEs crossing with nobody left to
+    /// answer either. Giving the first one time to be relayed means the second role sees its call
+    /// already gone and stays quiet.
+    /// </remarks>
+    public async Task HangupAsync(TimeSpan settle)
     {
-        if (UserAgent.IsCallActive)
+        if (!UserAgent.IsCallActive)
         {
-            UserAgent.Hangup();
+            return;
         }
 
+        _logger.LogDebug("{Role} hanging up.", Name);
+
+        UserAgent.Hangup();
+
+        await Task.Delay(settle, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Releases the transport and media. Deliberately sends nothing: a role that still has a call
+    /// at this point would be originating a BYE it cannot wait for the answer to.
+    /// </summary>
+    public void Dispose()
+    {
         Media?.Dispose();
         Transport.Shutdown();
     }

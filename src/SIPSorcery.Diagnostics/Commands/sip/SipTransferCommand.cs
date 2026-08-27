@@ -56,6 +56,12 @@ public sealed class SipTransferCommand : CommandBase
     /// settling delay.
     /// </summary>
     private const int DEFAULT_SETTLE_SECONDS = 10;
+
+    /// <summary>
+    /// How long a role waits after its BYE before its transport is torn down. Long enough for the
+    /// 200 to come back over a WAN round trip and for the far end to see the call end.
+    /// </summary>
+    private static readonly TimeSpan HANGUP_SETTLE = TimeSpan.FromMilliseconds(600);
     private const int REGISTRATION_EXPIRY_SECONDS = 300;
 
     /// <summary>One step of the scenario, with the offset from the start of the run.</summary>
@@ -547,11 +553,7 @@ public sealed class SipTransferCommand : CommandBase
             var transferorLeg = Describe(transferorRole.Media);
             var transfereeLeg = Describe(transfereeRole.Media);
 
-            if (transferorRole.UserAgent.IsCallActive)
-            {
-                transferorRole.UserAgent.Hangup();
-                await Task.Delay(500, CancellationToken.None).ConfigureAwait(false);
-            }
+            await HangUpAllAsync(roles).ConfigureAwait(false);
 
             timeline.Add("callEnded");
 
@@ -604,10 +606,33 @@ public sealed class SipTransferCommand : CommandBase
         }
         finally
         {
+            // Ends any call still up before the transports go, so an abandoned run leaves nothing
+            // ringing on the server. Idempotent with the tidy path above: a role whose call has
+            // already ended sends nothing.
+            await HangUpAllAsync(roles).ConfigureAwait(false);
+
             foreach (var role in roles)
             {
                 role.Dispose();
             }
+        }
+    }
+
+    /// <summary>
+    /// Ends every call still up, one role at a time.
+    /// </summary>
+    /// <remarks>
+    /// Sequential, and re-checking before each, is the point. After a successful transfer the
+    /// surviving call has one of these roles at each end; hanging both up together leaves two BYEs
+    /// crossing with neither end alive to answer the other, and both transactions retransmitting
+    /// into a socket that is about to close. Letting the first BYE be relayed means the second role
+    /// finds its call already over and stays quiet.
+    /// </remarks>
+    private static async Task HangUpAllAsync(IEnumerable<TransferRole> roles)
+    {
+        foreach (var role in roles)
+        {
+            await role.HangupAsync(HANGUP_SETTLE).ConfigureAwait(false);
         }
     }
 
