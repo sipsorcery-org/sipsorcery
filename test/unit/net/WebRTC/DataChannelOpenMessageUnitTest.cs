@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: DataChannelOpenMessageUnitTest.cs
 //
 // Description: Unit tests for the DataChannelOpenMessage class.
@@ -157,6 +157,22 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = GetDcepOpenBuffer(0, 0, null);
 
             Assert.Throws<ApplicationException>(() => DataChannelOpenMessage.Parse(buffer, 1));
+        }
+
+        /// <summary>
+        /// Tests that a valid DCEP OPEN message can omit both variable-length fields.
+        /// </summary>
+        [Fact]
+        public void ParseEmptyLabelAndProtocolUnitTest()
+        {
+            var buffer = GetDcepOpenBuffer(0, 0, null);
+
+            var parsed = DataChannelOpenMessage.Parse(buffer, 0);
+
+            Assert.Equal((byte)DataChannelMessageTypes.OPEN, parsed.MessageType);
+            Assert.Equal((byte)DataChannelTypes.DATA_CHANNEL_RELIABLE, parsed.ChannelType);
+            Assert.Null(parsed.Label);
+            Assert.Null(parsed.Protocol);
         }
     }
 }
