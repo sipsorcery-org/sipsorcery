@@ -29,6 +29,7 @@
     </PackageReference>
     <PackageReference Include="SIPSorcery.WebSocketSharp" />
     <PackageReference Include="System.Net.WebSockets.Client" />
+    <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
 
     <!-- The packages below are transitive references included to overcome vulnerabilities in a top level package. -->
