@@ -429,6 +429,11 @@ public sealed class SipTransferCommand : CommandBase
 
                 timeline.Add("transfereeAcceptedRefer", detail: referTo.URI.ToParameterlessString());
 
+                // Silenced for the transfer: the transferee holds the transferor while it calls
+                // the target, and a tone playing into a session that will not send warns on every
+                // packet.
+                _ = transfereeRole.Media?.PauseAsync();
+
                 // Returning true is what accepts it; with no handler at all the library accepts
                 // anyway, so this changes nothing beyond making the decision visible.
                 return true;
@@ -439,6 +444,8 @@ public sealed class SipTransferCommand : CommandBase
                 Console.Error.WriteLine(
                     $"Transferee reached {referTo.URI.ToParameterlessString()}; its call to the transferor is done.");
                 timeline.Add("transfereeReachedTarget");
+
+                _ = transfereeRole.Media?.ResumeAsync();
             };
 
             transfereeRole.UserAgent.OnTransferToTargetFailed += referTo =>
@@ -446,6 +453,8 @@ public sealed class SipTransferCommand : CommandBase
                 Console.Error.WriteLine(
                     $"Transferee could not reach {referTo.URI.ToParameterlessString()}; the transfer failed.");
                 timeline.Add("transfereeFailedToReachTarget");
+
+                _ = transfereeRole.Media?.ResumeAsync();
             };
 
             // The target's side of it. Between these two the call being replaced is on hold, which
@@ -459,6 +468,8 @@ public sealed class SipTransferCommand : CommandBase
                     "answering the call taking it over.");
 
                 timeline.Add("targetReplacingCall", detail: replaced);
+
+                _ = targetRole.Media?.PauseAsync();
             };
 
             targetRole.UserAgent.OnAttendedTransferAccepted += replaced =>
@@ -467,6 +478,8 @@ public sealed class SipTransferCommand : CommandBase
                     $"Target accepted the transfer; its call {replaced.CallId} to the transferor is done.");
 
                 timeline.Add("targetAcceptedTransfer", detail: replaced.CallId);
+
+                _ = targetRole.Media?.ResumeAsync();
             };
 
             // Recorded rather than required. The transferee's own REFER handling in the library
