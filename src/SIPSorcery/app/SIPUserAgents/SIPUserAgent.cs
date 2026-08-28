@@ -1,10 +1,10 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
 // Description: A "full" SIP user agent that encompasses both client and server 
 // user agents. It is also able to manage in dialog operations after the call 
-// is established (the client and server user agents don't handle in dialog 
-// operations).
+// is established (the individual client and server user agent classes don't handle
+// in dialog operations).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -38,7 +38,7 @@ namespace SIPSorcery.SIP.App
     /// <summary>
     /// A "full" SIP user agent that encompasses both client and server user agents.
     /// It is also able to manage in dialog operations after the call is established 
-    /// (the client and server user agents don't handle in dialog operations).
+    /// (the individual client and server user agent classes don't handle in dialog operations).
     /// 
     /// Unlike other user agents this one also manages its own RTP session object
     /// which means it can handle things like call on and off hold, RTP end point
