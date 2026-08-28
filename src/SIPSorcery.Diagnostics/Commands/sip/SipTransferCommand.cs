@@ -97,6 +97,7 @@ public sealed class SipTransferCommand : CommandBase
         long? CallDurationMs,
         MediaLeg? TransferorMedia,
         MediaLeg? TransfereeMedia,
+        MediaLeg? TargetMedia,
         IReadOnlyList<TimelineEvent> Timeline,
         string? Error,
         TransferOutcome? Transfer = null);
@@ -382,7 +383,7 @@ public sealed class SipTransferCommand : CommandBase
 
                 return WriteResult(asJson,
                     new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
-                        roleResults, false, null, null, null, null, timeline.Events,
+                        roleResults, false, null, null, null, null, null, timeline.Events,
                         $"Registration failed for: {failed}."),
                     ExitCodes.Failed);
             }
@@ -543,7 +544,7 @@ public sealed class SipTransferCommand : CommandBase
 
                 return WriteResult(asJson,
                     new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
-                        roleResults, false, connectTimeMs, null, null, null, timeline.Events,
+                        roleResults, false, connectTimeMs, null, null, null, null, timeline.Events,
                         statusCode != null
                             ? $"The transferee did not answer: {statusCode} {failureResponse!.ReasonPhrase}."
                             : $"The transferee did not answer within {timeoutSeconds}s."),
@@ -606,7 +607,8 @@ public sealed class SipTransferCommand : CommandBase
                     return WriteResult(asJson,
                         new TransferResult(false, mode, protocol.ToString(), serverUri.ToString(), domain,
                             roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
-                            Describe(transferorRole.Media), Describe(transfereeRole.Media), timeline.Events,
+                            Describe(transferorRole.Media), Describe(transfereeRole.Media),
+                            Describe(targetRole.Media), timeline.Events,
                             "The consultation call to the target was not answered."),
                         ExitCodes.Failed);
                 }
@@ -710,6 +712,20 @@ public sealed class SipTransferCommand : CommandBase
             var transferorLeg = Describe(transferorRole.Media);
             var transfereeLeg = Describe(transfereeRole.Media);
 
+            // The surviving call after a transfer is the transferee and the target, so the
+            // target's side of it is half the evidence for whether the media actually moved.
+            var targetLeg = Describe(targetRole.Media);
+
+            // The consultation is a real leg of an attended transfer and the only place the
+            // target's audio can be seen before the transfer, which separates "the target stopped
+            // sending when it was taken over" from "the target never sent at all".
+            if (attended)
+            {
+                var consultLeg = Describe(transferorRole.ConsultationMedia);
+                Console.Error.WriteLine(
+                    $"  consultation: transferor heard {(consultLeg is null or { Packets: 0 } ? "nothing" : $"{consultLeg.Packets} packets from {consultLeg.RemoteEndPoint}")} from the target.");
+            }
+
             await HangUpAllAsync(roles).ConfigureAwait(false);
 
             timeline.Add("callEnded");
@@ -751,7 +767,7 @@ public sealed class SipTransferCommand : CommandBase
             return WriteResult(asJson,
                 new TransferResult(transferred, mode, protocol.ToString(), serverUri.ToString(), domain,
                     roleResults, true, connectTimeMs, callWindow.ElapsedMilliseconds,
-                    transferorLeg, transfereeLeg, timeline.Events, error, outcome),
+                    transferorLeg, transfereeLeg, targetLeg, timeline.Events, error, outcome),
                 transferred ? ExitCodes.Ok : ExitCodes.Failed);
         }
         catch (OperationCanceledException)
@@ -872,7 +888,7 @@ public sealed class SipTransferCommand : CommandBase
         bool asJson, string server, string mode, string error, Timeline timeline, int exitCode) =>
         WriteResult(asJson,
             new TransferResult(false, mode, string.Empty, server, string.Empty, Array.Empty<RoleResult>(),
-                false, null, null, null, null, timeline.Events, error),
+                false, null, null, null, null, null, timeline.Events, error),
             exitCode);
 
     private static int WriteResult(bool asJson, TransferResult result, int exitCode)
@@ -896,6 +912,7 @@ public sealed class SipTransferCommand : CommandBase
                 Console.WriteLine($"  call answered in {result.ConnectTimeMs}ms, held {result.CallDurationMs}ms");
                 WriteLeg("transferor heard", result.TransferorMedia);
                 WriteLeg("transferee heard", result.TransfereeMedia);
+        WriteLeg("target     heard", result.TargetMedia);
             }
 
             if (result.Error != null)

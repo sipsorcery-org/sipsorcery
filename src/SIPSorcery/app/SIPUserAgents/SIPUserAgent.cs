@@ -1559,6 +1559,8 @@ namespace SIPSorcery.SIP.App
 
             OnAttendedTransferRequested?.Invoke(uas.ClientTransaction.TransactionRequest);
 
+            LogHoldState("an attended transfer arrived");
+
             // Captured before the answer, because answering replaces it and this is the dialog the
             // application needs named: the one being taken over.
             SIPDialogue replacedDialogue = m_sipDialogue;
@@ -1592,7 +1594,11 @@ namespace SIPSorcery.SIP.App
             // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
             SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
 
+            LogHoldState("the call being replaced was put on hold");
+
             bool answerResult = await Answer(uas, MediaSession).ConfigureAwait(false);
+
+            LogHoldState("the replacing call was answered");
 
             if (answerResult)
             {
@@ -2024,6 +2030,22 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <returns>The required state of the local media tracks to match the current on
         /// hold conditions.</returns>
+        /// <summary>
+        /// Records the hold state and the send/receive direction it implies.
+        /// </summary>
+        /// <remarks>
+        /// The two flags are what decide whether this agent will send, and they are changed by
+        /// several paths that do not obviously belong together - a hold request either way, an
+        /// answer arriving, a transfer taking a call over. Logging them at each of those points
+        /// is what turns "the call went one way" into a question with an answer.
+        /// </remarks>
+        private void LogHoldState(string context)
+        {
+            logger.LogDebug(
+                "Hold state after {Context}: local hold {LocalHold}, remote hold {RemoteHold}, implies {StreamStatus}.",
+                context, IsOnLocalHold, IsOnRemoteHold, GetStreamStatusForOnHoldState());
+        }
+
         private MediaStreamStatusEnum GetStreamStatusForOnHoldState()
         {
             var streamStatus = MediaStreamStatusEnum.SendRecv;

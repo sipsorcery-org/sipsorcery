@@ -93,10 +93,34 @@ namespace SIPSorcery.Net
         /// </summary>
         public MediaStreamStatusEnum DefaultStreamStatus { get; private set; }
 
+        private MediaStreamStatusEnum _streamStatus;
+
         /// <summary>
         /// Holds the stream state of the track.
         /// </summary>
-        public MediaStreamStatusEnum StreamStatus { get; internal set; }
+        /// <remarks>
+        /// Changes are logged because this is what decides whether the track will send, and it is
+        /// set from several places - an on hold request, an answer arriving, an application asking
+        /// directly. When a call goes one way the question is always which of those last touched
+        /// it, and a track that silently refuses to send is otherwise only visible as a warning
+        /// per packet with nothing to say why.
+        /// </remarks>
+        public MediaStreamStatusEnum StreamStatus
+        {
+            get => _streamStatus;
+
+            internal set
+            {
+                if (_streamStatus != value)
+                {
+                    logger.LogDebug(
+                        "{Kind} {MediaType} track stream status {Previous} -> {Current}.",
+                        IsRemote ? "Remote" : "Local", Kind, _streamStatus, value);
+                }
+
+                _streamStatus = value;
+            }
+        }
 
         /// <summary>
         /// If the SDP remote the remote party provides "a=ssrc" attributes, as specified
