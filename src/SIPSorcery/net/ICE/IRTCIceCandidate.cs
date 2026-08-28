@@ -122,9 +122,7 @@ namespace SIPSorcery.Net
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
-            return JsonSerializer.Serialize(
-                this,
-                SipSorceryJsonSerializerContext.Default.RTCIceCandidateInit);
+            return SipSorceryJsonSerializer.Serialize(this);
         }
 
 #nullable enable
@@ -143,9 +141,7 @@ namespace SIPSorcery.Net
 
             try
             {
-                init = JsonSerializer.Deserialize(
-                    json,
-                    SipSorceryJsonSerializerContext.Default.RTCIceCandidateInit);
+                init = SipSorceryJsonSerializer.Deserialize<RTCIceCandidateInit>(json);
             }
             catch (JsonException)
             {
