@@ -614,9 +614,18 @@ namespace SIPSorcery.SIP
 
             SIPRequestOutTraceEvent?.Invoke(sendFromSIPEndPoint, dstEndPoint, sipRequest);
 
-            if (sipChannel.IsSecure)
+            // The client web socket channel serves both ws and wss destinations, so whether a secure send is required
+            // can't be determined from the channel alone and the destination protocol has to be taken into account.
+            if (sipChannel.IsSecure || dstEndPoint.Protocol == SIPProtocolsEnum.wss)
             {
-                return sipChannel.SendSecureAsync(dstEndPoint, sipRequest.GetBytes(), sipRequest.URI.HostAddress, true, sipRequest.SendFromHintConnectionID);
+                // The certificate name needs to match the host the connection is actually being made to. When a route
+                // set is present the destination end point was resolved from the top route, not the request URI, so
+                // it's the top route's host that will be presented in the server's certificate.
+                var routeSet = sipRequest.Header.Routes;
+                string serverCertificateName = (routeSet != null && routeSet.Length > 0) ?
+                    routeSet.TopRoute.URI.HostAddress : sipRequest.URI.HostAddress;
+
+                return sipChannel.SendSecureAsync(dstEndPoint, sipRequest.GetBytes(), serverCertificateName, true, sipRequest.SendFromHintConnectionID);
             }
             else
             {
