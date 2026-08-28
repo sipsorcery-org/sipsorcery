@@ -416,7 +416,57 @@ public sealed class SipTransferCommand : CommandBase
                 descriptor.Password = parsed[1].Password;
                 descriptor.From = transfereeRole.Aor.ToString();
 
+                Console.Error.WriteLine($"Transferee is calling the target at {descriptor.Uri}.");
                 timeline.Add("transfereeCallingTarget", detail: descriptor.Uri);
+            };
+
+            // The transferee's side of the transfer, which the library does raise events for.
+            transfereeRole.UserAgent.OnTransferRequested += (referTo, referredBy) =>
+            {
+                Console.Error.WriteLine(
+                    $"Transferee was asked to transfer the call to {referTo.URI.ToParameterlessString()}" +
+                    (string.IsNullOrWhiteSpace(referredBy) ? "" : $" by {referredBy}") + " - accepting.");
+
+                timeline.Add("transfereeAcceptedRefer", detail: referTo.URI.ToParameterlessString());
+
+                // Returning true is what accepts it; with no handler at all the library accepts
+                // anyway, so this changes nothing beyond making the decision visible.
+                return true;
+            };
+
+            transfereeRole.UserAgent.OnTransferToTargetSuccessful += referTo =>
+            {
+                Console.Error.WriteLine(
+                    $"Transferee reached {referTo.URI.ToParameterlessString()}; its call to the transferor is done.");
+                timeline.Add("transfereeReachedTarget");
+            };
+
+            transfereeRole.UserAgent.OnTransferToTargetFailed += referTo =>
+            {
+                Console.Error.WriteLine(
+                    $"Transferee could not reach {referTo.URI.ToParameterlessString()}; the transfer failed.");
+                timeline.Add("transfereeFailedToReachTarget");
+            };
+
+            // The target's side of it. Between these two the call being replaced is on hold, which
+            // is where the RecvOnly warnings from the audio source come from.
+            targetRole.UserAgent.OnAttendedTransferRequested += request =>
+            {
+                var replaced = SIPReplacesParameter.Parse(request.Header.Replaces)?.CallID;
+
+                Console.Error.WriteLine(
+                    $"Target is being asked to replace call {replaced} - putting it on hold and " +
+                    "answering the call taking it over.");
+
+                timeline.Add("targetReplacingCall", detail: replaced);
+            };
+
+            targetRole.UserAgent.OnAttendedTransferAccepted += replaced =>
+            {
+                Console.Error.WriteLine(
+                    $"Target accepted the transfer; its call {replaced.CallId} to the transferor is done.");
+
+                timeline.Add("targetAcceptedTransfer", detail: replaced.CallId);
             };
 
             // Recorded rather than required. The transferee's own REFER handling in the library
@@ -447,7 +497,14 @@ public sealed class SipTransferCommand : CommandBase
                 failureResponse = resp;
                 Console.Error.WriteLine($"Call failed: {error}.");
             };
-            transferorRole.UserAgent.OnCallHungup += _ => remoteHungup.TrySetResult(true);
+            transferorRole.UserAgent.OnCallHungup += _ =>
+            {
+                // After a transfer this is the transferee letting the transferor go, which is the
+                // half of the outcome the transferor can actually observe.
+                Console.Error.WriteLine("Transferor's call to the transferee has been hung up.");
+                timeline.Add("originalLegHungup");
+                remoteHungup.TrySetResult(true);
+            };
 
             Console.Error.WriteLine($"Transferor calling transferee at {transfereeRole.Aor} ...");
 
@@ -514,6 +571,8 @@ public sealed class SipTransferCommand : CommandBase
                 // replacement. Nothing else tells the transferor the transfer landed.
                 agent.OnCallHungup += _ =>
                 {
+                    Console.Error.WriteLine(
+                        "Transferor's call to the target has been hung up - the target took the replacement.");
                     timeline.Add("consultationReplaced");
                     consultationReplaced.TrySetResult(true);
                 };
@@ -595,6 +654,10 @@ public sealed class SipTransferCommand : CommandBase
                 // A moment beyond the answer for media to start arriving from the new end point.
                 await Task.Delay(TimeSpan.FromSeconds(2), ct).ConfigureAwait(false);
             }
+
+            Console.Error.WriteLine(attended
+                ? "Both of the transferor's calls should now be gone; the transferee and target are talking."
+                : "The transferor's call should now be gone; the transferee and target are talking.");
 
             bool targetAnswered = attended
                 ? consultationReplaced.Task.IsCompletedSuccessfully

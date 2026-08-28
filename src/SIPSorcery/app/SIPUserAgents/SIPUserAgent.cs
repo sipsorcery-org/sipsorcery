@@ -364,6 +364,34 @@ namespace SIPSorcery.SIP.App
         /// <summary>	
         /// The remote call party has put us on hold.	
         /// </summary>	
+        /// <summary>
+        /// An INVITE has arrived that replaces this agent's current call, and it is being taken
+        /// over. This is the attended transfer seen from the party being transferred TO.
+        /// </summary>
+        /// <remarks>
+        /// Informational, and raised before the current call is put on hold and the new one
+        /// answered. There is no way to decline from here: RFC 3891 matching has already
+        /// identified the dialog and acceptance is what this agent does with it.
+        ///
+        /// The counterpart on the transferee is <seealso cref="OnTransferRequested"/>. Without
+        /// this the party being replaced is the one side of an attended transfer an application
+        /// cannot observe at all, because the exchange is handled inside this class and
+        /// OnIncomingCall is deliberately not raised for it.
+        /// </remarks>
+        public event Action<SIPRequest> OnAttendedTransferRequested;
+
+        /// <summary>
+        /// The call replacing this agent's current one has been answered. The dialog supplied is
+        /// the one that has been replaced and is about to be hung up.
+        /// </summary>
+        /// <remarks>
+        /// Raised after the new call is answered, so unlike
+        /// <seealso cref="OnAttendedTransferRequested"/> this says the transfer actually
+        /// happened. It does not fire when answering fails, in which case the original call is
+        /// taken back off hold and carries on.
+        /// </remarks>
+        public event Action<SIPDialogue> OnAttendedTransferAccepted;
+
         public event Action RemotePutOnHold;
 
         /// <summary>	
@@ -1529,6 +1557,12 @@ namespace SIPSorcery.SIP.App
             // requests or response (most likely relating to on/off hold) don't get applied to the media session.
             _oldCallID = uas.ClientTransaction.TransactionRequest.Header.CallId;
 
+            OnAttendedTransferRequested?.Invoke(uas.ClientTransaction.TransactionRequest);
+
+            // Captured before the answer, because answering replaces it and this is the dialog the
+            // application needs named: the one being taken over.
+            SIPDialogue replacedDialogue = m_sipDialogue;
+
             if (!IsOnLocalHold)
             {
                 logger.LogDebug("Current call placed on hold.");
@@ -1563,6 +1597,8 @@ namespace SIPSorcery.SIP.App
             if (answerResult)
             {
                 logger.LogDebug("Attended transfer was successfully answered, hanging up original call.");
+
+                OnAttendedTransferAccepted?.Invoke(replacedDialogue);
 
                 // Hanging up original call.
                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
